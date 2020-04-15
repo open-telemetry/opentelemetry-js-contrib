@@ -2,13 +2,13 @@
   "lerna": "3.13.4",
   "npmClient": "npm",
   "packages": [
-    "benchmark/*",
     "packages/*",
-    "packages/opentelemetry-plugin-postgres/*"
+    "plugins/*",
+    "plugins/opentelemetry-plugin-postgres/*"
   ],
   "version": "0.6.1",
   "changelog": {
-    "repo": "open-telemetry/opentelemetry-js",
+    "repo": "open-telemetry/opentelemetry-js-contrib",
     "labels": {
       "breaking": ":boom: Breaking Change",
       "enhancement": ":rocket: (Enhancement)",
