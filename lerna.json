@@ -3,8 +3,9 @@
   "npmClient": "npm",
   "packages": [
     "packages/*",
-    "plugins/*",
-    "plugins/opentelemetry-plugin-postgres/*"
+    "plugins/node/*",
+    "plugins/node/opentelemetry-plugin-postgres/*",
+    "plugins/web/*"
   ],
   "version": "0.6.1",
   "changelog": {
