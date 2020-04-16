@@ -45,17 +45,13 @@ cache_1: &cache_1
     - ./node_modules
     - ./package-lock.json
     - packages/opentelemetry-plugin-dns/node_modules
-    - packages/opentelemetry-plugin-grpc/node_modules
-    - packages/opentelemetry-plugin-http/node_modules
     - packages/opentelemetry-plugin-ioredis/node_modules
     - packages/opentelemetry-plugin-mongodb/node_modules
     - packages/opentelemetry-plugin-redis/node_modules
     - packages/opentelemetry-plugin-postgres/opentelemetry-plugin-pg/node_modules
     - packages/opentelemetry-plugin-document-load/node_modules
-    - packages/opentelemetry-plugin-https/node_modules
     - packages/opentelemetry-plugin-postgres/opentelemetry-plugin-pg-pool/node_modules
     - packages/opentelemetry-plugin-mysql/node_modules
-    - packages/opentelemetry-plugin-xml-http-request/node_modules
     - packages/opentelemetry-plugin-express/node_modules
 
 node_unit_tests: &node_unit_tests
