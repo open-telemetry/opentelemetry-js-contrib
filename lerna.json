@@ -4,7 +4,6 @@
   "packages": [
     "packages/*",
     "plugins/node/*",
-    "plugins/node/opentelemetry-plugin-postgres/*",
     "plugins/web/*"
   ],
   "version": "0.6.1",
