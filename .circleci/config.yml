@@ -53,6 +53,7 @@ cache_1: &cache_1
     - plugins/node/opentelemetry-plugin-pg-pool/node_modules
     - plugins/node/opentelemetry-plugin-mysql/node_modules
     - plugins/node/opentelemetry-plugin-express/node_modules
+    - propagators/opentelemetry-propagator-jaeger/node_modules
 
 node_unit_tests: &node_unit_tests
   resource_class: large
