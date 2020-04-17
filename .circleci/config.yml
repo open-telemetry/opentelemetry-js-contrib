@@ -44,15 +44,15 @@ cache_1: &cache_1
   paths:
     - ./node_modules
     - ./package-lock.json
-    - packages/opentelemetry-plugin-dns/node_modules
-    - packages/opentelemetry-plugin-ioredis/node_modules
-    - packages/opentelemetry-plugin-mongodb/node_modules
-    - packages/opentelemetry-plugin-redis/node_modules
-    - packages/opentelemetry-plugin-postgres/opentelemetry-plugin-pg/node_modules
-    - packages/opentelemetry-plugin-document-load/node_modules
-    - packages/opentelemetry-plugin-postgres/opentelemetry-plugin-pg-pool/node_modules
-    - packages/opentelemetry-plugin-mysql/node_modules
-    - packages/opentelemetry-plugin-express/node_modules
+    - plugins/node/opentelemetry-plugin-dns/node_modules
+    - plugins/node/opentelemetry-plugin-ioredis/node_modules
+    - plugins/node/opentelemetry-plugin-mongodb/node_modules
+    - plugins/node/opentelemetry-plugin-redis/node_modules
+    - plugins/node/opentelemetry-plugin-pg/node_modules
+    - plugins/node/opentelemetry-plugin-document-load/node_modules
+    - plugins/node/opentelemetry-plugin-pg-pool/node_modules
+    - plugins/node/opentelemetry-plugin-mysql/node_modules
+    - plugins/node/opentelemetry-plugin-express/node_modules
 
 node_unit_tests: &node_unit_tests
   resource_class: large
