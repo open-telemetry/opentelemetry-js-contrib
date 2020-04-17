@@ -13,7 +13,7 @@
     "lint": "gts check",
     "lint:fix": "gts fix",
     "precompile": "tsc --version",
-    "version:update": "node ../../scripts/version-update.js",
+    "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p .",
     "prepare": "npm run compile"
   },
