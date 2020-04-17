@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { BasePlugin } from '@opentelemetry/core';
+import { BasePlugin, isWrapped } from '@opentelemetry/core';
 import { CanonicalCode, Span } from '@opentelemetry/api';
 import * as pgTypes from 'pg';
 import * as shimmer from 'shimmer';
@@ -43,7 +43,10 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
   }
 
   protected patch(): typeof pgTypes {
-    if (this._moduleExports.Client.prototype.query) {
+    if (
+      this._moduleExports.Client.prototype.query &&
+      !isWrapped(this._moduleExports.Client.prototype.query)
+    ) {
       shimmer.wrap(
         this._moduleExports.Client.prototype,
         'query',
