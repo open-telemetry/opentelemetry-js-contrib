@@ -1,7 +1,7 @@
 {
   "name": "postgres-example",
   "private": true,
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Example of Postgres integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -35,8 +35,8 @@
     "@opentelemetry/exporter-zipkin": "^0.6.1",
     "@opentelemetry/node": "^0.6.1",
     "@opentelemetry/plugin-http": "^0.6.1",
-    "@opentelemetry/plugin-pg": "^0.6.1",
-    "@opentelemetry/plugin-pg-pool": "^0.6.1",
+    "@opentelemetry/plugin-pg": "^0.7.0",
+    "@opentelemetry/plugin-pg-pool": "^0.7.0",
     "@opentelemetry/tracing": "^0.6.1",
     "express": "^4.17.1",
     "pg": "^7.12.1"
