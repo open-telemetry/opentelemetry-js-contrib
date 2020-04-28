@@ -3,11 +3,11 @@
   "npmClient": "npm",
   "packages": [
     "packages/*",
-    "propagators/*",
     "plugins/node/*",
-    "plugins/web/*"
+    "plugins/web/*",
+    "propagators/*"
   ],
-  "version": "0.6.1",
+  "version": "0.7.0",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",
     "labels": {

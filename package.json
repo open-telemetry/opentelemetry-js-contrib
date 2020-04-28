@@ -1,6 +1,6 @@
 {
   "name": "opentelemetry-contrib",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "This is a repository for OpenTelemetry JavaScript contributions.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
