@@ -25,6 +25,25 @@ OpenTelemetry can collect tracing data automatically using plugins. Vendors/User
 - [@opentelemetry/plugin-xml-http-request][otel-plugin-xml-http-request]
 - [@opentelemetry/plugin-user-interaction][otel-plugin-user-interaction]
 
+## Supported Runtimes
+
+Platform Version | Supported
+---------------- | ---------
+Node.JS `v14`    | ✅
+Node.JS `v13`    | ✅
+Node.JS `v12`    | ✅
+Node.JS `v10`    | ✅
+Node.JS `v8`     | See [Node Support](#node-support) below
+Web Browsers     | ✅ See [Browser Support](#browser-support) below
+
+### Node Support
+Automated tests are run using the latest release of each currently active version of Node.JS.
+While Node.JS v8 is no longer supported by the Node.JS team, the latest version of Node.JS v8 is still included in our testing suite.
+Please note that versions of Node.JS v8 prior to `v8.5.0` will NOT work, because OpenTelemetry Node depends on the `perf_hooks` module introduced in `v8.5.0`
+
+### Browser Support
+Automated browser tests are run in the latest version of Headless Chrome.
+There is currently no list of officially supported browsers, but OpenTelemetry is developed using standard web technologies with wide support and should work in currently supported versions of major browsers.
 
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
