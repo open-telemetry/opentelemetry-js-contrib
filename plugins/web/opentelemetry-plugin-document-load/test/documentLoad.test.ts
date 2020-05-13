@@ -42,7 +42,7 @@ import {
 } from '@opentelemetry/web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { ExportResult } from '@opentelemetry/base';
+import { ExportResult } from '@opentelemetry/core';
 import { DocumentLoad } from '../src';
 
 export class DummyExporter implements SpanExporter {

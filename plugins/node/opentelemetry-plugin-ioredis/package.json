@@ -44,10 +44,10 @@
     "access": "public"
   },
   "devDependencies": {
-    "@opentelemetry/context-async-hooks": "^0.6.1",
-    "@opentelemetry/node": "^0.6.1",
+    "@opentelemetry/context-async-hooks": "^0.8.0",
+    "@opentelemetry/node": "^0.8.0",
     "@opentelemetry/test-utils": "^0.7.0",
-    "@opentelemetry/tracing": "^0.6.1",
+    "@opentelemetry/tracing": "^0.8.0",
     "@types/ioredis": "^4.14.3",
     "@types/mocha": "^7.0.0",
     "@types/node": "^13.1.0",
@@ -66,8 +66,8 @@
     "typescript": "3.7.4"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.6.1",
-    "@opentelemetry/core": "^0.6.1",
+    "@opentelemetry/api": "^0.8.0",
+    "@opentelemetry/core": "^0.8.0",
     "shimmer": "^1.2.1"
   }
 }

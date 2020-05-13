@@ -43,7 +43,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.6.0",
-    "@opentelemetry/base": "^0.6.1",
     "@types/mocha": "^7.0.0",
     "@types/node": "^12.6.8",
     "@types/sinon": "^7.0.13",
@@ -73,9 +72,9 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.6.1",
-    "@opentelemetry/core": "^0.6.1",
-    "@opentelemetry/tracing": "^0.6.1",
-    "@opentelemetry/web": "^0.6.1"
+    "@opentelemetry/api": "^0.8.0",
+    "@opentelemetry/core": "^0.8.0",
+    "@opentelemetry/tracing": "^0.8.0",
+    "@opentelemetry/web": "^0.8.0"
   }
 }
