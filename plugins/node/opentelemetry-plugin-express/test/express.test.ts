@@ -98,42 +98,44 @@ describe('Express Plugin', () => {
         tracer.withSpan(rootSpan, async () => {
           await httpRequest.get(`http://localhost:${port}/toto/tata`);
           rootSpan.end();
-          assert(
+          assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
-              .find(span => span.name.includes('customMiddleware')) !==
-              undefined
+              .find(span => span.name.includes('customMiddleware')),
+            undefined
           );
-          assert(
+          assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
-              .find(span => span.name.includes('query')) !== undefined
+              .find(span => span.name.includes('query')),
+            undefined
           );
-          assert(
+          assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
-              .find(span => span.name.includes('jsonParser')) !== undefined
+              .find(span => span.name.includes('jsonParser')),
+            undefined
           );
           const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name.includes('request handler'));
-          assert(requestHandlerSpan !== undefined);
-          assert(
-            requestHandlerSpan?.attributes[AttributeNames.COMPONENT] ===
-              'express'
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.COMPONENT],
+            'express'
           );
-          assert(
-            requestHandlerSpan?.attributes[AttributeNames.HTTP_ROUTE] ===
-              '/toto/:id'
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.HTTP_ROUTE],
+            '/toto/:id'
           );
-          assert(
-            requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE] ===
-              'request_handler'
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
+            'request_handler'
           );
           let exportedRootSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
-          assert(exportedRootSpan !== undefined);
+          assert.notStrictEqual(exportedRootSpan, undefined);
           server.close();
           return done();
         });
@@ -177,7 +179,7 @@ describe('Express Plugin', () => {
           let exportedRootSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
-          assert(exportedRootSpan !== undefined);
+          assert.notStrictEqual(exportedRootSpan, undefined);
           server.close();
           return done();
         });
@@ -205,7 +207,10 @@ describe('Express Plugin', () => {
           await httpRequest.get(`http://localhost:${port}/toto/tata`);
           rootSpan.end();
           assert.deepEqual(memoryExporter.getFinishedSpans().length, 1);
-          assert(memoryExporter.getFinishedSpans()[0] !== undefined);
+          assert.notStrictEqual(
+            memoryExporter.getFinishedSpans()[0],
+            undefined
+          );
           server.close();
           return done();
         });
