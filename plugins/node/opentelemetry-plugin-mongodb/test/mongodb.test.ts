@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {context, PluginConfig, SpanKind} from '@opentelemetry/api';
+import { context, PluginConfig, SpanKind } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -46,7 +46,7 @@ describe('MongoDBPlugin', () => {
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
   const logger = new NoopLogger();
-  const enhancedDbConfig: PluginConfig = {enhancedDatabaseReporting: true};
+  const enhancedDbConfig: PluginConfig = { enhancedDatabaseReporting: true };
   const provider = new BasicTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
@@ -240,13 +240,12 @@ describe('MongoDBPlugin', () => {
 
     it('should not create a child span for command', done => {
       const span = provider.getTracer('default').startSpan('indexRootSpan');
-      collection.createIndex({a: 1}, (err, result) => {
+      collection.createIndex({ a: 1 }, (err, result) => {
         span.end();
         assert.ifError(err);
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
         done();
       });
     });
-
   });
 });

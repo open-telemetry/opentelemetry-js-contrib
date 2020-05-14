@@ -85,7 +85,7 @@ export function assertSpans(
   if (isEnhancedDatabaseReportingEnabled) {
     const dbStatement = <any>mongoSpan.attributes[AttributeNames.DB_STATEMENT];
     for (const key in dbStatement) {
-        assert.notStrictEqual(dbStatement[key], '?');
+      assert.notStrictEqual(dbStatement[key], '?');
     }
   }
 }

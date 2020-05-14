@@ -200,7 +200,10 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
       {} as { [key: string]: unknown }
     );
 
-    const isEnhancedDatabaseReportingEnabled = this._config !== undefined && this._config.enhancedDatabaseReporting !== undefined && this._config.enhancedDatabaseReporting;
+    const isEnhancedDatabaseReportingEnabled =
+      this._config !== undefined &&
+      this._config.enhancedDatabaseReporting !== undefined &&
+      this._config.enhancedDatabaseReporting;
     if (isEnhancedDatabaseReportingEnabled) {
       query = command.query ?? command.q ?? command;
     }
