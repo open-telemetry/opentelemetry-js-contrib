@@ -35,7 +35,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
 
   static readonly BASE_SPAN_NAME = PostgresPlugin.COMPONENT + '.query';
 
-  readonly supportedVersions = ['7.*'];
+  readonly supportedVersions = ['7.*', '8.*'];
 
   constructor(readonly moduleName: string) {
     super('@opentelemetry/plugin-pg', VERSION);
