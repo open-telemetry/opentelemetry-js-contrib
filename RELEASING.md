@@ -1,4 +1,4 @@
-# Releasing OpenTelemetry Packages (for Maintainers Only)
+s# Releasing OpenTelemetry Packages (for Maintainers Only)
 
 This document explains how to publish all OT modules at version x.y.z. Ensure that you’re following semver when choosing a version number.
 
