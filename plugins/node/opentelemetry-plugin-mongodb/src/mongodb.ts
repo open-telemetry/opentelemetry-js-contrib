@@ -192,21 +192,16 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
     });
 
     if (command === undefined) return;
-    let query = Object.keys(command.query ?? command.q ?? command).reduce(
-      (obj, key) => {
-        obj[key] = '?';
-        return obj;
-      },
-      {} as { [key: string]: unknown }
-    );
 
-    const isEnhancedDatabaseReportingEnabled =
-      this._config !== undefined &&
-      this._config.enhancedDatabaseReporting !== undefined &&
-      this._config.enhancedDatabaseReporting;
-    if (isEnhancedDatabaseReportingEnabled) {
-      query = command.query ?? command.q ?? command;
-    }
+    const query = this._config?.enhancedDatabaseReporting
+      ? command.query ?? command.q ?? command
+      : Object.keys(command.query ?? command.q ?? command).reduce(
+          (obj, key) => {
+            obj[key] = '?';
+            return obj;
+          },
+          {} as { [key: string]: unknown }
+        );
 
     span.setAttribute('db.statement', JSON.stringify(query));
   }
