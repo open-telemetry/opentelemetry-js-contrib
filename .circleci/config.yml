@@ -29,7 +29,7 @@ redis_service: &redis_service
   image: redis
 
 mongo_service: &mongo_service
-  image: mongodb
+  image: mongo
 
 mysql_service: &mysql_service
   image: circleci/mysql:5.7
