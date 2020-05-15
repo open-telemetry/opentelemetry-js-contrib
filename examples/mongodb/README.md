@@ -7,6 +7,8 @@ This is a modification of the HTTP example that executes multiple parallel reque
 - Insert Document Query
 - Fetch All Documents Query
 
+This example runs with the `enhancedDatabaseReporting` flag set to `true` in the  `mongodb` plugin config. This allows for capturing parameters within the queries instead of obfuscating them.
+
 
 ## Installation
 
