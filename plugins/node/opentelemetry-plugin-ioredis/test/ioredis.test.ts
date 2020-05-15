@@ -27,6 +27,7 @@ import * as assert from 'assert';
 import * as ioredisTypes from 'ioredis';
 import { IORedisPlugin, plugin } from '../src';
 import { AttributeNames } from '../src/enums';
+import { IORedisPluginConfig, DbStatementSerializer } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -507,6 +508,52 @@ describe('ioredis', () => {
           } catch (error) {
             assert.ifError(error);
           }
+        });
+      });
+    });
+
+    describe('Instrumenting with specific configuration', () => {
+      const dbStatementSerializer: DbStatementSerializer = (cmdName, cmdArgs) =>
+        `FOOBAR_${cmdName}: ${cmdArgs[0]}`;
+      before(() => {
+        plugin.disable();
+        const config: IORedisPluginConfig = {
+          dbStatementSerializer,
+        };
+        plugin.enable(ioredis, provider, new NoopLogger(), config);
+      });
+
+      IOREDIS_CALLBACK_OPERATIONS.forEach(command => {
+        it(`should tag the span with a custom db.statement for cb style ${command.description}`, done => {
+          const attributes = {
+            ...DEFAULT_ATTRIBUTES,
+            [AttributeNames.DB_STATEMENT]: dbStatementSerializer(
+              command.name,
+              command.args
+            ),
+          };
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          provider.getTracer('ioredis-test').withSpan(span, () => {
+            command.method((err, _result) => {
+              assert.ifError(err);
+              assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans.length, 2);
+              assert.strictEqual(endedSpans[0].name, command.name);
+              testUtils.assertSpan(
+                endedSpans[0],
+                SpanKind.CLIENT,
+                attributes,
+                [],
+                okStatus
+              );
+              testUtils.assertPropagation(endedSpans[0], span);
+              done();
+            });
+          });
         });
       });
     });

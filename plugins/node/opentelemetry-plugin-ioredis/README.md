@@ -42,6 +42,14 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const provider = new NodeTracerProvider();
 ```
 
+### IORedis Plugin Options
+
+IORedis plugin has few options available to choose from. You can set the following:
+
+| Options | Type | Description |
+| ------- | ---- | ----------- |
+| `dbStatementSerializer` | `DbStatementSerializer` | IORedis plugin will serialize db.statement using the specified function. |
+
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>

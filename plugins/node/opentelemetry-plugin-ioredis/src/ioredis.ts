@@ -17,6 +17,7 @@
 import { BasePlugin } from '@opentelemetry/core';
 import * as ioredisTypes from 'ioredis';
 import * as shimmer from 'shimmer';
+import { IORedisPluginConfig } from './types';
 import { traceConnection, traceSendCommand } from './utils';
 import { VERSION } from './version';
 
@@ -24,6 +25,7 @@ export class IORedisPlugin extends BasePlugin<typeof ioredisTypes> {
   static readonly COMPONENT = 'ioredis';
   static readonly DB_TYPE = 'redis';
   readonly supportedVersions = ['>1 <5'];
+  protected _config!: IORedisPluginConfig;
 
   constructor(readonly moduleName: string) {
     super('@opentelemetry/plugin-ioredis', VERSION);
@@ -60,7 +62,7 @@ export class IORedisPlugin extends BasePlugin<typeof ioredisTypes> {
   private _patchSendCommand() {
     const tracer = this._tracer;
     return (original: Function) => {
-      return traceSendCommand(tracer, original);
+      return traceSendCommand(tracer, original, plugin._config);
     };
   }
 
