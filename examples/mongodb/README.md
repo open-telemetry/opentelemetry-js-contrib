@@ -2,24 +2,10 @@
 
 OpenTelemetry Mongodb Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can use Zipkin or Jaeger for this example), to give observability to distributed systems.
 
-This is a modification of the HTTP example that executes multiple parallel requests that interact with a Mongodb server backend using the `mongo` npm module. The example displays traces using multiple connection methods.
+This is a modification of the Mongo example that executes multiple parallel requests that interact with a Mongodb server backend using the `mongo` npm module. The example displays traces using multiple connection methods.
 - Create Collection Query
 - Insert Document Query
 - Fetch All Documents Query
-
-### Http Plugin Options
-
-Mongodb plugin has few options available to choose from. You can set the following:
-
-| Options | Type | Description |
-| ------- | ---- | ----------- |
-| [`enabled`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L60) | `Boolean` | Whether to enable the plugin |
-| [`path`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L66) | `String` | Path of the trace plugin to load. |
-| [`ignoreMethods`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L71) | `String[]` | Request methods that match any string in ignoreMethods will not be traced |
-| [`ignoreUrls`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L78) | <code>Array<string &#124; RegExp></code> | URLs that partially match any regex or exactly match the strings in ignoreUrls will not be traced |
-| [`internalFilesExports`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L84) | `PluginInternalFiles` | List of internal files that need patch and are not exported by default |
-| [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L91) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
-
 
 
 ## Installation
