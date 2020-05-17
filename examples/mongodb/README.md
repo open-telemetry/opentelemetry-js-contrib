@@ -7,7 +7,19 @@ This is a modification of the HTTP example that executes multiple parallel reque
 - Insert Document Query
 - Fetch All Documents Query
 
-This example runs with the `enhancedDatabaseReporting` flag set to `true` in the  `mongodb` plugin config. This allows for capturing parameters within the queries instead of obfuscating them.
+### Http Plugin Options
+
+Mongodb plugin has few options available to choose from. You can set the following:
+
+| Options | Type | Description |
+| ------- | ---- | ----------- |
+| [`enabled`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L60) | `Boolean` | Whether to enable the plugin |
+| [`path`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L66) | `String` | Path of the trace plugin to load. |
+| [`ignoreMethods`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L71) | `String[]` | Request methods that match any string in ignoreMethods will not be traced |
+| [`ignoreUrls`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L78) | <code>Array<string &#124; RegExp></code> | URLs that partially match any regex or exactly match the strings in ignoreUrls will not be traced |
+| [`internalFilesExports`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L84) | `PluginInternalFiles` | List of internal files that need patch and are not exported by default |
+| [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L91) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
+
 
 
 ## Installation
