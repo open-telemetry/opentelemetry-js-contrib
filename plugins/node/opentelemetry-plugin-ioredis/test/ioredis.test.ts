@@ -512,7 +512,7 @@ describe('ioredis', () => {
       });
     });
 
-    describe('Instrumenting with specific configuration', () => {
+    describe('Instrumenting with a custom db.statement serializer', () => {
       const dbStatementSerializer: DbStatementSerializer = (cmdName, cmdArgs) =>
         `FOOBAR_${cmdName}: ${cmdArgs[0]}`;
       before(() => {
