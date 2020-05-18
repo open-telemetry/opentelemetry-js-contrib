@@ -194,15 +194,14 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
     if (command === undefined) return;
 
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
-    const query = this._config?.enhancedDatabaseReporting
-      ? command.query ?? command.q ?? command
-      : Object.keys(command.query ?? command.q ?? command).reduce(
-          (obj, key) => {
+    const commandObj = command.query ?? command.q ?? command;
+    const query =
+      this._config?.enhancedDatabaseReporting === true
+        ? commandObj
+        : Object.keys(commandObj).reduce((obj, key) => {
             obj[key] = '?';
             return obj;
-          },
-          {} as { [key: string]: unknown }
-        );
+          }, {} as { [key: string]: unknown });
 
     span.setAttribute('db.statement', JSON.stringify(query));
   }
