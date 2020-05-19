@@ -78,13 +78,13 @@ export const traceSendCommand = (
   original: Function,
   config?: IORedisPluginConfig
 ) => {
+  const dbStatementSerializer =
+    config?.dbStatementSerializer || defaultDbStatementSerializer;
   return function(
     this: ioredisTypes.Redis & IORedisPluginClientTypes,
     cmd?: IORedisCommand
   ) {
     if (arguments.length >= 1 && typeof cmd === 'object') {
-      const dbStatementSerializer =
-        config?.dbStatementSerializer || defaultDbStatementSerializer;
       const span = tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
         attributes: {

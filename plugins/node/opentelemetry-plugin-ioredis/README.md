@@ -50,6 +50,30 @@ IORedis plugin has few options available to choose from. You can set the followi
 | ------- | ---- | ----------- |
 | `dbStatementSerializer` | `DbStatementSerializer` | IORedis plugin will serialize db.statement using the specified function. |
 
+#### Custom db.statement Serializer
+The plugin serializes the whole command into a Span attribute called `db.statement`. The standard serialization format is `{cmdName} {cmdArgs.join(',')}`.
+It is also possible to define a custom serialization function. The function will receive the command name and arguments and must return a string.
+
+Here is a simple example to serialize the command name skipping arguments:
+
+```javascript
+const { NodeTracerProvider } = require('@opentelemetry/node');
+
+const provider = new NodeTracerProvider({
+  plugins: {
+    ioredis: {
+      enabled: true,
+      // You may use a package name or absolute path to the file.
+      path: '@opentelemetry/plugin-ioredis',
+      dbStatementSerializer: function (cmdName, cmdArgs) {
+        return cmdName;
+      }
+    }
+  }
+});
+
+```
+
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>

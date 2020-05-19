@@ -31,6 +31,13 @@ export interface IORedisPluginClientTypes {
   options: ioredisTypes.RedisOptions;
 }
 
+/**
+ * Function that can be used to serialize db.statement tag
+ * @param cmdName - The name of the command (eg. set, get, mset)
+ * @param cmdArgs - Array of arguments passed to the command
+ *
+ * @returns serialized string that will be used as the db.statement attribute.
+ */
 export type DbStatementSerializer = (
   cmdName: IORedisCommand['name'],
   cmdArgs: IORedisCommand['args']
