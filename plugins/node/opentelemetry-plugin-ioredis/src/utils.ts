@@ -16,7 +16,12 @@
 
 import * as ioredisTypes from 'ioredis';
 import { Tracer, SpanKind, Span, CanonicalCode } from '@opentelemetry/api';
-import { IORedisPluginClientTypes, IORedisCommand } from './types';
+import {
+  IORedisPluginClientTypes,
+  IORedisCommand,
+  IORedisPluginConfig,
+  DbStatementSerializer,
+} from './types';
 import { IORedisPlugin } from './ioredis';
 import { AttributeNames } from './enums';
 
@@ -60,7 +65,21 @@ export const traceConnection = (tracer: Tracer, original: Function) => {
   };
 };
 
-export const traceSendCommand = (tracer: Tracer, original: Function) => {
+const defaultDbStatementSerializer: DbStatementSerializer = (
+  cmdName,
+  cmdArgs
+) =>
+  Array.isArray(cmdArgs) && cmdArgs.length
+    ? `${cmdName} ${cmdArgs.join(' ')}`
+    : cmdName;
+
+export const traceSendCommand = (
+  tracer: Tracer,
+  original: Function,
+  config?: IORedisPluginConfig
+) => {
+  const dbStatementSerializer =
+    config?.dbStatementSerializer || defaultDbStatementSerializer;
   return function(
     this: ioredisTypes.Redis & IORedisPluginClientTypes,
     cmd?: IORedisCommand
@@ -71,10 +90,10 @@ export const traceSendCommand = (tracer: Tracer, original: Function) => {
         attributes: {
           [AttributeNames.COMPONENT]: IORedisPlugin.COMPONENT,
           [AttributeNames.DB_TYPE]: IORedisPlugin.DB_TYPE,
-          [AttributeNames.DB_STATEMENT]:
-            Array.isArray(cmd.args) && cmd.args.length
-              ? `${cmd.name} ${cmd.args.join(' ')}`
-              : cmd.name,
+          [AttributeNames.DB_STATEMENT]: dbStatementSerializer(
+            cmd.name,
+            cmd.args
+          ),
         },
       });
 
