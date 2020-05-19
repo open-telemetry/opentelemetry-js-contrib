@@ -54,12 +54,15 @@ export function accessCollection(
  * @param spans Readable spans that we need to assert.
  * @param expectedName The expected name of the first root span.
  * @param expectedKind The expected kind of the first root span.
+ * @param log
+ * @param isEnhancedDatabaseReportingEnabled Is enhanced database reporting enabled: boolean
  */
 export function assertSpans(
   spans: ReadableSpan[],
   expectedName: string,
   expectedKind: SpanKind,
-  log = false
+  log = false,
+  isEnhancedDatabaseReportingEnabled = false
 ) {
   if (log) {
     console.log(spans);
@@ -78,4 +81,11 @@ export function assertSpans(
     process.env.MONGODB_HOST || 'localhost'
   );
   assert.strictEqual(mongoSpan.status.code, CanonicalCode.OK);
+
+  if (isEnhancedDatabaseReportingEnabled) {
+    const dbStatement = <any>mongoSpan.attributes[AttributeNames.DB_STATEMENT];
+    for (const key in dbStatement) {
+      assert.notStrictEqual(dbStatement[key], '?');
+    }
+  }
 }
