@@ -29,6 +29,7 @@ const PREBUILDS_FOLDER_NAME = 'prebuilds';
 
 // https://nodejs.org/en/download/releases/
 const targets = [
+  { version: '8.0.0', abi: '57' },
   { version: '10.0.0', abi: '64' },
   { version: '11.0.0', abi: '67' },
   { version: '12.0.0', abi: '72' },
