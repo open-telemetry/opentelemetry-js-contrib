@@ -2,12 +2,13 @@
   "lerna": "3.13.4",
   "npmClient": "npm",
   "packages": [
+    "examples/metrics-collector",
     "packages/*",
     "plugins/node/*",
     "plugins/web/*",
     "propagators/*"
   ],
-  "version": "0.7.0",
+  "version": "0.8.0",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",
     "labels": {

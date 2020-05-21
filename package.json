@@ -22,7 +22,7 @@
     "lint:examples": "eslint ./examples/**/*.js",
     "lint:examples:fix": "eslint ./examples/**/*.js --fix"
   },
-  "repository": "open-telemetry/opentelemetry-js",
+  "repository": "open-telemetry/opentelemetry-js-contrib",
   "keywords": [
     "opentelemetry",
     "nodejs",

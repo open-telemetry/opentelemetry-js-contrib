@@ -1,0 +1,79 @@
+{
+  "name": "@opentelemetry/metrics-collector",
+  "version": "0.8.0",
+  "description": "OpenTelemetry Metrics Collector",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "scripts": {
+    "build:all": "node scripts/build_all.js",
+    "build:install": "node scripts/build_install.js",
+    "clean": "rimraf build/*",
+    "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
+    "compile": "npm run version:update && tsc -p .",
+    "lint": "gts check",
+    "lint:fix": "gts fix",
+    "postcompile": "npm run build:install",
+    "precompile": "tsc --version",
+    "prepare": "npm run compile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc ts-mocha -p tsconfig.json test/**/*.test.ts",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsc -w"
+  },
+  "keywords": [
+    "opentelemetry",
+    "metrics",
+    "nodejs",
+    "tracing",
+    "profiling",
+    "plugin"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "Release/**/*.*",
+    "build/src/**/*.js",
+    "build/src/**/*.d.ts",
+    "doc",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@opentelemetry/exporter-prometheus": "^0.8.0",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^14.0.1",
+    "@types/sinon": "^9.0.1",
+    "checksum": "^0.1.1",
+    "codecov": "^3.6.5",
+    "gts": "^1.1.2",
+    "mkdirp": "^1.0.4",
+    "mocha": "^7.1.2",
+    "mock-require": "^3.0.3",
+    "nan": "^2.14.1",
+    "node-gyp": "^6.1.0",
+    "nyc": "^15.0.0",
+    "rimraf": "^3.0.2",
+    "sinon": "^7.5.0",
+    "systeminformation": "^4.23.1",
+    "tar": "^6.0.2",
+    "ts-loader": "^7.0.4",
+    "ts-mocha": "^7.0.0",
+    "ts-node": "^8.6.2",
+    "tslint-consistent-codestyle": "^1.16.0",
+    "tslint-microsoft-contrib": "^6.2.0",
+    "typescript": "3.7.2"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^0.8.0",
+    "@opentelemetry/core": "^0.8.0",
+    "@opentelemetry/metrics": "^0.8.0",
+    "node-gyp-build": "^4.2.1"
+  }
+}

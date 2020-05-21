@@ -185,6 +185,25 @@ jobs:
     docker:
       - image: circleci/node:12-browsers
     <<: *browsers_unit_tests
+  build-native-stats:
+    docker:
+      - image: node
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71D
+      - run:
+          name: Install
+          command: npm install --ignore-scripts
+      - run:
+          name: Bootstrap
+          command: npx lerna bootstrap --scope @opentelemetry/metrics-collector --include-filtered-dependencies
+      - run:
+          name: Create prebuilds for native stats
+          command: npm run build:all
+      - store_artifacts:
+          path: ./artifacts/prebuilds.tgz
 
 workflows:
   version: 2
@@ -199,4 +218,9 @@ workflows:
       - node12
       - node13
       - node12-browsers
+      - build-native-stats:
+          filters:
+            branches:
+              only: metrics-collector
+
 
