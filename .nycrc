@@ -3,6 +3,8 @@
     ".ts"
   ],
   "exclude": [
+    "**/scripts/**/*.js",
+    "**/version.ts",
     "**/*.d.ts",
     "build/**/**/*.js",
     "src/index.ts",
