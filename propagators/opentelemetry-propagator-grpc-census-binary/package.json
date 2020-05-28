@@ -1,7 +1,7 @@
 {
-  "name": "@opentelemetry/propagator-grpc",
+  "name": "@opentelemetry/propagator-grpc-census-binary",
   "version": "0.0.2",
-  "description": "OpenTelemetry gRPC propagator provides a context propagator for OpenTelemetry that can use the gRPC header: 'grpc-trace-bin'",
+  "description": "OpenTelemetry gRPC Census propagator provides a context propagator for OpenTelemetry that can use the gRPC binary header: 'grpc-trace-bin' for interoperability with OpenCensus",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
