@@ -1,0 +1,44 @@
+{
+  "name": "mongodb-example",
+  "private": true,
+  "version": "0.7.0",
+  "description": "Example of mongodb integration with OpenTelemetry",
+  "main": "index.js",
+  "scripts": {
+    "zipkin:server": "cross-env EXPORTER=zipkin node ./server.js",
+    "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js",
+    "jaeger:server": "cross-env EXPORTER=jaeger node ./server.js",
+    "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "mongodb",
+    "tracing"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^0.7.0",
+    "@opentelemetry/exporter-jaeger": "^0.7.0",
+    "@opentelemetry/exporter-zipkin": "^0.7.0",
+    "@opentelemetry/node": "^0.7.0",
+    "@opentelemetry/plugin-http": "^0.7.0",
+    "@opentelemetry/plugin-mongodb": "^0.7.0",
+    "@opentelemetry/tracing": "^0.7.0",
+    "mongodb": "^3.5.7"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
+  "devDependencies": {
+    "cross-env": "^6.0.0"
+  }
+}

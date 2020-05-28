@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, SpanKind } from '@opentelemetry/api';
+import { context, PluginConfig, SpanKind } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -46,6 +46,7 @@ describe('MongoDBPlugin', () => {
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
   const logger = new NoopLogger();
+  const enhancedDbConfig: PluginConfig = { enhancedDatabaseReporting: true };
   const provider = new BasicTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
@@ -100,7 +101,6 @@ describe('MongoDBPlugin', () => {
   describe('Instrumenting query operations', () => {
     it('should create a child span for insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-
       const span = provider.getTracer('default').startSpan(`insertRootSpan`);
       provider.getTracer('default').withSpan(span, () => {
         collection.insertMany(insertData, (err, result) => {
@@ -142,6 +142,28 @@ describe('MongoDBPlugin', () => {
             memoryExporter.getFinishedSpans(),
             `mongodb.remove`,
             SpanKind.CLIENT
+          );
+          done();
+        });
+      });
+    });
+
+    it('should create a child span for insert and include database query params in span', done => {
+      const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+      const span = provider.getTracer('default').startSpan(`insertRootSpan`);
+
+      plugin.enable(mongodb, provider, logger, enhancedDbConfig);
+
+      provider.getTracer('default').withSpan(span, () => {
+        collection.insertMany(insertData, (err, result) => {
+          span.end();
+          assert.ifError(err);
+          assertSpans(
+            memoryExporter.getFinishedSpans(),
+            `mongodb.insert`,
+            SpanKind.CLIENT,
+            false,
+            true
           );
           done();
         });
@@ -197,7 +219,6 @@ describe('MongoDBPlugin', () => {
 
     it('should not create a child span for query', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-
       const span = provider.getTracer('default').startSpan('insertRootSpan');
       collection.insertMany(insertData, (err, result) => {
         span.end();
