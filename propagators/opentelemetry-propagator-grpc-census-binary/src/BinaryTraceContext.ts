@@ -38,6 +38,12 @@ const TRACE_OPTIONS_OFFSET = TRACE_OPTION_FIELD_ID_OFFSET + ID_SIZE;
 const FORMAT_LENGTH =
   4 * ID_SIZE + TRACE_ID_SIZE + SPAN_ID_SIZE + TRACE_OPTION_SIZE;
 
+/**
+ * Used to encode SpanContext to binary (toBytes) or decode SpanContext
+ * from binary (fromBytes). Derived from a previous implementation in
+ * opentelemetry-core (see README.md). Supports the main
+ * GrpcCensusPropagator class.
+ */
 export class BinaryTraceContext {
   static toBytes(spanContext: SpanContext): Uint8Array {
     /**
