@@ -63,7 +63,7 @@ describe('ioredis', () => {
   });
 
   afterEach(() => {
-    contextManager.disable();
+    context.disable();
   });
 
   before(function() {

@@ -85,7 +85,7 @@ describe('Multiple enable on the plugin', () => {
 
   afterEach(done => {
     collection.deleteOne({}, done);
-    contextManager.disable();
+    context.disable();
   });
 
   after(() => {
