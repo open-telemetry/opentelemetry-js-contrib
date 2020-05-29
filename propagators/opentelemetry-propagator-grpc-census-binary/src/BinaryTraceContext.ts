@@ -45,6 +45,12 @@ const FORMAT_LENGTH =
  * GrpcCensusPropagator class.
  */
 export class BinaryTraceContext {
+  /**
+   * Converts context to the binary format used by OpenCensus.
+   *
+   * @param spanContext - The SpanContext to encode
+   * @returns Encoded context as a Uint8Array
+   */
   static toBytes(spanContext: SpanContext): Uint8Array {
     /**
      *  0           1           2
@@ -79,6 +85,12 @@ export class BinaryTraceContext {
     return buf;
   }
 
+  /**
+   * Converts the binary format used by OpenCensus to a SpanContext
+   *
+   * @param buf - Encoded context as a Uint8Array
+   * @returns Decoded context or null if the incoming binary is invalid
+   */
   static fromBytes(buf: Uint8Array): SpanContext | null {
     const result: SpanContext = {
       traceId: '',
@@ -99,7 +111,7 @@ export class BinaryTraceContext {
 
     result.isRemote = true;
 
-    // See serializeSpanContext for byte offsets.
+    // See toBytes for byte offsets.
     result.traceId = toHex(buf.slice(TRACE_ID_OFFSET, SPAN_ID_FIELD_ID_OFFSET));
     result.spanId = toHex(
       buf.slice(SPAN_ID_OFFSET, TRACE_OPTION_FIELD_ID_OFFSET)
@@ -109,6 +121,12 @@ export class BinaryTraceContext {
   }
 }
 
+/**
+ * Convert a binary array to a Hex representation
+ *
+ * @param buff - binary array to be converted
+ * @returns Hex representation
+ */
 function toHex(buff: Uint8Array) {
   let out = '';
   for (let i = 0; i < buff.length; ++i) {

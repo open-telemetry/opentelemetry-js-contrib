@@ -33,19 +33,41 @@ const VALID_TRACEID_REGEX = /^[0-9a-f]{32}$/i;
 const VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i;
 const INVALID_ID_REGEX = /^0+$/i;
 
+/**
+ * Check whether a traceId is valid
+ * @param traceId - traceId to check
+ * @returns true if valid
+ */
 function isValidTraceId(traceId: string): boolean {
   return VALID_TRACEID_REGEX.test(traceId) && !INVALID_ID_REGEX.test(traceId);
 }
 
+/**
+ * Check whether a spanId is valid
+ * @param spanId - spanId to check
+ * @returns true if valid
+ */
 function isValidSpanId(spanId: string): boolean {
   return VALID_SPANID_REGEX.test(spanId) && !INVALID_ID_REGEX.test(spanId);
 }
 
 /**
- * Propagator for the grpc-trace-bin header in gRPC
- * Inspired by: https://github.com/census-instrumentation/opencensus-node/tree/master/packages/opencensus-propagation-binaryformat/src
+ * Propagator for the grpc-trace-bin header used by OpenCensus for
+ * gRPC. Acts as a bridge between the HttpTextPropagator interface and
+ * the binary encoding/decoding that happens in the supporting
+ * BinaryTraceContext class.
  */
 export class GrpcCensusPropagator implements HttpTextPropagator {
+  /**
+   * Injects trace propagation context into the carrier after encoding
+   * in binary format
+   *
+   * @param context - Context to be injected
+   * @param carrier - Carrier in which to inject (for gRPC this will
+   *                  be a grpc.Metadata object)
+   * @param setter - setter function that sets the correct key in
+   *                 the carrier
+   */
   inject(context: Context, carrier: unknown, setter: SetterFunction) {
     const spanContext = getParentSpanContext(context);
     if (!spanContext) return;
@@ -68,6 +90,17 @@ export class GrpcCensusPropagator implements HttpTextPropagator {
     }
   }
 
+  /**
+   * Extracts trace propagation context from the carrier and decodes
+   * from the binary format
+   *
+   * @param context - context to set extracted span context on
+   * @param carrier - Carrier from which to extract (for gRPC this will
+   *                  be a grpc.Metadata object)
+   * @param getter - getter function that gets value(s) for the correct
+   *                 key in the carrier
+   * @returns Extracted context if successful, otherwise the input context
+   */
   extract(context: Context, carrier: unknown, getter: GetterFunction): Context {
     if (carrier) {
       // Get the gRPC header (carrier will be of type grpc.Metadata and
