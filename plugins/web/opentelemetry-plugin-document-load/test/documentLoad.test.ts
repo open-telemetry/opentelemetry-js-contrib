@@ -229,7 +229,7 @@ describe('DocumentLoad Plugin', () => {
   });
 
   afterEach(() => {
-    contextManager.disable();
+    context.disable();
     Object.defineProperty(window.document, 'readyState', {
       writable: true,
       value: 'complete',

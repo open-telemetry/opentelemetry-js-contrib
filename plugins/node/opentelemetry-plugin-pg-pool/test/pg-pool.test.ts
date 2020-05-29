@@ -136,7 +136,7 @@ describe('pg-pool@2.x', () => {
     memoryExporter.reset();
     plugin.disable();
     pgPlugin.disable();
-    contextManager.disable();
+    context.disable();
   });
 
   it('should return a plugin', () => {

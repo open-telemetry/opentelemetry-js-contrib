@@ -101,7 +101,7 @@ describe('mysql@2.x', () => {
   });
 
   afterEach(done => {
-    contextManager.disable();
+    context.disable();
     memoryExporter.reset();
     plugin.disable();
     connection.end(() => {

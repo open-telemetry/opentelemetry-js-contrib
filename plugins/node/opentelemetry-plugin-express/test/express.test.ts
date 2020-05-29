@@ -72,7 +72,7 @@ describe('Express Plugin', () => {
 
   afterEach(() => {
     memoryExporter.reset();
-    contextManager.disable();
+    context.disable();
   });
 
   describe('Instrumenting normal get operations', () => {

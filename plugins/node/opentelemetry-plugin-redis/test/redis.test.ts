@@ -62,7 +62,7 @@ describe('redis@2.x', () => {
   });
 
   afterEach(() => {
-    contextManager.disable();
+    context.disable();
   });
 
   before(function() {
