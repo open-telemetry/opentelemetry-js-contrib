@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/plugin-pg",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "OpenTelemetry postgres automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -47,13 +47,14 @@
   "devDependencies": {
     "@opentelemetry/context-async-hooks": "^0.8.3",
     "@opentelemetry/node": "^0.8.3",
-    "@opentelemetry/test-utils": "^0.7.0",
+    "@opentelemetry/test-utils": "^0.8.0",
     "@opentelemetry/tracing": "^0.8.3",
     "@types/mocha": "^7.0.0",
     "@types/node": "^12.6.9",
     "@types/pg": "^7.11.2",
     "@types/shimmer": "^1.0.1",
     "codecov": "^3.6.1",
+    "cross-env": "^6.0.0",
     "gts": "^1.1.0",
     "mocha": "^7.1.2",
     "nyc": "^15.0.0",
@@ -63,7 +64,6 @@
     "ts-node": "^8.6.2",
     "tslint-consistent-codestyle": "^1.16.0",
     "tslint-microsoft-contrib": "^6.2.0",
-    "cross-env": "^6.0.0",
     "typescript": "3.7.2"
   },
   "dependencies": {
