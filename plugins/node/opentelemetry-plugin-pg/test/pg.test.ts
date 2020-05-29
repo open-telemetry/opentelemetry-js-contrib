@@ -127,7 +127,7 @@ describe('pg@7.x', () => {
   afterEach(() => {
     memoryExporter.reset();
     plugin.disable();
-    contextManager.disable();
+    context.disable();
   });
 
   it('should return a plugin', () => {
