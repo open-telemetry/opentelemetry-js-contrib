@@ -24,7 +24,7 @@ import {
   TimedEvent,
 } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { plugin as pgPlugin, PostgresPlugin } from '@opentelemetry/plugin-pg';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/test-utils';
@@ -95,7 +95,7 @@ const runCallbackTest = (
 describe('pg-pool@2.x', () => {
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncHooksContextManager;
-  const provider = new NodeTracerProvider();
+  const provider = new BasicTracerProvider();
   const logger = new NoopLogger();
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker

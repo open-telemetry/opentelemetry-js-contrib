@@ -23,11 +23,11 @@ import {
   Status,
   TimedEvent,
 } from '@opentelemetry/api';
-import { NoopLogger } from '@opentelemetry/core';
-import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { NoopLogger } from '@opentelemetry/core';
 import * as testUtils from '@opentelemetry/test-utils';
 import {
+  BasicTracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
@@ -84,7 +84,7 @@ const runCallbackTest = (
 describe('pg@7.x', () => {
   let client: pg.Client;
   let contextManager: AsyncHooksContextManager;
-  const provider = new NodeTracerProvider();
+  const provider = new BasicTracerProvider();
   const tracer = provider.getTracer('external');
   const logger = new NoopLogger();
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
