@@ -72,9 +72,9 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.8.0",
-    "@opentelemetry/core": "^0.8.0",
-    "@opentelemetry/tracing": "^0.8.0",
-    "@opentelemetry/web": "^0.8.0"
+    "@opentelemetry/api": "^0.8.3",
+    "@opentelemetry/core": "^0.8.3",
+    "@opentelemetry/tracing": "^0.8.3",
+    "@opentelemetry/web": "^0.8.3"
   }
 }
