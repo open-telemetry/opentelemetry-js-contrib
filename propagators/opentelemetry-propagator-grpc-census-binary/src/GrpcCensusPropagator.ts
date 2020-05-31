@@ -64,9 +64,9 @@ export class GrpcCensusPropagator implements HttpTextPropagator {
    *
    * @param context - Context to be injected
    * @param carrier - Carrier in which to inject (for gRPC this will
-   *                  be a grpc.Metadata object)
+   *     be a grpc.Metadata object)
    * @param setter - setter function that sets the correct key in
-   *                 the carrier
+   *     the carrier
    */
   inject(context: Context, carrier: unknown, setter: SetterFunction) {
     const spanContext = getParentSpanContext(context);
@@ -96,9 +96,9 @@ export class GrpcCensusPropagator implements HttpTextPropagator {
    *
    * @param context - context to set extracted span context on
    * @param carrier - Carrier from which to extract (for gRPC this will
-   *                  be a grpc.Metadata object)
+   *     be a grpc.Metadata object)
    * @param getter - getter function that gets value(s) for the correct
-   *                 key in the carrier
+   *     key in the carrier
    * @returns Extracted context if successful, otherwise the input context
    */
   extract(context: Context, carrier: unknown, getter: GetterFunction): Context {
