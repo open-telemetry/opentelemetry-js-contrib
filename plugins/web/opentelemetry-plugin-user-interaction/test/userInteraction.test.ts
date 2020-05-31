@@ -87,7 +87,7 @@ describe('UserInteractionPlugin', () => {
       requests = [];
       sandbox.restore();
       exportSpy.restore();
-      contextManager.disable();
+      context.disable();
     });
 
     it('should handle task without async operation', () => {

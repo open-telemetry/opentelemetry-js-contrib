@@ -88,7 +88,7 @@ describe('MongoDBPlugin', () => {
 
   afterEach(done => {
     collection.deleteOne({}, done);
-    contextManager.disable();
+    context.disable();
   });
 
   after(() => {

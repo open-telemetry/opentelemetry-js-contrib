@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.8.0
+
+Released 2020-05-29
+
+#### :rocket: (Enhancement)
+* [#30](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/30) Support OpenTelemetry SDK 0.8.x ([@dyladan](https://github.com/dyladan))
+* `opentelemetry-plugin-mongodb`
+  * [#34](https://github.com/open-telemetry/opentelemetry-js/pull/34) Enhanced Database Reporting for MongoDB ([@romil-punetha](https://github.com/romil-punetha))
+* `opentelemetry-plugin-ioredis`
+  * [#33](https://github.com/open-telemetry/opentelemetry-js/pull/33) feat(opentelemetry-plugin-ioredis): provide a custom serializer fn for db.statement ([@marcoreni](https://github.com/marcoreni))
+
+#### Committers: 3
+- Marco Reni ([@marcoreni](https://github.com/marcoreni))
+- Romil Punetha ([@romil-punetha](https://github.com/romil-punetha))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+
 ## 0.7.0
 
 Released 2020-04-27

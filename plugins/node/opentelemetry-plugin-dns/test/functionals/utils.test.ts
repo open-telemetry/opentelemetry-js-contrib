@@ -168,7 +168,7 @@ describe('Utility', () => {
         SpanKind.INTERNAL
       );
       utils.setError(new Error(errorMessage), span, process.versions.node);
-      const attributes = span.toReadableSpan().attributes;
+      const attributes = span.attributes;
       assert.strictEqual(
         attributes[AttributeNames.DNS_ERROR_MESSAGE],
         errorMessage
