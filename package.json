@@ -2,6 +2,13 @@
   "name": "opentelemetry-contrib",
   "version": "0.8.0",
   "description": "This is a repository for OpenTelemetry JavaScript contributions.",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
@@ -22,7 +29,6 @@
     "lint:examples": "eslint ./examples/**/*.js",
     "lint:examples:fix": "eslint ./examples/**/*.js --fix"
   },
-  "repository": "open-telemetry/opentelemetry-js",
   "keywords": [
     "opentelemetry",
     "nodejs",

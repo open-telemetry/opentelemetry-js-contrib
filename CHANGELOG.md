@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.8.0 (`@opentelemetry/propagator-grpc-census-binary`)
+
+#### :rocket: (Enhancement)
+* [#39](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/39) feat: add gRPC Census propagator ([@nkelly75](https://github.com/nkelly75))
+
+#### Committers: 1
+- Niall Kelly ([@nkelly75](https://github.com/nkelly75))
+
 ## 0.8.0
 
 Released 2020-05-29
