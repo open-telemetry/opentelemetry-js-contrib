@@ -1,16 +1,17 @@
 'use strict';
 
-const binaryPropagator = process.env.BINARY_PROPAGATOR === 'true' ? true : false;
-const censusTracer = process.env.CENSUS_TRACER === 'true' ? true : false;
+/* eslint-disable global-require */
+const binaryPropagator = process.env.BINARY_PROPAGATOR === 'true';
+const censusTracer = process.env.CENSUS_TRACER === 'true';
 
 let tracer;
 let SpanKind;
 if (censusTracer) {
   tracer = require('./tracer_census')();
-  SpanKind = require('@opencensus/core').SpanKind;
+  ({ SpanKind } = require('@opencensus/core').SpanKind);
 } else {
   tracer = require('./tracer')('example-grpc-capitalize-server', binaryPropagator);
-  SpanKind = require('@opentelemetry/api').SpanKind;
+  ({ SpanKind } = require('@opentelemetry/api').SpanKind);
 }
 
 const path = require('path');
@@ -24,7 +25,9 @@ const PROTO_OPTIONS = {
 const definition = protoLoader.loadSync(PROTO_PATH, PROTO_OPTIONS);
 const rpcProto = grpc.loadPackageDefinition(definition).rpc;
 
-/** Implements the Capitalize RPC method. */
+/**
+ * Implements the Capitalize RPC method.
+ */
 function capitalize(call, callback) {
   if (call.metadata) {
     // output the gRPC metadata to see headers e.g. traceparent or grpc-trace-bin
@@ -41,6 +44,9 @@ function capitalize(call, callback) {
   callback(null, { data: Buffer.from(capitalized) });
 }
 
+/**
+ * Capitalize wrapped with Census tracing
+ */
 function capitalizeWithCensusTracing(call) {
   const currentSpan = tracer.currentRootSpan;
   // display traceid in the terminal
@@ -48,7 +54,7 @@ function capitalizeWithCensusTracing(call) {
 
   const span = tracer.startChildSpan({
     name: 'tutorials.FetchImpl.capitalize',
-    kind: SpanKind.SERVER
+    kind: SpanKind.SERVER,
   });
 
   const data = call.request.data.toString('utf8');
@@ -60,6 +66,9 @@ function capitalizeWithCensusTracing(call) {
   return capitalized;
 }
 
+/**
+ * Capitalize wrapped with OpenTelemetry tracing
+ */
 function capitalizeWithOTelTracing(call) {
   const currentSpan = tracer.getCurrentSpan();
   // display traceid in the terminal

@@ -1,7 +1,8 @@
 'use strict';
 
-const binaryPropagator = process.env.BINARY_PROPAGATOR === 'true' ? true : false;
-const censusTracer = process.env.CENSUS_TRACER === 'true' ? true : false;
+/* eslint-disable global-require */
+const binaryPropagator = process.env.BINARY_PROPAGATOR === 'true';
+const censusTracer = process.env.CENSUS_TRACER === 'true';
 let tracer;
 if (censusTracer) {
   tracer = require('./tracer_census')();
@@ -17,8 +18,11 @@ const PROTO_PATH = path.join(__dirname, 'protos/defs.proto');
 // Even though grpc.load is deprecated in favor of @grpc/proto-loader, it
 // appears @opencensus/instrumentation-grpc only gets to set the
 // grpc-trace-bin header if we use grpc.load
-const Fetch = grpc.load(PROTO_PATH).rpc.Fetch;
+const { Fetch } = grpc.load(PROTO_PATH).rpc;
 
+/**
+ * Creates a gRPC client, makes a gRPC call and waits before shutting down
+ */
 function main() {
   const client = new Fetch('localhost:50051',
     grpc.credentials.createInsecure());
@@ -26,10 +30,9 @@ function main() {
   console.log('> ', data);
 
   if (censusTracer) {
-    capitalizeWithCensusTracing(tracer, client, data);
-  }
-  else {
-    capitalizeWithOTelTracing(tracer, client, data);
+    capitalizeWithCensusTracing(client, data);
+  } else {
+    capitalizeWithOTelTracing(client, data);
   }
 
   // The process must live for at least the interval past any traces that
@@ -39,8 +42,11 @@ function main() {
   setTimeout(() => { console.log('Completed.'); }, 5000);
 }
 
-function capitalizeWithCensusTracing(tracer, client, data) {
-  tracer.startRootSpan({name: 'tutorialsClient.capitalize'}, rootSpan => {
+/**
+ * Makes the gRPC call wrapped in an OpenCensus-style span
+ */
+function capitalizeWithCensusTracing(client, data) {
+  tracer.startRootSpan({ name: 'tutorialsClient.capitalize' }, (rootSpan) => {
     client.capitalize({ data: Buffer.from(data) }, (err, response) => {
       if (err) {
         console.log('could not get grpc response');
@@ -54,7 +60,10 @@ function capitalizeWithCensusTracing(tracer, client, data) {
   });
 }
 
-function capitalizeWithOTelTracing(tracer, client, data) {
+/**
+ * Makes the gRPC call wrapped in an OpenTelemetry-style span
+ */
+function capitalizeWithOTelTracing(client, data) {
   const span = tracer.startSpan('tutorialsClient.capitalize');
   tracer.withSpan(span, () => {
     client.capitalize({ data: Buffer.from(data) }, (err, response) => {

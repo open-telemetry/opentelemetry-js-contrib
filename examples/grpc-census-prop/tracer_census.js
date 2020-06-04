@@ -5,17 +5,20 @@ const { ConsoleExporter } = require('@opencensus/core');
 
 const defaultBufferConfig = {
   bufferSize: 1,
-  bufferTimeout: 2000
+  bufferTimeout: 2000,
 };
 
+/**
+ * Return an OpenCensus tracer configured to use the gRPC plugin
+ */
 module.exports = () => {
-  let tracer = tracing.start({
+  const { tracer } = tracing.start({
 
     samplingRate: 1,
     plugins: {
-      'grpc': '@opencensus/instrumentation-grpc'
-    }
-  }).tracer;
+      grpc: '@opencensus/instrumentation-grpc',
+    },
+  });
 
   tracer.registerSpanEventListener(new ConsoleExporter(defaultBufferConfig));
 

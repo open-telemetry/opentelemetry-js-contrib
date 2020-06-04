@@ -6,6 +6,10 @@ const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/tra
 const { HttpTraceContext } = require('@opentelemetry/core');
 const { GrpcCensusPropagator } = require('@opentelemetry/propagator-grpc-census-binary');
 
+/**
+ * Return an OpenTelemetry tracer configured to use the gRPC plugin and with the
+ * requested propagator
+ */
 module.exports = (serviceName, binaryPropagator) => {
   const provider = new NodeTracerProvider({
     plugins: {
@@ -24,11 +28,11 @@ module.exports = (serviceName, binaryPropagator) => {
   if (binaryPropagator) {
     // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
     provider.register({
-      propagator: new GrpcCensusPropagator()
+      propagator: new GrpcCensusPropagator(),
     });
   } else {
     provider.register({
-      propagator: new HttpTraceContext()
+      propagator: new HttpTraceContext(),
     });
   }
 
