@@ -8,10 +8,10 @@ let tracer;
 let SpanKind;
 if (censusTracer) {
   tracer = require('./tracer_census')();
-  ({ SpanKind } = require('@opencensus/core').SpanKind);
+  ({ SpanKind } = require('@opencensus/core'));
 } else {
   tracer = require('./tracer')('example-grpc-capitalize-server', binaryPropagator);
-  ({ SpanKind } = require('@opentelemetry/api').SpanKind);
+  ({ SpanKind } = require('@opentelemetry/api'));
 }
 
 const path = require('path');
