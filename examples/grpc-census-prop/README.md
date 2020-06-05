@@ -17,7 +17,7 @@ instrumentation then the `propagator-grpc-census-binary` propagator allows OpenT
 to propagate context through the `grpc-trace-bin` binary header.
 
 The same source code is used to run various versions of the client and server. Environment
-variables (set up through `scripts` in [package.json](./package.json) determine the various
+variables (set up through `scripts` in [package.json](./package.json)) determine the various
 combinations. This table shows what to expect:
 
 | Combination | Client Instrumentation | Server Instrumentation | Propagation Header |
