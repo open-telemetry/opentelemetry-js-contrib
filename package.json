@@ -46,7 +46,7 @@
     "eslint-config-airbnb-base": "14.1.0",
     "eslint-plugin-import": "2.21.1",
     "gts": "1.1.2",
-    "husky": "3.1.0",
+    "husky": "4.2.5",
     "lerna": "3.22.1",
     "lerna-changelog": "1.0.1",
     "tslint": "5.20.1",
