@@ -52,7 +52,7 @@
     "@types/redis": "2.8.22",
     "@types/shimmer": "1.0.1",
     "codecov": "3.7.0",
-    "cross-env": "6.0.3",
+    "cross-env": "7.0.2",
     "gts": "1.1.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
