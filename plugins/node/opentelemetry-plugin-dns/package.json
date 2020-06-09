@@ -45,7 +45,7 @@
     "@opentelemetry/tracing": "0.8.3",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
-    "@types/semver": "6.2.1",
+    "@types/semver": "7.2.0",
     "@types/shimmer": "1.0.1",
     "@types/sinon": "7.5.2",
     "codecov": "3.7.0",
