@@ -32,8 +32,12 @@ provider.register({
   propagator: new GrpcCensusPropagator()
 });
 ```
+
+Also, see [examples/grpc-census-prop](../../examples/grpc-census-prop) for a
+worked example that shows when this propagator can be useful.
+
 ## Implementation Details
-See [binary-format.ts](https://github.com/census-instrumentation/opencensus-node/blob/master/packages/opencensus-propagation-binaryformat/src/binary-format.ts) for equivalent encoding/decoding of the format in OpenCensus. Note: the author of the OpenCensus binary format, [~mayurkale22](https://github.com/mayurkale22), also created BinaryTraceContext.ts in [opentelemetry-core](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-core) but that was subsequently removed as part of PR [#804](https://github.com/open-telemetry/opentelemetry-js/pull/804). The implementation of GrpcCensusPropagator in _this_ module uses a version of BinaryTraceContext.ts inspired by Mayur's previous work (with minor modifications e.g. there is no longer a BinaryFormat interface to implement).
+See [binary-format.ts](https://github.com/census-instrumentation/opencensus-node/blob/master/packages/opencensus-propagation-binaryformat/src/binary-format.ts) for equivalent encoding/decoding of the format in OpenCensus. Note: the author of the OpenCensus binary format, [@mayurkale22](https://github.com/mayurkale22), also created BinaryTraceContext.ts in [opentelemetry-core](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-core) but that was subsequently removed as part of PR [#804](https://github.com/open-telemetry/opentelemetry-js/pull/804). The implementation of GrpcCensusPropagator in _this_ module uses a version of BinaryTraceContext.ts inspired by Mayur's previous work (with minor modifications e.g. there is no longer a BinaryFormat interface to implement).
 
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
