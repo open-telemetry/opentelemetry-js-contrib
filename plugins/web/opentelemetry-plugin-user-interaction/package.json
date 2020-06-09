@@ -48,7 +48,7 @@
     "@opentelemetry/tracing": "0.8.3",
     "@types/jquery": "3.3.38",
     "@types/mocha": "7.0.2",
-    "@types/node": "12.12.46",
+    "@types/node": "12.12.47",
     "@types/shimmer": "1.0.1",
     "@types/sinon": "7.5.2",
     "@types/webpack-env": "1.15.2",
