@@ -43,10 +43,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
   }
 
   protected patch(): typeof pgTypes {
-    if (
-      this._moduleExports.Client.prototype.query &&
-      !isWrapped(this._moduleExports.Client.prototype.query)
-    ) {
+    if (!isWrapped(this._moduleExports.Client.prototype.query)) {
       shimmer.wrap(
         this._moduleExports.Client.prototype,
         'query',
@@ -57,9 +54,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
   }
 
   protected unpatch(): void {
-    if (this._moduleExports.Client.prototype.query) {
-      shimmer.unwrap(this._moduleExports.Client.prototype, 'query');
-    }
+    shimmer.unwrap(this._moduleExports.Client.prototype, 'query');
   }
 
   private _getClientQueryPatch() {
