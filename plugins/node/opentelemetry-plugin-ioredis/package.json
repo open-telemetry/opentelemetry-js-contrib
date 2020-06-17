@@ -48,7 +48,7 @@
     "@opentelemetry/node": "0.8.3",
     "@opentelemetry/test-utils": "^0.8.0",
     "@opentelemetry/tracing": "0.8.3",
-    "@types/ioredis": "4.16.5",
+    "@types/ioredis": "4.16.6",
     "@types/mocha": "7.0.2",
     "@types/node": "13.13.12",
     "@types/shimmer": "1.0.1",
