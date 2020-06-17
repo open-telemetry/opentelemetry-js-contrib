@@ -313,28 +313,31 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
       ): Zone {
         const target: HTMLElement | undefined = plugin._getClickedElement(task);
         let span: api.Span | undefined;
+        const activeZone = this;
         if (target) {
           span = plugin._createSpan(target, 'click');
           if (span) {
             plugin._incrementTask(span);
-            try {
-              return plugin._tracer.withSpan(span, () => {
-                const currentZone = Zone.current;
-                task._zone = currentZone;
-                return original.call(currentZone, task, applyThis, applyArgs);
-              });
-            } finally {
-              plugin._decrementTask(span);
-            }
+            return activeZone.run(() => {
+              try {
+                return plugin._tracer.withSpan(span as api.Span, () => {
+                  const currentZone = Zone.current;
+                  task._zone = currentZone;
+                  return original.call(currentZone, task, applyThis, applyArgs);
+                });
+              } finally {
+                plugin._decrementTask(span as api.Span);
+              }
+            });
           }
         } else {
-          span = plugin._getCurrentSpan(this);
+          span = plugin._getCurrentSpan(activeZone);
         }
 
         try {
-          return original.call(this, task, applyThis, applyArgs);
+          return original.call(activeZone, task, applyThis, applyArgs);
         } finally {
-          if (span && plugin._shouldCountTask(task, Zone.current)) {
+          if (span && plugin._shouldCountTask(task, activeZone)) {
             plugin._decrementTask(span);
           }
         }
