@@ -55,7 +55,6 @@ interface ContextManagerWithPrivate {
   _createZone: Function;
 }
 
-
 describe('UserInteractionPlugin', () => {
   describe('when zone.js is available', () => {
     let contextManager: ZoneContextManager;
@@ -70,7 +69,7 @@ describe('UserInteractionPlugin', () => {
 
       // this is needed until this is merged and released
       // https://github.com/open-telemetry/opentelemetry-js/pull/1209
-      const contextManagerWithPrivate = ((contextManager as unknown) as ContextManagerWithPrivate);
+      const contextManagerWithPrivate = (contextManager as unknown) as ContextManagerWithPrivate;
       contextManagerWithPrivate._createZone = createZone;
 
       context.setGlobalContextManager(contextManager);
@@ -222,30 +221,35 @@ describe('UserInteractionPlugin', () => {
       });
     });
 
-    it('should handle task with within different zone - angular test', done => {
+    it('should run task from different zone - angular test', done => {
       const context = Context.ROOT_CONTEXT;
       const rootZone = Zone.current;
       const newZone = createZone('test', context);
 
       const element = createButton();
       element.addEventListener('click', () => {
-        assert.ok(Zone.current !== newZone, 'Current zone for 2nd' +
-          ' listener click is wrong');
-        assert.ok(Zone.current.parent === rootZone, 'Parent Zone for 2nd' +
-          ' listener click is wrong');
+        assert.ok(
+          Zone.current !== newZone,
+          'Current zone for 2nd listener click is wrong'
+        );
+        assert.ok(
+          Zone.current.parent === rootZone,
+          'Parent Zone for 2nd listener click is wrong'
+        );
       });
 
-      newZone.run(()=> {
+      newZone.run(() => {
         assert.ok(Zone.current === newZone, 'New zone is wrong');
         fakeInteraction(() => {
-          assert.ok(Zone.current.parent === newZone, 'Parent zone for click' +
-            ' is wrong');
+          assert.ok(
+            Zone.current.parent === newZone,
+            'Parent zone for click is wrong'
+          );
           const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
           assertClickSpan(spanClick);
 
           done();
         }, element);
-
       });
     });
 
