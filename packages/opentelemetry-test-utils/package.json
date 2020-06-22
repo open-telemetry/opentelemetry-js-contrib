@@ -5,8 +5,8 @@
   "description": "Test utilities.",
   "main": "build/testUtils.js",
   "scripts": {
-    "lint": "gts check",
-    "lint:fix": "gts fix",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
     "compile": "tsc -p .",
     "precompile": "tsc --version",
     "prepare": "npm run compile"
