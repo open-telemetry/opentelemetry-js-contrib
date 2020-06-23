@@ -348,7 +348,8 @@ describe('ioredis', () => {
       it(`should create a child span for lua`, done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'eval return {KEYS[1],ARGV[1]} 1 test',
+          [AttributeNames.DB_STATEMENT]:
+            'evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 test',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -371,7 +372,7 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans[1].name, 'eval');
             assert.strictEqual(endedSpans[0].name, 'evalsha');
             testUtils.assertSpan(
-              endedSpans[1],
+              endedSpans[0],
               SpanKind.CLIENT,
               attributes,
               [],
@@ -509,6 +510,19 @@ describe('ioredis', () => {
             assert.ifError(error);
           }
         });
+      });
+    });
+
+    describe('Instrumenting without parent span', () => {
+      before(() => {
+        plugin.disable();
+        plugin.enable(ioredis, provider, new NoopLogger(), {});
+      });
+      it('should not create child span', async () => {
+        await client.set('test', 'data');
+        const result = await client.del('test');
+        assert.strictEqual(result, 1);
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       });
     });
 
