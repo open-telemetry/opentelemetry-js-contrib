@@ -40,21 +40,6 @@ import {
 const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/package.json';
 
-// this is needed until this is merged and released
-// https://github.com/open-telemetry/opentelemetry-js/pull/1209
-const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
-function createZone(zoneName: string, context: unknown): Zone {
-  return Zone.current.fork({
-    name: zoneName,
-    properties: {
-      [ZONE_CONTEXT_KEY]: context,
-    },
-  });
-}
-interface ContextManagerWithPrivate {
-  _createZone: Function;
-}
-
 describe('UserInteractionPlugin', () => {
   describe('when zone.js is available', () => {
     let contextManager: ZoneContextManager;
@@ -66,12 +51,6 @@ describe('UserInteractionPlugin', () => {
     let requests: sinon.SinonFakeXMLHttpRequest[] = [];
     beforeEach(() => {
       contextManager = new ZoneContextManager().enable();
-
-      // this is needed until this is merged and released
-      // https://github.com/open-telemetry/opentelemetry-js/pull/1209
-      const contextManagerWithPrivate = (contextManager as unknown) as ContextManagerWithPrivate;
-      contextManagerWithPrivate._createZone = createZone;
-
       context.setGlobalContextManager(contextManager);
       sandbox = sinon.createSandbox();
       history.pushState({ test: 'testing' }, '', `${location.pathname}`);
@@ -224,7 +203,13 @@ describe('UserInteractionPlugin', () => {
     it('should run task from different zone - angular test', done => {
       const context = Context.ROOT_CONTEXT;
       const rootZone = Zone.current;
-      const newZone = createZone('test', context);
+
+      interface CtxMngrWithPrv {
+        _createZone: Function;
+      }
+
+      const ctxMngrWithPrv = (contextManager as unknown) as CtxMngrWithPrv;
+      const newZone = ctxMngrWithPrv._createZone('test', context);
 
       const element = createButton();
       element.addEventListener('click', () => {
