@@ -17,7 +17,7 @@
 // because of zone original timeout needs to be patched to be able to run
 // code outside zone.js. This needs to be done before all
 const originalSetTimeout = window.setTimeout;
-
+import { Context } from '@opentelemetry/context-base';
 import { context } from '@opentelemetry/api';
 import { isWrapped, LogLevel } from '@opentelemetry/core';
 import { XMLHttpRequestPlugin } from '@opentelemetry/plugin-xml-http-request';
@@ -197,6 +197,44 @@ describe('UserInteractionPlugin', () => {
             done();
           });
         });
+      });
+    });
+
+    it('should run task from different zone - angular test', done => {
+      const context = Context.ROOT_CONTEXT;
+      const rootZone = Zone.current;
+
+      interface CtxMngrWithPrv {
+        _createZone: Function;
+      }
+
+      const ctxMngrWithPrv = (contextManager as unknown) as CtxMngrWithPrv;
+      const newZone = ctxMngrWithPrv._createZone('test', context);
+
+      const element = createButton();
+      element.addEventListener('click', () => {
+        assert.ok(
+          Zone.current !== newZone,
+          'Current zone for 2nd listener click is wrong'
+        );
+        assert.ok(
+          Zone.current.parent === rootZone,
+          'Parent Zone for 2nd listener click is wrong'
+        );
+      });
+
+      newZone.run(() => {
+        assert.ok(Zone.current === newZone, 'New zone is wrong');
+        fakeInteraction(() => {
+          assert.ok(
+            Zone.current.parent === newZone,
+            'Parent zone for click is wrong'
+          );
+          const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
+          assertClickSpan(spanClick);
+
+          done();
+        }, element);
       });
     });
 
