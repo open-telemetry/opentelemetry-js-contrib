@@ -169,7 +169,9 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         next: express.NextFunction
       ) {
         storeLayerPath(req, layerPath);
-        const route = (req[_LAYERS_STORE_PROPERTY] as string[]).join('');
+        const route = (req[_LAYERS_STORE_PROPERTY] as string[])
+          .filter(path => path !== '/')
+          .join('');
         const attributes: Attributes = {
           [AttributeNames.COMPONENT]: ExpressPlugin.component,
           [AttributeNames.HTTP_ROUTE]: route.length > 0 ? route : undefined,
@@ -180,6 +182,9 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         ] as ExpressLayerType;
         // verify against the config if the layer should be ignored
         if (isLayerIgnored(metadata.name, type, plugin._config)) {
+          return original.apply(this, arguments);
+        }
+        if (plugin._tracer.getCurrentSpan() === undefined) {
           return original.apply(this, arguments);
         }
         const span = plugin._tracer.startSpan(metadata.name, {
