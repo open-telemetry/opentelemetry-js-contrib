@@ -42,7 +42,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@babel/core": "7.10.3",
+    "@babel/core": "7.10.4",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
     "@types/sinon": "9.0.4",
