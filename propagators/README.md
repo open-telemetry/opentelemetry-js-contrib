@@ -45,7 +45,6 @@ api.propagation.setGlobalPropagator(new GrpcCensusPropagator());
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-- For help or feedback on this project, join us on [gitter][gitter-url]
 
 ## License
 
