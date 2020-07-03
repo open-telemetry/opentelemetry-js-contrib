@@ -45,6 +45,9 @@
     "@babel/core": "7.10.2",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
+    "@types/react": "^16.9.41",
+    "@types/react-addons-test-utils": "^0.14.25",
+    "@types/react-dom": "^16.9.8",
     "@types/shimmer": "1.0.1",
     "@types/sinon": "9.0.4",
     "@types/webpack-env": "1.15.2",
@@ -60,6 +63,7 @@
     "karma-webpack": "4.0.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
+    "react-dom": "^16.13.1",
     "rimraf": "3.0.2",
     "sinon": "9.0.2",
     "ts-loader": "7.0.5",
@@ -74,9 +78,12 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^0.9.0",
+    "@opentelemetry/context-zone": "^0.9.0",
     "@opentelemetry/core": "^0.9.0",
+    "@opentelemetry/semantic-conventions": "^0.9.0",
     "@opentelemetry/tracing": "^0.9.0",
     "@opentelemetry/web": "^0.9.0",
-    "@types/react": "^16.9.41"
+    "react": "^16.13.1",
+    "shimmer": "^1.2.1"
   }
 }
