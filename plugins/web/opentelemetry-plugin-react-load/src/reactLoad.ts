@@ -17,10 +17,14 @@
 import * as api from '@opentelemetry/api';
 import { BasePlugin, isWrapped } from '@opentelemetry/core';
 import * as shimmer from 'shimmer';
+import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import * as React from 'react';
-
+import {
+  RenderFunction,
+  ComponentDidMountFunction
+} from './types';
 /**
  * This class represents a react lifecycle plugin
  */
@@ -55,7 +59,7 @@ export class ReactLoad extends BasePlugin<unknown> {
   ): api.Span | undefined {
     return this._tracer.startSpan(name, {
       attributes: {
-        [AttributeNames.COMPONENT]: this.moduleName,
+        [GeneralAttribute.COMPONENT]: this.moduleName,
       },
       parent: this._getParentSpan(react),
     });
@@ -68,7 +72,7 @@ export class ReactLoad extends BasePlugin<unknown> {
   private _createSpan(name: string): api.Span | undefined {
     return this._tracer.startSpan(name, {
       attributes: {
-        [AttributeNames.COMPONENT]: this.moduleName,
+        [GeneralAttribute.COMPONENT]: this.moduleName,
       },
     });
   }
@@ -91,7 +95,7 @@ export class ReactLoad extends BasePlugin<unknown> {
    * Patches the render lifecycle method
    */
   private _patchRender() {
-    return (original: () => React.ReactNode): (() => React.ReactNode) => {
+    return (original: RenderFunction): RenderFunction => {
       const plugin = this;
       return function patchRender(
         this: React.Component,
@@ -113,7 +117,7 @@ export class ReactLoad extends BasePlugin<unknown> {
    * Patches the componentDidMount lifecycle method
    */
   private _patchComponentDidMount() {
-    return (original: (() => void) | undefined): (() => void) | undefined => {
+    return (original: ComponentDidMountFunction): ComponentDidMountFunction => {
       const plugin = this;
       if (!original) {
         this._logger.debug(
@@ -133,7 +137,7 @@ export class ReactLoad extends BasePlugin<unknown> {
         }
         const mountingSpan = plugin._getParentSpan(this);
         if (mountingSpan) {
-          mountingSpan.updateName('reactLoad: mounting');
+          mountingSpan.updateName(AttributeNames.MOUNTING_SPAN);
           mountingSpan.end();
           plugin._parentSpanMap.delete(this);
         }

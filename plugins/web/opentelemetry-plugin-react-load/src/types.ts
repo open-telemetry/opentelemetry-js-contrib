@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
-export enum AttributeNames {
-  MOUNTING_SPAN = 'reactLoad: mounting',
-}
+ import * as React from 'react';
+
+ /*
+ * method "render" from React.Component
+ */
+ export type RenderFunction = () => React.ReactNode;
+
+ /*
+ * method "componentDidMount" from React.Component
+ */
+ export type ComponentDidMountFunction = (() => void) | undefined;
