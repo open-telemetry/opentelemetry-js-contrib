@@ -223,7 +223,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
           if (spanHasEnded === false) {
             span.end(startTime);
           }
-        }).unref();
+        });
         return result;
       };
     });

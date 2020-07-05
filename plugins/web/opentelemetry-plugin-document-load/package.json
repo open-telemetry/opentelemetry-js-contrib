@@ -42,7 +42,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@babel/core": "7.10.3",
+    "@babel/core": "7.10.4",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
     "@types/sinon": "9.0.4",
@@ -66,7 +66,7 @@
     "ts-node": "8.10.2",
     "tslint-consistent-codestyle": "1.16.0",
     "tslint-microsoft-contrib": "6.2.0",
-    "typescript": "3.9.5",
+    "typescript": "3.9.6",
     "webpack": "4.43.0",
     "webpack-cli": "3.3.12",
     "webpack-merge": "4.2.2"
