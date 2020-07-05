@@ -135,13 +135,13 @@ jobs:
       - checkout
       - run:
           name: Install minimal lint modules globally
-          command: npm i -g tslint lerna typescript tslint-consistent-codestyle tslint-microsoft-contrib
+          command: npm i -g eslint lerna typescript eslint-plugin-header eslint-config-airbnb-base eslint-plugin-import @typescript-eslint/eslint-plugin @typescript-eslint/parser
       - run:
           name: Install gts version 1.1.0 globally
           command: npm i -g gts@1.1.0
       - run:
           name: Symlink global modules into all lerna packages
-          command: lerna exec 'npm link tslint lerna typescript gts tslint-consistent-codestyle tslint-microsoft-contrib'
+          command: lerna exec 'npm link eslint lerna typescript gts eslint-plugin-header eslint-config-airbnb-base eslint-plugin-import @typescript-eslint/eslint-plugin @typescript-eslint/parser'
       - run:
           name: Check code style and linting
           command: npm run lint
