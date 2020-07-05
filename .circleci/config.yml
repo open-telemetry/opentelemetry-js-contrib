@@ -162,10 +162,6 @@ workflows:
   version: 2
   build:
     jobs:
-      - lint:
-          filters:
-            branches:
-              only: /.*/
       - node8
       - node10
       - node12
