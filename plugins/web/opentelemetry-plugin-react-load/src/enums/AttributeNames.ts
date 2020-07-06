@@ -16,4 +16,6 @@
 
 export enum AttributeNames {
   MOUNTING_SPAN = 'reactLoad: mounting',
+  LOCATION_URL = 'location',
+  REACT_NAME = 'react component name'
 }

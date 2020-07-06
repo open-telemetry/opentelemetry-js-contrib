@@ -45,6 +45,7 @@ import {
   import * as React from "react";
   import * as ReactDOM from "react-dom";
   import { act } from 'react-dom/test-utils';
+import { AttributeNames } from '../src/enums/AttributeNames';
 
   export class DummyExporter implements SpanExporter {
     export(spans: any) {}
@@ -197,7 +198,17 @@ import {
                 `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
               );
 
-              assert.strictEqual(keys.length, 1, `number of attributes is wrong for span "${span.name}"`);
+              assert.ok(
+                attributes[keys[1]] !== '',
+                `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
+              );
+
+              assert.ok(
+                attributes[keys[2]] !== '',
+                `attributes ${AttributeNames.REACT_NAME} is not defined for span "${span.name}"`
+              );
+
+              assert.strictEqual(keys.length, 3, `number of attributes is wrong for span "${span.name}"`);
             });
           });
         });

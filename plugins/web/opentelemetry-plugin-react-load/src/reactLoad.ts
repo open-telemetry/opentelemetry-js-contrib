@@ -33,7 +33,7 @@ export class ReactLoad extends BasePlugin<unknown> {
   readonly version: string = '1';
   moduleName = this.component;
   protected _config!: api.PluginConfig;
-  private _reactComponent: React.Component[];
+  private _reactComponents: React.Component[];
   private _parentSpanMap: WeakMap<React.Component, api.Span | undefined>;
 
   /**
@@ -41,7 +41,7 @@ export class ReactLoad extends BasePlugin<unknown> {
    */
   constructor(reactComponent: any[]) {
     super('@opentelemetry/plugin-react-load', VERSION);
-    this._reactComponent = reactComponent.map((item: any) => {
+    this._reactComponents = reactComponent.map((item: any) => {
       return item.prototype;
     });
     this._parentSpanMap = new WeakMap<React.Component, api.Span | undefined>();
@@ -60,6 +60,8 @@ export class ReactLoad extends BasePlugin<unknown> {
     return this._tracer.startSpan(name, {
       attributes: {
         [GeneralAttribute.COMPONENT]: this.moduleName,
+        [AttributeNames.LOCATION_URL]: window.location.href,
+        [AttributeNames.REACT_NAME]: react.constructor.name,
       },
       parent: this._getParentSpan(react),
     });
@@ -67,12 +69,15 @@ export class ReactLoad extends BasePlugin<unknown> {
 
    /**
    * Creates a new span
+   * @param react React component currently being instrumented
    * @param name name of span
    */
-  private _createSpan(name: string): api.Span | undefined {
+  private _createSpan(react: React.Component, name: string): api.Span | undefined {
     return this._tracer.startSpan(name, {
       attributes: {
         [GeneralAttribute.COMPONENT]: this.moduleName,
+        [AttributeNames.LOCATION_URL]: window.location.href,
+        [AttributeNames.REACT_NAME]: react.constructor.name,
       },
     });
   }
@@ -85,7 +90,7 @@ export class ReactLoad extends BasePlugin<unknown> {
   private _getParentSpan(react: React.Component): api.Span | undefined {
     let span: api.Span | undefined = this._parentSpanMap.get(react);
     if (!span) {
-      span = this._createSpan('parent');
+      span = this._createSpan(react, 'parent');
       this._parentSpanMap.set(react, span);
     }
     return span;
@@ -151,7 +156,7 @@ export class ReactLoad extends BasePlugin<unknown> {
    */
   protected patch() {
     this._logger.debug('applying patch to', this.moduleName, this.version);
-    this._reactComponent.forEach(prototype => {
+    this._reactComponents.forEach(prototype => {
       if (isWrapped(prototype.componentDidMount)) {
         shimmer.unwrap(prototype, 'componentDidMount');
         this._logger.debug(
@@ -189,7 +194,7 @@ export class ReactLoad extends BasePlugin<unknown> {
   protected unpatch() {
     this._logger.debug('removing patch from', this.moduleName, this.version);
 
-    this._reactComponent.forEach(prototype => {
+    this._reactComponents.forEach(prototype => {
       shimmer.unwrap(prototype, 'render');
       shimmer.unwrap(prototype, 'componentDidMount');
     });
