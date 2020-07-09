@@ -51,7 +51,7 @@
     "@opentelemetry/test-utils": "^0.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
-    "@types/pg": "7.14.3",
+    "@types/pg": "7.14.4",
     "@types/pg-pool": "2.0.2",
     "@types/shimmer": "1.0.1",
     "codecov": "3.7.0",
