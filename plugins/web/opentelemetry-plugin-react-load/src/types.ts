@@ -25,3 +25,28 @@
  * method "componentDidMount" from React.Component
  */
  export type ComponentDidMountFunction = (() => void) | undefined;
+
+ /*
+ * method "componentDidUpdate" from React.Component
+ */
+export type ComponentDidUpdateFunction = ((prevProps: Readonly<{}>, prevState: Readonly<{}>, snapshot?: any) => void) | undefined;
+
+ /*
+ * method "shouldComponentUpdate" from React.Component
+ */
+export type ShouldComponentUpdateFunction = ((nextProps: Readonly<{}>, nextState: Readonly<{}>, nextContext: any) => boolean) | undefined;
+
+ /*
+ * method "setState" from React.Component
+ */
+export type SetStateFunction = <K extends never>(state: {} | ((prevState: Readonly<{}>, props: Readonly<{}>) => {} | Pick<{}, K> | null) | Pick<{}, K> | null, callback?: (() => void) | undefined) => void;
+
+/*
+ * method "setState" from React.Component
+ */
+export type ForceUpdateFunction = (callback?: (() => void) | undefined) => void;
+
+/*
+ * method "getSnapshotBeforeUpdate" from React.Component
+ */
+export type GetSnapshotBeforeUpdateFunction = ((prevProps: Readonly<{}>, prevState: Readonly<{}>) => any) | undefined;

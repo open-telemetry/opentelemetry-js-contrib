@@ -1,12 +1,12 @@
 import * as React from 'react';
 
-export default class MissingComponentDidMount extends React.Component {
+export default class MissingComponentDidUpdate extends React.Component {
     constructor(props: Readonly<{}>){
         super(props);
     }
 
-    componentDidUpdate(prevProps: any){
-        console.log("updated");
+    componentDidMount(){
+        console.log("mounted");
     }
 
     shouldComponentUpdate(nextProps: any, nextState: any){

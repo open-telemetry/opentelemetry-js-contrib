@@ -16,6 +16,8 @@
 
 export enum AttributeNames {
   MOUNTING_SPAN = 'reactLoad: mounting',
+  UPDATING_SPAN = 'reactLoad: updating',
   LOCATION_URL = 'location',
-  REACT_NAME = 'react component name'
+  REACT_NAME = 'react component name',
+  REACT_STATE = 'react component state'
 }

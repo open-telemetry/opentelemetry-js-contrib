@@ -1,8 +1,12 @@
 import * as React from 'react';
 
-export default class MissingComponentDidMount extends React.Component {
+export default class ShouldComponentUpdateFalse extends React.Component {
     constructor(props: Readonly<{}>){
         super(props);
+    }
+
+    componentDidMount(){
+        console.log("mounted");
     }
 
     componentDidUpdate(prevProps: any){
@@ -10,7 +14,7 @@ export default class MissingComponentDidMount extends React.Component {
     }
 
     shouldComponentUpdate(nextProps: any, nextState: any){
-        return true;
+        return false;
     }
     
     getSnapshotBeforeUpdate(prevProps: any, prevState: any){
