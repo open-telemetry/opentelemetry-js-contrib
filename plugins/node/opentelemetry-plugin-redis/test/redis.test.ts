@@ -131,7 +131,8 @@ describe('redis@2.x', () => {
       {
         description: 'get',
         command: 'get',
-        method: (cb: redisTypes.Callback<string>) => client.get('test', cb),
+        method: (cb: redisTypes.Callback<string | null>) =>
+          client.get('test', cb),
       },
       {
         description: 'delete',

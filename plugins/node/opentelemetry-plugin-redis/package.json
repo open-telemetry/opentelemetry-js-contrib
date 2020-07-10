@@ -49,7 +49,7 @@
     "@opentelemetry/tracing": "0.9.0",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
-    "@types/redis": "2.8.22",
+    "@types/redis": "2.8.24",
     "@types/shimmer": "1.0.1",
     "codecov": "3.7.0",
     "cross-env": "7.0.2",
