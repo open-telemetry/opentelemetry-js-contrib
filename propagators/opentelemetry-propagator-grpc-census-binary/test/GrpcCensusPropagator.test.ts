@@ -1,5 +1,5 @@
-/*!
- * Copyright 2020, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import {
 
 describe('GrpcCensusPropagator', () => {
   const censusPropagator = new GrpcCensusPropagator();
-  let metadata = new Metadata();
+  const metadata = new Metadata();
 
   beforeEach(() => {
     metadata.remove(GRPC_TRACE_KEY);
@@ -141,8 +141,8 @@ describe('GrpcCensusPropagator', () => {
 
   describe('.extract()', () => {
     it('should extract context of a unsampled span from carrier', () => {
-      let encodedArray = getUnsampledSpanEncodedArray();
-      let encoded = Buffer.from(encodedArray.buffer);
+      const encodedArray = getUnsampledSpanEncodedArray();
+      const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
       const extractedSpanContext = getExtractedSpanContext(
@@ -162,11 +162,11 @@ describe('GrpcCensusPropagator', () => {
     });
 
     it('should extract context of a sampled span from carrier', () => {
-      let encodedArray = getUnsampledSpanEncodedArray();
+      const encodedArray = getUnsampledSpanEncodedArray();
 
       // switch last byte to sampled
       encodedArray[encodedArray.length - 1] = 1;
-      let encoded = Buffer.from(encodedArray.buffer);
+      const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
       const extractedSpanContext = getExtractedSpanContext(
@@ -199,9 +199,9 @@ describe('GrpcCensusPropagator', () => {
     it('should return undefined for invalid field IDs', () => {
       // zero out all 29 bytes - this will fail due to lack of valid
       // field IDs for spanId and options (bytes 18 and 27)
-      let encodedArray = new Uint8Array(29);
+      const encodedArray = new Uint8Array(29);
 
-      let encoded = Buffer.from(encodedArray.buffer);
+      const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
       const extractedSpanContext = getExtractedSpanContext(
@@ -221,11 +221,11 @@ describe('GrpcCensusPropagator', () => {
 
       // zero out all 29 bytes except for the spanId field ID and
       // the options field IF
-      let encodedArray = new Uint8Array(29);
+      const encodedArray = new Uint8Array(29);
       encodedArray[18] = 1;
       encodedArray[27] = 2;
 
-      let encoded = Buffer.from(encodedArray.buffer);
+      const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
       const extractedSpanContext = getExtractedSpanContext(

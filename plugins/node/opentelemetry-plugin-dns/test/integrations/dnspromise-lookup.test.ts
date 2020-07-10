@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ const provider = new NodeTracerProvider({ logger });
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 describe('dns.promises.lookup()', () => {
-  before(function(done) {
+  before(function (done) {
     // skip tests if node version is not supported
     if (semver.lte(process.versions.node, '10.6.0')) {
       this.skip();

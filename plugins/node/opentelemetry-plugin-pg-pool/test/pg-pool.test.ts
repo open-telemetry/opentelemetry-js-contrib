@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,7 @@ describe('pg-pool@2.x', () => {
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
-  before(function(done) {
+  before(function (done) {
     if (!shouldTest) {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -116,7 +116,7 @@ describe('pg-pool@2.x', () => {
     done();
   });
 
-  after(function(done) {
+  after(done => {
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }
@@ -125,7 +125,7 @@ describe('pg-pool@2.x', () => {
     });
   });
 
-  beforeEach(function() {
+  beforeEach(() => {
     plugin.enable(pgPool, provider, logger);
     pgPlugin.enable(pg, provider, logger);
     contextManager = new AsyncHooksContextManager().enable();

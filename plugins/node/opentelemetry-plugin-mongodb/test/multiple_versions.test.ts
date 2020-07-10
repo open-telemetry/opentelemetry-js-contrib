@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,9 @@ describe('Multiple enable on the plugin', () => {
     shouldTest = false;
   }
 
-  const URL = `mongodb://${process.env.MONGODB_HOST || 'localhost'}:${process
-    .env.MONGODB_PORT || '27017'}`;
+  const URL = `mongodb://${process.env.MONGODB_HOST || 'localhost'}:${
+    process.env.MONGODB_PORT || '27017'
+  }`;
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
   const COLLECTION_NAME = 'test';
 
@@ -97,14 +98,14 @@ describe('Multiple enable on the plugin', () => {
   it('should create a child span for insert', done => {
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
 
-    const span = provider.getTracer('default').startSpan(`insertRootSpan`);
+    const span = provider.getTracer('default').startSpan('insertRootSpan');
     provider.getTracer('default').withSpan(span, () => {
       collection.insertMany(insertData, (err, result) => {
         span.end();
         assert.ifError(err);
         assertSpans(
           memoryExporter.getFinishedSpans(),
-          `mongodb.insert`,
+          'mongodb.insert',
           SpanKind.CLIENT
         );
         done();

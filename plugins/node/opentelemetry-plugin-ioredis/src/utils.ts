@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
 };
 
 export const traceConnection = (tracer: Tracer, original: Function) => {
-  return function(this: ioredisTypes.Redis & IORedisPluginClientTypes) {
+  return function (this: ioredisTypes.Redis & IORedisPluginClientTypes) {
     const span = tracer.startSpan('connect', {
       kind: SpanKind.CLIENT,
       attributes: {
@@ -80,7 +80,7 @@ export const traceSendCommand = (
 ) => {
   const dbStatementSerializer =
     config?.dbStatementSerializer || defaultDbStatementSerializer;
-  return function(
+  return function (
     this: ioredisTypes.Redis & IORedisPluginClientTypes,
     cmd?: IORedisCommand
   ) {

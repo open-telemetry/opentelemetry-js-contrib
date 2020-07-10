@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-// because of zone original timeout needs to be patched to be able to run
-// code outside zone.js. This needs to be done before all
 const originalSetTimeout = window.setTimeout;
 import { Context } from '@opentelemetry/context-base';
 import { context } from '@opentelemetry/api';
@@ -55,7 +52,7 @@ describe('UserInteractionPlugin', () => {
       sandbox = sinon.createSandbox();
       history.pushState({ test: 'testing' }, '', `${location.pathname}`);
       const fakeXhr = sandbox.useFakeXMLHttpRequest();
-      fakeXhr.onCreate = function(xhr: sinon.SinonFakeXMLHttpRequest) {
+      fakeXhr.onCreate = function (xhr: sinon.SinonFakeXMLHttpRequest) {
         requests.push(xhr);
         setTimeout(() => {
           requests[requests.length - 1].respond(
@@ -161,7 +158,7 @@ describe('UserInteractionPlugin', () => {
             assert.equal(attributes.component, 'user-interaction');
             assert.equal(attributes.event_type, 'click');
             assert.equal(attributes.target_element, 'BUTTON');
-            assert.equal(attributes.target_xpath, `//*[@id="testBtn"]`);
+            assert.equal(attributes.target_xpath, '//*[@id="testBtn"]');
 
             done();
           });
@@ -241,7 +238,7 @@ describe('UserInteractionPlugin', () => {
     it('should ignore interaction when element is disabled', done => {
       const btn = createButton(true);
       let called = false;
-      const callback = function() {
+      const callback = function () {
         called = true;
       };
       fakeInteraction(callback, btn);
