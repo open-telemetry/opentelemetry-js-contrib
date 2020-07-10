@@ -48,7 +48,7 @@
     "@opentelemetry/test-utils": "^0.8.0",
     "@opentelemetry/tracing": "0.9.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "12.12.47",
+    "@types/node": "12.12.50",
     "@types/redis": "2.8.24",
     "@types/shimmer": "1.0.1",
     "codecov": "3.7.0",

@@ -44,7 +44,7 @@
   "devDependencies": {
     "@babel/core": "7.10.4",
     "@types/mocha": "7.0.2",
-    "@types/node": "12.12.47",
+    "@types/node": "12.12.50",
     "@types/sinon": "9.0.4",
     "@types/webpack-env": "1.15.2",
     "babel-loader": "8.1.0",
