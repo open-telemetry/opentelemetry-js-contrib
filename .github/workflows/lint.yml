@@ -25,5 +25,4 @@ jobs:
           npm install --only=dev --ignore-scripts
           npx lerna bootstrap --no-ci --ignore-scripts -- --only=dev
       - name: Lint
-        run: |
-          npm run lint
+        run: npm run lint
