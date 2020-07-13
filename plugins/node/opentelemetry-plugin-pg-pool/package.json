@@ -47,7 +47,6 @@
   },
   "devDependencies": {
     "@opentelemetry/context-async-hooks": "0.9.0",
-    "@opentelemetry/node": "^0.9.0",
     "@opentelemetry/plugin-pg": "^0.8.0",
     "@opentelemetry/test-utils": "^0.8.0",
     "@types/mocha": "7.0.2",
