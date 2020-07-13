@@ -104,11 +104,7 @@ describe('pg@7.x', () => {
     }
 
     client = new pg.Client(CONFIG);
-    try {
-      await client.connect();
-    } catch (e) {
-      throw e;
-    }
+    await client.connect();
   });
 
   after(async () => {

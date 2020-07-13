@@ -17,9 +17,9 @@
 import * as ioredisTypes from 'ioredis';
 import { Tracer, SpanKind, Span, CanonicalCode } from '@opentelemetry/api';
 import {
-  IORedisPluginClientTypes,
-  IORedisCommand,
-  IORedisPluginConfig,
+  IoRedisPluginClientTypes,
+  IoRedisCommand,
+  IoRedisPluginConfig,
   DbStatementSerializer,
 } from './types';
 import { IORedisPlugin } from './ioredis';
@@ -38,7 +38,7 @@ const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
 };
 
 export const traceConnection = (tracer: Tracer, original: Function) => {
-  return function (this: ioredisTypes.Redis & IORedisPluginClientTypes) {
+  return function (this: ioredisTypes.Redis & IoRedisPluginClientTypes) {
     const span = tracer.startSpan('connect', {
       kind: SpanKind.CLIENT,
       attributes: {
@@ -76,13 +76,13 @@ const defaultDbStatementSerializer: DbStatementSerializer = (
 export const traceSendCommand = (
   tracer: Tracer,
   original: Function,
-  config?: IORedisPluginConfig
+  config?: IoRedisPluginConfig
 ) => {
   const dbStatementSerializer =
     config?.dbStatementSerializer || defaultDbStatementSerializer;
   return function (
-    this: ioredisTypes.Redis & IORedisPluginClientTypes,
-    cmd?: IORedisCommand
+    this: ioredisTypes.Redis & IoRedisPluginClientTypes,
+    cmd?: IoRedisCommand
   ) {
     if (arguments.length < 1 || typeof cmd !== 'object') {
       return original.apply(this, arguments);

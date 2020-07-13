@@ -83,7 +83,9 @@ export function assertSpans(
   assert.strictEqual(mongoSpan.status.code, CanonicalCode.OK);
 
   if (isEnhancedDatabaseReportingEnabled) {
-    const dbStatement = <any>mongoSpan.attributes[AttributeNames.DB_STATEMENT];
+    const dbStatement = mongoSpan.attributes[
+      AttributeNames.DB_STATEMENT
+    ] as any;
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');
     }

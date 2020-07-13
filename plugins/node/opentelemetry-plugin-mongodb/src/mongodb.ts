@@ -58,7 +58,7 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
         shimmer.wrap(
           this._moduleExports.Server.prototype,
           // Forced to ignore due to incomplete typings
-          // tslint:disable-next-line:ban-ts-ignore
+          // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
           // @ts-ignore
           fn,
           this._getPatchCommand(fn)

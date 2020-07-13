@@ -27,7 +27,7 @@ import * as assert from 'assert';
 import * as ioredisTypes from 'ioredis';
 import { IORedisPlugin, plugin } from '../src';
 import { AttributeNames } from '../src/enums';
-import { IORedisPluginConfig, DbStatementSerializer } from '../src/types';
+import { IoRedisPluginConfig, DbStatementSerializer } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -531,7 +531,7 @@ describe('ioredis', () => {
         `FOOBAR_${cmdName}: ${cmdArgs[0]}`;
       before(() => {
         plugin.disable();
-        const config: IORedisPluginConfig = {
+        const config: IoRedisPluginConfig = {
           dbStatementSerializer,
         };
         plugin.enable(ioredis, provider, new NoopLogger(), config);

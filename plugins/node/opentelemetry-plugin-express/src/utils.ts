@@ -127,7 +127,9 @@ export const isLayerIgnored = (
         return true;
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    /* catch block*/
+  }
 
   return false;
 };
