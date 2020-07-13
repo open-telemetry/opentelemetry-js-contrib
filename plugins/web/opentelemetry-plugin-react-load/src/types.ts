@@ -50,3 +50,8 @@ export type ForceUpdateFunction = (callback?: (() => void) | undefined) => void;
  * method "getSnapshotBeforeUpdate" from React.Component
  */
 export type GetSnapshotBeforeUpdateFunction = ((prevProps: Readonly<{}>, prevState: Readonly<{}>) => any) | undefined;
+
+/*
+ * method "componentWillUnmount" from React.Component
+ */
+export type ComponentWillUnmountFunction = (() => void) | undefined;

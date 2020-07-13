@@ -28,7 +28,8 @@ import {
   ShouldComponentUpdateFunction,
   SetStateFunction,
   ForceUpdateFunction,
-  GetSnapshotBeforeUpdateFunction
+  GetSnapshotBeforeUpdateFunction,
+  ComponentWillUnmountFunction
 } from './types';
 /**
  * This class represents a react lifecycle plugin
@@ -310,6 +311,40 @@ export class ReactLoad extends BasePlugin<unknown> {
   }
 
   /**
+   * Patches the componentWillUnmount lifecycle method
+   */
+  private _patchComponentWillUnmount(){
+    return (original: ComponentWillUnmountFunction): ComponentWillUnmountFunction => {
+      const plugin = this;
+      if (!original) {
+        this._logger.debug(
+          'componentWillUnmount function was undefined, should always be defined when patching.'
+        );
+        return;
+      }
+
+      return function patchComponentWillUnmount(
+        this: React.Component,
+        ...args
+      ): void {
+        console.log(window)
+        const span = plugin._createSpanWithParent(this, 'componentWillUnmount');
+        const apply = original.apply(this, args);
+        if (span) {
+          span.end();
+        }
+        const updatingSpan = plugin._getParentSpan(this);
+        if (updatingSpan) {
+          updatingSpan.updateName(AttributeNames.UNMOUNTING_SPAN);
+          updatingSpan.end();
+          plugin._parentSpanMap.delete(this);
+        }
+        return apply;
+      };
+    };
+  }
+
+  /**
    * implements patch function
    */
   protected patch() {
@@ -345,6 +380,10 @@ export class ReactLoad extends BasePlugin<unknown> {
         shimmer.unwrap(prototype, 'componentDidUpdate');
         this._logger.debug('removing previous patch from method componentDidUpdate');
       }
+      if (isWrapped(prototype.componentWillUnmount)) {
+        shimmer.unwrap(prototype, 'componentWillUnmount');
+        this._logger.debug('removing previous patch from method componentWillUnmount');
+      }
 
       // Lifecycle methods must exist when patching, even if not defined in component
       if (!prototype.render) {
@@ -364,6 +403,9 @@ export class ReactLoad extends BasePlugin<unknown> {
       if (!prototype.componentDidUpdate) {
         prototype.componentDidUpdate = () => {};
       }
+      if (!prototype.componentWillUnmount) {
+        prototype.componentWillUnmount = () => {};
+      }
 
       shimmer.wrap(prototype, 'render', this._patchRender());
       shimmer.wrap(
@@ -376,6 +418,7 @@ export class ReactLoad extends BasePlugin<unknown> {
       shimmer.wrap(prototype, 'shouldComponentUpdate', this._patchShouldComponentUpdate());
       shimmer.wrap(prototype, 'getSnapshotBeforeUpdate', this._patchGetSnapshotBeforeUpdate());
       shimmer.wrap(prototype, 'componentDidUpdate', this._patchComponentDidUpdate());
+      shimmer.wrap(prototype, 'componentWillUnmount', this._patchComponentWillUnmount());
     });
     return this._moduleExports;
   }
@@ -396,6 +439,8 @@ export class ReactLoad extends BasePlugin<unknown> {
       shimmer.unwrap(prototype, 'shouldComponentUpdate');
       shimmer.unwrap(prototype, 'getSnapshotBeforeUpdate');
       shimmer.unwrap(prototype, 'componentDidUpdate');
+
+      shimmer.unwrap(prototype, 'componentWillUnmount');
     });
 
     this._parentSpanMap = new WeakMap<React.Component, api.Span | undefined>();
