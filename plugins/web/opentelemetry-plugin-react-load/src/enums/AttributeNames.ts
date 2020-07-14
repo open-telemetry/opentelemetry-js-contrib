@@ -20,5 +20,6 @@ export enum AttributeNames {
   UNMOUNTING_SPAN = 'reactLoad: unmounting',
   LOCATION_URL = 'location',
   REACT_NAME = 'react_component_name',
-  REACT_STATE = 'react_component_state'
+  REACT_STATE = 'react_component_state',
+  REACT_ERROR = 'react_error'
 }

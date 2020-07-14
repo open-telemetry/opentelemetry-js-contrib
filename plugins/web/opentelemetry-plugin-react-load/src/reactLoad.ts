@@ -80,6 +80,37 @@ export class ReactLoad extends BasePlugin<unknown> {
     });
   }
 
+  private _instrumentFunction(react: React.Component, spanName: string, apply: Function, parentName: string){
+    const span = this._createSpanWithParent(react, spanName);
+    let res;
+    try {
+      res = apply();
+    } catch (err) {
+      if (span) {
+        span.setAttribute(AttributeNames.REACT_ERROR, err.stack);
+        span.end();
+      }
+      this._endParentSpan(react, parentName)
+      throw err;
+    }
+    
+    if (span) {
+      span.end();
+    }
+    return res;
+  }
+
+  private _endParentSpan(react: React.Component, name?: string){
+    const mountingSpan = this._getParentSpan(react);
+    if (mountingSpan) {
+      if(name){
+        mountingSpan.updateName(name);
+      }
+      mountingSpan.end();
+      this._parentSpanMap.delete(react);
+    }
+  }
+
    /**
    * Returns attributes object for spans
    * @param react React component currently being instrumented
@@ -123,14 +154,8 @@ export class ReactLoad extends BasePlugin<unknown> {
         this: React.Component,
         ...args
       ): React.ReactNode {
-        const span = plugin._createSpanWithParent(this, 'render');
-        const apply = original.apply(this, args);
-        
-        if (span) {
-          span.end();
-        }
-
-        return apply;
+        // TODO: Get parent name and determine if we need to pass in mounting or updating
+        return plugin._instrumentFunction(this, 'render', () => { return original.apply(this, args)}, 'parentName');
       };
     };
   }
@@ -152,17 +177,8 @@ export class ReactLoad extends BasePlugin<unknown> {
         this: React.Component,
         ...args
       ): void {
-        const span = plugin._createSpanWithParent(this, 'componentDidMount');
-        const apply = original.apply(this, args);
-        if (span) {
-          span.end();
-        }
-        const mountingSpan = plugin._getParentSpan(this);
-        if (mountingSpan) {
-          mountingSpan.updateName(AttributeNames.MOUNTING_SPAN);
-          mountingSpan.end();
-          plugin._parentSpanMap.delete(this);
-        }
+        const apply = plugin._instrumentFunction(this, 'componentDidMount', () => { return original.apply(this, args)}, AttributeNames.MOUNTING_SPAN);
+        plugin._endParentSpan(this, AttributeNames.MOUNTING_SPAN)
         return apply;
       };
     };
@@ -178,13 +194,7 @@ export class ReactLoad extends BasePlugin<unknown> {
         this: React.Component,
         ...args
       ): void {
-        const span = plugin._createSpanWithParent(this, 'setState()');
-        const apply = original.apply(this, args);
-        if (span) {
-          span.end();
-        }
-        
-        return apply;
+        return plugin._instrumentFunction(this, 'setState()', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);;
       };
     };
   }
@@ -199,13 +209,7 @@ export class ReactLoad extends BasePlugin<unknown> {
         this: React.Component,
         ...args
       ): void {
-        const span = plugin._createSpanWithParent(this, 'forceUpdate()');
-        const apply = original.apply(this, args);
-        if (span) {
-          span.end();
-        }
-        
-        return apply;
+        return plugin._instrumentFunction(this, 'forceUpdate()', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);;
       };
     };
   }
@@ -227,20 +231,11 @@ export class ReactLoad extends BasePlugin<unknown> {
         this: React.Component,
         ...args
       ): boolean {
-        const span = plugin._createSpanWithParent(this, 'shouldComponentUpdate');
-        const apply = original.apply(this, args);
-        if (span) {
-          span.end();
-        }
+        const apply = plugin._instrumentFunction(this, 'shouldComponentUpdate', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);
         // if shouldComponentUpdate returns false, the component does not get 
         // updated and no other lifecycle methods get called
         if(apply === false){
-          const updatingSpan = plugin._getParentSpan(this);
-          if (updatingSpan) {
-            updatingSpan.updateName(AttributeNames.UPDATING_SPAN);
-            updatingSpan.end();
-            plugin._parentSpanMap.delete(this);
-          }
+          plugin._endParentSpan(this, AttributeNames.UPDATING_SPAN);
         }
         
         return apply;
@@ -265,14 +260,8 @@ export class ReactLoad extends BasePlugin<unknown> {
       return function patchGetSnapshotBeforeUpdate(
         this: React.Component,
         ...args
-      ): any {
-        const span = plugin._createSpanWithParent(this, 'getSnapshotBeforeUpdate');
-        const apply = original.apply(this, args);
-        if (span) {
-          span.end();
-        }
-        
-        return apply;
+      ): any {        
+        return plugin._instrumentFunction(this, 'getSnapshotBeforeUpdate', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);
       };
     };
   }
@@ -294,17 +283,8 @@ export class ReactLoad extends BasePlugin<unknown> {
         this: React.Component,
         ...args
       ): void {
-        const span = plugin._createSpanWithParent(this, 'componentDidUpdate');
-        const apply = original.apply(this, args);
-        if (span) {
-          span.end();
-        }
-        const updatingSpan = plugin._getParentSpan(this);
-        if (updatingSpan) {
-          updatingSpan.updateName(AttributeNames.UPDATING_SPAN);
-          updatingSpan.end();
-          plugin._parentSpanMap.delete(this);
-        }
+        const apply = plugin._instrumentFunction(this, 'componentDidUpdate', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);
+        plugin._endParentSpan(this, AttributeNames.UPDATING_SPAN);
         return apply;
       };
     };
@@ -327,18 +307,8 @@ export class ReactLoad extends BasePlugin<unknown> {
         this: React.Component,
         ...args
       ): void {
-        console.log(window)
-        const span = plugin._createSpanWithParent(this, 'componentWillUnmount');
-        const apply = original.apply(this, args);
-        if (span) {
-          span.end();
-        }
-        const updatingSpan = plugin._getParentSpan(this);
-        if (updatingSpan) {
-          updatingSpan.updateName(AttributeNames.UNMOUNTING_SPAN);
-          updatingSpan.end();
-          plugin._parentSpanMap.delete(this);
-        }
+        const apply = plugin._instrumentFunction(this, 'componentWillUnmount', () => { return original.apply(this, args)}, AttributeNames.UNMOUNTING_SPAN);
+        plugin._endParentSpan(this, AttributeNames.UNMOUNTING_SPAN);
         return apply;
       };
     };
