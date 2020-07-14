@@ -19,16 +19,12 @@ import { CanonicalCode, SpanKind } from '@opentelemetry/api';
 import { AttributeNames } from './enums';
 import * as shimmer from 'shimmer';
 import * as pgPoolTypes from 'pg-pool';
-import {
-  PostgresPoolPluginOptions,
-  PgPoolCallback,
-  PgPoolExtended,
-} from './types';
+import { PgPoolCallback, PgPoolExtended } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
 
 export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
-  protected _config: PostgresPoolPluginOptions;
+  protected _config: {};
 
   static readonly COMPONENT = 'pg-pool';
   static readonly DB_TYPE = 'sql';

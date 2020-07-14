@@ -15,16 +15,13 @@
  */
 
 import * as childProcess from 'child_process';
-// eslint-disable-next-line node/no-unpublished-import
 import { SpanKind, Attributes, Event, Span, Status } from '@opentelemetry/api';
 import * as assert from 'assert';
-/* eslint-disable node/no-unpublished-import */
 import { ReadableSpan } from '@opentelemetry/tracing';
 import {
   hrTimeToMilliseconds,
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
-/* esling-enable node/no-unpublished-import */
 
 export function startDocker(db: 'redis' | 'mysql' | 'postgres') {
   let dockerRunCmd;

@@ -17,7 +17,7 @@
 import * as ioredisTypes from 'ioredis';
 import { PluginConfig } from '@opentelemetry/api';
 
-export interface IoRedisCommand {
+export interface IoredisCommand {
   reject: (err: Error) => void;
   resolve: (result: {}) => void;
   promise: Promise<{}>;
@@ -26,7 +26,7 @@ export interface IoRedisCommand {
   name: string;
 }
 
-export interface IoRedisPluginClientTypes {
+export interface IoredisPluginClientTypes {
   // https://github.com/luin/ioredis/blob/master/API.md
   options: ioredisTypes.RedisOptions;
 }
@@ -39,14 +39,14 @@ export interface IoRedisPluginClientTypes {
  * @returns serialized string that will be used as the db.statement attribute.
  */
 export type DbStatementSerializer = (
-  cmdName: IoRedisCommand['name'],
-  cmdArgs: IoRedisCommand['args']
+  cmdName: IoredisCommand['name'],
+  cmdArgs: IoredisCommand['args']
 ) => string;
 
 /**
  * Options available for the IORedis Plugin (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-plugin-ioredis#ioredis-plugin-options))
  */
-export interface IoRedisPluginConfig extends PluginConfig {
+export interface IoredisPluginConfig extends PluginConfig {
   /** Custom serializer function for the db.statement tag */
   dbStatementSerializer?: DbStatementSerializer;
 }

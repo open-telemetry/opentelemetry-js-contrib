@@ -166,8 +166,6 @@ describe('pg-pool@2.x', () => {
         try {
           await client.query('SELECT NOW()');
           runCallbackTest(span, pgAttributes, events, okStatus, 2, 1);
-        } catch (e) {
-          throw e;
         } finally {
           client.release();
         }
@@ -228,14 +226,10 @@ describe('pg-pool@2.x', () => {
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await provider.getTracer('test-pg-pool').withSpan(span, async () => {
-        try {
-          const result = await pool.query('SELECT NOW()');
-          runCallbackTest(span, pgPoolattributes, events, okStatus, 2, 0);
-          runCallbackTest(span, pgAttributes, events, okStatus, 2, 1);
-          assert.ok(result, 'pool.query() returns a promise');
-        } catch (e) {
-          throw e;
-        }
+        const result = await pool.query('SELECT NOW()');
+        runCallbackTest(span, pgPoolattributes, events, okStatus, 2, 0);
+        runCallbackTest(span, pgAttributes, events, okStatus, 2, 1);
+        assert.ok(result, 'pool.query() returns a promise');
       });
     });
 

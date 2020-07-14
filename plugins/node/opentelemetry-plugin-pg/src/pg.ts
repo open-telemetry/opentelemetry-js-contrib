@@ -22,13 +22,12 @@ import {
   PgClientExtended,
   PgPluginQueryConfig,
   PostgresCallback,
-  PostgresPluginOptions,
 } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
 
 export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
-  protected _config: PostgresPluginOptions;
+  protected _config: {};
 
   static readonly COMPONENT = 'pg';
   static readonly DB_TYPE = 'sql';
