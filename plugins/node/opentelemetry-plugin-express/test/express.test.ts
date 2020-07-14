@@ -81,7 +81,8 @@ describe('Express Plugin', () => {
       const app = express();
       app.use((req, res, next) => tracer.withSpan(rootSpan, next));
       app.use(express.json());
-      app.use((req, res, next) => {
+      // eslint-disable-next-line prefer-arrow-callback
+      app.use(function customMiddleware(req, res, next) {
         for (let i = 0; i < 1000000; i++) {
           continue;
         }
