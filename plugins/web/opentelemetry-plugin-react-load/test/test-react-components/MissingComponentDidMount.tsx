@@ -6,7 +6,6 @@ export default class MissingComponentDidMount extends React.Component {
     }
 
     componentDidUpdate(prevProps: any){
-        console.log("updated");
     }
 
     shouldComponentUpdate(nextProps: any, nextState: any){

@@ -6,11 +6,9 @@ export default class MisingShouldComponentUpdate extends React.Component {
     }
 
     componentDidMount(){
-        console.log("mounted");
     }
 
     componentDidUpdate(prevProps: any){
-        console.log("updated");
     }
 
     getSnapshotBeforeUpdate(prevProps: any, prevState: any){

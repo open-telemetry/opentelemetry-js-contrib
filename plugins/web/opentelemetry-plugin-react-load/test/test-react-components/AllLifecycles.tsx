@@ -6,11 +6,9 @@ export default class AllLifecycles extends React.Component {
     }
 
     componentDidMount(){
-        console.log("mounted");
     }
 
     componentDidUpdate(prevProps: any){
-        console.log("updated");
     }
 
     shouldComponentUpdate(nextProps: any, nextState: any){
