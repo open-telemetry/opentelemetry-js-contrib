@@ -5,5 +5,8 @@ module.exports = {
         "browser": true,
         "jquery": true
     },
+    "globals": {
+        "Zone": "readonly"
+    },
     ...require('../../../eslint.config.js')
 }
