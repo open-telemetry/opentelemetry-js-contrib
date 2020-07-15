@@ -49,6 +49,7 @@
     "@opentelemetry/context-async-hooks": "0.9.0",
     "@opentelemetry/plugin-pg": "^0.8.0",
     "@opentelemetry/test-utils": "^0.8.0",
+    "@opentelemetry/tracing": "^0.9.0",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
     "@types/pg": "7.14.4",
@@ -71,8 +72,6 @@
   "dependencies": {
     "@opentelemetry/api": "^0.9.0",
     "@opentelemetry/core": "^0.9.0",
-    "@opentelemetry/node": "^0.9.0",
-    "@opentelemetry/tracing": "^0.9.0",
     "shimmer": "^1.2.1"
   }
 }
