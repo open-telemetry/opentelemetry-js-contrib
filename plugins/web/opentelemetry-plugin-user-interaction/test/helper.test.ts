@@ -58,7 +58,7 @@ export function assertClickSpan(span: tracing.ReadableSpan, id = 'testBtn') {
 }
 
 export function getData(url: string, callbackAfterSend: Function) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.send();

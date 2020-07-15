@@ -33,23 +33,24 @@ const logger = new NoopLogger();
 const provider = new NodeTracerProvider({ logger });
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
-async function lookupPromise(hostname:string, options:dns.LookupOptions = {}): Promise<any>{
+async function lookupPromise(
+  hostname: string,
+  options: dns.LookupOptions = {}
+): Promise<any> {
   return new Promise((resolve, reject) => {
-      dns.lookup(hostname, options,(err, address, family) => {
-          if(err) reject(err);
-          if (options.all){
-            resolve(address);
-          }
-          else{
-            resolve({ address, family });
-          }
-      });
- });
-};
+    dns.lookup(hostname, options, (err, address, family) => {
+      if (err) reject(err);
+      if (options.all) {
+        resolve(address);
+      } else {
+        resolve({ address, family });
+      }
+    });
+  });
+}
 
 describe('dns.promises.lookup()', () => {
   before(function (done) {
-    
     // if node version is supported, it's mandatory for CI
     if (process.env.CI) {
       plugin.enable(dns, provider, provider.logger);
@@ -79,10 +80,9 @@ describe('dns.promises.lookup()', () => {
     [4, 6].forEach(ipversion => {
       it(`should export a valid span with "family" arg to ${ipversion}`, async () => {
         const hostname = 'google.com';
-        const {address, family}  = await lookupPromise(
-          hostname,
-          {family:ipversion}
-        );
+        const { address, family } = await lookupPromise(hostname, {
+          family: ipversion,
+        });
         assert.ok(address);
         assert.ok(family);
 
@@ -97,9 +97,7 @@ describe('dns.promises.lookup()', () => {
   describe('with no options param', () => {
     it('should export a valid span', async () => {
       const hostname = 'google.com';
-      const { address, family } = await lookupPromise(
-        hostname
-      );
+      const { address, family } = await lookupPromise(hostname);
 
       assert.ok(address);
       assert.ok(family);
@@ -113,9 +111,7 @@ describe('dns.promises.lookup()', () => {
     it('should export a valid span with error NOT_FOUND', async () => {
       const hostname = 'ᚕ';
       try {
-        await lookupPromise(
-          hostname
-        );
+        await lookupPromise(hostname);
         assert.fail();
       } catch (error) {
         const spans = memoryExporter.getFinishedSpans();
@@ -136,7 +132,7 @@ describe('dns.promises.lookup()', () => {
     it('should export a valid span with error INVALID_ARGUMENT when "family" param is equal to -1', async () => {
       const hostname = 'google.com';
       try {
-        await lookupPromise(hostname, {family: -1});
+        await lookupPromise(hostname, { family: -1 });
         assert.fail();
       } catch (error) {
         const spans = memoryExporter.getFinishedSpans();
@@ -153,8 +149,7 @@ describe('dns.promises.lookup()', () => {
               message: error!.message,
             },
           });
-        }
-        else{
+        } else {
           assertSpan(span, {
             addresses: [],
             // tslint:disable-next-line:no-any
@@ -172,7 +167,7 @@ describe('dns.promises.lookup()', () => {
       const hostname = 1234;
       try {
         // tslint:disable-next-line:no-any
-        await lookupPromise(hostname as any, {family: 4});
+        await lookupPromise(hostname as any, { family: 4 });
         assert.fail();
       } catch (error) {
         const spans = memoryExporter.getFinishedSpans();
@@ -189,8 +184,7 @@ describe('dns.promises.lookup()', () => {
               message: error!.message,
             },
           });
-        }
-        else{
+        } else {
           assertSpan(span, {
             addresses: [],
             // tslint:disable-next-line:no-any
