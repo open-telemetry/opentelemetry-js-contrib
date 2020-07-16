@@ -49,3 +49,5 @@ api.propagation.setGlobalPropagator(new GrpcCensusPropagator());
 ## License
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
+
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
