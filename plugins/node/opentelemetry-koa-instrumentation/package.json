@@ -53,6 +53,7 @@
     "@types/shimmer": "1.0.1",
     "codecov": "3.7.0",
     "eslint": "^7.4.0",
+    "eslint-plugin-header": "^3.0.0",
     "gts": "2.0.2",
     "koa": "^2.13.0",
     "mocha": "7.2.0",
