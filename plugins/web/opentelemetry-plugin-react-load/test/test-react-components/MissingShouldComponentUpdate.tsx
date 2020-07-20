@@ -1,6 +1,7 @@
 import * as React from 'react';
+import { BaseOpenTelemetryComponent } from '../../src';
 
-export default class MisingShouldComponentUpdate extends React.Component {
+export default class MisingShouldComponentUpdate extends BaseOpenTelemetryComponent {
     constructor(props: Readonly<{}>){
         super(props);
     }

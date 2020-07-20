@@ -15,11 +15,11 @@
  */
 
 import * as api from '@opentelemetry/api';
-import { BasePlugin, isWrapped } from '@opentelemetry/core';
+import { isWrapped } from '@opentelemetry/core';
 import * as shimmer from 'shimmer';
 import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums/AttributeNames';
-import { VERSION } from './version';
+// import { VERSION } from './version';
 import * as React from 'react';
 import {
   RenderFunction,
@@ -31,26 +31,33 @@ import {
   GetSnapshotBeforeUpdateFunction,
   ComponentWillUnmountFunction
 } from './types';
+// import { BaseOpenTelemetryComponent } from './BaseOpenTelemetryComponent';
+
 /**
  * This class represents a react lifecycle plugin
  */
-export class ReactLoad extends BasePlugin<unknown> {
+export class BaseOpenTelemetryComponent extends React.Component {
   readonly component: string = 'react-load';
   readonly version: string = '1';
   moduleName = this.component;
-  protected _config!: api.PluginConfig;
-  private _reactComponents: React.Component[];
   private _parentSpanMap: WeakMap<React.Component, api.Span | undefined>;
-
+  private static _tracer: api.Tracer;
+  private static _logger: api.Logger;
   /**
    * @param reactComponent
    */
-  constructor(reactComponent: any[]) {
-    super('@opentelemetry/plugin-react-load', VERSION);
-    this._reactComponents = reactComponent.map((item: any) => {
-      return item.prototype;
-    });
+  constructor(props: any) {
+    super(props);
     this._parentSpanMap = new WeakMap<React.Component, api.Span | undefined>();
+    this.patch();
+  }
+
+  static setTracer(name: string, version?: string){
+    this._tracer = api.trace.getTracer(name, version)
+  }
+
+  static setLogger(logger: api.Logger){
+    this._logger = logger;
   }
 
    /**
@@ -63,7 +70,7 @@ export class ReactLoad extends BasePlugin<unknown> {
     react: React.Component,
     name: string
   ): api.Span | undefined {
-    return this._tracer.startSpan(name, {
+    return BaseOpenTelemetryComponent._tracer.startSpan(name, {
       attributes: this._getAttributes(react),
       parent: this._getParentSpan(react),
     });
@@ -75,7 +82,7 @@ export class ReactLoad extends BasePlugin<unknown> {
    * @param name name of span
    */
   private _createSpan(react: React.Component, name: string): api.Span | undefined {
-    return this._tracer.startSpan(name, {
+    return BaseOpenTelemetryComponent._tracer.startSpan(name, {
       attributes: this._getAttributes(react)
     });
   }
@@ -155,7 +162,7 @@ export class ReactLoad extends BasePlugin<unknown> {
         ...args
       ): React.ReactNode {
         // TODO: Get parent name and determine if we need to pass in mounting or updating
-        return plugin._instrumentFunction(this, 'render', () => { return original.apply(this, args)}, 'parentName');
+        return plugin._instrumentFunction(this, 'render', () => { return original!.apply(this, args)}, 'parentName');
       };
     };
   }
@@ -166,19 +173,13 @@ export class ReactLoad extends BasePlugin<unknown> {
   private _patchComponentDidMount() {
     return (original: ComponentDidMountFunction): ComponentDidMountFunction => {
       const plugin = this;
-      if (!original) {
-        this._logger.debug(
-          'componentDidMount function was undefined, should always be defined when patching.'
-        );
-        return;
-      }
 
       return function patchComponentDidMount(
         this: React.Component,
         ...args
       ): void {
-        const apply = plugin._instrumentFunction(this, 'componentDidMount', () => { return original.apply(this, args)}, AttributeNames.MOUNTING_SPAN);
-        plugin._endParentSpan(this, AttributeNames.MOUNTING_SPAN)
+        const apply = plugin._instrumentFunction(this, 'componentDidMount', () => { return original!.apply(this, args)}, AttributeNames.MOUNTING_SPAN);
+        plugin._endParentSpan(this, AttributeNames.MOUNTING_SPAN);
         return apply;
       };
     };
@@ -194,7 +195,7 @@ export class ReactLoad extends BasePlugin<unknown> {
         this: React.Component,
         ...args
       ): void {
-        return plugin._instrumentFunction(this, 'setState()', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);;
+        return plugin._instrumentFunction(this, 'setState()', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);;
       };
     };
   }
@@ -209,7 +210,7 @@ export class ReactLoad extends BasePlugin<unknown> {
         this: React.Component,
         ...args
       ): void {
-        return plugin._instrumentFunction(this, 'forceUpdate()', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);;
+        return plugin._instrumentFunction(this, 'forceUpdate()', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);;
       };
     };
   }
@@ -220,21 +221,15 @@ export class ReactLoad extends BasePlugin<unknown> {
   private _patchShouldComponentUpdate(){
     return (original: ShouldComponentUpdateFunction): ShouldComponentUpdateFunction => {
       const plugin = this;
-      if (!original) {
-        this._logger.debug(
-          'shouldComponentUpdate function was undefined, should always be defined when patching.'
-        );
-        return;
-      }
 
       return function patchShouldComponentUpdate(
         this: React.Component,
         ...args
       ): boolean {
-        const apply = plugin._instrumentFunction(this, 'shouldComponentUpdate', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);
+        const apply = plugin._instrumentFunction(this, 'shouldComponentUpdate', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);
         // if shouldComponentUpdate returns false, the component does not get 
         // updated and no other lifecycle methods get called
-        if(apply === false){
+        if(!apply){
           plugin._endParentSpan(this, AttributeNames.UPDATING_SPAN);
         }
         
@@ -250,18 +245,12 @@ export class ReactLoad extends BasePlugin<unknown> {
   private _patchGetSnapshotBeforeUpdate(){
     return (original: GetSnapshotBeforeUpdateFunction): GetSnapshotBeforeUpdateFunction => {
       const plugin = this;
-      if (!original) {
-        this._logger.debug(
-          'getSnapshotBeforeUpdate function was undefined, should always be defined when patching.'
-        );
-        return;
-      }
-
+    
       return function patchGetSnapshotBeforeUpdate(
         this: React.Component,
         ...args
       ): any {        
-        return plugin._instrumentFunction(this, 'getSnapshotBeforeUpdate', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);
+        return plugin._instrumentFunction(this, 'getSnapshotBeforeUpdate', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);
       };
     };
   }
@@ -272,18 +261,12 @@ export class ReactLoad extends BasePlugin<unknown> {
   private _patchComponentDidUpdate(){
     return (original: ComponentDidUpdateFunction): ComponentDidUpdateFunction => {
       const plugin = this;
-      if (!original) {
-        this._logger.debug(
-          'componentDidUpdate function was undefined, should always be defined when patching.'
-        );
-        return;
-      }
 
       return function patchComponentDidUpdate(
         this: React.Component,
         ...args
       ): void {
-        const apply = plugin._instrumentFunction(this, 'componentDidUpdate', () => { return original.apply(this, args)}, AttributeNames.UPDATING_SPAN);
+        const apply = plugin._instrumentFunction(this, 'componentDidUpdate', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);
         plugin._endParentSpan(this, AttributeNames.UPDATING_SPAN);
         return apply;
       };
@@ -296,18 +279,12 @@ export class ReactLoad extends BasePlugin<unknown> {
   private _patchComponentWillUnmount(){
     return (original: ComponentWillUnmountFunction): ComponentWillUnmountFunction => {
       const plugin = this;
-      if (!original) {
-        this._logger.debug(
-          'componentWillUnmount function was undefined, should always be defined when patching.'
-        );
-        return;
-      }
-
+     
       return function patchComponentWillUnmount(
         this: React.Component,
         ...args
       ): void {
-        const apply = plugin._instrumentFunction(this, 'componentWillUnmount', () => { return original.apply(this, args)}, AttributeNames.UNMOUNTING_SPAN);
+        const apply = plugin._instrumentFunction(this, 'componentWillUnmount', () => { return original!.apply(this, args)}, AttributeNames.UNMOUNTING_SPAN);
         plugin._endParentSpan(this, AttributeNames.UNMOUNTING_SPAN);
         return apply;
       };
@@ -317,102 +294,98 @@ export class ReactLoad extends BasePlugin<unknown> {
   /**
    * implements patch function
    */
-  protected patch() {
-    this._logger.debug('applying patch to', this.moduleName, this.version);
-    this._reactComponents.forEach(prototype => {
-      if (isWrapped(prototype.render)) {
-        shimmer.unwrap(prototype, 'render');
-        this._logger.debug('removing previous patch from method render');
-      }
-      if (isWrapped(prototype.componentDidMount)) {
-        shimmer.unwrap(prototype, 'componentDidMount');
-        this._logger.debug(
-          'removing previous patch from method componentDidMount'
-        );
-      }
-      if (isWrapped(prototype.shouldComponentUpdate)) {
-        shimmer.unwrap(prototype, 'shouldComponentUpdate');
-        this._logger.debug('removing previous patch from method shouldComponentUpdate');
-      }
-      if (isWrapped(prototype.getSnapshotBeforeUpdate)) {
-        shimmer.unwrap(prototype, 'getSnapshotBeforeUpdate');
-        this._logger.debug('removing previous patch from method getSnapshotBeforeUpdate');
-      }
-      if(isWrapped(prototype.setState)){
-        shimmer.unwrap(prototype, 'setState');
-        this._logger.debug('removing previous patch from method setState');
-      }
-      if(isWrapped(prototype.forceUpdate)){
-        shimmer.unwrap(prototype, 'forceUpdate');
-        this._logger.debug('removing previous patch from method forceUpdate');
-      }
-      if (isWrapped(prototype.componentDidUpdate)) {
-        shimmer.unwrap(prototype, 'componentDidUpdate');
-        this._logger.debug('removing previous patch from method componentDidUpdate');
-      }
-      if (isWrapped(prototype.componentWillUnmount)) {
-        shimmer.unwrap(prototype, 'componentWillUnmount');
-        this._logger.debug('removing previous patch from method componentWillUnmount');
-      }
-
-      // Lifecycle methods must exist when patching, even if not defined in component
-      if (!prototype.render) {
-        prototype.render = () => {
-          return null;
-        };
-      }
-      if (!prototype.componentDidMount) {
-        prototype.componentDidMount = () => {};
-      }
-      if (!prototype.shouldComponentUpdate) {
-        prototype.shouldComponentUpdate = () => { return true; };
-      }
-      if (!prototype.getSnapshotBeforeUpdate) {
-        prototype.getSnapshotBeforeUpdate = () => { return null; };
-      }
-      if (!prototype.componentDidUpdate) {
-        prototype.componentDidUpdate = () => {};
-      }
-      if (!prototype.componentWillUnmount) {
-        prototype.componentWillUnmount = () => {};
-      }
-
-      shimmer.wrap(prototype, 'render', this._patchRender());
-      shimmer.wrap(
-        prototype,
-        'componentDidMount',
-        this._patchComponentDidMount()
+  public patch() {
+    BaseOpenTelemetryComponent._logger.debug('applying patch to', this.moduleName, this.version);
+    
+    if (isWrapped(this.render)) {
+      shimmer.unwrap(this, 'render');
+      BaseOpenTelemetryComponent._logger.debug('removing previous patch from method render');
+    }
+    if (isWrapped(this.componentDidMount)) {
+      shimmer.unwrap(this, 'componentDidMount');
+      BaseOpenTelemetryComponent._logger.debug(
+        'removing previous patch from method componentDidMount'
       );
-      shimmer.wrap(prototype, 'setState', this._patchSetState());
-      shimmer.wrap(prototype, 'forceUpdate', this._patchForceUpdate());
-      shimmer.wrap(prototype, 'shouldComponentUpdate', this._patchShouldComponentUpdate());
-      shimmer.wrap(prototype, 'getSnapshotBeforeUpdate', this._patchGetSnapshotBeforeUpdate());
-      shimmer.wrap(prototype, 'componentDidUpdate', this._patchComponentDidUpdate());
-      shimmer.wrap(prototype, 'componentWillUnmount', this._patchComponentWillUnmount());
-    });
-    return this._moduleExports;
+    }
+    if (isWrapped(this.shouldComponentUpdate)) {
+      shimmer.unwrap(this, 'shouldComponentUpdate');
+      BaseOpenTelemetryComponent._logger.debug('removing previous patch from method shouldComponentUpdate');
+    }
+    if (isWrapped(this.getSnapshotBeforeUpdate)) {
+      shimmer.unwrap(this, 'getSnapshotBeforeUpdate');
+      BaseOpenTelemetryComponent._logger.debug('removing previous patch from method getSnapshotBeforeUpdate');
+    }
+    if(isWrapped(this.setState)){
+      shimmer.unwrap(this, 'setState');
+      BaseOpenTelemetryComponent._logger.debug('removing previous patch from method setState');
+    }
+    if(isWrapped(this.forceUpdate)){
+      shimmer.unwrap(this, 'forceUpdate');
+      BaseOpenTelemetryComponent._logger.debug('removing previous patch from method forceUpdate');
+    }
+    if (isWrapped(this.componentDidUpdate)) {
+      shimmer.unwrap(this, 'componentDidUpdate');
+      BaseOpenTelemetryComponent._logger.debug('removing previous patch from method componentDidUpdate');
+    }
+    if (isWrapped(this.componentWillUnmount)) {
+      shimmer.unwrap(this, 'componentWillUnmount');
+      BaseOpenTelemetryComponent._logger.debug('removing previous patch from method componentWillUnmount');
+    }
+
+    // Lifecycle methods must exist when patching, even if not defined in component
+    if (!this.render) {
+      this.render = () => {
+        return null;
+      };
+    }
+    if (!this.componentDidMount) {
+      this.componentDidMount = () => {};
+    }
+    if (!this.shouldComponentUpdate) {
+      this.shouldComponentUpdate = () => { return true; };
+    }
+    if (!this.getSnapshotBeforeUpdate) {
+      this.getSnapshotBeforeUpdate = () => { return null; };
+    }
+    if (!this.componentDidUpdate) {
+      this.componentDidUpdate = () => {};
+    }
+    if (!this.componentWillUnmount) {
+      this.componentWillUnmount = () => {};
+    }
+
+    shimmer.wrap(this, 'render', this._patchRender());
+    shimmer.wrap(
+      this,
+      'componentDidMount',
+      this._patchComponentDidMount()
+    );
+    shimmer.wrap(this, 'setState', this._patchSetState());
+    shimmer.wrap(this, 'forceUpdate', this._patchForceUpdate());
+    shimmer.wrap(this, 'shouldComponentUpdate', this._patchShouldComponentUpdate());
+    shimmer.wrap(this, 'getSnapshotBeforeUpdate', this._patchGetSnapshotBeforeUpdate());
+    shimmer.wrap(this, 'componentDidUpdate', this._patchComponentDidUpdate());
+    shimmer.wrap(this, 'componentWillUnmount', this._patchComponentWillUnmount());
   }
 
   /**
    * implements unpatch function
    */
-  protected unpatch() {
-    this._logger.debug('removing patch from', this.moduleName, this.version);
+  public unpatch() {
+    BaseOpenTelemetryComponent._logger.debug('removing patch from', this.moduleName, this.version);
+    
+    shimmer.unwrap(this, 'render');
+    
+    shimmer.unwrap(this, 'componentDidMount');
 
-    this._reactComponents.forEach(prototype => {
-      shimmer.unwrap(prototype, 'render');
-      
-      shimmer.unwrap(prototype, 'componentDidMount');
-  
-      shimmer.unwrap(prototype, 'setState');
-      shimmer.unwrap(prototype, 'forceUpdate');
-      shimmer.unwrap(prototype, 'shouldComponentUpdate');
-      shimmer.unwrap(prototype, 'getSnapshotBeforeUpdate');
-      shimmer.unwrap(prototype, 'componentDidUpdate');
+    shimmer.unwrap(this, 'setState');
+    shimmer.unwrap(this, 'forceUpdate');
+    shimmer.unwrap(this, 'shouldComponentUpdate');
+    shimmer.unwrap(this, 'getSnapshotBeforeUpdate');
+    shimmer.unwrap(this, 'componentDidUpdate');
 
-      shimmer.unwrap(prototype, 'componentWillUnmount');
-    });
-
+    shimmer.unwrap(this, 'componentWillUnmount');
+    
     this._parentSpanMap = new WeakMap<React.Component, api.Span | undefined>();
   }
 }

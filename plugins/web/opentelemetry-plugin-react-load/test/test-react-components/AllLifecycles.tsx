@@ -1,6 +1,7 @@
 import * as React from 'react';
+import { BaseOpenTelemetryComponent } from '../../src';
 
-export default class AllLifecycles extends React.Component {
+export default class AllLifecycles extends BaseOpenTelemetryComponent {
     constructor(props: Readonly<{}>){
         super(props);
     }
