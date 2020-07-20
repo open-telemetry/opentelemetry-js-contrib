@@ -16,11 +16,11 @@
 import {
   AttributeNames,
   KoaContext,
-  KoaComponentName,
   KoaMiddleware,
   KoaLayerType,
 } from './types';
 import { Attributes } from '@opentelemetry/api';
+import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
 export const getMiddlewareMetadata = (
   context: KoaContext,
@@ -36,8 +36,7 @@ export const getMiddlewareMetadata = (
       attributes: {
         [AttributeNames.KOA_NAME]: layerPath,
         [AttributeNames.KOA_TYPE]: KoaLayerType.ROUTER,
-        [AttributeNames.COMPONENT]: KoaComponentName,
-        [AttributeNames.HTTP_ROUTE]: layerPath,
+        [HttpAttribute.HTTP_ROUTE]: layerPath,
       },
       name: `router - ${layerPath}`,
     };
@@ -46,7 +45,6 @@ export const getMiddlewareMetadata = (
       attributes: {
         [AttributeNames.KOA_NAME]: layer.name ?? 'middleware',
         [AttributeNames.KOA_TYPE]: KoaLayerType.MIDDLEWARE,
-        [AttributeNames.COMPONENT]: KoaComponentName,
       },
       name: `middleware - ${layer.name}`,
     };

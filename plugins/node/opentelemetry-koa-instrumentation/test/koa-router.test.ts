@@ -28,7 +28,8 @@ import * as KoaRouter from '@koa/router';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 import { plugin } from '../src';
-import { AttributeNames, KoaLayerType, KoaComponentName } from '../src/types';
+import { AttributeNames, KoaLayerType } from '../src/types';
+import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
@@ -99,10 +100,6 @@ describe('Koa Instrumentation - Router Tests', () => {
           .getFinishedSpans()
           .find(span => span.name.includes('router - /post/:id'));
         assert.notStrictEqual(requestHandlerSpan, undefined);
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.COMPONENT],
-          KoaComponentName
-        );
 
         assert.strictEqual(
           requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
@@ -110,7 +107,7 @@ describe('Koa Instrumentation - Router Tests', () => {
         );
 
         assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.HTTP_ROUTE],
+          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
           '/post/:id'
         );
 

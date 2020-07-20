@@ -27,7 +27,7 @@ import * as koa from 'koa';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 import { plugin } from '../src';
-import { AttributeNames, KoaLayerType, KoaComponentName } from '../src/types';
+import { AttributeNames, KoaLayerType } from '../src/types';
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
@@ -124,10 +124,7 @@ describe('Koa Instrumentation - Core Tests', () => {
           .getFinishedSpans()
           .find(span => span.name.includes('middleware'));
         assert.notStrictEqual(requestHandlerSpan, undefined);
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.COMPONENT],
-          KoaComponentName
-        );
+
         assert.strictEqual(
           requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
           KoaLayerType.MIDDLEWARE
@@ -175,10 +172,7 @@ describe('Koa Instrumentation - Core Tests', () => {
           .getFinishedSpans()
           .find(span => span.name.includes('asyncMiddleware'));
         assert.notStrictEqual(requestHandlerSpan, undefined);
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.COMPONENT],
-          KoaComponentName
-        );
+
         assert.strictEqual(
           requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
           KoaLayerType.MIDDLEWARE
