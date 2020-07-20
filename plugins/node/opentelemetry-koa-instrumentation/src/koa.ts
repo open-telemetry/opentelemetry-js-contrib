@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import * as koa from 'koa';
+import type * as koa from 'koa';
 import * as shimmer from 'shimmer';
 import {
   KoaMiddleware,
