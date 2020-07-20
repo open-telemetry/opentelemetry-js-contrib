@@ -17,7 +17,7 @@ router.get('/run_test', runTest)
   .get('/post/:id', showNewPost);
 
 async function setUp() {
-  app.use(no_op);
+  app.use(noOp);
   app.use(router.routes());
 }
 
@@ -56,7 +56,7 @@ function runTest(ctx) {
   ctx.redirect('/post/new');
 }
 
-async function no_op(ctx, next) {
+async function noOp(ctx, next) {
   console.log('Sample basic koa middleware');
   const syntheticDelay = 100;
   await new Promise((r) => setTimeout(r, syntheticDelay));
