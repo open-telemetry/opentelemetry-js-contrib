@@ -19,7 +19,6 @@ import { isWrapped } from '@opentelemetry/core';
 import * as shimmer from 'shimmer';
 import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums/AttributeNames';
-// import { VERSION } from './version';
 import * as React from 'react';
 import {
   RenderFunction,
@@ -31,10 +30,9 @@ import {
   GetSnapshotBeforeUpdateFunction,
   ComponentWillUnmountFunction
 } from './types';
-// import { BaseOpenTelemetryComponent } from './BaseOpenTelemetryComponent';
 
 /**
- * This class represents a react lifecycle plugin
+ * This class is the base component for a React component with lifecycle instumentation
  */
 export class BaseOpenTelemetryComponent extends React.Component {
   readonly component: string = 'react-load';
@@ -43,19 +41,29 @@ export class BaseOpenTelemetryComponent extends React.Component {
   private _parentSpanMap: WeakMap<React.Component, api.Span | undefined>;
   private static _tracer: api.Tracer;
   private static _logger: api.Logger;
+  
   /**
-   * @param reactComponent
-   */
+   * @param props Props of the React component
+  */
   constructor(props: any) {
     super(props);
     this._parentSpanMap = new WeakMap<React.Component, api.Span | undefined>();
     this.patch();
   }
 
+  /**
+   * Sets the tracer for all components being instrumented
+   * @param name Name of tracer
+   * @param version Version of tracer, this is optional. When not provided it will use the latest.
+   */
   static setTracer(name: string, version?: string){
     this._tracer = api.trace.getTracer(name, version)
   }
 
+  /**
+   * Sets the logger for all components being instrumented
+   * @param logger
+   */
   static setLogger(logger: api.Logger){
     this._logger = logger;
   }
@@ -87,11 +95,18 @@ export class BaseOpenTelemetryComponent extends React.Component {
     });
   }
 
-  private _instrumentFunction(react: React.Component, spanName: string, apply: Function, parentName: string){
+  /**
+   * Provides intrumentation for a function
+   * @param react React component currently instrumenting.
+   * @param spanName Name to set the span of the instrumented function to.
+   * @param original Original function currently beign wrapped.
+   * @parentName Name to set parent span to on error.
+   */
+  private _instrumentFunction(react: React.Component, spanName: string, original: Function, parentName: string){
     const span = this._createSpanWithParent(react, spanName);
     let res;
     try {
-      res = apply();
+      res = original();
     } catch (err) {
       if (span) {
         span.setAttribute(AttributeNames.REACT_ERROR, err.stack);
@@ -107,6 +122,11 @@ export class BaseOpenTelemetryComponent extends React.Component {
     return res;
   }
 
+   /**
+   * Ends the current parent span. 
+   * @param react React component parent span belongs to.
+   * @param name Name to set the parent span to, this is optional.
+   */
   private _endParentSpan(react: React.Component, name?: string){
     const mountingSpan = this._getParentSpan(react);
     if (mountingSpan) {
@@ -292,7 +312,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
   }
 
   /**
-   * implements patch function
+   * patch function which wraps all the lifecycle methods
    */
   public patch() {
     BaseOpenTelemetryComponent._logger.debug('applying patch to', this.moduleName, this.version);
@@ -369,7 +389,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
   }
 
   /**
-   * implements unpatch function
+   * unpatch function to unwrap all the lifecycle methods
    */
   public unpatch() {
     BaseOpenTelemetryComponent._logger.debug('removing patch from', this.moduleName, this.version);
