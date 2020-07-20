@@ -18,7 +18,6 @@ import { BasePlugin } from '@opentelemetry/core';
 import * as koa from 'koa';
 import * as shimmer from 'shimmer';
 import {
-  Parameters,
   KoaMiddleware,
   KoaContext,
   KoaComponentName,
@@ -46,8 +45,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
       return this._moduleExports;
     }
     this._logger.debug('Patching Koa.use');
-    const appProto = this._moduleExports.prototype;
-    shimmer.wrap(appProto, 'use', this._getKoaUsePatch.bind(this));
+    shimmer.wrap(this._moduleExports.prototype, 'use', this._getKoaUsePatch);
 
     return this._moduleExports;
   }
@@ -56,8 +54,8 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
    * Unpatches all Koa operations
    */
   protected unpatch(): void {
-    const appProto = this._moduleExports.prototype;
-    shimmer.unwrap(appProto, 'use');
+    this._logger.debug('Unpatching Koa');
+    shimmer.unwrap(this._moduleExports.prototype, 'use');
   }
 
   /**
@@ -66,25 +64,15 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
    * @param {KoaMiddleware} middleware - the original middleware function
    */
   private _getKoaUsePatch(original: (middleware: KoaMiddleware) => koa) {
-    return function use(
-      this: koa,
-      middlewareFunction: KoaMiddleware,
-      ...args: Parameters<typeof original>
-    ) {
-      let patchedFunction;
+    return function use(this: koa, middlewareFunction: KoaMiddleware) {
+      let patchedFunction: KoaMiddleware;
       if (middlewareFunction.router) {
         patchedFunction = plugin._patchRouterDispatch(middlewareFunction);
       } else {
         patchedFunction = plugin._patchLayer(middlewareFunction, false);
       }
-
-      args[0] = patchedFunction;
-      const res = original.apply(this, args);
-
-      return res;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any;
+      return original.apply(this, [patchedFunction]);
+    };
   }
 
   /**
@@ -94,7 +82,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
    * @param {KoaMiddleware} dispatchLayer - the original dispatch function which dispatches
    * routed middleware
    */
-  private _patchRouterDispatch(dispatchLayer: KoaMiddleware) {
+  private _patchRouterDispatch(dispatchLayer: KoaMiddleware): KoaMiddleware {
     this._logger.debug('Patching @koa/router dispatch');
 
     const router = dispatchLayer.router;
@@ -108,9 +96,8 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
         pathStack[j] = this._patchLayer(routedMiddleware, true, path);
       }
     }
-    const dispatcher = (context: KoaContext, next: koa.Next) => {
-      const result = dispatchLayer(context, next);
-      return result;
+    const dispatcher: KoaMiddleware = (context: KoaContext, next: koa.Next) => {
+      return dispatchLayer(context, next);
     };
     return dispatcher;
   }
@@ -134,7 +121,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
     this._logger.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
       if (this._tracer.getCurrentSpan() === undefined) {
-        return await middlewareLayer(context, next);
+        return middlewareLayer(context, next);
       }
       const metadata = getMiddlewareMetadata(
         context,

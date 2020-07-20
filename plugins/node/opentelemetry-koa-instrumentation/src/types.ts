@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Middleware, ParameterizedContext, DefaultState } from 'koa';
-import { RouterParamContext } from '@koa/router';
-import Router = require('@koa/router');
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Parameters<T> = T extends (...args: infer T) => any ? T : unknown[];
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
+import type { RouterParamContext } from '@koa/router';
+import type * as Router from '@koa/router';
 
 /**
  * This symbol is used to mark a Koa layer as being already instrumented
