@@ -55,7 +55,7 @@
     "@types/pg": "7.14.4",
     "@types/pg-pool": "2.0.2",
     "@types/shimmer": "1.0.1",
-    "codecov": "3.7.0",
+    "codecov": "3.7.1",
     "cross-env": "7.0.2",
     "gts": "2.0.2",
     "mocha": "7.2.0",
