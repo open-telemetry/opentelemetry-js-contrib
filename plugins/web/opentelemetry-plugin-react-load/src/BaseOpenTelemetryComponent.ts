@@ -31,6 +31,12 @@ import {
   ComponentWillUnmountFunction
 } from './types';
 
+interface ParentSpanData {
+  span: api.Span,
+  name: string,
+}
+
+const DEFAULT_PARENT_NAME = 'parent';
 /**
  * This class is the base component for a React component with lifecycle instumentation
  */
@@ -38,7 +44,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
   readonly component: string = 'react-load';
   readonly version: string = '1';
   moduleName = this.component;
-  private _parentSpanMap: WeakMap<React.Component, api.Span | undefined>;
+  private _parentSpanMap: WeakMap<React.Component, ParentSpanData>;
   private static _tracer: api.Tracer;
   private static _logger: api.Logger;
   
@@ -47,7 +53,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
   */
   constructor(props: any) {
     super(props);
-    this._parentSpanMap = new WeakMap<React.Component, api.Span | undefined>();
+    this._parentSpanMap = new WeakMap<React.Component, ParentSpanData>();
     this.patch();
   }
 
@@ -80,7 +86,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
   ): api.Span | undefined {
     return BaseOpenTelemetryComponent._tracer.startSpan(name, {
       attributes: this._getAttributes(react),
-      parent: this._getParentSpan(react),
+      parent: this._getCreateParentSpan(react)?.span,
     });
   }
 
@@ -102,7 +108,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * @param original Original function currently beign wrapped.
    * @parentName Name to set parent span to on error.
    */
-  private _instrumentFunction(react: React.Component, spanName: string, original: Function, parentName: string){
+  private _instrumentFunction(react: React.Component, spanName: string, original: Function){
     const span = this._createSpanWithParent(react, spanName);
     let res;
     try {
@@ -112,7 +118,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
         span.setAttribute(AttributeNames.REACT_ERROR, err.stack);
         span.end();
       }
-      this._endParentSpan(react, parentName)
+      this._endParentSpan(react)
       throw err;
     }
     
@@ -125,15 +131,12 @@ export class BaseOpenTelemetryComponent extends React.Component {
    /**
    * Ends the current parent span. 
    * @param react React component parent span belongs to.
-   * @param name Name to set the parent span to, this is optional.
    */
-  private _endParentSpan(react: React.Component, name?: string){
-    const mountingSpan = this._getParentSpan(react);
-    if (mountingSpan) {
-      if(name){
-        mountingSpan.updateName(name);
-      }
-      mountingSpan.end();
+  private _endParentSpan(react: React.Component){
+    const parentSpanData = this._parentSpanMap.get(react);
+    if (parentSpanData) {
+      parentSpanData.span.updateName(parentSpanData.name);
+      parentSpanData.span.end();
       this._parentSpanMap.delete(react);
     }
   }
@@ -162,13 +165,15 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * this function creates a parent span
    * @param react React component parent span belongs to.
    */
-  private _getParentSpan(react: React.Component): api.Span | undefined {
-    let span: api.Span | undefined = this._parentSpanMap.get(react);
-    if (!span) {
-      span = this._createSpan(react, 'parent');
-      this._parentSpanMap.set(react, span);
+  private _getCreateParentSpan(react: React.Component): ParentSpanData | undefined {
+    let parentSpan: ParentSpanData | undefined = this._parentSpanMap.get(react);
+    if (!parentSpan) {
+      let span = this._createSpan(react, DEFAULT_PARENT_NAME);
+      if(span){
+        this._parentSpanMap.set(react, {span, name: DEFAULT_PARENT_NAME});
+      }
     }
-    return span;
+    return this._parentSpanMap.get(react);
   }
 
   /**
@@ -181,8 +186,14 @@ export class BaseOpenTelemetryComponent extends React.Component {
         this: React.Component,
         ...args
       ): React.ReactNode {
-        // TODO: Get parent name and determine if we need to pass in mounting or updating
-        return plugin._instrumentFunction(this, 'render', () => { return original!.apply(this, args)}, 'parentName');
+        // Render is the first method in the mounting flow, if parent span wasn't named updating already then we're in the mounting flow
+        // The naming assigned here will only be reflected if the component throws and error when rendering
+        const parentData = plugin._getCreateParentSpan(this);
+        if( parentData && parentData.name === DEFAULT_PARENT_NAME ){
+
+          parentData.name = AttributeNames.MOUNTING_SPAN;
+        }
+        return plugin._instrumentFunction(this, 'render', () => { return original!.apply(this, args)});
       };
     };
   }
@@ -198,8 +209,12 @@ export class BaseOpenTelemetryComponent extends React.Component {
         this: React.Component,
         ...args
       ): void {
-        const apply = plugin._instrumentFunction(this, 'componentDidMount', () => { return original!.apply(this, args)}, AttributeNames.MOUNTING_SPAN);
-        plugin._endParentSpan(this, AttributeNames.MOUNTING_SPAN);
+        const parentData = plugin._getCreateParentSpan(this);
+        if(parentData){
+          parentData.name = AttributeNames.MOUNTING_SPAN;
+        }
+        const apply = plugin._instrumentFunction(this, 'componentDidMount', () => { return original!.apply(this, args)});
+        plugin._endParentSpan(this);
         return apply;
       };
     };
@@ -215,7 +230,11 @@ export class BaseOpenTelemetryComponent extends React.Component {
         this: React.Component,
         ...args
       ): void {
-        return plugin._instrumentFunction(this, 'setState()', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);;
+        const parentData = plugin._getCreateParentSpan(this);
+        if(parentData){
+          parentData.name = AttributeNames.UPDATING_SPAN;
+        }
+        return plugin._instrumentFunction(this, 'setState()', () => { return original!.apply(this, args)});
       };
     };
   }
@@ -230,7 +249,11 @@ export class BaseOpenTelemetryComponent extends React.Component {
         this: React.Component,
         ...args
       ): void {
-        return plugin._instrumentFunction(this, 'forceUpdate()', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);;
+        const parentData = plugin._getCreateParentSpan(this);
+        if(parentData){
+          parentData.name = AttributeNames.UPDATING_SPAN;
+        }
+        return plugin._instrumentFunction(this, 'forceUpdate()', () => { return original!.apply(this, args)});
       };
     };
   }
@@ -246,11 +269,15 @@ export class BaseOpenTelemetryComponent extends React.Component {
         this: React.Component,
         ...args
       ): boolean {
-        const apply = plugin._instrumentFunction(this, 'shouldComponentUpdate', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);
+        const parentData = plugin._getCreateParentSpan(this);
+        if(parentData){
+          parentData.name = AttributeNames.UPDATING_SPAN;
+        }
+        const apply = plugin._instrumentFunction(this, 'shouldComponentUpdate', () => { return original!.apply(this, args)});
         // if shouldComponentUpdate returns false, the component does not get 
         // updated and no other lifecycle methods get called
         if(!apply){
-          plugin._endParentSpan(this, AttributeNames.UPDATING_SPAN);
+          plugin._endParentSpan(this);
         }
         
         return apply;
@@ -269,8 +296,12 @@ export class BaseOpenTelemetryComponent extends React.Component {
       return function patchGetSnapshotBeforeUpdate(
         this: React.Component,
         ...args
-      ): any {        
-        return plugin._instrumentFunction(this, 'getSnapshotBeforeUpdate', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);
+      ): any {       
+        const parentData = plugin._getCreateParentSpan(this);
+        if(parentData){
+          parentData.name = AttributeNames.UPDATING_SPAN;
+        } 
+        return plugin._instrumentFunction(this, 'getSnapshotBeforeUpdate', () => { return original!.apply(this, args)});
       };
     };
   }
@@ -286,8 +317,12 @@ export class BaseOpenTelemetryComponent extends React.Component {
         this: React.Component,
         ...args
       ): void {
-        const apply = plugin._instrumentFunction(this, 'componentDidUpdate', () => { return original!.apply(this, args)}, AttributeNames.UPDATING_SPAN);
-        plugin._endParentSpan(this, AttributeNames.UPDATING_SPAN);
+        const parentData = plugin._getCreateParentSpan(this);
+        if(parentData){
+          parentData.name = AttributeNames.UPDATING_SPAN;
+        }
+        const apply = plugin._instrumentFunction(this, 'componentDidUpdate', () => { return original!.apply(this, args)});
+        plugin._endParentSpan(this);
         return apply;
       };
     };
@@ -304,8 +339,12 @@ export class BaseOpenTelemetryComponent extends React.Component {
         this: React.Component,
         ...args
       ): void {
-        const apply = plugin._instrumentFunction(this, 'componentWillUnmount', () => { return original!.apply(this, args)}, AttributeNames.UNMOUNTING_SPAN);
-        plugin._endParentSpan(this, AttributeNames.UNMOUNTING_SPAN);
+        const parentData = plugin._getCreateParentSpan(this);
+        if(parentData){
+          parentData.name = AttributeNames.UNMOUNTING_SPAN;
+        }
+        const apply = plugin._instrumentFunction(this, 'componentWillUnmount', () => { return original!.apply(this, args)});
+        plugin._endParentSpan(this);
         return apply;
       };
     };
@@ -406,6 +445,6 @@ export class BaseOpenTelemetryComponent extends React.Component {
 
     shimmer.unwrap(this, 'componentWillUnmount');
     
-    this._parentSpanMap = new WeakMap<React.Component, api.Span | undefined>();
+    this._parentSpanMap = new WeakMap<React.Component, ParentSpanData>();
   }
 }
