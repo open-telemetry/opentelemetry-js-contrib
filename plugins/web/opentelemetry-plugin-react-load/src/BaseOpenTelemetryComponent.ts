@@ -20,6 +20,7 @@ import * as shimmer from 'shimmer';
 import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums/AttributeNames';
 import * as React from 'react';
+import { VERSION } from './version';
 import {
   RenderFunction,
   ComponentDidMountFunction,
@@ -63,7 +64,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * @param version Version of tracer, this is optional. When not provided it will use the latest.
    */
   static setTracer(name: string, version?: string){
-    this._tracer = api.trace.getTracer(name, version)
+    this._tracer = api.trace.getTracer(name, version ? version : VERSION)
   }
 
   /**
