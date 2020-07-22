@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,12 @@ import {
   PgClientExtended,
   PgPluginQueryConfig,
   PostgresCallback,
-  PostgresPluginOptions,
 } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
 
 export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
-  protected _config: PostgresPluginOptions;
+  protected _config: {};
 
   static readonly COMPONENT = 'pg';
   static readonly DB_TYPE = 'sql';

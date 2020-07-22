@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-// mongodb.Server type is deprecated so every use trigger a lint error
-/* tslint:disable:deprecation */
 
 import { BasePlugin } from '@opentelemetry/core';
 import { CanonicalCode, Span, SpanKind } from '@opentelemetry/api';
@@ -51,7 +48,7 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
   protected patch() {
     this._logger.debug('Patching MongoDB');
     if (this._hasPatched === true) {
-      this._logger.debug(`Patch is already applied, ignoring.`);
+      this._logger.debug('Patch is already applied, ignoring.');
       return this._moduleExports;
     }
 
@@ -61,7 +58,7 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
         shimmer.wrap(
           this._moduleExports.Server.prototype,
           // Forced to ignore due to incomplete typings
-          // tslint:disable-next-line:ban-ts-ignore
+          // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
           // @ts-ignore
           fn,
           this._getPatchCommand(fn)
@@ -178,10 +175,12 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
     // add network attributes to determine the remote server
     if (topology && topology.s) {
       span.setAttributes({
-        [AttributeNames.PEER_HOSTNAME]: `${topology.s.options?.host ??
-          topology.s.host}`,
-        [AttributeNames.PEER_PORT]: `${topology.s.options?.port ??
-          topology.s.port}`,
+        [AttributeNames.PEER_HOSTNAME]: `${
+          topology.s.options?.host ?? topology.s.host
+        }`,
+        [AttributeNames.PEER_PORT]: `${
+          topology.s.options?.port ?? topology.s.port
+        }`,
       });
     }
     // add database related attributes
@@ -223,7 +222,7 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
         if (!currentSpan || typeof resultHandler !== 'function') {
           return original.apply(this, args);
         }
-        const span = plugin._tracer.startSpan(`mongodb.query`, {
+        const span = plugin._tracer.startSpan('mongodb.query', {
           kind: SpanKind.CLIENT,
         });
         plugin._populateAttributes(span, this.ns, this.cmd, this.topology);

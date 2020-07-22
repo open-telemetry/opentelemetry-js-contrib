@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ describe('pg@7.x', () => {
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
-  before(async function() {
+  before(async function () {
     if (!shouldTest) {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -104,11 +104,7 @@ describe('pg@7.x', () => {
     }
 
     client = new pg.Client(CONFIG);
-    try {
-      await client.connect();
-    } catch (e) {
-      throw e;
-    }
+    await client.connect();
   });
 
   after(async () => {
@@ -118,7 +114,7 @@ describe('pg@7.x', () => {
     await client.end();
   });
 
-  beforeEach(function() {
+  beforeEach(() => {
     plugin.enable(pg, provider, logger);
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);

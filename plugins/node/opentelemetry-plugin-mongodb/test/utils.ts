@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ export function accessCollection(
   collectionName: string
 ): Promise<MongoDBAccess> {
   return new Promise((resolve, reject) => {
-    mongodb.MongoClient.connect(url, function connectedClient(err, client) {
+    mongodb.MongoClient.connect(url, (err, client) => {
       if (err) {
         reject(err);
         return;
@@ -83,7 +83,9 @@ export function assertSpans(
   assert.strictEqual(mongoSpan.status.code, CanonicalCode.OK);
 
   if (isEnhancedDatabaseReportingEnabled) {
-    const dbStatement = <any>mongoSpan.attributes[AttributeNames.DB_STATEMENT];
+    const dbStatement = mongoSpan.attributes[
+      AttributeNames.DB_STATEMENT
+    ] as any;
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');
     }

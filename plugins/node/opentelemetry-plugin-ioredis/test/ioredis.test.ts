@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import * as assert from 'assert';
 import * as ioredisTypes from 'ioredis';
 import { IORedisPlugin, plugin } from '../src';
 import { AttributeNames } from '../src/enums';
-import { IORedisPluginConfig, DbStatementSerializer } from '../src/types';
+import { IoredisPluginConfig, DbStatementSerializer } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -66,7 +66,7 @@ describe('ioredis', () => {
     context.disable();
   });
 
-  before(function() {
+  before(function () {
     // needs to be "function" to have MochaContext "this" context
     if (!shouldTest) {
       // this.skip() workaround
@@ -110,8 +110,8 @@ describe('ioredis', () => {
           span
         );
         assert.strictEqual(endedSpans.length, 2);
-        assert.strictEqual(endedSpans[0].name, `connect`);
-        assert.strictEqual(endedSpans[1].name, `info`);
+        assert.strictEqual(endedSpans[0].name, 'connect');
+        assert.strictEqual(endedSpans[1].name, 'info');
         testUtils.assertPropagation(endedSpans[0], span);
 
         testUtils.assertSpan(
@@ -123,11 +123,11 @@ describe('ioredis', () => {
         );
         span.end();
         assert.strictEqual(endedSpans.length, 3);
-        assert.strictEqual(endedSpans[2].name, `test span`);
+        assert.strictEqual(endedSpans[2].name, 'test span');
 
         client.quit(done);
         assert.strictEqual(endedSpans.length, 4);
-        assert.strictEqual(endedSpans[3].name, `quit`);
+        assert.strictEqual(endedSpans[3].name, 'quit');
       };
       const errorHandler = (err: Error) => {
         assert.ifError(err);
@@ -236,7 +236,7 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, `hset`);
+            assert.strictEqual(endedSpans[0].name, 'hset');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -264,7 +264,7 @@ describe('ioredis', () => {
               // `resultKeys` is an array of strings representing key names.
               // Note that resultKeys may contain 0 keys, and that it will sometimes
               // contain duplicates due to SCAN's implementation in Redis.
-              for (var i = 0; i < resultKeys.length; i++) {
+              for (let i = 0; i < resultKeys.length; i++) {
                 console.log(resultKeys[i]);
               }
             })
@@ -274,7 +274,7 @@ describe('ioredis', () => {
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
               assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[0].name, `scan`);
+              assert.strictEqual(endedSpans[0].name, 'scan');
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -345,7 +345,7 @@ describe('ioredis', () => {
         });
       });
 
-      it(`should create a child span for lua`, done => {
+      it('should create a child span for lua', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
           [AttributeNames.DB_STATEMENT]:
@@ -384,7 +384,7 @@ describe('ioredis', () => {
         });
       });
 
-      it(`should create a child span for multi/transaction`, done => {
+      it('should create a child span for multi/transaction', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
           [AttributeNames.DB_STATEMENT]: 'multi',
@@ -420,7 +420,7 @@ describe('ioredis', () => {
         });
       });
 
-      it(`should create a child span for pipeline`, done => {
+      it('should create a child span for pipeline', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
           [AttributeNames.DB_STATEMENT]: 'set foo bar',
@@ -468,7 +468,7 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, `get`);
+            assert.strictEqual(endedSpans[0].name, 'get');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -531,7 +531,7 @@ describe('ioredis', () => {
         `FOOBAR_${cmdName}: ${cmdArgs[0]}`;
       before(() => {
         plugin.disable();
-        const config: IORedisPluginConfig = {
+        const config: IoredisPluginConfig = {
           dbStatementSerializer,
         };
         plugin.enable(ioredis, provider, new NoopLogger(), config);
@@ -605,7 +605,7 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 1);
-            assert.strictEqual(endedSpans[0].name, `test span`);
+            assert.strictEqual(endedSpans[0].name, 'test span');
           } catch (error) {
             assert.ifError(error);
           }

@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
 
   private _getConnectionCallbackPatchFn(cb: Function) {
     const thisPlugin = this;
-    return function() {
+    return function () {
       if (arguments[1]) {
         // this is the callback passed into a query
         // no need to unwrap
@@ -266,7 +266,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
 
   private _patchCallbackQuery(span: Span) {
     return (originalCallback: Function) => {
-      return function(
+      return function (
         err: mysqlTypes.MysqlError | null,
         results?: any,
         fields?: mysqlTypes.FieldInfo[]

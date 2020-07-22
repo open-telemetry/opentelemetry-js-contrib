@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 import * as pgTypes from 'pg';
 import * as pgPoolTypes from 'pg-pool';
-
-export interface PostgresPoolPluginOptions {}
 
 export type PgPoolCallback = (
   err: Error,

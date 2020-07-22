@@ -1,5 +1,5 @@
-/*!
- * Copyright 2020, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ describe('Express Plugin', () => {
       const app = express();
       app.use((req, res, next) => tracer.withSpan(rootSpan, next));
       app.use(express.json());
+      // eslint-disable-next-line prefer-arrow-callback
       app.use(function customMiddleware(req, res, next) {
         for (let i = 0; i < 1000000; i++) {
           continue;
@@ -127,7 +128,7 @@ describe('Express Plugin', () => {
           requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
           'request_handler'
         );
-        let exportedRootSpan = memoryExporter
+        const exportedRootSpan = memoryExporter
           .getFinishedSpans()
           .find(span => span.name === 'rootSpan');
         assert.notStrictEqual(exportedRootSpan, undefined);
@@ -138,7 +139,7 @@ describe('Express Plugin', () => {
     it('should not create span because there are no parent', async () => {
       const app = express();
       app.use(express.json());
-      app.use(function customMiddleware(req, res, next) {
+      app.use((req, res, next) => {
         for (let i = 0; i < 1000000; i++) {
           continue;
         }
@@ -170,7 +171,7 @@ describe('Express Plugin', () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const app = express();
       app.use(express.json());
-      app.use(function customMiddleware(req, res, next) {
+      app.use((req, res, next) => {
         for (let i = 0; i < 1000; i++) {
           continue;
         }
@@ -194,7 +195,7 @@ describe('Express Plugin', () => {
             ).length,
           0
         );
-        let exportedRootSpan = memoryExporter
+        const exportedRootSpan = memoryExporter
           .getFinishedSpans()
           .find(span => span.name === 'rootSpan');
         assert.notStrictEqual(exportedRootSpan, undefined);
@@ -209,7 +210,7 @@ describe('Express Plugin', () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const app = express();
       app.use(express.json());
-      app.use(function customMiddleware(req, res, next) {
+      app.use((req, res, next) => {
         for (let i = 0; i < 1000; i++) {
           continue;
         }

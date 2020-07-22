@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-// because of zone original timeout needs to be patched to be able to run
-// code outside zone.js. This needs to be done before all
 const originalSetTimeout = window.setTimeout;
 
 import { context } from '@opentelemetry/api';
@@ -51,7 +48,7 @@ describe('UserInteractionPlugin', () => {
       context.setGlobalContextManager(contextManager);
       sandbox = sinon.createSandbox();
       const fakeXhr = sandbox.useFakeXMLHttpRequest();
-      fakeXhr.onCreate = function(xhr: sinon.SinonFakeXMLHttpRequest) {
+      fakeXhr.onCreate = function (xhr: sinon.SinonFakeXMLHttpRequest) {
         requests.push(xhr);
         setTimeout(() => {
           requests[requests.length - 1].respond(
@@ -115,10 +112,10 @@ describe('UserInteractionPlugin', () => {
     it('should handle target without function getAttribute', done => {
       let callback: Function;
       const btn: any = {
-        addEventListener: function(name: string, callbackF: Function) {
+        addEventListener: function (name: string, callbackF: Function) {
           callback = callbackF;
         },
-        click: function() {
+        click: function () {
           callback();
         },
       };
@@ -134,14 +131,14 @@ describe('UserInteractionPlugin', () => {
     it('should not create span when element has attribute disabled', done => {
       let callback: Function;
       const btn: any = {
-        addEventListener: function(name: string, callbackF: Function) {
+        addEventListener: function (name: string, callbackF: Function) {
           callback = callbackF;
         },
-        click: function() {
+        click: function () {
           callback();
         },
-        getAttribute: function() {},
-        hasAttribute: function(name: string) {
+        getAttribute: function () {},
+        hasAttribute: function (name: string) {
           return name === 'disabled' ? true : false;
         },
       };
@@ -155,7 +152,7 @@ describe('UserInteractionPlugin', () => {
     });
 
     it('should not create span when start span fails', done => {
-      userInteractionPlugin['_tracer'].startSpan = function() {
+      userInteractionPlugin['_tracer'].startSpan = function () {
         throw 'foo';
       };
 
@@ -197,7 +194,7 @@ describe('UserInteractionPlugin', () => {
             assert.equal(attributes.component, 'user-interaction');
             assert.equal(attributes.event_type, 'click');
             assert.equal(attributes.target_element, 'BUTTON');
-            assert.equal(attributes.target_xpath, `//*[@id="testBtn"]`);
+            assert.equal(attributes.target_xpath, '//*[@id="testBtn"]');
 
             done();
           });
