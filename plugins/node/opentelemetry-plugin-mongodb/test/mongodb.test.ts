@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,9 @@ describe('MongoDBPlugin', () => {
     shouldTest = false;
   }
 
-  const URL = `mongodb://${process.env.MONGODB_HOST || 'localhost'}:${process
-    .env.MONGODB_PORT || '27017'}`;
+  const URL = `mongodb://${process.env.MONGODB_HOST || 'localhost'}:${
+    process.env.MONGODB_PORT || '27017'
+  }`;
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
   const COLLECTION_NAME = 'test';
 
@@ -101,14 +102,14 @@ describe('MongoDBPlugin', () => {
   describe('Instrumenting query operations', () => {
     it('should create a child span for insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-      const span = provider.getTracer('default').startSpan(`insertRootSpan`);
+      const span = provider.getTracer('default').startSpan('insertRootSpan');
       provider.getTracer('default').withSpan(span, () => {
         collection.insertMany(insertData, (err, result) => {
           span.end();
           assert.ifError(err);
           assertSpans(
             memoryExporter.getFinishedSpans(),
-            `mongodb.insert`,
+            'mongodb.insert',
             SpanKind.CLIENT
           );
           done();
@@ -124,7 +125,7 @@ describe('MongoDBPlugin', () => {
           assert.ifError(err);
           assertSpans(
             memoryExporter.getFinishedSpans(),
-            `mongodb.update`,
+            'mongodb.update',
             SpanKind.CLIENT
           );
           done();
@@ -140,7 +141,7 @@ describe('MongoDBPlugin', () => {
           assert.ifError(err);
           assertSpans(
             memoryExporter.getFinishedSpans(),
-            `mongodb.remove`,
+            'mongodb.remove',
             SpanKind.CLIENT
           );
           done();
@@ -150,7 +151,7 @@ describe('MongoDBPlugin', () => {
 
     it('should create a child span for insert and include database query params in span', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-      const span = provider.getTracer('default').startSpan(`insertRootSpan`);
+      const span = provider.getTracer('default').startSpan('insertRootSpan');
 
       plugin.enable(mongodb, provider, logger, enhancedDbConfig);
 
@@ -160,7 +161,7 @@ describe('MongoDBPlugin', () => {
           assert.ifError(err);
           assertSpans(
             memoryExporter.getFinishedSpans(),
-            `mongodb.insert`,
+            'mongodb.insert',
             SpanKind.CLIENT,
             false,
             true
@@ -181,7 +182,7 @@ describe('MongoDBPlugin', () => {
           assert.ifError(err);
           assertSpans(
             memoryExporter.getFinishedSpans(),
-            `mongodb.query`,
+            'mongodb.query',
             SpanKind.CLIENT
           );
           done();
@@ -200,7 +201,7 @@ describe('MongoDBPlugin', () => {
           assert.ifError(err);
           assertSpans(
             memoryExporter.getFinishedSpans(),
-            `mongodb.createIndexes`,
+            'mongodb.createIndexes',
             SpanKind.CLIENT
           );
           done();

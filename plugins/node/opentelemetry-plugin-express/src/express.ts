@@ -1,5 +1,5 @@
-/*!
- * Copyright 2020, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,10 +159,10 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
     if (layer[kLayerPatched] === true) return;
     layer[kLayerPatched] = true;
     this._logger.debug('patching express.Router.Layer.handle');
-    shimmer.wrap(layer, 'handle', function(original: Function) {
+    shimmer.wrap(layer, 'handle', (original: Function) => {
       if (original.length === 4) return original;
 
-      return function(
+      return function (
         this: ExpressLayer,
         req: PatchedRequest,
         res: express.Response,
@@ -191,7 +191,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
           attributes: Object.assign(attributes, metadata.attributes),
         });
         const startTime = hrTime();
-        let spanHasEnded: boolean = false;
+        let spanHasEnded = false;
         // If we found anything that isnt a middleware, there no point of measuring
         // stheir time ince they dont have callback.
         if (
@@ -205,7 +205,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         const args = Array.from(arguments);
         const callbackIdx = args.findIndex(arg => typeof arg === 'function');
         if (callbackIdx >= 0) {
-          arguments[callbackIdx] = function() {
+          arguments[callbackIdx] = function () {
             if (spanHasEnded === false) {
               span.end();
               spanHasEnded = true;

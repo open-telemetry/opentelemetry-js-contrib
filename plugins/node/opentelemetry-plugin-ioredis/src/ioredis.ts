@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 import { BasePlugin } from '@opentelemetry/core';
 import * as ioredisTypes from 'ioredis';
 import * as shimmer from 'shimmer';
-import { IORedisPluginConfig } from './types';
+import { IoredisPluginConfig } from './types';
 import { traceConnection, traceSendCommand } from './utils';
 import { VERSION } from './version';
 
@@ -25,7 +25,7 @@ export class IORedisPlugin extends BasePlugin<typeof ioredisTypes> {
   static readonly COMPONENT = 'ioredis';
   static readonly DB_TYPE = 'redis';
   readonly supportedVersions = ['>1 <5'];
-  protected _config!: IORedisPluginConfig;
+  protected _config!: IoredisPluginConfig;
 
   constructor(readonly moduleName: string) {
     super('@opentelemetry/plugin-ioredis', VERSION);

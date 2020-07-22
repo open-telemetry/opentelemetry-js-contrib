@@ -126,25 +126,6 @@ browsers_unit_tests: &browsers_unit_tests
         command: if [ "$CIRCLE_NODE_VERSION" = "v12" ]; then npm run codecov:browser; fi
 
 jobs:
-  lint:
-    docker:
-      - image: node:12
-        environment:
-          NPM_CONFIG_UNSAFE_PERM: true
-    steps:
-      - checkout
-      - run:
-          name: Install minimal lint modules globally
-          command: npm i -g tslint lerna typescript tslint-consistent-codestyle tslint-microsoft-contrib
-      - run:
-          name: Install gts version 1.1.0 globally
-          command: npm i -g gts@1.1.0
-      - run:
-          name: Symlink global modules into all lerna packages
-          command: lerna exec 'npm link tslint lerna typescript gts tslint-consistent-codestyle tslint-microsoft-contrib'
-      - run:
-          name: Check code style and linting
-          command: npm run lint
   node8:
     docker:
       - image: node:8
@@ -181,10 +162,6 @@ workflows:
   version: 2
   build:
     jobs:
-      - lint:
-          filters:
-            branches:
-              only: /.*/
       - node8
       - node10
       - node12
