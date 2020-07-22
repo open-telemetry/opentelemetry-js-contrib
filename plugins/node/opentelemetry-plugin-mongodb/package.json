@@ -48,7 +48,7 @@
     "@types/mongodb": "3.5.25",
     "@types/node": "12.12.47",
     "@types/shimmer": "1.0.1",
-    "codecov": "3.7.0",
+    "codecov": "3.7.1",
     "gts": "2.0.2",
     "mocha": "7.2.0",
     "mongodb": "3.5.9",

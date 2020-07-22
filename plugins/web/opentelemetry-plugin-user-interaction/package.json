@@ -55,7 +55,7 @@
     "@types/webpack-env": "1.15.2",
     "@types/zone.js": "0.5.12",
     "babel-loader": "8.1.0",
-    "codecov": "3.7.0",
+    "codecov": "3.7.1",
     "gts": "2.0.2",
     "istanbul-instrumenter-loader": "3.0.1",
     "karma": "5.1.0",
