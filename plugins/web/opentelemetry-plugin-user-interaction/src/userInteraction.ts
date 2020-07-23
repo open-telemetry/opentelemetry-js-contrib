@@ -49,7 +49,10 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   private _spansData = new WeakMap<api.Span, SpanData>();
   private _zonePatched = false;
   // for addEventListener/removeEventListener state
-  private _wrappedListeners = new WeakMap<Function, Map<String, Map<HTMLElement, Function>>>();
+  private _wrappedListeners = new WeakMap<
+    Function,
+    Map<string, Map<HTMLElement, Function>>
+  >();
 
   constructor() {
     super('@opentelemetry/plugin-user-interaction', VERSION);
@@ -167,7 +170,12 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     }
   }
 
-  private addPatchedListener(on: HTMLElement, type: String, listener: Function, wrappedListener: Function) {
+  private addPatchedListener(
+    on: HTMLElement,
+    type: string,
+    listener: Function,
+    wrappedListener: Function
+  ) {
     let listener2Type = this._wrappedListeners.get(listener);
     if (!listener2Type) {
       listener2Type = new Map();
@@ -181,12 +189,16 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     element2patched.set(on, wrappedListener);
   }
 
-  private removePatchedListener(on: HTMLElement, type: String, listener: Function) : Function|undefined {
-    let listener2Type = this._wrappedListeners.get(listener);
+  private removePatchedListener(
+    on: HTMLElement,
+    type: string,
+    listener: Function
+  ): Function | undefined {
+    const listener2Type = this._wrappedListeners.get(listener);
     if (!listener2Type) {
       return undefined;
     }
-    let element2patched = listener2Type.get(type);
+    const element2patched = listener2Type.get(type);
     if (!element2patched) {
       return undefined;
     }
@@ -251,7 +263,11 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
         listener: any,
         useCapture: any
       ) {
-        const wrappedListener = plugin.removePatchedListener(this, type, listener);
+        const wrappedListener = plugin.removePatchedListener(
+          this,
+          type,
+          listener
+        );
         if (wrappedListener) {
           return original.call(this, type, wrappedListener, useCapture);
         } else {
