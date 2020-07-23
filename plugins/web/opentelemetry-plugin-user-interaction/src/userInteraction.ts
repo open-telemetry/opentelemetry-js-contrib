@@ -239,8 +239,12 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
         listener: any,
         useCapture: any
       ) {
+        const once = useCapture && useCapture.once;
         const patchedListener = (...args: any[]) => {
           const target = this;
+          if (once) {
+            plugin.removePatchedListener(this, type, listener);
+          }
           const span = plugin._createSpan(target, 'click');
           if (span) {
             return plugin._tracer.withSpan(span, () => {

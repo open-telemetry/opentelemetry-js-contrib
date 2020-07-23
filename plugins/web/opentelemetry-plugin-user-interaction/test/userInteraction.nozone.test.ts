@@ -123,7 +123,7 @@ describe('UserInteractionPlugin', () => {
       assert.strictEqual(called, false);
     });
 
-    it('should only not double-register a listener', () => {
+    it('should not double-register a listener', () => {
       let callCount = 0;
       const listener = function () {
         callCount++;
@@ -138,6 +138,22 @@ describe('UserInteractionPlugin', () => {
       document.body.removeEventListener('bodyEvent', listener);
       document.body.dispatchEvent(new Event('bodyEvent'));
       assert.strictEqual(callCount, 0);
+    });
+
+    it('should handle once-only callbacks', () => {
+      let callCount = 0;
+      const listener = function () {
+        callCount++;
+      };
+      // addEventListener semantics treat the second call as a no-op
+      document.body.addEventListener('bodyEvent', listener, { once: true });
+      document.body.addEventListener('bodyEvent', listener); // considered a double-register
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 1);
+      // now that it's been dispatched once, it's been removed; should be able to re-add
+      document.body.addEventListener('bodyEvent', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 2);
     });
 
     it('should handle task without async operation', () => {
