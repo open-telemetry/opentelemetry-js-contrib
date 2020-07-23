@@ -89,6 +89,20 @@ describe('UserInteractionPlugin', () => {
       context.disable();
     });
 
+    it('should not break removeEventListener', () => {
+      let called = false;
+      const listener = function () {
+        called = true;
+      };
+      document.body.addEventListener('testEvent', listener);
+      document.body.dispatchEvent(new Event('testEvent'));
+      assert.strictEqual(called, true);
+      called = false;
+      document.body.removeEventListener('testEvent', listener);
+      document.body.dispatchEvent(new Event('testEvent'));
+      assert.strictEqual(called, false);
+    });
+
     it('should handle task without async operation', () => {
       fakeInteraction();
       assert.equal(exportSpy.args.length, 1, 'should export one span');
