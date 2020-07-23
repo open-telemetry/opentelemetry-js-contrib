@@ -170,12 +170,15 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     }
   }
 
+  /**
+   * Returns true iff we should use the patched callback; false if it's already been patched
+   */
   private addPatchedListener(
     on: HTMLElement,
     type: string,
     listener: Function,
     wrappedListener: Function
-  ) {
+  ): boolean {
     let listener2Type = this._wrappedListeners.get(listener);
     if (!listener2Type) {
       listener2Type = new Map();
@@ -186,9 +189,16 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
       element2patched = new Map();
       listener2Type.set(type, element2patched);
     }
+    if (element2patched.has(on)) {
+      return false;
+    }
     element2patched.set(on, wrappedListener);
+    return true;
   }
 
+  /**
+   * Returns the patched version of the callback (or undefined)
+   */
   private removePatchedListener(
     on: HTMLElement,
     type: string,
@@ -243,8 +253,9 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
             return listener.apply(target, args);
           }
         };
-        plugin.addPatchedListener(this, type, listener, patchedListener);
-        return original.call(this, type, patchedListener, useCapture);
+        if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
+          return original.call(this, type, patchedListener, useCapture);
+        }
       };
     };
   }
