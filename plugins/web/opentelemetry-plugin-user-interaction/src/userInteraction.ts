@@ -216,6 +216,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
       ) {
         const wrappedListener = plugin._wrappedListeners.get(listener);
         if (wrappedListener) {
+          plugin._wrappedListeners.delete(listener);
           return original.call(this, type, wrappedListener, useCapture);
         } else {
           return original.call(this, type, listener, useCapture);
