@@ -150,10 +150,15 @@ describe('UserInteractionPlugin', () => {
       document.body.addEventListener('bodyEvent', listener); // considered a double-register
       document.body.dispatchEvent(new Event('bodyEvent'));
       assert.strictEqual(callCount, 1);
-      // now that it's been dispatched once, it's been removed; should be able to re-add
+      // now that it's been dispatched once, it's been removed
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 1);
+      // should be able to re-add
       document.body.addEventListener('bodyEvent', listener);
       document.body.dispatchEvent(new Event('bodyEvent'));
       assert.strictEqual(callCount, 2);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 3);
     });
 
     it('should handle task without async operation', () => {
