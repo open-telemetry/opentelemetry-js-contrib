@@ -14,32 +14,54 @@
  * limitations under the License.
  */
 
- import * as React from 'react';
+import * as React from 'react';
 
- /*
+/*
  * method "render" from React.Component
  */
- export type RenderFunction = () => React.ReactNode;
+export type RenderFunction = () => React.ReactNode;
 
- /*
+/*
  * method "componentDidMount" from React.Component
  */
- export type ComponentDidMountFunction = (() => void) | undefined;
+export type ComponentDidMountFunction = (() => void) | undefined;
 
- /*
+/*
  * method "componentDidUpdate" from React.Component
  */
-export type ComponentDidUpdateFunction = ((prevProps: Readonly<{}>, prevState: Readonly<{}>, snapshot?: any) => void) | undefined;
+export type ComponentDidUpdateFunction =
+  | ((
+      prevProps: Readonly<any>,
+      prevState: Readonly<any>,
+      snapshot?: any
+    ) => void)
+  | undefined;
 
- /*
+/*
  * method "shouldComponentUpdate" from React.Component
  */
-export type ShouldComponentUpdateFunction = ((nextProps: Readonly<{}>, nextState: Readonly<{}>, nextContext: any) => boolean) | undefined;
+export type ShouldComponentUpdateFunction =
+  | ((
+      nextProps: Readonly<any>,
+      nextState: Readonly<any>,
+      nextContext: any
+    ) => boolean)
+  | undefined;
 
- /*
+/*
  * method "setState" from React.Component
  */
-export type SetStateFunction = <K extends never>(state: {} | ((prevState: Readonly<{}>, props: Readonly<{}>) => {} | Pick<{}, K> | null) | Pick<{}, K> | null, callback?: (() => void) | undefined) => void;
+export type SetStateFunction = <K extends never>(
+  state:
+    | any
+    | ((
+        prevState: Readonly<any>,
+        props: Readonly<any>
+      ) => any | Pick<any, K> | null)
+    | Pick<any, K>
+    | null,
+  callback?: (() => void) | undefined
+) => void;
 
 /*
  * method "setState" from React.Component
@@ -49,7 +71,9 @@ export type ForceUpdateFunction = (callback?: (() => void) | undefined) => void;
 /*
  * method "getSnapshotBeforeUpdate" from React.Component
  */
-export type GetSnapshotBeforeUpdateFunction = ((prevProps: Readonly<{}>, prevState: Readonly<{}>) => any) | undefined;
+export type GetSnapshotBeforeUpdateFunction =
+  | ((prevProps: Readonly<any>, prevState: Readonly<any>) => any)
+  | undefined;
 
 /*
  * method "componentWillUnmount" from React.Component

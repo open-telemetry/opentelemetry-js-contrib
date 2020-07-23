@@ -1,7 +1,7 @@
 import { BaseOpenTelemetryComponent } from '../../src';
 
 export default class MissingRender extends BaseOpenTelemetryComponent {
-    constructor(props: Readonly<{}>){
+    constructor(props: Readonly<any>){
         super(props);
     }
 
