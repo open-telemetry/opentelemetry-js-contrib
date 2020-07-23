@@ -48,7 +48,8 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   moduleName = this.component;
   private _spansData = new WeakMap<api.Span, SpanData>();
   private _zonePatched = false;
-  private _wrappedListeners = new WeakMap<Function, Function>();
+  // for addEventListener/removeEventListener state
+  private _wrappedListeners = new WeakMap<Function, Map<String, Map<HTMLElement, Function>>>();
 
   constructor() {
     super('@opentelemetry/plugin-user-interaction', VERSION);
@@ -166,6 +167,42 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     }
   }
 
+  private addPatchedListener(on: HTMLElement, type: String, listener: Function, wrappedListener: Function) {
+    let listener2Type = this._wrappedListeners.get(listener);
+    if (!listener2Type) {
+      listener2Type = new Map();
+      this._wrappedListeners.set(listener, listener2Type);
+    }
+    let element2patched = listener2Type.get(type);
+    if (!element2patched) {
+      element2patched = new Map();
+      listener2Type.set(type, element2patched);
+    }
+    element2patched.set(on, wrappedListener);
+  }
+
+  private removePatchedListener(on: HTMLElement, type: String, listener: Function) : Function|undefined {
+    let listener2Type = this._wrappedListeners.get(listener);
+    if (!listener2Type) {
+      return undefined;
+    }
+    let element2patched = listener2Type.get(type);
+    if (!element2patched) {
+      return undefined;
+    }
+    const patched = element2patched.get(on);
+    if (patched) {
+      element2patched.delete(on);
+      if (element2patched.size === 0) {
+        listener2Type.delete(type);
+        if (listener2Type.size === 0) {
+          this._wrappedListeners.delete(listener);
+        }
+      }
+    }
+    return patched;
+  }
+
   /**
    * This patches the addEventListener of HTMLElement to be able to
    * auto instrument the click events
@@ -194,7 +231,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
             return listener.apply(target, args);
           }
         };
-        plugin._wrappedListeners.set(listener, patchedListener);
+        plugin.addPatchedListener(this, type, listener, patchedListener);
         return original.call(this, type, patchedListener, useCapture);
       };
     };
@@ -214,9 +251,8 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
         listener: any,
         useCapture: any
       ) {
-        const wrappedListener = plugin._wrappedListeners.get(listener);
+        const wrappedListener = plugin.removePatchedListener(this, type, listener);
         if (wrappedListener) {
-          plugin._wrappedListeners.delete(listener);
           return original.call(this, type, wrappedListener, useCapture);
         } else {
           return original.call(this, type, listener, useCapture);

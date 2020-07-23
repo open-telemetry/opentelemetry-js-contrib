@@ -94,12 +94,32 @@ describe('UserInteractionPlugin', () => {
       const listener = function () {
         called = true;
       };
-      document.body.addEventListener('testEvent', listener);
-      document.body.dispatchEvent(new Event('testEvent'));
+      // add same listener three different ways
+      document.body.addEventListener('bodyEvent', listener);
+      document.body.addEventListener('bodyEvent2', listener);
+      document.addEventListener('docEvent', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
       assert.strictEqual(called, true);
       called = false;
-      document.body.removeEventListener('testEvent', listener);
-      document.body.dispatchEvent(new Event('testEvent'));
+      // Remove first callback, second type should still fire
+      document.body.removeEventListener('bodyEvent', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(called, false);
+      document.body.dispatchEvent(new Event('bodyEvent2'));
+      assert.strictEqual(called, true);
+      called = false;
+      // Remove doc callback, body 2 should still fire
+      document.removeEventListener('docEvent', listener);
+      document.dispatchEvent(new Event('docEvent'));
+      assert.strictEqual(called, false);
+      document.body.dispatchEvent(new Event('bodyEvent2'));
+      assert.strictEqual(called, true);
+      called = false;
+      // Finally, remove the last one and nothing should fire
+      document.body.removeEventListener('bodyEvent2', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      document.body.dispatchEvent(new Event('bodyEvent2'));
+      document.dispatchEvent(new Event('docEvent'));
       assert.strictEqual(called, false);
     });
 
