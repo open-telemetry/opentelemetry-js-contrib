@@ -188,7 +188,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         const startTime = hrTime();
         let spanHasEnded: boolean = false;
         // If we found anything that isnt a middleware, there no point of measuring
-        // stheir time ince they dont have callback.
+        // their time since they dont have callback.
         if (
           metadata.attributes[AttributeNames.EXPRESS_TYPE] !==
           ExpressLayerType.MIDDLEWARE
