@@ -39,7 +39,7 @@ interface ParentSpanData {
 
 const DEFAULT_PARENT_NAME = 'parent';
 /**
- * This class is the base component for a React component with lifecycle instumentation
+ * This class is the base component for a React component with lifecycle instrumentation
  */
 export class BaseOpenTelemetryComponent extends React.Component {
   readonly component: string = 'react-load';
@@ -63,8 +63,8 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * @param name Name of tracer
    * @param version Version of tracer, this is optional. When not provided it will use the latest.
    */
-  static setTracer(name: string, version?: string){
-    this._tracer = api.trace.getTracer(name, version ? version : VERSION)
+  static setTracer(name: string, version?: string) {
+    BaseOpenTelemetryComponent._tracer = api.trace.getTracer(name, version ? version : VERSION)
   }
 
   /**
@@ -72,7 +72,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * @param logger
    */
   static setLogger(logger: api.Logger){
-    this._logger = logger;
+    BaseOpenTelemetryComponent._logger = logger;
   }
 
    /**
@@ -103,10 +103,10 @@ export class BaseOpenTelemetryComponent extends React.Component {
   }
 
   /**
-   * Provides intrumentation for a function
+   * Provides instrumentation for a function
    * @param react React component currently instrumenting.
    * @param spanName Name to set the span of the instrumented function to.
-   * @param original Original function currently beign wrapped.
+   * @param original Original function currently being wrapped.
    * @parentName Name to set parent span to on error.
    */
   private _instrumentFunction(react: React.Component, spanName: string, original: Function){
@@ -170,7 +170,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
     let parentSpan: ParentSpanData | undefined = this._parentSpanMap.get(react);
     if (!parentSpan) {
       let span = this._createSpan(react, DEFAULT_PARENT_NAME);
-      if(span){
+      if(span) {
         this._parentSpanMap.set(react, {span, name: DEFAULT_PARENT_NAME});
       }
     }
