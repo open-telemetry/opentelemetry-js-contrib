@@ -48,6 +48,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   moduleName = this.component;
   private _spansData = new WeakMap<api.Span, SpanData>();
   private _zonePatched = false;
+  private _wrappedListeners = new WeakMap<Function, Function>();
 
   constructor() {
     super('@opentelemetry/plugin-user-interaction', VERSION);
@@ -193,7 +194,32 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
             return listener.apply(target, args);
           }
         };
+        plugin._wrappedListeners.set(listener, patchedListener);
         return original.call(this, type, patchedListener, useCapture);
+      };
+    };
+  }
+
+  /**
+   * This patches the removeEventListener of HTMLElement to handle the fact that
+   * we patched the original callbacks
+   * This is done when zone is not available
+   */
+  private _patchRemoveEventListener() {
+    const plugin = this;
+    return (original: Function) => {
+      return function removeEventListenerPatched(
+        this: HTMLElement,
+        type: any,
+        listener: any,
+        useCapture: any
+      ) {
+        const wrappedListener = plugin._wrappedListeners.get(listener);
+        if (wrappedListener) {
+          return original.call(this, type, wrappedListener, useCapture);
+        } else {
+          return original.call(this, type, listener, useCapture);
+        }
       };
     };
   }
@@ -434,10 +460,21 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
           'removing previous patch from method addEventListener'
         );
       }
+      if (isWrapped(HTMLElement.prototype.removeEventListener)) {
+        shimmer.unwrap(HTMLElement.prototype, 'removeEventListener');
+        this._logger.debug(
+          'removing previous patch from method removeEventListener'
+        );
+      }
       shimmer.wrap(
         HTMLElement.prototype,
         'addEventListener',
         this._patchElement()
+      );
+      shimmer.wrap(
+        HTMLElement.prototype,
+        'removeEventListener',
+        this._patchRemoveEventListener()
       );
     }
 
