@@ -48,6 +48,11 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   moduleName = this.component;
   private _spansData = new WeakMap<api.Span, SpanData>();
   private _zonePatched = false;
+  // for addEventListener/removeEventListener state
+  private _wrappedListeners = new WeakMap<
+    Function,
+    Map<string, Map<HTMLElement, Function>>
+  >();
 
   constructor() {
     super('@opentelemetry/plugin-user-interaction', VERSION);
@@ -166,6 +171,61 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   }
 
   /**
+   * Returns true iff we should use the patched callback; false if it's already been patched
+   */
+  private addPatchedListener(
+    on: HTMLElement,
+    type: string,
+    listener: Function,
+    wrappedListener: Function
+  ): boolean {
+    let listener2Type = this._wrappedListeners.get(listener);
+    if (!listener2Type) {
+      listener2Type = new Map();
+      this._wrappedListeners.set(listener, listener2Type);
+    }
+    let element2patched = listener2Type.get(type);
+    if (!element2patched) {
+      element2patched = new Map();
+      listener2Type.set(type, element2patched);
+    }
+    if (element2patched.has(on)) {
+      return false;
+    }
+    element2patched.set(on, wrappedListener);
+    return true;
+  }
+
+  /**
+   * Returns the patched version of the callback (or undefined)
+   */
+  private removePatchedListener(
+    on: HTMLElement,
+    type: string,
+    listener: Function
+  ): Function | undefined {
+    const listener2Type = this._wrappedListeners.get(listener);
+    if (!listener2Type) {
+      return undefined;
+    }
+    const element2patched = listener2Type.get(type);
+    if (!element2patched) {
+      return undefined;
+    }
+    const patched = element2patched.get(on);
+    if (patched) {
+      element2patched.delete(on);
+      if (element2patched.size === 0) {
+        listener2Type.delete(type);
+        if (listener2Type.size === 0) {
+          this._wrappedListeners.delete(listener);
+        }
+      }
+    }
+    return patched;
+  }
+
+  /**
    * This patches the addEventListener of HTMLElement to be able to
    * auto instrument the click events
    * This is done when zone is not available
@@ -179,8 +239,12 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
         listener: any,
         useCapture: any
       ) {
+        const once = useCapture && useCapture.once;
         const patchedListener = (...args: any[]) => {
           const target = this;
+          if (once) {
+            plugin.removePatchedListener(this, type, listener);
+          }
           const span = plugin._createSpan(target, 'click');
           if (span) {
             return plugin._tracer.withSpan(span, () => {
@@ -193,7 +257,37 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
             return listener.apply(target, args);
           }
         };
-        return original.call(this, type, patchedListener, useCapture);
+        if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
+          return original.call(this, type, patchedListener, useCapture);
+        }
+      };
+    };
+  }
+
+  /**
+   * This patches the removeEventListener of HTMLElement to handle the fact that
+   * we patched the original callbacks
+   * This is done when zone is not available
+   */
+  private _patchRemoveEventListener() {
+    const plugin = this;
+    return (original: Function) => {
+      return function removeEventListenerPatched(
+        this: HTMLElement,
+        type: any,
+        listener: any,
+        useCapture: any
+      ) {
+        const wrappedListener = plugin.removePatchedListener(
+          this,
+          type,
+          listener
+        );
+        if (wrappedListener) {
+          return original.call(this, type, wrappedListener, useCapture);
+        } else {
+          return original.call(this, type, listener, useCapture);
+        }
       };
     };
   }
@@ -434,10 +528,21 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
           'removing previous patch from method addEventListener'
         );
       }
+      if (isWrapped(HTMLElement.prototype.removeEventListener)) {
+        shimmer.unwrap(HTMLElement.prototype, 'removeEventListener');
+        this._logger.debug(
+          'removing previous patch from method removeEventListener'
+        );
+      }
       shimmer.wrap(
         HTMLElement.prototype,
         'addEventListener',
         this._patchElement()
+      );
+      shimmer.wrap(
+        HTMLElement.prototype,
+        'removeEventListener',
+        this._patchRemoveEventListener()
       );
     }
 

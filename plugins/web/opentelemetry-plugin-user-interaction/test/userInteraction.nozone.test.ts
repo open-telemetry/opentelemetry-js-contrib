@@ -89,6 +89,78 @@ describe('UserInteractionPlugin', () => {
       context.disable();
     });
 
+    it('should not break removeEventListener', () => {
+      let called = false;
+      const listener = function () {
+        called = true;
+      };
+      // add same listener three different ways
+      document.body.addEventListener('bodyEvent', listener);
+      document.body.addEventListener('bodyEvent2', listener);
+      document.addEventListener('docEvent', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(called, true);
+      called = false;
+      // Remove first callback, second type should still fire
+      document.body.removeEventListener('bodyEvent', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(called, false);
+      document.body.dispatchEvent(new Event('bodyEvent2'));
+      assert.strictEqual(called, true);
+      called = false;
+      // Remove doc callback, body 2 should still fire
+      document.removeEventListener('docEvent', listener);
+      document.dispatchEvent(new Event('docEvent'));
+      assert.strictEqual(called, false);
+      document.body.dispatchEvent(new Event('bodyEvent2'));
+      assert.strictEqual(called, true);
+      called = false;
+      // Finally, remove the last one and nothing should fire
+      document.body.removeEventListener('bodyEvent2', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      document.body.dispatchEvent(new Event('bodyEvent2'));
+      document.dispatchEvent(new Event('docEvent'));
+      assert.strictEqual(called, false);
+    });
+
+    it('should not double-register a listener', () => {
+      let callCount = 0;
+      const listener = function () {
+        callCount++;
+      };
+      // addEventListener semantics treat the second call as a no-op
+      document.body.addEventListener('bodyEvent', listener);
+      document.body.addEventListener('bodyEvent', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 1);
+      // now ensure remove still works
+      callCount = 0;
+      document.body.removeEventListener('bodyEvent', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 0);
+    });
+
+    it('should handle once-only callbacks', () => {
+      let callCount = 0;
+      const listener = function () {
+        callCount++;
+      };
+      // addEventListener semantics treat the second call as a no-op
+      document.body.addEventListener('bodyEvent', listener, { once: true });
+      document.body.addEventListener('bodyEvent', listener); // considered a double-register
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 1);
+      // now that it's been dispatched once, it's been removed
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 1);
+      // should be able to re-add
+      document.body.addEventListener('bodyEvent', listener);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 2);
+      document.body.dispatchEvent(new Event('bodyEvent'));
+      assert.strictEqual(callCount, 3);
+    });
+
     it('should handle task without async operation', () => {
       fakeInteraction();
       assert.equal(exportSpy.args.length, 1, 'should export one span');
