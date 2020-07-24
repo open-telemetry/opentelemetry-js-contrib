@@ -634,6 +634,81 @@ describe('ReactLoad Instrumentation', () => {
           });
         });
       });
+      
+      describe('AND component is unmounting', () => {
+        beforeEach(() => {
+          rootContainer = document.createElement("div");
+          document.body.appendChild(rootContainer);
+          var reactElement = React.createElement(component, null, null);
+          act(() => {
+            ReactDOM.render(reactElement, rootContainer);
+            ReactDOM.unmountComponentAtNode(rootContainer);
+          });
+        });
+
+        afterEach(() => {
+          document.body.removeChild(rootContainer);
+          rootContainer = null;
+        });
+        
+        it('should export spans render and componentDidMount as children', () => {
+          const componentWillUnmountSpan: ReadableSpan = exportSpy.args[3][0][0];
+          const unmountingSpan: ReadableSpan = exportSpy.args[4][0][0];
+
+          assert.equal(
+            unmountingSpan.parentSpanId, 
+            undefined, 
+            'unmounting span is should not have a parent'
+          );
+          assert.equal(
+            componentWillUnmountSpan.parentSpanId, 
+            unmountingSpan.spanContext.spanId, 
+            'componentWillUnmount span is not a child of the unmounting span'
+          );
+
+          assert.strictEqual(exportSpy.args.length, 5, `total number of spans is wrong`);
+        });
+
+        it('spans should have correct name', () => {
+          const componentWillUnmountSpan: ReadableSpan = exportSpy.args[3][0][0];
+          const unmountingSpan: ReadableSpan = exportSpy.args[4][0][0];
+
+          assert.equal(unmountingSpan.name, 'reactLoad: unmounting', 'unmounting span has wrong name');
+          assert.equal(componentWillUnmountSpan.name, 'componentWillUnmount', 'componentWillUnmount span has wrong name');
+        });
+
+        it('spans should have correct attributes', () => {
+          const spans: [] = exportSpy.args;
+          assert.strictEqual(spans.length, 5, 'number of spans is wrong');
+          spans.forEach(element => {
+            const span: ReadableSpan = element[0][0];
+            const attributes = span.attributes;
+            const keys = Object.keys(attributes);
+       
+            assert.ok(
+              attributes[keys[0]] !== '',
+              `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
+            );
+
+            assert.ok(
+              attributes[keys[1]] !== '',
+              `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
+            );
+
+            assert.ok(
+              attributes[keys[2]] !== '',
+              `attributes ${AttributeNames.REACT_NAME} is not defined for span "${span.name}"`
+            );
+
+            assert.ok(
+              attributes[keys[3]] !== '',
+              `attributes ${AttributeNames.REACT_STATE} is not defined for span "${span.name}"`
+            );
+
+            assert.strictEqual(keys.length, 4, `number of attributes is wrong for span "${span.name}"`);
+          });
+        });
+      });
     });
   });
 
