@@ -82,7 +82,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * Creates a new span as a child of the current parent span.
    * If parent span is undefined, just the child is created.
    * @param react React component currently being instrumented
-   * @param name name of span
+   * @param name Name of span
    */
   private _createSpanWithParent(
     react: React.Component,
@@ -97,7 +97,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
   /**
    * Creates a new span
    * @param react React component currently being instrumented
-   * @param name name of span
+   * @param name Name of span
    */
   private _createSpan(
     react: React.Component,
@@ -161,7 +161,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
     try {
       state = JSON.stringify(react.state);
     } catch {
-      state = 'state could not be turned into string';
+      state = '{"message": "state could not be turned into string"}';
     }
     return {
       [GeneralAttribute.COMPONENT]: this.moduleName,
