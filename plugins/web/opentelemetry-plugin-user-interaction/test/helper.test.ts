@@ -46,7 +46,7 @@ export function fakeInteraction(
 }
 
 export function assertClickSpan(span: tracing.ReadableSpan, id = 'testBtn') {
-  assert.equal(span.name, `event_click: //*[@id="${id}"]`);
+  assert.equal(span.name, 'click');
 
   const attributes = span.attributes;
   assert.equal(attributes.component, 'user-interaction');
