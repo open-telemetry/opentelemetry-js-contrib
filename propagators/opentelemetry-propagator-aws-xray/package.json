@@ -1,0 +1,76 @@
+{
+  "name": "opentelemetry-propagator-aws-xray",
+  "version": "0.9.0",
+  "description": "OpenTelemetry AWS Xray propagator provides HTTP header propagation for systems that are using AWS Xray HTTP header format.",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": "open-telemetry/opentelemetry-js",
+  "scripts": {
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts' --exclude 'test/index-webpack.ts'",
+    "test:browser": "nyc karma start --single-run",
+    "tdd": "npm run tdd:node",
+    "tdd:node": "npm run test -- --watch-extensions ts --watch",
+    "tdd:browser": "karma start",
+    "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
+    "clean": "rimraf build/*",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "precompile": "tsc --version",
+    "compile": "npm run version:update && tsc -p .",
+    "prepare": "npm run compile",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsc -w"
+  },
+  "keywords": [
+    "opentelemetry",
+    "nodejs",
+    "tracing",
+    "profiling",
+    "awsxray"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.d.ts",
+    "doc",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/mocha": "7.0.2",
+    "@types/node": "12.12.47",
+    "@types/sinon": "9.0.4",
+    "@types/webpack-env": "1.15.2",
+    "codecov": "3.7.1",
+    "gts": "2.0.2",
+    "istanbul-instrumenter-loader": "3.0.1",
+    "karma": "5.1.0",
+    "karma-chrome-launcher": "3.1.0",
+    "karma-coverage-istanbul-reporter": "3.0.3",
+    "karma-mocha": "2.0.1",
+    "karma-spec-reporter": "0.0.32",
+    "karma-webpack": "4.0.2",
+    "mocha": "6.2.3",
+    "nyc": "15.1.0",
+    "rimraf": "3.0.2",
+    "sinon": "9.0.2",
+    "ts-loader": "8.0.0",
+    "ts-mocha": "7.0.0",
+    "ts-node": "8.10.2",
+    "tslint-consistent-codestyle": "1.16.0",
+    "tslint-microsoft-contrib": "6.2.0",
+    "typescript": "3.9.6",
+    "webpack": "4.43.0"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^0.9.0",
+    "@opentelemetry/core": "^0.9.0"
+  }
+}
