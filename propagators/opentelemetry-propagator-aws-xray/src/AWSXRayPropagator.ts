@@ -38,14 +38,13 @@ const KV_DELIMITER = '=';
 
 const TRACE_ID_KEY = 'Root';
 const TRACE_ID_LENGTH = 35;
-const TRACE_ID_VERSION = "1";
+const TRACE_ID_VERSION = '1';
 const TRACE_ID_DELIMITER = '-';
 const TRACE_ID_DELIMITER_INDEX_1 = 1;
 const TRACE_ID_DELIMITER_INDEX_2 = 10;
 const TRACE_ID_FIRST_PART_LENGTH = 8;
 
 const PARENT_ID_KEY = 'Parent';
-// const PARENT_ID_LENGTH = 16;
 
 const SAMPLED_FLAG_KEY = 'Sampled';
 const SAMPLED_FLAG_LENGTH = 1;
@@ -58,46 +57,40 @@ const VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i;
  * Implementation of the AWS X-Ray Trace Header propagation protocol. See <a href=
  * https://https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-tracingheader>AWS
  * Tracing header spec</a>
- * 
+ *
  * An example AWS Xray Tracing Header is shown below:
  * X-Amzn-Trace-Id: Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1
  */
 export class AWSXRayPropagator implements HttpTextPropagator {
   inject(context: Context, carrier: unknown, setter: SetterFunction) {
     const spanContext = getParentSpanContext(context);
-    if (!spanContext) return;
-    if (!VALID_TRACEID_REGEX.test(spanContext.traceId) ||
-      !VALID_SPANID_REGEX.test(spanContext.spanId) ||
-      (spanContext.traceFlags !== TraceFlags.NONE &&
-        spanContext.traceFlags !== TraceFlags.SAMPLED)) return;
+    if (!spanContext || !isValid(spanContext)) return;
 
     const otTraceId = spanContext.traceId;
-    const xrayTraceId = TRACE_ID_VERSION
-      + TRACE_ID_DELIMITER
-      + otTraceId.substring(0, TRACE_ID_FIRST_PART_LENGTH)
-      + TRACE_ID_DELIMITER
-      + otTraceId.substring(TRACE_ID_FIRST_PART_LENGTH);
+    const xrayTraceId =
+      TRACE_ID_VERSION +
+      TRACE_ID_DELIMITER +
+      otTraceId.substring(0, TRACE_ID_FIRST_PART_LENGTH) +
+      TRACE_ID_DELIMITER +
+      otTraceId.substring(TRACE_ID_FIRST_PART_LENGTH);
     const parentId = spanContext.spanId;
-    const samplingFlag = spanContext.traceFlags? IS_SAMPLED: NOT_SAMPLED;
+    const samplingFlag = spanContext.traceFlags ? IS_SAMPLED : NOT_SAMPLED;
     // TODO: Add OT trace state to the X-Ray trace header
 
-    const traceHeader = TRACE_ID_KEY
-      + KV_DELIMITER
-      + xrayTraceId
-      + TRACE_HEADER_DELIMITER
-      + PARENT_ID_KEY
-      + KV_DELIMITER
-      + parentId
-      + TRACE_HEADER_DELIMITER
-      + SAMPLED_FLAG_KEY
-      + KV_DELIMITER
-      + samplingFlag;
+    const traceHeader =
+      TRACE_ID_KEY +
+      KV_DELIMITER +
+      xrayTraceId +
+      TRACE_HEADER_DELIMITER +
+      PARENT_ID_KEY +
+      KV_DELIMITER +
+      parentId +
+      TRACE_HEADER_DELIMITER +
+      SAMPLED_FLAG_KEY +
+      KV_DELIMITER +
+      samplingFlag;
 
-    setter(
-      carrier,
-      AWSXRAY_TRACE_ID_HEADER,
-      traceHeader
-    );
+    setter(carrier, AWSXRAY_TRACE_ID_HEADER, traceHeader);
   }
 
   extract(context: Context, carrier: unknown, getter: GetterFunction): Context {
@@ -106,17 +99,22 @@ export class AWSXRayPropagator implements HttpTextPropagator {
 
     return setExtractedSpanContext(context, spanContext);
   }
-  
-  private getSpanContextFromHeader(carrier: unknown, getter: GetterFunction): SpanContext {
+
+  private getSpanContextFromHeader(
+    carrier: unknown,
+    getter: GetterFunction
+  ): SpanContext {
     const traceHeader = getter(carrier, AWSXRAY_TRACE_ID_HEADER);
     // Only if the returned traceHeader is no empty string can be extracted
-    if (!traceHeader || typeof traceHeader !== 'string') return INVALID_SPAN_CONTEXT;
+    if (!traceHeader || typeof traceHeader !== 'string')
+      return INVALID_SPAN_CONTEXT;
 
-    let pos = 0, trimmedPart: string;
+    let pos = 0;
+    let trimmedPart: string;
     let parsedTraceId = INVALID_TRACE_ID;
     let parsedSpanId = INVALID_SPAN_ID;
     let parsedTraceFlags = null;
-    while(pos < traceHeader.length) {
+    while (pos < traceHeader.length) {
       const delimiterIndex = traceHeader.indexOf(TRACE_HEADER_DELIMITER, pos);
       if (delimiterIndex >= 0) {
         trimmedPart = traceHeader.substring(pos, delimiterIndex).trim();
@@ -148,7 +146,7 @@ export class AWSXRayPropagator implements HttpTextPropagator {
       spanId: parsedSpanId,
       traceFlags: parsedTraceFlags,
       isRemote: true,
-    }
+    };
     if (!isValid(resultSpanContext)) {
       return INVALID_SPAN_CONTEXT;
     }
@@ -167,34 +165,47 @@ export class AWSXRayPropagator implements HttpTextPropagator {
     }
 
     // Check delimiters
-    if (xrayTraceId.charAt(TRACE_ID_DELIMITER_INDEX_1) !== TRACE_ID_DELIMITER
-    || xrayTraceId.charAt(TRACE_ID_DELIMITER_INDEX_2) !== TRACE_ID_DELIMITER) {
+    if (
+      xrayTraceId.charAt(TRACE_ID_DELIMITER_INDEX_1) !== TRACE_ID_DELIMITER ||
+      xrayTraceId.charAt(TRACE_ID_DELIMITER_INDEX_2) !== TRACE_ID_DELIMITER
+    ) {
       return INVALID_TRACE_ID;
     }
 
-    const epochPart = xrayTraceId.substring(TRACE_ID_DELIMITER_INDEX_1 + 1, TRACE_ID_DELIMITER_INDEX_2);
-    const uniquePart = xrayTraceId.substring(TRACE_ID_DELIMITER_INDEX_2 + 1, TRACE_ID_LENGTH);
+    const epochPart = xrayTraceId.substring(
+      TRACE_ID_DELIMITER_INDEX_1 + 1,
+      TRACE_ID_DELIMITER_INDEX_2
+    );
+    const uniquePart = xrayTraceId.substring(
+      TRACE_ID_DELIMITER_INDEX_2 + 1,
+      TRACE_ID_LENGTH
+    );
     const resTraceId = epochPart + uniquePart;
 
     // Check the content of trace id
     if (!VALID_TRACEID_REGEX.test(resTraceId)) {
-      return INVALID_TRACE_ID
+      return INVALID_TRACE_ID;
     }
 
     return resTraceId;
   }
 
-  private _parseSpanId(xrayParentId: string): string{
-    return (VALID_SPANID_REGEX.test(xrayParentId))? xrayParentId: INVALID_SPAN_ID;
+  private _parseSpanId(xrayParentId: string): string {
+    return VALID_SPANID_REGEX.test(xrayParentId)
+      ? xrayParentId
+      : INVALID_SPAN_ID;
   }
 
   private _parseTraceFlag(xraySampledFlag: string): TraceFlags | null {
-    if (xraySampledFlag.length === SAMPLED_FLAG_LENGTH && xraySampledFlag === NOT_SAMPLED) {
+    if (
+      xraySampledFlag.length === SAMPLED_FLAG_LENGTH &&
+      xraySampledFlag === NOT_SAMPLED
+    ) {
       return TraceFlags.NONE;
-    } else if (xraySampledFlag === IS_SAMPLED) {
-      return TraceFlags.SAMPLED;
-    } else {
-      return null;
     }
+    if (xraySampledFlag === IS_SAMPLED) {
+      return TraceFlags.SAMPLED;
+    }
+    return null;
   }
 }
