@@ -1,0 +1,60 @@
+{
+  "name": "react-load-example",
+  "private": true,
+  "version": "0.9.0",
+  "description": "Example of using @opentelemetry/plugin-react-load in browser",
+  "main": "index.jsx",
+  "scripts": {
+    "start": "serve -s build",
+    "dev": "react-scripts start",
+    "build": "react-scripts build",
+    "clean": "rm -rf ../../node_modules" 
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "tracing",
+    "web",
+    "react"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.6.0",
+    "babel-loader": "^8.0.6",
+    "ts-loader": "^6.0.4"
+  },
+  "dependencies": {
+    "@opentelemetry/context-zone": "^0.9.0",
+    "@opentelemetry/core": "^0.9.0",
+    "@opentelemetry/tracing": "^0.9.0",
+    "@opentelemetry/web": "^0.9.0",
+    "@opentelemetry/plugin-react-load": "^0.8.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "^3.4.1",
+    "reactstrap": "^8.5.1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
