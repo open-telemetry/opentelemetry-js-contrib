@@ -40,7 +40,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
    */
   protected patch(): typeof koa {
     this._logger.debug('Patching Koa');
-    if (this._moduleExports === undefined || this._moduleExports === null) {
+    if (this._moduleExports == null) {
       return this._moduleExports;
     }
     this._logger.debug('Patching Koa.use');
@@ -95,10 +95,8 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
         pathStack[j] = this._patchLayer(routedMiddleware, true, path);
       }
     }
-    const dispatcher: KoaMiddleware = (context: KoaContext, next: koa.Next) => {
-      return dispatchLayer(context, next);
-    };
-    return dispatcher;
+
+    return dispatchLayer;
   }
 
   /**
