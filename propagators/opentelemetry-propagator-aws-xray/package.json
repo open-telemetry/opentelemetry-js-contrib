@@ -1,5 +1,5 @@
 {
-  "name": "opentelemetry-propagator-aws-xray",
+  "name": "@opentelemetry/propagator-aws-xray",
   "version": "0.9.0",
   "description": "OpenTelemetry AWS Xray propagator provides HTTP header propagation for systems that are using AWS Xray HTTP header format.",
   "main": "build/src/index.js",
