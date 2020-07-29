@@ -82,7 +82,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   /**
    * Controls whether or not to create a span, based on the event type.
    */
-  protected allowEventType(eventType: string): boolean {
+  protected _allowEventType(eventType: string): boolean {
     return eventType === 'click' || eventType === 'dblclick';
   }
   /**
@@ -100,7 +100,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     if (element.hasAttribute('disabled')) {
       return undefined;
     }
-    if (!this.allowEventType(eventName)) {
+    if (!this._allowEventType(eventName)) {
       return undefined;
     }
     const xpath = getElementXPath(element, true);
