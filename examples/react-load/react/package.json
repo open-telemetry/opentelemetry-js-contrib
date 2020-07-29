@@ -8,7 +8,7 @@
     "start": "serve -s build",
     "dev": "react-scripts start",
     "build": "react-scripts build",
-    "clean": "rm -rf ../../node_modules" 
+    "clean": "rm -rf ../../node_modules"
   },
   "repository": {
     "type": "git",
@@ -36,9 +36,9 @@
   "dependencies": {
     "@opentelemetry/context-zone": "^0.9.0",
     "@opentelemetry/core": "^0.9.0",
+    "@opentelemetry/plugin-react-load": "^0.8.0",
     "@opentelemetry/tracing": "^0.9.0",
     "@opentelemetry/web": "^0.9.0",
-    "@opentelemetry/plugin-react-load": "^0.8.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.2.0",

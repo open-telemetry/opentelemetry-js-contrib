@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "name": "react-load-preact-example",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "build": "preact build --no-prerender",
+    "start": "sirv build --port 8080 --cors --single"
+  },
+  "devDependencies": {
+    "identity-obj-proxy": "^3.0.0",
+    "preact-cli": "^3.0.0",
+    "preact-render-spy": "^1.2.1",
+    "sirv-cli": "1.0.3"
+  },
+  "dependencies": {
+    "@opentelemetry/context-zone": "^0.10.1",
+    "@opentelemetry/tracing": "^0.10.1",
+    "@opentelemetry/web": "^0.10.1",
+    "@opentelemetry/plugin-react-load": "^0.8.0",
+    "preact": "^10.3.2",
+    "preact-render-to-string": "^5.1.4",
+    "preact-router": "^3.2.1"
+  }
+}
