@@ -63,6 +63,7 @@
     "karma-webpack": "4.0.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
+    "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "rimraf": "3.0.2",
     "sinon": "9.0.2",
@@ -76,6 +77,9 @@
     "webpack-cli": "3.3.12",
     "webpack-merge": "4.2.2"
   },
+  "peerDependencies": {
+    "react": "^16.13.1"
+  },
   "dependencies": {
     "@opentelemetry/api": "^0.9.0",
     "@opentelemetry/context-zone": "^0.9.0",
@@ -83,7 +87,6 @@
     "@opentelemetry/semantic-conventions": "^0.9.0",
     "@opentelemetry/tracing": "^0.9.0",
     "@opentelemetry/web": "^0.9.0",
-    "react": "^16.13.1",
     "shimmer": "^1.2.1"
   }
 }

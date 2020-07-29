@@ -413,49 +413,49 @@ export class BaseOpenTelemetryComponent extends React.Component {
 
     if (isWrapped(this.render)) {
       shimmer.unwrap(this, 'render');
-      BaseOpenTelemetryComponent._logger.debug(
+      BaseOpenTelemetryComponent._logger.warn(
         'removing previous patch from method render'
       );
     }
     if (isWrapped(this.componentDidMount)) {
       shimmer.unwrap(this, 'componentDidMount');
-      BaseOpenTelemetryComponent._logger.debug(
+      BaseOpenTelemetryComponent._logger.warn(
         'removing previous patch from method componentDidMount'
       );
     }
     if (isWrapped(this.shouldComponentUpdate)) {
       shimmer.unwrap(this, 'shouldComponentUpdate');
-      BaseOpenTelemetryComponent._logger.debug(
+      BaseOpenTelemetryComponent._logger.warn(
         'removing previous patch from method shouldComponentUpdate'
       );
     }
     if (isWrapped(this.getSnapshotBeforeUpdate)) {
       shimmer.unwrap(this, 'getSnapshotBeforeUpdate');
-      BaseOpenTelemetryComponent._logger.debug(
+      BaseOpenTelemetryComponent._logger.warn(
         'removing previous patch from method getSnapshotBeforeUpdate'
       );
     }
     if (isWrapped(this.setState)) {
       shimmer.unwrap(this, 'setState');
-      BaseOpenTelemetryComponent._logger.debug(
+      BaseOpenTelemetryComponent._logger.warn(
         'removing previous patch from method setState'
       );
     }
     if (isWrapped(this.forceUpdate)) {
       shimmer.unwrap(this, 'forceUpdate');
-      BaseOpenTelemetryComponent._logger.debug(
+      BaseOpenTelemetryComponent._logger.warn(
         'removing previous patch from method forceUpdate'
       );
     }
     if (isWrapped(this.componentDidUpdate)) {
       shimmer.unwrap(this, 'componentDidUpdate');
-      BaseOpenTelemetryComponent._logger.debug(
+      BaseOpenTelemetryComponent._logger.warn(
         'removing previous patch from method componentDidUpdate'
       );
     }
     if (isWrapped(this.componentWillUnmount)) {
       shimmer.unwrap(this, 'componentWillUnmount');
-      BaseOpenTelemetryComponent._logger.debug(
+      BaseOpenTelemetryComponent._logger.warn(
         'removing previous patch from method componentWillUnmount'
       );
     }
