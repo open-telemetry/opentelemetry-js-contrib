@@ -83,7 +83,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
    * Controls whether or not to create a span, based on the event type.
    */
   protected _allowEventType(eventType: string): boolean {
-    return eventType === 'click' || eventType === 'dblclick';
+    return eventType === 'click';
   }
   /**
    * Creates a new span
