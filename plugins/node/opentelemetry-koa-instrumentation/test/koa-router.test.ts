@@ -118,5 +118,97 @@ describe('Koa Instrumentation - Router Tests', () => {
       });
       server.close();
     });
+
+    it('should correctly instrument nested routers', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const app = new koa();
+      app.use((ctx, next) => tracer.withSpan(rootSpan, next));
+
+      const router = new KoaRouter();
+      const nestedRouter = new KoaRouter();
+      nestedRouter.get('/post/:id', ctx => {
+        ctx.body = `Post id: ${ctx.params.id}`;
+      });
+
+      router.use('/:first', nestedRouter.routes());
+      app.use(router.routes());
+
+      const server = http.createServer(app.callback());
+      await new Promise(resolve => server.listen(0, resolve));
+      const port = (server.address() as AddressInfo).port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await tracer.withSpan(rootSpan, async () => {
+        await httpRequest.get(`http://localhost:${port}/test/post/0`);
+        rootSpan.end();
+
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+        const requestHandlerSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name.includes('router - /:first/post/:id'));
+        assert.notStrictEqual(requestHandlerSpan, undefined);
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+          KoaLayerType.ROUTER
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
+          '/:first/post/:id'
+        );
+
+        const exportedRootSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name === 'rootSpan');
+        assert.notStrictEqual(exportedRootSpan, undefined);
+      });
+      server.close();
+    });
+
+    it('should correctly instrument prefixed routers', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const app = new koa();
+      app.use((ctx, next) => tracer.withSpan(rootSpan, next));
+
+      const router = new KoaRouter();
+      router.get('/post/:id', ctx => {
+        ctx.body = `Post id: ${ctx.params.id}`;
+      });
+      router.prefix('/:first');
+      app.use(router.routes());
+
+      const server = http.createServer(app.callback());
+      await new Promise(resolve => server.listen(0, resolve));
+      const port = (server.address() as AddressInfo).port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await tracer.withSpan(rootSpan, async () => {
+        await httpRequest.get(`http://localhost:${port}/test/post/0`);
+        rootSpan.end();
+
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+        const requestHandlerSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name.includes('router - /:first/post/:id'));
+        assert.notStrictEqual(requestHandlerSpan, undefined);
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+          KoaLayerType.ROUTER
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
+          '/:first/post/:id'
+        );
+
+        const exportedRootSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name === 'rootSpan');
+        assert.notStrictEqual(exportedRootSpan, undefined);
+      });
+      server.close();
+    });
   });
 });
