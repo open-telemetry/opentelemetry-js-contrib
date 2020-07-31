@@ -69,4 +69,6 @@ Since the example adds in a delay to the request, we can see that reflected in t
 
 # LICENSE
 
-Apache License 2.0
+Apache 2.0 - See [LICENSE][license-url] for more information.
+
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
