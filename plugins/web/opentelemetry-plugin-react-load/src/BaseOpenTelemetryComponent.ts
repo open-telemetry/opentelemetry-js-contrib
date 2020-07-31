@@ -43,7 +43,6 @@ const DEFAULT_PARENT_NAME = 'parent';
  */
 export class BaseOpenTelemetryComponent extends React.Component {
   readonly component: string = 'react-load';
-  readonly version: string = '1';
   moduleName = this.component;
   private _parentSpanMap: WeakMap<React.Component, ParentSpanData>;
   private static _tracer: api.Tracer;
@@ -408,7 +407,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
     BaseOpenTelemetryComponent._logger.debug(
       'applying patch to',
       this.moduleName,
-      this.version
+      VERSION
     );
 
     if (isWrapped(this.render)) {
@@ -521,7 +520,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
     BaseOpenTelemetryComponent._logger.debug(
       'removing patch from',
       this.moduleName,
-      this.version
+      VERSION
     );
 
     shimmer.unwrap(this, 'render');
