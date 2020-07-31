@@ -34,7 +34,6 @@ import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
-const EVENT_CLICK_NAME = 'event_click:';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
 
 /**
@@ -81,6 +80,12 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   }
 
   /**
+   * Controls whether or not to create a span, based on the event type.
+   */
+  protected _allowEventType(eventType: string): boolean {
+    return eventType === 'click';
+  }
+  /**
    * Creates a new span
    * @param element
    * @param eventName
@@ -95,9 +100,12 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     if (element.hasAttribute('disabled')) {
       return undefined;
     }
+    if (!this._allowEventType(eventName)) {
+      return undefined;
+    }
     const xpath = getElementXPath(element, true);
     try {
-      const span = this._tracer.startSpan(`${EVENT_CLICK_NAME} ${xpath}`, {
+      const span = this._tracer.startSpan(eventName, {
         attributes: {
           [AttributeNames.COMPONENT]: this.component,
           [AttributeNames.EVENT_TYPE]: eventName,
@@ -145,17 +153,6 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
       return context.getValue(ACTIVE_SPAN_KEY) as api.Span;
     }
     return context;
-  }
-
-  /**
-   * It gets the element that has been clicked when zone tries to run a new task
-   * @param task
-   */
-  private _getClickedElement(task: AsyncTask): HTMLElement | undefined {
-    if (task.eventName === 'click') {
-      return task.target;
-    }
-    return undefined;
   }
 
   /**
@@ -245,7 +242,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
           if (once) {
             plugin.removePatchedListener(this, type, listener);
           }
-          const span = plugin._createSpan(target, 'click');
+          const span = plugin._createSpan(target, type);
           if (span) {
             return plugin._tracer.withSpan(span, () => {
               const result = listener.apply(target, args);
@@ -405,11 +402,11 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
         applyThis?: any,
         applyArgs?: any
       ): Zone {
-        const target: HTMLElement | undefined = plugin._getClickedElement(task);
+        const target: HTMLElement | undefined = task.target;
         let span: api.Span | undefined;
         const activeZone = this;
         if (target) {
-          span = plugin._createSpan(target, 'click');
+          span = plugin._createSpan(target, task.eventName);
           if (span) {
             plugin._incrementTask(span);
             return activeZone.run(() => {
@@ -568,6 +565,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
       shimmer.unwrap(ZoneWithPrototype.prototype, 'cancelTask');
     } else {
       shimmer.unwrap(HTMLElement.prototype, 'addEventListener');
+      shimmer.unwrap(HTMLElement.prototype, 'removeEventListener');
     }
     this._unpatchHistoryApi();
   }

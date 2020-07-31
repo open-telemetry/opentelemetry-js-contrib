@@ -368,6 +368,11 @@ describe('UserInteractionPlugin', () => {
         true,
         'addEventListener should be wrapped'
       );
+      assert.strictEqual(
+        isWrapped(HTMLElement.prototype.removeEventListener),
+        true,
+        'removeEventListener should be wrapped'
+      );
 
       assert.strictEqual(
         isWrapped(history.replaceState),
@@ -397,6 +402,11 @@ describe('UserInteractionPlugin', () => {
         isWrapped(HTMLElement.prototype.addEventListener),
         false,
         'addEventListener should be unwrapped'
+      );
+      assert.strictEqual(
+        isWrapped(HTMLElement.prototype.removeEventListener),
+        false,
+        'removeEventListener should be unwrapped'
       );
 
       assert.strictEqual(
