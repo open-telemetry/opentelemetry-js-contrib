@@ -156,7 +156,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * @param react React component currently being instrumented
    **/
   private _getAttributes(react: React.Component) {
-    let state = '';
+    let state: string;
     try {
       state = JSON.stringify(react.state);
     } catch {
