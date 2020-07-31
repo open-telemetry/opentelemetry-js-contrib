@@ -18,26 +18,6 @@ npm run build
 npm start
 ```
 
-If building the app spits out an error like:
-```
-There might be a problem with the project dependency tree.
-It is likely not a bug in Create React App, but something you need to fix locally.
-
-The react-scripts package provided by Create React App requires a dependency:
-
-  "eslint": "^6.6.0"
-
-Don't try to install it manually: your package manager does it automatically.
-However, a different version of eslint was detected higher up in the tree:
-...
-```
-
-then fix the dependency issue by running:
-```
-# from this directory
-npm run clean
-```
-
 By default, the application runs on port 5000.
 
 
@@ -64,11 +44,13 @@ Since the example adds in a delay to the request, we can see that reflected in t
 
 
 # Useful links
-- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-node>
+- For more information on OpenTelemetry, visit: [opentelemetry.io][otel]
+- For more information on OpenTelemetry for Node.js, visit: [@opentelemetry/node][otel-node]
 
 # LICENSE
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
+[otel]: https://opentelemetry.io/
+[otel-node]: https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-node

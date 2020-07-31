@@ -40,9 +40,13 @@ After a few seconds (when the request is fulfilled):
 
 
 # Useful links
-- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-node>
+- For more information on OpenTelemetry, visit: [opentelemetry.io][otel]
+- For more information on OpenTelemetry for Node.js, visit: [@opentelemetry/node][otel-node]
 
 # LICENSE
 
-Apache License 2.0
+Apache 2.0 - See [LICENSE][license-url] for more information.
+
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
+[otel]: https://opentelemetry.io/
+[otel-node]: https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-node
