@@ -12,6 +12,13 @@ npm install
 ```
 
 # Run the example
+Run docker
+```
+# from this directory
+npm run docker:start
+```
+
+Run app
 ```
 # from this directory
 npm run build
@@ -20,23 +27,29 @@ npm start
 
 By default, the application runs on port 8080.
 
+Open Zipkin page at http://localhost:9411/zipkin/ - you should be able to see the spans in zipkin
 
 ## Screenshots of traces
 Take note of the parent-child relationships.
 ### First load
 Upon loading, http://localhost:8080 mounting spans will be exported
 <p align="center"><img src="./images/mounting.png?raw=true"/></p>
+<p align="center"><img src="./images/zipkin-mounting.png?raw=true"/></p>
 
 ### Pressing 'Enter'
 Here we can see the previous component unmounting and the new component mounting.
 <p align="center"><img src="./images/redirect.png?raw=true"/></p>
+<p align="center"><img src="./images/zipkin-redirect.png?raw=true"/></p>
+<p align="center"><img src="./images/zipkin-redirect2.png?raw=true"/></p>
 
 ### Pressing 'Make Request'
 While in loading state:
 <p align="center"><img src="./images/updating.png?raw=true"/></p>
+<p align="center"><img src="./images/zipkin-updating.png?raw=true"/></p>
 
 After a few seconds (when the request is fulfilled):
 <p align="center"><img src="./images/updating2.png?raw=true"/></p>
+<p align="center"><img src="./images/zipkin-updating2.png?raw=true"/></p>
 
 
 # Useful links

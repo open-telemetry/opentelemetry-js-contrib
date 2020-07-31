@@ -6,6 +6,9 @@
   "main": "index.js",
   "scripts": {
     "build": "preact build --no-prerender",
+    "docker:start": "cd ./docker && docker-compose down && docker-compose up",
+    "docker:startd": "cd ./docker && docker-compose down && docker-compose up -d",
+    "docker:stop": "cd ./docker && docker-compose down",
     "start": "sirv build --port 8080 --cors --single"
   },
   "repository": {
@@ -35,6 +38,7 @@
   },
   "dependencies": {
     "@opentelemetry/context-zone": "^0.10.1",
+    "@opentelemetry/exporter-collector": "^0.10.1",
     "@opentelemetry/plugin-react-load": "^0.8.0",
     "@opentelemetry/tracing": "^0.10.1",
     "@opentelemetry/web": "^0.10.1",
