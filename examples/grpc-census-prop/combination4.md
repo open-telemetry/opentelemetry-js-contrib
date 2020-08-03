@@ -10,7 +10,7 @@ Note: traceId **901c68f681e5a85a125b3dad82e51498**
 ```
 $ npm run client:otel:binprop
 
-> grpc-census-prop-example@0.8.0 client:otel:binprop /opentelemetry-js-contrib/examples/grpc-census-prop
+> grpc-census-prop-example@0.9.0 client:otel:binprop /opentelemetry-js-contrib/examples/grpc-census-prop
 > cross-env BINARY_PROPAGATOR=true node ./capitalize_client.js
 
 PluginLoader#load: trying to load grpc@1.24.2
@@ -53,7 +53,7 @@ Note: traceId **901c68f681e5a85a125b3dad82e51498**
 ```
 $ npm run server:census
 
-> grpc-census-prop-example@0.8.0 server:census /opentelemetry-js-contrib/examples/grpc-census-prop
+> grpc-census-prop-example@0.9.0 server:census /opentelemetry-js-contrib/examples/grpc-census-prop
 > cross-env CENSUS_TRACER=true node ./capitalize_server.js
 
 Metadata {
