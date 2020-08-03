@@ -292,7 +292,6 @@ describe('UserInteractionPlugin', () => {
             assertClickSpan(spanClick);
 
             const attributes = spanXhr.attributes;
-            assert.equal(attributes.component, 'xml-http-request');
             assert.equal(
               attributes['http.url'],
               'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/package.json'

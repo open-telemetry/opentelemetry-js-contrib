@@ -28,11 +28,11 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.8.3",
-    "@opentelemetry/exporter-jaeger": "^0.8.3",
-    "@opentelemetry/node": "^0.8.3",
+    "@opentelemetry/api": "^0.10.1",
+    "@opentelemetry/exporter-jaeger": "^0.10.1",
+    "@opentelemetry/node": "^0.10.1",
     "@opentelemetry/plugin-ioredis": "^0.8.0",
-    "@opentelemetry/tracing": "^0.8.3",
+    "@opentelemetry/tracing": "^0.10.1",
     "ioredis": "^4.14.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme"
