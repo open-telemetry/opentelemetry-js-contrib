@@ -1,6 +1,6 @@
 {
   "name": "grpc-dynamic-codegen-example",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Example of gRPC integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {

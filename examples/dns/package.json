@@ -1,7 +1,7 @@
 {
   "name": "dns-example",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Example of DNS integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -30,7 +30,7 @@
     "@opentelemetry/exporter-jaeger": "^0.10.1",
     "@opentelemetry/exporter-zipkin": "^0.10.1",
     "@opentelemetry/node": "^0.10.1",
-    "@opentelemetry/plugin-dns": "^0.8.0",
+    "@opentelemetry/plugin-dns": "^0.9.0",
     "@opentelemetry/tracing": "^0.10.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
