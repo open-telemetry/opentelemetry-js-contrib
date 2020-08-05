@@ -26,7 +26,10 @@ import {
 import * as assert from 'assert';
 import * as redisTypes from 'redis';
 import { plugin, RedisPlugin } from '../src';
-import { AttributeNames } from '../src/enums';
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -38,10 +41,10 @@ const CONFIG = {
 const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
-  [AttributeNames.COMPONENT]: RedisPlugin.COMPONENT,
-  [AttributeNames.PEER_HOSTNAME]: CONFIG.host,
-  [AttributeNames.PEER_PORT]: CONFIG.port,
-  [AttributeNames.PEER_ADDRESS]: URL,
+  [DatabaseAttribute.DB_SYSTEM]: RedisPlugin.COMPONENT,
+  [GeneralAttribute.NET_PEER_HOSTNAME]: CONFIG.host,
+  [GeneralAttribute.NET_PEER_PORT]: CONFIG.port,
+  [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
 
 const okStatus: Status = {
@@ -172,7 +175,7 @@ describe('redis@2.x', () => {
         it(`should create a child span for ${operation.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [AttributeNames.DB_STATEMENT]: operation.command,
+            [DatabaseAttribute.DB_STATEMENT]: operation.command,
           };
           const span = tracer.startSpan('test span');
           tracer.withSpan(span, () => {
