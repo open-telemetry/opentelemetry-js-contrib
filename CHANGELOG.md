@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.9.0
+
+#### :rocket: (Enhancement)
+* [#162](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/162) chore: clean up span naming ([@johnbley](https://github.com/johnbley))
+* [#165](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/165) chore: bump opentelemetry core dependencies ([@dyladan](https://github.com/dyladan))
+
+#### :bug: (Bug Fix)
+* [#158](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/158) fix: patch removeEventListener to properly remove patched callbacks ([@johnbley](https://github.com/johnbley))
+
+#### Committers: 10
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- John Bley ([@johnbley](https://github.com/johnbley))
+- Mark Wolff ([@markwolff](https://github.com/markwolff))
+- Mayur Kale ([@mayurkale22](https://github.com/mayurkale22))
+- Naseem ([@naseemkullah](https://github.com/naseemkullah))
+- Niall Kelly ([@nkelly75](https://github.com/nkelly75))
+- Shivkanya Andhare ([@shivkanya9146](https://github.com/shivkanya9146))
+- Valentin Marchaud ([@vmarchaud](https://github.com/vmarchaud))
+- [@rezakrimi](https://github.com/rezakrimi)
+
 ## 0.8.0 (`@opentelemetry/propagator-grpc-census-binary`)
 
 #### :rocket: (Enhancement)
