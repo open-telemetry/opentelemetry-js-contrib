@@ -13,4 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const VERSION = '0.8.0';
+export const VERSION = '0.9.0';
