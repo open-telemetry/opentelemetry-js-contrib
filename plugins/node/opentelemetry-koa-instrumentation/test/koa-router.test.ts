@@ -58,25 +58,34 @@ describe('Koa Instrumentation - Router Tests', () => {
   provider.addSpanProcessor(spanProcessor);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
+  let app: koa;
+  let server: http.Server;
+  let port: number;
 
   before(() => {
     plugin.enable(koa, provider, logger);
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
+
+    app = new koa();
+    server = http.createServer(app.callback());
+    await new Promise(resolve => server.listen(0, resolve));
+    port = (server.address() as AddressInfo).port;
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
   afterEach(() => {
     memoryExporter.reset();
     context.disable();
+    server.close();
   });
 
   describe('Instrumenting @koa/router calls', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const app = new koa();
       app.use((ctx, next) => tracer.withSpan(rootSpan, next));
 
       const router = new KoaRouter();
@@ -85,11 +94,6 @@ describe('Koa Instrumentation - Router Tests', () => {
       });
 
       app.use(router.routes());
-
-      const server = http.createServer(app.callback());
-      await new Promise(resolve => server.listen(0, resolve));
-      const port = (server.address() as AddressInfo).port;
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}/post/0`);
@@ -116,12 +120,10 @@ describe('Koa Instrumentation - Router Tests', () => {
           .find(span => span.name === 'rootSpan');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
-      server.close();
     });
 
     it('should correctly instrument nested routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const app = new koa();
       app.use((ctx, next) => tracer.withSpan(rootSpan, next));
 
       const router = new KoaRouter();
@@ -133,11 +135,6 @@ describe('Koa Instrumentation - Router Tests', () => {
       router.use('/:first', nestedRouter.routes());
       app.use(router.routes());
 
-      const server = http.createServer(app.callback());
-      await new Promise(resolve => server.listen(0, resolve));
-      const port = (server.address() as AddressInfo).port;
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}/test/post/0`);
         rootSpan.end();
@@ -163,12 +160,10 @@ describe('Koa Instrumentation - Router Tests', () => {
           .find(span => span.name === 'rootSpan');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
-      server.close();
     });
 
     it('should correctly instrument prefixed routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const app = new koa();
       app.use((ctx, next) => tracer.withSpan(rootSpan, next));
 
       const router = new KoaRouter();
@@ -178,11 +173,6 @@ describe('Koa Instrumentation - Router Tests', () => {
       router.prefix('/:first');
       app.use(router.routes());
 
-      const server = http.createServer(app.callback());
-      await new Promise(resolve => server.listen(0, resolve));
-      const port = (server.address() as AddressInfo).port;
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}/test/post/0`);
         rootSpan.end();
@@ -208,7 +198,6 @@ describe('Koa Instrumentation - Router Tests', () => {
           .find(span => span.name === 'rootSpan');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
-      server.close();
     });
   });
 });

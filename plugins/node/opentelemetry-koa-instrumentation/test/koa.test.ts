@@ -56,19 +56,29 @@ describe('Koa Instrumentation - Core Tests', () => {
   provider.addSpanProcessor(spanProcessor);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
+  let app: koa;
+  let server: http.Server;
+  let port: number;
 
   before(() => {
     plugin.enable(koa, provider, logger);
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
+
+    app = new koa();
+    server = http.createServer(app.callback());
+    await new Promise(resolve => server.listen(0, resolve));
+    port = (server.address() as AddressInfo).port;
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
   afterEach(() => {
     memoryExporter.reset();
     context.disable();
+    server.close();
   });
 
   const simpleResponse: koa.Middleware = async (ctx, next) => {
@@ -93,15 +103,9 @@ describe('Koa Instrumentation - Core Tests', () => {
   describe('Instrumenting core middleware calls', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const app = new koa();
       app.use((ctx, next) => tracer.withSpan(rootSpan, next));
       app.use(customMiddleware);
       app.use(simpleResponse);
-
-      const server = http.createServer(app.callback());
-      await new Promise(resolve => server.listen(0, resolve));
-      const port = (server.address() as AddressInfo).port;
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}`);
@@ -134,34 +138,21 @@ describe('Koa Instrumentation - Core Tests', () => {
           .find(span => span.name === 'rootSpan');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
-      server.close();
     });
 
     it('should not create span if there is no parent span', async () => {
-      const app = new koa();
       app.use(customMiddleware);
       app.use(simpleResponse);
 
-      const server = http.createServer(app.callback());
-      await new Promise(resolve => server.listen(0, resolve));
-      const port = (server.address() as AddressInfo).port;
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       const res = await httpRequest.get(`http://localhost:${port}`);
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       assert.strictEqual(res, 'test');
-      server.close();
     });
 
     it('should handle async middleware functions', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const app = new koa();
       app.use((ctx, next) => tracer.withSpan(rootSpan, next));
       app.use(asyncMiddleware);
-
-      const server = http.createServer(app.callback());
-      await new Promise(resolve => server.listen(0, resolve));
-      const port = (server.address() as AddressInfo).port;
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}`);
@@ -182,7 +173,6 @@ describe('Koa Instrumentation - Core Tests', () => {
           .find(span => span.name === 'rootSpan');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
-      server.close();
     });
   });
 
@@ -190,19 +180,14 @@ describe('Koa Instrumentation - Core Tests', () => {
     it('should not create new spans', async () => {
       plugin.disable();
       const rootSpan = tracer.startSpan('rootSpan');
-      const app = new koa();
       app.use(customMiddleware);
-      const server = http.createServer(app.callback());
-      await new Promise(resolve => server.listen(0, resolve));
-      const port = (server.address() as AddressInfo).port;
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}`);
         rootSpan.end();
         assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 1);
         assert.notStrictEqual(memoryExporter.getFinishedSpans()[0], undefined);
       });
-      server.close();
     });
   });
 });
