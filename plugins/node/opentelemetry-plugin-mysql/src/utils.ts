@@ -16,7 +16,8 @@
 
 import { Attributes } from '@opentelemetry/api';
 import { AttributeNames } from './enums';
-import { ConnectionConfig, Query } from './types';
+import { Query } from './types';
+import { ConnectionConfig, PoolActualConfig } from 'mysql';
 
 /**
  * Get a span name from a mysql query
@@ -49,7 +50,7 @@ function getCommand(query: string | Query) {
  *
  * @param config ConnectionConfig
  */
-export function getConnectionAttributes(config: ConnectionConfig): Attributes {
+export function getConnectionAttributes(config: ConnectionConfig | PoolActualConfig): Attributes {
   const { host, port, database, user } = getConfig(config);
 
   return {
