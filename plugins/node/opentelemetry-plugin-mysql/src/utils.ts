@@ -50,7 +50,9 @@ function getCommand(query: string | Query) {
  *
  * @param config ConnectionConfig
  */
-export function getConnectionAttributes(config: ConnectionConfig | PoolActualConfig): Attributes {
+export function getConnectionAttributes(
+  config: ConnectionConfig | PoolActualConfig
+): Attributes {
   const { host, port, database, user } = getConfig(config);
 
   return {
