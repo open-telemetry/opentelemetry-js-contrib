@@ -262,6 +262,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
   private _wrapRegisterHandler<T>(plugin: Hapi.Plugin<T>): void {
     const instrumentation = this;
     const pluginName = getPluginName(plugin);
+    const oldHandler = plugin.register;
     const newRegisterHandler = async function (
       server: Hapi.Server,
       options: T
@@ -278,7 +279,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
           pluginName
         );
       });
-      return await plugin.register(server, options);
+      return await oldHandler(server, options);
     };
     plugin.register = newRegisterHandler;
   }
