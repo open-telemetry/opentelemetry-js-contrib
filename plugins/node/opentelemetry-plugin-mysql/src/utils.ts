@@ -17,7 +17,7 @@
 import { Attributes } from '@opentelemetry/api';
 import { AttributeNames } from './enums';
 import { Query } from './types';
-import { ConnectionConfig, PoolActualConfig } from 'mysql';
+import type { ConnectionConfig, PoolActualConfig } from 'mysql';
 
 /**
  * Get a span name from a mysql query
