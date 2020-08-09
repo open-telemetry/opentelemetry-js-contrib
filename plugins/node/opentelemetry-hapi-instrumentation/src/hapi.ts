@@ -133,7 +133,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
   ): RegisterFunction<T> {
     const instrumentation = this;
     this._logger.debug('Patching Hapi.Server register function');
-    return async function register(
+    return function register(
       this: Hapi.Server,
       pluginInput: HapiPluginInput<T>,
       options?: Hapi.ServerRegisterOptions
@@ -145,7 +145,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       } else {
         instrumentation._wrapRegisterHandler(pluginInput.plugin);
       }
-      await original.call(this, pluginInput, options);
+      return original.call(this, pluginInput, options);
     };
   }
 
@@ -166,7 +166,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
   ) {
     const instrumentation = this;
     this._logger.debug('Patching Hapi.Server ext function');
-    return async function ext(
+    return function ext(
       this: Hapi.Server,
       ...args: Parameters<typeof original>
     ) {
@@ -210,7 +210,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
           args[1] = instrumentation._wrapExtMethods(method, type, pluginName);
         }
       }
-      await original.apply(this, args);
+      return original.apply(this, args);
     };
   }
 
@@ -249,7 +249,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
           pluginName
         );
       }
-      original.apply(this, [route]);
+      return original.apply(this, [route]);
     };
   }
 
@@ -263,7 +263,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     const instrumentation = this;
     const pluginName = getPluginName(plugin);
     const oldHandler = plugin.register;
-    const newRegisterHandler = async function (
+    const newRegisterHandler = function (
       server: Hapi.Server,
       options: T
     ) {
@@ -279,7 +279,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
           pluginName
         );
       });
-      return await oldHandler(server, options);
+      return oldHandler(server, options);
     };
     plugin.register = newRegisterHandler;
   }

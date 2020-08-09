@@ -27,7 +27,7 @@ import * as hapi from '@hapi/hapi';
 import { plugin } from '../src';
 import { AttributeNames, HapiLayerType } from '../src/types';
 
-describe('Hapi Instrumentation - Plugin Tests', () => {
+describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
   const logger = new NoopLogger();
   const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
