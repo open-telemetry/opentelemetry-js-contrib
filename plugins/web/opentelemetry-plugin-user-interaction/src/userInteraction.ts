@@ -245,7 +245,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
         const patchedListener = (...args: any[]) => {
           const target = this;
           let parentSpan: Span | undefined;
-          const event: Event = args.length > 0 ? args[0] : undefined;
+          const event: Event | undefined = args[0];
           if (event) {
             parentSpan = plugin._event2span.get(event);
           }
