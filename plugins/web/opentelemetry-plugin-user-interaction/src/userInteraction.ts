@@ -32,6 +32,7 @@ import {
 } from './types';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
+import { Span } from '@opentelemetry/api';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
@@ -52,6 +53,8 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     Function,
     Map<string, Map<HTMLElement, Function>>
   >();
+  // for event bubbling
+  private _event2span: WeakMap<Event, Span> = new WeakMap<Event, Span>();
 
   constructor() {
     super('@opentelemetry/plugin-user-interaction', VERSION);
@@ -92,7 +95,8 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
    */
   private _createSpan(
     element: HTMLElement,
-    eventName: string
+    eventName: string,
+    parentSpan?: Span | undefined
   ): api.Span | undefined {
     if (!element.getAttribute) {
       return undefined;
@@ -106,6 +110,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     const xpath = getElementXPath(element, true);
     try {
       const span = this._tracer.startSpan(eventName, {
+        parent: parentSpan,
         attributes: {
           [AttributeNames.COMPONENT]: this.component,
           [AttributeNames.EVENT_TYPE]: eventName,
@@ -239,11 +244,19 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
         const once = useCapture && useCapture.once;
         const patchedListener = (...args: any[]) => {
           const target = this;
+          let parentSpan: Span | undefined;
+          const event: Event = args.length > 0 ? args[0] : undefined;
+          if (event) {
+            parentSpan = plugin._event2span.get(event);
+          }
           if (once) {
             plugin.removePatchedListener(this, type, listener);
           }
-          const span = plugin._createSpan(target, type);
+          const span = plugin._createSpan(target, type, parentSpan);
           if (span) {
+            if (event) {
+              plugin._event2span.set(event, span);
+            }
             return plugin._tracer.withSpan(span, () => {
               const result = listener.apply(target, args);
               // no zone so end span immediately
