@@ -21,6 +21,8 @@ import {
   AttributeNames,
   HapiLayerType,
   HapiLifecycleMethodNames,
+  PatchableExtMethod,
+  ServerExtDirectInput,
 } from './types';
 
 export function getPluginName<T>(plugin: Hapi.Plugin<T>): string {
@@ -38,6 +40,30 @@ export const isLifecycleExtType = (
     typeof variableToCheck === 'string' &&
     HapiLifecycleMethodNames.includes(variableToCheck)
   );
+};
+
+export const isLifecycleExtEventObj = (
+  variableToCheck: unknown
+): variableToCheck is Hapi.ServerExtEventsRequestObject => {
+  const event = (variableToCheck as Hapi.ServerExtEventsRequestObject)?.type;
+  return event !== undefined && isLifecycleExtType(event);
+};
+
+export const isDirectExtInput = (
+  variableToCheck: unknown
+): variableToCheck is ServerExtDirectInput => {
+  return (
+    Array.isArray(variableToCheck) &&
+    variableToCheck.length <= 3 &&
+    isLifecycleExtType(variableToCheck[0]) &&
+    typeof variableToCheck[1] === 'function'
+  );
+};
+
+export const isPatchableExtMethod = (
+  variableToCheck: PatchableExtMethod | PatchableExtMethod[]
+): variableToCheck is PatchableExtMethod => {
+  return !Array.isArray(variableToCheck);
 };
 
 export const getRouteMetadata = (

@@ -48,6 +48,12 @@ export type PatchableExtMethod = Hapi.Lifecycle.Method & {
   [handlerPatched]?: boolean;
 };
 
+export type ServerExtDirectInput = [
+  Hapi.ServerRequestExtType,
+  Hapi.Lifecycle.Method,
+  (Hapi.ServerExtOptions | undefined)?
+];
+
 export enum AttributeNames {
   HAPI_TYPE = 'hapi.type',
   PLUGIN_NAME = 'hapi.plugin.name',
