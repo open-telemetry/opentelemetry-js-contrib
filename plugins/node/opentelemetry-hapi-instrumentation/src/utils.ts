@@ -38,7 +38,7 @@ export const isLifecycleExtType = (
 ): variableToCheck is Hapi.ServerRequestExtType => {
   return (
     typeof variableToCheck === 'string' &&
-    HapiLifecycleMethodNames.includes(variableToCheck)
+    HapiLifecycleMethodNames.has(variableToCheck)
   );
 };
 

@@ -54,19 +54,19 @@ export type ServerExtDirectInput = [
   (Hapi.ServerExtOptions | undefined)?
 ];
 
-export enum AttributeNames {
-  HAPI_TYPE = 'hapi.type',
-  PLUGIN_NAME = 'hapi.plugin.name',
-  EXT_TYPE = 'server.ext.type',
-}
+export const AttributeNames = {
+  HAPI_TYPE: 'hapi.type',
+  PLUGIN_NAME: 'hapi.plugin.name',
+  EXT_TYPE: 'server.ext.type',
+};
 
-export enum HapiLayerType {
-  ROUTER = 'router',
-  PLUGIN = 'plugin',
-  EXT = 'server.ext',
-}
+export const HapiLayerType = {
+  ROUTER: 'router',
+  PLUGIN: 'plugin',
+  EXT: 'server.ext',
+};
 
-export const HapiLifecycleMethodNames = [
+export const HapiLifecycleMethodNames = new Set([
   'onPreAuth',
   'onCredentials',
   'onPostAuth',
@@ -74,4 +74,4 @@ export const HapiLifecycleMethodNames = [
   'onPostHandler',
   'onPreResponse',
   'onRequest',
-];
+]);

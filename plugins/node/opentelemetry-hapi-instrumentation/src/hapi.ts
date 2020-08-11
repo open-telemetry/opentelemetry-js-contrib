@@ -111,8 +111,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       // function, which requires supporting a variety of different parameters
       // as extension inputs
       shimmer.wrap(newServer, 'ext', originalExtHandler => {
-        return instrumentation._getServerExtPatch(
-          instrumentation,
+        return instrumentation._getServerExtPatch.bind(instrumentation)(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           originalExtHandler as any
         );
@@ -140,7 +139,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
   private _getServerRegisterPatch<T>(
     original: RegisterFunction<T>
   ): RegisterFunction<T> {
-    const instrumentation = this;
+    const instrumentation: HapiInstrumentation = this;
     this._logger.debug('Patching Hapi.Server register function');
     return function register(
       this: Hapi.Server,
@@ -154,7 +153,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       } else {
         instrumentation._wrapRegisterHandler(pluginInput.plugin);
       }
-      return original.call(this, pluginInput, options);
+      return original.apply(this, [pluginInput, options]);
     };
   }
 
@@ -169,11 +168,11 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
    * for adding this server extension. Else, signifies that the extension was added directly
    */
   private _getServerExtPatch(
-    instrumentation: HapiInstrumentation,
     original: (...args: unknown[]) => unknown,
     pluginName?: string
   ) {
-    this._logger.debug('Patching Hapi.Server ext function');
+    const instrumentation: HapiInstrumentation = this;
+    instrumentation._logger.debug('Patching Hapi.Server ext function');
 
     return function ext(
       this: ThisParameterType<typeof original>,
@@ -233,8 +232,8 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     original: HapiServerRouteInputMethod,
     pluginName?: string
   ) {
-    const instrumentation = this;
-    this._logger.debug('Patching Hapi.Server route function');
+    const instrumentation: HapiInstrumentation = this;
+    instrumentation._logger.debug('Patching Hapi.Server route function');
     return function route(
       this: Hapi.Server,
       route: HapiServerRouteInput
@@ -266,7 +265,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
    * @param {Hapi.Plugin<T>} plugin - the new plugin which is being instrumented
    */
   private _wrapRegisterHandler<T>(plugin: Hapi.Plugin<T>): void {
-    const instrumentation = this;
+    const instrumentation: HapiInstrumentation = this;
     const pluginName = getPluginName(plugin);
     const oldHandler = plugin.register;
     const newRegisterHandler = function (server: Hapi.Server, options: T) {
@@ -281,8 +280,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       // function, which requires supporting a variety of different parameters
       // as extension inputs
       shimmer.wrap(server, 'ext', originalExtHandler => {
-        return instrumentation._getServerExtPatch(
-          instrumentation,
+        return instrumentation._getServerExtPatch.bind(instrumentation)(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           originalExtHandler as any,
           pluginName
@@ -309,7 +307,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     extPoint: Hapi.ServerRequestExtType,
     pluginName?: string
   ): T {
-    const instrumentation = this;
+    const instrumentation: HapiInstrumentation = this;
 
     if (method instanceof Array) {
       for (let i = 0; i < method.length; i++) {
@@ -356,7 +354,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     route: PatchableServerRoute,
     pluginName?: string
   ): PatchableServerRoute {
-    const instrumentation = this;
+    const instrumentation: HapiInstrumentation = this;
     if (route[handlerPatched] === true) return route;
     route[handlerPatched] = true;
     if (typeof route.handler === 'function') {
