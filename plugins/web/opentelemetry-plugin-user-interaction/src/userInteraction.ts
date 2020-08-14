@@ -54,7 +54,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     Map<string, Map<HTMLElement, Function>>
   >();
   // for event bubbling
-  private _event2span: WeakMap<Event, Span> = new WeakMap<Event, Span>();
+  private _eventsSpanMap: WeakMap<Event, Span> = new WeakMap<Event, Span>();
 
   constructor() {
     super('@opentelemetry/plugin-user-interaction', VERSION);
@@ -247,7 +247,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
           let parentSpan: Span | undefined;
           const event: Event | undefined = args[0];
           if (event) {
-            parentSpan = plugin._event2span.get(event);
+            parentSpan = plugin._eventsSpanMap.get(event);
           }
           if (once) {
             plugin.removePatchedListener(this, type, listener);
@@ -255,7 +255,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
           const span = plugin._createSpan(target, type, parentSpan);
           if (span) {
             if (event) {
-              plugin._event2span.set(event, span);
+              plugin._eventsSpanMap.set(event, span);
             }
             return plugin._tracer.withSpan(span, () => {
               const result = listener.apply(target, args);
