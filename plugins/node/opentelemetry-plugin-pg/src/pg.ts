@@ -20,7 +20,7 @@ import * as pgTypes from 'pg';
 import * as shimmer from 'shimmer';
 import {
   PgClientExtended,
-  PgPluginQueryConfig,
+  NormalizedQueryConfig,
   PostgresCallback,
 } from './types';
 import * as utils from './utils';
@@ -103,12 +103,12 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
               );
             }
           } else if (
-            typeof (args[0] as PgPluginQueryConfig).callback === 'function'
+            typeof (args[0] as NormalizedQueryConfig).callback === 'function'
           ) {
             // Patch ConfigQuery callback
             let callback = utils.patchCallback(
               span,
-              (args[0] as PgPluginQueryConfig).callback!
+              (args[0] as NormalizedQueryConfig).callback!
             );
             // If a parent span existed, bind the callback
             if (parentSpan) {

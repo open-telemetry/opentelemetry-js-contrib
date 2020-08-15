@@ -31,6 +31,8 @@ export interface PgClientExtended extends pgTypes.Client {
   connectionParameters: PgClientConnectionParams;
 }
 
-export interface PgPluginQueryConfig extends pgTypes.QueryConfig {
+// Interface name based on original driver implementation
+// https://github.com/brianc/node-postgres/blob/2ef55503738eb2cbb6326744381a92c0bc0439ab/packages/pg/lib/utils.js#L157
+export interface NormalizedQueryConfig extends pgTypes.QueryConfig {
   callback?: PostgresCallback;
 }

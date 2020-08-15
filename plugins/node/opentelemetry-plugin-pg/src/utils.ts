@@ -18,7 +18,7 @@ import { Span, CanonicalCode, Tracer, SpanKind } from '@opentelemetry/api';
 import { AttributeNames } from './enums';
 import {
   PgClientExtended,
-  PgPluginQueryConfig,
+  NormalizedQueryConfig,
   PostgresCallback,
   PgClientConnectionParams,
 } from './types';
@@ -66,7 +66,7 @@ export function handleConfigQuery(
   tracer: Tracer,
   ...args: unknown[]
 ) {
-  const argsConfig = args[0] as PgPluginQueryConfig;
+  const argsConfig = args[0] as NormalizedQueryConfig;
 
   // Set child span name
   const queryCommand = getCommandFromText(argsConfig.name || argsConfig.text);
