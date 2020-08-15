@@ -44,11 +44,7 @@ function getJDBCString(params: PgClientConnectionParams) {
 }
 
 // Private helper function to start a span
-function pgStartSpan(
-  tracer: Tracer,
-  client: pgTypes.Client & PgClientExtended,
-  name: string
-) {
+function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
   const jdbcString = getJDBCString(client.connectionParameters);
   return tracer.startSpan(name, {
     kind: SpanKind.CLIENT,
@@ -66,7 +62,7 @@ function pgStartSpan(
 
 // Queries where args[0] is a QueryConfig
 export function handleConfigQuery(
-  this: pgTypes.Client & PgClientExtended,
+  this: PgClientExtended,
   tracer: Tracer,
   ...args: unknown[]
 ) {
@@ -98,7 +94,7 @@ export function handleConfigQuery(
 
 // Queries where args[1] is a 'values' array
 export function handleParameterizedQuery(
-  this: pgTypes.Client & PgClientExtended,
+  this: PgClientExtended,
   tracer: Tracer,
   ...args: unknown[]
 ) {
@@ -118,7 +114,7 @@ export function handleParameterizedQuery(
 
 // Queries where args[0] is a text query and 'values' was not specified
 export function handleTextQuery(
-  this: pgTypes.Client & PgClientExtended,
+  this: PgClientExtended,
   tracer: Tracer,
   ...args: unknown[]
 ) {
@@ -138,7 +134,7 @@ export function handleTextQuery(
  * Create and immediately end a new span
  */
 export function handleInvalidQuery(
-  this: pgTypes.Client & PgClientExtended,
+  this: PgClientExtended,
   tracer: Tracer,
   originalQuery: typeof pgTypes.Client.prototype.query,
   ...args: unknown[]
@@ -162,7 +158,7 @@ export function patchCallback(
   cb: PostgresCallback
 ): PostgresCallback {
   return function patchedCallback(
-    this: pgTypes.Client & PgClientExtended,
+    this: PgClientExtended,
     err: Error,
     res: object
   ) {

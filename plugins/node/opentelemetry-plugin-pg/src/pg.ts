@@ -62,10 +62,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
       plugin._logger.debug(
         `Patching ${PostgresPlugin.COMPONENT}.Client.prototype.query`
       );
-      return function query(
-        this: pgTypes.Client & PgClientExtended,
-        ...args: unknown[]
-      ) {
+      return function query(this: PgClientExtended, ...args: unknown[]) {
         let span: Span;
 
         // Handle different client.query(...) signatures

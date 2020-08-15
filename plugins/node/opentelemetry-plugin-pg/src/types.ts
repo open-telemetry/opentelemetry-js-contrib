@@ -27,7 +27,7 @@ export interface PgClientConnectionParams {
   user: string;
 }
 
-export interface PgClientExtended {
+export interface PgClientExtended extends pgTypes.Client {
   connectionParameters: PgClientConnectionParams;
 }
 
