@@ -64,29 +64,26 @@ function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
 export function handleConfigQuery(
   this: PgClientExtended,
   tracer: Tracer,
-  ...args: unknown[]
+  queryConfig: NormalizedQueryConfig
 ) {
-  const argsConfig = args[0] as NormalizedQueryConfig;
-
   // Set child span name
-  const queryCommand = getCommandFromText(argsConfig.name || argsConfig.text);
+  const queryCommand = getCommandFromText(queryConfig.name || queryConfig.text);
   const name = PostgresPlugin.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
-  if (argsConfig.text) {
-    span.setAttribute(AttributeNames.DB_STATEMENT, argsConfig.text);
+  if (queryConfig.text) {
+    span.setAttribute(AttributeNames.DB_STATEMENT, queryConfig.text);
   }
-
-  if (argsConfig.values instanceof Array) {
+  if (queryConfig.values instanceof Array) {
     span.setAttribute(
       AttributeNames.PG_VALUES,
-      arrayStringifyHelper(argsConfig.values)
+      arrayStringifyHelper(queryConfig.values)
     );
   }
   // Set plan name attribute, if present
-  if (argsConfig.name) {
-    span.setAttribute(AttributeNames.PG_PLAN, argsConfig.name);
+  if (queryConfig.name) {
+    span.setAttribute(AttributeNames.PG_PLAN, queryConfig.name);
   }
 
   return span;
@@ -96,18 +93,17 @@ export function handleConfigQuery(
 export function handleParameterizedQuery(
   this: PgClientExtended,
   tracer: Tracer,
-  ...args: unknown[]
+  query: string,
+  values: unknown[]
 ) {
   // Set child span name
-  const queryCommand = getCommandFromText(args[0] as string);
+  const queryCommand = getCommandFromText(query);
   const name = PostgresPlugin.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
-  span.setAttribute(AttributeNames.DB_STATEMENT, args[0]);
-  if (args[1] instanceof Array) {
-    span.setAttribute(AttributeNames.PG_VALUES, arrayStringifyHelper(args[1]));
-  }
+  span.setAttribute(AttributeNames.DB_STATEMENT, query);
+  span.setAttribute(AttributeNames.PG_VALUES, arrayStringifyHelper(values));
 
   return span;
 }
@@ -116,15 +112,15 @@ export function handleParameterizedQuery(
 export function handleTextQuery(
   this: PgClientExtended,
   tracer: Tracer,
-  ...args: unknown[]
+  query: string
 ) {
   // Set child span name
-  const queryCommand = getCommandFromText(args[0] as string);
+  const queryCommand = getCommandFromText(query);
   const name = PostgresPlugin.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
-  span.setAttribute(AttributeNames.DB_STATEMENT, args[0]);
+  span.setAttribute(AttributeNames.DB_STATEMENT, query);
 
   return span;
 }

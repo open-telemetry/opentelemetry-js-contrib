@@ -67,17 +67,25 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
 
         // Handle different client.query(...) signatures
         if (typeof args[0] === 'string') {
+          const query = args[0];
           if (args.length > 1 && args[1] instanceof Array) {
+            const params = args[1];
             span = utils.handleParameterizedQuery.call(
               this,
               plugin._tracer,
-              ...args
+              query,
+              params
             );
           } else {
-            span = utils.handleTextQuery.call(this, plugin._tracer, ...args);
+            span = utils.handleTextQuery.call(this, plugin._tracer, query);
           }
         } else if (typeof args[0] === 'object') {
-          span = utils.handleConfigQuery.call(this, plugin._tracer, ...args);
+          const queryConfig = args[0] as NormalizedQueryConfig;
+          span = utils.handleConfigQuery.call(
+            this,
+            plugin._tracer,
+            queryConfig
+          );
         } else {
           return utils.handleInvalidQuery.call(
             this,
