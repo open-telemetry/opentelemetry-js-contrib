@@ -27,8 +27,6 @@ import * as utils from './utils';
 import { VERSION } from './version';
 
 export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
-  protected _config: {};
-
   static readonly COMPONENT = 'pg';
   static readonly DB_TYPE = 'sql';
 
@@ -73,6 +71,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             span = utils.handleParameterizedQuery.call(
               this,
               plugin._tracer,
+              plugin._config,
               query,
               params
             );
@@ -84,6 +83,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
           span = utils.handleConfigQuery.call(
             this,
             plugin._tracer,
+            plugin._config,
             queryConfig
           );
         } else {

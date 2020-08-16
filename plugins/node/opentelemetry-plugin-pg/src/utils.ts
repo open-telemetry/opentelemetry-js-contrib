@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { Span, CanonicalCode, Tracer, SpanKind } from '@opentelemetry/api';
+import {
+  Span,
+  CanonicalCode,
+  Tracer,
+  SpanKind,
+  PluginConfig,
+} from '@opentelemetry/api';
 import { AttributeNames } from './enums';
 import {
   PgClientExtended,
@@ -64,6 +70,7 @@ function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
 export function handleConfigQuery(
   this: PgClientExtended,
   tracer: Tracer,
+  pluginConfig: PluginConfig,
   queryConfig: NormalizedQueryConfig
 ) {
   // Set child span name
@@ -75,7 +82,10 @@ export function handleConfigQuery(
   if (queryConfig.text) {
     span.setAttribute(AttributeNames.DB_STATEMENT, queryConfig.text);
   }
-  if (queryConfig.values instanceof Array) {
+  if (
+    pluginConfig.enhancedDatabaseReporting &&
+    queryConfig.values instanceof Array
+  ) {
     span.setAttribute(
       AttributeNames.PG_VALUES,
       arrayStringifyHelper(queryConfig.values)
@@ -93,6 +103,7 @@ export function handleConfigQuery(
 export function handleParameterizedQuery(
   this: PgClientExtended,
   tracer: Tracer,
+  pluginConfig: PluginConfig,
   query: string,
   values: unknown[]
 ) {
@@ -103,7 +114,9 @@ export function handleParameterizedQuery(
 
   // Set attributes
   span.setAttribute(AttributeNames.DB_STATEMENT, query);
-  span.setAttribute(AttributeNames.PG_VALUES, arrayStringifyHelper(values));
+  if (pluginConfig.enhancedDatabaseReporting) {
+    span.setAttribute(AttributeNames.PG_VALUES, arrayStringifyHelper(values));
+  }
 
   return span;
 }
