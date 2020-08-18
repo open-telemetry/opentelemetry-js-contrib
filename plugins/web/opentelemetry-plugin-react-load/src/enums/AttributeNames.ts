@@ -15,18 +15,11 @@
  */
 
 export enum AttributeNames {
-  // required by https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/data-database.md
-  COMPONENT = 'component',
-  DB_TYPE = 'db.type',
-  DB_INSTANCE = 'db.instance',
-  DB_STATEMENT = 'db.statement',
-  PEER_ADDRESS = 'peer.address',
-  PEER_HOSTNAME = 'peer.host',
-
-  // optional
-  DB_USER = 'db.user',
-  PEER_PORT = 'peer.port',
-  PEER_IPV4 = 'peer.ipv4',
-  PEER_IPV6 = 'peer.ipv6',
-  PEER_SERVICE = 'peer.service',
+  MOUNTING_SPAN = 'reactLoad: mounting',
+  UPDATING_SPAN = 'reactLoad: updating',
+  UNMOUNTING_SPAN = 'reactLoad: unmounting',
+  LOCATION_URL = 'location',
+  REACT_NAME = 'react_component_name',
+  REACT_STATE = 'react_component_state',
+  REACT_ERROR = 'react_error',
 }

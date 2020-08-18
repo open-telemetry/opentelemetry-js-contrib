@@ -98,7 +98,7 @@ export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
           return plugin._tracer.bind(
             connectResultPromise
               .then((result: any) => {
-                // Resturn a pass-along promise which ends the span and then goes to user's orig resolvers
+                // Return a pass-along promise which ends the span and then goes to user's orig resolvers
                 return new Promise((resolve, _) => {
                   span.setStatus({ code: CanonicalCode.OK });
                   span.end();

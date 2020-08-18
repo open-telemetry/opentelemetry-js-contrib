@@ -23,7 +23,10 @@ import {
 } from './types';
 import { EventEmitter } from 'events';
 import { RedisPlugin } from './redis';
-import { AttributeNames } from './enums';
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
 
 const endSpan = (span: Span, err?: Error | null) => {
   if (err) {
@@ -78,21 +81,21 @@ export const getTracedInternalSendCommand = (
       const span = tracer.startSpan(`${RedisPlugin.COMPONENT}-${cmd.command}`, {
         kind: SpanKind.CLIENT,
         attributes: {
-          [AttributeNames.COMPONENT]: RedisPlugin.COMPONENT,
-          [AttributeNames.DB_STATEMENT]: cmd.command,
+          [DatabaseAttribute.DB_SYSTEM]: RedisPlugin.COMPONENT,
+          [DatabaseAttribute.DB_STATEMENT]: cmd.command,
         },
       });
 
       // Set attributes for not explicitly typed RedisPluginClientTypes
       if (this.options) {
         span.setAttributes({
-          [AttributeNames.PEER_HOSTNAME]: this.options.host,
-          [AttributeNames.PEER_PORT]: this.options.port,
+          [GeneralAttribute.NET_PEER_HOSTNAME]: this.options.host,
+          [GeneralAttribute.NET_PEER_PORT]: this.options.port,
         });
       }
       if (this.address) {
         span.setAttribute(
-          AttributeNames.PEER_ADDRESS,
+          GeneralAttribute.NET_PEER_ADDRESS,
           `redis://${this.address}`
         );
       }
