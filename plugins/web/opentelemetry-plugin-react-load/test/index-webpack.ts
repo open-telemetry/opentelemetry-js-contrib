@@ -13,20 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const testsContext = require.context('.', true, /test$/);
+testsContext.keys().forEach(testsContext);
 
-export enum AttributeNames {
-  // required by https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/data-database.md
-  COMPONENT = 'component',
-  DB_TYPE = 'db.type',
-  DB_INSTANCE = 'db.instance',
-  DB_STATEMENT = 'db.statement',
-  PEER_ADDRESS = 'peer.address',
-  PEER_HOSTNAME = 'peer.host',
-
-  // optional
-  DB_USER = 'db.user',
-  PEER_PORT = 'peer.port',
-  PEER_IPV4 = 'peer.ipv4',
-  PEER_IPV6 = 'peer.ipv6',
-  PEER_SERVICE = 'peer.service',
-}
+const srcContext = require.context('.', true, /src$/);
+srcContext.keys().forEach(srcContext);
