@@ -211,7 +211,6 @@ describe('pg@7.x', () => {
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
         [AttributeNames.DB_STATEMENT]: query,
-        [AttributeNames.PG_VALUES]: '[0]',
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -273,7 +272,6 @@ describe('pg@7.x', () => {
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
         [AttributeNames.DB_STATEMENT]: query,
-        [AttributeNames.PG_VALUES]: '[0]',
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -294,7 +292,6 @@ describe('pg@7.x', () => {
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
         [AttributeNames.DB_STATEMENT]: query,
-        [AttributeNames.PG_VALUES]: '[0]',
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -320,7 +317,6 @@ describe('pg@7.x', () => {
         ...DEFAULT_ATTRIBUTES,
         [AttributeNames.PG_PLAN]: name,
         [AttributeNames.DB_STATEMENT]: query,
-        [AttributeNames.PG_VALUES]: '[0]',
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');

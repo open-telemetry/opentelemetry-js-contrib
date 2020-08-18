@@ -20,15 +20,13 @@ import * as pgTypes from 'pg';
 import * as shimmer from 'shimmer';
 import {
   PgClientExtended,
-  PgPluginQueryConfig,
+  NormalizedQueryConfig,
   PostgresCallback,
 } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
 
 export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
-  protected _config: {};
-
   static readonly COMPONENT = 'pg';
   static readonly DB_TYPE = 'sql';
 
@@ -62,25 +60,32 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
       plugin._logger.debug(
         `Patching ${PostgresPlugin.COMPONENT}.Client.prototype.query`
       );
-      return function query(
-        this: pgTypes.Client & PgClientExtended,
-        ...args: unknown[]
-      ) {
+      return function query(this: PgClientExtended, ...args: unknown[]) {
         let span: Span;
 
         // Handle different client.query(...) signatures
         if (typeof args[0] === 'string') {
+          const query = args[0];
           if (args.length > 1 && args[1] instanceof Array) {
+            const params = args[1];
             span = utils.handleParameterizedQuery.call(
               this,
               plugin._tracer,
-              ...args
+              plugin._config,
+              query,
+              params
             );
           } else {
-            span = utils.handleTextQuery.call(this, plugin._tracer, ...args);
+            span = utils.handleTextQuery.call(this, plugin._tracer, query);
           }
         } else if (typeof args[0] === 'object') {
-          span = utils.handleConfigQuery.call(this, plugin._tracer, ...args);
+          const queryConfig = args[0] as NormalizedQueryConfig;
+          span = utils.handleConfigQuery.call(
+            this,
+            plugin._tracer,
+            plugin._config,
+            queryConfig
+          );
         } else {
           return utils.handleInvalidQuery.call(
             this,
@@ -106,12 +111,12 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
               );
             }
           } else if (
-            typeof (args[0] as PgPluginQueryConfig).callback === 'function'
+            typeof (args[0] as NormalizedQueryConfig).callback === 'function'
           ) {
             // Patch ConfigQuery callback
             let callback = utils.patchCallback(
               span,
-              (args[0] as PgPluginQueryConfig).callback!
+              (args[0] as NormalizedQueryConfig).callback!
             );
             // If a parent span existed, bind the callback
             if (parentSpan) {
@@ -132,7 +137,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
           return result
             .then((result: unknown) => {
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
-              return new Promise((resolve, _) => {
+              return new Promise(resolve => {
                 span.setStatus({ code: CanonicalCode.OK });
                 span.end();
                 resolve(result);
