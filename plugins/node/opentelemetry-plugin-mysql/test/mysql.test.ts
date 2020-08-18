@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ describe('mysql@2.x', () => {
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
   const memoryExporter = new InMemorySpanExporter();
 
-  before(function(done) {
+  before(function (done) {
     if (!shouldTest) {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -65,14 +65,14 @@ describe('mysql@2.x', () => {
     }
   });
 
-  after(function() {
+  after(function () {
     if (testMysqlLocally) {
       this.timeout(5000);
       testUtils.cleanUpDocker('mysql');
     }
   });
 
-  beforeEach(function() {
+  beforeEach(() => {
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
     plugin.enable(mysql, provider, logger);

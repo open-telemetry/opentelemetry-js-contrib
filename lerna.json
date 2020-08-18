@@ -7,7 +7,7 @@
     "plugins/web/*",
     "propagators/*"
   ],
-  "version": "0.8.0",
+  "version": "0.9.0",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",
     "labels": {

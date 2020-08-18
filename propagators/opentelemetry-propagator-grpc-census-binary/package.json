@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagator-grpc-census-binary",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "OpenTelemetry gRPC Census propagator provides a context propagator for OpenTelemetry that can use the gRPC binary header: 'grpc-trace-bin' for interoperability with OpenCensus",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,8 +11,8 @@
     "tdd:node": "npm run test -- --watch-extensions ts --watch",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "clean": "rimraf build/*",
-    "lint": "gts check",
-    "lint:fix": "gts fix",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version",
     "compile": "npm run version:update && tsc -p .",
     "prepare": "npm run compile",
@@ -42,23 +42,24 @@
     "access": "public"
   },
   "devDependencies": {
-    "@types/mocha": "^7.0.0",
-    "@types/node": "^12.6.8",
-    "codecov": "^3.6.1",
-    "grpc": "^1.24.2",
-    "gts": "^1.1.0",
-    "mocha": "^6.1.0",
-    "nyc": "^15.0.0",
-    "rimraf": "^3.0.0",
-    "ts-loader": "^6.0.4",
-    "ts-mocha": "^6.0.0",
-    "ts-node": "^8.6.2",
-    "tslint-consistent-codestyle": "^1.16.0",
-    "tslint-microsoft-contrib": "^6.2.0",
-    "typescript": "3.7.2"
+    "@opentelemetry/context-base": "0.10.2",
+    "@types/mocha": "7.0.2",
+    "@types/node": "14.0.27",
+    "codecov": "3.7.2",
+    "grpc": "1.24.3",
+    "gts": "2.0.2",
+    "mocha": "7.2.0",
+    "nyc": "15.1.0",
+    "rimraf": "3.0.2",
+    "ts-loader": "8.0.2",
+    "ts-mocha": "7.0.0",
+    "ts-node": "8.10.2",
+    "tslint-consistent-codestyle": "1.16.0",
+    "tslint-microsoft-contrib": "6.2.0",
+    "typescript": "3.9.7"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.8.3",
-    "@opentelemetry/core": "^0.8.3"
+    "@opentelemetry/api": "^0.10.2",
+    "@opentelemetry/core": "^0.10.2"
   }
 }

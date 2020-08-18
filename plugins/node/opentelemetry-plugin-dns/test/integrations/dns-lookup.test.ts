@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ const provider = new NodeTracerProvider({ logger });
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 describe('dns.lookup()', () => {
-  before(function(done) {
+  before(function (done) {
     // mandatory
     if (process.env.CI) {
       plugin.enable(dns, provider, provider.logger);
