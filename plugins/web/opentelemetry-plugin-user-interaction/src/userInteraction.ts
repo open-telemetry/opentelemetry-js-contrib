@@ -50,7 +50,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   private _zonePatched = false;
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
-    Function,
+    Function | EventListener,
     Map<string, Map<HTMLElement, Function>>
   >();
   // for event bubbling
@@ -178,7 +178,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   private addPatchedListener(
     on: HTMLElement,
     type: string,
-    listener: Function,
+    listener: Function | EventListener,
     wrappedListener: Function
   ): boolean {
     let listener2Type = this._wrappedListeners.get(listener);
@@ -204,7 +204,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   private removePatchedListener(
     on: HTMLElement,
     type: string,
-    listener: Function
+    listener: Function | EventListener
   ): Function | undefined {
     const listener2Type = this._wrappedListeners.get(listener);
     if (!listener2Type) {
@@ -225,6 +225,13 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
       }
     }
     return patched;
+  }
+
+  // utility method to deal with the Function|EventListener nature of addEventListener
+  private _invokeListener(listener: any, target: any, args: any[]): any {
+    return typeof listener === 'function'
+      ? listener.apply(target, args)
+      : listener.handleEvent(args);
   }
 
   /**
@@ -258,13 +265,13 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
               plugin._eventsSpanMap.set(event, span);
             }
             return plugin._tracer.withSpan(span, () => {
-              const result = listener.apply(target, args);
+              const result = plugin._invokeListener(listener, target, args);
               // no zone so end span immediately
               span.end();
               return result;
             });
           } else {
-            return listener.apply(target, args);
+            return plugin._invokeListener(listener, target, args);
           }
         };
         if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
