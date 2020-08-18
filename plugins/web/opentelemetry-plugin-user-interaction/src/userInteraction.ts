@@ -50,7 +50,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   private _zonePatched = false;
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
-    Function | EventListener,
+    Function | EventListenerObject,
     Map<string, Map<HTMLElement, Function>>
   >();
   // for event bubbling
@@ -178,7 +178,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   private addPatchedListener(
     on: HTMLElement,
     type: string,
-    listener: Function | EventListener,
+    listener: Function | EventListenerObject,
     wrappedListener: Function
   ): boolean {
     let listener2Type = this._wrappedListeners.get(listener);
@@ -204,7 +204,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   private removePatchedListener(
     on: HTMLElement,
     type: string,
-    listener: Function | EventListener
+    listener: Function | EventListenerObject
   ): Function | undefined {
     const listener2Type = this._wrappedListeners.get(listener);
     if (!listener2Type) {
@@ -228,10 +228,16 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   }
 
   // utility method to deal with the Function|EventListener nature of addEventListener
-  private _invokeListener(listener: any, target: any, args: any[]): any {
-    return typeof listener === 'function'
-      ? listener.apply(target, args)
-      : listener.handleEvent(args);
+  private _invokeListener(
+    listener: Function | EventListenerObject,
+    target: any,
+    args: any[]
+  ): any {
+    if (typeof listener === 'function') {
+      return listener.apply(target, args);
+    } else {
+      return listener.handleEvent(args[0]);
+    }
   }
 
   /**
