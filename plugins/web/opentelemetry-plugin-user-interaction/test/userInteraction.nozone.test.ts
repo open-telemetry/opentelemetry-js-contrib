@@ -304,6 +304,31 @@ describe('UserInteractionPlugin', () => {
       });
     });
 
+    it('should trace causality of bubbled events', () => {
+      let callCount = 0;
+      const listener1 = function () {
+        callCount++;
+      };
+      const listener2 = function () {
+        callCount++;
+      };
+      document.body.addEventListener('click', listener1);
+      document.body.firstElementChild?.addEventListener('click', listener2);
+      document.body.firstElementChild?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+      assert.strictEqual(callCount, 2);
+      assert.strictEqual(exportSpy.args.length, 2);
+      assert.strictEqual(
+        exportSpy.args[0][0][0].traceId,
+        exportSpy.args[1][0][0].traceId
+      );
+      assert.strictEqual(
+        exportSpy.args[0][0][0].spanId,
+        exportSpy.args[1][0][0].context.parentSpanId
+      );
+    });
+
     it('should handle 3 overlapping interactions', done => {
       const btn1 = document.createElement('button');
       btn1.setAttribute('id', 'btn1');
