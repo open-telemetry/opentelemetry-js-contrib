@@ -187,6 +187,16 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         if (plugin._tracer.getCurrentSpan() === undefined) {
           return original.apply(this, arguments);
         }
+        // Rename the root http span once we reach the request handler
+        if (
+          metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
+          ExpressLayerType.REQUEST_HANDLER
+        ) {
+          const parent = plugin._tracer.getCurrentSpan();
+          if (parent) {
+            parent.updateName(`${req.method} ${route}`);
+          }
+        }
         const span = plugin._tracer.startSpan(metadata.name, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
