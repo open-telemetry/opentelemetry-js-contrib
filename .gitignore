@@ -78,3 +78,6 @@ package.json.lerna_backup
 
 # VsCode configs
 .vscode/
+
+*.iml
+.idea
