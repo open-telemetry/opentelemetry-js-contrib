@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-import { Span, CanonicalCode, Tracer, SpanKind } from '@opentelemetry/api';
+import {
+  Span,
+  CanonicalCode,
+  Tracer,
+  SpanKind,
+  PluginConfig,
+} from '@opentelemetry/api';
 import { AttributeNames } from './enums';
 import {
   PgClientExtended,
-  PgPluginQueryConfig,
+  NormalizedQueryConfig,
   PostgresCallback,
   PgClientConnectionParams,
 } from './types';
@@ -44,11 +50,7 @@ function getJDBCString(params: PgClientConnectionParams) {
 }
 
 // Private helper function to start a span
-function pgStartSpan(
-  tracer: Tracer,
-  client: pgTypes.Client & PgClientExtended,
-  name: string
-) {
+function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
   const jdbcString = getJDBCString(client.connectionParameters);
   return tracer.startSpan(name, {
     kind: SpanKind.CLIENT,
@@ -66,31 +68,32 @@ function pgStartSpan(
 
 // Queries where args[0] is a QueryConfig
 export function handleConfigQuery(
-  this: pgTypes.Client & PgClientExtended,
+  this: PgClientExtended,
   tracer: Tracer,
-  ...args: unknown[]
+  pluginConfig: PluginConfig,
+  queryConfig: NormalizedQueryConfig
 ) {
-  const argsConfig = args[0] as PgPluginQueryConfig;
-
   // Set child span name
-  const queryCommand = getCommandFromText(argsConfig.name || argsConfig.text);
+  const queryCommand = getCommandFromText(queryConfig.name || queryConfig.text);
   const name = PostgresPlugin.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
-  if (argsConfig.text) {
-    span.setAttribute(AttributeNames.DB_STATEMENT, argsConfig.text);
+  if (queryConfig.text) {
+    span.setAttribute(AttributeNames.DB_STATEMENT, queryConfig.text);
   }
-
-  if (argsConfig.values instanceof Array) {
+  if (
+    pluginConfig.enhancedDatabaseReporting &&
+    queryConfig.values instanceof Array
+  ) {
     span.setAttribute(
       AttributeNames.PG_VALUES,
-      arrayStringifyHelper(argsConfig.values)
+      arrayStringifyHelper(queryConfig.values)
     );
   }
   // Set plan name attribute, if present
-  if (argsConfig.name) {
-    span.setAttribute(AttributeNames.PG_PLAN, argsConfig.name);
+  if (queryConfig.name) {
+    span.setAttribute(AttributeNames.PG_PLAN, queryConfig.name);
   }
 
   return span;
@@ -98,19 +101,21 @@ export function handleConfigQuery(
 
 // Queries where args[1] is a 'values' array
 export function handleParameterizedQuery(
-  this: pgTypes.Client & PgClientExtended,
+  this: PgClientExtended,
   tracer: Tracer,
-  ...args: unknown[]
+  pluginConfig: PluginConfig,
+  query: string,
+  values: unknown[]
 ) {
   // Set child span name
-  const queryCommand = getCommandFromText(args[0] as string);
+  const queryCommand = getCommandFromText(query);
   const name = PostgresPlugin.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
-  span.setAttribute(AttributeNames.DB_STATEMENT, args[0]);
-  if (args[1] instanceof Array) {
-    span.setAttribute(AttributeNames.PG_VALUES, arrayStringifyHelper(args[1]));
+  span.setAttribute(AttributeNames.DB_STATEMENT, query);
+  if (pluginConfig.enhancedDatabaseReporting) {
+    span.setAttribute(AttributeNames.PG_VALUES, arrayStringifyHelper(values));
   }
 
   return span;
@@ -118,17 +123,17 @@ export function handleParameterizedQuery(
 
 // Queries where args[0] is a text query and 'values' was not specified
 export function handleTextQuery(
-  this: pgTypes.Client & PgClientExtended,
+  this: PgClientExtended,
   tracer: Tracer,
-  ...args: unknown[]
+  query: string
 ) {
   // Set child span name
-  const queryCommand = getCommandFromText(args[0] as string);
+  const queryCommand = getCommandFromText(query);
   const name = PostgresPlugin.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
-  span.setAttribute(AttributeNames.DB_STATEMENT, args[0]);
+  span.setAttribute(AttributeNames.DB_STATEMENT, query);
 
   return span;
 }
@@ -138,7 +143,7 @@ export function handleTextQuery(
  * Create and immediately end a new span
  */
 export function handleInvalidQuery(
-  this: pgTypes.Client & PgClientExtended,
+  this: PgClientExtended,
   tracer: Tracer,
   originalQuery: typeof pgTypes.Client.prototype.query,
   ...args: unknown[]
@@ -162,7 +167,7 @@ export function patchCallback(
   cb: PostgresCallback
 ): PostgresCallback {
   return function patchedCallback(
-    this: pgTypes.Client & PgClientExtended,
+    this: PgClientExtended,
     err: Error,
     res: object
   ) {

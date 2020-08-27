@@ -26,8 +26,11 @@ import {
 import * as assert from 'assert';
 import * as ioredisTypes from 'ioredis';
 import { IORedisPlugin, plugin } from '../src';
-import { AttributeNames } from '../src/enums';
 import { IoredisPluginConfig, DbStatementSerializer } from '../src/types';
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -39,11 +42,10 @@ const CONFIG = {
 const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
-  [AttributeNames.COMPONENT]: IORedisPlugin.COMPONENT,
-  [AttributeNames.DB_TYPE]: IORedisPlugin.DB_TYPE,
-  [AttributeNames.PEER_HOSTNAME]: CONFIG.host,
-  [AttributeNames.PEER_PORT]: CONFIG.port,
-  [AttributeNames.PEER_ADDRESS]: URL,
+  [DatabaseAttribute.DB_SYSTEM]: IORedisPlugin.DB_SYSTEM,
+  [GeneralAttribute.NET_PEER_HOSTNAME]: CONFIG.host,
+  [GeneralAttribute.NET_PEER_PORT]: CONFIG.port,
+  [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
 
 const okStatus: Status = {
@@ -91,7 +93,7 @@ describe('ioredis', () => {
   });
 
   it('should have correct module name', () => {
-    assert.strictEqual(plugin.moduleName, IORedisPlugin.COMPONENT);
+    assert.strictEqual(plugin.moduleName, 'ioredis');
   });
 
   describe('#createClient()', () => {
@@ -100,7 +102,7 @@ describe('ioredis', () => {
       let client: ioredisTypes.Redis;
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: 'connect',
+        [DatabaseAttribute.DB_STATEMENT]: 'connect',
       };
       const readyHandler = () => {
         const endedSpans = memoryExporter.getFinishedSpans();
@@ -194,9 +196,9 @@ describe('ioredis', () => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [AttributeNames.DB_STATEMENT]: `${command.name} ${command.args.join(
-              ' '
-            )}`,
+            [DatabaseAttribute.DB_STATEMENT]: `${
+              command.name
+            } ${command.args.join(' ')}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -226,7 +228,7 @@ describe('ioredis', () => {
       it('should create a child span for hset promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'hset hash random random',
+          [DatabaseAttribute.DB_STATEMENT]: 'hset hash random random',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
@@ -254,7 +256,7 @@ describe('ioredis', () => {
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'scan 0',
+          [DatabaseAttribute.DB_STATEMENT]: 'scan 0',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         provider.getTracer('ioredis-test').withSpan(span, () => {
@@ -329,7 +331,7 @@ describe('ioredis', () => {
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
-              [AttributeNames.DB_STATEMENT]: 'subscribe news music',
+              [DatabaseAttribute.DB_STATEMENT]: 'subscribe news music',
             };
             testUtils.assertSpan(
               endedSpans[5],
@@ -348,7 +350,7 @@ describe('ioredis', () => {
       it('should create a child span for lua', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]:
+          [DatabaseAttribute.DB_STATEMENT]:
             'evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 test',
         };
 
@@ -387,7 +389,7 @@ describe('ioredis', () => {
       it('should create a child span for multi/transaction', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'multi',
+          [DatabaseAttribute.DB_STATEMENT]: 'multi',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -423,7 +425,7 @@ describe('ioredis', () => {
       it('should create a child span for pipeline', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'set foo bar',
+          [DatabaseAttribute.DB_STATEMENT]: 'set foo bar',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -457,7 +459,7 @@ describe('ioredis', () => {
       it('should create a child span for get promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'get test',
+          [DatabaseAttribute.DB_STATEMENT]: 'get test',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
@@ -486,7 +488,7 @@ describe('ioredis', () => {
       it('should create a child span for del', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'del test',
+          [DatabaseAttribute.DB_STATEMENT]: 'del test',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
@@ -541,7 +543,7 @@ describe('ioredis', () => {
         it(`should tag the span with a custom db.statement for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [AttributeNames.DB_STATEMENT]: dbStatementSerializer(
+            [DatabaseAttribute.DB_STATEMENT]: dbStatementSerializer(
               command.name,
               command.args
             ),
