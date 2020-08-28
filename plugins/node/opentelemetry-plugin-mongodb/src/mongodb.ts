@@ -183,13 +183,16 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
         }`,
       });
     }
+
+    // The namespace is a combination of the database name and the name of the
+    // collection or index, like so: [database-name].[collection-or-index-name].
+    const [dbName, dbCollection] = ns.split('.');
+
     // add database related attributes
     span.setAttributes({
       [DatabaseAttribute.DB_SYSTEM]: 'mongodb',
-      // The namespace is a combination of the database name and the name of the
-      // collection or index, like so: [database-name].[collection-or-index-name].
-      [DatabaseAttribute.DB_NAME]: ns.split('.')[0],
-      [DatabaseAttribute.DB_MONGODB_COLLECTION]: ns.split('.')[1],
+      [DatabaseAttribute.DB_NAME]: dbName,
+      [DatabaseAttribute.DB_MONGODB_COLLECTION]: dbCollection,
     });
 
     if (command === undefined) return;
