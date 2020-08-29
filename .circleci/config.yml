@@ -157,6 +157,15 @@ jobs:
     docker:
       - image: circleci/node:12-browsers
     <<: *browsers_unit_tests
+  node14:
+    docker:
+      - image: node:14
+        environment: *node_test_env
+      - *postgres_service
+      - *mysql_service
+      - *redis_service
+      - *mongo_service
+    <<: *node_unit_tests
 
 workflows:
   version: 2
@@ -166,4 +175,5 @@ workflows:
       - node10
       - node12
       - node12-browsers
+      - node14
 
