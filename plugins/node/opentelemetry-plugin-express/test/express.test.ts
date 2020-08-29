@@ -90,8 +90,10 @@ describe('Express Plugin', () => {
       });
       const router = express.Router();
       app.use('/toto', router);
-      router.get('/:id', (req, res, next) => {
-        return res.status(200).end();
+      router.get('/:id', (req, res) => {
+        setTimeout(() => {
+          return res.status(200).end();
+        }, 5);
       });
       const server = http.createServer(app);
       await new Promise(resolve => server.listen(0, resolve));

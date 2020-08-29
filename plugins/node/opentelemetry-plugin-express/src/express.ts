@@ -201,6 +201,13 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
           span.end(startTime);
           spanHasEnded = true;
         }
+        // listener for response.on('finish')
+        const onResponseFinish = () => {
+          if (spanHasEnded === false) {
+            spanHasEnded = true;
+            span.end(startTime);
+          }
+        };
         // verify we have a callback
         const args = Array.from(arguments);
         const callbackIdx = args.findIndex(arg => typeof arg === 'function');
@@ -209,6 +216,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
             if (spanHasEnded === false) {
               span.end();
               spanHasEnded = true;
+              req.res?.removeListener('finish', onResponseFinish);
             }
             if (!(req.route && arguments[0] instanceof Error)) {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
@@ -218,12 +226,13 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
           };
         }
         const result = original.apply(this, arguments);
-        // If the callback is never called, we need to close the span.
-        setImmediate(() => {
-          if (spanHasEnded === false) {
-            span.end(startTime);
-          }
-        });
+        /**
+         * As this point if the callback wasn't called, that means either the
+         * layer is asynchronous (so it will call the callback later on) or that
+         * the layer directly end the http response, so we'll hook into the "finish"
+         * event to handle the later case.
+         */
+        req.res?.once('finish', onResponseFinish);
         return result;
       };
     });
