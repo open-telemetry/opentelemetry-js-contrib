@@ -21,11 +21,11 @@ module.exports = {
   mode: 'development',
   target: 'web',
   output: { filename: 'bundle.js' },
-  resolve: { extensions: ['.ts', '.js'] },
+  resolve: { extensions: ['.ts', '.js', '.tsx'] },
   devtool: 'inline-source-map',
   module: {
     rules: [
-      { test: /\.ts$/, use: 'ts-loader' },
+      { test: /\.tsx?$/, use: 'ts-loader' },
       {
         enforce: 'post',
         exclude: /(node_modules|\.test\.[tj]sx?$)/,
