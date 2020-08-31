@@ -17,6 +17,7 @@
     "precompile": "tsc --version",
     "version:update": "lerna run version:update",
     "compile": "lerna run compile",
+    "build:rca-metrics": "lerna run build:rca-metrics",
     "test": "lerna run test",
     "test:browser": "lerna run test:browser",
     "bootstrap": "lerna bootstrap",

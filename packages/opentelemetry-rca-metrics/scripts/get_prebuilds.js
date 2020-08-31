@@ -24,9 +24,11 @@ const os = require('os');
 const path = require('path');
 const exec = require('./exec.js');
 
-console.log('Downloading and compiling files for release.');
+const MAIN_FOLDER = path.resolve(__dirname, '..');
+const ARTIFACTS_FOLDER = path.resolve(MAIN_FOLDER, 'artifacts');
 
-const TOKEN = process.env.CIRCLE_TOKEN;
+console.log('Downloading rca-metrics compiled files for release.');
+
 if (!TOKEN) {
   throw new Error(
     [
@@ -69,7 +71,6 @@ getPipeline()
   .then(downloadArtifacts)
   .then(validatePrebuilds)
   .then(copyPrebuilds)
-  .then(bundle)
   .catch(e => {
     process.exitCode = 1;
     console.error(e);
@@ -186,15 +187,14 @@ function validatePrebuilds() {
 }
 
 function copyPrebuilds() {
-  const basename = path.normalize(path.join(__dirname, '..', 'artifacts'));
   const filename = 'prebuilds.tgz';
 
   fs.copyFileSync(
     path.join(os.tmpdir(), filename),
-    path.join(basename, filename)
+    path.join(ARTIFACTS_FOLDER, filename)
   );
-}
-
-function bundle() {
-  exec('yarn bundle');
+  fs.copyFileSync(
+    path.join(os.tmpdir(), `${filename}.sha1`),
+    path.join(ARTIFACTS_FOLDER, `${filename}.sha1`)
+  );
 }

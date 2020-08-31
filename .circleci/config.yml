@@ -54,6 +54,9 @@ cache_1: &cache_1
     - plugins/node/opentelemetry-plugin-mysql/node_modules
     - plugins/node/opentelemetry-plugin-express/node_modules
     - propagators/opentelemetry-propagator-jaeger/node_modules
+    - propagators/opentelemetry-propagator-grpc-census-binary/node_modules
+    - packages/opentelemetry-rca-metrics/node_modules
+    - packages/opentelemetry-test-utils/node_modules
 
 node_unit_tests: &node_unit_tests
   resource_class: large
@@ -74,7 +77,7 @@ node_unit_tests: &node_unit_tests
           echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
     - restore_cache:
         keys:
-          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71D
+          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
     - run:
         name: Install Root Dependencies
         command: npm install --ignore-scripts
@@ -109,7 +112,7 @@ browsers_unit_tests: &browsers_unit_tests
           echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
     - restore_cache:
         keys:
-          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71D
+          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
     - run:
         name: Install Root Dependencies
         command: npm install --ignore-scripts
@@ -144,22 +147,20 @@ build_metrics: &build_metrics
           echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
     - restore_cache:
         keys:
-          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71E
+          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
     - run:
         name: Install Root Dependencies
         command: npm install --ignore-scripts
     - run:
         name: Boostrap dependencies
-        command: npx lerna bootstrap --scope @opentelemetry/rca-metrics --include-filtered-dependencies
-    - save_cache:
-        <<: *cache_1
+        command: npx lerna bootstrap --scope @opentelemetry/rca-metrics --include-filtered-dependencies --ignore-scripts
     - run:
         name: Create prebuilds for native stats
-        command: npm run build:all
+        command: npm run build:rca-metrics
     - store_artifacts:
-        path: ./prebuilds.tgz
+        path: ./packages/opentelemetry-rca-metrics/artifacts/prebuilds.tgz
     - store_artifacts:
-        path: ./prebuilds.tgz.sha1
+        path: ./packages/opentelemetry-rca-metrics/artifacts/prebuilds.tgz.sha1
 
 jobs:
   node8:
@@ -195,7 +196,7 @@ jobs:
     <<: *browsers_unit_tests
   build-native-stats:
     docker:
-      - image: node:12
+      - image: node:14
         environment: *node_test_env
     <<: *build_metrics
 
@@ -207,11 +208,8 @@ workflows:
       - node10
       - node12
       - node12-browsers
-      - build-native-stats
-
-#      - build-native-stats:
-#          filters:
-#            branches:
-#              only: master
-#
-
+      - build-native-stats:
+          filters:
+            branches:
+              only:
+                - master
