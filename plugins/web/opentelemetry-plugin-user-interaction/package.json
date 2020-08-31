@@ -86,7 +86,7 @@
     "shimmer": "^1.2.1"
   },
   "peerDependencies": {
-    "zone.js": "^0.10.3"
+    "zone.js": "0.10.3"
   },
   "sideEffects": false
 }
