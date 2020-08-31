@@ -9,7 +9,10 @@
     "karma.conf.js",
     "src/platform/browser/*.ts",
     "test/index-webpack.ts",
-    "webpack/*.js"
+    "webpack/*.js",
+    "packages/opentelemetry-rca-metrics/scripts/*.js",
+    ".eslintrc.js",
+    "version.ts"
   ],
   "all": true
 }
