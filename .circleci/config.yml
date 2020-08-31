@@ -150,7 +150,7 @@ build_metrics: &build_metrics
         command: npm install --ignore-scripts
     - run:
         name: Boostrap dependencies
-        command: npx lerna bootstrap --scope @opentelemetry/metrics-collector --include-filtered-dependencies
+        command: npx lerna bootstrap --scope @opentelemetry/rca-metrics --include-filtered-dependencies
     - save_cache:
         <<: *cache_1
     - run:
