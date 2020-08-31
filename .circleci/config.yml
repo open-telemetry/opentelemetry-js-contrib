@@ -125,6 +125,42 @@ browsers_unit_tests: &browsers_unit_tests
         name: report coverage
         command: if [ "$CIRCLE_NODE_VERSION" = "v12" ]; then npm run codecov:browser; fi
 
+build_metrics: &build_metrics
+  resource_class: large
+  steps:
+    - checkout
+    - run:
+        name: Create Checksum
+        command: sh .circleci/checksum.sh /tmp/checksums.txt
+    - run:
+        name: Setup environment variables
+        command: |
+          echo "export CIRCLE_NODE_VERSION=\$(node --version | grep -oE 'v[0-9]+')" >> $BASH_ENV
+          source $BASH_ENV
+    - run:
+        name: Log out node.js version
+        command: |
+          node --version
+          echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
+    - restore_cache:
+        keys:
+          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71E
+    - run:
+        name: Install Root Dependencies
+        command: npm install --ignore-scripts
+    - run:
+        name: Boostrap dependencies
+        command: npx lerna bootstrap --scope @opentelemetry/metrics-collector --include-filtered-dependencies
+    - save_cache:
+        <<: *cache_1
+    - run:
+        name: Create prebuilds for native stats
+        command: npm run build:all
+    - store_artifacts:
+        path: ./prebuilds.tgz
+    - store_artifacts:
+        path: ./prebuilds.tgz.sha1
+
 jobs:
   node8:
     docker:
@@ -157,6 +193,11 @@ jobs:
     docker:
       - image: circleci/node:12-browsers
     <<: *browsers_unit_tests
+  build-native-stats:
+    docker:
+      - image: node:12
+        environment: *node_test_env
+    <<: *build_metrics
 
 workflows:
   version: 2
@@ -166,4 +207,11 @@ workflows:
       - node10
       - node12
       - node12-browsers
+      - build-native-stats
+
+#      - build-native-stats:
+#          filters:
+#            branches:
+#              only: master
+#
 

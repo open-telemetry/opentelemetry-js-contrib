@@ -1,0 +1,36 @@
+{
+  "name": "rca-metrics-example",
+  "private": true,
+  "version": "0.9.0",
+  "description": "Example of using @opentelemetry/rca-metrics",
+  "main": "index.js",
+  "scripts": {
+    "start": "node node.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "http",
+    "tracing",
+    "metrics"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^0.10.2",
+    "@opentelemetry/core": "^0.10.2",
+    "@opentelemetry/exporter-prometheus": "^0.10.2",
+    "@opentelemetry/metrics": "^0.10.2",
+    "@opentelemetry/rca-metrics": "^0.9.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme"
+}
