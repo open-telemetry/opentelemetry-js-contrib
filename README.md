@@ -69,6 +69,7 @@ OpenTelemetry can collect tracing data automatically using plugins. Vendors/User
 - [@opentelemetry/plugin-document-load][otel-plugin-document-load]
 - [@opentelemetry/plugin-xml-http-request][otel-plugin-xml-http-request]
 - [@opentelemetry/plugin-user-interaction][otel-plugin-user-interaction]
+- [@opentelemetry/plugin-react-load][otel-plugin-react-load]
 
 ## Contributing
 
@@ -92,6 +93,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-plugin-https]: https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-plugin-https
 [otel-plugin-dns]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-dns
 [otel-plugin-document-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/web/opentelemetry-plugin-document-load
+[otel-plugin-react-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/web/opentelemetry-plugin-react-load
 [otel-plugin-ioredis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-ioredis
 [otel-plugin-mongodb]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-mongodb
 [otel-plugin-mysql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-mysql

@@ -28,6 +28,7 @@ const MAIN_FOLDER = path.resolve(__dirname, '..');
 const ARTIFACTS_FOLDER = path.resolve(MAIN_FOLDER, 'artifacts');
 
 console.log('Downloading rca-metrics compiled files for release.');
+const TOKEN = process.env.CIRCLE_TOKEN;
 
 if (!TOKEN) {
   throw new Error(

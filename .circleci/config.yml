@@ -80,10 +80,10 @@ node_unit_tests: &node_unit_tests
           - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
     - run:
         name: Install Root Dependencies
-        command: npm install --ignore-scripts
+        command: npm install
     - run:
         name: Boostrap dependencies
-        command: npx lerna bootstrap --no-ci
+        command: npx lerna bootstrap
     - save_cache:
         <<: *cache_1
     - run:
@@ -115,10 +115,10 @@ browsers_unit_tests: &browsers_unit_tests
           - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
     - run:
         name: Install Root Dependencies
-        command: npm install --ignore-scripts
+        command: npm install
     - run:
         name: Boostrap dependencies
-        command: npx lerna bootstrap --no-ci
+        command: npx lerna bootstrap
     - save_cache:
         <<: *cache_1
     - run:

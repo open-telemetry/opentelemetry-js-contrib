@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-export type ConnectionConfig = Partial<{
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-}>;
-
 export type Query = Partial<{
   sql: string;
 }>;

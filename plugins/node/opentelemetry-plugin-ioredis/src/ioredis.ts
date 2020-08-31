@@ -22,8 +22,7 @@ import { traceConnection, traceSendCommand } from './utils';
 import { VERSION } from './version';
 
 export class IORedisPlugin extends BasePlugin<typeof ioredisTypes> {
-  static readonly COMPONENT = 'ioredis';
-  static readonly DB_TYPE = 'redis';
+  static readonly DB_SYSTEM = 'redis';
   readonly supportedVersions = ['>1 <5'];
   protected _config!: IoredisPluginConfig;
 
@@ -74,4 +73,4 @@ export class IORedisPlugin extends BasePlugin<typeof ioredisTypes> {
   }
 }
 
-export const plugin = new IORedisPlugin(IORedisPlugin.COMPONENT);
+export const plugin = new IORedisPlugin('ioredis');
