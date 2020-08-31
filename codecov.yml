@@ -13,3 +13,5 @@ coverage:
       default:
         target: auto
         threshold: 1%
+ignore:
+  - "packages/opentelemetry-rca-metrics/scripts"
