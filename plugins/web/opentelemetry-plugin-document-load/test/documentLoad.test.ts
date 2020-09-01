@@ -419,11 +419,11 @@ describe('DocumentLoad Plugin', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.name,
+          spanResource1.attributes['http.url'],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.name,
+          spanResource2.attributes['http.url'],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -455,7 +455,7 @@ describe('DocumentLoad Plugin', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.name,
+          spanResource1.attributes['http.url'],
           'http://localhost:8090/bundle.js'
         );
 

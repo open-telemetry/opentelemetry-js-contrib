@@ -205,12 +205,13 @@ export class DocumentLoad extends BasePlugin<unknown> {
     spanOptions: SpanOptions = {}
   ) {
     const span = this._startSpan(
-      resource.name,
+      'resourceFetch',
       PTN.FETCH_START,
       resource,
       spanOptions
     );
     if (span) {
+      span.setAttribute('http.url', resource.name);
       addSpanNetworkEvents(span, resource);
       this._endSpan(span, PTN.RESPONSE_END, resource);
     }
