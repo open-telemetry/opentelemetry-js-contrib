@@ -16,7 +16,7 @@
 
 import { BasePlugin } from '@opentelemetry/core';
 import { CanonicalCode, Span, SpanKind } from '@opentelemetry/api';
-import * as mongodb from 'mongodb';
+import type * as mongodb from 'mongodb';
 import * as shimmer from 'shimmer';
 import {
   Func,
@@ -186,7 +186,9 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
 
     // The namespace is a combination of the database name and the name of the
     // collection or index, like so: [database-name].[collection-or-index-name].
-    const [dbName, dbCollection] = ns.split('.');
+    // It could be a string or an instance of MongoDBNamespace, as such we
+    // always coerce to a string to extract db and collection.
+    const [dbName, dbCollection] = ns.toString().split('.');
 
     // add database related attributes
     span.setAttributes({
