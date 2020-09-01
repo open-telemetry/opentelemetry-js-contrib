@@ -206,7 +206,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
     spanOptions: SpanOptions = {}
   ) {
     const span = this._startSpan(
-      'resourceFetch',
+      AttributeNames.RESOURCE_FETCH,
       PTN.FETCH_START,
       resource,
       spanOptions
