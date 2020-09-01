@@ -36,6 +36,7 @@ import {
 } from '@opentelemetry/web';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
+import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
 /**
  * This class represents a document load plugin
@@ -211,7 +212,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
       spanOptions
     );
     if (span) {
-      span.setAttribute('http.url', resource.name);
+      span.setAttribute(HttpAttribute.HTTP_URL, resource.name);
       addSpanNetworkEvents(span, resource);
       this._endSpan(span, PTN.RESPONSE_END, resource);
     }
