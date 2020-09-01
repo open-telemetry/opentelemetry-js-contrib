@@ -214,9 +214,9 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         if (callbackIdx >= 0) {
           arguments[callbackIdx] = function () {
             if (spanHasEnded === false) {
-              span.end();
               spanHasEnded = true;
               req.res?.removeListener('finish', onResponseFinish);
+              span.end();
             }
             if (!(req.route && arguments[0] instanceof Error)) {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
