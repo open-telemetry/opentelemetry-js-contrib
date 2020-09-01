@@ -325,6 +325,7 @@ describe('DocumentLoad Plugin', () => {
         const fsEvents = fetchSpan.events;
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
+        assert.ok((rootSpan.attributes['http.response_content_length'] as number)> 0);
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
 
