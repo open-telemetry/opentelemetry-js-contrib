@@ -16,25 +16,25 @@
 
 import { BasePlugin } from '@opentelemetry/core';
 import { CanonicalCode, Span, SpanKind } from '@opentelemetry/api';
-import * as mongodb from 'mongodb';
+import type * as mongodb from 'mongodb';
 import * as shimmer from 'shimmer';
 import {
-  AttributeNames,
   Func,
   MongodbCommandType,
   MongoInternalCommand,
   MongoInternalTopology,
 } from './types';
 import { VERSION } from './version';
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
 
 /** MongoDBCore instrumentation plugin for OpenTelemetry */
 export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
   private readonly _SERVER_METHODS = ['insert', 'update', 'remove', 'command'];
   private readonly _CURSOR_METHODS = ['_next', 'next'];
   private _hasPatched: boolean = false;
-
-  private readonly _COMPONENT = 'mongodb';
-  private readonly _DB_TYPE = 'mongodb';
 
   readonly supportedVersions = ['>=2 <4'];
 
@@ -175,19 +175,26 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
     // add network attributes to determine the remote server
     if (topology && topology.s) {
       span.setAttributes({
-        [AttributeNames.PEER_HOSTNAME]: `${
+        [GeneralAttribute.NET_HOST_NAME]: `${
           topology.s.options?.host ?? topology.s.host
         }`,
-        [AttributeNames.PEER_PORT]: `${
+        [GeneralAttribute.NET_HOST_PORT]: `${
           topology.s.options?.port ?? topology.s.port
         }`,
       });
     }
+
+    // The namespace is a combination of the database name and the name of the
+    // collection or index, like so: [database-name].[collection-or-index-name].
+    // It could be a string or an instance of MongoDBNamespace, as such we
+    // always coerce to a string to extract db and collection.
+    const [dbName, dbCollection] = ns.toString().split('.');
+
     // add database related attributes
     span.setAttributes({
-      [AttributeNames.DB_INSTANCE]: `${ns}`,
-      [AttributeNames.DB_TYPE]: this._DB_TYPE,
-      [AttributeNames.COMPONENT]: this._COMPONENT,
+      [DatabaseAttribute.DB_SYSTEM]: 'mongodb',
+      [DatabaseAttribute.DB_NAME]: dbName,
+      [DatabaseAttribute.DB_MONGODB_COLLECTION]: dbCollection,
     });
 
     if (command === undefined) return;
