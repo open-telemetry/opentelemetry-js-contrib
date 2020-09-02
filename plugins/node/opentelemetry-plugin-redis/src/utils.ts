@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-import * as redisTypes from 'redis';
+import type { RedisClient } from 'redis';
 import { Tracer, SpanKind, Span, CanonicalCode } from '@opentelemetry/api';
-import {
-  RedisPluginStreamTypes,
-  RedisPluginClientTypes,
-  RedisCommand,
-} from './types';
+import { RedisCommand, RedisPluginClientTypes } from './types';
 import { EventEmitter } from 'events';
 import { RedisPlugin } from './redis';
 import {
@@ -41,8 +37,8 @@ const endSpan = (span: Span, err?: Error | null) => {
 };
 
 export const getTracedCreateClient = (tracer: Tracer, original: Function) => {
-  return function createClientTrace(this: redisTypes.RedisClient) {
-    const client: redisTypes.RedisClient = original.apply(this, arguments);
+  return function createClientTrace(this: RedisClient) {
+    const client: RedisClient = original.apply(this, arguments);
     return tracer.bind(client);
   };
 };
@@ -51,7 +47,7 @@ export const getTracedCreateStreamTrace = (
   tracer: Tracer,
   original: Function
 ) => {
-  return function create_stream_trace(this: RedisPluginStreamTypes) {
+  return function create_stream_trace(this: RedisClient) {
     if (!this.stream) {
       Object.defineProperty(this, 'stream', {
         get() {
@@ -72,7 +68,7 @@ export const getTracedInternalSendCommand = (
   original: Function
 ) => {
   return function internal_send_command_trace(
-    this: redisTypes.RedisClient & RedisPluginClientTypes,
+    this: RedisPluginClientTypes,
     cmd?: RedisCommand
   ) {
     // New versions of redis (2.4+) use a single options object

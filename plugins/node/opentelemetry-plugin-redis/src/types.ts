@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import * as redisTypes from 'redis';
-import { EventEmitter } from 'events';
+import type { Callback } from 'redis';
 
 // exported from
 // https://github.com/NodeRedis/node_redis/blob/master/lib/command.js
@@ -23,7 +22,7 @@ export interface RedisCommand {
   command: string;
   args: string[];
   buffer_args: boolean;
-  callback: redisTypes.Callback<unknown>;
+  callback: Callback<unknown>;
   call_on_write: boolean;
 }
 
@@ -34,8 +33,4 @@ export interface RedisPluginClientTypes {
   };
 
   address?: string;
-}
-
-export interface RedisPluginStreamTypes {
-  stream?: { get(): EventEmitter; set(val: EventEmitter): void };
 }
