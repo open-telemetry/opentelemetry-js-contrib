@@ -19,7 +19,7 @@ export type MongoInternalCommand = {
   findandmodify: boolean;
   createIndexes: boolean;
   count: boolean;
-  ismaster: boolean;
+  isprimary: boolean;
   indexes?: unknown[];
   query?: { [key: string]: unknown };
   q?: { [key: string]: unknown };
@@ -43,7 +43,7 @@ export type MongoInternalTopology = {
 export enum MongodbCommandType {
   CREATE_INDEXES = 'createIndexes',
   FIND_AND_MODIFY = 'findAndModify',
-  IS_MASTER = 'isMaster',
+  IS_PRIMARY = 'isMaster',
   COUNT = 'count',
   UNKNOWN = 'unknown',
 }

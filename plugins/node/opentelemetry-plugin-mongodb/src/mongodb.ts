@@ -150,8 +150,8 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
       return MongodbCommandType.CREATE_INDEXES;
     } else if (command.findandmodify !== undefined) {
       return MongodbCommandType.FIND_AND_MODIFY;
-    } else if (command.ismaster !== undefined) {
-      return MongodbCommandType.IS_MASTER;
+    } else if (command.isprimary !== undefined) {
+      return MongodbCommandType.IS_PRIMARY;
     } else if (command.count !== undefined) {
       return MongodbCommandType.COUNT;
     } else {
