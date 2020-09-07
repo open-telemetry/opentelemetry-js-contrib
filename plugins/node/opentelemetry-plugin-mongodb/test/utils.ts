@@ -18,7 +18,10 @@ import { CanonicalCode, SpanKind } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import * as mongodb from 'mongodb';
-import { AttributeNames } from '../src/types';
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
 
 export interface MongoDBAccess {
   client: mongodb.MongoClient;
@@ -75,16 +78,19 @@ export function assertSpans(
   const [mongoSpan] = spans;
   assert.strictEqual(mongoSpan.name, expectedName);
   assert.strictEqual(mongoSpan.kind, expectedKind);
-  assert.strictEqual(mongoSpan.attributes[AttributeNames.COMPONENT], 'mongodb');
   assert.strictEqual(
-    mongoSpan.attributes[AttributeNames.PEER_HOSTNAME],
+    mongoSpan.attributes[DatabaseAttribute.DB_SYSTEM],
+    'mongodb'
+  );
+  assert.strictEqual(
+    mongoSpan.attributes[GeneralAttribute.NET_HOST_NAME],
     process.env.MONGODB_HOST || 'localhost'
   );
   assert.strictEqual(mongoSpan.status.code, CanonicalCode.OK);
 
   if (isEnhancedDatabaseReportingEnabled) {
     const dbStatement = mongoSpan.attributes[
-      AttributeNames.DB_STATEMENT
+      DatabaseAttribute.DB_STATEMENT
     ] as any;
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');
