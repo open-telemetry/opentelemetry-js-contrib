@@ -15,8 +15,7 @@
  */
 
 import * as assert from 'assert';
-import { SpanContext, TraceFlags } from '@opentelemetry/api';
-import { Context } from '@opentelemetry/context-base';
+import { SpanContext, TraceFlags, Context } from '@opentelemetry/api';
 import {
   getExtractedSpanContext,
   setExtractedSpanContext,
