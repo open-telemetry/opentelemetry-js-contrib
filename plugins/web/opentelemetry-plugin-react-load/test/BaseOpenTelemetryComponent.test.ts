@@ -23,7 +23,6 @@ import {
   ReadableSpan,
 } from '@opentelemetry/tracing';
 import { StackContextManager } from '@opentelemetry/web';
-import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import AllLifecycles from './test-react-components/AllLifecycles';
@@ -343,11 +342,6 @@ describe('ReactLoad Instrumentation', () => {
             const keys = Object.keys(attributes);
 
             assert.ok(
-              attributes[keys[0]] !== '',
-              `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
               attributes[keys[1]] !== '',
               `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
             );
@@ -482,11 +476,6 @@ describe('ReactLoad Instrumentation', () => {
             const keys = Object.keys(attributes);
 
             assert.ok(
-              attributes[keys[0]] !== '',
-              `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
               attributes[keys[1]] !== '',
               `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
             );
@@ -607,11 +596,6 @@ describe('ReactLoad Instrumentation', () => {
             const keys = Object.keys(attributes);
 
             assert.ok(
-              attributes[keys[0]] !== '',
-              `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
               attributes[keys[1]] !== '',
               `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
             );
@@ -698,11 +682,6 @@ describe('ReactLoad Instrumentation', () => {
             const span: ReadableSpan = element[0][0];
             const attributes = span.attributes;
             const keys = Object.keys(attributes);
-
-            assert.ok(
-              attributes[keys[0]] !== '',
-              `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-            );
 
             assert.ok(
               attributes[keys[1]] !== '',
@@ -806,11 +785,6 @@ describe('ReactLoad Instrumentation', () => {
         const span: ReadableSpan = element[0][0];
         const attributes = span.attributes;
         const keys = Object.keys(attributes);
-
-        assert.ok(
-          attributes[keys[0]] !== '',
-          `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-        );
 
         assert.ok(
           attributes[keys[1]] !== '',

@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/test-utils",
   "private": true,
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Test utilities.",
   "main": "build/testUtils.js",
   "scripts": {
@@ -31,8 +31,8 @@
     "typescript": "3.9.6"
   },
   "dependencies": {
-    "@opentelemetry/api": "0.10.1",
-    "@opentelemetry/core": "0.10.1",
-    "@opentelemetry/tracing": "0.10.1"
+    "@opentelemetry/api": "^0.11.0",
+    "@opentelemetry/core": "^0.11.0",
+    "@opentelemetry/tracing": "^0.11.0"
   }
 }
