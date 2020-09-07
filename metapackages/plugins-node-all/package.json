@@ -1,5 +1,5 @@
 {
-    "name": "@opentelemetry/plugins-node-all",
+    "name": "@opentelemetry/plugins-node-core-and-contrib",
     "version": "0.10.0",
     "description": "Metapackage which bundles opentelemetry node core and contrib plugins",
     "author": "OpenTelemetry Authors",
