@@ -16,6 +16,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
+            metapackages/*/node_modules
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules
