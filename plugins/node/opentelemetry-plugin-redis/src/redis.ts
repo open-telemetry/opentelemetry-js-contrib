@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import * as redisTypes from 'redis';
+import type * as redisTypes from 'redis';
 import * as shimmer from 'shimmer';
 import {
   getTracedCreateClient,
