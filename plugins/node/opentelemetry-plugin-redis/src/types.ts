@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import * as redisTypes from 'redis';
-import { EventEmitter } from 'events';
+import type * as redisTypes from 'redis';
 
 // exported from
 // https://github.com/NodeRedis/node_redis/blob/master/lib/command.js
@@ -34,8 +33,4 @@ export interface RedisPluginClientTypes {
   };
 
   address?: string;
-}
-
-export interface RedisPluginStreamTypes {
-  stream?: { get(): EventEmitter; set(val: EventEmitter): void };
 }
