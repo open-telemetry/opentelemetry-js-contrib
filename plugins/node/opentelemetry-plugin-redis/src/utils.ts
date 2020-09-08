@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { RedisClient } from 'redis';
+import type * as redisTypes from 'redis';
 import { Tracer, SpanKind, Span, CanonicalCode } from '@opentelemetry/api';
 import { RedisCommand, RedisPluginClientTypes } from './types';
 import { EventEmitter } from 'events';
@@ -37,8 +37,8 @@ const endSpan = (span: Span, err?: Error | null) => {
 };
 
 export const getTracedCreateClient = (tracer: Tracer, original: Function) => {
-  return function createClientTrace(this: RedisClient) {
-    const client: RedisClient = original.apply(this, arguments);
+  return function createClientTrace(this: redisTypes.RedisClient) {
+    const client: redisTypes.RedisClient = original.apply(this, arguments);
     return tracer.bind(client);
   };
 };
@@ -47,7 +47,7 @@ export const getTracedCreateStreamTrace = (
   tracer: Tracer,
   original: Function
 ) => {
-  return function create_stream_trace(this: RedisClient) {
+  return function create_stream_trace(this: redisTypes.RedisClient) {
     if (!this.stream) {
       Object.defineProperty(this, 'stream', {
         get() {

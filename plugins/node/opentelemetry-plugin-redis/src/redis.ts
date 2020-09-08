@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import type * as redis from 'redis';
+import type * as redisTypes from 'redis';
 import * as shimmer from 'shimmer';
 import {
   getTracedCreateClient,
@@ -24,7 +24,7 @@ import {
 } from './utils';
 import { VERSION } from './version';
 
-export class RedisPlugin extends BasePlugin<typeof redis> {
+export class RedisPlugin extends BasePlugin<typeof redisTypes> {
   static readonly COMPONENT = 'redis';
   readonly supportedVersions = ['^2.6.0']; // equivalent to >= 2.6.0 <3
 

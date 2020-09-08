@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { Callback } from 'redis';
+import type * as redisTypes from 'redis';
 
 // exported from
 // https://github.com/NodeRedis/node_redis/blob/master/lib/command.js
@@ -22,7 +22,7 @@ export interface RedisCommand {
   command: string;
   args: string[];
   buffer_args: boolean;
-  callback: Callback<unknown>;
+  callback: redisTypes.Callback<unknown>;
   call_on_write: boolean;
 }
 
