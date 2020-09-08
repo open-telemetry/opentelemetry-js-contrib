@@ -17,7 +17,7 @@
 import {
   Context,
   GetterFunction,
-  HttpTextPropagator,
+  TextMapPropagator,
   SetterFunction,
 } from '@opentelemetry/api';
 import {
@@ -53,11 +53,11 @@ function isValidSpanId(spanId: string): boolean {
 
 /**
  * Propagator for the grpc-trace-bin header used by OpenCensus for
- * gRPC. Acts as a bridge between the HttpTextPropagator interface and
+ * gRPC. Acts as a bridge between the TextMapPropagator interface and
  * the binary encoding/decoding that happens in the supporting
  * BinaryTraceContext class.
  */
-export class GrpcCensusPropagator implements HttpTextPropagator {
+export class GrpcCensusPropagator implements TextMapPropagator {
   /**
    * Injects trace propagation context into the carrier after encoding
    * in binary format

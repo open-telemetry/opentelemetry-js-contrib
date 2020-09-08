@@ -43,6 +43,7 @@
   "devDependencies": {
     "@opentelemetry/context-async-hooks": "0.10.2",
     "@opentelemetry/node": "0.10.2",
+    "@opentelemetry/semantic-conventions": "^0.10.2",
     "@opentelemetry/tracing": "0.10.2",
     "@types/mocha": "7.0.2",
     "@types/mongodb": "3.5.25",

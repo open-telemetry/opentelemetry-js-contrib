@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import * as ioredisTypes from 'ioredis';
+import type * as ioredisTypes from 'ioredis';
 import * as shimmer from 'shimmer';
 import { IoredisPluginConfig } from './types';
 import { traceConnection, traceSendCommand } from './utils';
