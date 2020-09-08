@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-import * as ioredisTypes from 'ioredis';
+import type * as ioredisTypes from 'ioredis';
 import { Tracer, SpanKind, Span, CanonicalCode } from '@opentelemetry/api';
 import {
-  IoredisPluginClientTypes,
   IoredisCommand,
   IoredisPluginConfig,
   DbStatementSerializer,
@@ -41,7 +40,7 @@ const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
 };
 
 export const traceConnection = (tracer: Tracer, original: Function) => {
-  return function (this: ioredisTypes.Redis & IoredisPluginClientTypes) {
+  return function (this: ioredisTypes.Redis) {
     const span = tracer.startSpan('connect', {
       kind: SpanKind.CLIENT,
       attributes: {
@@ -82,10 +81,7 @@ export const traceSendCommand = (
 ) => {
   const dbStatementSerializer =
     config?.dbStatementSerializer || defaultDbStatementSerializer;
-  return function (
-    this: ioredisTypes.Redis & IoredisPluginClientTypes,
-    cmd?: IoredisCommand
-  ) {
+  return function (this: ioredisTypes.Redis, cmd?: IoredisCommand) {
     if (arguments.length < 1 || typeof cmd !== 'object') {
       return original.apply(this, arguments);
     }
