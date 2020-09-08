@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as ioredisTypes from 'ioredis';
+import type * as ioredisTypes from 'ioredis';
 import { PluginConfig } from '@opentelemetry/api';
 
 export interface IoredisCommand {
@@ -24,11 +24,6 @@ export interface IoredisCommand {
   args: Array<string | Buffer | number>;
   callback: ioredisTypes.CallbackFunction<unknown>;
   name: string;
-}
-
-export interface IoredisPluginClientTypes {
-  // https://github.com/luin/ioredis/blob/master/API.md
-  options: ioredisTypes.RedisOptions;
 }
 
 /**
