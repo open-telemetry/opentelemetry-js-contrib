@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import * as ioredisTypes from 'ioredis';
+import type * as ioredisTypes from 'ioredis';
+import { PluginConfig } from '@opentelemetry/api';
 
-export interface IORedisCommand {
+export interface IoredisCommand {
   reject: (err: Error) => void;
   resolve: (result: {}) => void;
   promise: Promise<{}>;
@@ -25,7 +26,22 @@ export interface IORedisCommand {
   name: string;
 }
 
-export interface IORedisPluginClientTypes {
-  // https://github.com/luin/ioredis/blob/master/API.md
-  options: ioredisTypes.RedisOptions;
+/**
+ * Function that can be used to serialize db.statement tag
+ * @param cmdName - The name of the command (eg. set, get, mset)
+ * @param cmdArgs - Array of arguments passed to the command
+ *
+ * @returns serialized string that will be used as the db.statement attribute.
+ */
+export type DbStatementSerializer = (
+  cmdName: IoredisCommand['name'],
+  cmdArgs: IoredisCommand['args']
+) => string;
+
+/**
+ * Options available for the IORedis Plugin (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-plugin-ioredis#ioredis-plugin-options))
+ */
+export interface IoredisPluginConfig extends PluginConfig {
+  /** Custom serializer function for the db.statement tag */
+  dbStatementSerializer?: DbStatementSerializer;
 }

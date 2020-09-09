@@ -1,5 +1,5 @@
-/*!
- * Copyright 2020, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ export function createButton(disabled?: boolean): HTMLElement {
 }
 
 export function fakeInteraction(
-  callback: Function = function() {},
+  callback: Function = function () {},
   elem?: HTMLElement
 ) {
   const element: HTMLElement = elem || createButton();
@@ -46,7 +46,7 @@ export function fakeInteraction(
 }
 
 export function assertClickSpan(span: tracing.ReadableSpan, id = 'testBtn') {
-  assert.equal(span.name, `event_click: //*[@id="${id}"]`);
+  assert.equal(span.name, 'click');
 
   const attributes = span.attributes;
   assert.equal(attributes.component, 'user-interaction');
@@ -58,7 +58,7 @@ export function assertClickSpan(span: tracing.ReadableSpan, id = 'testBtn') {
 }
 
 export function getData(url: string, callbackAfterSend: Function) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.send();

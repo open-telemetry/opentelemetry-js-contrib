@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import {
   TimedEvent,
 } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { plugin as pgPlugin, PostgresPlugin } from '@opentelemetry/plugin-pg';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/test-utils';
@@ -95,13 +95,13 @@ const runCallbackTest = (
 describe('pg-pool@2.x', () => {
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncHooksContextManager;
-  const provider = new NodeTracerProvider();
+  const provider = new BasicTracerProvider();
   const logger = new NoopLogger();
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
-  before(function(done) {
+  before(function (done) {
     if (!shouldTest) {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -116,7 +116,7 @@ describe('pg-pool@2.x', () => {
     done();
   });
 
-  after(function(done) {
+  after(done => {
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }
@@ -125,7 +125,7 @@ describe('pg-pool@2.x', () => {
     });
   });
 
-  beforeEach(function() {
+  beforeEach(() => {
     plugin.enable(pgPool, provider, logger);
     pgPlugin.enable(pg, provider, logger);
     contextManager = new AsyncHooksContextManager().enable();
@@ -136,7 +136,7 @@ describe('pg-pool@2.x', () => {
     memoryExporter.reset();
     plugin.disable();
     pgPlugin.disable();
-    contextManager.disable();
+    context.disable();
   });
 
   it('should return a plugin', () => {
@@ -166,8 +166,6 @@ describe('pg-pool@2.x', () => {
         try {
           await client.query('SELECT NOW()');
           runCallbackTest(span, pgAttributes, events, okStatus, 2, 1);
-        } catch (e) {
-          throw e;
         } finally {
           client.release();
         }
@@ -228,14 +226,10 @@ describe('pg-pool@2.x', () => {
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await provider.getTracer('test-pg-pool').withSpan(span, async () => {
-        try {
-          const result = await pool.query('SELECT NOW()');
-          runCallbackTest(span, pgPoolattributes, events, okStatus, 2, 0);
-          runCallbackTest(span, pgAttributes, events, okStatus, 2, 1);
-          assert.ok(result, 'pool.query() returns a promise');
-        } catch (e) {
-          throw e;
-        }
+        const result = await pool.query('SELECT NOW()');
+        runCallbackTest(span, pgPoolattributes, events, okStatus, 2, 0);
+        runCallbackTest(span, pgAttributes, events, okStatus, 2, 1);
+        assert.ok(result, 'pool.query() returns a promise');
       });
     });
 

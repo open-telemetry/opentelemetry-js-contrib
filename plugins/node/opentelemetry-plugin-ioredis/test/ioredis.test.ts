@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,11 @@ import {
 import * as assert from 'assert';
 import * as ioredisTypes from 'ioredis';
 import { IORedisPlugin, plugin } from '../src';
-import { AttributeNames } from '../src/enums';
+import { IoredisPluginConfig, DbStatementSerializer } from '../src/types';
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -38,11 +42,10 @@ const CONFIG = {
 const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
-  [AttributeNames.COMPONENT]: IORedisPlugin.COMPONENT,
-  [AttributeNames.DB_TYPE]: IORedisPlugin.DB_TYPE,
-  [AttributeNames.PEER_HOSTNAME]: CONFIG.host,
-  [AttributeNames.PEER_PORT]: CONFIG.port,
-  [AttributeNames.PEER_ADDRESS]: URL,
+  [DatabaseAttribute.DB_SYSTEM]: IORedisPlugin.DB_SYSTEM,
+  [GeneralAttribute.NET_PEER_HOSTNAME]: CONFIG.host,
+  [GeneralAttribute.NET_PEER_PORT]: CONFIG.port,
+  [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
 
 const okStatus: Status = {
@@ -62,10 +65,10 @@ describe('ioredis', () => {
   });
 
   afterEach(() => {
-    contextManager.disable();
+    context.disable();
   });
 
-  before(function() {
+  before(function () {
     // needs to be "function" to have MochaContext "this" context
     if (!shouldTest) {
       // this.skip() workaround
@@ -90,7 +93,7 @@ describe('ioredis', () => {
   });
 
   it('should have correct module name', () => {
-    assert.strictEqual(plugin.moduleName, IORedisPlugin.COMPONENT);
+    assert.strictEqual(plugin.moduleName, 'ioredis');
   });
 
   describe('#createClient()', () => {
@@ -99,7 +102,7 @@ describe('ioredis', () => {
       let client: ioredisTypes.Redis;
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: 'connect',
+        [DatabaseAttribute.DB_STATEMENT]: 'connect',
       };
       const readyHandler = () => {
         const endedSpans = memoryExporter.getFinishedSpans();
@@ -109,8 +112,8 @@ describe('ioredis', () => {
           span
         );
         assert.strictEqual(endedSpans.length, 2);
-        assert.strictEqual(endedSpans[0].name, `connect`);
-        assert.strictEqual(endedSpans[1].name, `info`);
+        assert.strictEqual(endedSpans[0].name, 'connect');
+        assert.strictEqual(endedSpans[1].name, 'info');
         testUtils.assertPropagation(endedSpans[0], span);
 
         testUtils.assertSpan(
@@ -122,11 +125,11 @@ describe('ioredis', () => {
         );
         span.end();
         assert.strictEqual(endedSpans.length, 3);
-        assert.strictEqual(endedSpans[2].name, `test span`);
+        assert.strictEqual(endedSpans[2].name, 'test span');
 
         client.quit(done);
         assert.strictEqual(endedSpans.length, 4);
-        assert.strictEqual(endedSpans[3].name, `quit`);
+        assert.strictEqual(endedSpans[3].name, 'quit');
       };
       const errorHandler = (err: Error) => {
         assert.ifError(err);
@@ -193,9 +196,9 @@ describe('ioredis', () => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [AttributeNames.DB_STATEMENT]: `${command.name} ${command.args.join(
-              ' '
-            )}`,
+            [DatabaseAttribute.DB_STATEMENT]: `${
+              command.name
+            } ${command.args.join(' ')}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -225,7 +228,7 @@ describe('ioredis', () => {
       it('should create a child span for hset promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'hset hash random random',
+          [DatabaseAttribute.DB_STATEMENT]: 'hset hash random random',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
@@ -235,7 +238,7 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, `hset`);
+            assert.strictEqual(endedSpans[0].name, 'hset');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -253,7 +256,7 @@ describe('ioredis', () => {
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'scan 0',
+          [DatabaseAttribute.DB_STATEMENT]: 'scan 0',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         provider.getTracer('ioredis-test').withSpan(span, () => {
@@ -263,7 +266,7 @@ describe('ioredis', () => {
               // `resultKeys` is an array of strings representing key names.
               // Note that resultKeys may contain 0 keys, and that it will sometimes
               // contain duplicates due to SCAN's implementation in Redis.
-              for (var i = 0; i < resultKeys.length; i++) {
+              for (let i = 0; i < resultKeys.length; i++) {
                 console.log(resultKeys[i]);
               }
             })
@@ -273,7 +276,7 @@ describe('ioredis', () => {
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
               assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[0].name, `scan`);
+              assert.strictEqual(endedSpans[0].name, 'scan');
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -328,7 +331,7 @@ describe('ioredis', () => {
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
-              [AttributeNames.DB_STATEMENT]: 'subscribe news music',
+              [DatabaseAttribute.DB_STATEMENT]: 'subscribe news music',
             };
             testUtils.assertSpan(
               endedSpans[5],
@@ -344,10 +347,11 @@ describe('ioredis', () => {
         });
       });
 
-      it(`should create a child span for lua`, done => {
+      it('should create a child span for lua', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'eval return {KEYS[1],ARGV[1]} 1 test',
+          [DatabaseAttribute.DB_STATEMENT]:
+            'evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 test',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -370,7 +374,7 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans[1].name, 'eval');
             assert.strictEqual(endedSpans[0].name, 'evalsha');
             testUtils.assertSpan(
-              endedSpans[1],
+              endedSpans[0],
               SpanKind.CLIENT,
               attributes,
               [],
@@ -382,10 +386,10 @@ describe('ioredis', () => {
         });
       });
 
-      it(`should create a child span for multi/transaction`, done => {
+      it('should create a child span for multi/transaction', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'multi',
+          [DatabaseAttribute.DB_STATEMENT]: 'multi',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -418,10 +422,10 @@ describe('ioredis', () => {
         });
       });
 
-      it(`should create a child span for pipeline`, done => {
+      it('should create a child span for pipeline', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'set foo bar',
+          [DatabaseAttribute.DB_STATEMENT]: 'set foo bar',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -455,7 +459,7 @@ describe('ioredis', () => {
       it('should create a child span for get promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'get test',
+          [DatabaseAttribute.DB_STATEMENT]: 'get test',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
@@ -466,7 +470,7 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, `get`);
+            assert.strictEqual(endedSpans[0].name, 'get');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -484,7 +488,7 @@ describe('ioredis', () => {
       it('should create a child span for del', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [AttributeNames.DB_STATEMENT]: 'del test',
+          [DatabaseAttribute.DB_STATEMENT]: 'del test',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
@@ -507,6 +511,65 @@ describe('ioredis', () => {
           } catch (error) {
             assert.ifError(error);
           }
+        });
+      });
+    });
+
+    describe('Instrumenting without parent span', () => {
+      before(() => {
+        plugin.disable();
+        plugin.enable(ioredis, provider, new NoopLogger(), {});
+      });
+      it('should not create child span', async () => {
+        await client.set('test', 'data');
+        const result = await client.del('test');
+        assert.strictEqual(result, 1);
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      });
+    });
+
+    describe('Instrumenting with a custom db.statement serializer', () => {
+      const dbStatementSerializer: DbStatementSerializer = (cmdName, cmdArgs) =>
+        `FOOBAR_${cmdName}: ${cmdArgs[0]}`;
+      before(() => {
+        plugin.disable();
+        const config: IoredisPluginConfig = {
+          dbStatementSerializer,
+        };
+        plugin.enable(ioredis, provider, new NoopLogger(), config);
+      });
+
+      IOREDIS_CALLBACK_OPERATIONS.forEach(command => {
+        it(`should tag the span with a custom db.statement for cb style ${command.description}`, done => {
+          const attributes = {
+            ...DEFAULT_ATTRIBUTES,
+            [DatabaseAttribute.DB_STATEMENT]: dbStatementSerializer(
+              command.name,
+              command.args
+            ),
+          };
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          provider.getTracer('ioredis-test').withSpan(span, () => {
+            command.method((err, _result) => {
+              assert.ifError(err);
+              assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans.length, 2);
+              assert.strictEqual(endedSpans[0].name, command.name);
+              testUtils.assertSpan(
+                endedSpans[0],
+                SpanKind.CLIENT,
+                attributes,
+                [],
+                okStatus
+              );
+              testUtils.assertPropagation(endedSpans[0], span);
+              done();
+            });
+          });
         });
       });
     });
@@ -544,7 +607,7 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 1);
-            assert.strictEqual(endedSpans[0].name, `test span`);
+            assert.strictEqual(endedSpans[0].name, 'test span');
           } catch (error) {
             assert.ifError(error);
           }

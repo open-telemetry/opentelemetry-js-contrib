@@ -1,5 +1,5 @@
-/*!
- * Copyright 2020, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 import {
   Context,
-  HttpTextPropagator,
+  TextMapPropagator,
   SpanContext,
   TraceFlags,
   SetterFunction,
@@ -44,7 +44,7 @@ export const UBER_TRACE_ID_HEADER = 'uber-trace-id';
  * One byte bitmap, as two hex digits.
  * Inspired by jaeger-client-node project.
  */
-export class JaegerHttpTracePropagator implements HttpTextPropagator {
+export class JaegerHttpTracePropagator implements TextMapPropagator {
   private readonly _jaegerTraceHeader: string;
 
   /**

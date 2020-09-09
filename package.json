@@ -1,7 +1,14 @@
 {
   "name": "opentelemetry-contrib",
-  "version": "0.7.0",
+  "version": "0.10.0",
   "description": "This is a repository for OpenTelemetry JavaScript contributions.",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
@@ -22,7 +29,6 @@
     "lint:examples": "eslint ./examples/**/*.js",
     "lint:examples:fix": "eslint ./examples/**/*.js --fix"
   },
-  "repository": "open-telemetry/opentelemetry-js",
   "keywords": [
     "opentelemetry",
     "nodejs",
@@ -34,21 +40,34 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@commitlint/cli": "^8.3.4",
-    "@commitlint/config-conventional": "^8.3.4",
-    "eslint": "^6.8.0",
-    "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-plugin-import": "^2.19.1",
-    "gts": "^1.1.0",
-    "husky": "^3.0.9",
-    "lerna": "^3.17.0",
-    "lerna-changelog": "^1.0.0",
-    "tslint": "^5.0.0",
-    "typescript": "^3.7.2"
+    "@commitlint/cli": "9.0.1",
+    "@commitlint/config-conventional": "9.0.1",
+    "@typescript-eslint/eslint-plugin": "3.3.0",
+    "@typescript-eslint/parser": "3.3.0",
+    "eslint": "7.4.0",
+    "eslint-config-airbnb-base": "14.2.0",
+    "eslint-plugin-header": "3.0.0",
+    "eslint-plugin-import": "2.22.0",
+    "gts": "2.0.2",
+    "husky": "4.2.5",
+    "lerna": "3.22.1",
+    "lerna-changelog": "1.0.1",
+    "typescript": "3.9.6"
   },
   "husky": {
     "hooks": {
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
+  },
+  "changelog": {
+    "labels": {
+      "breaking": ":boom: Breaking Change",
+      "bug": ":bug: Bug Fix",
+      "plugin-request": ":tada: New Plugins",
+      "enhancement": ":rocket: Enhancement",
+      "internal": ":house: Internal",
+      "documentation": ":memo: Documentation"
+    },
+    "ignoreCommitters": ["renovate-bot", "dependabot"]
   }
 }

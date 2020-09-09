@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/**
- * Can't use Sinon Fake Time here as then cannot stub the performance getEntriesByType with desired metrics
  */
 
 import {
@@ -42,8 +38,9 @@ import {
 } from '@opentelemetry/web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { ExportResult } from '@opentelemetry/base';
+import { ExportResult } from '@opentelemetry/core';
 import { DocumentLoad } from '../src';
+import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
 export class DummyExporter implements SpanExporter {
   export(
@@ -229,7 +226,7 @@ describe('DocumentLoad Plugin', () => {
   });
 
   afterEach(() => {
-    contextManager.disable();
+    context.disable();
     Object.defineProperty(window.document, 'readyState', {
       writable: true,
       value: 'complete',
@@ -329,6 +326,11 @@ describe('DocumentLoad Plugin', () => {
         const fsEvents = fetchSpan.events;
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
+        assert.ok(
+          (rootSpan.attributes[
+            HttpAttribute.HTTP_RESPONSE_CONTENT_LENGTH
+          ] as number) > 0
+        );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
 
@@ -422,11 +424,11 @@ describe('DocumentLoad Plugin', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.name,
+          spanResource1.attributes[HttpAttribute.HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.name,
+          spanResource2.attributes[HttpAttribute.HTTP_URL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -458,7 +460,7 @@ describe('DocumentLoad Plugin', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.name,
+          spanResource1.attributes[HttpAttribute.HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
 

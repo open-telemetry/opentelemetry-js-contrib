@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import * as redisTypes from 'redis';
-import { EventEmitter } from 'events';
+import type * as redisTypes from 'redis';
 
 // exported from
 // https://github.com/NodeRedis/node_redis/blob/master/lib/command.js
@@ -34,8 +33,4 @@ export interface RedisPluginClientTypes {
   };
 
   address?: string;
-}
-
-export interface RedisPluginStreamTypes {
-  stream?: { get(): EventEmitter; set(val: EventEmitter): void };
 }

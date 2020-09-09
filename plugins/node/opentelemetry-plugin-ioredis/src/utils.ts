@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-import * as ioredisTypes from 'ioredis';
+import type * as ioredisTypes from 'ioredis';
 import { Tracer, SpanKind, Span, CanonicalCode } from '@opentelemetry/api';
-import { IORedisPluginClientTypes, IORedisCommand } from './types';
+import {
+  IoredisCommand,
+  IoredisPluginConfig,
+  DbStatementSerializer,
+} from './types';
 import { IORedisPlugin } from './ioredis';
-import { AttributeNames } from './enums';
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
 
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
@@ -33,21 +40,20 @@ const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
 };
 
 export const traceConnection = (tracer: Tracer, original: Function) => {
-  return function(this: ioredisTypes.Redis & IORedisPluginClientTypes) {
+  return function (this: ioredisTypes.Redis) {
     const span = tracer.startSpan('connect', {
       kind: SpanKind.CLIENT,
       attributes: {
-        [AttributeNames.COMPONENT]: IORedisPlugin.COMPONENT,
-        [AttributeNames.DB_TYPE]: IORedisPlugin.DB_TYPE,
-        [AttributeNames.DB_STATEMENT]: 'connect',
+        [DatabaseAttribute.DB_SYSTEM]: IORedisPlugin.DB_SYSTEM,
+        [DatabaseAttribute.DB_STATEMENT]: 'connect',
       },
     });
     const { host, port } = this.options;
 
     span.setAttributes({
-      [AttributeNames.PEER_HOSTNAME]: host,
-      [AttributeNames.PEER_PORT]: port,
-      [AttributeNames.PEER_ADDRESS]: `redis://${host}:${port}`,
+      [GeneralAttribute.NET_PEER_HOSTNAME]: host,
+      [GeneralAttribute.NET_PEER_PORT]: port,
+      [GeneralAttribute.NET_PEER_ADDRESS]: `redis://${host}:${port}`,
     });
     try {
       const client = original.apply(this, arguments);
@@ -60,40 +66,56 @@ export const traceConnection = (tracer: Tracer, original: Function) => {
   };
 };
 
-export const traceSendCommand = (tracer: Tracer, original: Function) => {
-  return function(
-    this: ioredisTypes.Redis & IORedisPluginClientTypes,
-    cmd?: IORedisCommand
-  ) {
-    if (arguments.length >= 1 && typeof cmd === 'object') {
-      const span = tracer.startSpan(cmd.name, {
-        kind: SpanKind.CLIENT,
-        attributes: {
-          [AttributeNames.COMPONENT]: IORedisPlugin.COMPONENT,
-          [AttributeNames.DB_TYPE]: IORedisPlugin.DB_TYPE,
-          [AttributeNames.DB_STATEMENT]:
-            Array.isArray(cmd.args) && cmd.args.length
-              ? `${cmd.name} ${cmd.args.join(' ')}`
-              : cmd.name,
-        },
-      });
+const defaultDbStatementSerializer: DbStatementSerializer = (
+  cmdName,
+  cmdArgs
+) =>
+  Array.isArray(cmdArgs) && cmdArgs.length
+    ? `${cmdName} ${cmdArgs.join(' ')}`
+    : cmdName;
 
-      const { host, port } = this.options;
+export const traceSendCommand = (
+  tracer: Tracer,
+  original: Function,
+  config?: IoredisPluginConfig
+) => {
+  const dbStatementSerializer =
+    config?.dbStatementSerializer || defaultDbStatementSerializer;
+  return function (this: ioredisTypes.Redis, cmd?: IoredisCommand) {
+    if (arguments.length < 1 || typeof cmd !== 'object') {
+      return original.apply(this, arguments);
+    }
+    // Do not trace if there is not parent span
+    if (tracer.getCurrentSpan() === undefined) {
+      return original.apply(this, arguments);
+    }
 
-      span.setAttributes({
-        [AttributeNames.PEER_HOSTNAME]: host,
-        [AttributeNames.PEER_PORT]: port,
-        [AttributeNames.PEER_ADDRESS]: `redis://${host}:${port}`,
-      });
+    const span = tracer.startSpan(cmd.name, {
+      kind: SpanKind.CLIENT,
+      attributes: {
+        [DatabaseAttribute.DB_SYSTEM]: IORedisPlugin.DB_SYSTEM,
+        [DatabaseAttribute.DB_STATEMENT]: dbStatementSerializer(
+          cmd.name,
+          cmd.args
+        ),
+      },
+    });
 
-      try {
-        const result = original.apply(this, arguments);
-        endSpan(span, null);
-        return result;
-      } catch (error) {
-        endSpan(span, error);
-        throw error;
-      }
-    } else return original.apply(this, arguments);
+    const { host, port } = this.options;
+
+    span.setAttributes({
+      [GeneralAttribute.NET_PEER_HOSTNAME]: host,
+      [GeneralAttribute.NET_PEER_PORT]: port,
+      [GeneralAttribute.NET_PEER_ADDRESS]: `redis://${host}:${port}`,
+    });
+
+    try {
+      const result = original.apply(this, arguments);
+      endSpan(span, null);
+      return result;
+    } catch (error) {
+      endSpan(span, error);
+      throw error;
+    }
   };
 };

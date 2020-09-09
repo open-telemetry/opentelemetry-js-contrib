@@ -45,6 +45,17 @@ const provider = new NodeTracerProvider();
 
 See [examples/mongodb](https://github.com/open-telemetry/opentelemetry-js/tree/master/examples/mongodb) for a short example.
 
+### Mongo Plugin Options
+
+Mongodb plugin has few options available to choose from. You can set the following:
+
+| Options | Type | Description |
+| ------- | ---- | ----------- |
+| [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L91) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
+
+
+
+
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>

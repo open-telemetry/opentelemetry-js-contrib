@@ -1,0 +1,62 @@
+{
+  "private": true,
+  "name": "react-load-preact-example",
+  "version": "0.9.0",
+  "description": "Example of using @opentelemetry/plugin-react-load in browser with Preact",
+  "main": "index.js",
+  "scripts": {
+    "build": "preact build --no-prerender",
+    "docker:start": "cd ./docker && docker-compose down && docker-compose up",
+    "docker:startd": "cd ./docker && docker-compose down && docker-compose up -d",
+    "docker:stop": "cd ./docker && docker-compose down",
+    "start": "sirv build --port 8080 --cors --single"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "react",
+    "preact",
+    "web",
+    "tracing"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  },
+  "devDependencies": {
+    "identity-obj-proxy": "^3.0.0",
+    "preact-cli": "^3.0.0",
+    "preact-render-spy": "^1.2.1",
+    "sirv-cli": "1.0.3"
+  },
+  "dependencies": {
+    "@opentelemetry/context-zone": "^0.10.1",
+    "@opentelemetry/exporter-collector": "^0.10.1",
+    "@opentelemetry/plugin-react-load": "^0.8.0",
+    "@opentelemetry/tracing": "^0.10.1",
+    "@opentelemetry/web": "^0.10.1",
+    "preact": "^10.3.2",
+    "preact-render-to-string": "^5.1.4",
+    "preact-router": "^3.2.1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "homepage": "https://github.com/opentelemetry-js-contrib/examples/react-load/preact#readme"
+}

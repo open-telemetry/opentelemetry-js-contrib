@@ -1,5 +1,5 @@
-/*!
- * Copyright 2020, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,17 +159,19 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
     if (layer[kLayerPatched] === true) return;
     layer[kLayerPatched] = true;
     this._logger.debug('patching express.Router.Layer.handle');
-    shimmer.wrap(layer, 'handle', function(original: Function) {
+    shimmer.wrap(layer, 'handle', (original: Function) => {
       if (original.length === 4) return original;
 
-      return function(
+      return function (
         this: ExpressLayer,
         req: PatchedRequest,
         res: express.Response,
         next: express.NextFunction
       ) {
         storeLayerPath(req, layerPath);
-        const route = (req[_LAYERS_STORE_PROPERTY] as string[]).join('');
+        const route = (req[_LAYERS_STORE_PROPERTY] as string[])
+          .filter(path => path !== '/')
+          .join('');
         const attributes: Attributes = {
           [AttributeNames.COMPONENT]: ExpressPlugin.component,
           [AttributeNames.HTTP_ROUTE]: route.length > 0 ? route : undefined,
@@ -182,13 +184,16 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         if (isLayerIgnored(metadata.name, type, plugin._config)) {
           return original.apply(this, arguments);
         }
+        if (plugin._tracer.getCurrentSpan() === undefined) {
+          return original.apply(this, arguments);
+        }
         const span = plugin._tracer.startSpan(metadata.name, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
         const startTime = hrTime();
-        let spanHasEnded: boolean = false;
+        let spanHasEnded = false;
         // If we found anything that isnt a middleware, there no point of measuring
-        // stheir time ince they dont have callback.
+        // their time since they dont have callback.
         if (
           metadata.attributes[AttributeNames.EXPRESS_TYPE] !==
           ExpressLayerType.MIDDLEWARE
@@ -200,7 +205,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         const args = Array.from(arguments);
         const callbackIdx = args.findIndex(arg => typeof arg === 'function');
         if (callbackIdx >= 0) {
-          arguments[callbackIdx] = function() {
+          arguments[callbackIdx] = function () {
             if (spanHasEnded === false) {
               span.end();
               spanHasEnded = true;
@@ -218,7 +223,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
           if (spanHasEnded === false) {
             span.end(startTime);
           }
-        }).unref();
+        });
         return result;
       };
     });

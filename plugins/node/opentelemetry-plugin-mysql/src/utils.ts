@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,49 +15,33 @@
  */
 
 import { Attributes } from '@opentelemetry/api';
-import { AttributeNames } from './enums';
-import { ConnectionConfig, Query } from './types';
-
-/**
- * Get a span name from a mysql query
- *
- * @param query mysql Query or string
- */
-export function getSpanName(query: string | Query) {
-  return `mysql.query:${getCommand(query)}`;
-}
-
-/**
- * Get the low cardinality command name from a query.
- *
- * @param query mysql Query or string
- */
-function getCommand(query: string | Query) {
-  const queryString = typeof query === 'string' ? query : query.sql;
-
-  if (!queryString) {
-    return 'UNKNOWN_COMMAND';
-  }
-
-  // Command is the first non-whitespace token in the query
-  const match = queryString.match(/^\s*(\w+)/);
-  return (match && match[1]) || 'UNKNOWN_COMMAND';
-}
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
+import type {
+  ConnectionConfig,
+  PoolActualConfig,
+  Query,
+  QueryOptions,
+} from 'mysql';
 
 /**
  * Get an Attributes map from a mysql connection config object
  *
  * @param config ConnectionConfig
  */
-export function getConnectionAttributes(config: ConnectionConfig): Attributes {
+export function getConnectionAttributes(
+  config: ConnectionConfig | PoolActualConfig
+): Attributes {
   const { host, port, database, user } = getConfig(config);
 
   return {
-    [AttributeNames.PEER_ADDRESS]: getJDBCString(host, port, database),
-    [AttributeNames.DB_INSTANCE]: database,
-    [AttributeNames.PEER_HOSTNAME]: host,
-    [AttributeNames.PEER_PORT]: port,
-    [AttributeNames.DB_USER]: user,
+    [GeneralAttribute.NET_PEER_HOSTNAME]: host,
+    [GeneralAttribute.NET_PEER_PORT]: port,
+    [GeneralAttribute.NET_PEER_ADDRESS]: getJDBCString(host, port, database),
+    [DatabaseAttribute.DB_NAME]: database,
+    [DatabaseAttribute.DB_USER]: user,
   };
 }
 
@@ -83,4 +67,30 @@ function getJDBCString(
   }
 
   return jdbcString;
+}
+
+/**
+ * Conjures up the value for the db.statement attribute by formatting a SQL query.
+ *
+ * @returns the database statement being executed.
+ */
+export function getDbStatement(
+  query: string | Query | QueryOptions,
+  format: (
+    sql: string,
+    values: any[],
+    stringifyObjects?: boolean,
+    timeZone?: string
+  ) => string,
+  values?: any[]
+): string {
+  if (typeof query === 'string') {
+    return values ? format(query, values) : query;
+  } else {
+    // According to https://github.com/mysqljs/mysql#performing-queries
+    // The values argument will override the values in the option object.
+    return values || query.values
+      ? format(query.sql, values || query.values)
+      : query.sql;
+  }
 }

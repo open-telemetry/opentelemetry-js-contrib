@@ -1,5 +1,5 @@
-/*!
- * Copyright 2019, OpenTelemetry Authors
+/*
+ * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@ import { CanonicalCode, SpanKind } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import * as mongodb from 'mongodb';
-import { AttributeNames } from '../src/types';
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
 
 export interface MongoDBAccess {
   client: mongodb.MongoClient;
@@ -37,7 +40,7 @@ export function accessCollection(
   collectionName: string
 ): Promise<MongoDBAccess> {
   return new Promise((resolve, reject) => {
-    mongodb.MongoClient.connect(url, function connectedClient(err, client) {
+    mongodb.MongoClient.connect(url, (err, client) => {
       if (err) {
         reject(err);
         return;
@@ -54,12 +57,15 @@ export function accessCollection(
  * @param spans Readable spans that we need to assert.
  * @param expectedName The expected name of the first root span.
  * @param expectedKind The expected kind of the first root span.
+ * @param log
+ * @param isEnhancedDatabaseReportingEnabled Is enhanced database reporting enabled: boolean
  */
 export function assertSpans(
   spans: ReadableSpan[],
   expectedName: string,
   expectedKind: SpanKind,
-  log = false
+  log = false,
+  isEnhancedDatabaseReportingEnabled = false
 ) {
   if (log) {
     console.log(spans);
@@ -72,10 +78,22 @@ export function assertSpans(
   const [mongoSpan] = spans;
   assert.strictEqual(mongoSpan.name, expectedName);
   assert.strictEqual(mongoSpan.kind, expectedKind);
-  assert.strictEqual(mongoSpan.attributes[AttributeNames.COMPONENT], 'mongodb');
   assert.strictEqual(
-    mongoSpan.attributes[AttributeNames.PEER_HOSTNAME],
+    mongoSpan.attributes[DatabaseAttribute.DB_SYSTEM],
+    'mongodb'
+  );
+  assert.strictEqual(
+    mongoSpan.attributes[GeneralAttribute.NET_HOST_NAME],
     process.env.MONGODB_HOST || 'localhost'
   );
   assert.strictEqual(mongoSpan.status.code, CanonicalCode.OK);
+
+  if (isEnhancedDatabaseReportingEnabled) {
+    const dbStatement = mongoSpan.attributes[
+      DatabaseAttribute.DB_STATEMENT
+    ] as any;
+    for (const key in dbStatement) {
+      assert.notStrictEqual(dbStatement[key], '?');
+    }
+  }
 }
