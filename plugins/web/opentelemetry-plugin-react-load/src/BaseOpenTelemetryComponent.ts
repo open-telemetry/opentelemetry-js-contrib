@@ -17,7 +17,6 @@
 import * as api from '@opentelemetry/api';
 import { isWrapped } from '@opentelemetry/core';
 import * as shimmer from 'shimmer';
-import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums/AttributeNames';
 import * as React from 'react';
 import { VERSION } from './version';
@@ -154,7 +153,6 @@ export class BaseOpenTelemetryComponent extends React.Component {
       state = '{"message": "state could not be turned into string"}';
     }
     return {
-      [GeneralAttribute.COMPONENT]: this.moduleName,
       [AttributeNames.LOCATION_URL]: window.location.href,
       [AttributeNames.REACT_NAME]: react.constructor.name,
       [AttributeNames.REACT_STATE]: state,
