@@ -75,7 +75,7 @@ OpenTelemetry can collect tracing data automatically using plugins. Vendors/User
 
 Multiple plugins may be leveraged via metapackages.
 
-- [@opentelemetry/plugins-node-all][otel-plugins-node-all] - all officially supported core and contrib plugins.
+- [@opentelemetry/plugins-node-core-and-contrib][otel-plugins-node-core-and-contrib] - all officially supported core and contrib plugins.
 
 ## Contributing
 
@@ -111,4 +111,4 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-plugin-user-interaction]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/web/opentelemetry-plugin-user-interaction
 [otel-plugin-xml-http-request]: https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-plugin-xml-http-request
 [otel-plugin-express]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-express
-[otel-plugins-node-all]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/metapackages/plugins-node-all
+[otel-plugins-node-core-and-contrib]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/metapackages/plugins-node-core-and-contrib

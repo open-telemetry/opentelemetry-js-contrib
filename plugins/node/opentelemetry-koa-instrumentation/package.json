@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/koa-instrumentation",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "OpenTelemetry Koa automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -42,20 +42,20 @@
     "access": "public"
   },
   "devDependencies": {
-    "@koa/router": "^9.3.1",
-    "@opentelemetry/context-async-hooks": "0.10.2",
-    "@opentelemetry/node": "0.10.2",
-    "@opentelemetry/tracing": "0.10.2",
-    "@types/koa": "^2.11.3",
-    "@types/koa__router": "^8.0.2",
+    "@koa/router": "9.4.0",
+    "@opentelemetry/context-async-hooks": "0.11.0",
+    "@opentelemetry/node": "0.11.0",
+    "@opentelemetry/tracing": "0.11.0",
+    "@types/koa": "2.11.4",
+    "@types/koa__router": "8.0.2",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
     "@types/shimmer": "1.0.1",
     "codecov": "3.7.1",
-    "eslint": "^7.6.0",
-    "eslint-plugin-header": "^3.0.0",
+    "eslint": "7.8.1",
+    "eslint-plugin-header": "3.1.0",
     "gts": "2.0.2",
-    "koa": "^2.13.0",
+    "koa": "2.13.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
@@ -66,9 +66,9 @@
     "typescript": "3.9.6"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.10.2",
-    "@opentelemetry/core": "^0.10.2",
-    "@opentelemetry/semantic-conventions": "^0.10.2",
+    "@opentelemetry/api": "^0.11.0",
+    "@opentelemetry/core": "^0.11.0",
+    "@opentelemetry/semantic-conventions": "^0.11.0",
     "shimmer": "^1.2.1"
   }
 }

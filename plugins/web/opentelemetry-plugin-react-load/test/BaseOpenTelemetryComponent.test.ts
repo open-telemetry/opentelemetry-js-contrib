@@ -23,7 +23,6 @@ import {
   ReadableSpan,
 } from '@opentelemetry/tracing';
 import { StackContextManager } from '@opentelemetry/web';
-import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import AllLifecycles from './test-react-components/AllLifecycles';
@@ -339,34 +338,7 @@ describe('ReactLoad Instrumentation', () => {
           assert.strictEqual(spans.length, 3, 'number of spans is wrong');
           spans.forEach(element => {
             const span: ReadableSpan = element[0][0];
-            const attributes = span.attributes;
-            const keys = Object.keys(attributes);
-
-            assert.ok(
-              attributes[keys[0]] !== '',
-              `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[1]] !== '',
-              `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[2]] !== '',
-              `attributes ${AttributeNames.REACT_NAME} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[3]] !== '',
-              `attributes ${AttributeNames.REACT_STATE} is not defined for span "${span.name}"`
-            );
-
-            assert.strictEqual(
-              keys.length,
-              4,
-              `number of attributes is wrong for span "${span.name}"`
-            );
+            ensureSpanAttributesAreCorrect(span);
           });
         });
       });
@@ -478,34 +450,7 @@ describe('ReactLoad Instrumentation', () => {
           assert.strictEqual(spans.length, 9, 'number of spans is wrong');
           spans.forEach(element => {
             const span: ReadableSpan = element[0][0];
-            const attributes = span.attributes;
-            const keys = Object.keys(attributes);
-
-            assert.ok(
-              attributes[keys[0]] !== '',
-              `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[1]] !== '',
-              `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[2]] !== '',
-              `attributes ${AttributeNames.REACT_NAME} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[3]] !== '',
-              `attributes ${AttributeNames.REACT_STATE} is not defined for span "${span.name}"`
-            );
-
-            assert.strictEqual(
-              keys.length,
-              4,
-              `number of attributes is wrong for span "${span.name}"`
-            );
+            ensureSpanAttributesAreCorrect(span);
           });
         });
       });
@@ -603,34 +548,7 @@ describe('ReactLoad Instrumentation', () => {
           assert.strictEqual(spans.length, 8, 'number of spans is wrong');
           spans.forEach(element => {
             const span: ReadableSpan = element[0][0];
-            const attributes = span.attributes;
-            const keys = Object.keys(attributes);
-
-            assert.ok(
-              attributes[keys[0]] !== '',
-              `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[1]] !== '',
-              `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[2]] !== '',
-              `attributes ${AttributeNames.REACT_NAME} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[3]] !== '',
-              `attributes ${AttributeNames.REACT_STATE} is not defined for span "${span.name}"`
-            );
-
-            assert.strictEqual(
-              keys.length,
-              4,
-              `number of attributes is wrong for span "${span.name}"`
-            );
+            ensureSpanAttributesAreCorrect(span);
           });
         });
       });
@@ -696,34 +614,7 @@ describe('ReactLoad Instrumentation', () => {
           assert.strictEqual(spans.length, 5, 'number of spans is wrong');
           spans.forEach(element => {
             const span: ReadableSpan = element[0][0];
-            const attributes = span.attributes;
-            const keys = Object.keys(attributes);
-
-            assert.ok(
-              attributes[keys[0]] !== '',
-              `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[1]] !== '',
-              `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[2]] !== '',
-              `attributes ${AttributeNames.REACT_NAME} is not defined for span "${span.name}"`
-            );
-
-            assert.ok(
-              attributes[keys[3]] !== '',
-              `attributes ${AttributeNames.REACT_STATE} is not defined for span "${span.name}"`
-            );
-
-            assert.strictEqual(
-              keys.length,
-              4,
-              `number of attributes is wrong for span "${span.name}"`
-            );
+            ensureSpanAttributesAreCorrect(span);
           });
         });
       });
@@ -804,35 +695,33 @@ describe('ReactLoad Instrumentation', () => {
       const spans: [] = exportSpy.args;
       spans.forEach(element => {
         const span: ReadableSpan = element[0][0];
-        const attributes = span.attributes;
-        const keys = Object.keys(attributes);
-
-        assert.ok(
-          attributes[keys[0]] !== '',
-          `attributes ${GeneralAttribute.COMPONENT} is not defined for span "${span.name}"`
-        );
-
-        assert.ok(
-          attributes[keys[1]] !== '',
-          `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
-        );
-
-        assert.ok(
-          attributes[keys[2]] !== '',
-          `attributes ${AttributeNames.REACT_NAME} is not defined for span "${span.name}"`
-        );
-
-        assert.ok(
-          attributes[keys[3]] !== '',
-          `attributes ${AttributeNames.REACT_STATE} is not defined for span "${span.name}"`
-        );
-
-        assert.strictEqual(
-          keys.length,
-          4,
-          `number of attributes is wrong for span "${span.name}"`
-        );
+        ensureSpanAttributesAreCorrect(span);
       });
     });
   });
 });
+
+function ensureSpanAttributesAreCorrect(span: ReadableSpan) {
+  const attributes = span.attributes;
+  const keys = Object.keys(attributes);
+
+  assert.ok(
+    attributes[keys[0]] !== '',
+    `attributes ${AttributeNames.LOCATION_URL} is not defined for span "${span.name}"`
+  );
+
+  assert.ok(
+    attributes[keys[1]] !== '',
+    `attributes ${AttributeNames.REACT_NAME} is not defined for span "${span.name}"`
+  );
+
+  assert.ok(
+    attributes[keys[2]] !== '',
+    `attributes ${AttributeNames.REACT_STATE} is not defined for span "${span.name}"`
+  );
+  assert.strictEqual(
+    keys.length,
+    3,
+    `number of attributes is wrong for span "${span.name}"`
+  );
+}
