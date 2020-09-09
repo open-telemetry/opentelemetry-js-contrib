@@ -16,22 +16,19 @@
 
 import { BasePlugin, isWrapped } from '@opentelemetry/core';
 import { CanonicalCode, Span, SpanKind } from '@opentelemetry/api';
-import * as mysqlTypes from 'mysql';
+import type * as mysqlTypes from 'mysql';
 import * as shimmer from 'shimmer';
-import { AttributeNames } from './enums';
-import { getConnectionAttributes, getSpanName } from './utils';
+import { getConnectionAttributes, getDbStatement } from './utils';
 import { VERSION } from './version';
+import { DatabaseAttribute } from '@opentelemetry/semantic-conventions';
 
 export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
   readonly supportedVersions = ['2.*'];
 
   static readonly COMPONENT = 'mysql';
-  static readonly DB_TYPE = 'sql';
 
   static readonly COMMON_ATTRIBUTES = {
-    [AttributeNames.COMPONENT]: MysqlPlugin.COMPONENT,
-    [AttributeNames.DB_TYPE]: MysqlPlugin.DB_TYPE,
-    [AttributeNames.PEER_SERVICE]: MysqlPlugin.COMPONENT,
+    [DatabaseAttribute.DB_SYSTEM]: MysqlPlugin.COMPONENT,
   };
 
   private _enabled = false;
@@ -198,6 +195,8 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
       const thisPlugin = this;
       thisPlugin._logger.debug('MysqlPlugin: patched mysql query');
 
+      const format = this._moduleExports.format;
+
       return function query(
         query: string | mysqlTypes.Query | mysqlTypes.QueryOptions,
         _valuesOrCallback?: unknown[] | mysqlTypes.queryCallback,
@@ -208,9 +207,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
           return originalQuery.apply(connection, arguments);
         }
 
-        const spanName = getSpanName(query);
-
-        const span = thisPlugin._tracer.startSpan(spanName, {
+        const span = thisPlugin._tracer.startSpan(`${query}`, {
           kind: SpanKind.CLIENT,
           attributes: {
             ...MysqlPlugin.COMMON_ATTRIBUTES,
@@ -218,17 +215,18 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
           },
         });
 
-        if (typeof query === 'string') {
-          span.setAttribute(AttributeNames.DB_STATEMENT, query);
-        } else if (typeof query === 'object') {
-          if (query.sql) {
-            span.setAttribute(AttributeNames.DB_STATEMENT, query.sql);
-          }
+        let values;
 
-          if (query.values) {
-            span.setAttribute(AttributeNames.MYSQL_VALUES, query.values);
-          }
+        if (Array.isArray(_valuesOrCallback)) {
+          values = _valuesOrCallback;
+        } else if (arguments[2]) {
+          values = [_valuesOrCallback];
         }
+
+        span.setAttribute(
+          DatabaseAttribute.DB_STATEMENT,
+          getDbStatement(query, format, values)
+        );
 
         if (arguments.length === 1) {
           const streamableQuery: mysqlTypes.Query = originalQuery.apply(
@@ -251,11 +249,6 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
         if (typeof arguments[1] === 'function') {
           shimmer.wrap(arguments, 1, thisPlugin._patchCallbackQuery(span));
         } else if (typeof arguments[2] === 'function') {
-          if (Array.isArray(_valuesOrCallback)) {
-            span.setAttribute(AttributeNames.MYSQL_VALUES, _valuesOrCallback);
-          } else if (arguments[2]) {
-            span.setAttribute(AttributeNames.MYSQL_VALUES, [_valuesOrCallback]);
-          }
           shimmer.wrap(arguments, 2, thisPlugin._patchCallbackQuery(span));
         }
 

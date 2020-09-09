@@ -27,9 +27,12 @@ import {
 import * as assert from 'assert';
 import * as mysql from 'mysql';
 import { MysqlPlugin, plugin } from '../src';
-import { AttributeNames } from '../src/enums';
+import {
+  DatabaseAttribute,
+  GeneralAttribute,
+} from '@opentelemetry/semantic-conventions';
 
-const port = parseInt(process.env.MYSQL_PORT || '33306', 10);
+const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
 const user = process.env.MYSQL_USER || 'otel';
@@ -125,8 +128,8 @@ describe('mysql@2.x', () => {
     it('should intercept connection.query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+1 as solution';
-        const query = connection.query(statement);
+        const sql = 'SELECT 1+1 as solution';
+        const query = connection.query(sql);
         let rows = 0;
 
         query.on('result', row => {
@@ -138,7 +141,7 @@ describe('mysql@2.x', () => {
           assert.strictEqual(rows, 1);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement);
+          assertSpan(spans[0], sql);
           done();
         });
       });
@@ -147,14 +150,14 @@ describe('mysql@2.x', () => {
     it('should intercept connection.query(text: string, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+1 as solution';
-        connection.query(statement, (err, res) => {
+        const sql = 'SELECT 1+1 as solution';
+        connection.query(sql, (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 2);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement);
+          assertSpan(spans[0], sql);
           done();
         });
       });
@@ -163,14 +166,14 @@ describe('mysql@2.x', () => {
     it('should intercept connection.query(text: options, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+? as solution';
-        connection.query({ sql: statement, values: [1] }, (err, res) => {
+        const sql = 'SELECT 1+? as solution';
+        connection.query({ sql, values: [1] }, (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 2);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, [1]);
+          assertSpan(spans[0], sql, [1]);
           done();
         });
       });
@@ -179,16 +182,14 @@ describe('mysql@2.x', () => {
     it('should intercept connection.query(text: options, values: [], callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+? as solution';
-        // @ts-ignore this is documented https://github.com/mysqljs/mysql#performing-queries
-        // but does not match the typings
-        connection.query({ sql: statement }, [1], (err, res) => {
+        const sql = 'SELECT 1+? as solution';
+        connection.query({ sql }, [1], (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 2);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, [1]);
+          assertSpan(spans[0], sql, [1]);
           done();
         });
       });
@@ -197,14 +198,14 @@ describe('mysql@2.x', () => {
     it('should intercept connection.query(text: string, values: [], callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT ? as solution';
-        connection.query(statement, [1], (err, res) => {
+        const sql = 'SELECT ? as solution';
+        connection.query(sql, [1], (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 1);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, [1]);
+          assertSpan(spans[0], sql, [1]);
           done();
         });
       });
@@ -213,14 +214,14 @@ describe('mysql@2.x', () => {
     it('should intercept connection.query(text: string, value: any, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT ? as solution';
-        connection.query(statement, 1, (err, res) => {
+        const sql = 'SELECT ? as solution';
+        connection.query(sql, 1, (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 1);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, [1]);
+          assertSpan(spans[0], sql, [1]);
           done();
         });
       });
@@ -229,12 +230,12 @@ describe('mysql@2.x', () => {
     it('should attach error messages to spans', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT ? as solution';
-        connection.query(statement, (err, res) => {
+        const sql = 'SELECT ? as solution';
+        connection.query(sql, (err, res) => {
           assert.ok(err);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, undefined, err!.message);
+          assertSpan(spans[0], sql, undefined, err!.message);
           done();
         });
       });
@@ -245,8 +246,8 @@ describe('mysql@2.x', () => {
     it('should intercept pool.query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+1 as solution';
-        const query = pool.query(statement);
+        const sql = 'SELECT 1+1 as solution';
+        const query = pool.query(sql);
         let rows = 0;
 
         query.on('result', row => {
@@ -258,7 +259,7 @@ describe('mysql@2.x', () => {
           assert.strictEqual(rows, 1);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement);
+          assertSpan(spans[0], sql);
           done();
         });
       });
@@ -267,9 +268,9 @@ describe('mysql@2.x', () => {
     it('should intercept pool.getConnection().query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+1 as solution';
+        const sql = 'SELECT 1+1 as solution';
         pool.getConnection((err, conn) => {
-          const query = conn.query(statement);
+          const query = conn.query(sql);
           let rows = 0;
 
           query.on('result', row => {
@@ -281,7 +282,7 @@ describe('mysql@2.x', () => {
             assert.strictEqual(rows, 1);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement);
+            assertSpan(spans[0], sql);
             done();
           });
         });
@@ -291,14 +292,14 @@ describe('mysql@2.x', () => {
     it('should intercept pool.query(text: string, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+1 as solution';
-        pool.query(statement, (err, res) => {
+        const sql = 'SELECT 1+1 as solution';
+        pool.query(sql, (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 2);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement);
+          assertSpan(spans[0], sql);
           done();
         });
       });
@@ -307,15 +308,15 @@ describe('mysql@2.x', () => {
     it('should intercept pool.getConnection().query(text: string, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+1 as solution';
+        const sql = 'SELECT 1+1 as solution';
         pool.getConnection((err, conn) => {
-          conn.query(statement, (err, res) => {
+          conn.query(sql, (err, res) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement);
+            assertSpan(spans[0], sql);
             done();
           });
         });
@@ -325,14 +326,14 @@ describe('mysql@2.x', () => {
     it('should intercept pool.query(text: options, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+? as solution';
-        pool.query({ sql: statement, values: [1] }, (err, res) => {
+        const sql = 'SELECT 1+? as solution';
+        pool.query({ sql, values: [1] }, (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 2);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, [1]);
+          assertSpan(spans[0], sql, [1]);
           done();
         });
       });
@@ -341,16 +342,14 @@ describe('mysql@2.x', () => {
     it('should intercept pool.query(text: options, values: [], callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT 1+? as solution';
-        // @ts-ignore this is documented https://github.com/mysqljs/mysql#performing-queries
-        // but does not match the typings
-        pool.query({ sql: statement }, [1], (err, res) => {
+        const sql = 'SELECT 1+? as solution';
+        pool.query({ sql }, [1], (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 2);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, [1]);
+          assertSpan(spans[0], sql, [1]);
           done();
         });
       });
@@ -359,14 +358,14 @@ describe('mysql@2.x', () => {
     it('should intercept pool.query(text: string, values: [], callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT ? as solution';
-        pool.query(statement, [1], (err, res) => {
+        const sql = 'SELECT ? as solution';
+        pool.query(sql, [1], (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 1);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, [1]);
+          assertSpan(spans[0], sql, [1]);
           done();
         });
       });
@@ -375,14 +374,14 @@ describe('mysql@2.x', () => {
     it('should intercept pool.query(text: string, value: any, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT ? as solution';
-        pool.query(statement, 1, (err, res) => {
+        const sql = 'SELECT ? as solution';
+        pool.query(sql, 1, (err, res) => {
           assert.ifError(err);
           assert.ok(res);
           assert.strictEqual(res[0].solution, 1);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, [1]);
+          assertSpan(spans[0], sql, [1]);
           done();
         });
       });
@@ -391,12 +390,12 @@ describe('mysql@2.x', () => {
     it('should attach error messages to spans', done => {
       const span = provider.getTracer('default').startSpan('test span');
       provider.getTracer('default').withSpan(span, () => {
-        const statement = 'SELECT ? as solution';
-        pool.query(statement, (err, res) => {
+        const sql = 'SELECT ? as solution';
+        pool.query(sql, (err, res) => {
           assert.ok(err);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], statement, undefined, err!.message);
+          assertSpan(spans[0], sql, undefined, err!.message);
           done();
         });
       });
@@ -409,8 +408,8 @@ describe('mysql@2.x', () => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
         provider.getTracer('default').withSpan(span, () => {
-          const statement = 'SELECT 1+1 as solution';
-          const query = poolClusterConnection.query(statement);
+          const sql = 'SELECT 1+1 as solution';
+          const query = poolClusterConnection.query(sql);
           let rows = 0;
 
           query.on('result', row => {
@@ -422,7 +421,7 @@ describe('mysql@2.x', () => {
             assert.strictEqual(rows, 1);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement);
+            assertSpan(spans[0], sql);
             done();
           });
         });
@@ -434,14 +433,14 @@ describe('mysql@2.x', () => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
         provider.getTracer('default').withSpan(span, () => {
-          const statement = 'SELECT 1+1 as solution';
-          poolClusterConnection.query(statement, (err, res) => {
+          const sql = 'SELECT 1+1 as solution';
+          poolClusterConnection.query(sql, (err, res) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement);
+            assertSpan(spans[0], sql);
             done();
           });
         });
@@ -453,19 +452,16 @@ describe('mysql@2.x', () => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
         provider.getTracer('default').withSpan(span, () => {
-          const statement = 'SELECT 1+? as solution';
-          poolClusterConnection.query(
-            { sql: statement, values: [1] },
-            (err, res) => {
-              assert.ifError(err);
-              assert.ok(res);
-              assert.strictEqual(res[0].solution, 2);
-              const spans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(spans.length, 1);
-              assertSpan(spans[0], statement, [1]);
-              done();
-            }
-          );
+          const sql = 'SELECT 1+? as solution';
+          poolClusterConnection.query({ sql, values: [1] }, (err, res) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql, [1]);
+            done();
+          });
         });
       });
     });
@@ -475,16 +471,16 @@ describe('mysql@2.x', () => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
         provider.getTracer('default').withSpan(span, () => {
-          const statement = 'SELECT 1+? as solution';
+          const sql = 'SELECT 1+? as solution';
           // @ts-ignore this is documented https://github.com/mysqljs/mysql#performing-queries
           // but does not match the typings
-          poolClusterConnection.query({ sql: statement }, [1], (err, res) => {
+          poolClusterConnection.query({ sql }, [1], (err, res) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 2);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement, [1]);
+            assertSpan(spans[0], sql, [1]);
             done();
           });
         });
@@ -496,14 +492,14 @@ describe('mysql@2.x', () => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
         provider.getTracer('default').withSpan(span, () => {
-          const statement = 'SELECT ? as solution';
-          poolClusterConnection.query(statement, [1], (err, res) => {
+          const sql = 'SELECT ? as solution';
+          poolClusterConnection.query(sql, [1], (err, res) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 1);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement, [1]);
+            assertSpan(spans[0], sql, [1]);
             done();
           });
         });
@@ -515,14 +511,14 @@ describe('mysql@2.x', () => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
         provider.getTracer('default').withSpan(span, () => {
-          const statement = 'SELECT ? as solution';
-          poolClusterConnection.query(statement, 1, (err, res) => {
+          const sql = 'SELECT ? as solution';
+          poolClusterConnection.query(sql, 1, (err, res) => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 1);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement, [1]);
+            assertSpan(spans[0], sql, [1]);
             done();
           });
         });
@@ -534,12 +530,12 @@ describe('mysql@2.x', () => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
         provider.getTracer('default').withSpan(span, () => {
-          const statement = 'SELECT ? as solution';
-          poolClusterConnection.query(statement, (err, res) => {
+          const sql = 'SELECT ? as solution';
+          poolClusterConnection.query(sql, (err, res) => {
             assert.ok(err);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement, undefined, err!.message);
+            assertSpan(spans[0], sql, undefined, err!.message);
             done();
           });
         });
@@ -551,12 +547,12 @@ describe('mysql@2.x', () => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
         provider.getTracer('default').withSpan(span, () => {
-          const statement = 'SELECT 1 as solution';
-          poolClusterConnection.query(statement, (err, res) => {
+          const sql = 'SELECT 1 as solution';
+          poolClusterConnection.query(sql, (err, res) => {
             assert.ifError(err);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement);
+            assertSpan(spans[0], sql);
             done();
           });
         });
@@ -569,12 +565,12 @@ describe('mysql@2.x', () => {
         'ORDER',
         (err, poolClusterConnection) => {
           assert.ifError(err);
-          const statement = 'SELECT 1 as solution';
-          poolClusterConnection.query(statement, (err, res) => {
+          const sql = 'SELECT 1 as solution';
+          poolClusterConnection.query(sql, (err, res) => {
             assert.ifError(err);
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans.length, 1);
-            assertSpan(spans[0], statement);
+            assertSpan(spans[0], sql);
             done();
           });
         }
@@ -585,23 +581,19 @@ describe('mysql@2.x', () => {
 
 function assertSpan(
   span: ReadableSpan,
-  statement: string,
+  sql: string,
   values?: any,
   errorMessage?: string
 ) {
-  assert.equal(span.attributes[AttributeNames.COMPONENT], 'mysql');
-  assert.equal(span.attributes[AttributeNames.DB_TYPE], 'sql');
-  assert.equal(span.attributes[AttributeNames.DB_INSTANCE], database);
-  assert.equal(span.attributes[AttributeNames.PEER_PORT], port);
-  assert.equal(span.attributes[AttributeNames.PEER_HOSTNAME], host);
-  assert.equal(span.attributes[AttributeNames.DB_USER], user);
-  assert.strictEqual(span.attributes[AttributeNames.DB_STATEMENT], statement);
-  if (values) {
-    assert.deepStrictEqual(
-      span.attributes[AttributeNames.MYSQL_VALUES],
-      values
-    );
-  }
+  assert.equal(span.attributes[DatabaseAttribute.DB_SYSTEM], 'mysql');
+  assert.equal(span.attributes[DatabaseAttribute.DB_NAME], database);
+  assert.equal(span.attributes[GeneralAttribute.NET_PEER_PORT], port);
+  assert.equal(span.attributes[GeneralAttribute.NET_PEER_HOSTNAME], host);
+  assert.equal(span.attributes[DatabaseAttribute.DB_USER], user);
+  assert.strictEqual(
+    span.attributes[DatabaseAttribute.DB_STATEMENT],
+    mysql.format(sql, values)
+  );
   if (errorMessage) {
     assert.equal(span.status.message, errorMessage);
     assert.equal(span.status.code, CanonicalCode.UNKNOWN);

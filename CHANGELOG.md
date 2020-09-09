@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.10.0
+
+#### :bug: Bug Fix
+* [#186](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/186) [size/XS] fix: fixes broken readme links ([@michaelgoin](https://github.com/michaelgoin))
+
+#### :tada: New Plugins
+* [#171](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/171) feat: Hapi auto-instrumentation ([@carolinee21](https://github.com/carolinee21))
+* [#144](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/144) feat: adding Koa instrumentation ([@carolinee21](https://github.com/carolinee21))
+
+#### :rocket: Enhancement
+* Other
+  * [#183](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/183) [mysql] implement semantic conventions ([@naseemkullah](https://github.com/naseemkullah))
+  * [#196](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/196) fix: new version with TextMapPropagator interface ([@jufab](https://github.com/jufab))
+  * [#184](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/184) chore: moved plugins-node-all into contrib repo from opentelemetry-js ([@michaelgoin](https://github.com/michaelgoin))
+  * [#187](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/187) [mongodb] implement semantic db conventions ([@naseemkullah](https://github.com/naseemkullah))
+  * [#172](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/172) [Plugin User Interaction]: Improve causality of spans from bubbled events ([@johnbley](https://github.com/johnbley))
+  * [#164](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/164) feat: Add React Plugin ([@thgao](https://github.com/thgao))
+  * [#170](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/170) fix: various compilation errors ([@naseemkullah](https://github.com/naseemkullah))
+* `opentelemetry-test-utils`
+  * [#167](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/167) ioredis and redis DB semantic conventions ([@naseemkullah](https://github.com/naseemkullah))
+
+#### :house: Internal
+* [#194](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/194) Ioredis cleanup ([@naseemkullah](https://github.com/naseemkullah))
+* [#195](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/195) redis cleanup ([@naseemkullah](https://github.com/naseemkullah))
+* [#192](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/192) Handful of document-load fixes ([@johnbley](https://github.com/johnbley))
+* [#191](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/191) Zone.js fixed failing build ([@obecny](https://github.com/obecny))
+* [#174](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/174) feat(opentelemetry-plugin-pg): omit pg.values by default ([@sergioregueira](https://github.com/sergioregueira))
+
+#### Committers: 9
+* Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+* John Bley ([@johnbley](https://github.com/johnbley))
+* Julien Fabre ([@jufab](https://github.com/jufab))
+* Michael Goin ([@michaelgoin](https://github.com/michaelgoin))
+* Naseem ([@naseemkullah](https://github.com/naseemkullah))
+* Sergio Regueira ([@sergioregueira](https://github.com/sergioregueira))
+* Shivkanya Andhare ([@shivkanya9146](https://github.com/shivkanya9146))
+* Tina Gao ([@thgao](https://github.com/thgao))
+* [@carolinee21](https://github.com/carolinee21)
+
 ## 0.9.0
 
 #### :rocket: (Enhancement)
