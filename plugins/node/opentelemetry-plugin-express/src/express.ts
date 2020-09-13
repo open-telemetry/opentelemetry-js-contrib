@@ -227,7 +227,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         }
         const result = original.apply(this, arguments);
         /**
-         * As this point if the callback wasn't called, that means either the
+         * At this point if the callback wasn't called, that means either the
          * layer is asynchronous (so it will call the callback later on) or that
          * the layer directly end the http response, so we'll hook into the "finish"
          * event to handle the later case.
