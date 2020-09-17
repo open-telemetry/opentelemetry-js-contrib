@@ -94,3 +94,16 @@ export function getDbStatement(
       : query.sql;
   }
 }
+
+/**
+ * The span name SHOULD be set to a low cardinality value
+ * representing the statement executed on the database.
+ *
+ * @returns SQL statement without variable arguments or SQL verb
+ */
+export function getSpanName(query: string | Query | QueryOptions): string {
+  if (typeof query === 'object') {
+    return query.sql;
+  }
+  return query.split(' ')[0];
+}

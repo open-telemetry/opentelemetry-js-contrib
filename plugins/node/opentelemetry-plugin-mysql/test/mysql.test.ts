@@ -124,6 +124,34 @@ describe('mysql@2.x', () => {
     assert.strictEqual(plugin.moduleName, 'mysql');
   });
 
+  it('should name the span correctly when the query is a string', done => {
+    const span = provider.getTracer('default').startSpan('test span');
+    provider.getTracer('default').withSpan(span, () => {
+      const sql = 'SELECT 1+1 as solution';
+      const query = connection.query(sql);
+
+      query.on('end', () => {
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans[0].name, 'SELECT');
+        done();
+      });
+    });
+  });
+
+  it('should name the span correctly when the query is an object', done => {
+    const span = provider.getTracer('default').startSpan('test span');
+    provider.getTracer('default').withSpan(span, () => {
+      const sql = 'SELECT 1+? as solution';
+      const query = connection.query({ sql, values: [1] });
+
+      query.on('end', () => {
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans[0].name, sql);
+        done();
+      });
+    });
+  });
+
   describe('#Connection', () => {
     it('should intercept connection.query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');
@@ -585,17 +613,17 @@ function assertSpan(
   values?: any,
   errorMessage?: string
 ) {
-  assert.equal(span.attributes[DatabaseAttribute.DB_SYSTEM], 'mysql');
-  assert.equal(span.attributes[DatabaseAttribute.DB_NAME], database);
-  assert.equal(span.attributes[GeneralAttribute.NET_PEER_PORT], port);
-  assert.equal(span.attributes[GeneralAttribute.NET_PEER_HOSTNAME], host);
-  assert.equal(span.attributes[DatabaseAttribute.DB_USER], user);
+  assert.strictEqual(span.attributes[DatabaseAttribute.DB_SYSTEM], 'mysql');
+  assert.strictEqual(span.attributes[DatabaseAttribute.DB_NAME], database);
+  assert.strictEqual(span.attributes[GeneralAttribute.NET_PEER_PORT], port);
+  assert.strictEqual(span.attributes[GeneralAttribute.NET_PEER_HOSTNAME], host);
+  assert.strictEqual(span.attributes[DatabaseAttribute.DB_USER], user);
   assert.strictEqual(
     span.attributes[DatabaseAttribute.DB_STATEMENT],
     mysql.format(sql, values)
   );
   if (errorMessage) {
-    assert.equal(span.status.message, errorMessage);
-    assert.equal(span.status.code, CanonicalCode.UNKNOWN);
+    assert.strictEqual(span.status.message, errorMessage);
+    assert.strictEqual(span.status.code, CanonicalCode.UNKNOWN);
   }
 }

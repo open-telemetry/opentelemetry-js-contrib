@@ -18,7 +18,7 @@ import { BasePlugin, isWrapped } from '@opentelemetry/core';
 import { CanonicalCode, Span, SpanKind } from '@opentelemetry/api';
 import type * as mysqlTypes from 'mysql';
 import * as shimmer from 'shimmer';
-import { getConnectionAttributes, getDbStatement } from './utils';
+import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
 import { VERSION } from './version';
 import { DatabaseAttribute } from '@opentelemetry/semantic-conventions';
 
@@ -207,7 +207,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
           return originalQuery.apply(connection, arguments);
         }
 
-        const span = thisPlugin._tracer.startSpan(`${query}`, {
+        const span = thisPlugin._tracer.startSpan(getSpanName(query), {
           kind: SpanKind.CLIENT,
           attributes: {
             ...MysqlPlugin.COMMON_ATTRIBUTES,
