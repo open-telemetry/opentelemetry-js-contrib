@@ -23,6 +23,6 @@
         "@opentelemetry/plugin-pg": "^0.10.0",
         "@opentelemetry/plugin-pg-pool": "^0.10.0",
         "@opentelemetry/plugin-redis": "^0.10.0",
-        "@opentelemetry/plugins-node-core": "^0.11.0"
+        "@opentelemetry/plugins-node-core": "0.11.0"
     }
 }
