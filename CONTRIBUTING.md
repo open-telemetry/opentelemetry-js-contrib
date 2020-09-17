@@ -32,11 +32,11 @@ Here an exemple that will pass the verification: `git commit -s -am "chore(opent
 
 ### Fork
 
-In the interest of keeping this repository clean and manageable, you should work from a fork. To create a fork, click the 'Fork' button at the top of the repository, then clone the fork locally using `git clone git@github.com:USERNAME/opentelemetry-js.git`.
+In the interest of keeping this repository clean and manageable, you should work from a fork. To create a fork, click the 'Fork' button at the top of the repository, then clone the fork locally using `git clone git@github.com:USERNAME/opentelemetry-js-contrib.git`.
 
 You should also add this repository as an "upstream" repo to your local copy, in order to keep it up to date. You can add this as a remote like so:
 ```
-git remote add upstream https://github.com/open-telemetry/opentelemetry-js.git
+git remote add upstream https://github.com/open-telemetry/opentelemetry-js-contrib.git
 
 #verify that the upstream exists
 git remote -v
@@ -55,7 +55,7 @@ Please also see [GitHub workflow](https://github.com/open-telemetry/community/bl
 
 ### Running the tests
 
-The `opentelemetry-js` project is written in TypeScript.
+The `opentelemetry-js-contrib` project is written in TypeScript.
 
 - `npm install` to install dependencies.
 - `npm run compile` compiles the code, checking for type errors.
