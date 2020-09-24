@@ -41,7 +41,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@hapi/hapi": "19.2.0",
+    "@hapi/hapi": "20.0.1",
     "@opentelemetry/context-async-hooks": "0.11.0",
     "@opentelemetry/node": "0.11.0",
     "@opentelemetry/tracing": "0.11.0",
