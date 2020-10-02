@@ -161,6 +161,24 @@ describe('UserInteractionPlugin', () => {
       assert.strictEqual(callCount, 3);
     });
 
+    it('should handle EventListener callbacks', () => {
+      let callCount = 0;
+      const listener = {
+        handleEvent(evt: Event) {
+          if (evt) {
+            callCount++;
+          }
+        },
+      };
+      document.body.addEventListener('EventListenerEvent', listener);
+      document.body.dispatchEvent(new Event('EventListenerEvent'));
+      assert.strictEqual(callCount, 1);
+      callCount = 0;
+      document.body.removeEventListener('EventListenerEvent', listener);
+      document.body.dispatchEvent(new Event('EventListenerEvent'));
+      assert.strictEqual(callCount, 0);
+    });
+
     it('should handle task without async operation', () => {
       fakeInteraction();
       assert.equal(exportSpy.args.length, 1, 'should export one span');
