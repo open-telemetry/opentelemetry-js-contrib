@@ -124,30 +124,34 @@ describe('mysql@2.x', () => {
     assert.strictEqual(plugin.moduleName, 'mysql');
   });
 
-  it('should name the span correctly when the query is a string', done => {
-    const span = provider.getTracer('default').startSpan('test span');
-    provider.getTracer('default').withSpan(span, () => {
-      const sql = 'SELECT 1+1 as solution';
-      const query = connection.query(sql);
+  describe('when the query is a string', () => {
+    it('should name the span accordingly ', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      provider.getTracer('default').withSpan(span, () => {
+        const sql = 'SELECT 1+1 as solution';
+        const query = connection.query(sql);
 
-      query.on('end', () => {
-        const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans[0].name, 'SELECT');
-        done();
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans[0].name, 'SELECT');
+          done();
+        });
       });
     });
   });
 
-  it('should name the span correctly when the query is an object', done => {
-    const span = provider.getTracer('default').startSpan('test span');
-    provider.getTracer('default').withSpan(span, () => {
-      const sql = 'SELECT 1+? as solution';
-      const query = connection.query({ sql, values: [1] });
+  describe('when the query is an object', () => {
+    it('should name the span accordingly ', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      provider.getTracer('default').withSpan(span, () => {
+        const sql = 'SELECT 1+? as solution';
+        const query = connection.query({ sql, values: [1] });
 
-      query.on('end', () => {
-        const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans[0].name, sql);
-        done();
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans[0].name, sql);
+          done();
+        });
       });
     });
   });
