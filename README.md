@@ -56,6 +56,7 @@ OpenTelemetry can collect tracing data automatically using plugins. Vendors/User
 - [@opentelemetry/plugin-http][otel-plugin-http]
 - [@opentelemetry/plugin-https][otel-plugin-https]
 - [@opentelemetry/plugin-mongodb][otel-plugin-mongodb]
+- [@opentelemetry/plugin-mongoose][otel-plugin-mongoose]
 - [@opentelemetry/plugin-mysql][otel-plugin-mysql]
 - [@opentelemetry/plugin-pg][otel-plugin-pg]
 - [@opentelemetry/plugin-pg-pool][otel-plugin-pg-pool]
@@ -125,6 +126,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-plugin-react-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/web/opentelemetry-plugin-react-load
 [otel-plugin-ioredis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-ioredis
 [otel-plugin-mongodb]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-mongodb
+[otel-plugin-mongoose]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-mongoose
 [otel-plugin-mysql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-mysql
 [otel-plugin-pg-pool]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-pg-pool
 [otel-plugin-pg]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-plugin-pg
