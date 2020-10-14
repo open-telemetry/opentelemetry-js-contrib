@@ -149,16 +149,12 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       if (Array.isArray(pluginInput)) {
         for (const pluginObj of pluginInput) {
           instrumentation._wrapRegisterHandler(
-            pluginObj.plugin && pluginObj.plugin.plugin
-              ? pluginObj.plugin.plugin
-              : pluginObj.plugin
+            pluginObj.plugin?.plugin ?? pluginObj.plugin
           );
         }
       } else {
         instrumentation._wrapRegisterHandler(
-          pluginInput.plugin && pluginInput.plugin.plugin
-            ? pluginInput.plugin.plugin
-            : pluginInput.plugin
+          pluginInput.plugin?.plugin ?? pluginInput.plugin
         );
       }
       return original.apply(this, [pluginInput, options]);
@@ -365,14 +361,8 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     const instrumentation: HapiInstrumentation = this;
     if (route[handlerPatched] === true) return route;
     route[handlerPatched] = true;
-    let handler;
-    if (route.handler) {
-      handler = route.handler;
-    } else if (route.options && route.options.handler) {
-      handler = route.options.handler;
-    }
-    if (typeof handler === 'function') {
-      const oldHandler = handler as Hapi.Lifecycle.Method;
+    const oldHandler = route.options?.handler ?? route.handler;
+    if (typeof oldHandler === 'function') {
       const newHandler: Hapi.Lifecycle.Method = async function (
         request: Hapi.Request,
         h: Hapi.ResponseToolkit,
@@ -392,7 +382,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       };
       if (route.handler) {
         route.handler = newHandler;
-      } else if (route.options && route.options.handler) {
+      } else if (route.options?.handler) {
         route.options.handler = newHandler;
       }
     }

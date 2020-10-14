@@ -291,83 +291,85 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
       });
     });
 
-    it('should instrument package-based plugins (direct exports)', async () => {
-      const rootSpan = tracer.startSpan('rootSpan');
+    describe('when plugin is declared in root export level', () => {
+      it('should instrument package-based plugins', async () => {
+        const rootSpan = tracer.startSpan('rootSpan');
 
-      await server.register({
-        plugin: packagePlugin,
-      });
-      await server.start();
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-
-      await tracer.withSpan(rootSpan, async () => {
-        const res = await server.inject({
-          method: 'GET',
-          url: '/package',
+        await server.register({
+          plugin: packagePlugin,
         });
-        assert.strictEqual(res.statusCode, 200);
+        await server.start();
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+        await tracer.withSpan(rootSpan, async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/package',
+          });
+          assert.strictEqual(res.statusCode, 200);
 
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'plugin-by-package: route - /package');
-        assert.notStrictEqual(requestHandlerSpan, undefined);
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.PLUGIN
-        );
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
-          'plugin-by-package'
-        );
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'plugin-by-package: route - /package');
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.PLUGIN
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
+            'plugin-by-package'
+          );
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        });
       });
     });
-
-    it('should instrument package-based plugins (with exports.plugin)', async () => {
-      const rootSpan = tracer.startSpan('rootSpan');
-
-      // Suppress this ts error due the Hapi plugin type definition is incomplete. server.register can accept nested plugin. See reference https://hapi.dev/api/?v=20.0.0#-routeoptionshandler
-      await server.register({
-        // @ts-ignore
-        plugin: nestedPackagePlugin,
-      });
-      await server.start();
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-
-      await tracer.withSpan(rootSpan, async () => {
-        const res = await server.inject({
-          method: 'GET',
-          url: '/package',
+    describe('when plugin is declared in export.plugin level', () => {
+      it('should instrument package-based plugins', async () => {
+        const rootSpan = tracer.startSpan('rootSpan');
+        // Suppress this ts error due the Hapi plugin type definition is incomplete. server.register can accept nested plugin. See reference https://hapi.dev/api/?v=20.0.0#-routeoptionshandler
+        await server.register({
+          // @ts-ignore
+          plugin: nestedPackagePlugin,
         });
-        assert.strictEqual(res.statusCode, 200);
+        await server.start();
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+        await tracer.withSpan(rootSpan, async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/package',
+          });
+          assert.strictEqual(res.statusCode, 200);
 
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'plugin-by-package: route - /package');
-        assert.notStrictEqual(requestHandlerSpan, undefined);
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.PLUGIN
-        );
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
-          'plugin-by-package'
-        );
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'plugin-by-package: route - /package');
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.PLUGIN
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
+            'plugin-by-package'
+          );
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        });
       });
     });
   });

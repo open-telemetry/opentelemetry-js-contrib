@@ -68,9 +68,6 @@
       "internal": ":house: Internal",
       "documentation": ":memo: Documentation"
     },
-    "ignoreCommitters": [
-      "renovate-bot",
-      "dependabot"
-    ]
+    "ignoreCommitters": ["renovate-bot", "dependabot"]
   }
 }
