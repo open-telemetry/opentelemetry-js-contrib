@@ -380,10 +380,10 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
 
         return res;
       };
-      if (route.handler) {
-        route.handler = newHandler;
-      } else if (route.options?.handler) {
+      if (route.options?.handler) {
         route.options.handler = newHandler;
+      } else if (route.handler) {
+        route.handler = newHandler;
       }
     }
     return route;
