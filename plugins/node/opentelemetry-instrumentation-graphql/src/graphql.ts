@@ -60,7 +60,9 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
 };
 
 export class GraphQLInstrumentation extends InstrumentationBase {
-  constructor(config: GraphQLInstrumentationConfig & InstrumentationConfig = {}) {
+  constructor(
+    config: GraphQLInstrumentationConfig & InstrumentationConfig = {}
+  ) {
     super('graphql', VERSION, Object.assign({}, DEFAULT_CONFIG, config));
   }
 
@@ -192,7 +194,10 @@ export class GraphQLInstrumentation extends InstrumentationBase {
           processedArgs.operationName
         );
 
-        const span = instrumentation._createExecuteSpan(operation, processedArgs);
+        const span = instrumentation._createExecuteSpan(
+          operation,
+          processedArgs
+        );
 
         processedArgs.contextValue[OTEL_GRAPHQL_DATA_SYMBOL] = {
           source: processedArgs.document

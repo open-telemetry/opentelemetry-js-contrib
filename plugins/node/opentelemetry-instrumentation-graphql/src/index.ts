@@ -15,4 +15,3 @@
  */
 
 export * from './graphql';
-export * from './symbols';
