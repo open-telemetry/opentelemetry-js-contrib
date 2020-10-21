@@ -74,8 +74,8 @@
     "tslint-microsoft-contrib": "6.2.0",
     "typescript": "3.9.5",
     "webpack": "4.43.0",
-    "webpack-cli": "3.3.12",
-    "webpack-merge": "4.2.2"
+    "webpack-cli": "4.0.0",
+    "webpack-merge": "5.2.0"
   },
   "peerDependencies": {
     "react": "^16.13.1"
