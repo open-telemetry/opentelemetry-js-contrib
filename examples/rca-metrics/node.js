@@ -2,6 +2,7 @@
 
 const { RCAMetrics } = require('@opentelemetry/rca-metrics');
 const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
+const { MeterProvider } = require('@opentelemetry/metrics');
 
 const exporter = new PrometheusExporter(
   {
@@ -12,8 +13,10 @@ const exporter = new PrometheusExporter(
   },
 );
 
-const rcaMetrics = new RCAMetrics({
+const meterProvider = new MeterProvider({
   exporter,
   interval: 2000,
 });
+
+const rcaMetrics = new RCAMetrics({ meterProvider, name: 'example-rca-metrics' });
 rcaMetrics.start();

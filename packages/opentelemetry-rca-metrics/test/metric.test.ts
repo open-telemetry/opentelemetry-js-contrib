@@ -18,6 +18,7 @@ const SI = require('systeminformation');
 import { ExportResult } from '@opentelemetry/core';
 import {
   Histogram,
+  MeterProvider,
   MetricExporter,
   MetricRecord,
 } from '@opentelemetry/metrics';
@@ -97,15 +98,18 @@ describe('RCA Metrics', () => {
     exporter = new NoopExporter();
     exportSpy = sandbox.stub(exporter, 'export');
 
+    const meterProvider = new MeterProvider({
+      interval: INTERVAL,
+      exporter,
+    });
+
     // it seems like this is the only way to be able to mock
     // `node-gyp-build` before metrics are being loaded, if import them before
     // the first pass on unit tests will not mock correctly
     metrics = require('../src');
     rcaMetrics = new metrics.RCAMetrics({
-      exporter,
-      interval: INTERVAL,
+      meterProvider,
       name: 'opentelemetry-rca-metrics',
-      url: '',
     });
     rcaMetrics.start();
 
@@ -136,6 +140,14 @@ describe('RCA Metrics', () => {
   });
 
   it('should create a new instance', () => {
+    assert.ok(rcaMetrics instanceof metrics.RCAMetrics);
+  });
+
+  it('should create a new instance with default meter provider', () => {
+    rcaMetrics = new metrics.RCAMetrics({
+      name: 'opentelemetry-rca-metrics',
+    });
+    rcaMetrics.start();
     assert.ok(rcaMetrics instanceof metrics.RCAMetrics);
   });
 

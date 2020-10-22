@@ -22,28 +22,27 @@ import { getCpuUsageData, getMemoryData } from './stats/common';
 import { getNetworkData } from './stats/si';
 
 import * as types from './types';
+import { VERSION } from './version';
 
 /**
  * Metrics Collector Configuration
  */
 export interface MetricsCollectorConfig {
   logger?: api.Logger;
-  exporter: metrics.MetricExporter;
   // maximum timeout to wait for stats collection default is 500ms
   maxTimeoutUpdateMS?: number;
+  // Meter Provider
+  meterProvider: metrics.MeterProvider;
   // Character to be used to join metrics - default is "."
   metricNameSeparator?: string;
   // Name of component
   name: string;
   // metric export endpoint
   url: string;
-  // How often the metrics should be exported
-  interval?: number;
 }
 
-const DEFAULT_INTERVAL = 60 * 1000;
 const DEFAULT_MAX_TIMEOUT_UPDATE_MS = 500;
-const DEFAULT_NAME = 'opentelemetry-metrics-collector';
+const DEFAULT_NAME = 'opentelemetry-rca-metrics';
 const DEFAULT_METRIC_NAME_SEPARATOR = '.';
 
 // default label name to be used to store metric name
@@ -55,8 +54,6 @@ const DEFAULT_KEY = 'name';
  * the default label name for metric name is "name"
  */
 export class RCAMetrics {
-  private _intervalExport: number | undefined;
-  private _exporter: metrics.MetricExporter;
   protected _logger: api.Logger | undefined;
   protected _maxTimeoutUpdateMS: number;
   protected _meter: metrics.Meter;
@@ -67,19 +64,18 @@ export class RCAMetrics {
   private _memValueObserver: types.ValueObserverWithObservations | undefined;
 
   constructor(config: MetricsCollectorConfig) {
-    this._intervalExport =
-      typeof config.interval === 'number' ? config.interval : DEFAULT_INTERVAL;
-    this._exporter = config.exporter;
-    this._logger = config.logger;
+    this._logger = config.logger || new api.NoopLogger();
     this._name = config.name || DEFAULT_NAME;
     this._maxTimeoutUpdateMS =
       config.maxTimeoutUpdateMS || DEFAULT_MAX_TIMEOUT_UPDATE_MS;
     this._metricNameSeparator =
       config.metricNameSeparator || DEFAULT_METRIC_NAME_SEPARATOR;
-    this._meter = new metrics.MeterProvider({
-      interval: this._intervalExport,
-      exporter: this._exporter,
-    }).getMeter(this._name);
+    const meterProvider =
+      config.meterProvider || api.metrics.getMeterProvider();
+    if (!config.meterProvider) {
+      this._logger.warn('No meter provider, using default');
+    }
+    this._meter = meterProvider.getMeter(this._name, VERSION);
   }
 
   /**
