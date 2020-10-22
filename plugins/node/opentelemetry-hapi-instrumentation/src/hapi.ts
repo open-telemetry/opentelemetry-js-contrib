@@ -382,7 +382,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       };
       if (route.options?.handler) {
         route.options.handler = newHandler;
-      } else if (route.handler) {
+      } else {
         route.handler = newHandler;
       }
     }
