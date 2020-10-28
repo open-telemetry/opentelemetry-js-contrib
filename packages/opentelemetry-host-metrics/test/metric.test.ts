@@ -77,9 +77,9 @@ const INTERVAL = 3000;
 
 let metrics: any;
 
-describe('RCA Metrics', () => {
+describe('Host Metrics', () => {
   let sandbox: sinon.SinonSandbox;
-  let rcaMetrics: any;
+  let hostMetrics: any;
   let exporter: MetricExporter;
   let exportSpy: any;
 
@@ -107,11 +107,11 @@ describe('RCA Metrics', () => {
     // `node-gyp-build` before metrics are being loaded, if import them before
     // the first pass on unit tests will not mock correctly
     metrics = require('../src');
-    rcaMetrics = new metrics.RCAMetrics({
+    hostMetrics = new metrics.HostMetrics({
       meterProvider,
-      name: 'opentelemetry-rca-metrics',
+      name: 'opentelemetry-host-metrics',
     });
-    rcaMetrics.start();
+    hostMetrics.start();
 
     // because networkStats mock simulates the network with every call it
     // returns the data that is bigger then previous, it needs to stub it again
@@ -140,15 +140,15 @@ describe('RCA Metrics', () => {
   });
 
   it('should create a new instance', () => {
-    assert.ok(rcaMetrics instanceof metrics.RCAMetrics);
+    assert.ok(hostMetrics instanceof metrics.HostMetrics);
   });
 
   it('should create a new instance with default meter provider', () => {
-    rcaMetrics = new metrics.RCAMetrics({
-      name: 'opentelemetry-rca-metrics',
+    hostMetrics = new metrics.HostMetrics({
+      name: 'opentelemetry-host-metrics',
     });
-    rcaMetrics.start();
-    assert.ok(rcaMetrics instanceof metrics.RCAMetrics);
+    hostMetrics.start();
+    assert.ok(hostMetrics instanceof metrics.HostMetrics);
   });
 
   it('should export CPU metrics', () => {

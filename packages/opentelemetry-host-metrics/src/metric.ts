@@ -42,7 +42,7 @@ export interface MetricsCollectorConfig {
 }
 
 const DEFAULT_MAX_TIMEOUT_UPDATE_MS = 500;
-const DEFAULT_NAME = 'opentelemetry-rca-metrics';
+const DEFAULT_NAME = 'opentelemetry-host-metrics';
 const DEFAULT_METRIC_NAME_SEPARATOR = '.';
 
 // default label name to be used to store metric name
@@ -53,7 +53,7 @@ const DEFAULT_KEY = 'name';
  * Loop, Garbage Collector, Heap Space
  * the default label name for metric name is "name"
  */
-export class RCAMetrics {
+export class HostMetrics {
   protected _logger: api.Logger | undefined;
   protected _maxTimeoutUpdateMS: number;
   protected _meter: metrics.Meter;

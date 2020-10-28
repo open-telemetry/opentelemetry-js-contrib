@@ -1,7 +1,7 @@
 {
-  "name": "@opentelemetry/rca-metrics",
+  "name": "@opentelemetry/host-metrics",
   "version": "0.10.0",
-  "description": "OpenTelemetry RCA Metrics for Node.js",
+  "description": "OpenTelemetry Host Metrics for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",

@@ -5,7 +5,7 @@
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-url]
 
-This module provides automatic collection of RCA Metrics which includes basic metrics for:
+This module provides automatic collection of Host Metrics which includes metrics for:
 * CPU
 * Memory
 * Network
@@ -13,14 +13,14 @@ This module provides automatic collection of RCA Metrics which includes basic me
 ## Installation
 
 ```bash
-npm install --save @opentelemetry/rca-metrics
+npm install --save @opentelemetry/host-metrics
 ```
 
 ## Usage
 
 ```javascript
 const { MeterProvider } = require('@opentelemetry/metrics');
-const { RCAMetrics } = require('@opentelemetry/rca-metrics');
+const { HostMetrics } = require('@opentelemetry/host-metrics');
 const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
 
 const exporter = new PrometheusExporter(
@@ -34,8 +34,8 @@ const meterProvider = new MeterProvider({
   interval: 2000,
 });
 
-const rcaMetrics = new RCAMetrics({ meterProvider, name: 'example-rca-metrics' });
-rcaMetrics.start();
+const hostMetrics = new HostMetrics({ meterProvider, name: 'example-host-metrics' });
+hostMetrics.start();
 
 ```
 

@@ -1,6 +1,6 @@
 'use strict';
 
-const { RCAMetrics } = require('@opentelemetry/rca-metrics');
+const { HostMetrics } = require('@opentelemetry/host-metrics');
 const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
 const { MeterProvider } = require('@opentelemetry/metrics');
 
@@ -18,5 +18,5 @@ const meterProvider = new MeterProvider({
   interval: 2000,
 });
 
-const rcaMetrics = new RCAMetrics({ meterProvider, name: 'example-rca-metrics' });
-rcaMetrics.start();
+const hostMetrics = new HostMetrics({ meterProvider, name: 'example-host-metrics' });
+hostMetrics.start();
