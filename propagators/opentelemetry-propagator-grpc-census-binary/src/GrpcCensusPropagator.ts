@@ -16,14 +16,12 @@
 
 import {
   Context,
-  GetterFunction,
-  TextMapPropagator,
-  SetterFunction,
-} from '@opentelemetry/api';
-import {
   getParentSpanContext,
+  GetterFunction,
   setExtractedSpanContext,
-} from '@opentelemetry/core';
+  SetterFunction,
+  TextMapPropagator,
+} from '@opentelemetry/api';
 import { BinaryTraceContext } from './BinaryTraceContext';
 
 /** The metadata key under which span context is stored as a binary value. */
