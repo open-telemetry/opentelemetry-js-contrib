@@ -1,0 +1,15 @@
+[
+  {
+    "iface": "en0",
+    "operstate": "up",
+    "rx_bytes": 60073930753,
+    "rx_dropped": 1200,
+    "rx_errors": 0,
+    "tx_bytes": 14207163202,
+    "tx_dropped": 1200,
+    "tx_errors": 21104,
+    "rx_sec": -1,
+    "tx_sec": -1,
+    "ms": 0
+  }
+]
