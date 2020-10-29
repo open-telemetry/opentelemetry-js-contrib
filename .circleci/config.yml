@@ -54,6 +54,10 @@ cache_1: &cache_1
     - plugins/node/opentelemetry-plugin-mysql/node_modules
     - plugins/node/opentelemetry-plugin-express/node_modules
     - propagators/opentelemetry-propagator-jaeger/node_modules
+    - propagators/opentelemetry-propagator-grpc-census-binary/node_modules
+    - packages/opentelemetry-host-metrics/node_modules
+    - packages/opentelemetry-runtime-metrics/node_modules
+    - packages/opentelemetry-test-utils/node_modules
 
 node_unit_tests: &node_unit_tests
   resource_class: large
@@ -74,7 +78,7 @@ node_unit_tests: &node_unit_tests
           echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
     - restore_cache:
         keys:
-          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71D
+          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
     - run:
         name: Install Root Dependencies
         command: npm install --ignore-scripts
@@ -109,7 +113,7 @@ browsers_unit_tests: &browsers_unit_tests
           echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
     - restore_cache:
         keys:
-          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71D
+          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
     - run:
         name: Install Root Dependencies
         command: npm install --ignore-scripts
@@ -124,6 +128,40 @@ browsers_unit_tests: &browsers_unit_tests
     - run:
         name: report coverage
         command: if [ "$CIRCLE_NODE_VERSION" = "v12" ]; then npm run codecov:browser; fi
+
+build_metrics: &build_metrics
+  resource_class: large
+  steps:
+    - checkout
+    - run:
+        name: Create Checksum
+        command: sh .circleci/checksum.sh /tmp/checksums.txt
+    - run:
+        name: Setup environment variables
+        command: |
+          echo "export CIRCLE_NODE_VERSION=\$(node --version | grep -oE 'v[0-9]+')" >> $BASH_ENV
+          source $BASH_ENV
+    - run:
+        name: Log out node.js version
+        command: |
+          node --version
+          echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
+    - restore_cache:
+        keys:
+          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
+    - run:
+        name: Install Root Dependencies
+        command: npm install --ignore-scripts
+    - run:
+        name: Boostrap dependencies
+        command: npx lerna bootstrap --scope @opentelemetry/runtime-metrics --include-filtered-dependencies --ignore-scripts
+    - run:
+        name: Create prebuilds for native stats
+        command: npm run build:runtime-metrics
+    - store_artifacts:
+        path: ./packages/opentelemetry-runtime-metrics/artifacts/prebuilds.tgz
+    - store_artifacts:
+        path: ./packages/opentelemetry-runtime-metrics/artifacts/prebuilds.tgz.sha1
 
 jobs:
   node8:
@@ -166,6 +204,11 @@ jobs:
     docker:
       - image: circleci/node:12-browsers
     <<: *browsers_unit_tests
+  build-native-stats:
+    docker:
+      - image: node:14
+        environment: *node_test_env
+    <<: *build_metrics
 
 workflows:
   version: 2
@@ -176,4 +219,8 @@ workflows:
       - node12
       - node14
       - node12-browsers
-
+      - build-native-stats:
+          filters:
+            branches:
+              only:
+                - master

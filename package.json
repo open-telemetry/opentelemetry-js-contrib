@@ -13,6 +13,7 @@
   "types": "build/src/index.d.ts",
   "scripts": {
     "clean": "lerna run clean",
+    "build:runtime-metrics": "lerna run build:runtime-metrics",
     "postinstall": "npm run bootstrap",
     "precompile": "tsc --version",
     "version:update": "lerna run version:update",
