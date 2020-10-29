@@ -61,42 +61,86 @@ describe('Hapi Instrumentation - Core Tests', () => {
   });
 
   describe('Instrumenting Hapi Routes', () => {
-    it('should create a child span for single routes', async () => {
-      const rootSpan = tracer.startSpan('rootSpan');
-      server.route({
-        method: 'GET',
-        path: '/',
-        handler: (request, h) => {
-          return 'Hello World!';
-        },
-      });
-
-      await server.start();
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-
-      await tracer.withSpan(rootSpan, async () => {
-        const res = await server.inject({
+    describe('when handler is in route level', () => {
+      it('should create a child span for single routes', async () => {
+        const rootSpan = tracer.startSpan('rootSpan');
+        server.route({
           method: 'GET',
-          url: '/',
+          path: '/',
+          handler: (request, h) => {
+            return 'Hello World!';
+          },
         });
-        assert.strictEqual(res.statusCode, 200);
 
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+        await server.start();
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'route - /');
-        assert.notStrictEqual(requestHandlerSpan, undefined);
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.ROUTER
-        );
+        await tracer.withSpan(rootSpan, async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/',
+          });
+          assert.strictEqual(res.statusCode, 200);
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'route - /');
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.ROUTER
+          );
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        });
+      });
+    });
+    describe('when handler is in route.options level', () => {
+      it('should create a child span for single routes', async () => {
+        const rootSpan = tracer.startSpan('rootSpan');
+        server.route({
+          method: 'GET',
+          path: '/',
+          options: {
+            handler: (request, h) => {
+              return 'Hello World!';
+            },
+          },
+        });
+
+        await server.start();
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+        await tracer.withSpan(rootSpan, async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/',
+          });
+          assert.strictEqual(res.statusCode, 200);
+
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'route - /');
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.ROUTER
+          );
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        });
       });
     });
 
