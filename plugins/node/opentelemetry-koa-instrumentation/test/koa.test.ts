@@ -93,6 +93,12 @@ describe('Koa Instrumentation - Core Tests', () => {
     await next();
   };
 
+  const spanCreateMiddleware: koa.Middleware = async (ctx, next) => {
+    const span = tracer.startSpan('foo');
+    span.end();
+    await next();
+  };
+
   const asyncMiddleware: koa.Middleware = async (ctx, next) => {
     const start = Date.now();
     await next();
@@ -106,17 +112,30 @@ describe('Koa Instrumentation - Core Tests', () => {
       app.use((ctx, next) => tracer.withSpan(rootSpan, next));
       app.use(customMiddleware);
       app.use(simpleResponse);
+      app.use(spanCreateMiddleware);
 
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}`);
         rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 5);
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 8);
 
         assert.notStrictEqual(
           memoryExporter
             .getFinishedSpans()
             .find(span => span.name.includes('customMiddleware')),
           undefined
+        );
+
+        const fooParentSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name.includes('spanCreateMiddleware'));
+        assert.notStrictEqual(fooParentSpan, undefined);
+
+        const fooSpan = memoryExporter.getFinishedSpans().find(span => 'foo');
+        assert.notStrictEqual(fooSpan, undefined);
+        assert.strictEqual(
+          fooSpan!.parentSpanId,
+          fooParentSpan!.spanContext.spanId
         );
 
         const simpleResponseSpan = memoryExporter

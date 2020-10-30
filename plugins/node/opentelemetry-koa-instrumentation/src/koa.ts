@@ -129,9 +129,12 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
       const span = this._tracer.startSpan(metadata.name, {
         attributes: metadata.attributes,
       });
-      const result = await middlewareLayer(context, next);
-      span.end();
-      return result;
+
+      return this._tracer.withSpan(span, async () => {
+        const result = await middlewareLayer(context, next);
+        span.end();
+        return result;
+      });
     };
   }
 }
