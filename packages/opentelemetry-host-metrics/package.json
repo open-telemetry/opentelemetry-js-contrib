@@ -56,7 +56,7 @@
     "semver": "7.3.2",
     "sinon": "9.2.1",
     "ts-loader": "8.0.7",
-    "ts-mocha": "7.0.0",
+    "ts-mocha": "8.0.0",
     "ts-node": "8.10.2",
     "typescript": "3.9.7"
   },

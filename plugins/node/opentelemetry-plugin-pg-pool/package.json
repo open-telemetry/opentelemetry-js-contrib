@@ -63,7 +63,7 @@
     "pg": "8.3.0",
     "pg-pool": "3.2.1",
     "rimraf": "3.0.2",
-    "ts-mocha": "7.0.0",
+    "ts-mocha": "8.0.0",
     "ts-node": "9.0.0",
     "tslint-consistent-codestyle": "1.16.0",
     "tslint-microsoft-contrib": "6.2.0",
