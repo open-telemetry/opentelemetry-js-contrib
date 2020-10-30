@@ -34,7 +34,7 @@
     "@opentelemetry/api": "^0.12.0",
     "@opentelemetry/exporter-collector": "^0.12.0",
     "@opentelemetry/node": "^0.12.0",
-    "@opentelemetry/plugin-express": "^0.10.0",
+    "@opentelemetry/plugin-express": "^0.11.0",
     "@opentelemetry/instrumentation-graphql": "^0.11.0",
     "@opentelemetry/plugin-http": "^0.12.0",
     "@opentelemetry/plugin-https": "^0.12.0",
