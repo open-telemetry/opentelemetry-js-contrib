@@ -48,7 +48,9 @@ export class DummyExporter implements SpanExporter {
     resultCallback: (result: ExportResult) => void
   ) {}
 
-  shutdown() {}
+  shutdown() {
+    return Promise.resolve();
+  }
 }
 
 const resources = [

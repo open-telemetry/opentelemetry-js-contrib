@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
-import { SpanContext, TraceFlags, Context } from '@opentelemetry/api';
 import {
-  getExtractedSpanContext,
+  getParentSpanContext,
+  ROOT_CONTEXT,
   setExtractedSpanContext,
-} from '@opentelemetry/core';
+  SpanContext,
+  TraceFlags,
+} from '@opentelemetry/api';
+import * as assert from 'assert';
 import { Metadata, MetadataValue } from 'grpc';
 import {
-  GRPC_TRACE_KEY,
   GrpcCensusPropagator,
+  GRPC_TRACE_KEY,
 } from '../src/GrpcCensusPropagator';
 
 describe('GrpcCensusPropagator', () => {
@@ -42,7 +44,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
       censusPropagator.inject(
-        setExtractedSpanContext(Context.ROOT_CONTEXT, spanContext),
+        setExtractedSpanContext(ROOT_CONTEXT, spanContext),
         metadata,
         (metadata, k, v) => metadata.set(k, v as MetadataValue)
       );
@@ -63,7 +65,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.NONE,
       };
       censusPropagator.inject(
-        setExtractedSpanContext(Context.ROOT_CONTEXT, spanContext),
+        setExtractedSpanContext(ROOT_CONTEXT, spanContext),
         metadata,
         (metadata, k, v) => metadata.set(k, v as MetadataValue)
       );
@@ -84,7 +86,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.NONE,
       };
       censusPropagator.inject(
-        setExtractedSpanContext(Context.ROOT_CONTEXT, emptySpanContext),
+        setExtractedSpanContext(ROOT_CONTEXT, emptySpanContext),
         metadata,
         (metadata, k, v) => metadata.set(k, v as MetadataValue)
       );
@@ -94,10 +96,8 @@ describe('GrpcCensusPropagator', () => {
     });
 
     it('should not inject when context has no parent', () => {
-      censusPropagator.inject(
-        Context.ROOT_CONTEXT,
-        metadata,
-        (metadata, k, v) => metadata.set(k, v as MetadataValue)
+      censusPropagator.inject(ROOT_CONTEXT, metadata, (metadata, k, v) =>
+        metadata.set(k, v as MetadataValue)
       );
 
       const value = metadata.getMap()[GRPC_TRACE_KEY] as Buffer;
@@ -112,7 +112,7 @@ describe('GrpcCensusPropagator', () => {
       };
       censusPropagator.inject(
         // cast to any so that undefined traceFlags can be used for coverage
-        setExtractedSpanContext(Context.ROOT_CONTEXT, spanContext as any),
+        setExtractedSpanContext(ROOT_CONTEXT, spanContext as any),
         metadata,
         (metadata, k, v) => metadata.set(k, v as MetadataValue)
       );
@@ -128,7 +128,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
       censusPropagator.inject(
-        setExtractedSpanContext(Context.ROOT_CONTEXT, emptySpanContext),
+        setExtractedSpanContext(ROOT_CONTEXT, emptySpanContext),
         null,
         (metadata, k, v) => metadata.set(k, v as MetadataValue)
       );
@@ -144,11 +144,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getExtractedSpanContext(
-        censusPropagator.extract(
-          Context.ROOT_CONTEXT,
-          metadata,
-          (carrier, key) => carrier.get(key)
+      const extractedSpanContext = getParentSpanContext(
+        censusPropagator.extract(ROOT_CONTEXT, metadata, (carrier, key) =>
+          carrier.get(key)
         )
       );
 
@@ -168,11 +166,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getExtractedSpanContext(
-        censusPropagator.extract(
-          Context.ROOT_CONTEXT,
-          metadata,
-          (carrier, key) => carrier.get(key)
+      const extractedSpanContext = getParentSpanContext(
+        censusPropagator.extract(ROOT_CONTEXT, metadata, (carrier, key) =>
+          carrier.get(key)
         )
       );
 
@@ -185,11 +181,9 @@ describe('GrpcCensusPropagator', () => {
     });
 
     it('should return undefined when header is not set', () => {
-      const extractedSpanContext = getExtractedSpanContext(
-        censusPropagator.extract(
-          Context.ROOT_CONTEXT,
-          metadata,
-          (carrier, key) => carrier.get(key)
+      const extractedSpanContext = getParentSpanContext(
+        censusPropagator.extract(ROOT_CONTEXT, metadata, (carrier, key) =>
+          carrier.get(key)
         )
       );
       assert.deepStrictEqual(extractedSpanContext, undefined);
@@ -203,11 +197,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getExtractedSpanContext(
-        censusPropagator.extract(
-          Context.ROOT_CONTEXT,
-          metadata,
-          (carrier, key) => carrier.get(key)
+      const extractedSpanContext = getParentSpanContext(
+        censusPropagator.extract(ROOT_CONTEXT, metadata, (carrier, key) =>
+          carrier.get(key)
         )
       );
 
@@ -227,11 +219,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getExtractedSpanContext(
-        censusPropagator.extract(
-          Context.ROOT_CONTEXT,
-          metadata,
-          (carrier, key) => carrier.get(key)
+      const extractedSpanContext = getParentSpanContext(
+        censusPropagator.extract(ROOT_CONTEXT, metadata, (carrier, key) =>
+          carrier.get(key)
         )
       );
 
@@ -239,8 +229,8 @@ describe('GrpcCensusPropagator', () => {
     });
 
     it('should return undefined when carrier is null', () => {
-      const extractedSpanContext = getExtractedSpanContext(
-        censusPropagator.extract(Context.ROOT_CONTEXT, null, (carrier, key) =>
+      const extractedSpanContext = getParentSpanContext(
+        censusPropagator.extract(ROOT_CONTEXT, null, (carrier, key) =>
           carrier.get(key)
         )
       );

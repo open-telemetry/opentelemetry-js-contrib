@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 const originalSetTimeout = window.setTimeout;
-import { Context } from '@opentelemetry/context-base';
 import { context } from '@opentelemetry/api';
+import { ROOT_CONTEXT } from '@opentelemetry/context-base';
+import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import { isWrapped, LogLevel } from '@opentelemetry/core';
 import { XMLHttpRequestPlugin } from '@opentelemetry/plugin-xml-http-request';
-import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import * as tracing from '@opentelemetry/tracing';
 import { WebTracerProvider } from '@opentelemetry/web';
 import * as assert from 'assert';
@@ -197,7 +197,7 @@ describe('UserInteractionPlugin', () => {
     });
 
     it('should run task from different zone - angular test', done => {
-      const context = Context.ROOT_CONTEXT;
+      const context = ROOT_CONTEXT;
       const rootZone = Zone.current;
 
       interface CtxMngrWithPrv {
