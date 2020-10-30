@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import type * as Hapi from '@hapi/hapi';
+import { Lifecycle } from '@hapi/hapi';
 
 export const HapiComponentName = '@hapi/hapi';
 
@@ -33,11 +34,18 @@ export type HapiServerRouteInput =
 
 export type PatchableServerRoute = Hapi.ServerRoute & {
   [handlerPatched]?: boolean;
+  options?: {
+    handler?: Lifecycle.Method;
+  };
+};
+
+export type HapiPluginObject<T> = Hapi.ServerRegisterPluginObject<T> & {
+  plugin: Hapi.ServerRegisterPluginObject<T>;
 };
 
 export type HapiPluginInput<T> =
-  | Hapi.ServerRegisterPluginObject<T>
-  | Array<Hapi.ServerRegisterPluginObject<T>>;
+  | HapiPluginObject<T>
+  | Array<HapiPluginObject<T>>;
 
 export type RegisterFunction<T> = (
   plugin: HapiPluginInput<T>,
