@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/plugin-ioredis",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "OpenTelemetry ioredis automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -47,7 +47,7 @@
     "@opentelemetry/context-async-hooks": "0.12.0",
     "@opentelemetry/node": "0.12.0",
     "@opentelemetry/semantic-conventions": "0.12.0",
-    "@opentelemetry/test-utils": "^0.10.0",
+    "@opentelemetry/test-utils": "^0.11.0",
     "@opentelemetry/tracing": "0.12.0",
     "@types/ioredis": "4.17.3",
     "@types/mocha": "7.0.2",
