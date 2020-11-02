@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CanonicalCode, context, SpanKind, Status } from '@opentelemetry/api';
+import { CanonicalCode, context, Span, SpanKind, Status } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -127,9 +127,11 @@ describe('ioredis', () => {
         assert.strictEqual(endedSpans.length, 3);
         assert.strictEqual(endedSpans[2].name, 'test span');
 
-        client.quit(done);
-        assert.strictEqual(endedSpans.length, 4);
-        assert.strictEqual(endedSpans[3].name, 'quit');
+        client.quit(() => {
+          assert.strictEqual(endedSpans.length, 4);
+          assert.strictEqual(endedSpans[3].name, 'quit');
+          done();
+        });
       };
       const errorHandler = (err: Error) => {
         assert.ifError(err);
@@ -253,6 +255,23 @@ describe('ioredis', () => {
         });
       });
 
+      it('should set span with error when redis return reject', async () => {
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await provider.getTracer('ioredis-test').withSpan(span, async () => {
+          await client.set('non-int-key', 'no-int-value');
+          try {
+            // should throw 'ReplyError: ERR value is not an integer or out of range'
+            // because the value im the key is not numeric and we try to increment it
+            await client.incr('non-int-key');
+          } catch (ex) {
+            const endedSpans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(endedSpans.length, 2);
+            // redis 'incr' operation failed with exception, so span should indicate it
+            assert.notStrictEqual(endedSpans[1].status.code, CanonicalCode.OK);
+          }  
+        });
+      });
+
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
@@ -312,9 +331,9 @@ describe('ioredis', () => {
             const spanNames = [
               'connect',
               'connect',
+              'info',
+              'info',
               'subscribe',
-              'info',
-              'info',
               'subscribe',
               'publish',
               'publish',
@@ -378,7 +397,9 @@ describe('ioredis', () => {
               SpanKind.CLIENT,
               attributes,
               [],
-              okStatus
+              {
+                code: CanonicalCode.NOT_FOUND,
+              }
             );
             testUtils.assertPropagation(endedSpans[0], span);
             done();
@@ -572,6 +593,29 @@ describe('ioredis', () => {
           });
         });
       });
+    });
+
+    describe('Instrumenting with a custom responseHook', () => {
+
+      before(() => {
+        plugin.disable();
+        const config: IoredisPluginConfig = {
+          responseHook: (span: Span, cmdName: string, cmdArgs: Array<string | Buffer | number>, response: any) => {
+            console.log(cmdName);
+          },
+        };
+        plugin.enable(ioredis, provider, new NoopLogger(), config);
+      });
+
+      it(`should call responseHook when set in config`, async () => {
+        const span = provider
+          .getTracer('ioredis-test')
+          .startSpan('test span');
+        await provider.getTracer('ioredis-test').withSpan(span, async () => {
+          await client.incr('new-key');
+        });
+      });
+
     });
 
     describe('Removing instrumentation', () => {

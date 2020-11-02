@@ -29,8 +29,13 @@ import {
 
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
+    let code = CanonicalCode.UNKNOWN;
+    if (err.message.startsWith('NOSCRIPT')) {
+      code = CanonicalCode.NOT_FOUND;
+    }
+
     span.setStatus({
-      code: CanonicalCode.UNKNOWN,
+      code,
       message: err.message,
     });
   } else {
@@ -111,7 +116,27 @@ export const traceSendCommand = (
 
     try {
       const result = original.apply(this, arguments);
-      endSpan(span, null);
+
+      const origResolve = cmd.resolve;
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      cmd.resolve = (result: any) => {
+        if (config?.responseHook) {
+          try {
+            config.responseHook(span, cmd.name, cmd.args, result);
+          } catch (ex) {
+            // we have nothing to do with exception from hook
+          }
+        }
+        endSpan(span, null);
+        origResolve(result);
+      };
+
+      const origReject = cmd.reject;
+      cmd.reject = (err: Error) => {
+        endSpan(span, err);
+        origReject(err);
+      };
+
       return result;
     } catch (error) {
       endSpan(span, error);

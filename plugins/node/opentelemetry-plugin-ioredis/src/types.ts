@@ -15,7 +15,7 @@
  */
 
 import type * as ioredisTypes from 'ioredis';
-import { PluginConfig } from '@opentelemetry/api';
+import { PluginConfig, Span } from '@opentelemetry/api';
 
 export interface IoredisCommand {
   reject: (err: Error) => void;
@@ -38,10 +38,23 @@ export type DbStatementSerializer = (
   cmdArgs: IoredisCommand['args']
 ) => string;
 
+export interface RedisResponseCustomAttributeFunction {
+  (
+    span: Span,
+    cmdName: IoredisCommand['name'],
+    cmdArgs: IoredisCommand['args'],
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    response: any
+  ): void;
+}
+
 /**
  * Options available for the IORedis Plugin (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-plugin-ioredis#ioredis-plugin-options))
  */
 export interface IoredisPluginConfig extends PluginConfig {
   /** Custom serializer function for the db.statement tag */
   dbStatementSerializer?: DbStatementSerializer;
+
+  /** Function for adding custom attributes on db response */
+  responseHook?: RedisResponseCustomAttributeFunction;
 }
