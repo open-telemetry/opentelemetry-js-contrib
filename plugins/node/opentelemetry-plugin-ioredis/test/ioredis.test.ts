@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { CanonicalCode, context, Span, SpanKind, Status } from '@opentelemetry/api';
+import {
+  CanonicalCode,
+  context,
+  Span,
+  SpanKind,
+  Status,
+} from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -268,7 +274,7 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans.length, 2);
             // redis 'incr' operation failed with exception, so span should indicate it
             assert.notStrictEqual(endedSpans[1].status.code, CanonicalCode.OK);
-          }  
+          }
         });
       });
 
@@ -596,49 +602,59 @@ describe('ioredis', () => {
     });
 
     describe('Instrumenting with a custom responseHook', () => {
-
-      it(`should call responseHook when set in config`, async () => {
+      it('should call responseHook when set in config', async () => {
         plugin.disable();
         const config: IoredisPluginConfig = {
-          responseHook: (span: Span, cmdName: string, cmdArgs: Array<string | Buffer | number>, response: any) => {
+          responseHook: (
+            span: Span,
+            cmdName: string,
+            cmdArgs: Array<string | Buffer | number>,
+            response: any
+          ) => {
             assert.strictEqual(cmdName, 'incr');
             // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
             assert.strictEqual(response, 1);
-            span.setAttribute('attribute key from hook', 'custom value from hook');
+            span.setAttribute(
+              'attribute key from hook',
+              'custom value from hook'
+            );
           },
         };
         plugin.enable(ioredis, provider, new NoopLogger(), config);
 
-        const span = provider
-          .getTracer('ioredis-test')
-          .startSpan('test span');
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
           await client.incr('new-key');
           const endedSpans = memoryExporter.getFinishedSpans();
           assert.strictEqual(endedSpans.length, 1);
-          assert.strictEqual(endedSpans[0].attributes['attribute key from hook'], 'custom value from hook');
+          assert.strictEqual(
+            endedSpans[0].attributes['attribute key from hook'],
+            'custom value from hook'
+          );
         });
       });
 
-      it(`should call ignore responseHook which throws`, async () => {
+      it('should call ignore responseHook which throws', async () => {
         plugin.disable();
         const config: IoredisPluginConfig = {
-          responseHook: (span: Span, cmdName: string, cmdArgs: Array<string | Buffer | number>, response: any) => {
+          responseHook: (
+            span: Span,
+            cmdName: string,
+            cmdArgs: Array<string | Buffer | number>,
+            response: any
+          ) => {
             throw Error('error thrown in responseHook');
           },
         };
         plugin.enable(ioredis, provider, new NoopLogger(), config);
 
-        const span = provider
-          .getTracer('ioredis-test')
-          .startSpan('test span');
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
           await client.incr('new-key');
           const endedSpans = memoryExporter.getFinishedSpans();
           assert.strictEqual(endedSpans.length, 1);
         });
       });
-
     });
 
     describe('Removing instrumentation', () => {
