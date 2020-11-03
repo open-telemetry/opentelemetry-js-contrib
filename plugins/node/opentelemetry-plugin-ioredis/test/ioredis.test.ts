@@ -17,7 +17,6 @@
 import {
   CanonicalCode,
   context,
-  Span,
   SpanKind,
   Status,
 } from '@opentelemetry/api';
