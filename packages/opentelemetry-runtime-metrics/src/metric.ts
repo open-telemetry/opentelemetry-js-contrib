@@ -34,7 +34,9 @@ import * as types from './types';
 export class RuntimeMetrics extends BaseMetrics {
   private _memRuntimeValueObserver: ValueObserverWithObservations | undefined;
   private _heapValueObserver: ValueObserverWithObservations | undefined;
-  private _processUptimeValueObserver: ValueObserverWithObservations | undefined;
+  private _processUptimeValueObserver:
+    | ValueObserverWithObservations
+    | undefined;
   private _eventLoopValueObserver: ValueObserverWithObservations | undefined;
   private _gcValueObserver: ValueObserverWithObservations | undefined;
   private _gcByTypeValueObserver: ValueObserverWithObservations | undefined;
