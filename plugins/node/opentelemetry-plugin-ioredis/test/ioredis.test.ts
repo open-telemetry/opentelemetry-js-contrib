@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  CanonicalCode,
-  context,
-  SpanKind,
-  Status,
-} from '@opentelemetry/api';
+import { CanonicalCode, context, SpanKind, Status } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
