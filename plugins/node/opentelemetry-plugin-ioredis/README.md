@@ -49,7 +49,6 @@ IORedis plugin has few options available to choose from. You can set the followi
 | Options | Type | Description |
 | ------- | ---- | ----------- |
 | `dbStatementSerializer` | `DbStatementSerializer` | IORedis plugin will serialize db.statement using the specified function. |
-| `responseHook` | `RedisResponseCustomAttributeFunction` | Function for adding custom attributes on db response |
 
 #### Custom db.statement Serializer
 The plugin serializes the whole command into a Span attribute called `db.statement`. The standard serialization format is `{cmdName} {cmdArgs.join(',')}`.
