@@ -2,6 +2,8 @@
   "lerna": "3.13.4",
   "npmClient": "npm",
   "packages": [
+    "examples/host-metrics",
+    "examples/runtime-metrics",
     "packages/*",
     "metapackages/*",
     "plugins/node/*",

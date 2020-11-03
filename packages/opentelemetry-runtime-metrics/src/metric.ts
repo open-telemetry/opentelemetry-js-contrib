@@ -16,7 +16,7 @@
 
 import * as api from '@opentelemetry/api';
 import {
-  HostMetrics,
+  BaseMetrics,
   ValueObserverWithObservations,
 } from '@opentelemetry/host-metrics';
 import * as enums from './enum';
@@ -31,7 +31,7 @@ import * as types from './types';
  * Loop, Garbage Collector, Heap Space
  * the default label name for metric name is "name"
  */
-export class RuntimeMetrics extends HostMetrics {
+export class RuntimeMetrics extends BaseMetrics {
   private _memRuntimeValueObserver: ValueObserverWithObservations | undefined;
   private _heapValueObserver: ValueObserverWithObservations | undefined;
   private _procesUptimeValueObserver: ValueObserverWithObservations | undefined;
