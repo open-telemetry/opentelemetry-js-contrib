@@ -78,7 +78,7 @@ node_unit_tests: &node_unit_tests
           echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
     - restore_cache:
         keys:
-          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
+          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-ver-1
     - run:
         name: Install Root Dependencies
         command: npm install --ignore-scripts
@@ -113,7 +113,7 @@ browsers_unit_tests: &browsers_unit_tests
           echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
     - restore_cache:
         keys:
-          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
+          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-ver-1
     - run:
         name: Install Root Dependencies
         command: npm install --ignore-scripts
