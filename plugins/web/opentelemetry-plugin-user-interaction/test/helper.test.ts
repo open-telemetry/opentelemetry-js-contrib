@@ -20,7 +20,9 @@ import * as assert from 'assert';
 export class DummySpanExporter implements tracing.SpanExporter {
   export(spans: tracing.ReadableSpan[]) {}
 
-  shutdown() {}
+  shutdown() {
+    return Promise.resolve();
+  }
 }
 
 export function createButton(disabled?: boolean): HTMLElement {

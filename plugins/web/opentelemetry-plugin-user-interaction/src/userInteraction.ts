@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-import * as shimmer from 'shimmer';
-import {
-  ACTIVE_SPAN_KEY,
-  BasePlugin,
-  hrTime,
-  isWrapped,
-} from '@opentelemetry/core';
 import * as api from '@opentelemetry/api';
+import { getActiveSpan, Span } from '@opentelemetry/api';
+import { BasePlugin, hrTime, isWrapped } from '@opentelemetry/core';
 import { getElementXPath } from '@opentelemetry/web';
+import * as shimmer from 'shimmer';
+import { AttributeNames } from './enums/AttributeNames';
 import {
   AsyncTask,
   RunTaskFunction,
@@ -30,9 +27,7 @@ import {
   WindowWithZone,
   ZoneTypeWithPrototype,
 } from './types';
-import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
-import { Span } from '@opentelemetry/api';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
@@ -155,7 +150,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   private _getCurrentSpan(zone: Zone): api.Span | undefined {
     const context: api.Context | undefined = zone.get(ZONE_CONTEXT_KEY);
     if (context) {
-      return context.getValue(ACTIVE_SPAN_KEY) as api.Span;
+      return getActiveSpan(context);
     }
     return context;
   }

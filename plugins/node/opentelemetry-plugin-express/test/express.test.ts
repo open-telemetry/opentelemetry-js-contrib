@@ -132,7 +132,7 @@ describe('Express Plugin', () => {
         );
         const exportedRootSpan = memoryExporter
           .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
+          .find(span => span.name === 'GET /toto/:id');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
       server.close();
