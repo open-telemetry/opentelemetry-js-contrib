@@ -34,7 +34,7 @@ import * as types from './types';
 export class RuntimeMetrics extends BaseMetrics {
   private _memRuntimeValueObserver: ValueObserverWithObservations | undefined;
   private _heapValueObserver: ValueObserverWithObservations | undefined;
-  private _procesUptimeValueObserver: ValueObserverWithObservations | undefined;
+  private _processUptimeValueObserver: ValueObserverWithObservations | undefined;
   private _eventLoopValueObserver: ValueObserverWithObservations | undefined;
   private _gcValueObserver: ValueObserverWithObservations | undefined;
   private _gcByTypeValueObserver: ValueObserverWithObservations | undefined;
@@ -59,8 +59,8 @@ export class RuntimeMetrics extends BaseMetrics {
   }
 
   // PROCESS
-  private _createProcesUptimeValueObserver() {
-    this._procesUptimeValueObserver = this._createValueObserver(
+  private _createProcessUptimeValueObserver() {
+    this._processUptimeValueObserver = this._createValueObserver(
       enums.METRIC_NAMES.PROCESS,
       Object.values(enums.PROCESS_LABELS),
       'Process UpTime'
@@ -192,7 +192,7 @@ export class RuntimeMetrics extends BaseMetrics {
     // HEAP
     this._createHeapValueObserver();
     // PROCESS
-    this._createProcesUptimeValueObserver();
+    this._createProcessUptimeValueObserver();
     // EVENT LOOP
     this._createEventLoopValueObserver();
     // GC ALL
@@ -238,7 +238,7 @@ export class RuntimeMetrics extends BaseMetrics {
           this._updateObserver<types.ProcessData>(
             observerBatchResult,
             processData,
-            this._procesUptimeValueObserver
+            this._processUptimeValueObserver
           );
 
           // EVENT LOOP
