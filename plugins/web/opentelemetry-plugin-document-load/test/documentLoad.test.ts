@@ -511,21 +511,7 @@ describe('DocumentLoad Plugin', () => {
     });
   });
 
-  describe('when navigation entries types are NOT available then fallback to "performance.timing"', () => {
-    let spyEntries: any;
-    beforeEach(() => {
-      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([]);
-      spyEntries.withArgs('resource').returns([]);
-      Object.defineProperty(window.performance, 'timing', {
-        writable: true,
-        value: entriesFallback,
-      });
-    });
-    afterEach(() => {
-      spyEntries.restore();
-    });
-
+  function shouldExportCorrectSpan() {
     it('should export correct span with events', done => {
       const spyOnEnd = sinon.spy(dummyExporter, 'export');
       plugin.enable(moduleExports, provider, logger, config);
@@ -557,6 +543,41 @@ describe('DocumentLoad Plugin', () => {
         done();
       });
     });
+  }
+
+  describe('when navigation entries types are NOT available then fallback to "performance.timing"', () => {
+    let spyEntries: any;
+    beforeEach(() => {
+      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([]);
+      spyEntries.withArgs('resource').returns([]);
+
+      Object.defineProperty(window.performance, 'timing', {
+        writable: true,
+        value: entriesFallback,
+      });
+    });
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    shouldExportCorrectSpan();
+  });
+
+  describe('when getEntriesByType is not defined then fallback to "performance.timing"', () => {
+    beforeEach(() => {
+      Object.defineProperty(window.performance, 'getEntriesByType', {
+        writable: true,
+        value: undefined,
+      });
+
+      Object.defineProperty(window.performance, 'timing', {
+        writable: true,
+        value: entriesFallback,
+      });
+    });
+
+    shouldExportCorrectSpan();
   });
 
   describe('when navigation entries types and "performance.timing" are NOT available', () => {
