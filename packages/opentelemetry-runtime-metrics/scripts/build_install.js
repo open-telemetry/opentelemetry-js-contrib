@@ -23,6 +23,7 @@ const os = require('os');
 const path = require('path');
 const semver = require('semver');
 const tar = require('tar');
+const execSync = require('child_process').execSync;
 
 const args = process.argv.slice(2);
 const obj = {};
@@ -39,7 +40,8 @@ const nodeVersion =
   obj.version || process.version.replace(/v/g, '').split('.')[0];
 
 const MAIN_FOLDER = path.resolve(__dirname, '..');
-const BUILD_FOLDER = path.resolve(MAIN_FOLDER, 'build/Release');
+const BUILD_FOLDER = path.resolve(MAIN_FOLDER, 'build');
+const BUILD_FOLDER_RELEASE = path.resolve(MAIN_FOLDER, 'build/Release');
 const ARTIFACTS_FOLDER = path.resolve(MAIN_FOLDER, 'artifacts');
 const CACHE_FOLDER = path.join(MAIN_FOLDER, 'cache');
 const PREBUILDS_FOLDER_NAME = 'prebuilds';
@@ -52,6 +54,7 @@ const targets = [
   { version: '12.0.0', abi: '72' },
   { version: '13.0.0', abi: '79' },
   { version: '14.0.0', abi: '83' },
+  { version: '15.0.0', abi: '88' },
 ];
 const targetToCopy = targets.filter(target =>
   semver.satisfies(target.version, `=${nodeVersion}`)
@@ -79,21 +82,47 @@ function extractFromBuild() {
 }
 
 function copyToBuildFolder() {
-  mkdirp.sync(BUILD_FOLDER);
+  mkdirp.sync(BUILD_FOLDER_RELEASE);
   const src = `${CACHE_FOLDER}/${PREBUILDS_FOLDER_NAME}/${platform}-${arch}/node-${targetToCopy.abi}.node`;
   const info = `platform: (${platform}), arch: (${arch}), node version: (${targetToCopy.version})`;
   if (!fs.existsSync(src)) {
-    throw new Error(`No precompiled file found for ${info}`);
+    console.log(`No precompiled file found for ${info}`);
+    build(platform, arch, targetToCopy);
+    return;
   }
-  const dest = `${BUILD_FOLDER}/node-${targetToCopy.abi}.node`;
+  const dest = `${BUILD_FOLDER_RELEASE}/node-${targetToCopy.abi}.node`;
   fs.copyFileSync(src, dest);
   console.log(`File for ${info} installed successfully`);
 }
 
 function cleanBefore() {
-  rimraf.sync(BUILD_FOLDER);
+  rimraf.sync(BUILD_FOLDER_RELEASE);
 }
 
 function cleanAfter() {
   rimraf.sync(CACHE_FOLDER);
+}
+
+function build(platform, arch, target) {
+  console.log(
+    `Building: platform: ${platform}, arch: ${arch}, node version: ${target.version}`
+  );
+  const cmd = [
+    'node-gyp rebuild',
+    `--target=${target.version}`,
+    `--target_arch=${arch}`,
+    `--devdir=${CACHE_FOLDER}`,
+    '--release',
+    '--build_v8_with_gn=false',
+    '--v8_enable_pointer_compression=""',
+    '--v8_enable_31bit_smis_on_64bit_arch=""',
+    '--enable_lto=false',
+  ].join(' ');
+
+  execSync(cmd, { stdio: [0, 1, 2] });
+
+  fs.copyFileSync(`${BUILD_FOLDER_RELEASE}/metrics.node`, `${CACHE_FOLDER}/node-${target.abi}.node`);
+  rimraf.sync(BUILD_FOLDER);
+  mkdirp.sync(BUILD_FOLDER_RELEASE);
+  fs.copyFileSync(`${CACHE_FOLDER}/node-${target.abi}.node`, `${BUILD_FOLDER_RELEASE}/node-${target.abi}.node`);
 }
