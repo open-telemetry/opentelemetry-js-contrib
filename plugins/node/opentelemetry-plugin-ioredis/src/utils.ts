@@ -29,13 +29,8 @@ import {
 
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
-    let code = CanonicalCode.UNKNOWN;
-    if (err.message.startsWith('NOSCRIPT')) {
-      code = CanonicalCode.NOT_FOUND;
-    }
-
     span.setStatus({
-      code,
+      code: err.message.startsWith('NOSCRIPT') ? CanonicalCode.NOT_FOUND : CanonicalCode.UNKNOWN,
       message: err.message,
     });
   } else {
@@ -119,13 +114,13 @@ export const traceSendCommand = (
 
       const origResolve = cmd.resolve;
       /* eslint-disable @typescript-eslint/no-explicit-any */
-      cmd.resolve = (result: any) => {
+      cmd.resolve = function(result: any) {
         endSpan(span, null);
         origResolve(result);
       };
 
       const origReject = cmd.reject;
-      cmd.reject = (err: Error) => {
+      cmd.reject = function(err: Error) {
         endSpan(span, err);
         origReject(err);
       };
