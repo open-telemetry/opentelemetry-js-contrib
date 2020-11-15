@@ -65,6 +65,7 @@ OpenTelemetry can collect tracing data automatically using plugins. Vendors/User
 - [@opentelemetry/plugin-dns][otel-plugin-dns]
 - [@opentelemetry/hapi-instrumentation][otel-contrib-hapi-instrumentation]
 - [@opentelemetry/koa-instrumentation][otel-contrib-koa-instrumentation]
+- [@opentelemetry/instrumentation-graphql][otel-contrib-instrumentation-graphql]
 
 ### Web Plugins
 
@@ -135,3 +136,4 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-plugins-node-core-and-contrib]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/metapackages/plugins-node-core-and-contrib
 [otel-contrib-hapi-instrumentation]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-hapi-instrumentation
 [otel-contrib-koa-instrumentation]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-koa-instrumentation
+[otel-contrib-instrumentation-graphql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/plugins/node/opentelemetry-hapi-instrumentation
