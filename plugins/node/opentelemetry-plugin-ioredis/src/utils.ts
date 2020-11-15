@@ -30,7 +30,9 @@ import {
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
     span.setStatus({
-      code: err.message.startsWith('NOSCRIPT') ? CanonicalCode.NOT_FOUND : CanonicalCode.UNKNOWN,
+      code: err.message.startsWith('NOSCRIPT')
+        ? CanonicalCode.NOT_FOUND
+        : CanonicalCode.UNKNOWN,
       message: err.message,
     });
   } else {
@@ -114,13 +116,13 @@ export const traceSendCommand = (
 
       const origResolve = cmd.resolve;
       /* eslint-disable @typescript-eslint/no-explicit-any */
-      cmd.resolve = function(result: any) {
+      cmd.resolve = function (result: any) {
         endSpan(span, null);
         origResolve(result);
       };
 
       const origReject = cmd.reject;
-      cmd.reject = function(err: Error) {
+      cmd.reject = function (err: Error) {
         endSpan(span, err);
         origReject(err);
       };
