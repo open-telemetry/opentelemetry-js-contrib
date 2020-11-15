@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.11.0
+
+#### :bug: Bug Fix
+
+* [#221](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/221) fix: wrapper function for hapi route & plugins ([@jk1z](https://github.com/jk1z))
+* [#225](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/225) pg spans disconnected from parent ([@obecny](https://github.com/obecny))
+* [#208](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/208) [mysql] fix: ensure span name is a string to avoid [object Object] as span name ([@naseemkullah](https://github.com/naseemkullah))
+* [#175](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/175) fix: accept EventListener callbacks ([@johnbley](https://github.com/johnbley))
+* [#188](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/188) fix(express): listen for `finish` event on response for async express layer #107 ([@vmarchaud](https://github.com/vmarchaud))
+
+#### :rocket: Enhancement
+
+* Other
+  * [#176](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/176) feat: reduce root span cardinality in express plugin ([@gecgooden](https://github.com/gecgooden))
+  * [#226](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/226) feature: Graphql ([@obecny](https://github.com/obecny))
+  * [#215](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/215) Allow redis version 3.0.0 and above ([@akshah123](https://github.com/akshah123))
+  * [#212](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/212) docs: update dns status and add hapi koa ([@naseemkullah](https://github.com/naseemkullah))
+* `opentelemetry-host-metrics`
+  * [#227](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/227) Host Metrics ([@obecny](https://github.com/obecny))
+
+#### Committers: 9
+
+* Ankit Shah ([@akshah123](https://github.com/akshah123))
+* Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+* Daniel Dyla ([@dyladan](https://github.com/dyladan))
+* George Gooden ([@gecgooden](https://github.com/gecgooden))
+* Jack Zhang ([@jk1z](https://github.com/jk1z))
+* John Bley ([@johnbley](https://github.com/johnbley))
+* Mark ([@MarkSeufert](https://github.com/MarkSeufert))
+* Naseem ([@naseemkullah](https://github.com/naseemkullah))
+* Valentin Marchaud ([@vmarchaud](https://github.com/vmarchaud))
+
 ## 0.10.0
 
 #### :bug: Bug Fix
