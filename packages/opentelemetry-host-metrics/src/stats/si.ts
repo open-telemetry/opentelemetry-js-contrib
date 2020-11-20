@@ -18,34 +18,55 @@ import * as SI from 'systeminformation';
 import { NetworkData } from '../types';
 import { ObjectKeys } from '../util';
 
-let previousNetworkStats: Partial<NetworkData> = {};
+const previousNetworkStats: Record<string, Partial<NetworkData>> = {};
 
 /**
- * It returns network usage delta from last time
+ * It returns network usage as delta to be able to use with SumObservers.
+ * With network usage we start counting from 0.
  */
 export function getNetworkData() {
-  return new Promise<NetworkData>(resolve => {
-    const stats: NetworkData = {
-      bytesRecv: 0,
-      bytesSent: 0,
+  return new Promise<NetworkData[]>(resolve => {
+    const stats: Partial<NetworkData> = {
+      rx_bytes: 0,
+      rx_dropped: 0,
+      rx_errors: 0,
+      tx_bytes: 0,
+      tx_dropped: 0,
+      tx_errors: 0,
     };
     SI.networkStats()
       .then(results => {
-        results.forEach(result => {
-          stats.bytesRecv += result.rx_bytes;
-          stats.bytesSent += result.tx_bytes;
-        });
-        const lastStats = Object.assign({}, stats);
+        const allStats: NetworkData[] = [];
+        for (let i = 0, j = results.length; i < j; i++) {
+          const currentStats = Object.assign({}, stats);
+          let previousStats = previousNetworkStats[results[i].iface];
+          const firstTime = !previousStats;
+          if (firstTime) {
+            previousStats = {};
+          }
 
-        ObjectKeys(stats).forEach(key => {
-          stats[key] = stats[key] - (previousNetworkStats[key] || 0);
-        });
+          ObjectKeys(stats).forEach(key => {
+            if (typeof stats[key] === 'number') {
+              const current = results[i][key] as number;
+              if (firstTime) {
+                (previousStats[key] as number) = current;
+                (currentStats[key] as number) = 0;
+              } else {
+                const previous = (previousStats[key] || 0) as number;
+                (currentStats[key] as number) = current - previous;
+                (previousStats[key] as number) = current;
+              }
+            }
+          });
+          currentStats.iface = results[i].iface;
+          previousNetworkStats[currentStats.iface] = previousStats;
+          allStats.push(currentStats as NetworkData);
+        }
 
-        previousNetworkStats = lastStats;
-        resolve(stats);
+        resolve(allStats);
       })
       .catch(() => {
-        resolve(stats);
+        resolve([]);
       });
   });
 }

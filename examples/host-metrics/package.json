@@ -29,6 +29,7 @@
     "@opentelemetry/api": "^0.12.0",
     "@opentelemetry/core": "^0.12.0",
     "@opentelemetry/exporter-prometheus": "^0.12.0",
+    "@opentelemetry/exporter-collector": "^0.12.0",
     "@opentelemetry/metrics": "^0.12.0",
     "@opentelemetry/host-metrics": "^0.11.0"
   },

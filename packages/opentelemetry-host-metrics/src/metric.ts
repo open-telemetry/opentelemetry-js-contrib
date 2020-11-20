@@ -14,227 +14,214 @@
  * limitations under the License.
  */
 
+import { BaseMetrics } from './BaseMetrics';
 import * as api from '@opentelemetry/api';
-import * as metrics from '@opentelemetry/metrics';
 import * as enums from './enum';
 
 import { getCpuUsageData, getMemoryData } from './stats/common';
 import { getNetworkData } from './stats/si';
+import { CpuUsageData, MemoryData, NetworkData } from './types';
 
-import * as types from './types';
-import { VERSION } from './version';
-
-/**
- * Metrics Collector Configuration
- */
-export interface MetricsCollectorConfig {
-  logger?: api.Logger;
-  // maximum timeout to wait for stats collection default is 500ms
-  maxTimeoutUpdateMS?: number;
-  // Meter Provider
-  meterProvider: metrics.MeterProvider;
-  // Character to be used to join metrics - default is "."
-  metricNameSeparator?: string;
-  // Name of component
-  name: string;
-  // metric export endpoint
-  url: string;
-}
-
-const DEFAULT_MAX_TIMEOUT_UPDATE_MS = 500;
-const DEFAULT_NAME = 'opentelemetry-host-metrics';
-const DEFAULT_METRIC_NAME_SEPARATOR = '.';
-
-// default label name to be used to store metric name
-const DEFAULT_KEY = 'name';
+// import * as types from './types';
 
 /**
  * Metrics Collector - collects metrics for CPU, Memory, Heap, Network, Event
  * Loop, Garbage Collector, Heap Space
  * the default label name for metric name is "name"
  */
-export class HostMetrics {
-  protected _logger: api.Logger | undefined;
-  protected _maxTimeoutUpdateMS: number;
-  protected _meter: metrics.Meter;
-  private _name: string;
-  private _boundCounters: { [key: string]: api.BoundCounter } = {};
-  private _metricNameSeparator: string;
+export class HostMetrics extends BaseMetrics {
+  private _cpuTimeObserver!: api.SumObserver;
+  private _cpuUtilizationObserver!: api.ValueObserver;
+  private _memUsageObserver!: api.ValueObserver;
+  private _memUtilizationObserver!: api.ValueObserver;
+  private _networkDroppedObserver!: api.SumObserver;
+  private _networkErrorsObserver!: api.SumObserver;
+  private _networkIOObserver!: api.SumObserver;
+  // once metrics api and exporter is fixed it should be this
+  // private _memUsageObserver!: api.UpDownSumObserver;
 
-  private _memValueObserver: types.ValueObserverWithObservations | undefined;
-
-  constructor(config: MetricsCollectorConfig) {
-    this._logger = config.logger || new api.NoopLogger();
-    this._name = config.name || DEFAULT_NAME;
-    this._maxTimeoutUpdateMS =
-      config.maxTimeoutUpdateMS || DEFAULT_MAX_TIMEOUT_UPDATE_MS;
-    this._metricNameSeparator =
-      config.metricNameSeparator || DEFAULT_METRIC_NAME_SEPARATOR;
-    const meterProvider =
-      config.meterProvider || api.metrics.getMeterProvider();
-    if (!config.meterProvider) {
-      this._logger.warn('No meter provider, using default');
-    }
-    this._meter = meterProvider.getMeter(this._name, VERSION);
-  }
-
-  /**
-   * Creates a metric key name based on metric name and a key
-   * @param metricName
-   * @param key
-   */
-  protected _boundKey(metricName: string, key: string) {
-    if (!key) {
-      return metricName;
-    }
-    return `${metricName}${this._metricNameSeparator}${key}`;
-  }
-
-  /**
-   * Updates counter based on boundkey
-   * @param metricName
-   * @param key
-   * @param value
-   */
-  protected _counterUpdate(metricName: string, key: string, value = 0) {
-    const boundKey = this._boundKey(metricName, key);
-    this._boundCounters[boundKey].add(value);
-  }
-
-  /**
-   * @param metricName metric name - this will be added as label under name
-   *     "name"
-   * @param values values to be used to generate bound counters for each
-   * value prefixed with metricName
-   * @param description metric description
-   */
-  protected _createCounter(
-    metricName: string,
-    values: string[],
-    description?: string
-  ) {
-    const keys = values.map(key => this._boundKey(metricName, key));
-    const counter = this._meter.createCounter(metricName, {
-      description: description || metricName,
-    });
-    keys.forEach(key => {
-      this._boundCounters[key] = counter.bind({ [DEFAULT_KEY]: key });
-    });
-  }
-
-  /**
-   * @param metricName metric name - this will be added as label under name
-   *     "name"
-   * @param values values to be used to generate full metric name
-   * (metricName + value)
-   * value prefixed with metricName
-   * @param description metric description
-   * @param labelKey extra label to be observed
-   * @param labelValues label values to be observed based on labelKey
-   * @param afterKey extra name to be added to full metric name
-   */
-  protected _createValueObserver(
-    metricName: string,
-    values: string[],
-    description: string,
-    labelKey = '',
-    labelValues: string[] = [],
-    afterKey = ''
-  ): types.ValueObserverWithObservations {
-    const labelKeys = [DEFAULT_KEY];
-    if (labelKey) {
-      labelKeys.push(labelKey);
-    }
-    const observer = this._meter.createValueObserver(metricName, {
-      description: description || metricName,
-    });
-
-    const observations: types.Observations[] = [];
-    values.forEach(value => {
-      const boundKey = this._boundKey(
-        this._boundKey(metricName, value),
-        afterKey
-      );
-      if (labelKey) {
-        // there is extra label to be observed mixed with default one
-        // for example we want to be able to observe "name" and "gc_type"
-        labelValues.forEach(label => {
-          const observedLabels = Object.assign(
-            {},
-            { [DEFAULT_KEY]: boundKey },
-            {
-              [labelKey]: label,
-            }
-          );
-          observations.push({
-            key: value,
-            labels: observedLabels,
-            labelKey,
-          });
-        });
-      } else {
-        observations.push({
-          key: value,
-          labels: { [DEFAULT_KEY]: boundKey },
-        });
-      }
-    });
-
-    return { observer, observations };
-  }
-
-  // MEMORY
-  private _createMemValueObserver() {
-    this._memValueObserver = this._createValueObserver(
-      enums.METRIC_NAMES.MEMORY,
-      Object.values(enums.MEMORY_LABELS),
-      'Memory'
+  private _updateCpuTime(
+    observerBatchResult: api.BatchObserverResult,
+    cpuUsage: CpuUsageData
+  ): void {
+    observerBatchResult.observe(
+      {
+        state: enums.CPU_LABELS.USER,
+      },
+      [this._cpuTimeObserver?.observation(cpuUsage.user)]
+    );
+    observerBatchResult.observe(
+      {
+        state: enums.CPU_LABELS.SYSTEM,
+      },
+      [this._cpuTimeObserver?.observation(cpuUsage.system)]
+    );
+    observerBatchResult.observe(
+      {
+        state: enums.CPU_LABELS.IDLE,
+      },
+      [this._cpuTimeObserver?.observation(cpuUsage.idle)]
     );
   }
 
-  /**
-   * Updates observer
-   * @param observerBatchResult
-   * @param data
-   * @param observerWithObservations
-   */
-  protected _updateObserver<DataType>(
+  private _updateCpuUtilisation(
     observerBatchResult: api.BatchObserverResult,
-    data: DataType,
-    observerWithObservations?: types.ValueObserverWithObservations
-  ) {
-    if (observerWithObservations) {
-      observerWithObservations.observations.forEach(observation => {
-        const value = data[observation.key as keyof DataType];
-        if (typeof value === 'number') {
-          observerBatchResult.observe(observation.labels, [
-            observerWithObservations.observer.observation(value),
-          ]);
-        }
-      });
+    cpuUsage: CpuUsageData
+  ): void {
+    observerBatchResult.observe(
+      {
+        state: enums.CPU_LABELS.USER,
+      },
+      [this._cpuUtilizationObserver?.observation(cpuUsage.userP)]
+    );
+    observerBatchResult.observe(
+      {
+        state: enums.CPU_LABELS.SYSTEM,
+      },
+      [this._cpuUtilizationObserver?.observation(cpuUsage.systemP)]
+    );
+    observerBatchResult.observe(
+      {
+        state: enums.CPU_LABELS.IDLE,
+      },
+      [this._cpuUtilizationObserver?.observation(cpuUsage.idleP)]
+    );
+  }
+
+  private _updateMemUsage(
+    observerBatchResult: api.BatchObserverResult,
+    memUsage: MemoryData
+  ): void {
+    observerBatchResult.observe(
+      {
+        state: enums.MEMORY_LABELS.USED,
+      },
+      [this._memUsageObserver?.observation(memUsage.used)]
+    );
+    observerBatchResult.observe(
+      {
+        state: enums.MEMORY_LABELS.FREE,
+      },
+      [this._memUsageObserver?.observation(memUsage.free)]
+    );
+  }
+
+  private _updateMemUtilization(
+    observerBatchResult: api.BatchObserverResult,
+    memUsage: MemoryData
+  ): void {
+    observerBatchResult.observe(
+      {
+        state: enums.MEMORY_LABELS.USED,
+      },
+      [this._memUtilizationObserver?.observation(memUsage.usedP)]
+    );
+    observerBatchResult.observe(
+      {
+        state: enums.MEMORY_LABELS.FREE,
+      },
+      [this._memUtilizationObserver?.observation(memUsage.freeP)]
+    );
+  }
+
+  private _updateNetwork(
+    observerBatchResult: api.BatchObserverResult,
+    networkUsages: NetworkData[]
+  ): void {
+    for (let i = 0, j = networkUsages.length; i < j; i++) {
+      const networkUsage = networkUsages[i];
+      observerBatchResult.observe(
+        {
+          [enums.NETWORK_LABELS.DEVICE]: networkUsage.iface,
+          direction: enums.NETWORK_LABELS.RECEIVE,
+        },
+        [this._networkDroppedObserver?.observation(networkUsage.rx_dropped)]
+      );
+      observerBatchResult.observe(
+        {
+          device: networkUsage.iface,
+          direction: enums.NETWORK_LABELS.TRANSMIT,
+        },
+        [this._networkDroppedObserver?.observation(networkUsage.tx_dropped)]
+      );
+
+      observerBatchResult.observe(
+        {
+          device: networkUsage.iface,
+          direction: enums.NETWORK_LABELS.RECEIVE,
+        },
+        [this._networkErrorsObserver?.observation(networkUsage.rx_errors)]
+      );
+      observerBatchResult.observe(
+        {
+          device: networkUsage.iface,
+          direction: enums.NETWORK_LABELS.TRANSMIT,
+        },
+        [this._networkErrorsObserver?.observation(networkUsage.tx_errors)]
+      );
+
+      observerBatchResult.observe(
+        {
+          device: networkUsage.iface,
+          direction: enums.NETWORK_LABELS.RECEIVE,
+        },
+        [this._networkIOObserver?.observation(networkUsage.rx_bytes)]
+      );
+      observerBatchResult.observe(
+        {
+          device: networkUsage.iface,
+          direction: enums.NETWORK_LABELS.TRANSMIT,
+        },
+        [this._networkIOObserver?.observation(networkUsage.tx_bytes)]
+      );
     }
   }
 
   /**
    * Creates metrics
    */
-  protected _createMetrics() {
-    // CPU COUNTER
-    this._createCounter(
-      enums.METRIC_NAMES.CPU,
-      Object.values(enums.CPU_LABELS),
-      'CPU Usage'
+  protected _createMetrics(): void {
+    // CPU
+    this._cpuTimeObserver = this._meter.createSumObserver(
+      enums.METRIC_NAMES.CPU_TIME,
+      { description: 'Cpu time in seconds', unit: 's' }
     );
-
-    // NETWORK COUNTER
-    this._createCounter(
-      enums.METRIC_NAMES.NETWORK,
-      Object.values(enums.NETWORK_LABELS),
-      'Network Usage'
+    this._cpuUtilizationObserver = this._meter.createValueObserver(
+      enums.METRIC_NAMES.CPU_UTILIZATION,
+      {
+        description: 'Cpu usage time 0-1',
+      }
     );
-
-    // MEMORY
-    this._createMemValueObserver();
+    this._memUsageObserver = this._meter.createValueObserver(
+      enums.METRIC_NAMES.MEMORY_USAGE,
+      {
+        description: 'Memory usage in bytes',
+      }
+    );
+    this._memUtilizationObserver = this._meter.createValueObserver(
+      enums.METRIC_NAMES.MEMORY_UTILIZATION,
+      {
+        description: 'Memory usage 0-1',
+      }
+    );
+    this._networkDroppedObserver = this._meter.createSumObserver(
+      enums.METRIC_NAMES.NETWORK_DROPPED,
+      {
+        description: 'Network dropped packets',
+      }
+    );
+    this._networkErrorsObserver = this._meter.createSumObserver(
+      enums.METRIC_NAMES.NETWORK_ERRORS,
+      {
+        description: 'Network errors counter',
+      }
+    );
+    this._networkIOObserver = this._meter.createSumObserver(
+      enums.METRIC_NAMES.NETWORK_IO,
+      {
+        description: 'Network transmit and received bytes',
+      }
+    );
 
     this._meter.createBatchObserver(
       'metric_batch_observer',
@@ -244,26 +231,11 @@ export class HostMetrics {
           getCpuUsageData(),
           getNetworkData(),
         ]).then(([memoryData, cpuUsage, networkData]) => {
-          // CPU COUNTER
-          Object.values(enums.CPU_LABELS).forEach(value => {
-            this._counterUpdate(enums.METRIC_NAMES.CPU, value, cpuUsage[value]);
-          });
-
-          // NETWORK COUNTER
-          Object.values(enums.NETWORK_LABELS).forEach(value => {
-            this._counterUpdate(
-              enums.METRIC_NAMES.NETWORK,
-              value,
-              networkData[value]
-            );
-          });
-
-          // MEMORY
-          this._updateObserver<types.MemoryData>(
-            observerBatchResult,
-            memoryData,
-            this._memValueObserver
-          );
+          this._updateCpuTime(observerBatchResult, cpuUsage);
+          this._updateCpuUtilisation(observerBatchResult, cpuUsage);
+          this._updateMemUsage(observerBatchResult, memoryData);
+          this._updateMemUtilization(observerBatchResult, memoryData);
+          this._updateNetwork(observerBatchResult, networkData);
         });
       },
       {

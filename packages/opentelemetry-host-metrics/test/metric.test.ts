@@ -25,10 +25,10 @@ import {
 import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
+import { HostMetrics } from '../src';
 
 const cpuJson = require('./mocks/cpu.json');
 const networkJson = require('./mocks/network.json');
-const memoryJson = require('./mocks/memory.json');
 
 class NoopExporter implements MetricExporter {
   export(
@@ -63,10 +63,11 @@ const mockedSI = {
     });
   },
 };
-
+let memoryCallCount = 0;
 const mockedOS = {
   freemem: function () {
-    return 7179869184;
+    memoryCallCount++;
+    return 7179869184 + 1024 * memoryCallCount;
   },
   totalmem: function () {
     return 17179869184;
@@ -74,8 +75,6 @@ const mockedOS = {
 };
 
 const INTERVAL = 3000;
-
-let metrics: any;
 
 describe('Host Metrics', () => {
   let sandbox: sinon.SinonSandbox;
@@ -87,13 +86,14 @@ describe('Host Metrics', () => {
     sandbox = sinon.createSandbox();
     sandbox.useFakeTimers();
 
-    sandbox.stub(os, 'freemem').returns(mockedOS.freemem());
+    sandbox.stub(os, 'freemem').callsFake(() => {
+      return mockedOS.freemem();
+    });
     sandbox.stub(os, 'totalmem').returns(mockedOS.totalmem());
     sandbox.stub(process, 'cpuUsage').returns(cpuJson);
-    sandbox.stub(process, 'memoryUsage').returns(memoryJson);
-    const spyNetworkStats = sandbox
-      .stub(SI, 'networkStats')
-      .returns(mockedSI.networkStats());
+    sandbox.stub(SI, 'networkStats').callsFake(() => {
+      return mockedSI.networkStats();
+    });
 
     exporter = new NoopExporter();
     exportSpy = sandbox.stub(exporter, 'export');
@@ -103,26 +103,16 @@ describe('Host Metrics', () => {
       exporter,
     });
 
-    // it seems like this is the only way to be able to mock
-    // `node-gyp-build` before metrics are being loaded, if import them before
-    // the first pass on unit tests will not mock correctly
-    metrics = require('../src');
-    hostMetrics = new metrics.HostMetrics({
+    hostMetrics = new HostMetrics({
       meterProvider,
       name: 'opentelemetry-host-metrics',
     });
     hostMetrics.start();
 
-    // because networkStats mock simulates the network with every call it
-    // returns the data that is bigger then previous, it needs to stub it again
-    // as network is also called in initial start to start counting from 0
-    spyNetworkStats.restore();
-    sandbox.stub(SI, 'networkStats').returns(mockedSI.networkStats());
-
     // sinon fake doesn't work fine with setImmediate
     originalSetTimeout(() => {
       // move the clock with the same value as interval
-      sandbox.clock.tick(INTERVAL);
+      sandbox.clock.tick(INTERVAL * 2);
       // move to "real" next tick so that async batcher observer will start
       // processing metrics
       originalSetTimeout(() => {
@@ -140,39 +130,79 @@ describe('Host Metrics', () => {
   });
 
   it('should create a new instance', () => {
-    assert.ok(hostMetrics instanceof metrics.HostMetrics);
+    assert.ok(hostMetrics instanceof HostMetrics);
   });
 
   it('should create a new instance with default meter provider', () => {
-    hostMetrics = new metrics.HostMetrics({
+    const meterProvider = new MeterProvider({
+      interval: INTERVAL,
+      exporter,
+    });
+
+    hostMetrics = new HostMetrics({
+      meterProvider,
       name: 'opentelemetry-host-metrics',
     });
-    hostMetrics.start();
-    assert.ok(hostMetrics instanceof metrics.HostMetrics);
+    hostMetrics.start(true);
+    assert.ok(hostMetrics instanceof HostMetrics);
   });
 
-  it('should export CPU metrics', () => {
-    const records = getRecords(exportSpy.args[0][0], 'cpu');
-    assert.strictEqual(records.length, 4);
-    ensureValue(records[0], 'cpu.user', 1.899243);
-    ensureValue(records[1], 'cpu.sys', 0.258553);
-    ensureValue(records[2], 'cpu.usage', 2.157796);
-    ensureValue(records[3], 'cpu.total', 2.157796);
+  it('should export CPU time metrics', () => {
+    const records = getRecords(exportSpy.args[0][0], 'system.cpu.time');
+    assert.strictEqual(records.length, 3);
+    ensureValue(records[0], { state: 'user' }, 1.899243);
+    ensureValue(records[1], { state: 'system' }, 0.258553);
+    ensureValue(records[2], { state: 'idle' }, 0.842204);
   });
 
-  it('should export Network metrics', done => {
-    const records = getRecords(exportSpy.args[0][0], 'net');
+  it('should export CPU utilization metrics', () => {
+    const records = getRecords(exportSpy.args[0][0], 'system.cpu.utilization');
+    assert.strictEqual(records.length, 3);
+    ensureValue(records[0], { state: 'user' }, 0.633081);
+    ensureValue(records[1], { state: 'system' }, 0.08618433333333332);
+    ensureValue(records[2], { state: 'idle' }, 0.28073466666666663);
+  });
+
+  it('should export Memory usage metrics', done => {
+    const records = getRecords(exportSpy.args[0][0], 'system.memory.usage');
     assert.strictEqual(records.length, 2);
-    ensureValue(records[0], 'net.bytesSent', 14207163202);
-    ensureValue(records[1], 'net.bytesRecv', 60073930753);
+    ensureValue(records[0], { state: 'used' }, 9999983616);
+    ensureValue(records[1], { state: 'free' }, 7179885568);
     done();
   });
 
-  it('should export Memory metrics', done => {
-    const records = getRecords(exportSpy.args[0][0], 'mem');
+  it('should export Memory utilization metrics', done => {
+    const records = getRecords(
+      exportSpy.args[0][0],
+      'system.memory.utilization'
+    );
     assert.strictEqual(records.length, 2);
-    ensureValue(records[0], 'mem.available', mockedOS.freemem());
-    ensureValue(records[1], 'mem.total', mockedOS.totalmem());
+    ensureValue(records[0], { state: 'used' }, 0.5820754766464233);
+    ensureValue(records[1], { state: 'free' }, 0.41792452335357666);
+    done();
+  });
+
+  it('should export Network io dropped', done => {
+    const records = getRecords(exportSpy.args[0][0], 'system.network.dropped');
+    assert.strictEqual(records.length, 2);
+    ensureValue(records[0], { direction: 'receive', device: 'eth0' }, 1200);
+    ensureValue(records[1], { direction: 'transmit', device: 'eth0' }, 12);
+    done();
+  });
+
+  it('should export Network io errors', done => {
+    const records = getRecords(exportSpy.args[0][0], 'system.network.errors');
+    assert.strictEqual(records.length, 2);
+    ensureValue(records[0], { direction: 'receive', device: 'eth0' }, 3);
+    ensureValue(records[1], { direction: 'transmit', device: 'eth0' }, 15);
+    done();
+  });
+
+  it('should export Network io bytes', done => {
+    const records = getRecords(exportSpy.args[0][0], 'system.network.io');
+    assert.strictEqual(records.length, 2);
+    ensureValue(records[0], { direction: 'receive', device: 'eth0' }, 123123);
+    ensureValue(records[1], { direction: 'transmit', device: 'eth0' }, 321321);
     done();
   });
 });
@@ -181,8 +211,12 @@ function getRecords(records: MetricRecord[], name: string): MetricRecord[] {
   return records.filter(record => record.descriptor.name === name);
 }
 
-function ensureValue(record: MetricRecord, name: string, value: number) {
-  assert.strictEqual(record.labels.name, name);
+function ensureValue(
+  record: MetricRecord,
+  labels: Record<string, string>,
+  value: number
+) {
+  assert.deepStrictEqual(record.labels, labels);
   const point = record.aggregator.toPoint();
   const aggValue =
     typeof point.value === 'number'
