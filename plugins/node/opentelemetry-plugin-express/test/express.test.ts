@@ -102,6 +102,8 @@ describe('Express Plugin', () => {
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
+        // @ts-ignore
+        assert.strictEqual(rootSpan.name, 'GET /toto/:id');
         assert.notStrictEqual(
           memoryExporter
             .getFinishedSpans()
@@ -200,6 +202,65 @@ describe('Express Plugin', () => {
         const exportedRootSpan = memoryExporter
           .getFinishedSpans()
           .find(span => span.name === 'rootSpan');
+        assert.notStrictEqual(exportedRootSpan, undefined);
+      });
+      server.close();
+    });
+    it('should ignore all ExpressLayerType based on config. root span name should be modified when route exists', async () => {
+      plugin.disable();
+      const config: ExpressPluginConfig = {
+        ignoreLayersType: [
+          ExpressLayerType.MIDDLEWARE,
+          ExpressLayerType.ROUTER,
+          ExpressLayerType.REQUEST_HANDLER,
+        ],
+      };
+      plugin.enable(express, provider, logger, config);
+      const rootSpan = tracer.startSpan('rootSpan');
+      const app = express();
+      app.use((req, res, next) => tracer.withSpan(rootSpan, next));
+      app.use(express.json());
+      app.use((req, res, next) => {
+        for (let i = 0; i < 1000; i++) {
+          continue;
+        }
+        return next();
+      });
+      const router = express.Router();
+      app.use('/toto', router);
+      router.get('/:id', (req, res) => {
+        setImmediate(() => {
+          res.status(200).end();
+        });
+      });
+      const server = http.createServer(app);
+      await new Promise(resolve => server.listen(0, resolve));
+
+      const port = (server.address() as AddressInfo).port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await tracer.withSpan(rootSpan, async () => {
+        await httpRequest.get(`http://localhost:${port}/toto/tata`);
+        rootSpan.end();
+        // @ts-ignore
+        assert.strictEqual(rootSpan.name, 'GET /toto/:id');
+
+        assert.deepStrictEqual(
+          memoryExporter
+            .getFinishedSpans()
+            .filter(
+              span =>
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                  ExpressLayerType.MIDDLEWARE ||
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                  ExpressLayerType.ROUTER ||
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                  ExpressLayerType.REQUEST_HANDLER
+            ).length,
+          0
+        );
+        const exportedRootSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name === 'GET /toto/:id');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
       server.close();
