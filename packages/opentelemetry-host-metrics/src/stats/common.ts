@@ -19,14 +19,14 @@ import * as os from 'os';
 import { CpuUsageData, MemoryData } from '../types';
 
 const MICROSECOND = 1 / 1e6;
-let cpuUsageTime = 0;
+let cpuUsageTime: number | undefined = undefined;
 
 /**
  * It returns cpu load delta from last time - to be used with SumObservers.
  * When called first time it will return 0 and then delta will be calculated
  */
 export function getCpuUsageData(): CpuUsageData {
-  if (!cpuUsageTime) {
+  if (typeof cpuUsageTime !== 'number') {
     cpuUsageTime = new Date().getTime() - process.uptime() * 1000;
   }
 
