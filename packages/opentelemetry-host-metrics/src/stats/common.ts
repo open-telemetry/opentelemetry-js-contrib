@@ -19,7 +19,6 @@ import * as os from 'os';
 import { CpuUsageData, MemoryData } from '../types';
 
 const MICROSECOND = 1 / 1e6;
-let cpuUsage: NodeJS.CpuUsage | undefined;
 let cpuUsageTime = 0;
 
 /**
@@ -27,26 +26,20 @@ let cpuUsageTime = 0;
  * When called first time it will return 0 and then delta will be calculated
  */
 export function getCpuUsageData(): CpuUsageData {
-  let timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000;
   if (!cpuUsageTime) {
-    timeElapsed = 0;
+    cpuUsageTime = new Date().getTime() - process.uptime() * 1000;
   }
-  const elapsedUsage = process.cpuUsage(cpuUsage);
-  cpuUsage = process.cpuUsage();
-  let user = elapsedUsage.user * MICROSECOND;
-  let system = elapsedUsage.system * MICROSECOND;
-  if (!cpuUsageTime) {
-    user = 0;
-    system = 0;
-    timeElapsed = 1;
-  }
-  const idle = timeElapsed - user - system;
+
+  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000;
+  const elapsedUsage = process.cpuUsage();
+
+  const user = elapsedUsage.user * MICROSECOND;
+  const system = elapsedUsage.system * MICROSECOND;
+  const idle = Math.max(0, timeElapsed - user - system);
 
   const userP = user / timeElapsed;
   const systemP = system / timeElapsed;
   const idleP = idle / timeElapsed;
-
-  cpuUsageTime = new Date().getTime();
 
   return {
     user: user,
@@ -73,7 +66,7 @@ export function getMemoryData(): MemoryData {
   return {
     used: used,
     free: free,
-    usedP: usedP, // this is frac part (0-1) not delta
-    freeP: freeP, // this is frac part (0-1) not delta
+    usedP: usedP, // this is frac part (0-1)
+    freeP: freeP, // this is frac part (0-1)
   };
 }

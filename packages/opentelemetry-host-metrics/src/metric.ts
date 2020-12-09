@@ -32,13 +32,11 @@ import { CpuUsageData, MemoryData, NetworkData } from './types';
 export class HostMetrics extends BaseMetrics {
   private _cpuTimeObserver!: api.SumObserver;
   private _cpuUtilizationObserver!: api.ValueObserver;
-  private _memUsageObserver!: api.ValueObserver;
+  private _memUsageObserver!: api.UpDownSumObserver;
   private _memUtilizationObserver!: api.ValueObserver;
   private _networkDroppedObserver!: api.SumObserver;
   private _networkErrorsObserver!: api.SumObserver;
   private _networkIOObserver!: api.SumObserver;
-  // once metrics api and exporter is fixed it should be this
-  // private _memUsageObserver!: api.UpDownSumObserver;
 
   private _updateCpuTime(
     observerBatchResult: api.BatchObserverResult,
@@ -192,7 +190,7 @@ export class HostMetrics extends BaseMetrics {
         description: 'Cpu usage time 0-1',
       }
     );
-    this._memUsageObserver = this._meter.createValueObserver(
+    this._memUsageObserver = this._meter.createUpDownSumObserver(
       enums.METRIC_NAMES.MEMORY_USAGE,
       {
         description: 'Memory usage in bytes',
