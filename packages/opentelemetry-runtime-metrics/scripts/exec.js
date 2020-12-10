@@ -14,6 +14,21 @@
  * limitations under the License.
  */
 
-export * from './BaseMetrics';
-export * from './metric';
-export * from './types';
+'use strict';
+
+const execSync = require('child_process').execSync;
+
+function exec(command, options) {
+  options = Object.assign({ stdio: [0, 1, 2] }, options);
+  return execSync(command, options);
+}
+
+function pipe(command, options) {
+  return exec(command, Object.assign({ stdio: 'pipe' }, options))
+    .toString()
+    .replace(/\n$/, '');
+}
+
+exec.pipe = pipe;
+
+module.exports = exec;

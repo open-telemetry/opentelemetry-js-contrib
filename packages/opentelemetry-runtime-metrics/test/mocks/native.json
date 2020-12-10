@@ -1,0 +1,120 @@
+{
+  "eventLoop": {
+    "min": 28630,
+    "max": 32331252,
+    "sum": 32848385,
+    "avg": 8212096,
+    "count": 4,
+    "median": 244252,
+    "p95": 32331252,
+    "total": 32848385
+  },
+  "gc": {
+    "all": {
+      "min": 1,
+      "max": 10,
+      "sum": 3,
+      "avg": 4,
+      "count": 2,
+      "median": 3,
+      "p95": 11,
+      "total": 123
+    },
+    "scavenge": {
+      "min": 5273842,
+      "max": 5280777,
+      "sum": 10554619,
+      "avg": 5277309,
+      "count": 2,
+      "median": 5277310,
+      "p95": 5280777
+    },
+    "markSweepCompact": {
+      "min": 15273842,
+      "max": 15280777,
+      "sum": 110554619,
+      "avg": 15277309,
+      "count": 3,
+      "median": 15277310,
+      "p95": 15280777
+    },
+    "incrementalMarking": {
+      "min": 25273842,
+      "max": 25280777,
+      "sum": 210554619,
+      "avg": 25277309,
+      "count": 4,
+      "median": 25277310,
+      "p95": 25280777
+    },
+    "processWeakCallbacks": {
+      "min": 35273842,
+      "max": 35280777,
+      "sum": 310554619,
+      "avg": 35277309,
+      "count": 5,
+      "median": 35277310,
+      "p95": 35280777
+    }
+  },
+  "heap": {
+    "spaces": [
+      {
+        "spaceName": "read_only_space",
+        "size": 262144,
+        "usedSize": 32296,
+        "availableSize": 229576,
+        "physicalSize": 32568
+      },
+      {
+        "spaceName": "new_space",
+        "size": 33554432,
+        "usedSize": 9957432,
+        "availableSize": 6802376,
+        "physicalSize": 33541880
+      },
+      {
+        "spaceName": "old_space",
+        "size": 15314944,
+        "usedSize": 14430952,
+        "availableSize": 792496,
+        "physicalSize": 14753904
+      },
+      {
+        "spaceName": "code_space",
+        "size": 688128,
+        "usedSize": 602752,
+        "availableSize": 8736,
+        "physicalSize": 634688
+      },
+      {
+        "spaceName": "map_space",
+        "size": 1314816,
+        "usedSize": 1117920,
+        "availableSize": 35152,
+        "physicalSize": 1154512
+      },
+      {
+        "spaceName": "large_object_space",
+        "size": 17375232,
+        "usedSize": 17353888,
+        "availableSize": 12,
+        "physicalSize": 17375232
+      },
+      {
+        "spaceName": "code_large_object_space",
+        "size": 49152,
+        "usedSize": 3552,
+        "availableSize": 0,
+        "physicalSize": 49152
+      },
+      {
+        "spaceName": "new_large_object_space",
+        "size": 123,
+        "usedSize": 456,
+        "availableSize": 16759808,
+        "physicalSize": 789
+      }
+    ]
+  }
+}

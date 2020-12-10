@@ -1,0 +1,13 @@
+{
+  "total_heap_size": 82182144,
+  "total_heap_size_executable": 2408448,
+  "total_physical_size": 81304464,
+  "total_available_size": 2142200152,
+  "used_heap_size": 55252160,
+  "heap_size_limit": 2197815296,
+  "malloced_memory": 65592,
+  "peak_malloced_memory": 9617696,
+  "does_zap_garbage": 0,
+  "number_of_native_contexts": 2,
+  "number_of_detached_contexts": 0
+}

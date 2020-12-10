@@ -1,0 +1,84 @@
+{
+  "eventLoop": {
+    "min": 0,
+    "max": 0,
+    "sum": 0,
+    "avg": 0,
+    "count": 0,
+    "median": 0,
+    "p95": 0,
+    "total": 0
+  },
+  "gc": {
+    "all": {
+      "min": 0,
+      "max": 0,
+      "sum": 0,
+      "avg": 0,
+      "count": 0,
+      "median": 0,
+      "p95": 0,
+      "total": 0
+    }
+  },
+  "heap": {
+    "spaces": [
+      {
+        "spaceName": "read_only_space",
+        "size": 0,
+        "usedSize": 0,
+        "availableSize": 0,
+        "physicalSize": 0
+      },
+      {
+        "spaceName": "new_space",
+        "size": 0,
+        "usedSize": 0,
+        "availableSize": 0,
+        "physicalSize": 0
+      },
+      {
+        "spaceName": "old_space",
+        "size": 0,
+        "usedSize": 0,
+        "availableSize": 0,
+        "physicalSize": 0
+      },
+      {
+        "spaceName": "code_space",
+        "size": 0,
+        "usedSize": 0,
+        "availableSize": 0,
+        "physicalSize": 0
+      },
+      {
+        "spaceName": "map_space",
+        "size": 0,
+        "usedSize": 0,
+        "availableSize": 0,
+        "physicalSize": 0
+      },
+      {
+        "spaceName": "large_object_space",
+        "size": 0,
+        "usedSize": 0,
+        "availableSize": 0,
+        "physicalSize": 0
+      },
+      {
+        "spaceName": "code_large_object_space",
+        "size": 0,
+        "usedSize": 0,
+        "availableSize": 0,
+        "physicalSize": 0
+      },
+      {
+        "spaceName": "new_large_object_space",
+        "size": 0,
+        "usedSize": 0,
+        "availableSize": 0,
+        "physicalSize": 0
+      }
+    ]
+  }
+}

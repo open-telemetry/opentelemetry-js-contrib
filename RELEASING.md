@@ -80,6 +80,9 @@ Create a pull request titled `chore: x.y.z release proposal`. The commit body sh
 
 Merge the PR, and pull the changes locally (using the commands in the first step). Ensure that `chore: x.y.z release proposal` is the most recent commit.
 
+## Native stats
+To get latest artifacts for runtime metrics please see packages/opentelemetry-runtime-metrics/Readme.md section "Get prebuilds from CircleCi."
+
 ## Publish all packages
 
 Go into each directory and use `npm publish` (requires permissions) to publish the package. You can use the following script to automate this.
