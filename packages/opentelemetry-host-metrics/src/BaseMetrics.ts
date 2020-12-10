@@ -44,9 +44,7 @@ const DEFAULT_METRIC_NAME_SEPARATOR = '.';
 const DEFAULT_KEY = 'name';
 
 /**
- * Metrics Collector - collects metrics for CPU, Memory, Heap, Network, Event
- * Loop, Garbage Collector, Heap Space
- * the default label name for metric name is "name"
+ * Base Class for metrics
  */
 export abstract class BaseMetrics {
   protected _logger: api.Logger | undefined;

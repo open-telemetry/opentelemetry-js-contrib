@@ -22,12 +22,8 @@ import { getCpuUsageData, getMemoryData } from './stats/common';
 import { getNetworkData } from './stats/si';
 import { CpuUsageData, MemoryData, NetworkData } from './types';
 
-// import * as types from './types';
-
 /**
- * Metrics Collector - collects metrics for CPU, Memory, Heap, Network, Event
- * Loop, Garbage Collector, Heap Space
- * the default label name for metric name is "name"
+ * Metrics Collector - collects metrics for CPU, Memory, Network
  */
 export class HostMetrics extends BaseMetrics {
   private _cpuTimeObserver!: api.SumObserver;
@@ -244,7 +240,7 @@ export class HostMetrics extends BaseMetrics {
   }
 
   /**
-   * Starts collecting stats
+   * Starts collecting metrics
    */
   start() {
     // initial collection
