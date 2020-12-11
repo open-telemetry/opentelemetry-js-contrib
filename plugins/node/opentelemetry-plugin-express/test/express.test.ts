@@ -91,8 +91,10 @@ describe('Express Plugin', () => {
       });
       const router = express.Router();
       app.use('/toto', router);
+      let finishListenerCount: number | undefined;
       router.get('/:id', (req, res) => {
         setImmediate(() => {
+          finishListenerCount = req.res?.listenerCount('finish');
           res.status(200).end();
         });
       });
@@ -104,6 +106,7 @@ describe('Express Plugin', () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
         assert.strictEqual(rootSpan.name, 'GET /toto/:id');
+        assert.strictEqual(finishListenerCount, 1);
         assert.notStrictEqual(
           memoryExporter
             .getFinishedSpans()
