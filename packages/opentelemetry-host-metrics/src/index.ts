@@ -14,5 +14,6 @@
  * limitations under the License.
  */
 
+export * from './BaseMetrics';
 export * from './metric';
 export * from './types';
