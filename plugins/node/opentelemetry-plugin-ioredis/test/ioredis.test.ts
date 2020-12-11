@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CanonicalCode, context, SpanKind, Status } from '@opentelemetry/api';
+import { StatusCode, context, SpanKind, Status } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -49,7 +49,7 @@ const DEFAULT_ATTRIBUTES = {
 };
 
 const okStatus: Status = {
-  code: CanonicalCode.OK,
+  code: StatusCode.OK,
 };
 
 describe('ioredis', () => {

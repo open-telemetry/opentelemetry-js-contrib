@@ -42,9 +42,9 @@
   },
   "devDependencies": {
     "@hapi/hapi": "20.0.1",
-    "@opentelemetry/context-async-hooks": "0.12.0",
-    "@opentelemetry/node": "0.12.0",
-    "@opentelemetry/tracing": "0.12.0",
+    "@opentelemetry/context-async-hooks": "^0.13.0",
+    "@opentelemetry/node": "^0.13.0",
+    "@opentelemetry/tracing": "^0.13.0",
     "@types/hapi__hapi": "20.0.1",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
@@ -64,9 +64,9 @@
     "typescript": "3.9.6"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.12.0",
-    "@opentelemetry/core": "^0.12.0",
-    "@opentelemetry/semantic-conventions": "^0.12.0",
+    "@opentelemetry/api": "^0.13.0",
+    "@opentelemetry/core": "^0.13.0",
+    "@opentelemetry/semantic-conventions": "^0.13.0",
     "shimmer": "^1.2.1"
   }
 }

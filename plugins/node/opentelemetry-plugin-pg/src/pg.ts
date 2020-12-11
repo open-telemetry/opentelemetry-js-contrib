@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin, isWrapped } from '@opentelemetry/core';
-import { CanonicalCode, Span } from '@opentelemetry/api';
+import { StatusCode, Span } from '@opentelemetry/api';
 import * as pgTypes from 'pg';
 import * as shimmer from 'shimmer';
 import {
@@ -138,7 +138,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             .then((result: unknown) => {
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
-                span.setStatus({ code: CanonicalCode.OK });
+                span.setStatus({ code: StatusCode.OK });
                 span.end();
                 resolve(result);
               });
@@ -146,7 +146,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             .catch((error: Error) => {
               return new Promise((_, reject) => {
                 span.setStatus({
-                  code: CanonicalCode.UNKNOWN,
+                  code: StatusCode.UNSET,
                   message: error.message,
                 });
                 span.end();

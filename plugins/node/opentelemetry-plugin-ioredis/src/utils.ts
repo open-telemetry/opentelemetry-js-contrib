@@ -15,7 +15,7 @@
  */
 
 import type * as ioredisTypes from 'ioredis';
-import { Tracer, SpanKind, Span, CanonicalCode } from '@opentelemetry/api';
+import { Tracer, SpanKind, Span, StatusCode } from '@opentelemetry/api';
 import {
   IoredisCommand,
   IoredisPluginConfig,
@@ -30,11 +30,11 @@ import {
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
     span.setStatus({
-      code: CanonicalCode.UNKNOWN,
+      code: StatusCode.UNSET,
       message: err.message,
     });
   } else {
-    span.setStatus({ code: CanonicalCode.OK });
+    span.setStatus({ code: StatusCode.OK });
   }
   span.end();
 };

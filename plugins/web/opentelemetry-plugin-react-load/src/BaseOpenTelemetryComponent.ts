@@ -75,16 +75,22 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * If parent span is undefined, just the child is created.
    * @param react React component currently being instrumented
    * @param name Name of span
+   * @param parentSpan parent span
    */
   private _createSpanWithParent(
     react: React.Component,
     name: string,
-    parent: api.Span
+    parentSpan: api.Span
   ): api.Span {
-    return BaseOpenTelemetryComponent._tracer.startSpan(name, {
-      attributes: this._getAttributes(react),
-      parent,
-    });
+    return BaseOpenTelemetryComponent._tracer.startSpan(
+      name,
+      {
+        attributes: this._getAttributes(react),
+      },
+      parentSpan
+        ? api.setActiveSpan(api.context.active(), parentSpan)
+        : undefined
+    );
   }
 
   /**

@@ -16,7 +16,7 @@
 
 import {
   Attributes,
-  CanonicalCode,
+  StatusCode,
   context,
   Span,
   SpanKind,
@@ -58,10 +58,10 @@ const DEFAULT_ATTRIBUTES = {
 };
 
 const okStatus: Status = {
-  code: CanonicalCode.OK,
+  code: StatusCode.OK,
 };
 const unknownStatus: Status = {
-  code: CanonicalCode.UNKNOWN,
+  code: StatusCode.UNSET,
 };
 
 const runCallbackTest = (

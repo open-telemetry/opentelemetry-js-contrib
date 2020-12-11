@@ -16,7 +16,7 @@
 
 import {
   Attributes,
-  CanonicalCode,
+  StatusCode,
   context,
   Span,
   SpanKind,
@@ -74,7 +74,7 @@ const DEFAULT_PG_ATTRIBUTES = {
 };
 
 const okStatus: Status = {
-  code: CanonicalCode.OK,
+  code: StatusCode.OK,
 };
 
 const runCallbackTest = (

@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import { CanonicalCode, SpanKind } from '@opentelemetry/api';
+import { StatusCode, SpanKind } from '@opentelemetry/api';
 import { AttributeNames } from './enums';
 import * as shimmer from 'shimmer';
 import * as pgPoolTypes from 'pg-pool';
@@ -100,7 +100,7 @@ export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
               .then((result: any) => {
                 // Return a pass-along promise which ends the span and then goes to user's orig resolvers
                 return new Promise((resolve, _) => {
-                  span.setStatus({ code: CanonicalCode.OK });
+                  span.setStatus({ code: StatusCode.OK });
                   span.end();
                   resolve(result);
                 });
@@ -108,7 +108,7 @@ export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
               .catch((error: Error) => {
                 return new Promise((_, reject) => {
                   span.setStatus({
-                    code: CanonicalCode.UNKNOWN,
+                    code: StatusCode.UNSET,
                     message: error.message,
                   });
                   span.end();

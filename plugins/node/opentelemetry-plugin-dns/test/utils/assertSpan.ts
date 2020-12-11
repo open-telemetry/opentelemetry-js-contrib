@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { SpanKind, Status, CanonicalCode } from '@opentelemetry/api';
+import { SpanKind, Status, StatusCode } from '@opentelemetry/api';
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
 import * as assert from 'assert';
 import { AttributeNames } from '../../src/enums/AttributeNames';
@@ -62,7 +62,7 @@ export const assertSpan = (
 
   assert.deepStrictEqual(
     span.status,
-    validations.forceStatus || { code: CanonicalCode.OK }
+    validations.forceStatus || { code: StatusCode.UNSET }
   );
 
   assert.ok(hrTimeToNanoseconds(span.duration), 'must have positive duration');

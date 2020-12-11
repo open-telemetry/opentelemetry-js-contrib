@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span, CanonicalCode, Status, Attributes } from '@opentelemetry/api';
+import { Span, StatusCode, Status, Attributes } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import { AddressFamily } from './enums/AddressFamily';
 import * as dns from 'dns';
@@ -77,7 +77,7 @@ export /**
  */
 const parseErrorCode = (code: string | undefined): Status => {
   if (!code) {
-    return { code: CanonicalCode.UNKNOWN };
+    return { code: StatusCode.UNSET };
   } else {
     switch (code) {
       case dns.BADQUERY:
@@ -96,7 +96,6 @@ const parseErrorCode = (code: string | undefined): Status => {
       case 'ERR_INVALID_FILE_URL_HOST':
       case 'ERR_INVALID_FILE_URL_PATH':
       case 'ERR_MISSING_ARGS':
-        return { code: CanonicalCode.INVALID_ARGUMENT };
       case dns.BADRESP:
       case dns.NODATA:
       case dns.FILE:
@@ -105,25 +104,18 @@ const parseErrorCode = (code: string | undefined): Status => {
       case dns.NONAME:
       case dns.LOADIPHLPAPI:
       case dns.ADDRGETNETWORKPARAMS:
-        return { code: CanonicalCode.INTERNAL };
       case dns.SERVFAIL:
       case dns.NOTINITIALIZED:
       case dns.CONNREFUSED:
-        return { code: CanonicalCode.UNAVAILABLE };
       case dns.NOTFOUND:
-        return { code: CanonicalCode.NOT_FOUND };
       case dns.NOTIMP:
-        return { code: CanonicalCode.UNIMPLEMENTED };
       case dns.REFUSED:
-        return { code: CanonicalCode.RESOURCE_EXHAUSTED };
       case dns.CANCELLED:
-        return { code: CanonicalCode.CANCELLED };
       case dns.TIMEOUT:
-        return { code: CanonicalCode.DEADLINE_EXCEEDED };
       case dns.EOF:
-        return { code: CanonicalCode.OUT_OF_RANGE };
+        return { code: StatusCode.ERROR };
       default:
-        return { code: CanonicalCode.UNKNOWN };
+        return { code: StatusCode.UNSET };
     }
   }
 };

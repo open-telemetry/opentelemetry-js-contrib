@@ -99,10 +99,13 @@ function createResolverSpan(
     [SpanAttributes.FIELD_TYPE]: info.returnType.toString(),
   };
 
-  const span = tracer.startSpan(SpanNames.RESOLVE, {
-    attributes,
-    parent: parentSpan,
-  });
+  const span = tracer.startSpan(
+    SpanNames.RESOLVE,
+    {
+      attributes,
+    },
+    parentSpan ? api.setActiveSpan(api.context.active(), parentSpan) : undefined
+  );
 
   const document = contextValue[OTEL_GRAPHQL_DATA_SYMBOL].source;
   const fieldNode = info.fieldNodes.find(

@@ -15,7 +15,8 @@
  */
 
 import { context, Logger, propagation, trace } from '@opentelemetry/api';
-import { ConsoleLogger, B3Propagator, isWrapped } from '@opentelemetry/core';
+import { ConsoleLogger, isWrapped } from '@opentelemetry/core';
+import { B3Propagator } from '@opentelemetry/propagator-b3';
 import {
   BasicTracerProvider,
   SimpleSpanProcessor,

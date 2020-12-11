@@ -26,7 +26,7 @@ import * as dns from 'dns';
 import * as utils from '../utils/utils';
 import * as semver from 'semver';
 import { assertSpan } from '../utils/assertSpan';
-import { CanonicalCode } from '@opentelemetry/api';
+import { StatusCode } from '@opentelemetry/api';
 
 const memoryExporter = new InMemorySpanExporter();
 const logger = new NoopLogger();
@@ -122,7 +122,7 @@ describe('dns.promises.lookup()', () => {
           addresses: [],
           hostname,
           forceStatus: {
-            code: CanonicalCode.NOT_FOUND,
+            code: StatusCode.ERROR,
             message: error!.message,
           },
         });
@@ -145,7 +145,7 @@ describe('dns.promises.lookup()', () => {
             // tslint:disable-next-line:no-any
             hostname: hostname as any,
             forceStatus: {
-              code: CanonicalCode.UNKNOWN,
+              code: StatusCode.UNSET,
               message: error!.message,
             },
           });
@@ -155,7 +155,7 @@ describe('dns.promises.lookup()', () => {
             // tslint:disable-next-line:no-any
             hostname: hostname as any,
             forceStatus: {
-              code: CanonicalCode.INVALID_ARGUMENT,
+              code: StatusCode.ERROR,
               message: error!.message,
             },
           });
@@ -180,7 +180,7 @@ describe('dns.promises.lookup()', () => {
             // tslint:disable-next-line:no-any
             hostname: hostname as any,
             forceStatus: {
-              code: CanonicalCode.UNKNOWN,
+              code: StatusCode.UNSET,
               message: error!.message,
             },
           });
@@ -190,7 +190,7 @@ describe('dns.promises.lookup()', () => {
             // tslint:disable-next-line:no-any
             hostname: hostname as any,
             forceStatus: {
-              code: CanonicalCode.INVALID_ARGUMENT,
+              code: StatusCode.ERROR,
               message: error!.message,
             },
           });
