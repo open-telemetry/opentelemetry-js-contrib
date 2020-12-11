@@ -73,7 +73,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
    * @param rootSpan
    */
   private _addResourcesSpans(rootSpan: Span): void {
-    const resources: PerformanceResourceTiming[] = otperformance.getEntriesByType(
+    const resources: PerformanceResourceTiming[] = otperformance.getEntriesByType?.(
       'resource'
     ) as PerformanceResourceTiming[];
     if (resources) {
@@ -163,7 +163,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
    */
   private _getEntries() {
     const entries: PerformanceEntries = {};
-    const performanceNavigationTiming = (otperformance.getEntriesByType(
+    const performanceNavigationTiming = (otperformance.getEntriesByType?.(
       'navigation'
     )[0] as unknown) as PerformanceEntries;
 
