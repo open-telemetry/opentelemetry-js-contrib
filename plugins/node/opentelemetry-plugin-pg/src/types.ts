@@ -29,6 +29,8 @@ export interface PgClientConnectionParams {
 
 export interface PgClientExtended extends pgTypes.Client {
   connectionParameters: PgClientConnectionParams;
+
+  __clientId?: number;
 }
 
 // Interface name based on original driver implementation
