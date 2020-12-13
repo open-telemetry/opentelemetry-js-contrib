@@ -33,4 +33,5 @@ export enum AttributeNames {
   // PG specific -- not specified by spec
   PG_VALUES = 'pg.values',
   PG_PLAN = 'pg.plan',
+  CLIENT_ID = 'client.id',
 }

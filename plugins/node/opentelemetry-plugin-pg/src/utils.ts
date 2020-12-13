@@ -49,9 +49,18 @@ function getJDBCString(params: PgClientConnectionParams) {
   return `jdbc:postgresql://${host}:${port}/${database}`;
 }
 
+// Keep track of individual clients in the pool, increment each time a new client is used. If
+// a pool is not used then this will be different for every query that is run.
+let CLIENT_ID = 1;
+
 // Private helper function to start a span
 function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
   const jdbcString = getJDBCString(client.connectionParameters);
+
+  if (!client.__clientId) {
+    client.__clientId = CLIENT_ID++;
+  }
+
   return tracer.startSpan(name, {
     kind: SpanKind.CLIENT,
     attributes: {
@@ -62,6 +71,7 @@ function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
       [AttributeNames.PEER_HOSTNAME]: client.connectionParameters.host, // required
       [AttributeNames.PEER_PORT]: client.connectionParameters.port,
       [AttributeNames.DB_USER]: client.connectionParameters.user,
+      [AttributeNames.CLIENT_ID]: client.__clientId,
     },
   });
 }
