@@ -71,6 +71,7 @@ const DEFAULT_PG_ATTRIBUTES = {
   [AttributeNames.PEER_ADDRESS]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
   [AttributeNames.PEER_PORT]: CONFIG.port,
   [AttributeNames.DB_USER]: CONFIG.user,
+  [AttributeNames.CLIENT_ID]: 1,
 };
 
 const okStatus: Status = {

@@ -33,4 +33,5 @@ export enum AttributeNames {
   // PG-POOL specific -- not specified by spec
   IDLE_TIMEOUT_MILLIS = 'idle.timeout.millis',
   MAX_CLIENT = 'max',
+  CLIENT_ID = 'client.id',
 }
