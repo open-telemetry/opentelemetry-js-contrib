@@ -15,33 +15,58 @@
  */
 
 import * as os from 'os';
-import { CPU_LABELS, MEMORY_LABELS } from '../enum';
 
 import { CpuUsageData, MemoryData } from '../types';
 
 const MICROSECOND = 1 / 1e6;
-let cpuUsage: NodeJS.CpuUsage | undefined;
+let cpuUsageTime: number | undefined = undefined;
 
 /**
- * It returns cpu load delta from last time
+ * It returns cpu load delta from last time - to be used with SumObservers.
+ * When called first time it will return 0 and then delta will be calculated
  */
 export function getCpuUsageData(): CpuUsageData {
-  const elapsedUsage = process.cpuUsage(cpuUsage);
-  cpuUsage = process.cpuUsage();
+  if (typeof cpuUsageTime !== 'number') {
+    cpuUsageTime = new Date().getTime() - process.uptime() * 1000;
+  }
+
+  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000;
+  const elapsedUsage = process.cpuUsage();
+
+  const user = elapsedUsage.user * MICROSECOND;
+  const system = elapsedUsage.system * MICROSECOND;
+  const idle = Math.max(0, timeElapsed - user - system);
+
+  const userP = user / timeElapsed;
+  const systemP = system / timeElapsed;
+  const idleP = idle / timeElapsed;
+
   return {
-    [CPU_LABELS.USER]: elapsedUsage.user * MICROSECOND,
-    [CPU_LABELS.SYSTEM]: elapsedUsage.system * MICROSECOND,
-    [CPU_LABELS.USAGE]: (elapsedUsage.user + elapsedUsage.system) * MICROSECOND,
-    [CPU_LABELS.TOTAL]: (cpuUsage.user + cpuUsage.system) * MICROSECOND,
+    user: user,
+    system: system,
+    idle: idle,
+    userP: userP,
+    systemP: systemP,
+    idleP: idleP,
   };
 }
 
 /**
- * Returns memory data stats
+ * Returns memory data as absolute values
  */
 export function getMemoryData(): MemoryData {
+  const total = os.totalmem();
+  const free = os.freemem();
+
+  const used = total - free;
+
+  const freeP = free / total;
+  const usedP = used / total;
+
   return {
-    [MEMORY_LABELS.AVAILABLE]: os.freemem(),
-    [MEMORY_LABELS.TOTAL]: os.totalmem(),
+    used: used,
+    free: free,
+    usedP: usedP, // this is frac part (0-1)
+    freeP: freeP, // this is frac part (0-1)
   };
 }
