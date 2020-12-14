@@ -43,7 +43,7 @@ const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
   [DatabaseAttribute.DB_SYSTEM]: IORedisPlugin.DB_SYSTEM,
-  [GeneralAttribute.NET_PEER_HOSTNAME]: CONFIG.host,
+  [GeneralAttribute.NET_PEER_NAME]: CONFIG.host,
   [GeneralAttribute.NET_PEER_PORT]: CONFIG.port,
   [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
