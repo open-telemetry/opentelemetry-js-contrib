@@ -55,7 +55,7 @@
     "@types/shimmer": "1.0.1",
     "codecov": "3.7.2",
     "cross-env": "7.0.2",
-    "gts": "2.0.2",
+    "gts": "3.0.3",
     "ioredis": "4.17.3",
     "mocha": "7.2.0",
     "nyc": "15.1.0",

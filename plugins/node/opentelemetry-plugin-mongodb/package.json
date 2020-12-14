@@ -50,7 +50,7 @@
     "@types/node": "14.0.27",
     "@types/shimmer": "1.0.1",
     "codecov": "3.7.2",
-    "gts": "2.0.2",
+    "gts": "3.0.3",
     "mocha": "7.2.0",
     "mongodb": "3.5.9",
     "nyc": "15.1.0",

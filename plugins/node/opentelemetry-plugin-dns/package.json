@@ -49,7 +49,7 @@
     "@types/shimmer": "1.0.1",
     "@types/sinon": "9.0.4",
     "codecov": "3.7.2",
-    "gts": "2.0.2",
+    "gts": "3.0.3",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
