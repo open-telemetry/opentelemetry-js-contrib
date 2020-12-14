@@ -13,30 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export enum METRIC_NAMES {
-  CPU_TIME = 'system.cpu.time',
-  CPU_UTILIZATION = 'system.cpu.utilization',
-  MEMORY_USAGE = 'system.memory.usage',
-  MEMORY_UTILIZATION = 'system.memory.utilization',
-  NETWORK_DROPPED = 'system.network.dropped',
-  NETWORK_ERRORS = 'system.network.errors',
-  NETWORK_IO = 'system.network.io',
-}
-
-export enum CPU_LABELS {
-  USER = 'user',
-  SYSTEM = 'system',
-  IDLE = 'idle',
-}
-
-export enum NETWORK_LABELS {
-  DEVICE = 'device',
-  RECEIVE = 'receive',
-  TRANSMIT = 'transmit',
-}
-
-export enum MEMORY_LABELS {
-  FREE = 'free',
-  USED = 'used',
-}
+export * from './detectors';

@@ -51,7 +51,7 @@ export const traceConnection = (tracer: Tracer, original: Function) => {
     const { host, port } = this.options;
 
     span.setAttributes({
-      [GeneralAttribute.NET_PEER_HOSTNAME]: host,
+      [GeneralAttribute.NET_PEER_NAME]: host,
       [GeneralAttribute.NET_PEER_PORT]: port,
       [GeneralAttribute.NET_PEER_ADDRESS]: `redis://${host}:${port}`,
     });
@@ -104,7 +104,7 @@ export const traceSendCommand = (
     const { host, port } = this.options;
 
     span.setAttributes({
-      [GeneralAttribute.NET_PEER_HOSTNAME]: host,
+      [GeneralAttribute.NET_PEER_NAME]: host,
       [GeneralAttribute.NET_PEER_PORT]: port,
       [GeneralAttribute.NET_PEER_ADDRESS]: `redis://${host}:${port}`,
     });

@@ -13,43 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { ValueObserver } from '@opentelemetry/api';
 
 /**
  * Network data
  */
 export interface NetworkData {
-  // bytes received
-  bytesRecv: number;
-  // bytes sent
-  bytesSent: number;
+  iface: string;
+  rx_bytes: number;
+  rx_dropped: number;
+  rx_errors: number;
+  tx_bytes: number;
+  tx_dropped: number;
+  tx_errors: number;
 }
 
 /**
  * CPU usage data
  */
 export interface CpuUsageData {
-  sys: number;
-  usage: number;
+  system: number;
   user: number;
-  total: number;
+  idle: number;
+  systemP: number;
+  userP: number;
+  idleP: number;
 }
 
 /**
  * Memory data
  */
 export interface MemoryData {
-  available: number;
-  total: number;
-}
-
-export interface Observations {
-  key: string;
-  labels: Record<string, string>;
-  labelKey?: string;
-}
-
-export interface ValueObserverWithObservations {
-  observer: ValueObserver;
-  observations: Observations[];
+  used: number;
+  free: number;
+  // cached: number;
+  usedP: number;
+  freeP: number;
+  // cachedP: number;
 }
