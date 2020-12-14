@@ -82,7 +82,8 @@ export class GrpcCensusPropagator implements TextMapPropagator {
 
         if (carrier && encodedContext) {
           // Set the gRPC header (carrier will be of type grpc.Metadata)
-          // @TODO FIX ME
+          // @TODO FIX ME once this is resolved
+          // https://github.com/open-telemetry/opentelemetry-specification/issues/437
           setter.set(carrier, GRPC_TRACE_KEY, encodedContext as any);
           // setter.set(carrier, GRPC_TRACE_KEY, encodedContext);
         }
@@ -107,7 +108,8 @@ export class GrpcCensusPropagator implements TextMapPropagator {
       // getter actually returns an Array so we use the zero-th element if
       // it exists)
 
-      // @TODO FIX ME
+      // @TODO FIX ME once this is resolved
+      // https://github.com/open-telemetry/opentelemetry-specification/issues/437
       const values = (getter.get(
         carrier,
         GRPC_TRACE_KEY
