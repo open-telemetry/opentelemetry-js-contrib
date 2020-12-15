@@ -55,7 +55,7 @@ describe('redis@2.x', () => {
   const provider = new NodeTracerProvider();
   const tracer = provider.getTracer('external');
   let redis: typeof redisTypes;
-  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL || true;
+  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
 
   let contextManager: AsyncHooksContextManager;

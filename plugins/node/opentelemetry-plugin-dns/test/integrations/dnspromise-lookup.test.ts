@@ -24,7 +24,6 @@ import { NodeTracerProvider } from '@opentelemetry/node';
 import { plugin } from '../../src/dns';
 import * as dns from 'dns';
 import * as utils from '../utils/utils';
-import * as semver from 'semver';
 import { assertSpan } from '../utils/assertSpan';
 import { StatusCode } from '@opentelemetry/api';
 
@@ -139,27 +138,15 @@ describe('dns.promises.lookup()', () => {
         const [span] = spans;
 
         assert.strictEqual(spans.length, 1);
-        if (semver.lt(process.versions.node, '9.0.0')) {
-          assertSpan(span, {
-            addresses: [],
-            // tslint:disable-next-line:no-any
-            hostname: hostname as any,
-            forceStatus: {
-              code: StatusCode.ERROR,
-              message: error!.message,
-            },
-          });
-        } else {
-          assertSpan(span, {
-            addresses: [],
-            // tslint:disable-next-line:no-any
-            hostname: hostname as any,
-            forceStatus: {
-              code: StatusCode.ERROR,
-              message: error!.message,
-            },
-          });
-        }
+        assertSpan(span, {
+          addresses: [],
+          // tslint:disable-next-line:no-any
+          hostname: hostname as any,
+          forceStatus: {
+            code: StatusCode.ERROR,
+            message: error!.message,
+          },
+        });
       }
     });
 
@@ -174,27 +161,15 @@ describe('dns.promises.lookup()', () => {
         const [span] = spans;
 
         assert.strictEqual(spans.length, 1);
-        if (semver.lt(process.versions.node, '9.0.0')) {
-          assertSpan(span, {
-            addresses: [],
-            // tslint:disable-next-line:no-any
-            hostname: hostname as any,
-            forceStatus: {
-              code: StatusCode.ERROR,
-              message: error!.message,
-            },
-          });
-        } else {
-          assertSpan(span, {
-            addresses: [],
-            // tslint:disable-next-line:no-any
-            hostname: hostname as any,
-            forceStatus: {
-              code: StatusCode.ERROR,
-              message: error!.message,
-            },
-          });
-        }
+        assertSpan(span, {
+          addresses: [],
+          // tslint:disable-next-line:no-any
+          hostname: hostname as any,
+          forceStatus: {
+            code: StatusCode.ERROR,
+            message: error!.message,
+          },
+        });
       }
     });
   });

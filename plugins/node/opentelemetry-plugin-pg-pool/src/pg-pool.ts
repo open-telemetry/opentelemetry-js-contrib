@@ -100,7 +100,6 @@ export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
               .then((result: any) => {
                 // Return a pass-along promise which ends the span and then goes to user's orig resolvers
                 return new Promise((resolve, _) => {
-                  span.setStatus({ code: StatusCode.OK });
                   span.end();
                   resolve(result);
                 });
