@@ -9,7 +9,8 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "compile": "tsc -p .",
     "precompile": "tsc --version",
-    "prepare": "npm run compile"
+    "prepare": "npm run compile",
+    "watch": "tsc -w"
   },
   "repository": "open-telemetry/opentelemetry-js",
   "keywords": [

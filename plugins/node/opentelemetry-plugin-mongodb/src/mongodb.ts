@@ -249,12 +249,8 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
       const error = args[0];
       if (error instanceof Error) {
         span.setStatus({
-          code: StatusCode.UNSET,
+          code: StatusCode.ERROR,
           message: error.message,
-        });
-      } else {
-        span.setStatus({
-          code: StatusCode.OK,
         });
       }
       span.end();

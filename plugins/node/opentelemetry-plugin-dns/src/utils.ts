@@ -77,7 +77,7 @@ export /**
  */
 const parseErrorCode = (code: string | undefined): Status => {
   if (!code) {
-    return { code: StatusCode.UNSET };
+    return { code: StatusCode.ERROR };
   } else {
     switch (code) {
       case dns.BADQUERY:

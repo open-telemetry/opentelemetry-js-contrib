@@ -145,7 +145,7 @@ describe('dns.promises.lookup()', () => {
             // tslint:disable-next-line:no-any
             hostname: hostname as any,
             forceStatus: {
-              code: StatusCode.UNSET,
+              code: StatusCode.ERROR,
               message: error!.message,
             },
           });
@@ -180,7 +180,7 @@ describe('dns.promises.lookup()', () => {
             // tslint:disable-next-line:no-any
             hostname: hostname as any,
             forceStatus: {
-              code: StatusCode.UNSET,
+              code: StatusCode.ERROR,
               message: error!.message,
             },
           });

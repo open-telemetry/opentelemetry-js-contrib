@@ -128,9 +128,7 @@ describe('dns.lookup()', () => {
           addresses: [],
           hostname,
           forceStatus: {
-            code: process.versions.node.startsWith('8')
-              ? StatusCode.UNSET
-              : StatusCode.ERROR,
+            code: StatusCode.ERROR,
             message: error!.message,
           },
         });
@@ -152,9 +150,7 @@ describe('dns.lookup()', () => {
           // tslint:disable-next-line:no-any
           hostname: hostname as any,
           forceStatus: {
-            code: process.versions.node.startsWith('8')
-              ? StatusCode.UNSET
-              : StatusCode.ERROR,
+            code: StatusCode.ERROR,
             message: error!.message,
           },
         });

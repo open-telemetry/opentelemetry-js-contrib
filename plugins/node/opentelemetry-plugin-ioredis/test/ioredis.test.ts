@@ -48,8 +48,8 @@ const DEFAULT_ATTRIBUTES = {
   [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
 
-const okStatus: Status = {
-  code: StatusCode.OK,
+const spanStatus: Status = {
+  code: StatusCode.UNSET,
 };
 
 describe('ioredis', () => {
@@ -121,7 +121,7 @@ describe('ioredis', () => {
           SpanKind.CLIENT,
           attributes,
           [],
-          okStatus
+          spanStatus
         );
         span.end();
         assert.strictEqual(endedSpans.length, 3);
@@ -216,7 +216,7 @@ describe('ioredis', () => {
                 SpanKind.CLIENT,
                 attributes,
                 [],
-                okStatus
+                spanStatus
               );
               testUtils.assertPropagation(endedSpans[0], span);
               done();
@@ -244,7 +244,7 @@ describe('ioredis', () => {
               SpanKind.CLIENT,
               attributes,
               [],
-              okStatus
+              spanStatus
             );
             testUtils.assertPropagation(endedSpans[0], span);
           } catch (error) {
@@ -282,7 +282,7 @@ describe('ioredis', () => {
                 SpanKind.CLIENT,
                 attributes,
                 [],
-                okStatus
+                spanStatus
               );
               testUtils.assertPropagation(endedSpans[0], span);
               done();
@@ -338,7 +338,7 @@ describe('ioredis', () => {
               SpanKind.CLIENT,
               attributes,
               [],
-              okStatus
+              spanStatus
             );
             testUtils.assertPropagation(endedSpans[0], span);
           } catch (error) {
@@ -378,7 +378,7 @@ describe('ioredis', () => {
               SpanKind.CLIENT,
               attributes,
               [],
-              okStatus
+              spanStatus
             );
             testUtils.assertPropagation(endedSpans[0], span);
             done();
@@ -414,7 +414,7 @@ describe('ioredis', () => {
                 SpanKind.CLIENT,
                 attributes,
                 [],
-                okStatus
+                spanStatus
               );
               testUtils.assertPropagation(endedSpans[0], span);
               done();
@@ -448,7 +448,7 @@ describe('ioredis', () => {
               SpanKind.CLIENT,
               attributes,
               [],
-              okStatus
+              spanStatus
             );
             testUtils.assertPropagation(endedSpans[0], span);
             done();
@@ -476,7 +476,7 @@ describe('ioredis', () => {
               SpanKind.CLIENT,
               attributes,
               [],
-              okStatus
+              spanStatus
             );
             testUtils.assertPropagation(endedSpans[0], span);
           } catch (error) {
@@ -505,7 +505,7 @@ describe('ioredis', () => {
               SpanKind.CLIENT,
               attributes,
               [],
-              okStatus
+              spanStatus
             );
             testUtils.assertPropagation(endedSpans[0], span);
           } catch (error) {
@@ -564,7 +564,7 @@ describe('ioredis', () => {
                 SpanKind.CLIENT,
                 attributes,
                 [],
-                okStatus
+                spanStatus
               );
               testUtils.assertPropagation(endedSpans[0], span);
               done();

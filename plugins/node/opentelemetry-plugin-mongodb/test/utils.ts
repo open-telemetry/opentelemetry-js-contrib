@@ -86,7 +86,7 @@ export function assertSpans(
     mongoSpan.attributes[GeneralAttribute.NET_HOST_NAME],
     process.env.MONGODB_HOST || 'localhost'
   );
-  assert.strictEqual(mongoSpan.status.code, StatusCode.OK);
+  assert.strictEqual(mongoSpan.status.code, StatusCode.UNSET);
 
   if (isEnhancedDatabaseReportingEnabled) {
     const dbStatement = mongoSpan.attributes[

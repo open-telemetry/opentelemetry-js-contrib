@@ -277,7 +277,7 @@ function getUnsampledSpanEncodedArray() {
   ]);
 }
 
-function makeSetter(callback: any) {
+function makeSetter(callback: (metadata: any, k: any, v: any) => void) {
   const setter: TextMapSetter = {
     set(carrier, key, value) {
       callback(carrier, key, value);

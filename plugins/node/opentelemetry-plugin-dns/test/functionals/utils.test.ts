@@ -33,7 +33,7 @@ describe('Utility', () => {
     it('should return UNKNOWN code by default', () => {
       [(undefined as unknown) as string, '', 'DSHKJSAD'].forEach(code => {
         const status = utils.parseErrorCode(code);
-        assert.deepStrictEqual(status, { code: StatusCode.UNSET });
+        assert.deepStrictEqual(status, { code: StatusCode.ERROR });
       });
     });
   });
