@@ -27,11 +27,9 @@ import {
 const endSpan = (span: Span, err?: Error | null) => {
   if (err) {
     span.setStatus({
-      code: StatusCode.UNSET,
+      code: StatusCode.ERROR,
       message: err.message,
     });
-  } else {
-    span.setStatus({ code: StatusCode.OK });
   }
   span.end();
 };

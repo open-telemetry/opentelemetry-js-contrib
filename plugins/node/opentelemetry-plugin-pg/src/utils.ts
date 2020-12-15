@@ -152,9 +152,8 @@ export function handleInvalidQuery(
   const span = pgStartSpan(tracer, this, PostgresPlugin.BASE_SPAN_NAME);
   try {
     result = originalQuery.apply(this, args as never);
-    span.setStatus({ code: StatusCode.OK }); // this will never happen, but set a status anyways
   } catch (e) {
-    span.setStatus({ code: StatusCode.UNSET, message: e.message });
+    span.setStatus({ code: StatusCode.ERROR, message: e.message });
     throw e;
   } finally {
     span.end();
@@ -173,11 +172,9 @@ export function patchCallback(
   ) {
     if (err) {
       span.setStatus({
-        code: StatusCode.UNSET,
+        code: StatusCode.ERROR,
         message: err.message,
       });
-    } else if (res) {
-      span.setStatus({ code: StatusCode.OK });
     }
     span.end();
     cb.call(this, err, res);

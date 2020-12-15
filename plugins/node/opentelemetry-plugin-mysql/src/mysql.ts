@@ -237,7 +237,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
           return streamableQuery
             .on('error', err =>
               span.setStatus({
-                code: StatusCode.UNSET,
+                code: StatusCode.ERROR,
                 message: err.message,
               })
             )
@@ -266,12 +266,8 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
       ) {
         if (err) {
           span.setStatus({
-            code: StatusCode.UNSET,
+            code: StatusCode.ERROR,
             message: err.message,
-          });
-        } else {
-          span.setStatus({
-            code: StatusCode.OK,
           });
         }
         span.end();

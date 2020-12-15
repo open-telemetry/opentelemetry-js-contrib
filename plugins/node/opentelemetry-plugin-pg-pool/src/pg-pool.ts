@@ -108,7 +108,7 @@ export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
               .catch((error: Error) => {
                 return new Promise((_, reject) => {
                   span.setStatus({
-                    code: StatusCode.UNSET,
+                    code: StatusCode.ERROR,
                     message: error.message,
                   });
                   span.end();

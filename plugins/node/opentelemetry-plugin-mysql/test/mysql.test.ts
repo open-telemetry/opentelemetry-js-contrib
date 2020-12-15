@@ -628,6 +628,6 @@ function assertSpan(
   );
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
-    assert.strictEqual(span.status.code, StatusCode.UNSET);
+    assert.strictEqual(span.status.code, StatusCode.ERROR);
   }
 }

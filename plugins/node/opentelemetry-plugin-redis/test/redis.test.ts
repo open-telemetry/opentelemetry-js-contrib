@@ -47,15 +47,15 @@ const DEFAULT_ATTRIBUTES = {
   [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
 
-const okStatus: Status = {
-  code: StatusCode.OK,
+const unsetStatus: Status = {
+  code: StatusCode.UNSET,
 };
 
 describe('redis@2.x', () => {
   const provider = new NodeTracerProvider();
   const tracer = provider.getTracer('external');
   let redis: typeof redisTypes;
-  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
+  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL || true;
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
 
   let contextManager: AsyncHooksContextManager;
@@ -194,7 +194,7 @@ describe('redis@2.x', () => {
                 SpanKind.CLIENT,
                 attributes,
                 [],
-                okStatus
+                unsetStatus
               );
               testUtils.assertPropagation(endedSpans[0], span);
               done();
