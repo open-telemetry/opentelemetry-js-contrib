@@ -241,6 +241,12 @@ describe('GrpcCensusPropagator', () => {
       assert.deepStrictEqual(extractedSpanContext, undefined);
     });
   });
+
+  describe('fields', () => {
+    it('should return valid values', () => {
+      assert.deepStrictEqual(censusPropagator.fields(), ['grpc-trace-bin']);
+    });
+  });
 });
 
 function getUnsampledSpanEncodedArray() {
