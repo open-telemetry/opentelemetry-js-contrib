@@ -42,7 +42,7 @@ export const setError = (
   }
 
   span.setAttributes(attributes);
-  const status = parseErrorCode(code);
+  const status: Status = { code: StatusCode.ERROR };
   status.message = message;
   span.setStatus(status);
 };
@@ -69,55 +69,6 @@ export const getOperationName = (
   service?: string
 ): string => {
   return service ? `dns.${service}/${funcName}` : `dns.${funcName}`;
-};
-
-export /**
- * Parse the error code from DNS response.
- * @param code the error code to parse
- */
-const parseErrorCode = (code: string | undefined): Status => {
-  if (!code) {
-    return { code: StatusCode.ERROR };
-  } else {
-    switch (code) {
-      case dns.BADQUERY:
-      case dns.BADNAME:
-      case dns.BADFAMILY:
-      case dns.BADSTR:
-      case dns.BADFLAGS:
-      case dns.BADHINTS:
-      case dns.FORMERR:
-      case 'ERR_INVALID_OPT_VALUE':
-      case 'ERR_INVALID_ARG_TYPE':
-      case 'ERR_INVALID_ARG_VALUE':
-      case 'ERR_INVALID_ADDRESS_FAMILY':
-      case 'ERR_INVALID_CALLBACK':
-      case 'ERR_INVALID_IP_ADDRESS':
-      case 'ERR_INVALID_FILE_URL_HOST':
-      case 'ERR_INVALID_FILE_URL_PATH':
-      case 'ERR_MISSING_ARGS':
-      case dns.BADRESP:
-      case dns.NODATA:
-      case dns.FILE:
-      case dns.NOMEM:
-      case dns.DESTRUCTION:
-      case dns.NONAME:
-      case dns.LOADIPHLPAPI:
-      case dns.ADDRGETNETWORKPARAMS:
-      case dns.SERVFAIL:
-      case dns.NOTINITIALIZED:
-      case dns.CONNREFUSED:
-      case dns.NOTFOUND:
-      case dns.NOTIMP:
-      case dns.REFUSED:
-      case dns.CANCELLED:
-      case dns.TIMEOUT:
-      case dns.EOF:
-        return { code: StatusCode.ERROR };
-      default:
-        return { code: StatusCode.UNSET };
-    }
-  }
 };
 
 export const setLookupAttributes = (

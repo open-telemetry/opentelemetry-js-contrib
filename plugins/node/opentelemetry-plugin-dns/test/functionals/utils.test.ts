@@ -16,12 +16,7 @@
 
 import { NoopLogger } from '@opentelemetry/core';
 import { BasicTracerProvider, Span } from '@opentelemetry/tracing';
-import {
-  ROOT_CONTEXT,
-  StatusCode,
-  SpanKind,
-  TraceFlags,
-} from '@opentelemetry/api';
+import { ROOT_CONTEXT, SpanKind, TraceFlags } from '@opentelemetry/api';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { AttributeNames } from '../../src/enums/AttributeNames';
@@ -29,15 +24,6 @@ import { IgnoreMatcher } from '../../src/types';
 import * as utils from '../../src/utils';
 
 describe('Utility', () => {
-  describe('parseResponseStatus()', () => {
-    it('should return UNKNOWN code by default', () => {
-      [(undefined as unknown) as string, '', 'DSHKJSAD'].forEach(code => {
-        const status = utils.parseErrorCode(code);
-        assert.deepStrictEqual(status, { code: StatusCode.ERROR });
-      });
-    });
-  });
-
   describe('satisfiesPattern()', () => {
     it('string pattern', () => {
       const answer1 = utils.satisfiesPattern('localhost', 'localhost');
