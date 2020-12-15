@@ -15,24 +15,28 @@
  */
 
 export enum METRIC_NAMES {
-  CPU = 'cpu',
-  NETWORK = 'net',
-  MEMORY = 'mem',
+  CPU_TIME = 'system.cpu.time',
+  CPU_UTILIZATION = 'system.cpu.utilization',
+  MEMORY_USAGE = 'system.memory.usage',
+  MEMORY_UTILIZATION = 'system.memory.utilization',
+  NETWORK_DROPPED = 'system.network.dropped',
+  NETWORK_ERRORS = 'system.network.errors',
+  NETWORK_IO = 'system.network.io',
 }
 
 export enum CPU_LABELS {
   USER = 'user',
-  SYSTEM = 'sys',
-  USAGE = 'usage',
-  TOTAL = 'total',
+  SYSTEM = 'system',
+  IDLE = 'idle',
 }
 
 export enum NETWORK_LABELS {
-  BYTES_SENT = 'bytesSent',
-  BYTES_RECEIVED = 'bytesRecv',
+  DEVICE = 'device',
+  RECEIVE = 'receive',
+  TRANSMIT = 'transmit',
 }
 
 export enum MEMORY_LABELS {
-  AVAILABLE = 'available',
-  TOTAL = 'total',
+  FREE = 'free',
+  USED = 'used',
 }
