@@ -29,6 +29,7 @@ import {
   _LAYERS_STORE_PROPERTY,
   ExpressPluginConfig,
   ExpressLayerType,
+  ExpressPluginSpan,
 } from './types';
 import { getLayerMetadata, storeLayerPath, isLayerIgnored } from './utils';
 import { VERSION } from './version';
@@ -187,12 +188,9 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
           metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
           ExpressLayerType.REQUEST_HANDLER
         ) {
-          const parent = plugin._tracer.getCurrentSpan();
-          // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-          // @ts-ignore
-          const parentSpanName = parent && parent.name;
-          if (parent && parentSpanName) {
-            const parentRoute = parentSpanName.split(' ')[1];
+          const parent = plugin._tracer.getCurrentSpan() as ExpressPluginSpan;
+          if (parent?.name) {
+            const parentRoute = parent.name.split(' ')[1];
             if (!route.includes(parentRoute)) {
               parent.updateName(`${req.method} ${route}`);
             }

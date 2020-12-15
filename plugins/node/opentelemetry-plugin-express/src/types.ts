@@ -16,7 +16,7 @@
 
 import { kLayerPatched } from './express';
 import { Request } from 'express';
-import { PluginConfig, Attributes } from '@opentelemetry/api';
+import { PluginConfig, Attributes, Span } from '@opentelemetry/api';
 
 /**
  * This const define where on the `request` object the plugin will mount the
@@ -91,4 +91,11 @@ export interface ExpressPluginConfig extends PluginConfig {
   ignoreLayers?: IgnoreMatcher[];
   /** Ignore specific layers based on their type */
   ignoreLayersType?: ExpressLayerType[];
+}
+
+/**
+ * extends opentelemetry/api Span object to instrument the root span name of http plugin
+ */
+export interface ExpressPluginSpan extends Span {
+  name?: string;
 }
