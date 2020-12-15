@@ -40,20 +40,30 @@ mysql_service: &mysql_service
     MYSQL_ROOT_PASSWORD: rootpw
 
 cache_1: &cache_1
-  key: npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
+  key: npm-cache-02-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}
   paths:
     - ./node_modules
     - ./package-lock.json
+    - detectors/node/opentelemetry-resource-detector-github/node_modules
+    - metapackages/plugins-node-core-and-contrib/node_modules
+    - packages/opentelemetry-host-metrics/node_modules
+    - packages/opentelemetry-test-utils/node_modules
+    - plugins/node/opentelemetry-hapi-instrumentation/node_modules
+    - plugins/node/opentelemetry-instrumentation-graphql/node_modules
+    - plugins/node/opentelemetry-koa-instrumentation/node_modules
     - plugins/node/opentelemetry-plugin-dns/node_modules
+    - plugins/node/opentelemetry-plugin-express/node_modules
     - plugins/node/opentelemetry-plugin-ioredis/node_modules
     - plugins/node/opentelemetry-plugin-mongodb/node_modules
-    - plugins/node/opentelemetry-plugin-redis/node_modules
-    - plugins/node/opentelemetry-plugin-pg/node_modules
-    - plugins/node/opentelemetry-plugin-document-load/node_modules
-    - plugins/node/opentelemetry-plugin-pg-pool/node_modules
     - plugins/node/opentelemetry-plugin-mysql/node_modules
-    - plugins/node/opentelemetry-plugin-express/node_modules
+    - plugins/node/opentelemetry-plugin-pg/node_modules
+    - plugins/node/opentelemetry-plugin-pg-pool/node_modules
+    - plugins/node/opentelemetry-plugin-redis/node_modules
+    - plugins/web/opentelemetry-plugin-document-load/node_modules
+    - plugins/web/opentelemetry-plugin-react-load/node_modules
+    - plugins/web/opentelemetry-plugin-user-interaction/node_modules
     - propagators/opentelemetry-propagator-jaeger/node_modules
+    - propagators/opentelemetry-propagator-grpc-census-binary/node_modules
 
 node_unit_tests: &node_unit_tests
   resource_class: large
@@ -74,7 +84,7 @@ node_unit_tests: &node_unit_tests
           echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
     - restore_cache:
         keys:
-          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71D
+          - npm-cache-02-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71D
     - run:
         name: Install Root Dependencies
         command: npm install --ignore-scripts
@@ -109,7 +119,7 @@ browsers_unit_tests: &browsers_unit_tests
           echo "CIRCLE_NODE_VERSION=${CIRCLE_NODE_VERSION}"
     - restore_cache:
         keys:
-          - npm-cache-01-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71D
+          - npm-cache-02-{{ .Environment.CIRCLE_JOB }}-{{ checksum "/tmp/checksums.txt" }}-F267A71D
     - run:
         name: Install Root Dependencies
         command: npm install --ignore-scripts
