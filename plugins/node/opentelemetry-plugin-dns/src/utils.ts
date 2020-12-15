@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span, StatusCode, Status, Attributes } from '@opentelemetry/api';
+import { Span, StatusCode, Attributes } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import { AddressFamily } from './enums/AddressFamily';
 import * as dns from 'dns';
@@ -42,9 +42,11 @@ export const setError = (
   }
 
   span.setAttributes(attributes);
-  const status: Status = { code: StatusCode.ERROR };
-  status.message = message;
-  span.setStatus(status);
+
+  span.setStatus({
+    code: StatusCode.ERROR,
+    message,
+  });
 };
 
 /**

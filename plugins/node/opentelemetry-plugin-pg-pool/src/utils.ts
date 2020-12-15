@@ -33,11 +33,9 @@ export function patchCallback(span: Span, cb: PgPoolCallback): PgPoolCallback {
   ) {
     if (err) {
       span.setStatus({
-        code: StatusCode.UNSET,
+        code: StatusCode.ERROR,
         message: err.message,
       });
-    } else if (res) {
-      span.setStatus({ code: StatusCode.OK });
     }
     span.end();
     cb.call(this, err, res, done);

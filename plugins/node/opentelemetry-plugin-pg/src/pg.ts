@@ -138,7 +138,6 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             .then((result: unknown) => {
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
-                span.setStatus({ code: StatusCode.OK });
                 span.end();
                 resolve(result);
               });
@@ -146,7 +145,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             .catch((error: Error) => {
               return new Promise((_, reject) => {
                 span.setStatus({
-                  code: StatusCode.UNSET,
+                  code: StatusCode.ERROR,
                   message: error.message,
                 });
                 span.end();
