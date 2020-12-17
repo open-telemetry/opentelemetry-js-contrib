@@ -44,9 +44,9 @@
   },
   "devDependencies": {
     "@koa/router": "9.4.0",
-    "@opentelemetry/context-async-hooks": "^0.13.0",
-    "@opentelemetry/node": "^0.13.0",
-    "@opentelemetry/tracing": "^0.13.0",
+    "@opentelemetry/context-async-hooks": "^0.14.0",
+    "@opentelemetry/node": "^0.14.0",
+    "@opentelemetry/tracing": "^0.14.0",
     "@types/koa": "2.11.4",
     "@types/koa__router": "8.0.2",
     "@types/mocha": "7.0.2",
@@ -67,9 +67,9 @@
     "typescript": "3.9.6"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.13.0",
-    "@opentelemetry/core": "^0.13.0",
-    "@opentelemetry/semantic-conventions": "^0.13.0",
+    "@opentelemetry/api": "^0.14.0",
+    "@opentelemetry/core": "^0.14.0",
+    "@opentelemetry/semantic-conventions": "^0.14.0",
     "shimmer": "^1.2.1"
   }
 }

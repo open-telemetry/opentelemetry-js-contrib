@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-import {
-  Span,
-  StatusCode,
-  Tracer,
-  SpanKind,
-  PluginConfig,
-} from '@opentelemetry/api';
+import { Span, StatusCode, Tracer, SpanKind } from '@opentelemetry/api';
+import { PluginConfig } from '@opentelemetry/core';
 import { AttributeNames } from './enums';
 import {
   PgClientExtended,
