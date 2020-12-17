@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span, CanonicalCode } from '@opentelemetry/api';
+import { Span, StatusCode } from '@opentelemetry/api';
 import { PgPoolOptionsParams, PgPoolCallback, PgPoolExtended } from './types';
 
 export function getJDBCString(params: PgPoolOptionsParams) {
@@ -33,11 +33,9 @@ export function patchCallback(span: Span, cb: PgPoolCallback): PgPoolCallback {
   ) {
     if (err) {
       span.setStatus({
-        code: CanonicalCode.UNKNOWN,
+        code: StatusCode.ERROR,
         message: err.message,
       });
-    } else if (res) {
-      span.setStatus({ code: CanonicalCode.OK });
     }
     span.end();
     cb.call(this, err, res, done);

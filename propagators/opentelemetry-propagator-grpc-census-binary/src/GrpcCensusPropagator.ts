@@ -17,9 +17,9 @@
 import {
   Context,
   getParentSpanContext,
-  GetterFunction,
   setExtractedSpanContext,
-  SetterFunction,
+  TextMapGetter,
+  TextMapSetter,
   TextMapPropagator,
 } from '@opentelemetry/api';
 import { BinaryTraceContext } from './BinaryTraceContext';
@@ -66,7 +66,7 @@ export class GrpcCensusPropagator implements TextMapPropagator {
    * @param setter - setter function that sets the correct key in
    *     the carrier
    */
-  inject(context: Context, carrier: unknown, setter: SetterFunction) {
+  inject(context: Context, carrier: unknown, setter: TextMapSetter) {
     const spanContext = getParentSpanContext(context);
     if (!spanContext) return;
 
@@ -82,7 +82,10 @@ export class GrpcCensusPropagator implements TextMapPropagator {
 
         if (carrier && encodedContext) {
           // Set the gRPC header (carrier will be of type grpc.Metadata)
-          setter(carrier, GRPC_TRACE_KEY, encodedContext);
+          // @TODO FIX ME once this is resolved
+          // https://github.com/open-telemetry/opentelemetry-specification/issues/437
+          setter.set(carrier, GRPC_TRACE_KEY, encodedContext as any);
+          // setter.set(carrier, GRPC_TRACE_KEY, encodedContext);
         }
       }
     }
@@ -99,12 +102,19 @@ export class GrpcCensusPropagator implements TextMapPropagator {
    *     key in the carrier
    * @returns Extracted context if successful, otherwise the input context
    */
-  extract(context: Context, carrier: unknown, getter: GetterFunction): Context {
+  extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
     if (carrier) {
       // Get the gRPC header (carrier will be of type grpc.Metadata and
       // getter actually returns an Array so we use the zero-th element if
       // it exists)
-      const values = getter(carrier, GRPC_TRACE_KEY) as Array<Buffer>;
+
+      // @TODO FIX ME once this is resolved
+      // https://github.com/open-telemetry/opentelemetry-specification/issues/437
+      const values = (getter.get(
+        carrier,
+        GRPC_TRACE_KEY
+      ) as unknown) as Array<Buffer>;
+      // const values = getter.get(carrier, GRPC_TRACE_KEY) as Array<Buffer>;
       const metadataValue = values.length > 0 ? values[0] : null;
 
       if (!metadataValue) {
@@ -134,5 +144,9 @@ export class GrpcCensusPropagator implements TextMapPropagator {
     }
 
     return context;
+  }
+
+  fields(): string[] {
+    return [GRPC_TRACE_KEY];
   }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CanonicalCode, context, SpanKind, Status } from '@opentelemetry/api';
+import { StatusCode, context, SpanKind, Status } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -47,8 +47,8 @@ const DEFAULT_ATTRIBUTES = {
   [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
 
-const okStatus: Status = {
-  code: CanonicalCode.OK,
+const unsetStatus: Status = {
+  code: StatusCode.UNSET,
 };
 
 describe('redis@2.x', () => {
@@ -194,7 +194,7 @@ describe('redis@2.x', () => {
                 SpanKind.CLIENT,
                 attributes,
                 [],
-                okStatus
+                unsetStatus
               );
               testUtils.assertPropagation(endedSpans[0], span);
               done();

@@ -43,17 +43,16 @@
   },
   "devDependencies": {
     "@babel/core": "7.11.1",
-    "@opentelemetry/context-base": "0.12.0",
-    "@opentelemetry/context-zone-peer-dep": "0.12.0",
-    "@opentelemetry/plugin-xml-http-request": "0.12.0",
-    "@opentelemetry/tracing": "0.12.0",
+    "@opentelemetry/context-base": "^0.13.0",
+    "@opentelemetry/context-zone-peer-dep": "^0.13.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.13.0",
+    "@opentelemetry/tracing": "^0.13.0",
     "@types/jquery": "3.5.1",
     "@types/mocha": "7.0.2",
     "@types/node": "14.0.27",
     "@types/shimmer": "1.0.1",
     "@types/sinon": "9.0.4",
     "@types/webpack-env": "1.15.2",
-    "@types/zone.js": "0.5.12",
     "babel-loader": "8.1.0",
     "codecov": "3.7.2",
     "gts": "2.0.2",
@@ -81,9 +80,9 @@
     "zone.js": "0.10.3"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.12.0",
-    "@opentelemetry/core": "^0.12.0",
-    "@opentelemetry/web": "^0.12.0",
+    "@opentelemetry/api": "^0.13.0",
+    "@opentelemetry/core": "^0.13.0",
+    "@opentelemetry/web": "^0.13.0",
     "shimmer": "^1.2.1"
   },
   "peerDependencies": {

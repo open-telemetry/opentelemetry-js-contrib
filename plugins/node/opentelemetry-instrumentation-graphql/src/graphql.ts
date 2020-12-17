@@ -307,9 +307,14 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     options?: { maxErrors?: number }
   ): ReadonlyArray<graphqlTypes.GraphQLError> {
     const document = documentAST as ObjectWithOtelSpan;
-    const span = this.tracer.startSpan(SpanNames.VALIDATE, {
-      parent: document[OTEL_SPAN_SYMBOL],
-    });
+    const parentSpan = document[OTEL_SPAN_SYMBOL];
+    const span = this.tracer.startSpan(
+      SpanNames.VALIDATE,
+      {},
+      parentSpan
+        ? api.setActiveSpan(api.context.active(), parentSpan)
+        : undefined
+    );
     document[OTEL_SPAN_SYMBOL] = span;
 
     return this.tracer.withSpan(span, () => {
@@ -346,9 +351,15 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   ): api.Span {
     const config = this._getConfig();
     const document = processedArgs.document as ObjectWithOtelSpan;
-    const span = this.tracer.startSpan(SpanNames.EXECUTE, {
-      parent: document[OTEL_SPAN_SYMBOL],
-    });
+
+    const parentSpan = document[OTEL_SPAN_SYMBOL];
+    const span = this.tracer.startSpan(
+      SpanNames.EXECUTE,
+      {},
+      parentSpan
+        ? api.setActiveSpan(api.context.active(), parentSpan)
+        : undefined
+    );
     if (operation) {
       const name = (operation as graphqlTypes.OperationDefinitionNode)
         .operation;
