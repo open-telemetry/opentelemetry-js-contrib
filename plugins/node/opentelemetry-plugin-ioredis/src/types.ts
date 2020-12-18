@@ -15,7 +15,7 @@
  */
 
 import type * as ioredisTypes from 'ioredis';
-import { PluginConfig } from '@opentelemetry/api';
+import { PluginConfig } from '@opentelemetry/core';
 
 export interface IoredisCommand {
   reject: (err: Error) => void;
