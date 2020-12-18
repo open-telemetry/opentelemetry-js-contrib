@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.12.0
+
+### :bug: Bug Fix
+
+* [#241](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/241) fix(ioredis): set `net.peer.name` attribute according to spec ([@blumamir](https://github.com/blumamir))
+
+### :rocket: Enhancement
+
+* Other
+  * [#265](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/265) feat: Add GitHub Actions Resource Detector ([@smithclay](https://github.com/smithclay))
+  * [#268](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/268) fix: missing .fields() method in jaeger propagator ([@jtmalinowski](https://github.com/jtmalinowski))
+* `opentelemetry-host-metrics`
+  * [#266](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/266) chore: refactoring host metrics, aligning with semantic conventions ([@obecny](https://github.com/obecny))
+
+### :house: Internal
+
+* `opentelemetry-host-metrics`, `opentelemetry-test-utils`
+  * [#283](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/283) chore: update to OTel v0.14.0 ([@Flarna](https://github.com/Flarna))
+  * [#277](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/277) updating to core v.0.13.0 ([@obecny](https://github.com/obecny))
+* Other
+  * [#259](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/259) fix(plugin-document-load): check if getEntriesByType is available before using it ([@mhennoch](https://github.com/mhennoch))
+  * [#257](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/257) docs(readme): add @opentelemetry/instrumentation-graphql ([@Hongbo-Miao](https://github.com/Hongbo-Miao))
+
+### Committers: 7
+
+* Amir Blum ([@blumamir](https://github.com/blumamir))
+* Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+* Clay Smith ([@smithclay](https://github.com/smithclay))
+* Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+* Hongbo Miao ([@Hongbo-Miao](https://github.com/Hongbo-Miao))
+* Jakub Malinowski ([@jtmalinowski](https://github.com/jtmalinowski))
+* MartenH ([@mhennoch](https://github.com/mhennoch))
+
 ## 0.11.0
 
 #### :bug: Bug Fix
