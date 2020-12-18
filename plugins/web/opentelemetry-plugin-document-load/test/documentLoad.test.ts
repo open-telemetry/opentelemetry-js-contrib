@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-import {
-  context,
-  Logger,
-  PluginConfig,
-  propagation,
-  TimedEvent,
-} from '@opentelemetry/api';
+import { context, Logger, propagation, TimedEvent } from '@opentelemetry/api';
 import {
   ConsoleLogger,
   HttpTraceContext,
+  PluginConfig,
   TRACE_PARENT_HEADER,
 } from '@opentelemetry/core';
 import {

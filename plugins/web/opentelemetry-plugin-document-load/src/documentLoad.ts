@@ -16,14 +16,15 @@
 
 import {
   context,
-  PluginConfig,
   propagation,
   setActiveSpan,
   Span,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import {
   BasePlugin,
   otperformance,
+  PluginConfig,
   TRACE_PARENT_HEADER,
 } from '@opentelemetry/core';
 import {
@@ -93,7 +94,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
 
     const entries = this._getEntries();
     const traceparent = (metaElement && metaElement.content) || '';
-    context.with(propagation.extract({ traceparent }), () => {
+    context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
       const rootSpan = this._startSpan(
         AttributeNames.DOCUMENT_LOAD,
         PTN.FETCH_START,

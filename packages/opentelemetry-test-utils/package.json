@@ -32,8 +32,8 @@
     "typescript": "3.9.6"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.13.0",
-    "@opentelemetry/core": "^0.13.0",
-    "@opentelemetry/tracing": "^0.13.0"
+    "@opentelemetry/api": "^0.14.0",
+    "@opentelemetry/core": "^0.14.0",
+    "@opentelemetry/tracing": "^0.14.0"
   }
 }
