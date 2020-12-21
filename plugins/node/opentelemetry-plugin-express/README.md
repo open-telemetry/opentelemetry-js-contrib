@@ -43,7 +43,7 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const provider = new NodeTracerProvider();
 ```
 
-See [examples/express](https://github.com/open-telemetry/opentelemetry-js/tree/master/examples/express) for a short example.
+See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/examples/express) for a short example.
 
 ### Caveats
 
