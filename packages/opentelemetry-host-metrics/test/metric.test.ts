@@ -115,7 +115,7 @@ describe('Host Metrics', () => {
     // sinon fake doesn't work fine with setImmediate
     originalSetTimeout(() => {
       // move the clock with the same value as interval
-      sandbox.clock.tick(INTERVAL * 2);
+      sandbox.clock.tick(INTERVAL * 1);
       // move to "real" next tick so that async batcher observer will start
       // processing metrics
       originalSetTimeout(() => {
@@ -155,22 +155,22 @@ describe('Host Metrics', () => {
     assert.strictEqual(records.length, 3);
     ensureValue(records[0], { state: 'user' }, 1.899243);
     ensureValue(records[1], { state: 'system' }, 0.258553);
-    ensureValue(records[2], { state: 'idle' }, 3.8422039999999997);
+    ensureValue(records[2], { state: 'idle' }, 0.842204);
   });
 
   it('should export CPU utilization metrics', () => {
     const records = getRecords(exportSpy.args[0][0], 'system.cpu.utilization');
     assert.strictEqual(records.length, 3);
-    ensureValue(records[0], { state: 'user' }, 0.3165405);
-    ensureValue(records[1], { state: 'system' }, 0.04309216666666666);
-    ensureValue(records[2], { state: 'idle' }, 0.6403673333333333);
+    ensureValue(records[0], { state: 'user' }, 0.633081);
+    ensureValue(records[1], { state: 'system' }, 0.08618433333333332);
+    ensureValue(records[2], { state: 'idle' }, 0.28073466666666663);
   });
 
   it('should export Memory usage metrics', done => {
     const records = getRecords(exportSpy.args[0][0], 'system.memory.usage');
     assert.strictEqual(records.length, 2);
-    ensureValue(records[0], { state: 'used' }, 9999983616);
-    ensureValue(records[1], { state: 'free' }, 7179885568);
+    ensureValue(records[0], { state: 'used' }, 9999988736);
+    ensureValue(records[1], { state: 'free' }, 7179880448);
     done();
   });
 
@@ -180,32 +180,32 @@ describe('Host Metrics', () => {
       'system.memory.utilization'
     );
     assert.strictEqual(records.length, 2);
-    ensureValue(records[0], { state: 'used' }, 0.5820754766464233);
-    ensureValue(records[1], { state: 'free' }, 0.41792452335357666);
+    ensureValue(records[0], { state: 'used' }, 0.582075834274292);
+    ensureValue(records[1], { state: 'free' }, 0.417924165725708);
     done();
   });
 
   it('should export Network io dropped', done => {
     const records = getRecords(exportSpy.args[0][0], 'system.network.dropped');
     assert.strictEqual(records.length, 2);
-    ensureValue(records[0], { direction: 'receive', device: 'eth0' }, 2400);
-    ensureValue(records[1], { direction: 'transmit', device: 'eth0' }, 24);
+    ensureValue(records[0], { direction: 'receive', device: 'eth0' }, 1200);
+    ensureValue(records[1], { direction: 'transmit', device: 'eth0' }, 12);
     done();
   });
 
   it('should export Network io errors', done => {
     const records = getRecords(exportSpy.args[0][0], 'system.network.errors');
     assert.strictEqual(records.length, 2);
-    ensureValue(records[0], { direction: 'receive', device: 'eth0' }, 6);
-    ensureValue(records[1], { direction: 'transmit', device: 'eth0' }, 30);
+    ensureValue(records[0], { direction: 'receive', device: 'eth0' }, 3);
+    ensureValue(records[1], { direction: 'transmit', device: 'eth0' }, 15);
     done();
   });
 
   it('should export Network io bytes', done => {
     const records = getRecords(exportSpy.args[0][0], 'system.network.io');
     assert.strictEqual(records.length, 2);
-    ensureValue(records[0], { direction: 'receive', device: 'eth0' }, 246246);
-    ensureValue(records[1], { direction: 'transmit', device: 'eth0' }, 642642);
+    ensureValue(records[0], { direction: 'receive', device: 'eth0' }, 123123);
+    ensureValue(records[1], { direction: 'transmit', device: 'eth0' }, 321321);
     done();
   });
 });
