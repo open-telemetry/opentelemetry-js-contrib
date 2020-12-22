@@ -6,9 +6,10 @@
     "metapackages/*",
     "plugins/node/*",
     "plugins/web/*",
-    "propagators/*"
+    "propagators/*",
+    "detectors/node/*"
   ],
-  "version": "0.11.0",
+  "version": "0.12.0",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",
     "labels": {

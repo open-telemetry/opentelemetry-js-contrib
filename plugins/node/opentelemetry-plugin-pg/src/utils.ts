@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-import {
-  Span,
-  CanonicalCode,
-  Tracer,
-  SpanKind,
-  PluginConfig,
-} from '@opentelemetry/api';
+import { Span, StatusCode, Tracer, SpanKind } from '@opentelemetry/api';
+import { PluginConfig } from '@opentelemetry/core';
 import { AttributeNames } from './enums';
 import {
   PgClientExtended,
@@ -152,9 +147,8 @@ export function handleInvalidQuery(
   const span = pgStartSpan(tracer, this, PostgresPlugin.BASE_SPAN_NAME);
   try {
     result = originalQuery.apply(this, args as never);
-    span.setStatus({ code: CanonicalCode.OK }); // this will never happen, but set a status anyways
   } catch (e) {
-    span.setStatus({ code: CanonicalCode.UNKNOWN, message: e.message });
+    span.setStatus({ code: StatusCode.ERROR, message: e.message });
     throw e;
   } finally {
     span.end();
@@ -173,11 +167,9 @@ export function patchCallback(
   ) {
     if (err) {
       span.setStatus({
-        code: CanonicalCode.UNKNOWN,
+        code: StatusCode.ERROR,
         message: err.message,
       });
-    } else if (res) {
-      span.setStatus({ code: CanonicalCode.OK });
     }
     span.end();
     cb.call(this, err, res);

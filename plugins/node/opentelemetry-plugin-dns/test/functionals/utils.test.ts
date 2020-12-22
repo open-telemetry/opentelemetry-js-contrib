@@ -16,7 +16,7 @@
 
 import { NoopLogger } from '@opentelemetry/core';
 import { BasicTracerProvider, Span } from '@opentelemetry/tracing';
-import { CanonicalCode, SpanKind, TraceFlags } from '@opentelemetry/api';
+import { ROOT_CONTEXT, SpanKind, TraceFlags } from '@opentelemetry/api';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { AttributeNames } from '../../src/enums/AttributeNames';
@@ -24,15 +24,6 @@ import { IgnoreMatcher } from '../../src/types';
 import * as utils from '../../src/utils';
 
 describe('Utility', () => {
-  describe('parseResponseStatus()', () => {
-    it('should return UNKNOWN code by default', () => {
-      [(undefined as unknown) as string, '', 'DSHKJSAD'].forEach(code => {
-        const status = utils.parseErrorCode(code);
-        assert.deepStrictEqual(status, { code: CanonicalCode.UNKNOWN });
-      });
-    });
-  });
-
   describe('satisfiesPattern()', () => {
     it('string pattern', () => {
       const answer1 = utils.satisfiesPattern('localhost', 'localhost');
@@ -163,6 +154,7 @@ describe('Utility', () => {
       const errorMessage = 'test error';
       const span = new Span(
         new BasicTracerProvider().getTracer('default'),
+        ROOT_CONTEXT,
         'test',
         { spanId: '', traceId: '', traceFlags: TraceFlags.NONE },
         SpanKind.INTERNAL

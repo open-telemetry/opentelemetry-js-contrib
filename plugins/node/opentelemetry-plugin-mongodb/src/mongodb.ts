@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import { CanonicalCode, Span, SpanKind } from '@opentelemetry/api';
+import { StatusCode, Span, SpanKind } from '@opentelemetry/api';
 import type * as mongodb from 'mongodb';
 import * as shimmer from 'shimmer';
 import {
@@ -249,12 +249,8 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
       const error = args[0];
       if (error instanceof Error) {
         span.setStatus({
-          code: CanonicalCode.UNKNOWN,
+          code: StatusCode.ERROR,
           message: error.message,
-        });
-      } else {
-        span.setStatus({
-          code: CanonicalCode.OK,
         });
       }
       span.end();

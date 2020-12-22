@@ -15,7 +15,7 @@
  */
 
 import type * as redisTypes from 'redis';
-import { Tracer, SpanKind, Span, CanonicalCode } from '@opentelemetry/api';
+import { Tracer, SpanKind, Span, StatusCode } from '@opentelemetry/api';
 import { RedisCommand, RedisPluginClientTypes } from './types';
 import { EventEmitter } from 'events';
 import { RedisPlugin } from './redis';
@@ -27,11 +27,9 @@ import {
 const endSpan = (span: Span, err?: Error | null) => {
   if (err) {
     span.setStatus({
-      code: CanonicalCode.UNKNOWN,
+      code: StatusCode.ERROR,
       message: err.message,
     });
-  } else {
-    span.setStatus({ code: CanonicalCode.OK });
   }
   span.end();
 };

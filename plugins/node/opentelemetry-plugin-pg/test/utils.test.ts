@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { context, PluginConfig } from '@opentelemetry/api';
+import { context } from '@opentelemetry/api';
+import { PluginConfig } from '@opentelemetry/core';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   BasicTracerProvider,

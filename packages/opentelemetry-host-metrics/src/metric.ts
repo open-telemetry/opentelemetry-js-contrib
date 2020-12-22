@@ -218,7 +218,6 @@ export class HostMetrics extends BaseMetrics {
     );
 
     this._meter.createBatchObserver(
-      'metric_batch_observer',
       observerBatchResult => {
         Promise.all([
           getMemoryData(),
