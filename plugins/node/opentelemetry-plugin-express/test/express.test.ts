@@ -31,6 +31,7 @@ import {
   AttributeNames,
   ExpressLayerType,
   ExpressPluginConfig,
+  ExpressPluginSpan,
 } from '../src/types';
 
 const httpRequest = {
@@ -77,7 +78,7 @@ describe('Express Plugin', () => {
 
   describe('Instrumenting normal get operations', () => {
     it('should create a child span for middlewares', async () => {
-      const rootSpan = tracer.startSpan('rootSpan');
+      const rootSpan = tracer.startSpan('rootSpan') as ExpressPluginSpan;
       const app = express();
       app.use((req, res, next) => tracer.withSpan(rootSpan, next));
       app.use(express.json());
@@ -102,7 +103,6 @@ describe('Express Plugin', () => {
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
-        // @ts-ignore
         assert.strictEqual(rootSpan.name, 'GET /toto/:id');
         assert.notStrictEqual(
           memoryExporter
@@ -216,7 +216,7 @@ describe('Express Plugin', () => {
         ],
       };
       plugin.enable(express, provider, logger, config);
-      const rootSpan = tracer.startSpan('rootSpan');
+      const rootSpan = tracer.startSpan('rootSpan') as ExpressPluginSpan;
       const app = express();
       app.use((req, res, next) => tracer.withSpan(rootSpan, next));
       app.use(express.json());
@@ -241,9 +241,7 @@ describe('Express Plugin', () => {
       await tracer.withSpan(rootSpan, async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
-        // @ts-ignore
         assert.strictEqual(rootSpan.name, 'GET /toto/:id');
-
         assert.deepStrictEqual(
           memoryExporter
             .getFinishedSpans()
