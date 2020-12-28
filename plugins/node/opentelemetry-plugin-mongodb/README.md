@@ -43,7 +43,7 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const provider = new NodeTracerProvider();
 ```
 
-See [examples/mongodb](https://github.com/open-telemetry/opentelemetry-js/tree/master/examples/mongodb) for a short example.
+See [examples/mongodb](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/examples/mongodb) for a short example.
 
 ### Mongo Plugin Options
 

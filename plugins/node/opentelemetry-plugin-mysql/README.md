@@ -44,7 +44,7 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const provider = new NodeTracerProvider();
 ```
 
-See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js/tree/master/examples/mysql) for a short example.
+See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/examples/mysql) for a short example.
 
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
