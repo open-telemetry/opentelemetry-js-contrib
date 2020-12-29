@@ -16,7 +16,7 @@
 
 import {
   Attributes,
-  CanonicalCode,
+  StatusCode,
   context,
   Span,
   SpanKind,
@@ -73,15 +73,15 @@ const DEFAULT_PG_ATTRIBUTES = {
   [AttributeNames.DB_USER]: CONFIG.user,
 };
 
-const okStatus: Status = {
-  code: CanonicalCode.OK,
+const unsetStatus: Status = {
+  code: StatusCode.UNSET,
 };
 
 const runCallbackTest = (
   parentSpan: Span,
   attributes: Attributes,
   events: TimedEvent[],
-  status: Status = okStatus,
+  status: Status = unsetStatus,
   spansLength = 1,
   spansIndex = 0
 ) => {
@@ -97,11 +97,12 @@ describe('pg-pool@2.x', () => {
   let contextManager: AsyncHooksContextManager;
   const provider = new BasicTracerProvider();
   const logger = new NoopLogger();
-  const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
+  const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI:
+  // assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
-  before(function (done) {
+  before(function () {
     if (!shouldTest) {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -113,7 +114,6 @@ describe('pg-pool@2.x', () => {
     if (testPostgresLocally) {
       testUtils.startDocker('postgres');
     }
-    done();
   });
 
   after(done => {
@@ -161,11 +161,11 @@ describe('pg-pool@2.x', () => {
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await provider.getTracer('test-pg-pool').withSpan(span, async () => {
         const client = await pool.connect();
-        runCallbackTest(span, pgPoolattributes, events, okStatus, 1, 0);
+        runCallbackTest(span, pgPoolattributes, events, unsetStatus, 1, 0);
         assert.ok(client, 'pool.connect() returns a promise');
         try {
           await client.query('SELECT NOW()');
-          runCallbackTest(span, pgAttributes, events, okStatus, 2, 1);
+          runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
         } finally {
           client.release();
         }
@@ -197,14 +197,28 @@ describe('pg-pool@2.x', () => {
             throw new Error('No client received');
           }
           assert.ok(client);
-          runCallbackTest(parentSpan, pgPoolattributes, events, okStatus, 1, 0);
+          runCallbackTest(
+            parentSpan,
+            pgPoolattributes,
+            events,
+            unsetStatus,
+            1,
+            0
+          );
           client.query('SELECT NOW()', (err, ret) => {
             release();
             if (err) {
               return done(err);
             }
             assert.ok(ret);
-            runCallbackTest(parentSpan, pgAttributes, events, okStatus, 2, 1);
+            runCallbackTest(
+              parentSpan,
+              pgAttributes,
+              events,
+              unsetStatus,
+              2,
+              1
+            );
             done();
           });
         });
@@ -227,8 +241,8 @@ describe('pg-pool@2.x', () => {
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await provider.getTracer('test-pg-pool').withSpan(span, async () => {
         const result = await pool.query('SELECT NOW()');
-        runCallbackTest(span, pgPoolattributes, events, okStatus, 2, 0);
-        runCallbackTest(span, pgAttributes, events, okStatus, 2, 1);
+        runCallbackTest(span, pgPoolattributes, events, unsetStatus, 2, 0);
+        runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
         assert.ok(result, 'pool.query() returns a promise');
       });
     });
@@ -251,8 +265,15 @@ describe('pg-pool@2.x', () => {
           if (err) {
             return done(err);
           }
-          runCallbackTest(parentSpan, pgPoolattributes, events, okStatus, 2, 0);
-          runCallbackTest(parentSpan, pgAttributes, events, okStatus, 2, 1);
+          runCallbackTest(
+            parentSpan,
+            pgPoolattributes,
+            events,
+            unsetStatus,
+            2,
+            0
+          );
+          runCallbackTest(parentSpan, pgAttributes, events, unsetStatus, 2, 1);
           done();
         });
         assert.strictEqual(resNoPromise, undefined, 'No promise is returned');

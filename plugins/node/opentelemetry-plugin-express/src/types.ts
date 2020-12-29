@@ -16,7 +16,8 @@
 
 import { kLayerPatched } from './express';
 import { Request } from 'express';
-import { PluginConfig, Attributes } from '@opentelemetry/api';
+import { Attributes } from '@opentelemetry/api';
+import { PluginConfig } from '@opentelemetry/core';
 
 /**
  * This const define where on the `request` object the plugin will mount the

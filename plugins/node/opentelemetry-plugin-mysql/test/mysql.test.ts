@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CanonicalCode, context } from '@opentelemetry/api';
+import { StatusCode, context } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -628,6 +628,6 @@ function assertSpan(
   );
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
-    assert.strictEqual(span.status.code, CanonicalCode.UNKNOWN);
+    assert.strictEqual(span.status.code, StatusCode.ERROR);
   }
 }

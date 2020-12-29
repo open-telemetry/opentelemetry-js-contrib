@@ -21,6 +21,11 @@ fi
 
 openssl md5 package.json >> $FILE
 
+find detectors/node/*/package.json | xargs -I{} openssl md5 {} >> $FILE
+find metapackages/*/package.json | xargs -I{} openssl md5 {} >> $FILE
 find packages/*/package.json | xargs -I{} openssl md5 {} >> $FILE
+find plugins/node/*/package.json | xargs -I{} openssl md5 {} >> $FILE
+find plugins/web/*/package.json | xargs -I{} openssl md5 {} >> $FILE
+find propagators/*/package.json | xargs -I{} openssl md5 {} >> $FILE
 
 sort -o $FILE $FILE

@@ -16,7 +16,7 @@
 
 import {
   Attributes,
-  CanonicalCode,
+  StatusCode,
   context,
   Span,
   SpanKind,
@@ -57,18 +57,18 @@ const DEFAULT_ATTRIBUTES = {
   [AttributeNames.DB_USER]: CONFIG.user,
 };
 
-const okStatus: Status = {
-  code: CanonicalCode.OK,
+const unsetStatus: Status = {
+  code: StatusCode.UNSET,
 };
-const unknownStatus: Status = {
-  code: CanonicalCode.UNKNOWN,
+const errorStatus: Status = {
+  code: StatusCode.ERROR,
 };
 
 const runCallbackTest = (
   span: Span | null,
   attributes: Attributes,
   events: TimedEvent[],
-  status: Status = okStatus,
+  status: Status = unsetStatus,
   spansLength = 1,
   spansIndex = 0
 ) => {
@@ -147,7 +147,7 @@ describe('pg@7.x', () => {
       assertPgError,
       'pg should throw when no args provided'
     );
-    runCallbackTest(null, DEFAULT_ATTRIBUTES, [], unknownStatus);
+    runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
     memoryExporter.reset();
 
     assert.doesNotThrow(
@@ -159,7 +159,7 @@ describe('pg@7.x', () => {
               ...DEFAULT_ATTRIBUTES,
             },
             [],
-            unknownStatus
+            errorStatus
           );
         }),
       'pg should not throw when invalid config args are provided'

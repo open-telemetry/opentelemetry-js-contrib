@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-import { context, PluginConfig, SpanKind } from '@opentelemetry/api';
-import { NoopLogger } from '@opentelemetry/core';
+// for testing locally use this command to run docker
+// docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=localhost -p 27017:27017 --name otmongo mongo
+
+import { context, SpanKind } from '@opentelemetry/api';
+import { NoopLogger, PluginConfig } from '@opentelemetry/core';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -36,6 +39,7 @@ describe('MongoDBPlugin', () => {
     console.log('Skipping test-mongodb. Run MongoDB to test');
     shouldTest = false;
   }
+  // shouldTest = true
 
   const URL = `mongodb://${process.env.MONGODB_HOST || 'localhost'}:${
     process.env.MONGODB_PORT || '27017'

@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin, isWrapped } from '@opentelemetry/core';
-import { CanonicalCode, Span, SpanKind } from '@opentelemetry/api';
+import { StatusCode, Span, SpanKind } from '@opentelemetry/api';
 import type * as mysqlTypes from 'mysql';
 import * as shimmer from 'shimmer';
 import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
@@ -237,7 +237,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
           return streamableQuery
             .on('error', err =>
               span.setStatus({
-                code: CanonicalCode.UNKNOWN,
+                code: StatusCode.ERROR,
                 message: err.message,
               })
             )
@@ -266,12 +266,8 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
       ) {
         if (err) {
           span.setStatus({
-            code: CanonicalCode.UNKNOWN,
+            code: StatusCode.ERROR,
             message: err.message,
-          });
-        } else {
-          span.setStatus({
-            code: CanonicalCode.OK,
           });
         }
         span.end();
