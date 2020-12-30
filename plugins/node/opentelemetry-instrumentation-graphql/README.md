@@ -44,7 +44,7 @@ const graphQLInstrumentation = new GraphQLInstrumentation({
   // mergeItems: true,
 });
 
-graphQLInstrumentation.setTracerProvider(provider);
+graphQLInstrumentation.setTracerProvider(provider); // optional; uses global tracer by default
 
 graphQLInstrumentation.enable();
 
