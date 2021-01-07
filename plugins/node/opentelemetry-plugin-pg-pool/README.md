@@ -47,7 +47,7 @@ const provider = new NodeTracerProvider({
 });
 ```
 
-See [examples/postgres](https://github.com/open-telemetry/opentelemetry-js/tree/master/examples/postgres) for a short example.
+See [examples/postgres](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/examples/postgres) for a short example.
 
 ## Supported Versions
 
