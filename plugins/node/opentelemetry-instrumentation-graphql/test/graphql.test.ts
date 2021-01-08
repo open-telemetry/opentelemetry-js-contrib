@@ -137,7 +137,7 @@ describe('graphql', () => {
       });
 
       it('should instrument execute', () => {
-        const executeSpan = spans[3];
+        const executeSpan = spans[2];
 
         assert.deepStrictEqual(
           executeSpan.attributes[SpanAttributes.SOURCE],
@@ -157,8 +157,8 @@ describe('graphql', () => {
       });
 
       it('should instrument resolvers', () => {
-        const executeSpan = spans[3];
-        const resolveParentSpan = spans[2];
+        const executeSpan = spans[2];
+        const resolveParentSpan = spans[3];
         const span1 = spans[4];
         const span2 = spans[5];
         const span3 = spans[6];
@@ -239,7 +239,7 @@ describe('graphql', () => {
       });
 
       it('should instrument execute', () => {
-        const executeSpan = spans[3];
+        const executeSpan = spans[2];
 
         assert.deepStrictEqual(
           executeSpan.attributes[SpanAttributes.SOURCE],
@@ -259,8 +259,8 @@ describe('graphql', () => {
       });
 
       it('should instrument resolvers', () => {
-        const executeSpan = spans[3];
-        const resolveParentSpan = spans[2];
+        const executeSpan = spans[2];
+        const resolveParentSpan = spans[3];
         const span1 = spans[4];
 
         assertResolveSpan(
@@ -325,7 +325,7 @@ describe('graphql', () => {
       });
 
       it('should instrument execute', () => {
-        const executeSpan = spans[3];
+        const executeSpan = spans[2];
 
         assert.deepStrictEqual(
           executeSpan.attributes[SpanAttributes.SOURCE],
@@ -349,8 +349,8 @@ describe('graphql', () => {
       });
 
       it('should instrument resolvers', () => {
-        const executeSpan = spans[3];
-        const resolveParentSpan = spans[2];
+        const executeSpan = spans[2];
+        const resolveParentSpan = spans[3];
         const span1 = spans[4];
 
         assertResolveSpan(
@@ -481,7 +481,7 @@ describe('graphql', () => {
       });
 
       it('should instrument execute', () => {
-        const executeSpan = spans[3];
+        const executeSpan = spans[2];
 
         assert.deepStrictEqual(
           executeSpan.attributes[SpanAttributes.SOURCE],
@@ -568,7 +568,7 @@ describe('graphql', () => {
       });
 
       it('should instrument execute', () => {
-        const executeSpan = spans[3];
+        const executeSpan = spans[2];
 
         assert.deepStrictEqual(
           executeSpan.attributes[SpanAttributes.SOURCE],
@@ -588,8 +588,8 @@ describe('graphql', () => {
       });
 
       it('should instrument resolvers', () => {
-        const executeSpan = spans[3];
-        const resolveParentSpan = spans[2];
+        const executeSpan = spans[2];
+        const resolveParentSpan = spans[3];
         const span1 = spans[4];
 
         assertResolveSpan(
@@ -657,7 +657,7 @@ describe('graphql', () => {
       });
 
       it('should instrument execute', () => {
-        const executeSpan = spans[3];
+        const executeSpan = spans[2];
 
         assert.deepStrictEqual(
           executeSpan.attributes[SpanAttributes.SOURCE],
@@ -680,8 +680,8 @@ describe('graphql', () => {
       });
 
       it('should instrument resolvers', () => {
-        const executeSpan = spans[3];
-        const resolveParentSpan = spans[2];
+        const executeSpan = spans[2];
+        const resolveParentSpan = spans[3];
         const span1 = spans[4];
 
         assertResolveSpan(
@@ -746,7 +746,7 @@ describe('graphql', () => {
       });
 
       it('should instrument execute', () => {
-        const executeSpan = spans[3];
+        const executeSpan = spans[2];
 
         assert.deepStrictEqual(
           executeSpan.attributes[SpanAttributes.SOURCE],
@@ -770,8 +770,8 @@ describe('graphql', () => {
       });
 
       it('should instrument resolvers', () => {
-        const executeSpan = spans[3];
-        const resolveParentSpan = spans[2];
+        const executeSpan = spans[2];
+        const resolveParentSpan = spans[3];
         const span1 = spans[4];
 
         assertResolveSpan(
@@ -841,7 +841,7 @@ describe('graphql', () => {
     });
 
     it('should instrument execute', () => {
-      const executeSpan = spans[3];
+      const executeSpan = spans[2];
 
       assert.deepStrictEqual(
         executeSpan.attributes[SpanAttributes.SOURCE],
@@ -864,8 +864,8 @@ describe('graphql', () => {
     });
 
     it('should instrument resolvers', () => {
-      const executeSpan = spans[3];
-      const resolveParentSpan = spans[2];
+      const executeSpan = spans[2];
+      const resolveParentSpan = spans[3];
       const span1 = spans[4];
 
       assertResolveSpan(
