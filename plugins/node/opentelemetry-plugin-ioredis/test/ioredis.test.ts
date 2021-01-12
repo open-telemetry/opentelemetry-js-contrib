@@ -366,22 +366,26 @@ describe('ioredis', () => {
           client.echo('test', (err, result) => {
             assert.ifError(err);
 
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
-            span.end();
-            const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 3);
-            assert.strictEqual(endedSpans[2].name, 'test span');
-            assert.strictEqual(endedSpans[1].name, 'eval');
-            assert.strictEqual(endedSpans[0].name, 'evalsha');
-            testUtils.assertSpan(
-              endedSpans[0],
-              SpanKind.CLIENT,
-              attributes,
-              [],
-              unsetStatus
-            );
-            testUtils.assertPropagation(endedSpans[0], span);
-            done();
+            client.script('flush', (err, result) => {
+              assert.ifError(err);
+              assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans.length, 4);
+              assert.strictEqual(endedSpans[3].name, 'test span');
+              assert.strictEqual(endedSpans[2].name, 'script');
+              assert.strictEqual(endedSpans[1].name, 'eval');
+              assert.strictEqual(endedSpans[0].name, 'evalsha');
+              testUtils.assertSpan(
+                endedSpans[0],
+                SpanKind.CLIENT,
+                attributes,
+                [],
+                unsetStatus
+              );
+              testUtils.assertPropagation(endedSpans[0], span);
+              done();
+            });
           });
         });
       });
