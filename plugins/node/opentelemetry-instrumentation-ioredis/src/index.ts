@@ -15,3 +15,4 @@
  */
 
 export * from './ioredis';
+export { IORedisInstrumentationConfig } from './types';
