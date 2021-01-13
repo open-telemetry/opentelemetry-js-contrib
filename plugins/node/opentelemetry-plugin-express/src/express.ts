@@ -250,7 +250,9 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
          * the layer directly end the http response, so we'll hook into the "finish"
          * event to handle the later case.
          */
-        req.res?.once('finish', onResponseFinish);
+        if (!spanHasEnded) {
+          req.res?.once('finish', onResponseFinish);
+        }
         return result;
       };
     });
