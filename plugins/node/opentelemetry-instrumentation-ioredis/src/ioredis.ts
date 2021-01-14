@@ -17,7 +17,6 @@
 import type * as ioredisTypes from 'ioredis';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
@@ -33,12 +32,6 @@ export class IORedisInstrumentation extends InstrumentationBase<
 
   constructor(protected _config: IORedisInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-ioredis', VERSION, _config);
-  }
-
-  public setConfig(
-    config: IORedisInstrumentationConfig & InstrumentationConfig = {}
-  ) {
-    this._config = Object.assign({}, config);
   }
 
   init(): InstrumentationNodeModuleDefinition<typeof ioredisTypes>[] {
