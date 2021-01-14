@@ -152,6 +152,11 @@ describe('ioredis', () => {
   });
 
   describe('#send_internal_message()', () => {
+    // use a random part in key names because redis instance is used for parallel running tests
+    const randomId = ((Math.random() * 2 ** 32) >>> 0).toString(16);
+    const testKeyName = `test-${randomId}`;
+    const hashKeyName = `hash-${randomId}`;
+
     let client: ioredisTypes.Redis;
 
     const IOREDIS_CALLBACK_OPERATIONS: Array<{
@@ -163,16 +168,16 @@ describe('ioredis', () => {
       {
         description: 'insert',
         name: 'hset',
-        args: ['hash', 'testField', 'testValue'],
+        args: [hashKeyName, 'testField', 'testValue'],
         method: (cb: ioredisTypes.CallbackFunction<number>) =>
-          client.hset('hash', 'testField', 'testValue', cb),
+          client.hset(hashKeyName, 'testField', 'testValue', cb),
       },
       {
         description: 'get',
         name: 'get',
-        args: ['test'],
+        args: [testKeyName],
         method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
-          client.get('test', cb),
+          client.get(testKeyName, cb),
       },
     ];
 
@@ -185,7 +190,7 @@ describe('ioredis', () => {
     });
 
     beforeEach(async () => {
-      await client.set('test', 'data');
+      await client.set(testKeyName, 'data');
       memoryExporter.reset();
     });
 
@@ -194,7 +199,8 @@ describe('ioredis', () => {
     });
 
     afterEach(async () => {
-      client.del('hash');
+      await client.del(hashKeyName);
+      await client.del(testKeyName);
       memoryExporter.reset();
     });
 
@@ -235,12 +241,12 @@ describe('ioredis', () => {
       it('should create a child span for hset promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: 'hset hash random random',
+          [DatabaseAttribute.DB_STATEMENT]: `hset ${hashKeyName} random random`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
           try {
-            await client.hset('hash', 'random', 'random');
+            await client.hset(hashKeyName, 'random', 'random');
             assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
@@ -357,8 +363,7 @@ describe('ioredis', () => {
       it('should create a child span for lua', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]:
-            'evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 test',
+          [DatabaseAttribute.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -370,29 +375,30 @@ describe('ioredis', () => {
           });
           // Now `echo` can be used just like any other ordinary command,
           // and ioredis will try to use `EVALSHA` internally when possible for better performance.
-          client.echo('test', (err, result) => {
+          client.echo(testKeyName, (err, result) => {
             assert.ifError(err);
-            client.script('flush', (err, result) => {
-              assert.ifError(err);
 
-              assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
-              span.end();
-              const endedSpans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(endedSpans.length, 4);
-              assert.strictEqual(endedSpans[3].name, 'test span');
-              assert.strictEqual(endedSpans[2].name, 'script');
+            span.end();
+            const endedSpans = memoryExporter.getFinishedSpans();
+            // the script may be already cached on server therefore we get either 2 or 3 spans
+            if (endedSpans.length === 3) {
+              assert.strictEqual(endedSpans[2].name, 'test span');
               assert.strictEqual(endedSpans[1].name, 'eval');
               assert.strictEqual(endedSpans[0].name, 'evalsha');
-              testUtils.assertSpan(
-                endedSpans[0],
-                SpanKind.CLIENT,
-                attributes,
-                [],
-                unsetStatus
-              );
-              testUtils.assertPropagation(endedSpans[0], span);
-              done();
-            });
+            } else {
+              assert.strictEqual(endedSpans.length, 2);
+              assert.strictEqual(endedSpans[1].name, 'test span');
+              assert.strictEqual(endedSpans[0].name, 'evalsha');
+            }
+            testUtils.assertSpan(
+              endedSpans[0],
+              SpanKind.CLIENT,
+              attributes,
+              [],
+              unsetStatus
+            );
+            testUtils.assertPropagation(endedSpans[0], span);
+            done();
           });
         });
       });
@@ -470,12 +476,12 @@ describe('ioredis', () => {
       it('should create a child span for get promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: 'get test',
+          [DatabaseAttribute.DB_STATEMENT]: `get ${testKeyName}`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
           try {
-            const value = await client.get('test');
+            const value = await client.get(testKeyName);
             assert.strictEqual(value, 'data');
             assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
             span.end();
@@ -499,12 +505,12 @@ describe('ioredis', () => {
       it('should create a child span for del', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: 'del test',
+          [DatabaseAttribute.DB_STATEMENT]: `del ${testKeyName}`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
           try {
-            const result = await client.del('test');
+            const result = await client.del(testKeyName);
             assert.strictEqual(result, 1);
             assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
             span.end();
@@ -532,8 +538,8 @@ describe('ioredis', () => {
         instrumentation.enable();
       });
       it('should not create child span', async () => {
-        await client.set('test', 'data');
-        const result = await client.del('test');
+        await client.set(testKeyName, 'data');
+        const result = await client.del(testKeyName);
         assert.strictEqual(result, 1);
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       });
@@ -615,7 +621,7 @@ describe('ioredis', () => {
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await provider.getTracer('ioredis-test').withSpan(span, async () => {
           try {
-            await client.hset('hash', 'random', 'random');
+            await client.hset(hashKeyName, 'random', 'random');
             assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
