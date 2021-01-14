@@ -18,7 +18,6 @@ import { LookupAddress } from 'dns';
 import { Span, SpanKind, SpanOptions } from '@opentelemetry/api';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
@@ -41,12 +40,6 @@ import { VERSION } from './version';
 export class DnsInstrumentation extends InstrumentationBase<Dns> {
   constructor(protected _config: DnsInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-dns', VERSION, _config);
-  }
-
-  public setConfig(
-    config: DnsInstrumentationConfig & InstrumentationConfig = {}
-  ) {
-    this._config = Object.assign({}, config);
   }
 
   init(): InstrumentationNodeModuleDefinition<Dns>[] {
