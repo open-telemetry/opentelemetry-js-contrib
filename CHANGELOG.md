@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.12.1
+
+#### :bug: Bug Fix
+
+* [#299](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/299) chore: fixing parent span for graphql ([@obecny](https://github.com/obecny))
+* [#300](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/300) chore: fixing async resolvers for graphql ([@obecny](https://github.com/obecny))
+* [#290](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/290) docs: fix links to examples ([@aabmass](https://github.com/aabmass))
+
+#### :rocket: Enhancement
+
+* [#273](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/273) feat: enable root span route instrumentation without any express layer spans  ([@shyimo](https://github.com/shyimo))
+* [#298](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/298) Add CodeQL Security Scans ([@amanbrar1999](https://github.com/amanbrar1999))
+
+#### Committers: 7
+
+* Aaron Abbott ([@aabmass](https://github.com/aabmass))
+* Aman Brar ([@amanbrar1999](https://github.com/amanbrar1999))
+* Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+* Dobes Vandermeer ([@dobesv](https://github.com/dobesv))
+* Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+* Johannes Würbach ([@johanneswuerbach](https://github.com/johanneswuerbach))
+* Shai Moria ([@shyimo](https://github.com/shyimo))
+
 ## 0.12.0
 
 ### :bug: Bug Fix
