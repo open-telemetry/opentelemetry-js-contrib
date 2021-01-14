@@ -56,7 +56,7 @@ export class OpenTracingPropagator implements TextMapPropagator {
     const spanContext = getParentSpanContext(context);
     if (!spanContext || !isSpanContextValid(spanContext)) return;
 
-    setter.set(carrier, OT_TRACE_ID_HEADER, spanContext.traceId);
+    setter.set(carrier, OT_TRACE_ID_HEADER, spanContext.traceId.substr(16));
     setter.set(carrier, OT_SPAN_ID_HEADER, spanContext.spanId);
     setter.set(
       carrier,
