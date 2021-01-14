@@ -15,11 +15,14 @@
  */
 
 import {
+  Baggage,
   Context,
+  getBaggage,
   getParentSpanContext,
   isSpanContextValid,
   isValidSpanId,
   isValidTraceId,
+  setBaggage,
   setExtractedSpanContext,
   TextMapGetter,
   TextMapPropagator,
@@ -60,6 +63,13 @@ export class OpenTracingPropagator implements TextMapPropagator {
       OT_SAMPLED_HEADER,
       spanContext.traceFlags === TraceFlags.SAMPLED ? 'true' : 'false'
     );
+
+    const baggage = getBaggage(context);
+    if (!baggage) return;
+
+    Object.entries(baggage).forEach(([k, v]) => {
+      setter.set(carrier, `${OT_BAGGAGE_PREFIX}${k}`, v.value);
+    });
   }
 
   extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
@@ -71,12 +81,24 @@ export class OpenTracingPropagator implements TextMapPropagator {
       sampled === 'true' ? TraceFlags.SAMPLED : TraceFlags.NONE;
 
     if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
-      return setExtractedSpanContext(context, {
+      context = setExtractedSpanContext(context, {
         traceId,
         spanId,
         isRemote: true,
         traceFlags,
       });
+
+      const baggage: Baggage = getBaggage(context) || {};
+
+      getter.keys(carrier).forEach(k => {
+        if (!k.startsWith(OT_BAGGAGE_PREFIX)) return;
+        const value = readHeader(carrier, getter, k);
+        baggage[k.substr(OT_BAGGAGE_PREFIX.length)] = { value };
+      });
+
+      if (Object.keys(baggage).length > 0) {
+        context = setBaggage(context, baggage);
+      }
     }
 
     return context;

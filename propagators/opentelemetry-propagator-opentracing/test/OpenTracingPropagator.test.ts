@@ -23,6 +23,9 @@ import {
   setExtractedSpanContext,
   SpanContext,
   TraceFlags,
+  Baggage,
+  setBaggage,
+  getBaggage,
 } from '@opentelemetry/api';
 import { ROOT_CONTEXT } from '@opentelemetry/context-base';
 import * as assert from 'assert';
@@ -31,6 +34,7 @@ import {
   OT_TRACE_ID_HEADER,
   OT_SPAN_ID_HEADER,
   OT_SAMPLED_HEADER,
+  OT_BAGGAGE_PREFIX,
 } from '../src/OpenTracingPropagator';
 
 describe('OpenTracingPropagator', () => {
@@ -118,6 +122,28 @@ describe('OpenTracingPropagator', () => {
       assert.strictEqual(carrier[OT_TRACE_ID_HEADER], undefined);
       assert.strictEqual(carrier[OT_SPAN_ID_HEADER], undefined);
       assert.strictEqual(carrier[OT_SAMPLED_HEADER], undefined);
+    });
+
+    it('injects baggage', () => {
+      const spanContext: SpanContext = {
+        traceId: '80f198ee56343ba864fe8b2a57d3eff7',
+        spanId: 'e457b5a2e4d86bd1',
+        traceFlags: TraceFlags.SAMPLED,
+      };
+
+      let context = setExtractedSpanContext(ROOT_CONTEXT, spanContext);
+
+      const baggage: Baggage = {
+        foo: { value: 'bar' },
+        bar: { value: 'baz' },
+      };
+
+      context = setBaggage(context, baggage);
+
+      propagator.inject(context, carrier, defaultTextMapSetter);
+
+      assert.strictEqual(carrier[`${OT_BAGGAGE_PREFIX}foo`], 'bar');
+      assert.strictEqual(carrier[`${OT_BAGGAGE_PREFIX}bar`], 'baz');
     });
   });
 
@@ -241,11 +267,13 @@ describe('OpenTracingPropagator', () => {
       assert.deepStrictEqual(undefined, extractedSpanContext);
     });
 
-    it('handles invalid spanid', () => {
+    it('extracts baggage', () => {
       carrier = {
         [OT_TRACE_ID_HEADER]: '80f198ee56343ba864fe8b2a57d3eff7',
-        [OT_SPAN_ID_HEADER]: INVALID_SPANID,
+        [OT_SPAN_ID_HEADER]: 'e457b5a2e4d86bd1',
         [OT_SAMPLED_HEADER]: 'false',
+        [`${OT_BAGGAGE_PREFIX}foo`]: 'bar',
+        [`${OT_BAGGAGE_PREFIX}bar`]: 'baz',
       };
 
       const context = propagator.extract(
@@ -254,8 +282,13 @@ describe('OpenTracingPropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getParentSpanContext(context);
-      assert.deepStrictEqual(undefined, extractedSpanContext);
+      const baggage = getBaggage(context);
+
+      assert.ok(baggage);
+      assert.deepStrictEqual(baggage, {
+        foo: { value: 'bar' },
+        bar: { value: 'baz' },
+      });
     });
   });
 });
