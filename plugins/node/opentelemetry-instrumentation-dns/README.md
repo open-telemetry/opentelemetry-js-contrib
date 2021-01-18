@@ -34,23 +34,13 @@ const dnsInstrumentation = new DnsInstrumentation({
 });
 ```
 
-### Zipkin
-
-If you use Zipkin, you must use `ignoreHostnames` in order to not trace those calls. If the server is local. You can set:
-
-```js
-const dnsInstrumentation = new DnsInstrumentation({
-  ignoreHostnames: ['localhost']
-});
-```
-
 ### Dns Instrumentation Options
 
 Dns instrumentation has currently one option. You can set the following:
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js/blob/master/packages/opentelemetry-instrumentation-dns/src/types.ts#L98) | `IgnoreMatcher[]` | Dns instrumentation will not trace all requests that match hostnames |
+| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/packages/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher[]` | Dns instrumentation will not trace all requests that match hostnames |
 
 ## Useful links
 
@@ -62,11 +52,11 @@ Dns instrumentation has currently one option. You can set the following:
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
-[gitter-image]: https://badges.gitter.im/open-telemetry/opentelemetry-js.svg
+[gitter-image]: https://badges.gitter.im/open-telemetry/opentelemetry-js-contrib.svg
 [gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-[license-url]: https://github.com/open-telemetry/opentelemetry-js/blob/master/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js/status.svg?path=packages/opentelemetry-instrumentation-dns
-[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js?path=packages%2Fopentelemetry-instrumentation-dns
-[devDependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js/dev-status.svg?path=packages/opentelemetry-instrumentation-dns
-[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js?path=packages%2Fopentelemetry-instrumentation-dns&type=dev
+[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=packages/opentelemetry-instrumentation-dns
+[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-instrumentation-dns
+[devDependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=packages/opentelemetry-instrumentation-dns
+[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-instrumentation-dns&type=dev

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as dns from 'dns';
+import type * as dns from 'dns';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export type Dns = typeof dns;

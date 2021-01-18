@@ -16,11 +16,12 @@
 
 import { SpanKind, Status, StatusCode } from '@opentelemetry/api';
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
-import * as assert from 'assert';
-import { AttributeNames } from '../../src/enums/AttributeNames';
 import { ReadableSpan } from '@opentelemetry/tracing';
+import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
+import * as assert from 'assert';
+import type { LookupAddress } from 'dns';
+import { AttributeNames } from '../../src/enums/AttributeNames';
 import * as utils from '../../src/utils';
-import { LookupAddress } from 'dns';
 
 export const assertSpan = (
   span: ReadableSpan,
@@ -40,15 +41,11 @@ export const assertSpan = (
   assert.strictEqual(span.kind, SpanKind.CLIENT);
 
   assert.strictEqual(
-    span.attributes[AttributeNames.COMPONENT],
-    '@opentelemetry/instrumentation-dns'
-  );
-  assert.strictEqual(
     span.attributes[AttributeNames.DNS_ERROR_MESSAGE],
     span.status.message
   );
   assert.strictEqual(
-    span.attributes[AttributeNames.PEER_HOSTNAME],
+    span.attributes[GeneralAttribute.NET_PEER_HOSTNAME],
     validations.hostname
   );
 

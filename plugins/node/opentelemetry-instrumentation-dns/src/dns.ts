@@ -15,20 +15,20 @@
  */
 
 import { LookupAddress } from 'dns';
-import { Span, SpanKind, SpanOptions } from '@opentelemetry/api';
+import { Span, SpanKind } from '@opentelemetry/api';
+import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import * as semver from 'semver';
 import { AddressFamily } from './enums/AddressFamily';
-import { AttributeNames } from './enums/AttributeNames';
 import {
   Dns,
   DnsInstrumentationConfig,
   LookupCallbackSignature,
-  LookupFunctionSignature,
   LookupPromiseSignature,
 } from './types';
 import * as utils from './utils';
@@ -111,9 +111,10 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
       const argsCount = args.length;
       plugin._logger.debug('wrap lookup callback function and starts span');
       const name = utils.getOperationName('lookup');
-      const span = plugin._startDnsSpan(name, {
+      const span = plugin.tracer.startSpan(name, {
+        kind: SpanKind.CLIENT,
         attributes: {
-          [AttributeNames.PEER_HOSTNAME]: hostname,
+          [GeneralAttribute.NET_PEER_HOSTNAME]: hostname,
         },
       });
 
@@ -121,19 +122,30 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
       if (typeof originalCallback === 'function') {
         args[argsCount - 1] = plugin._wrapLookupCallback(
           originalCallback,
-          args[argsCount - 2],
           span
         );
-        return plugin._safeExecute(span, () =>
-          (original as LookupFunctionSignature).apply(this, [
-            hostname,
-            ...args,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ] as any)
+        return safeExecuteInTheMiddle(
+          () => original.apply(this, [hostname, ...args]),
+          error => {
+            if (error != null) {
+              utils.setError(error, span, process.version);
+              span.end();
+            }
+          }
         );
       } else {
-        const promise = plugin._safeExecute(span, () =>
-          (original as LookupPromiseSignature).apply(this, [hostname, ...args])
+        const promise = safeExecuteInTheMiddle(
+          () =>
+            (original as LookupPromiseSignature).apply(this, [
+              hostname,
+              ...args,
+            ]),
+          error => {
+            if (error != null) {
+              utils.setError(error, span, process.version);
+              span.end();
+            }
+          }
         );
         promise.then(
           result => {
@@ -152,23 +164,10 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
   }
 
   /**
-   * Start a new span with default attributes and kind
-   */
-  private _startDnsSpan(name: string, options: Omit<SpanOptions, 'kind'>) {
-    return this.tracer
-      .startSpan(name, { ...options, kind: SpanKind.CLIENT })
-      .setAttribute(
-        AttributeNames.COMPONENT,
-        '@opentelemetry/instrumentation-dns'
-      );
-  }
-
-  /**
    * Wrap lookup callback function
    */
   private _wrapLookupCallback(
     original: Function,
-    options: unknown,
     span: Span
   ): LookupCallbackSignature {
     const plugin = this;
@@ -190,21 +189,5 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
       plugin._logger.debug('executing original lookup callback function');
       return original.apply(this, arguments);
     };
-  }
-
-  /**
-   * Safely handle "execute" callback
-   */
-  private _safeExecute<T extends (...args: unknown[]) => ReturnType<T>>(
-    span: Span,
-    execute: T
-  ): ReturnType<T> {
-    try {
-      return execute();
-    } catch (error) {
-      utils.setError(error, span, process.version);
-      span.end();
-      throw error;
-    }
   }
 }

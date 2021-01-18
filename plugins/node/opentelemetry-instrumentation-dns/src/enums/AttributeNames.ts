@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 export enum AttributeNames {
-  COMPONENT = 'component',
-  PEER_HOSTNAME = 'peer.hostname',
-  PEER_PORT = 'peer.port',
-  PEER_SERVICE = 'peer.service',
   // NOT ON OFFICIAL SPEC
   DNS_ERROR_CODE = 'dns.error_code',
   DNS_ERROR_NAME = 'dns.error_name',
