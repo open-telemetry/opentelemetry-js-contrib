@@ -22,6 +22,10 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
+import {
+  ExceptionAttribute,
+  ExceptionEventName,
+} from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as koa from 'koa';
 import * as http from 'http';
@@ -104,6 +108,10 @@ describe('Koa Instrumentation - Core Tests', () => {
     await next();
     const ms = Date.now() - start;
     ctx.body = `${ctx.method} ${ctx.url} - ${ms}ms`;
+  };
+
+  const failingMiddleware: koa.Middleware = async (_ctx, _next) => {
+    throw new Error('I failed!');
   };
 
   describe('Instrumenting core middleware calls', () => {
@@ -192,6 +200,40 @@ describe('Koa Instrumentation - Core Tests', () => {
           .find(span => span.name === 'rootSpan');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
+    });
+
+    it('should propagate exceptions in the middleware while marking the span with an exception', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      app.use((_ctx, next) => tracer.withSpan(rootSpan, next));
+      app.use(failingMiddleware);
+      const res = await httpRequest.get(`http://localhost:${port}`);
+      assert.deepStrictEqual(res, 'Internal Server Error');
+
+      rootSpan.end();
+      assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+
+      const requestHandlerSpan = memoryExporter
+        .getFinishedSpans()
+        .find(span => span.name.includes('failingMiddleware'));
+      assert.notStrictEqual(requestHandlerSpan, undefined);
+
+      assert.strictEqual(
+        requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+        KoaLayerType.MIDDLEWARE
+      );
+      const exportedRootSpan = memoryExporter
+        .getFinishedSpans()
+        .find(span => span.name === 'rootSpan');
+      assert.ok(exportedRootSpan);
+      const exceptionEvent = requestHandlerSpan.events.find(
+        event => event.name === ExceptionEventName
+      );
+      assert.ok(exceptionEvent, 'There should be an exception event recorded');
+      assert.deepStrictEqual(exceptionEvent.name, 'exception');
+      assert.deepStrictEqual(
+        exceptionEvent.attributes![ExceptionAttribute.MESSAGE],
+        'I failed!'
+      );
     });
   });
 
