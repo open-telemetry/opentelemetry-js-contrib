@@ -26,7 +26,7 @@ import { Maybe } from 'graphql/jsutils/Maybe';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLFieldResolver } from 'graphql/type/definition';
 import { SpanAttributes, SpanNames } from './enum';
-import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_SPAN_SYMBOL } from './symbols';
+import { OTEL_GRAPHQL_DATA_SYMBOL } from './symbols';
 
 import {
   executeFunctionWithObj,
@@ -38,7 +38,6 @@ import {
   GraphQLInstrumentationParsedConfig,
   OtelExecutionArgs,
   ObjectWithGraphQLData,
-  ObjectWithOtelSpan,
   OPERATION_NOT_SUPPORTED,
 } from './types';
 import {
@@ -283,7 +282,6 @@ export class GraphQLInstrumentation extends InstrumentationBase {
         },
         (err, result) => {
           if (result) {
-            (result as ObjectWithOtelSpan)[OTEL_SPAN_SYMBOL] = span;
             const operation = getOperation(result);
             if (!operation) {
               span.updateName(SpanNames.SCHEMA_PARSE);
@@ -306,16 +304,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     typeInfo?: graphqlTypes.TypeInfo,
     options?: { maxErrors?: number }
   ): ReadonlyArray<graphqlTypes.GraphQLError> {
-    const document = documentAST as ObjectWithOtelSpan;
-    const parentSpan = document[OTEL_SPAN_SYMBOL];
-    const span = this.tracer.startSpan(
-      SpanNames.VALIDATE,
-      {},
-      parentSpan
-        ? api.setActiveSpan(api.context.active(), parentSpan)
-        : undefined
-    );
-    document[OTEL_SPAN_SYMBOL] = span;
+    const span = this.tracer.startSpan(SpanNames.VALIDATE, {});
 
     return this.tracer.withSpan(span, () => {
       return safeExecuteInTheMiddle<ReadonlyArray<graphqlTypes.GraphQLError>>(
@@ -350,16 +339,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     processedArgs: graphqlTypes.ExecutionArgs
   ): api.Span {
     const config = this._getConfig();
-    const document = processedArgs.document as ObjectWithOtelSpan;
 
-    const parentSpan = document[OTEL_SPAN_SYMBOL];
-    const span = this.tracer.startSpan(
-      SpanNames.EXECUTE,
-      {},
-      parentSpan
-        ? api.setActiveSpan(api.context.active(), parentSpan)
-        : undefined
-    );
+    const span = this.tracer.startSpan(SpanNames.EXECUTE, {});
     if (operation) {
       const name = (operation as graphqlTypes.OperationDefinitionNode)
         .operation;
