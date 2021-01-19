@@ -398,11 +398,11 @@ describe('ioredis', () => {
               assert.strictEqual(endedSpans[2].name, 'test span');
               assert.strictEqual(endedSpans[1].name, 'eval');
               assert.strictEqual(endedSpans[0].name, 'evalsha');
-              // in this case, server returns NOSCRIPT error for evalsha, 
+              // in this case, server returns NOSCRIPT error for evalsha,
               // telling the client to use EVAL instead
               expectedEvalshaStatus = {
                 code: StatusCode.ERROR,
-              }
+              };
             } else {
               assert.strictEqual(endedSpans.length, 2);
               assert.strictEqual(endedSpans[1].name, 'test span');
