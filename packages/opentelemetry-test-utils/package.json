@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/test-utils",
   "private": true,
-  "version": "0.11.0",
+  "version": "0.12.1",
   "description": "Test utilities.",
   "main": "build/testUtils.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "compile": "tsc -p .",
     "precompile": "tsc --version",
-    "prepare": "npm run compile"
+    "prepare": "npm run compile",
+    "watch": "tsc -w"
   },
   "repository": "open-telemetry/opentelemetry-js",
   "keywords": [
@@ -31,8 +32,8 @@
     "typescript": "3.9.6"
   },
   "dependencies": {
-    "@opentelemetry/api": "0.12.0",
-    "@opentelemetry/core": "0.12.0",
-    "@opentelemetry/tracing": "0.12.0"
+    "@opentelemetry/api": "^0.14.0",
+    "@opentelemetry/core": "^0.14.0",
+    "@opentelemetry/tracing": "^0.14.0"
   }
 }

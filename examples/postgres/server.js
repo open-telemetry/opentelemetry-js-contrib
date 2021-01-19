@@ -2,7 +2,7 @@
 
 // eslint-disable-next-line import/order
 const tracer = require('./tracer')('postgres-server-service');
-const { SpanKind, CanonicalCode } = require('@opentelemetry/api');
+const { SpanKind, StatusCode } = require('@opentelemetry/api');
 const express = require('express');
 const setupPg = require('./setupPsql');
 
@@ -41,7 +41,7 @@ app.get('/:cmd', (req, res) => {
       });
     } catch (e) {
       res.status(400).send({ message: e.message });
-      span.setStatus(CanonicalCode.UNKNOWN);
+      span.setStatus(StatusCode.ERROR);
     }
     span.end();
   });

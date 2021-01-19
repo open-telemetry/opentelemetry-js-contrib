@@ -29,6 +29,7 @@ import {
   _LAYERS_STORE_PROPERTY,
   ExpressPluginConfig,
   ExpressLayerType,
+  ExpressPluginSpan,
 } from './types';
 import { getLayerMetadata, storeLayerPath, isLayerIgnored } from './utils';
 import { VERSION } from './version';
@@ -170,7 +171,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
       ) {
         storeLayerPath(req, layerPath);
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
-          .filter(path => path !== '/')
+          .filter(path => path !== '/' && path !== '/*')
           .join('');
         const attributes: Attributes = {
           [AttributeNames.COMPONENT]: ExpressPlugin.component,
@@ -180,6 +181,22 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         const type = metadata.attributes[
           AttributeNames.EXPRESS_TYPE
         ] as ExpressLayerType;
+
+        // Rename the root http span in case we haven't done it already
+        // once we reach the request handler
+        if (
+          metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
+          ExpressLayerType.REQUEST_HANDLER
+        ) {
+          const parent = plugin._tracer.getCurrentSpan() as ExpressPluginSpan;
+          if (parent?.name) {
+            const parentRoute = parent.name.split(' ')[1];
+            if (!route.includes(parentRoute)) {
+              parent.updateName(`${req.method} ${route}`);
+            }
+          }
+        }
+
         // verify against the config if the layer should be ignored
         if (isLayerIgnored(metadata.name, type, plugin._config)) {
           return original.apply(this, arguments);
@@ -187,16 +204,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         if (plugin._tracer.getCurrentSpan() === undefined) {
           return original.apply(this, arguments);
         }
-        // Rename the root http span once we reach the request handler
-        if (
-          metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
-          ExpressLayerType.REQUEST_HANDLER
-        ) {
-          const parent = plugin._tracer.getCurrentSpan();
-          if (parent) {
-            parent.updateName(`${req.method} ${route}`);
-          }
-        }
+
         const span = plugin._tracer.startSpan(metadata.name, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
@@ -242,7 +250,9 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
          * the layer directly end the http response, so we'll hook into the "finish"
          * event to handle the later case.
          */
-        req.res?.once('finish', onResponseFinish);
+        if (!spanHasEnded) {
+          req.res?.once('finish', onResponseFinish);
+        }
         return result;
       };
     });

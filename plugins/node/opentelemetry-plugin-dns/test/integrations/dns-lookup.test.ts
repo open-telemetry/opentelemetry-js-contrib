@@ -25,7 +25,7 @@ import { plugin } from '../../src/dns';
 import * as dns from 'dns';
 import * as utils from '../utils/utils';
 import { assertSpan } from '../utils/assertSpan';
-import { CanonicalCode } from '@opentelemetry/api';
+import { StatusCode } from '@opentelemetry/api';
 
 const memoryExporter = new InMemorySpanExporter();
 const logger = new NoopLogger();
@@ -107,7 +107,7 @@ describe('dns.lookup()', () => {
           addresses: [{ address, family }],
           hostname,
           forceStatus: {
-            code: CanonicalCode.NOT_FOUND,
+            code: StatusCode.ERROR,
             message: err!.message,
           },
         });
@@ -128,9 +128,7 @@ describe('dns.lookup()', () => {
           addresses: [],
           hostname,
           forceStatus: {
-            code: process.versions.node.startsWith('8')
-              ? CanonicalCode.UNKNOWN
-              : CanonicalCode.INVALID_ARGUMENT,
+            code: StatusCode.ERROR,
             message: error!.message,
           },
         });
@@ -152,9 +150,7 @@ describe('dns.lookup()', () => {
           // tslint:disable-next-line:no-any
           hostname: hostname as any,
           forceStatus: {
-            code: process.versions.node.startsWith('8')
-              ? CanonicalCode.UNKNOWN
-              : CanonicalCode.INVALID_ARGUMENT,
+            code: StatusCode.ERROR,
             message: error!.message,
           },
         });

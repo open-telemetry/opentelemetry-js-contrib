@@ -1,7 +1,7 @@
 {
   "name": "opentelemetry-plugin-graphql-example",
   "private": true,
-  "version": "0.11.0",
+  "version": "0.12.1",
   "description": "Example of using @opentelemetry/plugin-graphql with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -31,14 +31,14 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.12.0",
-    "@opentelemetry/exporter-collector": "^0.12.0",
-    "@opentelemetry/node": "^0.12.0",
-    "@opentelemetry/plugin-express": "^0.11.0",
-    "@opentelemetry/instrumentation-graphql": "^0.11.0",
-    "@opentelemetry/plugin-http": "^0.12.0",
-    "@opentelemetry/plugin-https": "^0.12.0",
-    "@opentelemetry/tracing": "^0.12.0",
+    "@opentelemetry/api": "^0.14.0",
+    "@opentelemetry/exporter-collector": "^0.14.0",
+    "@opentelemetry/instrumentation-graphql": "^0.12.1",
+    "@opentelemetry/node": "^0.14.0",
+    "@opentelemetry/plugin-express": "^0.12.1",
+    "@opentelemetry/plugin-http": "^0.14.0",
+    "@opentelemetry/plugin-https": "^0.14.0",
+    "@opentelemetry/tracing": "^0.14.0",
     "apollo-server": "^2.18.1",
     "express": "^4.17.1",
     "express-graphql": "^0.11.0",

@@ -104,17 +104,22 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     }
     const xpath = getElementXPath(element, true);
     try {
-      const span = this._tracer.startSpan(eventName, {
-        parent: parentSpan,
-        attributes: {
-          [AttributeNames.COMPONENT]: this.component,
-          [AttributeNames.EVENT_TYPE]: eventName,
-          [AttributeNames.TARGET_ELEMENT]: element.tagName,
-          [AttributeNames.TARGET_XPATH]: xpath,
-          [AttributeNames.HTTP_URL]: window.location.href,
-          [AttributeNames.HTTP_USER_AGENT]: navigator.userAgent,
+      const span = this._tracer.startSpan(
+        eventName,
+        {
+          attributes: {
+            [AttributeNames.COMPONENT]: this.component,
+            [AttributeNames.EVENT_TYPE]: eventName,
+            [AttributeNames.TARGET_ELEMENT]: element.tagName,
+            [AttributeNames.TARGET_XPATH]: xpath,
+            [AttributeNames.HTTP_URL]: window.location.href,
+            [AttributeNames.HTTP_USER_AGENT]: navigator.userAgent,
+          },
         },
-      });
+        parentSpan
+          ? api.setActiveSpan(api.context.active(), parentSpan)
+          : undefined
+      );
 
       this._spansData.set(span, {
         taskCount: 0,

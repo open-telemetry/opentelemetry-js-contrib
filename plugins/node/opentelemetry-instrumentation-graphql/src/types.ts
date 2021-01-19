@@ -25,11 +25,7 @@ import {
   GraphQLTypeResolver,
 } from 'graphql/type/definition';
 import { GraphQLSchema } from 'graphql/type/schema';
-import {
-  OTEL_GRAPHQL_DATA_SYMBOL,
-  OTEL_PATCHED_SYMBOL,
-  OTEL_SPAN_SYMBOL,
-} from './symbols';
+import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 
 export const OPERATION_NOT_SUPPORTED =
   'Operation$operationName$not' + ' supported';
@@ -130,10 +126,6 @@ interface OtelGraphQLData {
   source?: any;
   span: api.Span;
   fields: { [key: string]: GraphQLField };
-}
-
-export interface ObjectWithOtelSpan {
-  [OTEL_SPAN_SYMBOL]?: api.Span;
 }
 
 export interface ObjectWithGraphQLData {

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
 import * as api from '@opentelemetry/api';
 import type { Maybe } from 'graphql/jsutils/Maybe';
@@ -99,10 +98,13 @@ function createResolverSpan(
     [SpanAttributes.FIELD_TYPE]: info.returnType.toString(),
   };
 
-  const span = tracer.startSpan(SpanNames.RESOLVE, {
-    attributes,
-    parent: parentSpan,
-  });
+  const span = tracer.startSpan(
+    SpanNames.RESOLVE,
+    {
+      attributes,
+    },
+    parentSpan ? api.setActiveSpan(api.context.active(), parentSpan) : undefined
+  );
 
   const document = contextValue[OTEL_GRAPHQL_DATA_SYMBOL].source;
   const fieldNode = info.fieldNodes.find(
@@ -355,8 +357,11 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
     }
 
     return tracer.withSpan(field.span, () => {
-      return safeExecuteInTheMiddle<
-        Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>
+      return safeExecuteInTheMiddleAsync<
+        | Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>
+        | Promise<
+            Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>
+          >
       >(
         () => {
           return fieldResolver.call(this, source, args, contextValue, info);
@@ -373,4 +378,33 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
   (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] = true;
 
   return wrappedFieldResolver;
+}
+
+/**
+ * Async version of safeExecuteInTheMiddle from instrumentation package
+ * can be removed once this will be added to instrumentation package
+ * @param execute
+ * @param onFinish
+ * @param preventThrowingError
+ */
+async function safeExecuteInTheMiddleAsync<T>(
+  execute: () => T,
+  onFinish: (e: Error | undefined, result: T | undefined) => void,
+  preventThrowingError?: boolean
+): Promise<T> {
+  let error: Error | undefined;
+  let result: T | undefined;
+  try {
+    result = await execute();
+  } catch (e) {
+    error = e;
+  } finally {
+    onFinish(error, result);
+    if (error && !preventThrowingError) {
+      // eslint-disable-next-line no-unsafe-finally
+      throw error;
+    }
+    // eslint-disable-next-line no-unsafe-finally
+    return result as T;
+  }
 }

@@ -17,7 +17,7 @@ const originalSetTimeout = window.setTimeout;
 
 import { context } from '@opentelemetry/api';
 import { isWrapped, LogLevel } from '@opentelemetry/core';
-import { XMLHttpRequestPlugin } from '@opentelemetry/plugin-xml-http-request';
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import * as tracing from '@opentelemetry/tracing';
 import { WebTracerProvider } from '@opentelemetry/web';
@@ -69,7 +69,7 @@ describe('UserInteractionPlugin', () => {
 
       webTracerProvider = new WebTracerProvider({
         logLevel: LogLevel.ERROR,
-        plugins: [userInteractionPlugin, new XMLHttpRequestPlugin()],
+        plugins: [userInteractionPlugin, new XMLHttpRequestInstrumentation()],
       });
 
       dummySpanExporter = new DummySpanExporter();

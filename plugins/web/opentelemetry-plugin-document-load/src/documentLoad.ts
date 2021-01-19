@@ -16,14 +16,15 @@
 
 import {
   context,
-  PluginConfig,
   propagation,
+  setActiveSpan,
   Span,
-  SpanOptions,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import {
   BasePlugin,
   otperformance,
+  PluginConfig,
   TRACE_PARENT_HEADER,
 } from '@opentelemetry/core';
 import {
@@ -78,7 +79,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
     ) as PerformanceResourceTiming[];
     if (resources) {
       resources.forEach(resource => {
-        this._initResourceSpan(resource, { parent: rootSpan });
+        this._initResourceSpan(resource, rootSpan);
       });
     }
   }
@@ -93,7 +94,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
 
     const entries = this._getEntries();
     const traceparent = (metaElement && metaElement.content) || '';
-    context.with(propagation.extract({ traceparent }), () => {
+    context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
       const rootSpan = this._startSpan(
         AttributeNames.DOCUMENT_LOAD,
         PTN.FETCH_START,
@@ -199,17 +200,17 @@ export class DocumentLoad extends BasePlugin<unknown> {
   /**
    * Creates and ends a span with network information about resource added as timed events
    * @param resource
-   * @param spanOptions
+   * @param parentSpan
    */
   private _initResourceSpan(
     resource: PerformanceResourceTiming,
-    spanOptions: SpanOptions = {}
+    parentSpan: Span
   ) {
     const span = this._startSpan(
       AttributeNames.RESOURCE_FETCH,
       PTN.FETCH_START,
       resource,
-      spanOptions
+      parentSpan
     );
     if (span) {
       span.setAttribute(HttpAttribute.HTTP_URL, resource.name);
@@ -223,13 +224,13 @@ export class DocumentLoad extends BasePlugin<unknown> {
    * @param spanName name of span
    * @param performanceName name of performance entry for time start
    * @param entries
-   * @param spanOptions
+   * @param parentSpan
    */
   private _startSpan(
     spanName: string,
     performanceName: string,
     entries: PerformanceEntries,
-    spanOptions: SpanOptions = {}
+    parentSpan?: Span
   ): Span | undefined {
     if (
       hasKey(entries, performanceName) &&
@@ -237,13 +238,10 @@ export class DocumentLoad extends BasePlugin<unknown> {
     ) {
       const span = this._tracer.startSpan(
         spanName,
-        Object.assign(
-          {},
-          {
-            startTime: entries[performanceName],
-          },
-          spanOptions
-        )
+        {
+          startTime: entries[performanceName],
+        },
+        parentSpan ? setActiveSpan(context.active(), parentSpan) : undefined
       );
       span.setAttribute(AttributeNames.COMPONENT, this.component);
       return span;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context } from '@opentelemetry/api';
+import { context, Span, Tracer } from '@opentelemetry/api';
 import { NoopLogger } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -31,6 +31,7 @@ import {
   AttributeNames,
   ExpressLayerType,
   ExpressPluginConfig,
+  ExpressPluginSpan,
 } from '../src/types';
 
 const httpRequest = {
@@ -50,6 +51,37 @@ const httpRequest = {
       });
     });
   },
+};
+
+const serverWithMiddleware = async (
+  tracer: Tracer,
+  rootSpan: Span,
+  addMiddlewares: (app: express.Express) => void
+): Promise<http.Server> => {
+  const app = express();
+  if (tracer) {
+    app.use((req, res, next) => tracer.withSpan(rootSpan, next));
+  }
+
+  app.use(express.json());
+
+  addMiddlewares(app);
+
+  const router = express.Router();
+  app.use('/toto', router);
+  router.get('/:id', (req, res) => {
+    setImmediate(() => {
+      res.status(200).end(req.params.id);
+    });
+  });
+  const server = http.createServer(app);
+  await new Promise<void>(resolve =>
+    server.listen(0, () => {
+      resolve();
+    })
+  );
+
+  return server;
 };
 
 describe('Express Plugin', () => {
@@ -77,31 +109,41 @@ describe('Express Plugin', () => {
 
   describe('Instrumenting normal get operations', () => {
     it('should create a child span for middlewares', async () => {
-      const rootSpan = tracer.startSpan('rootSpan');
+      const rootSpan = tracer.startSpan('rootSpan') as ExpressPluginSpan;
       const app = express();
       app.use((req, res, next) => tracer.withSpan(rootSpan, next));
       app.use(express.json());
-      // eslint-disable-next-line prefer-arrow-callback
-      app.use(function customMiddleware(req, res, next) {
+      const customMiddleware: express.RequestHandler = (req, res, next) => {
         for (let i = 0; i < 1000000; i++) {
           continue;
         }
         return next();
-      });
+      };
+      app.use(customMiddleware);
       const router = express.Router();
       app.use('/toto', router);
-      router.get('/:id', (req, res) => {
-        setImmediate(() => {
-          res.status(200).end();
+      let finishListenerCount: number | undefined;
+      const server = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
+          });
+          next();
         });
+        for (let index = 0; index < 15; index++) {
+          app.use(customMiddleware);
+        }
       });
-      const server = http.createServer(app);
-      await new Promise(resolve => server.listen(0, resolve));
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await tracer.withSpan(rootSpan, async () => {
-        await httpRequest.get(`http://localhost:${port}/toto/tata`);
+        const response = await httpRequest.get(
+          `http://localhost:${port}/toto/tata`
+        );
+        assert.strictEqual(response, 'tata');
         rootSpan.end();
+        assert.strictEqual(rootSpan.name, 'GET /toto/:id');
+        assert.strictEqual(finishListenerCount, 2);
         assert.notStrictEqual(
           memoryExporter
             .getFinishedSpans()
@@ -138,13 +180,129 @@ describe('Express Plugin', () => {
       server.close();
     });
 
+    it('supports sync middlewares directly responding', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let finishListenerCount: number | undefined;
+      const server = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
+          });
+          next();
+        });
+        const syncMiddleware: express.RequestHandler = (req, res, next) => {
+          for (let i = 0; i < 1000000; i++) {
+            continue;
+          }
+          res.status(200).end('middleware');
+        };
+        for (let index = 0; index < 15; index++) {
+          app.use(syncMiddleware);
+        }
+      });
+      const port = (server.address() as AddressInfo).port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await tracer.withSpan(rootSpan, async () => {
+        const response = await httpRequest.get(
+          `http://localhost:${port}/toto/tata`
+        );
+        assert.strictEqual(response, 'middleware');
+        rootSpan.end();
+        assert.strictEqual(finishListenerCount, 3);
+        assert.notStrictEqual(
+          memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('syncMiddleware')),
+          undefined,
+          'no syncMiddleware span'
+        );
+      });
+      server.close();
+    });
+
+    it('supports async middlewares', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let finishListenerCount: number | undefined;
+      const server = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
+          });
+          next();
+        });
+        const asyncMiddleware: express.RequestHandler = (req, res, next) => {
+          setTimeout(() => {
+            next();
+          }, 50);
+        };
+        for (let index = 0; index < 15; index++) {
+          app.use(asyncMiddleware);
+        }
+      });
+      const port = (server.address() as AddressInfo).port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await tracer.withSpan(rootSpan, async () => {
+        const response = await httpRequest.get(
+          `http://localhost:${port}/toto/tata`
+        );
+        assert.strictEqual(response, 'tata');
+        rootSpan.end();
+        assert.strictEqual(finishListenerCount, 2);
+        assert.notStrictEqual(
+          memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('asyncMiddleware')),
+          undefined,
+          'no asyncMiddleware span'
+        );
+      });
+      server.close();
+    });
+
+    it('supports async middlewares directly responding', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let finishListenerCount: number | undefined;
+      const server = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
+          });
+          next();
+        });
+        const asyncMiddleware: express.RequestHandler = (req, res, next) => {
+          setTimeout(() => {
+            res.status(200).end('middleware');
+          }, 50);
+        };
+        for (let index = 0; index < 15; index++) {
+          app.use(asyncMiddleware);
+        }
+      });
+      const port = (server.address() as AddressInfo).port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await tracer.withSpan(rootSpan, async () => {
+        const response = await httpRequest.get(
+          `http://localhost:${port}/toto/tata`
+        );
+        assert.strictEqual(response, 'middleware');
+        rootSpan.end();
+        assert.strictEqual(finishListenerCount, 3);
+        assert.notStrictEqual(
+          memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('asyncMiddleware')),
+          undefined,
+          'no asyncMiddleware span'
+        );
+      });
+      server.close();
+    });
+
     it('should not create span because there are no parent', async () => {
       const app = express();
       app.use(express.json());
       app.use((req, res, next) => {
-        for (let i = 0; i < 1000000; i++) {
-          continue;
-        }
+        for (let i = 0; i < 1000000; i++) {}
         return next();
       });
       const router = express.Router();
@@ -203,6 +361,82 @@ describe('Express Plugin', () => {
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
       server.close();
+    });
+  });
+
+  describe('when route exists', () => {
+    let server: http.Server;
+    let rootSpan: ExpressPluginSpan;
+    const config: ExpressPluginConfig = {
+      ignoreLayersType: [
+        ExpressLayerType.MIDDLEWARE,
+        ExpressLayerType.ROUTER,
+        ExpressLayerType.REQUEST_HANDLER,
+      ],
+    };
+
+    beforeEach(async () => {
+      plugin.disable();
+      plugin.enable(express, provider, logger, config);
+      rootSpan = tracer.startSpan('rootSpan') as ExpressPluginSpan;
+      const app = express();
+      app.use((req, res, next) => tracer.withSpan(rootSpan, next));
+      app.use(express.json());
+      app.use((req, res, next) => {
+        for (let i = 0; i < 1000; i++) {}
+        return next();
+      });
+      const router = express.Router();
+      app.use('/toto', router);
+      router.get('/:id', (req, res) => {
+        setImmediate(() => {
+          res.status(200).end();
+        });
+      });
+
+      server = http.createServer(app);
+      await new Promise(resolve => server.listen(0, resolve));
+    });
+
+    afterEach(() => {
+      server.close();
+    });
+
+    it('should ignore all ExpressLayerType based on config', async () => {
+      const port = (server.address() as AddressInfo).port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await tracer.withSpan(rootSpan, async () => {
+        await httpRequest.get(`http://localhost:${port}/toto/tata`);
+        rootSpan.end();
+        assert.deepStrictEqual(
+          memoryExporter
+            .getFinishedSpans()
+            .filter(
+              span =>
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                  ExpressLayerType.MIDDLEWARE ||
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                  ExpressLayerType.ROUTER ||
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                  ExpressLayerType.REQUEST_HANDLER
+            ).length,
+          0
+        );
+      });
+    });
+
+    it('root span name should be modified to GET /todo/:id', async () => {
+      const port = (server.address() as AddressInfo).port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await tracer.withSpan(rootSpan, async () => {
+        await httpRequest.get(`http://localhost:${port}/toto/tata`);
+        rootSpan.end();
+        assert.strictEqual(rootSpan.name, 'GET /toto/:id');
+        const exportedRootSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name === 'GET /toto/:id');
+        assert.notStrictEqual(exportedRootSpan, undefined);
+      });
     });
   });
 

@@ -14,9 +14,12 @@ jobs:
         id: cache
         with:
           path: |
+            ./node_modules
+            ./package-lock.json
             node_modules
-            packages/*/node_modules
+            detectors/node/*/node_modules
             metapackages/*/node_modules
+            packages/*/node_modules
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules

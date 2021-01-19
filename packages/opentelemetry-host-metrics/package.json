@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/host-metrics",
-  "version": "0.11.0",
+  "version": "0.12.1",
   "description": "OpenTelemetry Host Metrics for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -42,7 +42,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@opentelemetry/exporter-prometheus": "0.12.0",
+    "@opentelemetry/exporter-prometheus": "^0.14.0",
     "@types/mocha": "8.0.2",
     "@types/node": "14.0.27",
     "@types/sinon": "9.0.4",
@@ -56,14 +56,14 @@
     "semver": "7.3.2",
     "sinon": "9.2.1",
     "ts-loader": "8.0.7",
-    "ts-mocha": "7.0.0",
+    "ts-mocha": "8.0.0",
     "ts-node": "8.10.2",
     "typescript": "3.9.7"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.13.0",
-    "@opentelemetry/core": "^0.13.0",
-    "@opentelemetry/metrics": "^0.13.0",
+    "@opentelemetry/api": "^0.14.0",
+    "@opentelemetry/core": "^0.14.0",
+    "@opentelemetry/metrics": "^0.14.0",
     "systeminformation": "^4.31.0"
   }
 }

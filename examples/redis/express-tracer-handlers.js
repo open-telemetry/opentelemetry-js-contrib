@@ -25,7 +25,7 @@ function getErrorTracer(tracer) {
     console.error('Caught error', err.message);
     const span = tracer.getCurrentSpan();
     if (span) {
-      span.setStatus({ code: api.CanonicalCode.INTERNAL, message: err.message });
+      span.setStatus({ code: api.StatusCode.ERROR, message: err.message });
     }
     res.status(500).send(err.message);
   };
