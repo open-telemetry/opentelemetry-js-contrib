@@ -59,9 +59,7 @@ export interface GraphQLInstrumentationConfig {
 /**
  * Merged and parsed config of default instrumentation config and GraphQL
  */
-export type GraphQLInstrumentationParsedConfig = Required<
-  GraphQLInstrumentationConfig
-> &
+export type GraphQLInstrumentationParsedConfig = Required<GraphQLInstrumentationConfig> &
   InstrumentationConfig;
 
 export type executeFunctionWithObj = (
