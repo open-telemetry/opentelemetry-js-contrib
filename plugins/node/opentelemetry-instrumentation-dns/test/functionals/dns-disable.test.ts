@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { context } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -21,7 +22,7 @@ import {
 import * as assert from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { DnsInstrumentation } from '../../src/dns';
-import * as sinon from 'sinon';
+import * as Sinon from 'sinon';
 import * as dns from 'dns';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -40,12 +41,12 @@ describe('DnsInstrumentation', () => {
   });
 
   beforeEach(() => {
-    tracer.startSpan = sinon.spy();
-    tracer.withSpan = sinon.spy();
+    Sinon.spy(tracer, 'startSpan');
+    Sinon.spy(context, 'with');
   });
 
   afterEach(() => {
-    sinon.restore();
+    Sinon.restore();
   });
 
   describe('unpatch()', () => {
@@ -61,7 +62,7 @@ describe('DnsInstrumentation', () => {
         assert.strictEqual(spans.length, 0);
 
         assert.strictEqual(dns.lookup.__wrapped, undefined);
-        assert.strictEqual((tracer.withSpan as sinon.SinonSpy).called, false);
+        assert.strictEqual((context.with as sinon.SinonSpy).called, false);
         done();
       });
     });

@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-import { NoopLogger } from '@opentelemetry/core';
+import {
+  ROOT_CONTEXT,
+  SpanKind,
+  TraceFlags,
+  NoopLogger,
+} from '@opentelemetry/api';
 import { BasicTracerProvider, Span } from '@opentelemetry/tracing';
-import { ROOT_CONTEXT, SpanKind, TraceFlags } from '@opentelemetry/api';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { AttributeNames } from '../../src/enums/AttributeNames';
