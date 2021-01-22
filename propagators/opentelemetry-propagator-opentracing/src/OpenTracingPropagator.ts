@@ -18,12 +18,12 @@ import {
   Baggage,
   Context,
   getBaggage,
-  getParentSpanContext,
+  getSpanContext,
   isSpanContextValid,
   isValidSpanId,
   isValidTraceId,
   setBaggage,
-  setExtractedSpanContext,
+  setSpanContext,
   TextMapGetter,
   TextMapPropagator,
   TextMapSetter,
@@ -54,7 +54,7 @@ function readHeader(
  */
 export class OpenTracingPropagator implements TextMapPropagator {
   inject(context: Context, carrier: unknown, setter: TextMapSetter) {
-    const spanContext = getParentSpanContext(context);
+    const spanContext = getSpanContext(context);
     if (!spanContext || !isSpanContextValid(spanContext)) return;
 
     setter.set(carrier, OT_TRACE_ID_HEADER, spanContext.traceId.substr(16));
@@ -82,7 +82,7 @@ export class OpenTracingPropagator implements TextMapPropagator {
       sampled === 'true' ? TraceFlags.SAMPLED : TraceFlags.NONE;
 
     if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
-      context = setExtractedSpanContext(context, {
+      context = setSpanContext(context, {
         traceId,
         spanId,
         isRemote: true,

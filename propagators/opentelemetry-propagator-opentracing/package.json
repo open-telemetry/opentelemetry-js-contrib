@@ -39,7 +39,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.14.0"
+    "@opentelemetry/api": "^0.15.0"
   },
   "devDependencies": {
     "@opentelemetry/context-base": "^0.14.0",

@@ -19,8 +19,8 @@ import {
   defaultTextMapSetter,
   INVALID_SPANID,
   INVALID_TRACEID,
-  getParentSpanContext,
-  setExtractedSpanContext,
+  getSpanContext,
+  setSpanContext,
   SpanContext,
   TraceFlags,
   Baggage,
@@ -54,7 +54,7 @@ describe('OpenTracingPropagator', () => {
       };
 
       propagator.inject(
-        setExtractedSpanContext(ROOT_CONTEXT, spanContext),
+        setSpanContext(ROOT_CONTEXT, spanContext),
         carrier,
         defaultTextMapSetter
       );
@@ -70,7 +70,7 @@ describe('OpenTracingPropagator', () => {
       };
 
       propagator.inject(
-        setExtractedSpanContext(ROOT_CONTEXT, spanContext),
+        setSpanContext(ROOT_CONTEXT, spanContext),
         carrier,
         defaultTextMapSetter
       );
@@ -88,7 +88,7 @@ describe('OpenTracingPropagator', () => {
       };
 
       propagator.inject(
-        setExtractedSpanContext(ROOT_CONTEXT, spanContext),
+        setSpanContext(ROOT_CONTEXT, spanContext),
         carrier,
         defaultTextMapSetter
       );
@@ -106,7 +106,7 @@ describe('OpenTracingPropagator', () => {
       };
 
       propagator.inject(
-        setExtractedSpanContext(ROOT_CONTEXT, spanContext),
+        setSpanContext(ROOT_CONTEXT, spanContext),
         carrier,
         defaultTextMapSetter
       );
@@ -124,7 +124,7 @@ describe('OpenTracingPropagator', () => {
       };
 
       propagator.inject(
-        setExtractedSpanContext(ROOT_CONTEXT, spanContext),
+        setSpanContext(ROOT_CONTEXT, spanContext),
         carrier,
         defaultTextMapSetter
       );
@@ -141,7 +141,7 @@ describe('OpenTracingPropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
 
-      let context = setExtractedSpanContext(ROOT_CONTEXT, spanContext);
+      let context = setSpanContext(ROOT_CONTEXT, spanContext);
 
       const baggage: Baggage = {
         foo: { value: 'bar' },
@@ -171,7 +171,7 @@ describe('OpenTracingPropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getParentSpanContext(context);
+      const extractedSpanContext = getSpanContext(context);
 
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: 'e457b5a2e4d86bd1',
@@ -194,7 +194,7 @@ describe('OpenTracingPropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getParentSpanContext(context);
+      const extractedSpanContext = getSpanContext(context);
 
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: 'e457b5a2e4d86bd1',
@@ -217,7 +217,7 @@ describe('OpenTracingPropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getParentSpanContext(context);
+      const extractedSpanContext = getSpanContext(context);
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: 'e457b5a2e4d86bd1',
         traceId: '00000000000000004aaba1a52cf8ee09',
@@ -239,7 +239,7 @@ describe('OpenTracingPropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getParentSpanContext(context);
+      const extractedSpanContext = getSpanContext(context);
       assert.deepStrictEqual(undefined, extractedSpanContext);
     });
 
@@ -256,7 +256,7 @@ describe('OpenTracingPropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getParentSpanContext(context);
+      const extractedSpanContext = getSpanContext(context);
       assert.deepStrictEqual(undefined, extractedSpanContext);
     });
 
@@ -273,7 +273,7 @@ describe('OpenTracingPropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getParentSpanContext(context);
+      const extractedSpanContext = getSpanContext(context);
       assert.deepStrictEqual(undefined, extractedSpanContext);
     });
 
