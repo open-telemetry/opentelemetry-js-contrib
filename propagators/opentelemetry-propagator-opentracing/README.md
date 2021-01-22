@@ -27,7 +27,9 @@ bits MUST be retained. For example, a trace id of
 
 ```javascript
 const api = require('@opentelemetry/api');
-const { B3Propagator } = require('@opentelemetry/propagator-opentracing');
+const {
+  OpenTracingPropagator,
+} = require('@opentelemetry/propagator-opentracing');
 
 api.propagation.setGlobalPropagator(new OpenTracingPropagator());
 ```
