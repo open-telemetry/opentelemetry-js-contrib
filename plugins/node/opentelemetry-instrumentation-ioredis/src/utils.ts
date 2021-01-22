@@ -15,7 +15,14 @@
  */
 
 import type * as ioredisTypes from 'ioredis';
-import { Tracer, SpanKind, Span, StatusCode } from '@opentelemetry/api';
+import {
+  Tracer,
+  SpanKind,
+  Span,
+  StatusCode,
+  getSpan,
+  context,
+} from '@opentelemetry/api';
 import {
   IoredisCommand,
   IORedisInstrumentationConfig,
@@ -84,7 +91,7 @@ export const traceSendCommand = (
       return original.apply(this, arguments);
     }
     // Do not trace if there is not parent span
-    if (tracer.getCurrentSpan() === undefined) {
+    if (getSpan(context.active()) === undefined) {
       return original.apply(this, arguments);
     }
 
