@@ -15,7 +15,13 @@
  */
 
 import type * as redisTypes from 'redis';
-import { Tracer, SpanKind, Span, StatusCode } from '@opentelemetry/api';
+import {
+  context,
+  Tracer,
+  SpanKind,
+  Span,
+  StatusCode,
+} from '@opentelemetry/api';
 import { RedisCommand, RedisPluginClientTypes } from './types';
 import { EventEmitter } from 'events';
 import { RedisPlugin } from './redis';
@@ -37,7 +43,7 @@ const endSpan = (span: Span, err?: Error | null) => {
 export const getTracedCreateClient = (tracer: Tracer, original: Function) => {
   return function createClientTrace(this: redisTypes.RedisClient) {
     const client: redisTypes.RedisClient = original.apply(this, arguments);
-    return tracer.bind(client);
+    return context.bind(client);
   };
 };
 
@@ -52,7 +58,7 @@ export const getTracedCreateStreamTrace = (
           return this._patched_redis_stream;
         },
         set(val: EventEmitter) {
-          tracer.bind(val);
+          context.bind(val);
           this._patched_redis_stream = val;
         },
       });

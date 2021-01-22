@@ -72,10 +72,10 @@
     "webpack-merge": "5.0.9"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.14.0",
-    "@opentelemetry/core": "^0.14.0",
-    "@opentelemetry/semantic-conventions": "^0.14.0",
-    "@opentelemetry/tracing": "^0.14.0",
-    "@opentelemetry/web": "^0.14.0"
+    "@opentelemetry/api": "^0.15.0",
+    "@opentelemetry/core": "^0.15.0",
+    "@opentelemetry/semantic-conventions": "^0.15.0",
+    "@opentelemetry/tracing": "^0.15.0",
+    "@opentelemetry/web": "^0.15.0"
   }
 }

@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin, isWrapped } from '@opentelemetry/core';
-import { StatusCode, Span } from '@opentelemetry/api';
+import { context, StatusCode, Span, getSpan } from '@opentelemetry/api';
 import * as pgTypes from 'pg';
 import * as shimmer from 'shimmer';
 import {
@@ -97,7 +97,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
 
         // Bind callback to parent span
         if (args.length > 0) {
-          const parentSpan = plugin._tracer.getCurrentSpan();
+          const parentSpan = getSpan(context.active());
           if (typeof args[args.length - 1] === 'function') {
             // Patch ParameterQuery callback
             args[args.length - 1] = utils.patchCallback(
@@ -106,9 +106,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             );
             // If a parent span exists, bind the callback
             if (parentSpan) {
-              args[args.length - 1] = plugin._tracer.bind(
-                args[args.length - 1]
-              );
+              args[args.length - 1] = context.bind(args[args.length - 1]);
             }
           } else if (
             typeof (args[0] as NormalizedQueryConfig).callback === 'function'
@@ -120,7 +118,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             );
             // If a parent span existed, bind the callback
             if (parentSpan) {
-              callback = plugin._tracer.bind(callback);
+              callback = context.bind(callback);
             }
 
             // Copy the callback instead of writing to args.callback so that we don't modify user's

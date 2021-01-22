@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { context, Span, Tracer } from '@opentelemetry/api';
-import { NoopLogger } from '@opentelemetry/core';
+import { context, setSpan, NoopLogger, Span, Tracer } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -60,7 +59,9 @@ const serverWithMiddleware = async (
 ): Promise<http.Server> => {
   const app = express();
   if (tracer) {
-    app.use((req, res, next) => tracer.withSpan(rootSpan, next));
+    app.use((req, res, next) =>
+      context.with(setSpan(context.active(), rootSpan), next)
+    );
   }
 
   app.use(express.json());
@@ -111,7 +112,9 @@ describe('Express Plugin', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan') as ExpressPluginSpan;
       const app = express();
-      app.use((req, res, next) => tracer.withSpan(rootSpan, next));
+      app.use((req, res, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
       app.use(express.json());
       const customMiddleware: express.RequestHandler = (req, res, next) => {
         for (let i = 0; i < 1000000; i++) {
@@ -136,7 +139,7 @@ describe('Express Plugin', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         const response = await httpRequest.get(
           `http://localhost:${port}/toto/tata`
         );
@@ -202,7 +205,7 @@ describe('Express Plugin', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         const response = await httpRequest.get(
           `http://localhost:${port}/toto/tata`
         );
@@ -241,7 +244,7 @@ describe('Express Plugin', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         const response = await httpRequest.get(
           `http://localhost:${port}/toto/tata`
         );
@@ -280,7 +283,7 @@ describe('Express Plugin', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         const response = await httpRequest.get(
           `http://localhost:${port}/toto/tata`
         );
@@ -342,7 +345,7 @@ describe('Express Plugin', () => {
 
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
         assert.deepEqual(
@@ -380,7 +383,9 @@ describe('Express Plugin', () => {
       plugin.enable(express, provider, logger, config);
       rootSpan = tracer.startSpan('rootSpan') as ExpressPluginSpan;
       const app = express();
-      app.use((req, res, next) => tracer.withSpan(rootSpan, next));
+      app.use((req, res, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
       app.use(express.json());
       app.use((req, res, next) => {
         for (let i = 0; i < 1000; i++) {}
@@ -405,7 +410,7 @@ describe('Express Plugin', () => {
     it('should ignore all ExpressLayerType based on config', async () => {
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
         assert.deepStrictEqual(
@@ -428,7 +433,7 @@ describe('Express Plugin', () => {
     it('root span name should be modified to GET /todo/:id', async () => {
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
         assert.strictEqual(rootSpan.name, 'GET /toto/:id');
@@ -456,7 +461,7 @@ describe('Express Plugin', () => {
       await new Promise(resolve => server.listen(0, resolve));
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
         assert.deepEqual(memoryExporter.getFinishedSpans().length, 1);
