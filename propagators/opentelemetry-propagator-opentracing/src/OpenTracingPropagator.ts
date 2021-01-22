@@ -36,6 +36,7 @@ export const OT_SPAN_ID_HEADER = 'ot-tracer-spanid';
 export const OT_SAMPLED_HEADER = 'ot-tracer-sampled';
 export const OT_BAGGAGE_PREFIX = 'ot-tracer-baggage-';
 
+const FIELDS = [OT_TRACE_ID_HEADER, OT_SPAN_ID_HEADER, OT_SAMPLED_HEADER];
 const PADDING = '0'.repeat(16);
 
 function readHeader(
@@ -105,6 +106,6 @@ export class OpenTracingPropagator implements TextMapPropagator {
   }
 
   fields(): string[] {
-    return [OT_TRACE_ID_HEADER, OT_SPAN_ID_HEADER, OT_SAMPLED_HEADER];
+    return FIELDS;
   }
 }
