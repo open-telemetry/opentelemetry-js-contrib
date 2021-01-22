@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.13.0
+
+#### :bug: Bug Fix
+* [#310](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/310) fix: move semantic-conventions to regular dependencies ([@dobesv](https://github.com/dobesv))
+* [#281](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/281) fix(koa): End span and record exception on a middleware exception ([@oguzbilgener](https://github.com/oguzbilgener))
+
+#### :rocket: Enhancement
+* `opentelemetry-host-metrics`, `opentelemetry-test-utils`
+  * [#315](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/315) chore: update to OTel 0.15.0 ([@Flarna](https://github.com/Flarna))
+
+#### Committers: 3
+- Dobes Vandermeer ([@dobesv](https://github.com/dobesv))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Oğuz Bilgener ([@oguzbilgener](https://github.com/oguzbilgener))
+
 ## 0.12.1
 
 #### :bug: Bug Fix
