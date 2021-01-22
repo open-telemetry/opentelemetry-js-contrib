@@ -8,12 +8,20 @@
 
 ## OpenTracing Format
 
-```bash
-ot-tracer-traceid: unsigned uint64 encoded as hex characters
-ot-tracer-spanid: unsigned uint 64 encoded as hex characters
-ot-tracer-sampled: boolean encoded as a string with the values true or false
-ot-baggage-*: repeated string to string key-value baggage items
-```
+| Header Name         | Description                                                                                                                            | Required              |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `ot-tracer-traceid` | uint64 encoded as a string of 16 hex characters                                                                                        | yes                   |
+| `ot-tracer-spanid`  | uint64 encoded as a string of 16 hex characters                                                                                        | yes                   |
+| `ot-tracer-sampled` | boolean encoded as a string with the values `'true'` or `'false'`                                                                      | no                    |
+| `ot-baggage-*`      | repeated string to string key-value baggage items; keys are prefixed with `ot-baggage-` and the corresponding value is the raw string. | if baggage is present |
+
+### Interop and trace ids
+
+The OpenTracing propagation format expects trace ids to be 64-bits. In order to
+interop with OpenTelemetry, trace ids need to be truncated to 64-bits before
+sending them on the wire. When truncating, the least significant (right-most)
+bits MUST be retained. For example, a trace id of
+`3c3039f4d78d5c02ee8e3e41b17ce105` would be truncated to `ee8e3e41b17ce105`.
 
 ## Example Usage
 
