@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import { StatusCode, SpanKind } from '@opentelemetry/api';
+import { context, StatusCode, SpanKind, getSpan } from '@opentelemetry/api';
 import { AttributeNames } from './enums';
 import * as shimmer from 'shimmer';
 import * as pgPoolTypes from 'pg-pool';
@@ -79,11 +79,11 @@ export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
         );
 
         if (callback) {
-          const parentSpan = plugin._tracer.getCurrentSpan();
+          const parentSpan = getSpan(context.active());
           callback = utils.patchCallback(span, callback) as PgPoolCallback;
           // If a parent span exists, bind the callback
           if (parentSpan) {
-            callback = plugin._tracer.bind(callback);
+            callback = context.bind(callback);
           }
         }
 
@@ -95,11 +95,11 @@ export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
         // No callback was provided, return a promise instead
         if (connectResult instanceof Promise) {
           const connectResultPromise = connectResult as Promise<unknown>;
-          return plugin._tracer.bind(
+          return context.bind(
             connectResultPromise
-              .then((result: any) => {
+              .then(result => {
                 // Return a pass-along promise which ends the span and then goes to user's orig resolvers
-                return new Promise((resolve, _) => {
+                return new Promise(resolve => {
                   span.end();
                   resolve(result);
                 });

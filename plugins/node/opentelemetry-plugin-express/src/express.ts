@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin, hrTime } from '@opentelemetry/core';
-import { Attributes } from '@opentelemetry/api';
+import { Attributes, getSpan, context } from '@opentelemetry/api';
 import * as express from 'express';
 import * as core from 'express-serve-static-core';
 import * as shimmer from 'shimmer';
@@ -188,7 +188,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
           metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
           ExpressLayerType.REQUEST_HANDLER
         ) {
-          const parent = plugin._tracer.getCurrentSpan() as ExpressPluginSpan;
+          const parent = getSpan(context.active()) as ExpressPluginSpan;
           if (parent?.name) {
             const parentRoute = parent.name.split(' ')[1];
             if (!route.includes(parentRoute)) {
@@ -201,7 +201,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         if (isLayerIgnored(metadata.name, type, plugin._config)) {
           return original.apply(this, arguments);
         }
-        if (plugin._tracer.getCurrentSpan() === undefined) {
+        if (getSpan(context.active()) === undefined) {
           return original.apply(this, arguments);
         }
 
@@ -240,7 +240,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
-            return plugin._tracer.bind(callback).apply(this, arguments);
+            return context.bind(callback).apply(this, arguments);
           };
         }
         const result = original.apply(this, arguments);

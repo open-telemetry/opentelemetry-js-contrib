@@ -17,8 +17,8 @@
 // for testing locally use this command to run docker
 // docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=localhost -p 27017:27017 --name otmongo mongo
 
-import { context, SpanKind } from '@opentelemetry/api';
-import { NoopLogger, PluginConfig } from '@opentelemetry/core';
+import { context, setSpan, SpanKind, NoopLogger } from '@opentelemetry/api';
+import { PluginConfig } from '@opentelemetry/core';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -107,7 +107,7 @@ describe('MongoDBPlugin', () => {
     it('should create a child span for insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = provider.getTracer('default').startSpan('insertRootSpan');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         collection.insertMany(insertData, (err, result) => {
           span.end();
           assert.ifError(err);
@@ -123,7 +123,7 @@ describe('MongoDBPlugin', () => {
 
     it('should create a child span for update', done => {
       const span = provider.getTracer('default').startSpan('updateRootSpan');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         collection.updateOne({ a: 2 }, { $set: { b: 1 } }, (err, result) => {
           span.end();
           assert.ifError(err);
@@ -139,7 +139,7 @@ describe('MongoDBPlugin', () => {
 
     it('should create a child span for remove', done => {
       const span = provider.getTracer('default').startSpan('removeRootSpan');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         collection.deleteOne({ a: 3 }, (err, result) => {
           span.end();
           assert.ifError(err);
@@ -159,7 +159,7 @@ describe('MongoDBPlugin', () => {
 
       plugin.enable(mongodb, provider, logger, enhancedDbConfig);
 
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         collection.insertMany(insertData, (err, result) => {
           span.end();
           assert.ifError(err);
@@ -180,7 +180,7 @@ describe('MongoDBPlugin', () => {
   describe('Instrumenting cursor operations', () => {
     it('should create a child span for find', done => {
       const span = provider.getTracer('default').startSpan('findRootSpan');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         collection.find({}).toArray((err, result) => {
           span.end();
           assert.ifError(err);
@@ -199,7 +199,7 @@ describe('MongoDBPlugin', () => {
   describe('Instrumenting command operations', () => {
     it('should create a child span for create index', done => {
       const span = provider.getTracer('default').startSpan('indexRootSpan');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         collection.createIndex({ a: 1 }, (err, result) => {
           span.end();
           assert.ifError(err);

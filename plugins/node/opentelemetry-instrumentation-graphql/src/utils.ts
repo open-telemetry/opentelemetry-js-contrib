@@ -103,7 +103,7 @@ function createResolverSpan(
     {
       attributes,
     },
-    parentSpan ? api.setActiveSpan(api.context.active(), parentSpan) : undefined
+    parentSpan ? api.setSpan(api.context.active(), parentSpan) : undefined
   );
 
   const document = contextValue[OTEL_GRAPHQL_DATA_SYMBOL].source;
@@ -356,23 +356,26 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
       shouldEndSpan = newField.spanAdded;
     }
 
-    return tracer.withSpan(field.span, () => {
-      return safeExecuteInTheMiddleAsync<
-        | Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>
-        | Promise<
-            Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>
-          >
-      >(
-        () => {
-          return fieldResolver.call(this, source, args, contextValue, info);
-        },
-        err => {
-          if (shouldEndSpan) {
-            endSpan(field.span, err);
+    return api.context.with(
+      api.setSpan(api.context.active(), field.span),
+      () => {
+        return safeExecuteInTheMiddleAsync<
+          | Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>
+          | Promise<
+              Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>
+            >
+        >(
+          () => {
+            return fieldResolver.call(this, source, args, contextValue, info);
+          },
+          err => {
+            if (shouldEndSpan) {
+              endSpan(field.span, err);
+            }
           }
-        }
-      );
-    });
+        );
+      }
+    );
   }
 
   (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] = true;

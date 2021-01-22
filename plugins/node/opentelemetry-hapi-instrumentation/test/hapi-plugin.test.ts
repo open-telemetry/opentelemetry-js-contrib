@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { context } from '@opentelemetry/api';
-import { NoopLogger } from '@opentelemetry/core';
+import { context, NoopLogger, setSpan } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -122,7 +121,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         const res = await server.inject({
           method: 'GET',
           url: '/test',
@@ -173,7 +172,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         const res1 = await server.inject({
           method: 'GET',
           url: '/test',
@@ -243,7 +242,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         const res1 = await server.inject({
           method: 'GET',
           url: '/test',
@@ -301,7 +300,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
         await server.start();
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-        await tracer.withSpan(rootSpan, async () => {
+        await context.with(setSpan(context.active(), rootSpan), async () => {
           const res = await server.inject({
             method: 'GET',
             url: '/package',
@@ -342,7 +341,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
         await server.start();
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-        await tracer.withSpan(rootSpan, async () => {
+        await context.with(setSpan(context.active(), rootSpan), async () => {
           const res = await server.inject({
             method: 'GET',
             url: '/package',
