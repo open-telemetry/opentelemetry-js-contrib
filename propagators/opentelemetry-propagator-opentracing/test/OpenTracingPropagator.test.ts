@@ -26,8 +26,8 @@ import {
   Baggage,
   setBaggage,
   getBaggage,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import { ROOT_CONTEXT } from '@opentelemetry/context-base';
 import * as assert from 'assert';
 import {
   OpenTracingPropagator,
