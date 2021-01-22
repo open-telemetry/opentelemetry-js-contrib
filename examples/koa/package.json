@@ -1,7 +1,7 @@
 {
   "name": "koa-example",
   "private": true,
-  "version": "0.13.0",
+  "version": "0.12.1",
   "description": "Example of Koa and @koa/router integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -35,7 +35,7 @@
     "@opentelemetry/api": "^0.14.0",
     "@opentelemetry/exporter-jaeger": "^0.14.0",
     "@opentelemetry/exporter-zipkin": "^0.14.0",
-    "@opentelemetry/koa-instrumentation": "^0.13.0",
+    "@opentelemetry/koa-instrumentation": "^0.12.1",
     "@opentelemetry/node": "^0.14.0",
     "@opentelemetry/plugin-http": "^0.14.0",
     "@opentelemetry/tracing": "^0.14.0",
