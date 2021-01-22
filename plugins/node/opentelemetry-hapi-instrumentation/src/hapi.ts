@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { context, getSpan, setSpan } from '@opentelemetry/api';
 import { BasePlugin } from '@opentelemetry/core';
 import type * as Hapi from '@hapi/hapi';
 import { VERSION } from './version';
@@ -328,7 +329,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       const newHandler: PatchableExtMethod = async function (
         ...params: Parameters<Hapi.Lifecycle.Method>
       ) {
-        if (instrumentation._tracer.getCurrentSpan() === undefined) {
+        if (getSpan(context.active()) === undefined) {
           return await method(...params);
         }
         const metadata = getExtMetadata(extPoint, pluginName);
@@ -336,7 +337,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
           attributes: metadata.attributes,
         });
         let res;
-        await instrumentation._tracer.withSpan(span, async () => {
+        await context.with(setSpan(context.active(), span), async () => {
           res = await method(...params);
         });
         span.end();
@@ -368,7 +369,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
         h: Hapi.ResponseToolkit,
         err?: Error
       ) {
-        if (instrumentation._tracer.getCurrentSpan() === undefined) {
+        if (getSpan(context.active()) === undefined) {
           return await oldHandler(request, h, err);
         }
         const metadata = getRouteMetadata(route, pluginName);

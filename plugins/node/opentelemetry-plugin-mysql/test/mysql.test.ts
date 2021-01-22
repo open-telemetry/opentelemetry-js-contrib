@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { StatusCode, context } from '@opentelemetry/api';
-import { NoopLogger } from '@opentelemetry/core';
+import { NoopLogger, StatusCode, context, setSpan } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/test-utils';
@@ -127,7 +126,7 @@ describe('mysql@2.x', () => {
   describe('when the query is a string', () => {
     it('should name the span accordingly ', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+1 as solution';
         const query = connection.query(sql);
 
@@ -143,7 +142,7 @@ describe('mysql@2.x', () => {
   describe('when the query is an object', () => {
     it('should name the span accordingly ', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+? as solution';
         const query = connection.query({ sql, values: [1] });
 
@@ -159,7 +158,7 @@ describe('mysql@2.x', () => {
   describe('#Connection', () => {
     it('should intercept connection.query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+1 as solution';
         const query = connection.query(sql);
         let rows = 0;
@@ -181,7 +180,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept connection.query(text: string, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+1 as solution';
         connection.query(sql, (err, res) => {
           assert.ifError(err);
@@ -197,7 +196,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept connection.query(text: options, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+? as solution';
         connection.query({ sql, values: [1] }, (err, res) => {
           assert.ifError(err);
@@ -213,7 +212,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept connection.query(text: options, values: [], callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+? as solution';
         connection.query({ sql }, [1], (err, res) => {
           assert.ifError(err);
@@ -229,7 +228,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept connection.query(text: string, values: [], callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT ? as solution';
         connection.query(sql, [1], (err, res) => {
           assert.ifError(err);
@@ -245,7 +244,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept connection.query(text: string, value: any, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT ? as solution';
         connection.query(sql, 1, (err, res) => {
           assert.ifError(err);
@@ -261,7 +260,7 @@ describe('mysql@2.x', () => {
 
     it('should attach error messages to spans', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT ? as solution';
         connection.query(sql, (err, res) => {
           assert.ok(err);
@@ -277,7 +276,7 @@ describe('mysql@2.x', () => {
   describe('#Pool', () => {
     it('should intercept pool.query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+1 as solution';
         const query = pool.query(sql);
         let rows = 0;
@@ -299,7 +298,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept pool.getConnection().query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+1 as solution';
         pool.getConnection((err, conn) => {
           const query = conn.query(sql);
@@ -323,7 +322,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept pool.query(text: string, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+1 as solution';
         pool.query(sql, (err, res) => {
           assert.ifError(err);
@@ -339,7 +338,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept pool.getConnection().query(text: string, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+1 as solution';
         pool.getConnection((err, conn) => {
           conn.query(sql, (err, res) => {
@@ -357,7 +356,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept pool.query(text: options, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+? as solution';
         pool.query({ sql, values: [1] }, (err, res) => {
           assert.ifError(err);
@@ -373,7 +372,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept pool.query(text: options, values: [], callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT 1+? as solution';
         pool.query({ sql }, [1], (err, res) => {
           assert.ifError(err);
@@ -389,7 +388,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept pool.query(text: string, values: [], callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT ? as solution';
         pool.query(sql, [1], (err, res) => {
           assert.ifError(err);
@@ -405,7 +404,7 @@ describe('mysql@2.x', () => {
 
     it('should intercept pool.query(text: string, value: any, callback)', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT ? as solution';
         pool.query(sql, 1, (err, res) => {
           assert.ifError(err);
@@ -421,7 +420,7 @@ describe('mysql@2.x', () => {
 
     it('should attach error messages to spans', done => {
       const span = provider.getTracer('default').startSpan('test span');
-      provider.getTracer('default').withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const sql = 'SELECT ? as solution';
         pool.query(sql, (err, res) => {
           assert.ok(err);
@@ -439,7 +438,7 @@ describe('mysql@2.x', () => {
       poolCluster.getConnection((err, poolClusterConnection) => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
-        provider.getTracer('default').withSpan(span, () => {
+        context.with(setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+1 as solution';
           const query = poolClusterConnection.query(sql);
           let rows = 0;
@@ -464,7 +463,7 @@ describe('mysql@2.x', () => {
       poolCluster.getConnection((err, poolClusterConnection) => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
-        provider.getTracer('default').withSpan(span, () => {
+        context.with(setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+1 as solution';
           poolClusterConnection.query(sql, (err, res) => {
             assert.ifError(err);
@@ -483,7 +482,7 @@ describe('mysql@2.x', () => {
       poolCluster.getConnection((err, poolClusterConnection) => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
-        provider.getTracer('default').withSpan(span, () => {
+        context.with(setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
           poolClusterConnection.query({ sql, values: [1] }, (err, res) => {
             assert.ifError(err);
@@ -502,7 +501,7 @@ describe('mysql@2.x', () => {
       poolCluster.getConnection((err, poolClusterConnection) => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
-        provider.getTracer('default').withSpan(span, () => {
+        context.with(setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
           // @ts-ignore this is documented https://github.com/mysqljs/mysql#performing-queries
           // but does not match the typings
@@ -523,7 +522,7 @@ describe('mysql@2.x', () => {
       poolCluster.getConnection((err, poolClusterConnection) => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
-        provider.getTracer('default').withSpan(span, () => {
+        context.with(setSpan(context.active(), span), () => {
           const sql = 'SELECT ? as solution';
           poolClusterConnection.query(sql, [1], (err, res) => {
             assert.ifError(err);
@@ -542,7 +541,7 @@ describe('mysql@2.x', () => {
       poolCluster.getConnection((err, poolClusterConnection) => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
-        provider.getTracer('default').withSpan(span, () => {
+        context.with(setSpan(context.active(), span), () => {
           const sql = 'SELECT ? as solution';
           poolClusterConnection.query(sql, 1, (err, res) => {
             assert.ifError(err);
@@ -561,7 +560,7 @@ describe('mysql@2.x', () => {
       poolCluster.getConnection((err, poolClusterConnection) => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
-        provider.getTracer('default').withSpan(span, () => {
+        context.with(setSpan(context.active(), span), () => {
           const sql = 'SELECT ? as solution';
           poolClusterConnection.query(sql, (err, res) => {
             assert.ok(err);
@@ -578,7 +577,7 @@ describe('mysql@2.x', () => {
       poolCluster.getConnection('name', (err, poolClusterConnection) => {
         assert.ifError(err);
         const span = provider.getTracer('default').startSpan('test span');
-        provider.getTracer('default').withSpan(span, () => {
+        context.with(setSpan(context.active(), span), () => {
           const sql = 'SELECT 1 as solution';
           poolClusterConnection.query(sql, (err, res) => {
             assert.ifError(err);

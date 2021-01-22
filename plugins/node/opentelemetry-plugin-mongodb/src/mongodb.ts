@@ -15,7 +15,13 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import { StatusCode, Span, SpanKind } from '@opentelemetry/api';
+import {
+  getSpan,
+  StatusCode,
+  Span,
+  SpanKind,
+  context,
+} from '@opentelemetry/api';
 import type * as mongodb from 'mongodb';
 import * as shimmer from 'shimmer';
 import {
@@ -106,7 +112,7 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
         options: {} | Function,
         callback: Function
       ): mongodb.Server {
-        const currentSpan = plugin._tracer.getCurrentSpan();
+        const currentSpan = getSpan(context.active());
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (
@@ -224,7 +230,7 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
         },
         ...args: unknown[]
       ): mongodb.Cursor {
-        const currentSpan = plugin._tracer.getCurrentSpan();
+        const currentSpan = getSpan(context.active());
         const resultHandler = args[0];
         if (!currentSpan || typeof resultHandler !== 'function') {
           return original.apply(this, args);

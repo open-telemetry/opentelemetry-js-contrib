@@ -465,10 +465,11 @@ describe('DocumentLoad Plugin', () => {
         assert.strictEqual(srEvents1[1].name, PTN.DOMAIN_LOOKUP_START);
         assert.strictEqual(srEvents1[2].name, PTN.DOMAIN_LOOKUP_END);
         assert.strictEqual(srEvents1[3].name, PTN.CONNECT_START);
-        assert.strictEqual(srEvents1[4].name, PTN.CONNECT_END);
-        assert.strictEqual(srEvents1[5].name, PTN.REQUEST_START);
-        assert.strictEqual(srEvents1[6].name, PTN.RESPONSE_START);
-        assert.strictEqual(srEvents1[7].name, PTN.RESPONSE_END);
+        assert.strictEqual(srEvents1[4].name, PTN.SECURE_CONNECTION_START);
+        assert.strictEqual(srEvents1[5].name, PTN.CONNECT_END);
+        assert.strictEqual(srEvents1[6].name, PTN.REQUEST_START);
+        assert.strictEqual(srEvents1[7].name, PTN.RESPONSE_START);
+        assert.strictEqual(srEvents1[8].name, PTN.RESPONSE_END);
 
         assert.strictEqual(spyOnEnd.callCount, 3);
         done();
@@ -522,18 +523,20 @@ describe('DocumentLoad Plugin', () => {
         ensureNetworkEventsExists(rsEvents);
 
         assert.strictEqual(fsEvents[0].name, PTN.FETCH_START);
-        assert.strictEqual(fsEvents[1].name, PTN.DOM_INTERACTIVE);
+        assert.strictEqual(fsEvents[1].name, PTN.UNLOAD_EVENT_START);
+        assert.strictEqual(fsEvents[2].name, PTN.UNLOAD_EVENT_END);
+        assert.strictEqual(fsEvents[3].name, PTN.DOM_INTERACTIVE);
         assert.strictEqual(
-          fsEvents[2].name,
+          fsEvents[4].name,
           PTN.DOM_CONTENT_LOADED_EVENT_START
         );
-        assert.strictEqual(fsEvents[3].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
-        assert.strictEqual(fsEvents[4].name, PTN.DOM_COMPLETE);
-        assert.strictEqual(fsEvents[5].name, PTN.LOAD_EVENT_START);
-        assert.strictEqual(fsEvents[6].name, PTN.LOAD_EVENT_END);
+        assert.strictEqual(fsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
+        assert.strictEqual(fsEvents[6].name, PTN.DOM_COMPLETE);
+        assert.strictEqual(fsEvents[7].name, PTN.LOAD_EVENT_START);
+        assert.strictEqual(fsEvents[8].name, PTN.LOAD_EVENT_END);
 
         assert.strictEqual(rsEvents.length, 9);
-        assert.strictEqual(fsEvents.length, 7);
+        assert.strictEqual(fsEvents.length, 9);
         assert.strictEqual(spyOnEnd.callCount, 2);
         done();
       });

@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { context, SpanKind } from '@opentelemetry/api';
-import { NoopLogger } from '@opentelemetry/core';
+import { context, setSpan, NoopLogger, SpanKind } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -99,7 +98,7 @@ describe('Multiple enable on the plugin', () => {
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
 
     const span = provider.getTracer('default').startSpan('insertRootSpan');
-    provider.getTracer('default').withSpan(span, () => {
+    context.with(setSpan(context.active(), span), () => {
       collection.insertMany(insertData, (err, result) => {
         span.end();
         assert.ifError(err);
