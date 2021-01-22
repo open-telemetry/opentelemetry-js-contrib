@@ -19,7 +19,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { NoopLogger } from '@opentelemetry/core';
+import { NoopLogger, context } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { plugin } from '../../src/dns';
 import * as sinon from 'sinon';
@@ -38,8 +38,8 @@ describe('DnsPlugin', () => {
   });
 
   beforeEach(() => {
-    tracer.startSpan = sinon.spy();
-    tracer.withSpan = sinon.spy();
+    sinon.spy(tracer, 'startSpan');
+    sinon.spy(context, 'with');
   });
 
   afterEach(() => {
@@ -59,7 +59,7 @@ describe('DnsPlugin', () => {
         assert.strictEqual(spans.length, 0);
 
         assert.strictEqual(dns.lookup.__wrapped, undefined);
-        assert.strictEqual((tracer.withSpan as sinon.SinonSpy).called, false);
+        assert.strictEqual((context.with as sinon.SinonSpy).called, false);
         done();
       });
     });

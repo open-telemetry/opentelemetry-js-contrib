@@ -19,7 +19,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { NoopLogger } from '@opentelemetry/core';
+import { NoopLogger } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { plugin, DnsPlugin } from '../../src/dns';
 import * as dns from 'dns';

@@ -15,9 +15,9 @@
  */
 
 import {
-  getParentSpanContext,
+  getSpanContext,
   ROOT_CONTEXT,
-  setExtractedSpanContext,
+  setSpanContext,
   SpanContext,
   TextMapGetter,
   TextMapSetter,
@@ -46,7 +46,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
       censusPropagator.inject(
-        setExtractedSpanContext(ROOT_CONTEXT, spanContext),
+        setSpanContext(ROOT_CONTEXT, spanContext),
         metadata,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -69,7 +69,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.NONE,
       };
       censusPropagator.inject(
-        setExtractedSpanContext(ROOT_CONTEXT, spanContext),
+        setSpanContext(ROOT_CONTEXT, spanContext),
         metadata,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -92,7 +92,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.NONE,
       };
       censusPropagator.inject(
-        setExtractedSpanContext(ROOT_CONTEXT, emptySpanContext),
+        setSpanContext(ROOT_CONTEXT, emptySpanContext),
         metadata,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -124,7 +124,7 @@ describe('GrpcCensusPropagator', () => {
       };
       censusPropagator.inject(
         // cast to any so that undefined traceFlags can be used for coverage
-        setExtractedSpanContext(ROOT_CONTEXT, spanContext as any),
+        setSpanContext(ROOT_CONTEXT, spanContext as any),
         metadata,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -142,7 +142,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
       censusPropagator.inject(
-        setExtractedSpanContext(ROOT_CONTEXT, emptySpanContext),
+        setSpanContext(ROOT_CONTEXT, emptySpanContext),
         null,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -160,7 +160,7 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getParentSpanContext(
+      const extractedSpanContext = getSpanContext(
         censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
       );
 
@@ -180,7 +180,7 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getParentSpanContext(
+      const extractedSpanContext = getSpanContext(
         censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
       );
 
@@ -193,7 +193,7 @@ describe('GrpcCensusPropagator', () => {
     });
 
     it('should return undefined when header is not set', () => {
-      const extractedSpanContext = getParentSpanContext(
+      const extractedSpanContext = getSpanContext(
         censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
       );
       assert.deepStrictEqual(extractedSpanContext, undefined);
@@ -207,7 +207,7 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getParentSpanContext(
+      const extractedSpanContext = getSpanContext(
         censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
       );
 
@@ -227,7 +227,7 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getParentSpanContext(
+      const extractedSpanContext = getSpanContext(
         censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
       );
 
@@ -235,7 +235,7 @@ describe('GrpcCensusPropagator', () => {
     });
 
     it('should return undefined when carrier is null', () => {
-      const extractedSpanContext = getParentSpanContext(
+      const extractedSpanContext = getSpanContext(
         censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
       );
       assert.deepStrictEqual(extractedSpanContext, undefined);

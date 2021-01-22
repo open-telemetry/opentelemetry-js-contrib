@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { context, setSpan } from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
@@ -58,6 +59,8 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
   allowValues: false,
 };
 
+const supportedVersions = ['15.*'];
+
 export class GraphQLInstrumentation extends InstrumentationBase {
   constructor(
     config: GraphQLInstrumentationConfig & InstrumentationConfig = {}
@@ -76,7 +79,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   protected init() {
     const module = new InstrumentationNodeModuleDefinition<typeof graphqlTypes>(
       'graphql',
-      ['15.*']
+      supportedVersions
     );
     module.files.push(this._addPatchingExecute());
     module.files.push(this._addPatchingParser());
@@ -90,6 +93,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   > {
     return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
       'graphql/execution/execute.js',
+      supportedVersions,
       // cannot make it work with appropriate type as execute function has 2
       //types and/cannot import function but only types
       (moduleExports: any) => {
@@ -116,6 +120,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   > {
     return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
       'graphql/language/parser.js',
+      supportedVersions,
       moduleExports => {
         if (isWrapped(moduleExports.execute)) {
           this._unwrap(moduleExports, 'parse');
@@ -136,6 +141,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   > {
     return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
       'graphql/validation/validate.js',
+      supportedVersions,
       moduleExports => {
         if (isWrapped(moduleExports.execute)) {
           this._unwrap(moduleExports, 'validate');
@@ -209,7 +215,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
           fields: {},
         };
 
-        return instrumentation.tracer.withSpan(span, () => {
+        return context.with(setSpan(context.active(), span), () => {
           return safeExecuteInTheMiddle<
             PromiseOrValue<graphqlTypes.ExecutionResult>
           >(
@@ -273,7 +279,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     const config = this._getConfig();
     const span = this.tracer.startSpan(SpanNames.PARSE);
 
-    return this.tracer.withSpan(span, () => {
+    return context.with(setSpan(context.active(), span), () => {
       return safeExecuteInTheMiddle<
         graphqlTypes.DocumentNode & ObjectWithGraphQLData
       >(
@@ -306,7 +312,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   ): ReadonlyArray<graphqlTypes.GraphQLError> {
     const span = this.tracer.startSpan(SpanNames.VALIDATE, {});
 
-    return this.tracer.withSpan(span, () => {
+    return context.with(setSpan(context.active(), span), () => {
       return safeExecuteInTheMiddle<ReadonlyArray<graphqlTypes.GraphQLError>>(
         () => {
           return original.call(

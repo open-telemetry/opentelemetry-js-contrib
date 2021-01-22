@@ -17,7 +17,7 @@
 import {
   context,
   propagation,
-  setActiveSpan,
+  setSpan,
   Span,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
@@ -103,14 +103,14 @@ export class DocumentLoad extends BasePlugin<unknown> {
       if (!rootSpan) {
         return;
       }
-      this._tracer.withSpan(rootSpan, () => {
+      context.with(setSpan(context.active(), rootSpan), () => {
         const fetchSpan = this._startSpan(
           AttributeNames.DOCUMENT_FETCH,
           PTN.FETCH_START,
           entries
         );
         if (fetchSpan) {
-          this._tracer.withSpan(fetchSpan, () => {
+          context.with(setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(fetchSpan, entries);
             this._endSpan(fetchSpan, PTN.RESPONSE_END, entries);
           });
@@ -241,7 +241,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
         {
           startTime: entries[performanceName],
         },
-        parentSpan ? setActiveSpan(context.active(), parentSpan) : undefined
+        parentSpan ? setSpan(context.active(), parentSpan) : undefined
       );
       span.setAttribute(AttributeNames.COMPONENT, this.component);
       return span;

@@ -18,13 +18,15 @@ import {
   Attributes,
   StatusCode,
   context,
+  NoopLogger,
   Span,
   SpanKind,
   Status,
   TimedEvent,
+  setSpan,
+  getSpan,
 } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import { NoopLogger } from '@opentelemetry/core';
 import * as testUtils from '@opentelemetry/test-utils';
 import {
   BasicTracerProvider,
@@ -194,7 +196,7 @@ describe('pg@7.x', () => {
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
-      tracer.withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const res = client.query('SELECT NOW()', (err, res) => {
           assert.strictEqual(err, null);
           assert.ok(res);
@@ -214,7 +216,7 @@ describe('pg@7.x', () => {
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
-      tracer.withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const resNoPromise = client.query(query, values, (err, res) => {
           assert.strictEqual(err, null);
           assert.ok(res);
@@ -233,7 +235,7 @@ describe('pg@7.x', () => {
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
-      tracer.withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const resNoPromise = client.query({
           text: query,
           callback: (err: Error, res: pg.QueryResult) => {
@@ -255,7 +257,7 @@ describe('pg@7.x', () => {
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
-      tracer.withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         const resNoPromise = client.query({ text: query }, (err, res) => {
           assert.strictEqual(err, null);
           assert.ok(res);
@@ -275,7 +277,7 @@ describe('pg@7.x', () => {
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
-      await tracer.withSpan(span, async () => {
+      await context.with(setSpan(context.active(), span), async () => {
         const resPromise = await client.query(query, values);
         try {
           assert.ok(resPromise);
@@ -295,7 +297,7 @@ describe('pg@7.x', () => {
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
-      await tracer.withSpan(span, async () => {
+      await context.with(setSpan(context.active(), span), async () => {
         const resPromise = await client.query({
           text: query,
           values: values,
@@ -321,7 +323,7 @@ describe('pg@7.x', () => {
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
 
-      await tracer.withSpan(span, async () => {
+      await context.with(setSpan(context.active(), span), async () => {
         try {
           const resPromise = await client.query({
             name: name,
@@ -344,7 +346,7 @@ describe('pg@7.x', () => {
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
-      await tracer.withSpan(span, async () => {
+      await context.with(setSpan(context.active(), span), async () => {
         try {
           const resPromise = await client.query(query);
           assert.ok(resPromise);
@@ -360,7 +362,7 @@ describe('pg@7.x', () => {
       const parent = tracer.startSpan('parent');
 
       const queryHandler = (err?: Error, res?: pg.QueryResult) => {
-        const span = tracer.getCurrentSpan();
+        const span = getSpan(context.active());
         assert.deepStrictEqual(span!.context(), parent.context());
         if (err) {
           throw err;
@@ -376,7 +378,7 @@ describe('pg@7.x', () => {
         callback: queryHandler,
       };
 
-      tracer.withSpan(parent, () => {
+      context.with(setSpan(context.active(), parent), () => {
         client.query(config.text, config.callback); // 1
         client.query(config); // 2
         client.query(config.text, queryHandler); // 3
@@ -394,17 +396,17 @@ describe('pg@7.x', () => {
       const spans = [tracer.startSpan('span 1'), tracer.startSpan('span 2')];
       const currentSpans: (Span | undefined)[] = [];
       const queryHandler = () => {
-        currentSpans.push(tracer.getCurrentSpan());
+        currentSpans.push(getSpan(context.active()));
         if (currentSpans.length === 2) {
           assert.deepStrictEqual(currentSpans, spans);
           done();
         }
       };
 
-      tracer.withSpan(spans[0], () => {
+      context.with(setSpan(context.active(), spans[0]), () => {
         client.query('SELECT NOW()', queryHandler);
       });
-      tracer.withSpan(spans[1], () => {
+      context.with(setSpan(context.active(), spans[1]), () => {
         client.query('SELECT NOW()', queryHandler);
       });
     });
@@ -413,17 +415,17 @@ describe('pg@7.x', () => {
       const spans = [tracer.startSpan('span 1'), tracer.startSpan('span 2')];
       const currentSpans: (Span | undefined)[] = [];
       const queryHandler = () => {
-        currentSpans.push(tracer.getCurrentSpan());
+        currentSpans.push(getSpan(context.active()));
         if (currentSpans.length === 2) {
           assert.deepStrictEqual(currentSpans, spans);
           done();
         }
       };
 
-      tracer.withSpan(spans[0], () => {
+      context.with(setSpan(context.active(), spans[0]), () => {
         client.query('SELECT NOW()').then(queryHandler);
       });
-      tracer.withSpan(spans[1], () => {
+      context.with(setSpan(context.active(), spans[1]), () => {
         client.query('SELECT NOW()').then(queryHandler);
       });
     });
