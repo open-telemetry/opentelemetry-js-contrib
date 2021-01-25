@@ -34,7 +34,7 @@ import {
 export const OT_TRACE_ID_HEADER = 'ot-tracer-traceid';
 export const OT_SPAN_ID_HEADER = 'ot-tracer-spanid';
 export const OT_SAMPLED_HEADER = 'ot-tracer-sampled';
-export const OT_BAGGAGE_PREFIX = 'ot-tracer-baggage-';
+export const OT_BAGGAGE_PREFIX = 'ot-baggage-';
 
 const FIELDS = [OT_TRACE_ID_HEADER, OT_SPAN_ID_HEADER, OT_SAMPLED_HEADER];
 const PADDING = '0'.repeat(16);
