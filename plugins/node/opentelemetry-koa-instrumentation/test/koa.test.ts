@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { context } from '@opentelemetry/api';
-import { NoopLogger } from '@opentelemetry/core';
+import { context, setSpan, NoopLogger } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -117,12 +116,14 @@ describe('Koa Instrumentation - Core Tests', () => {
   describe('Instrumenting core middleware calls', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      app.use((ctx, next) => tracer.withSpan(rootSpan, next));
+      app.use((ctx, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
       app.use(customMiddleware);
       app.use(simpleResponse);
       app.use(spanCreateMiddleware);
 
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}`);
         rootSpan.end();
         assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 8);
@@ -178,10 +179,12 @@ describe('Koa Instrumentation - Core Tests', () => {
 
     it('should handle async middleware functions', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      app.use((ctx, next) => tracer.withSpan(rootSpan, next));
+      app.use((ctx, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
       app.use(asyncMiddleware);
 
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}`);
         rootSpan.end();
         assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
@@ -204,7 +207,9 @@ describe('Koa Instrumentation - Core Tests', () => {
 
     it('should propagate exceptions in the middleware while marking the span with an exception', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      app.use((_ctx, next) => tracer.withSpan(rootSpan, next));
+      app.use((_ctx, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
       app.use(failingMiddleware);
       const res = await httpRequest.get(`http://localhost:${port}`);
       assert.deepStrictEqual(res, 'Internal Server Error');
@@ -243,7 +248,7 @@ describe('Koa Instrumentation - Core Tests', () => {
       const rootSpan = tracer.startSpan('rootSpan');
       app.use(customMiddleware);
 
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}`);
         rootSpan.end();
         assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 1);

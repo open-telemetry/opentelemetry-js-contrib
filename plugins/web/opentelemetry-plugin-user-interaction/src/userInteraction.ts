@@ -15,7 +15,7 @@
  */
 
 import * as api from '@opentelemetry/api';
-import { getActiveSpan, Span } from '@opentelemetry/api';
+import { getSpan, Span } from '@opentelemetry/api';
 import { BasePlugin, hrTime, isWrapped } from '@opentelemetry/core';
 import { getElementXPath } from '@opentelemetry/web';
 import * as shimmer from 'shimmer';
@@ -116,9 +116,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
             [AttributeNames.HTTP_USER_AGENT]: navigator.userAgent,
           },
         },
-        parentSpan
-          ? api.setActiveSpan(api.context.active(), parentSpan)
-          : undefined
+        parentSpan ? api.setSpan(api.context.active(), parentSpan) : undefined
       );
 
       this._spansData.set(span, {
@@ -155,7 +153,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   private _getCurrentSpan(zone: Zone): api.Span | undefined {
     const context: api.Context | undefined = zone.get(ZONE_CONTEXT_KEY);
     if (context) {
-      return getActiveSpan(context);
+      return getSpan(context);
     }
     return context;
   }
@@ -270,12 +268,15 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
             if (event) {
               plugin._eventsSpanMap.set(event, span);
             }
-            return plugin._tracer.withSpan(span, () => {
-              const result = plugin._invokeListener(listener, target, args);
-              // no zone so end span immediately
-              span.end();
-              return result;
-            });
+            return api.context.with(
+              api.setSpan(api.context.active(), span),
+              () => {
+                const result = plugin._invokeListener(listener, target, args);
+                // no zone so end span immediately
+                span.end();
+                return result;
+              }
+            );
           } else {
             return plugin._invokeListener(listener, target, args);
           }
@@ -363,7 +364,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
    * @param url
    */
   _updateInteractionName(url: string) {
-    const span: api.Span | undefined = this._tracer.getCurrentSpan();
+    const span: api.Span | undefined = api.getSpan(api.context.active());
     if (span && typeof span.updateName === 'function') {
       span.updateName(`${EVENT_NAVIGATION_NAME} ${url}`);
     }
@@ -437,11 +438,19 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
             plugin._incrementTask(span);
             return activeZone.run(() => {
               try {
-                return plugin._tracer.withSpan(span as api.Span, () => {
-                  const currentZone = Zone.current;
-                  task._zone = currentZone;
-                  return original.call(currentZone, task, applyThis, applyArgs);
-                });
+                return api.context.with(
+                  api.setSpan(api.context.active(), span!),
+                  () => {
+                    const currentZone = Zone.current;
+                    task._zone = currentZone;
+                    return original.call(
+                      currentZone,
+                      task,
+                      applyThis,
+                      applyArgs
+                    );
+                  }
+                );
               } finally {
                 plugin._decrementTask(span as api.Span);
               }

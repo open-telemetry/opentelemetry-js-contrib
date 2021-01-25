@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-import { StatusCode, context, SpanKind, Status } from '@opentelemetry/api';
-import { NoopLogger } from '@opentelemetry/core';
+import {
+  StatusCode,
+  context,
+  SpanKind,
+  Status,
+  NoopLogger,
+  getSpan,
+  setSpan,
+} from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/test-utils';
@@ -101,7 +108,7 @@ describe('redis@2.x', () => {
       const span = tracer.startSpan('test span');
       let client: redisTypes.RedisClient;
       const readyHandler = () => {
-        assert.strictEqual(tracer.getCurrentSpan(), span);
+        assert.strictEqual(getSpan(context.active()), span);
         client.quit(done);
       };
       const errorHandler = (err: Error) => {
@@ -109,7 +116,7 @@ describe('redis@2.x', () => {
         client.quit(done);
       };
 
-      tracer.withSpan(span, () => {
+      context.with(setSpan(context.active(), span), () => {
         client = redis.createClient(URL);
         client.on('ready', readyHandler);
         client.on('error', errorHandler);
@@ -178,7 +185,7 @@ describe('redis@2.x', () => {
             [DatabaseAttribute.DB_STATEMENT]: operation.command,
           };
           const span = tracer.startSpan('test span');
-          tracer.withSpan(span, () => {
+          context.with(setSpan(context.active(), span), () => {
             operation.method((err, _result) => {
               assert.ifError(err);
               assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
@@ -212,7 +219,7 @@ describe('redis@2.x', () => {
       REDIS_OPERATIONS.forEach(operation => {
         it(`should not create a child span for ${operation.description}`, done => {
           const span = tracer.startSpan('test span');
-          tracer.withSpan(span, () => {
+          context.with(setSpan(context.active(), span), () => {
             operation.method((err, _) => {
               assert.ifError(err);
               assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);

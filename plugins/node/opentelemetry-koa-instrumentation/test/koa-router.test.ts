@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { context } from '@opentelemetry/api';
-import { NoopLogger } from '@opentelemetry/core';
+import { context, setSpan, NoopLogger } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -86,7 +85,9 @@ describe('Koa Instrumentation - Router Tests', () => {
   describe('Instrumenting @koa/router calls', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      app.use((ctx, next) => tracer.withSpan(rootSpan, next));
+      app.use((ctx, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
 
       const router = new KoaRouter();
       router.get('/post/:id', ctx => {
@@ -95,7 +96,7 @@ describe('Koa Instrumentation - Router Tests', () => {
 
       app.use(router.routes());
 
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/post/0`);
         rootSpan.end();
 
@@ -124,7 +125,9 @@ describe('Koa Instrumentation - Router Tests', () => {
 
     it('should correctly instrument nested routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      app.use((ctx, next) => tracer.withSpan(rootSpan, next));
+      app.use((ctx, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
 
       const router = new KoaRouter();
       const nestedRouter = new KoaRouter();
@@ -135,7 +138,7 @@ describe('Koa Instrumentation - Router Tests', () => {
       router.use('/:first', nestedRouter.routes());
       app.use(router.routes());
 
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/test/post/0`);
         rootSpan.end();
 
@@ -164,7 +167,9 @@ describe('Koa Instrumentation - Router Tests', () => {
 
     it('should correctly instrument prefixed routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      app.use((ctx, next) => tracer.withSpan(rootSpan, next));
+      app.use((ctx, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
 
       const router = new KoaRouter();
       router.get('/post/:id', ctx => {
@@ -173,7 +178,7 @@ describe('Koa Instrumentation - Router Tests', () => {
       router.prefix('/:first');
       app.use(router.routes());
 
-      await tracer.withSpan(rootSpan, async () => {
+      await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/test/post/0`);
         rootSpan.end();
 

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import * as api from '@opentelemetry/api';
+import { Logger, NoopLogger } from '@opentelemetry/api';
+import * as api from '@opentelemetry/api-metrics';
 import * as metrics from '@opentelemetry/metrics';
 
 import { VERSION } from './version';
@@ -23,7 +24,7 @@ import { VERSION } from './version';
  * Metrics Collector Configuration
  */
 export interface MetricsCollectorConfig {
-  logger?: api.Logger;
+  logger?: Logger;
   // maximum timeout to wait for stats collection default is 500ms
   maxTimeoutUpdateMS?: number;
   // Meter Provider
@@ -47,7 +48,7 @@ const DEFAULT_KEY = 'name';
  * Base Class for metrics
  */
 export abstract class BaseMetrics {
-  protected _logger: api.Logger | undefined;
+  protected _logger: Logger | undefined;
   protected _maxTimeoutUpdateMS: number;
   protected _meter: metrics.Meter;
   private _name: string;
@@ -55,7 +56,7 @@ export abstract class BaseMetrics {
   private _metricNameSeparator: string;
 
   constructor(config: MetricsCollectorConfig) {
-    this._logger = config.logger || new api.NoopLogger();
+    this._logger = config.logger || new NoopLogger();
     this._name = config.name || DEFAULT_NAME;
     this._maxTimeoutUpdateMS =
       config.maxTimeoutUpdateMS || DEFAULT_MAX_TIMEOUT_UPDATE_MS;

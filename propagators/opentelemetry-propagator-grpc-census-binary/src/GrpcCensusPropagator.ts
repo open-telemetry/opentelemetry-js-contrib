@@ -16,8 +16,8 @@
 
 import {
   Context,
-  getParentSpanContext,
-  setExtractedSpanContext,
+  getSpanContext,
+  setSpanContext,
   TextMapGetter,
   TextMapSetter,
   TextMapPropagator,
@@ -67,7 +67,7 @@ export class GrpcCensusPropagator implements TextMapPropagator {
    *     the carrier
    */
   inject(context: Context, carrier: unknown, setter: TextMapSetter) {
-    const spanContext = getParentSpanContext(context);
+    const spanContext = getSpanContext(context);
     if (!spanContext) return;
 
     if (
@@ -128,7 +128,7 @@ export class GrpcCensusPropagator implements TextMapPropagator {
           const spanId = decodedContext.spanId;
 
           if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
-            return setExtractedSpanContext(context, {
+            return setSpanContext(context, {
               traceId,
               spanId,
               isRemote: true,

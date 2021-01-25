@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import * as api from '@opentelemetry/api';
 import { BasePlugin } from '@opentelemetry/core';
 import type * as koa from 'koa';
 import * as shimmer from 'shimmer';
@@ -117,7 +118,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
     middlewareLayer[kLayerPatched] = true;
     this._logger.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
-      if (this._tracer.getCurrentSpan() === undefined) {
+      if (api.getSpan(api.context.active()) === undefined) {
         return middlewareLayer(context, next);
       }
       const metadata = getMiddlewareMetadata(
@@ -130,16 +131,19 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
         attributes: metadata.attributes,
       });
 
-      return this._tracer.withSpan(span, async () => {
-        try {
-          return await middlewareLayer(context, next);
-        } catch (err) {
-          span.recordException(err);
-          throw err;
-        } finally {
-          span.end();
+      return api.context.with(
+        api.setSpan(api.context.active(), span),
+        async () => {
+          try {
+            return await middlewareLayer(context, next);
+          } catch (err) {
+            span.recordException(err);
+            throw err;
+          } finally {
+            span.end();
+          }
         }
-      });
+      );
     };
   }
 }
