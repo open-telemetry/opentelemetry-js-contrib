@@ -37,7 +37,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import { plugin, PostgresPlugin } from '../src';
 import { AttributeNames } from '../src/enums';
-import { PostgresPluginConfig } from '../src/types';
+import { NormalizedQueryConfig, PostgresPluginConfig } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -431,18 +431,49 @@ describe('pg@7.x', () => {
       });
     });
 
-    it('should call applyCustomAttributesOnSpan if set', async () => {
+    it('should call applyCustomAttributesOnSpan with query text if set', async () => {
       plugin.disable();
       let called = false;
+      const query = 'SELECT NOW()';
       const config: PostgresPluginConfig = {
-        applyCustomAttributesOnSpan: span => {
+        applyCustomAttributesOnSpan: (span, queryText, queryParams) => {
           called = true;
+          assert.strictEqual(queryText, query);
+          assert.strictEqual(queryParams, undefined);
         },
       };
       plugin.enable(pg, provider, logger, config);
 
-      const query = 'SELECT $1::text';
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [AttributeNames.DB_STATEMENT]: query,
+      };
+      const events: TimedEvent[] = [];
+      const span = tracer.startSpan('test span');
+      await context.with(setSpan(context.active(), span), async () => {
+        try {
+          const resPromise = await client.query(query);
+          assert.ok(resPromise);
+          runCallbackTest(span, attributes, events);
+        } catch (e) {
+          assert.ok(false, e.message);
+        }
+      });
+    });
+    it('should call applyCustomAttributesOnSpan with query text and params if set', async () => {
+      plugin.disable();
+      let called = false;
       const values = ['0'];
+      const query = 'SELECT $1::text';
+      const config: PostgresPluginConfig = {
+        applyCustomAttributesOnSpan: (span, queryText, queryParams) => {
+          called = true;
+          assert.strictEqual(queryText, query);
+          assert.strictEqual(queryParams, values);
+        },
+      };
+      plugin.enable(pg, provider, logger, config);
+
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
         [AttributeNames.DB_STATEMENT]: query,
@@ -453,6 +484,52 @@ describe('pg@7.x', () => {
         const resPromise = await client.query(query, values);
         try {
           assert.ok(resPromise);
+          runCallbackTest(span, attributes, events);
+        } catch (e) {
+          assert.ok(false, e.message);
+        }
+      });
+      assert.strictEqual(called, true);
+    });
+
+    it('should call applyCustomAttributesOnSpan with query config if set', async () => {
+      plugin.disable();
+      const name = 'fetch-text';
+      const query = 'SELECT $1::text';
+      const values = ['0'];
+      let called = false;
+      const config: PostgresPluginConfig = {
+        applyCustomAttributesOnSpan: (span, queryConfig) => {
+          called = true;
+          if (typeof queryConfig === 'string') {
+            assert.ok(
+              false,
+              'queryConfig was of type string when we expect an interface'
+            );
+          }
+          const castQueryConfig = queryConfig as NormalizedQueryConfig;
+          assert.strictEqual(castQueryConfig.text, query);
+          assert.strictEqual(castQueryConfig.values, values);
+        },
+      };
+      plugin.enable(pg, provider, logger, config);
+
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [AttributeNames.PG_PLAN]: name,
+        [AttributeNames.DB_STATEMENT]: query,
+      };
+      const events: TimedEvent[] = [];
+      const span = tracer.startSpan('test span');
+
+      await context.with(setSpan(context.active(), span), async () => {
+        try {
+          const resPromise = await client.query({
+            name: name,
+            text: query,
+            values: values,
+          });
+          assert.strictEqual(resPromise.command, 'SELECT');
           runCallbackTest(span, attributes, events);
         } catch (e) {
           assert.ok(false, e.message);

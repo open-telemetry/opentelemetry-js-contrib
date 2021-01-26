@@ -41,7 +41,7 @@ export interface NormalizedQueryConfig extends pgTypes.QueryConfig {
 }
 
 export interface PostgresCustomAttributesFunction {
-  (span: Span): void;
+  (span: Span, query: string | NormalizedQueryConfig, params?: unknown[]): void;
 }
 
 // Options available for the Postgres Plugin

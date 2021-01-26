@@ -78,8 +78,14 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
               query,
               params
             );
+            if (plugin._config.applyCustomAttributesOnSpan) {
+              plugin._config.applyCustomAttributesOnSpan(span, query, params);
+            }
           } else {
             span = utils.handleTextQuery.call(this, plugin._tracer, query);
+            if (plugin._config.applyCustomAttributesOnSpan) {
+              plugin._config.applyCustomAttributesOnSpan(span, query);
+            }
           }
         } else if (typeof args[0] === 'object') {
           const queryConfig = args[0] as NormalizedQueryConfig;
@@ -89,6 +95,9 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             plugin._config,
             queryConfig
           );
+          if (plugin._config.applyCustomAttributesOnSpan) {
+            plugin._config.applyCustomAttributesOnSpan(span, queryConfig);
+          }
         } else {
           return utils.handleInvalidQuery.call(
             this,
@@ -96,11 +105,6 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             original,
             ...args
           );
-        }
-
-        // Check for and call the hook for applying custom attributes to the query span
-        if (plugin._config.applyCustomAttributesOnSpan) {
-          plugin._config.applyCustomAttributesOnSpan(span);
         }
 
         // Bind callback to parent span
