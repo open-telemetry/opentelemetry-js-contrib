@@ -23,6 +23,18 @@ sending them on the wire. When truncating, the least significant (right-most)
 bits MUST be retained. For example, a trace id of
 `3c3039f4d78d5c02ee8e3e41b17ce105` would be truncated to `ee8e3e41b17ce105`.
 
+### Baggage Notes
+
+Baggage keys and values are validated according to [rfc7230][rfc7230-url]. Any
+keys or values that would result in invalid HTTP headers will be silently
+dropped during inject.
+
+OpenTelemetry Baggage is represented as multiple headers where the
+names are carrier dependent. For this reason, they are omitted from the `fields`
+method. This behavior should be taken into account if your application relies
+on the `fields` functionality. See the [specification][fields-spec-url] for
+more details.
+
 ## Example Usage
 
 ```javascript
@@ -54,3 +66,5 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [devdependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-propagator-opentracing&type=dev
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/propagator-opentracing
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fpropagator-opentracing.svg
+[rfc7230-url]: https://tools.ietf.org/html/rfc7230#section-3.2
+[fields-spec-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/context/api-propagators.md#fields
