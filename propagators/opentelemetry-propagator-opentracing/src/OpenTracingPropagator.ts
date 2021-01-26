@@ -118,6 +118,11 @@ export class OpenTracingPropagator implements TextMapPropagator {
     return context;
   }
 
+  /**
+   * Note: fields does not include baggage headers as they are dependent on
+   * carrier instance. Attempting to reuse a carrier by clearing fields could
+   * result in a memory leak.
+   */
   fields(): string[] {
     return FIELDS;
   }
