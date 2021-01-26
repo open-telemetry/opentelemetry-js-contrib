@@ -78,13 +78,13 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
               query,
               params
             );
-            if (plugin._config.applyCustomAttributesOnSpan) {
-              plugin._config.applyCustomAttributesOnSpan({span, query, params});
+            if (plugin._config.postQueryHook) {
+              plugin._config.postQueryHook({span, query, params});
             }
           } else {
             span = utils.handleTextQuery.call(this, plugin._tracer, query);
-            if (plugin._config.applyCustomAttributesOnSpan) {
-              plugin._config.applyCustomAttributesOnSpan({span, query});
+            if (plugin._config.postQueryHook) {
+              plugin._config.postQueryHook({span, query});
             }
           }
         } else if (typeof args[0] === 'object') {
@@ -95,8 +95,8 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             plugin._config,
             queryConfig
           );
-          if (plugin._config.applyCustomAttributesOnSpan) {
-            plugin._config.applyCustomAttributesOnSpan({span, config: queryConfig});
+          if (plugin._config.postQueryHook) {
+            plugin._config.postQueryHook({span, config: queryConfig});
           }
         } else {
           return utils.handleInvalidQuery.call(

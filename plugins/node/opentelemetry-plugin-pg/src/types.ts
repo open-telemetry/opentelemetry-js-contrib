@@ -40,7 +40,7 @@ export interface NormalizedQueryConfig extends pgTypes.QueryConfig {
   callback?: PostgresCallback;
 }
 
-export interface PostgresCustomAttributesFunction {
+export interface PostgresPostQueryHookFunction {
   (ctx: QueryContext): void;
 }
 
@@ -53,5 +53,5 @@ export interface QueryContext {
 
 // Options available for the Postgres Plugin
 export interface PostgresPluginConfig extends PluginConfig {
-  applyCustomAttributesOnSpan?: PostgresCustomAttributesFunction;
+  postQueryHook?: PostgresPostQueryHookFunction;
 }

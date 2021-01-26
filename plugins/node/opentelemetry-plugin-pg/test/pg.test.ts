@@ -431,12 +431,12 @@ describe('pg@7.x', () => {
       });
     });
 
-    it('should call applyCustomAttributesOnSpan with query text if set', async () => {
+    it('should call postQueryHook with query text if set', async () => {
       plugin.disable();
       let called = false;
       const query = 'SELECT NOW()';
       const config: PostgresPluginConfig = {
-        applyCustomAttributesOnSpan: (ctx) => {
+        postQueryHook: (ctx) => {
           called = true;
           assert.strictEqual(ctx.query, query);
           assert.strictEqual(ctx.params, undefined);
@@ -461,13 +461,13 @@ describe('pg@7.x', () => {
       });
       assert.strictEqual(called, true);
     });
-    it('should call applyCustomAttributesOnSpan with query text and params if set', async () => {
+    it('should call postQueryHook with query text and params if set', async () => {
       plugin.disable();
       let called = false;
       const values = ['0'];
       const query = 'SELECT $1::text';
       const config: PostgresPluginConfig = {
-        applyCustomAttributesOnSpan: (ctx) => {
+        postQueryHook: (ctx) => {
           called = true;
           assert.strictEqual(ctx.query, query);
           assert.strictEqual(ctx.params, values);
@@ -493,14 +493,14 @@ describe('pg@7.x', () => {
       assert.strictEqual(called, true);
     });
 
-    it('should call applyCustomAttributesOnSpan with query config if set', async () => {
+    it('should call postQueryHook with query config if set', async () => {
       plugin.disable();
       const name = 'fetch-text';
       const query = 'SELECT $1::text';
       const values = ['0'];
       let called = false;
       const config: PostgresPluginConfig = {
-        applyCustomAttributesOnSpan: (ctx) => {
+        postQueryHook: (ctx) => {
           called = true;
           if(!ctx.config){
             assert.ok(false, 'ctx.config was undefined')
