@@ -22,7 +22,8 @@
     "tracing",
     "profiling",
     "monitoring",
-    "b3"
+    "opentracing",
+    "propagator"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
