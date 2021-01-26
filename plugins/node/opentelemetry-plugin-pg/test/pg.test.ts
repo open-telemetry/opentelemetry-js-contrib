@@ -37,6 +37,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import { plugin, PostgresPlugin } from '../src';
 import { AttributeNames } from '../src/enums';
+import { PostgresPluginConfig } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -428,6 +429,36 @@ describe('pg@7.x', () => {
       context.with(setSpan(context.active(), spans[1]), () => {
         client.query('SELECT NOW()').then(queryHandler);
       });
+    });
+
+    it('should call applyCustomAttributesOnSpan if set', async () => {
+      plugin.disable();
+      let called = false;
+      const config: PostgresPluginConfig = {
+        applyCustomAttributesOnSpan: span => {
+          called = true;
+        },
+      };
+      plugin.enable(pg, provider, logger, config);
+
+      const query = 'SELECT $1::text';
+      const values = ['0'];
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [AttributeNames.DB_STATEMENT]: query,
+      };
+      const events: TimedEvent[] = [];
+      const span = tracer.startSpan('test span');
+      await context.with(setSpan(context.active(), span), async () => {
+        const resPromise = await client.query(query, values);
+        try {
+          assert.ok(resPromise);
+          runCallbackTest(span, attributes, events);
+        } catch (e) {
+          assert.ok(false, e.message);
+        }
+      });
+      assert.strictEqual(called, true);
     });
   });
 });

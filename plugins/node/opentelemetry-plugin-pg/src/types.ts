@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import { Span } from '@opentelemetry/api';
+import { PluginConfig } from '@opentelemetry/core';
+
 import * as pgTypes from 'pg';
 
 export type PostgresCallback = (err: Error, res: object) => unknown;
@@ -35,4 +38,13 @@ export interface PgClientExtended extends pgTypes.Client {
 // https://github.com/brianc/node-postgres/blob/2ef55503738eb2cbb6326744381a92c0bc0439ab/packages/pg/lib/utils.js#L157
 export interface NormalizedQueryConfig extends pgTypes.QueryConfig {
   callback?: PostgresCallback;
+}
+
+export interface PostgresCustomAttributesFunction {
+  (span: Span): void;
+}
+
+// Options available for the Postgres Plugin
+export interface PostgresPluginConfig extends PluginConfig {
+  applyCustomAttributesOnSpan?: PostgresCustomAttributesFunction;
 }

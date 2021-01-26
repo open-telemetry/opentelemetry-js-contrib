@@ -22,6 +22,7 @@ import {
   PgClientExtended,
   NormalizedQueryConfig,
   PostgresCallback,
+  PostgresPluginConfig,
 } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
@@ -29,6 +30,8 @@ import { VERSION } from './version';
 export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
   static readonly COMPONENT = 'pg';
   static readonly DB_TYPE = 'sql';
+
+  protected _config!: PostgresPluginConfig;
 
   static readonly BASE_SPAN_NAME = PostgresPlugin.COMPONENT + '.query';
 
@@ -93,6 +96,11 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             original,
             ...args
           );
+        }
+
+        // Check for and call the hook for applying custom attributes to the query span
+        if (plugin._config.applyCustomAttributesOnSpan) {
+          plugin._config.applyCustomAttributesOnSpan(span);
         }
 
         // Bind callback to parent span
