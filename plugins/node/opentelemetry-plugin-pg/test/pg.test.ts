@@ -436,7 +436,7 @@ describe('pg@7.x', () => {
       let called = false;
       const query = 'SELECT NOW()';
       const config: PostgresPluginConfig = {
-        postQueryHook: (ctx) => {
+        postQueryHook: ctx => {
           called = true;
           assert.strictEqual(ctx.query, query);
           assert.strictEqual(ctx.params, undefined);
@@ -467,7 +467,7 @@ describe('pg@7.x', () => {
       const values = ['0'];
       const query = 'SELECT $1::text';
       const config: PostgresPluginConfig = {
-        postQueryHook: (ctx) => {
+        postQueryHook: ctx => {
           called = true;
           assert.strictEqual(ctx.query, query);
           assert.strictEqual(ctx.params, values);
@@ -500,10 +500,10 @@ describe('pg@7.x', () => {
       const values = ['0'];
       let called = false;
       const config: PostgresPluginConfig = {
-        postQueryHook: (ctx) => {
+        postQueryHook: ctx => {
           called = true;
-          if(!ctx.config){
-            assert.ok(false, 'ctx.config was undefined')
+          if (!ctx.config) {
+            assert.ok(false, 'ctx.config was undefined');
           }
           assert.strictEqual(ctx.config.text, query);
           assert.strictEqual(ctx.config.values, values);
