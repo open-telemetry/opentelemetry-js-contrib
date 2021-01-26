@@ -37,7 +37,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import { plugin, PostgresPlugin } from '../src';
 import { AttributeNames } from '../src/enums';
-import { NormalizedQueryConfig, PostgresPluginConfig } from '../src/types';
+import { PostgresPluginConfig } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -436,10 +436,10 @@ describe('pg@7.x', () => {
       let called = false;
       const query = 'SELECT NOW()';
       const config: PostgresPluginConfig = {
-        applyCustomAttributesOnSpan: (span, queryText, queryParams) => {
+        applyCustomAttributesOnSpan: (ctx) => {
           called = true;
-          assert.strictEqual(queryText, query);
-          assert.strictEqual(queryParams, undefined);
+          assert.strictEqual(ctx.query, query);
+          assert.strictEqual(ctx.params, undefined);
         },
       };
       plugin.enable(pg, provider, logger, config);
@@ -467,10 +467,10 @@ describe('pg@7.x', () => {
       const values = ['0'];
       const query = 'SELECT $1::text';
       const config: PostgresPluginConfig = {
-        applyCustomAttributesOnSpan: (span, queryText, queryParams) => {
+        applyCustomAttributesOnSpan: (ctx) => {
           called = true;
-          assert.strictEqual(queryText, query);
-          assert.strictEqual(queryParams, values);
+          assert.strictEqual(ctx.query, query);
+          assert.strictEqual(ctx.params, values);
         },
       };
       plugin.enable(pg, provider, logger, config);
@@ -500,17 +500,13 @@ describe('pg@7.x', () => {
       const values = ['0'];
       let called = false;
       const config: PostgresPluginConfig = {
-        applyCustomAttributesOnSpan: (span, queryConfig) => {
+        applyCustomAttributesOnSpan: (ctx) => {
           called = true;
-          if (typeof queryConfig === 'string') {
-            assert.ok(
-              false,
-              'queryConfig was of type string when we expect an interface'
-            );
+          if(!ctx.config){
+            assert.ok(false, 'ctx.config was undefined')
           }
-          const castQueryConfig = queryConfig as NormalizedQueryConfig;
-          assert.strictEqual(castQueryConfig.text, query);
-          assert.strictEqual(castQueryConfig.values, values);
+          assert.strictEqual(ctx.config.text, query);
+          assert.strictEqual(ctx.config.values, values);
         },
       };
       plugin.enable(pg, provider, logger, config);
