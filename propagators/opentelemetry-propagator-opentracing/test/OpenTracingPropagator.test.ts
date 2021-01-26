@@ -155,6 +155,48 @@ describe('OpenTracingPropagator', () => {
       assert.strictEqual(carrier[`${OT_BAGGAGE_PREFIX}foo`], 'bar');
       assert.strictEqual(carrier[`${OT_BAGGAGE_PREFIX}bar`], 'baz');
     });
+
+    it('omits baggage items with invalid keys', () => {
+      const spanContext: SpanContext = {
+        traceId: '80f198ee56343ba864fe8b2a57d3eff7',
+        spanId: 'e457b5a2e4d86bd1',
+        traceFlags: TraceFlags.SAMPLED,
+      };
+
+      let context = setSpanContext(ROOT_CONTEXT, spanContext);
+
+      const baggage: Baggage = {
+        fθθ: { value: 'bar' },
+        bar: { value: 'baz' },
+      };
+
+      context = setBaggage(context, baggage);
+
+      propagator.inject(context, carrier, defaultTextMapSetter);
+      assert.ok(!(`${OT_BAGGAGE_PREFIX}fθθ` in carrier));
+      assert.strictEqual(carrier[`${OT_BAGGAGE_PREFIX}bar`], 'baz');
+    });
+
+    it('omits baggage items with invalid values', () => {
+      const spanContext: SpanContext = {
+        traceId: '80f198ee56343ba864fe8b2a57d3eff7',
+        spanId: 'e457b5a2e4d86bd1',
+        traceFlags: TraceFlags.SAMPLED,
+      };
+
+      let context = setSpanContext(ROOT_CONTEXT, spanContext);
+
+      const baggage: Baggage = {
+        foo: { value: 'bαr' },
+        bar: { value: 'baz' },
+      };
+
+      context = setBaggage(context, baggage);
+
+      propagator.inject(context, carrier, defaultTextMapSetter);
+      assert.ok(!(`${OT_BAGGAGE_PREFIX}foo` in carrier));
+      assert.strictEqual(carrier[`${OT_BAGGAGE_PREFIX}bar`], 'baz');
+    });
   });
 
   describe('.extract', () => {

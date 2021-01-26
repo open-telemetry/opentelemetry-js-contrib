@@ -49,6 +49,18 @@ function readHeader(
   return header || '';
 }
 
+const VALID_HEADER_NAME_CHARS = /^[\^_`a-zA-Z\-0-9!#$%&'*+.|~]+$/;
+
+function isValidHeaderName(name: string): boolean {
+  return VALID_HEADER_NAME_CHARS.test(name);
+}
+
+const INVALID_HEADER_VALUE_CHARS = /[^\t\x20-\x7e\x80-\xff]/;
+
+function isValidHeaderValue(value: string): boolean {
+  return !INVALID_HEADER_VALUE_CHARS.test(value);
+}
+
 /**
  * Propagator for the OpenTracing HTTP format.
  */
@@ -69,6 +81,7 @@ export class OpenTracingPropagator implements TextMapPropagator {
     if (!baggage) return;
 
     Object.entries(baggage).forEach(([k, v]) => {
+      if (!isValidHeaderName(k) || !isValidHeaderValue(v.value)) return;
       setter.set(carrier, `${OT_BAGGAGE_PREFIX}${k}`, v.value);
     });
   }
