@@ -124,6 +124,6 @@ export class OpenTracingPropagator implements TextMapPropagator {
    * result in a memory leak.
    */
   fields(): string[] {
-    return FIELDS;
+    return FIELDS.slice();
   }
 }
