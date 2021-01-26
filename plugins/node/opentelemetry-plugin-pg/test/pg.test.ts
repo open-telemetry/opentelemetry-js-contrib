@@ -459,6 +459,7 @@ describe('pg@7.x', () => {
           assert.ok(false, e.message);
         }
       });
+      assert.strictEqual(called, true);
     });
     it('should call applyCustomAttributesOnSpan with query text and params if set', async () => {
       plugin.disable();
