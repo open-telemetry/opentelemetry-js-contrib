@@ -267,7 +267,7 @@ describe('ioredis', () => {
 
       it('should set span with error when redis return reject', async () => {
         const span = provider.getTracer('ioredis-test').startSpan('test span');
-        await provider.getTracer('ioredis-test').withSpan(span, async () => {
+        await context.with(setSpan(context.active(), span), async () => {
           await client.set('non-int-key', 'no-int-value');
           try {
             // should throw 'ReplyError: ERR value is not an integer or out of range'
