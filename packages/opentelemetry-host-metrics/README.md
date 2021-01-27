@@ -51,7 +51,7 @@ APACHE 2.0 - See [LICENSE][license-url] for more information.
 
 [gitter-image]: https://badges.gitter.im/open-telemetry/opentelemetry-js-contrib.svg
 [gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib.svg?path=packages%2Fopentelemetry-host-metrics
 [dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-host-metrics

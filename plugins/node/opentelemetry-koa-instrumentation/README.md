@@ -7,7 +7,7 @@
 This module provides automatic instrumentation for [`Koa`](https://github.com/koajs/koa).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-node) package.
+[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -43,7 +43,7 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const provider = new NodeTracerProvider();
 ```
 
-See [examples/koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/examples/koa) for a short example using both Koa and @koa/router
+See [examples/koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/koa) for a short example using both Koa and @koa/router
 
 ## Koa Packages
 
@@ -60,7 +60,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [gitter-image]: https://badges.gitter.im/open-telemetry/opentelemetry-js.svg
 [gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=plugins/node/opentelemetry-koa-instrumentation
 [dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins/node/opentelemetry-koa-instrumentation
