@@ -1,5 +1,6 @@
 'use strict';
 
+const api = require("@opentelemetry/api")
 // eslint-disable-next-line import/order
 const tracer = require('./tracer')('example-grpc-capitalize-client');
 const path = require('path');
@@ -20,7 +21,7 @@ function main() {
   console.log('> ', data);
 
   const span = tracer.startSpan('tutorialsClient.capitalize');
-  tracer.withSpan(span, () => {
+  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
     client.capitalize({ data: Buffer.from(data) }, (err, response) => {
       if (err) {
         console.log('could not get grpc response');

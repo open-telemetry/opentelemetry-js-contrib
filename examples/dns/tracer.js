@@ -33,8 +33,8 @@ module.exports = (serviceName) => {
 
   provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
-  // Initialize the OpenTelemetry APIs to use the BasicTracerProvider bindings
+  // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
 
-  return opentelemetry.trace.getTracer('dns-example');
+  return opentelemetry.trace.getTracer(serviceName);
 };

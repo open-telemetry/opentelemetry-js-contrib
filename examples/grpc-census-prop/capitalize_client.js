@@ -1,5 +1,6 @@
 'use strict';
 
+const api = require('@opentelemetry/api');
 /* eslint-disable global-require */
 const binaryPropagator = process.env.BINARY_PROPAGATOR === 'true';
 const censusTracer = process.env.CENSUS_TRACER === 'true';
@@ -65,7 +66,7 @@ function capitalizeWithCensusTracing(client, data) {
  */
 function capitalizeWithOTelTracing(client, data) {
   const span = tracer.startSpan('tutorialsClient.capitalize');
-  tracer.withSpan(span, () => {
+  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
     client.capitalize({ data: Buffer.from(data) }, (err, response) => {
       if (err) {
         console.log('could not get grpc response');
