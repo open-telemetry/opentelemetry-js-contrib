@@ -139,8 +139,9 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
         context.request.ctx.parentSpan = parent;
       }
 
-      if ( metadata.attributes[AttributeNames.KOA_TYPE] ===
-        KoaLayerType.ROUTER ) {
+      if (
+        metadata.attributes[AttributeNames.KOA_TYPE] === KoaLayerType.ROUTER
+      ) {
         if (context.request.ctx.parentSpan.name) {
           const parentRoute = context.request.ctx.parentSpan.name.split(' ')[1];
           if (
