@@ -118,7 +118,7 @@ describe('Koa Instrumentation - Router Tests', () => {
 
         const exportedRootSpan = memoryExporter
           .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
+          .find(span => span.name === 'GET /post/:id');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
     });
@@ -160,7 +160,7 @@ describe('Koa Instrumentation - Router Tests', () => {
 
         const exportedRootSpan = memoryExporter
           .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
+          .find(span => span.name === 'GET /:first/post/:id');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
     });
@@ -200,7 +200,7 @@ describe('Koa Instrumentation - Router Tests', () => {
 
         const exportedRootSpan = memoryExporter
           .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
+          .find(span => span.name === 'GET /:first/post/:id');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
     });
