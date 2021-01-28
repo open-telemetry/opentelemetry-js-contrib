@@ -89,15 +89,12 @@ jobs:
             plugins/web/*/node_modules
             propagators/*/node_modules
           key: ${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
-      # - name: Install Root Dependencies
-      #   run: npm install --ignore-scripts
-      # - name: Boostrap Dependencies
-      #   run: npx lerna bootstrap --no-ci
+      - name: Install Root Dependencies
+        run: npm install --ignore-scripts
+      - name: Boostrap Dependencies
+        run: npx lerna bootstrap --no-ci
       - name: Unit tests
-        # run: npm run test
-        env:
-          MATRIX_CONTEXT: ${{ toJSON(matrix) }}
-        run: echo "$MATRIX_CONTEXT"
+        run: npm run test
       - name: Report Coverage
         if: matrix.container == 'node:12'
         run: npm run codecov
