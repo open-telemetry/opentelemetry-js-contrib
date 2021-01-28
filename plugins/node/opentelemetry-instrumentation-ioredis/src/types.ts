@@ -17,7 +17,7 @@
 import type * as ioredisTypes from 'ioredis';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export interface IoredisCommand {
+export interface IORedisCommand {
   reject: (err: Error) => void;
   resolve: (result: {}) => void;
   promise: Promise<{}>;
@@ -34,8 +34,8 @@ export interface IoredisCommand {
  * @returns serialized string that will be used as the db.statement attribute.
  */
 export type DbStatementSerializer = (
-  cmdName: IoredisCommand['name'],
-  cmdArgs: IoredisCommand['args']
+  cmdName: IORedisCommand['name'],
+  cmdArgs: IORedisCommand['args']
 ) => string;
 
 /**

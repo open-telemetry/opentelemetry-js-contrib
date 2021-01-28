@@ -24,7 +24,7 @@ import {
   context,
 } from '@opentelemetry/api';
 import {
-  IoredisCommand,
+  IORedisCommand,
   IORedisInstrumentationConfig,
   DbStatementSerializer,
 } from './types';
@@ -86,7 +86,7 @@ export const traceSendCommand = (
 ) => {
   const dbStatementSerializer =
     config?.dbStatementSerializer || defaultDbStatementSerializer;
-  return function (this: ioredisTypes.Redis, cmd?: IoredisCommand) {
+  return function (this: ioredisTypes.Redis, cmd?: IORedisCommand) {
     if (arguments.length < 1 || typeof cmd !== 'object') {
       return original.apply(this, arguments);
     }
