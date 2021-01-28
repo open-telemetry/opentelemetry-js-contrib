@@ -39,7 +39,7 @@ export type DbStatementSerializer = (
 ) => string;
 
 /**
- * Options available for the IORedis Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-instrumentation-ioredis#ioredis-instrumentation-options))
+ * Options available for the IORedis Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-ioredis#ioredis-instrumentation-options))
  */
 // eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IORedisInstrumentationConfig extends InstrumentationConfig {
