@@ -9,7 +9,7 @@
 
 OpenTelemetry core package provides many Built-in Propagators such as HttpTraceContext Propagator, B3 Propagator, Composite Propagator etc.
 
-[Click here](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-core#built-in-propagators) to see Built-in Propagators.
+[Click here](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core#built-in-propagators) to see Built-in Propagators.
 
 
 ### Jaeger Propagator
@@ -50,4 +50,4 @@ api.propagation.setGlobalPropagator(new GrpcCensusPropagator());
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
-[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE

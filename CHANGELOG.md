@@ -201,4 +201,4 @@ Released 2020-04-27
 
 Released 2020-04-08
 
-For details about this release and all previous releases, see https://github.com/open-telemetry/opentelemetry-js/blob/master/CHANGELOG.md
+For details about this release and all previous releases, see https://github.com/open-telemetry/opentelemetry-js/blob/main/CHANGELOG.md
