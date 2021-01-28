@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Middleware, ParameterizedContext, DefaultState } from 'koa';
-import { RouterParamContext } from '@koa/router';
-import * as Router from '@koa/router';
-import { Span } from '@opentelemetry/api';
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
+import type { RouterParamContext } from '@koa/router';
+import type * as Router from '@koa/router';
+import type { Span } from '@opentelemetry/api';
 
 /**
  * This symbol is used to mark a Koa layer as being already instrumented
