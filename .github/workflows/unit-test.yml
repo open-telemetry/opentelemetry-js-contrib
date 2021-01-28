@@ -99,8 +99,8 @@ jobs:
           MATRIX_CONTEXT: ${{ toJSON(matrix) }}
         run: echo "$MATRIX_CONTEXT"
       - name: Report Coverage
+        if: matrix.container == 'node:12'
         run: npm run codecov
-        if: ${{ matrix.container }} == 'node:12'
   browser-tests:
     runs-on: ubuntu-latest
     container:
