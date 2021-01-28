@@ -36,6 +36,7 @@ import {
 
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
+    span.recordException(err);
     span.setStatus({
       code: StatusCode.ERROR,
       message: err.message,
