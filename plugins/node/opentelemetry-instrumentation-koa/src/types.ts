@@ -16,6 +16,7 @@
 import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
 import type { RouterParamContext } from '@koa/router';
 import type * as Router from '@koa/router';
+import type { Span } from '@opentelemetry/api';
 
 /**
  * This symbol is used to mark a Koa layer as being already instrumented
@@ -41,3 +42,10 @@ export enum KoaLayerType {
 }
 
 export const KoaComponentName = 'koa';
+
+/**
+ * extends opentelemetry/api Span object to instrument the root span name of http plugin by getting parent span id
+ */
+export interface KoaPluginSpan extends Span {
+  parentSpanId?: string;
+}
