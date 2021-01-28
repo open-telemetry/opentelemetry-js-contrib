@@ -43,6 +43,9 @@ export enum KoaLayerType {
 
 export const KoaComponentName = 'koa';
 
+/**
+ * extends opentelemetry/api Span object to instrument the root span name of http plugin by getting parent span id
+ */
 export interface KoaPluginSpan extends Span {
   parentSpanId?: string;
 }
