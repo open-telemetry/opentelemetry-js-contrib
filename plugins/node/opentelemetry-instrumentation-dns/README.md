@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`dns`](http://nodejs.org/dist/latest/docs/api/dns.html).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-node) package.
+[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -40,7 +40,7 @@ Dns instrumentation has currently one option. You can set the following:
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/packages/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher[]` | Dns instrumentation will not trace all requests that match hostnames |
+| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/packages/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher[]` | Dns instrumentation will not trace all requests that match hostnames |
 
 ## Useful links
 
@@ -54,7 +54,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [gitter-image]: https://badges.gitter.im/open-telemetry/opentelemetry-js-contrib.svg
 [gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=packages/opentelemetry-instrumentation-dns
 [dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-instrumentation-dns
