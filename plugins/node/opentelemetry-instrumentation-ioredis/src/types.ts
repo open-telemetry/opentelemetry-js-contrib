@@ -17,6 +17,7 @@
 import type * as ioredisTypes from 'ioredis';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
+// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IORedisCommand {
   reject: (err: Error) => void;
   resolve: (result: {}) => void;
