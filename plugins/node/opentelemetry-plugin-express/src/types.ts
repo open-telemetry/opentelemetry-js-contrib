@@ -43,7 +43,7 @@ export type PatchedRequest = {
 } & Request;
 export type PathParams = string | RegExp | Array<string | RegExp>;
 
-// https://github.com/expressjs/express/blob/master/lib/router/index.js#L53
+// https://github.com/expressjs/express/blob/main/lib/router/index.js#L53
 export type ExpressRouter = {
   params: { [key: string]: string };
   _params: string[];
@@ -53,7 +53,7 @@ export type ExpressRouter = {
   stack: ExpressLayer[];
 };
 
-// https://github.com/expressjs/express/blob/master/lib/router/layer.js#L33
+// https://github.com/expressjs/express/blob/main/lib/router/layer.js#L33
 export type ExpressLayer = {
   handle: Function;
   [kLayerPatched]?: boolean;
@@ -68,7 +68,7 @@ export type LayerMetadata = {
   name: string;
 };
 
-// https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/data-semantic-conventions.md#databases-client-calls
+// https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/data-semantic-conventions.md#databases-client-calls
 export enum AttributeNames {
   COMPONENT = 'component',
   HTTP_ROUTE = 'http.route',
@@ -85,7 +85,7 @@ export enum ExpressLayerType {
 export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 
 /**
- * Options available for the Express Plugin (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-plugin-express#express-plugin-options))
+ * Options available for the Express Plugin (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-express#express-plugin-options))
  */
 export interface ExpressPluginConfig extends PluginConfig {
   /** Ignore specific based on their name */

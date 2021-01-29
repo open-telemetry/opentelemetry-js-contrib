@@ -60,6 +60,6 @@ After a few seconds (when the request is fulfilled):
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
-[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [otel]: https://opentelemetry.io/
-[otel-node]: https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-node
+[otel-node]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node

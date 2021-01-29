@@ -39,7 +39,7 @@ export type DbStatementSerializer = (
 ) => string;
 
 /**
- * Options available for the IORedis Plugin (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-plugin-ioredis#ioredis-plugin-options))
+ * Options available for the IORedis Plugin (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-ioredis#ioredis-plugin-options))
  */
 export interface IoredisPluginConfig extends PluginConfig {
   /** Custom serializer function for the db.statement tag */
