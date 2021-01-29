@@ -39,7 +39,7 @@ import {
 } from './helper.test';
 
 const FILE_URL =
-  'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/package.json';
+  'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
 describe('UserInteractionPlugin', () => {
   describe('when zone.js is available', () => {
@@ -198,7 +198,7 @@ describe('UserInteractionPlugin', () => {
             const attributes = spanXhr.attributes;
             assert.equal(
               attributes['http.url'],
-              'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/package.json'
+              'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
             );
             // all other attributes are checked in xhr anyway
 
