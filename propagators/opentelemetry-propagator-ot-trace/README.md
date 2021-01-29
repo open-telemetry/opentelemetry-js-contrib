@@ -39,11 +39,9 @@ more details.
 
 ```javascript
 const api = require('@opentelemetry/api');
-const {
-  OpenTracingPropagator,
-} = require('@opentelemetry/propagator-opentracing');
+const { OTTracePropagator } = require('@opentelemetry/propagator-opentracing');
 
-api.propagation.setGlobalPropagator(new OpenTracingPropagator());
+api.propagation.setGlobalPropagator(new OTTracePropagator());
 ```
 
 ## Useful links
