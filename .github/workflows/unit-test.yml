@@ -96,7 +96,6 @@ jobs:
       - name: Unit tests
         run: npm run test
       - name: Report Coverage
-        if: matrix.container == 'node:12'
         run: npm run codecov
   browser-tests:
     runs-on: ubuntu-latest
