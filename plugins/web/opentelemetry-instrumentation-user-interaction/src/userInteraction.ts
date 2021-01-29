@@ -57,7 +57,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   private _eventsSpanMap: WeakMap<Event, Span> = new WeakMap<Event, Span>();
 
   constructor(config?: InstrumentationConfig) {
-    super('@opentelemetry/plugin-user-interaction', VERSION, config);
+    super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
   }
 
   init() {}
