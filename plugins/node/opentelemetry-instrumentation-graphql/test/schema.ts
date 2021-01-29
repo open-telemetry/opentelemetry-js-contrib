@@ -18,7 +18,7 @@ import * as https from 'https';
 import * as graphql from 'graphql';
 
 const url1 =
-  'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/package.json';
+  'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
 function getData(url: string): any {
   return new Promise((resolve, reject) => {
