@@ -14,39 +14,30 @@
  * limitations under the License.
  */
 
-import { context, Logger, propagation, TimedEvent } from '@opentelemetry/api';
-import {
-  ConsoleLogger,
-  HttpTraceContext,
-  PluginConfig,
-  TRACE_PARENT_HEADER,
-} from '@opentelemetry/core';
+import { context, propagation, TimedEvent } from '@opentelemetry/api';
+import { HttpTraceContext, TRACE_PARENT_HEADER } from '@opentelemetry/core';
 import {
   BasicTracerProvider,
+  InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-  SpanExporter,
 } from '@opentelemetry/tracing';
 import {
   PerformanceTimingNames as PTN,
   StackContextManager,
 } from '@opentelemetry/web';
+
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { ExportResult } from '@opentelemetry/core';
-import { DocumentLoad } from '../src';
+import { DocumentLoadInstrumentation } from '../src';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
-export class DummyExporter implements SpanExporter {
-  export(
-    spans: ReadableSpan[],
-    resultCallback: (result: ExportResult) => void
-  ) {}
+const exporter = new InMemorySpanExporter();
+const provider = new BasicTracerProvider();
+const spanProcessor = new SimpleSpanProcessor(exporter);
 
-  shutdown() {
-    return Promise.resolve();
-  }
-}
+provider.addSpanProcessor(spanProcessor);
+provider.register();
 
 const resources = [
   {
@@ -195,15 +186,10 @@ function ensureNetworkEventsExists(events: TimedEvent[]) {
   assert.strictEqual(events[8].name, PTN.RESPONSE_END);
 }
 
-describe('DocumentLoad Plugin', () => {
-  let plugin: DocumentLoad;
-  let moduleExports: any;
-  let provider: BasicTracerProvider;
-  let logger: Logger;
-  let config: PluginConfig;
-  let spanProcessor: SimpleSpanProcessor;
-  let dummyExporter: DummyExporter;
+describe('DocumentLoad Instrumentation', () => {
+  let plugin: DocumentLoadInstrumentation;
   let contextManager: StackContextManager;
+  const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
     contextManager = new StackContextManager().enable();
@@ -212,22 +198,21 @@ describe('DocumentLoad Plugin', () => {
       writable: true,
       value: 'complete',
     });
-    moduleExports = {};
-    provider = new BasicTracerProvider();
-    logger = new ConsoleLogger();
-    config = {};
-    plugin = new DocumentLoad();
-    dummyExporter = new DummyExporter();
-    spanProcessor = new SimpleSpanProcessor(dummyExporter);
-    provider.addSpanProcessor(spanProcessor);
+    plugin = new DocumentLoadInstrumentation({
+      enabled: false,
+    });
+    plugin.setTracerProvider(provider);
+    exporter.reset();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    sandbox.restore();
     context.disable();
     Object.defineProperty(window.document, 'readyState', {
       writable: true,
       value: 'complete',
     });
+    plugin.disable();
   });
 
   before(() => {
@@ -236,15 +221,17 @@ describe('DocumentLoad Plugin', () => {
 
   describe('constructor', () => {
     it('should construct an instance', () => {
-      plugin = new DocumentLoad();
-      assert.ok(plugin instanceof DocumentLoad);
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+      });
+      assert.ok(plugin instanceof DocumentLoadInstrumentation);
     });
   });
 
   describe('when document readyState is complete', () => {
     let spyEntries: any;
     beforeEach(() => {
-      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([]);
     });
@@ -252,7 +239,7 @@ describe('DocumentLoad Plugin', () => {
       spyEntries.restore();
     });
     it('should start collecting the performance immediately', done => {
-      plugin.enable(moduleExports, provider, logger, config);
+      plugin.enable();
       setTimeout(() => {
         assert.strictEqual(window.document.readyState, 'complete');
         assert.strictEqual(spyEntries.callCount, 2);
@@ -268,7 +255,7 @@ describe('DocumentLoad Plugin', () => {
         writable: true,
         value: 'loading',
       });
-      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([]);
     });
@@ -277,9 +264,8 @@ describe('DocumentLoad Plugin', () => {
     });
 
     it('should collect performance after document load event', done => {
-      const spy = sinon.spy(window, 'addEventListener');
-
-      plugin.enable(moduleExports, provider, logger, config);
+      const spy = sandbox.spy(window, 'addEventListener');
+      plugin.enable();
       const args = spy.args[0];
       const name = args[0];
       assert.strictEqual(name, 'load');
@@ -302,9 +288,9 @@ describe('DocumentLoad Plugin', () => {
   });
 
   describe('when navigation entries types are available', () => {
-    let spyEntries: any;
+    let spyEntries: sinon.SinonStub;
     beforeEach(() => {
-      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([]);
     });
@@ -313,12 +299,11 @@ describe('DocumentLoad Plugin', () => {
     });
 
     it('should export correct span with events', done => {
-      const spyOnEnd = sinon.spy(dummyExporter, 'export');
-      plugin.enable(moduleExports, provider, logger, config);
+      plugin.enable();
 
       setTimeout(() => {
-        const rootSpan = spyOnEnd.args[0][0][0] as ReadableSpan;
-        const fetchSpan = spyOnEnd.args[1][0][0] as ReadableSpan;
+        const rootSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+        const fetchSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
         const rsEvents = rootSpan.events;
         const fsEvents = fetchSpan.events;
 
@@ -346,7 +331,7 @@ describe('DocumentLoad Plugin', () => {
 
         assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(fsEvents.length, 9);
-        assert.strictEqual(spyOnEnd.callCount, 2);
+        assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
       });
     });
@@ -364,7 +349,7 @@ describe('DocumentLoad Plugin', () => {
           },
         };
 
-        spyGetElementsByTagName = sinon.stub(
+        spyGetElementsByTagName = sandbox.stub(
           window.document,
           'getElementsByTagName'
         );
@@ -375,11 +360,10 @@ describe('DocumentLoad Plugin', () => {
       });
 
       it('should create a root span with server context traceId', done => {
-        const spyOnEnd = sinon.spy(dummyExporter, 'export');
-        plugin.enable(moduleExports, provider, logger, config);
+        plugin.enable();
         setTimeout(() => {
-          const rootSpan = spyOnEnd.args[0][0][0] as ReadableSpan;
-          const fetchSpan = spyOnEnd.args[1][0][0] as ReadableSpan;
+          const rootSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+          const fetchSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
           assert.strictEqual(rootSpan.name, 'documentFetch');
           assert.strictEqual(fetchSpan.name, 'documentLoad');
 
@@ -392,9 +376,9 @@ describe('DocumentLoad Plugin', () => {
             'ab42124a3c573678d4d8b21ba52df3bf'
           );
 
-          assert.strictEqual(spyOnEnd.callCount, 2);
+          assert.strictEqual(exporter.getFinishedSpans().length, 2);
           done();
-        }, 1);
+        }, 100);
       });
     });
   });
@@ -402,7 +386,7 @@ describe('DocumentLoad Plugin', () => {
   describe('when resource entries are available', () => {
     let spyEntries: any;
     beforeEach(() => {
-      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns(resources);
     });
@@ -411,11 +395,10 @@ describe('DocumentLoad Plugin', () => {
     });
 
     it('should create span for each of the resource', done => {
-      const spyOnEnd = sinon.spy(dummyExporter, 'export');
-      plugin.enable(moduleExports, provider, logger, config);
+      plugin.enable();
       setTimeout(() => {
-        const spanResource1 = spyOnEnd.args[1][0][0] as ReadableSpan;
-        const spanResource2 = spyOnEnd.args[2][0][0] as ReadableSpan;
+        const spanResource1 = exporter.getFinishedSpans()[1] as ReadableSpan;
+        const spanResource2 = exporter.getFinishedSpans()[2] as ReadableSpan;
 
         const srEvents1 = spanResource1.events;
         const srEvents2 = spanResource2.events;
@@ -432,7 +415,7 @@ describe('DocumentLoad Plugin', () => {
         ensureNetworkEventsExists(srEvents1);
         ensureNetworkEventsExists(srEvents2);
 
-        assert.strictEqual(spyOnEnd.callCount, 4);
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
         done();
       });
     });
@@ -440,7 +423,7 @@ describe('DocumentLoad Plugin', () => {
   describe('when resource entries are available AND secureConnectionStart is 0', () => {
     let spyEntries: any;
     beforeEach(() => {
-      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns(resourcesNoSecureConnectionStart);
     });
@@ -449,10 +432,9 @@ describe('DocumentLoad Plugin', () => {
     });
 
     it('should create span for each of the resource', done => {
-      const spyOnEnd = sinon.spy(dummyExporter, 'export');
-      plugin.enable(moduleExports, provider, logger, config);
+      plugin.enable();
       setTimeout(() => {
-        const spanResource1 = spyOnEnd.args[1][0][0] as ReadableSpan;
+        const spanResource1 = exporter.getFinishedSpans()[1] as ReadableSpan;
 
         const srEvents1 = spanResource1.events;
 
@@ -471,7 +453,7 @@ describe('DocumentLoad Plugin', () => {
         assert.strictEqual(srEvents1[7].name, PTN.RESPONSE_START);
         assert.strictEqual(srEvents1[8].name, PTN.RESPONSE_END);
 
-        assert.strictEqual(spyOnEnd.callCount, 3);
+        assert.strictEqual(exporter.getFinishedSpans().length, 3);
         done();
       });
     });
@@ -482,7 +464,7 @@ describe('DocumentLoad Plugin', () => {
     beforeEach(() => {
       const entriesWithoutLoadEventEnd = Object.assign({}, entries);
       delete entriesWithoutLoadEventEnd.loadEventEnd;
-      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entriesWithoutLoadEventEnd]);
       spyEntries.withArgs('resource').returns([]);
     });
@@ -491,17 +473,16 @@ describe('DocumentLoad Plugin', () => {
     });
 
     it('should still export rootSpan and fetchSpan', done => {
-      const spyOnEnd = sinon.spy(dummyExporter, 'export');
-      plugin.enable(moduleExports, provider, logger, config);
+      plugin.enable();
 
       setTimeout(() => {
-        const rootSpan = spyOnEnd.args[0][0][0] as ReadableSpan;
-        const fetchSpan = spyOnEnd.args[1][0][0] as ReadableSpan;
+        const rootSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+        const fetchSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.strictEqual(fetchSpan.name, 'documentLoad');
 
-        assert.strictEqual(spyOnEnd.callCount, 2);
+        assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
       });
     });
@@ -509,11 +490,10 @@ describe('DocumentLoad Plugin', () => {
 
   function shouldExportCorrectSpan() {
     it('should export correct span with events', done => {
-      const spyOnEnd = sinon.spy(dummyExporter, 'export');
-      plugin.enable(moduleExports, provider, logger, config);
+      plugin.enable();
       setTimeout(() => {
-        const rootSpan = spyOnEnd.args[0][0][0] as ReadableSpan;
-        const fetchSpan = spyOnEnd.args[1][0][0] as ReadableSpan;
+        const rootSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+        const fetchSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
         const rsEvents = rootSpan.events;
         const fsEvents = fetchSpan.events;
 
@@ -537,7 +517,7 @@ describe('DocumentLoad Plugin', () => {
 
         assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(fsEvents.length, 9);
-        assert.strictEqual(spyOnEnd.callCount, 2);
+        assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
       });
     });
@@ -546,7 +526,7 @@ describe('DocumentLoad Plugin', () => {
   describe('when navigation entries types are NOT available then fallback to "performance.timing"', () => {
     let spyEntries: any;
     beforeEach(() => {
-      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([]);
       spyEntries.withArgs('resource').returns([]);
 
@@ -585,7 +565,7 @@ describe('DocumentLoad Plugin', () => {
         writable: true,
         value: undefined,
       });
-      spyEntries = sinon.stub(window.performance, 'getEntriesByType');
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([]);
       spyEntries.withArgs('resource').returns([]);
     });
@@ -594,10 +574,9 @@ describe('DocumentLoad Plugin', () => {
     });
 
     it('should not create any span', done => {
-      const spyOnEnd = sinon.spy(dummyExporter, 'export');
-      plugin.enable(moduleExports, provider, logger, config);
+      plugin.enable();
       setTimeout(() => {
-        assert.ok(spyOnEnd.callCount === 0);
+        assert.ok(exporter.getFinishedSpans().length === 0);
         done();
       });
     });

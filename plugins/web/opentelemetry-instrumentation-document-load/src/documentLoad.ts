@@ -21,12 +21,7 @@ import {
   Span,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import {
-  BasePlugin,
-  otperformance,
-  PluginConfig,
-  TRACE_PARENT_HEADER,
-} from '@opentelemetry/core';
+import { otperformance, TRACE_PARENT_HEADER } from '@opentelemetry/core';
 import {
   addSpanNetworkEvent,
   addSpanNetworkEvents,
@@ -35,6 +30,10 @@ import {
   PerformanceLegacy,
   PerformanceTimingNames as PTN,
 } from '@opentelemetry/web';
+import {
+  InstrumentationBase,
+  InstrumentationConfig,
+} from '@opentelemetry/instrumentation';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
@@ -42,21 +41,22 @@ import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 /**
  * This class represents a document load plugin
  */
-export class DocumentLoad extends BasePlugin<unknown> {
+export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   readonly component: string = 'document-load';
   readonly version: string = '1';
   moduleName = this.component;
-  protected _config!: PluginConfig;
+  protected _config!: InstrumentationConfig;
 
   /**
    *
    * @param config
    */
-  constructor(config: PluginConfig = {}) {
-    super('@opentelemetry/plugin-document-load', VERSION);
+  constructor(config: InstrumentationConfig = {}) {
+    super('@opentelemetry/plugin-document-load', VERSION, config);
     this._onDocumentLoaded = this._onDocumentLoaded.bind(this);
-    this._config = config;
   }
+
+  init() {}
 
   /**
    * callback to be executed when page is loaded
@@ -91,7 +91,6 @@ export class DocumentLoad extends BasePlugin<unknown> {
     const metaElement = [...document.getElementsByTagName('meta')].find(
       e => e.getAttribute('name') === TRACE_PARENT_HEADER
     );
-
     const entries = this._getEntries();
     const traceparent = (metaElement && metaElement.content) || '';
     context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
@@ -236,7 +235,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
       hasKey(entries, performanceName) &&
       typeof entries[performanceName] === 'number'
     ) {
-      const span = this._tracer.startSpan(
+      const span = this.tracer.startSpan(
         spanName,
         {
           startTime: entries[performanceName],
@@ -263,15 +262,14 @@ export class DocumentLoad extends BasePlugin<unknown> {
   /**
    * implements patch function
    */
-  protected patch() {
+  enable() {
     this._waitForPageLoad();
-    return this._moduleExports;
   }
 
   /**
    * implements unpatch function
    */
-  protected unpatch() {
+  disable() {
     window.removeEventListener('load', this._onDocumentLoaded);
   }
 }
