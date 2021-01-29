@@ -15,7 +15,13 @@
  */
 
 import * as childProcess from 'child_process';
-import { SpanKind, Attributes, Event, Span, Status } from '@opentelemetry/api';
+import {
+  SpanKind,
+  Attributes,
+  Span,
+  Status,
+  TimedEvent,
+} from '@opentelemetry/api';
 import * as assert from 'assert';
 import { ReadableSpan } from '@opentelemetry/tracing';
 import {
@@ -78,7 +84,7 @@ export const assertSpan = (
   span: ReadableSpan,
   kind: SpanKind,
   attributes: Attributes,
-  events: Event[],
+  events: TimedEvent[],
   status: Status
 ) => {
   assert.strictEqual(span.spanContext.traceId.length, 32);
