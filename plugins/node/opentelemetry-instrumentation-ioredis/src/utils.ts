@@ -36,6 +36,7 @@ import {
 
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
+    span.recordException(err);
     span.setStatus({
       code: StatusCode.ERROR,
       message: err.message,
@@ -116,7 +117,20 @@ export const traceSendCommand = (
 
     try {
       const result = original.apply(this, arguments);
-      endSpan(span, null);
+
+      const origResolve = cmd.resolve;
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      cmd.resolve = function (result: any) {
+        endSpan(span, null);
+        origResolve(result);
+      };
+
+      const origReject = cmd.reject;
+      cmd.reject = function (err: Error) {
+        endSpan(span, err);
+        origReject(err);
+      };
+
       return result;
     } catch (error) {
       endSpan(span, error);
