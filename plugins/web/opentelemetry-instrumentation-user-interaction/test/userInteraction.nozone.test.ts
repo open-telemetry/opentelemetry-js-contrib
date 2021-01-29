@@ -33,7 +33,7 @@ import {
 const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
-describe('UserInteractionPlugin', () => {
+describe('UserInteractionInstrumentation', () => {
   describe('when zone.js is NOT available', () => {
     let userInteractionInstrumentation: UserInteractionInstrumentation;
     let sandbox: sinon.SinonSandbox;
