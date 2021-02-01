@@ -62,9 +62,9 @@ function isValidHeaderValue(value: string): boolean {
 }
 
 /**
- * Propagator for the OpenTracing HTTP format.
+ * Propagator for the ot-trace HTTP format from OpenTracing.
  */
-export class OpenTracingPropagator implements TextMapPropagator {
+export class OTTracePropagator implements TextMapPropagator {
   inject(context: Context, carrier: unknown, setter: TextMapSetter) {
     const spanContext = getSpanContext(context);
     if (!spanContext || !isSpanContextValid(spanContext)) return;

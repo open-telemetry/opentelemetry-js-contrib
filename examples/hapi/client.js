@@ -1,17 +1,16 @@
 'use strict';
 
+const api = require('@opentelemetry/api');
 // eslint-disable-next-line import/order
 const tracer = require('./tracer')('example-hapi-client');
-const api = require('@opentelemetry/api');
 const axios = require('axios').default;
 
 function makeRequest() {
   const span = tracer.startSpan('client.makeRequest()', {
-    parent: tracer.getCurrentSpan(),
     kind: api.SpanKind.CLIENT,
   });
 
-  tracer.withSpan(span, async () => {
+  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), async () => {
     try {
       const res = await axios.get('http://localhost:8081/run_test');
       span.setStatus({ code: api.StatusCode.OK });

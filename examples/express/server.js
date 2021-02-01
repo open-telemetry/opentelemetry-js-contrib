@@ -1,7 +1,7 @@
 'use strict';
 
 // eslint-disable-next-line
-const tracer = require('./tracer')('example-express-server');
+require('./tracer')('example-express-server');
 
 // Require in rest of modules
 const express = require('express');
@@ -10,7 +10,6 @@ const axios = require('axios').default;
 // Setup express
 const app = express();
 const PORT = 8080;
-
 
 const getCrudController = () => {
   const router = express.Router();

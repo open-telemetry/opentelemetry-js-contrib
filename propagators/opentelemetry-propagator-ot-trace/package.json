@@ -1,7 +1,7 @@
 {
-  "name": "@opentelemetry/propagator-opentracing",
+  "name": "@opentelemetry/propagator-ot-trace",
   "version": "0.13.0",
-  "description": "OpenTelemetry propagator OpenTracing provides context propagation for systems that are using the OpenTracing header format",
+  "description": "The OpenTelemetry OTTracepropagator implements the propagation format used by the \"basic tracer\" implementations from the OpenTracing project",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
