@@ -30,15 +30,15 @@ import {
 } from '@opentelemetry/api';
 import * as assert from 'assert';
 import {
-  OpenTracingPropagator,
+  OTTracePropagator,
   OT_TRACE_ID_HEADER,
   OT_SPAN_ID_HEADER,
   OT_SAMPLED_HEADER,
   OT_BAGGAGE_PREFIX,
-} from '../src/OpenTracingPropagator';
+} from '../src/OTTracePropagator';
 
-describe('OpenTracingPropagator', () => {
-  const propagator = new OpenTracingPropagator();
+describe('OTTracePropagator', () => {
+  const propagator = new OTTracePropagator();
   let carrier: { [key: string]: unknown };
 
   beforeEach(() => {
