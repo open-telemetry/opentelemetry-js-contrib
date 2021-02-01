@@ -1,4 +1,4 @@
-# OpenTelemetry Propagator OpenTracing
+# OpenTelemetry OTTracePropagator
 
 [![Gitter chat][gitter-image]][gitter-url]
 [![NPM Published Version][npm-img]][npm-url]
@@ -6,7 +6,7 @@
 [![devDependencies][devdependencies-image]][devdependencies-url]
 [![Apache License][license-image]][license-image]
 
-## OpenTracing Format
+## OT Trace Format
 
 | Header Name         | Description                                                                                                                            | Required              |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
@@ -17,7 +17,7 @@
 
 ### Interop and trace ids
 
-The OpenTracing propagation format expects trace ids to be 64-bits. In order to
+The OT trace propagation format expects trace ids to be 64-bits. In order to
 interop with OpenTelemetry, trace ids need to be truncated to 64-bits before
 sending them on the wire. When truncating, the least significant (right-most)
 bits MUST be retained. For example, a trace id of
@@ -29,7 +29,7 @@ Baggage keys and values are validated according to [rfc7230][rfc7230-url]. Any
 keys or values that would result in invalid HTTP headers will be silently
 dropped during inject.
 
-OpenTelemetry Baggage is represented as multiple headers where the
+OT Baggage is represented as multiple headers where the
 names are carrier dependent. For this reason, they are omitted from the `fields`
 method. This behavior should be taken into account if your application relies
 on the `fields` functionality. See the [specification][fields-spec-url] for
@@ -39,11 +39,9 @@ more details.
 
 ```javascript
 const api = require('@opentelemetry/api');
-const {
-  OpenTracingPropagator,
-} = require('@opentelemetry/propagator-opentracing');
+const { OTTracePropagator } = require('@opentelemetry/propagator-ot-trace');
 
-api.propagation.setGlobalPropagator(new OpenTracingPropagator());
+api.propagation.setGlobalPropagator(new OTTracePropagator());
 ```
 
 ## Useful links
@@ -60,11 +58,11 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=packages/opentelemetry-propagator-opentracing
-[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-propagator-opentracing
-[devdependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=packages/opentelemetry-propagator-opentracing
-[devdependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-propagator-opentracing&type=dev
-[npm-url]: https://www.npmjs.com/package/@opentelemetry/propagator-opentracing
-[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fpropagator-opentracing.svg
+[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=packages/opentelemetry-propagator-ot-trace
+[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-propagator-ot-trace
+[devdependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=packages/opentelemetry-propagator-ot-trace
+[devdependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-propagator-ot-trace&type=dev
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/propagator-ot-trace
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fpropagator-ot-trace.svg
 [rfc7230-url]: https://tools.ietf.org/html/rfc7230#section-3.2
 [fields-spec-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/context/api-propagators.md#fields
