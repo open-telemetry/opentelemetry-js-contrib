@@ -21,7 +21,6 @@ function capitalize(call, callback) {
   console.log(`traceid: ${currentSpan.context().traceId}`);
 
   const span = tracer.startSpan('tutorials.FetchImpl.capitalize', {
-    parent: currentSpan,
     kind: SpanKind.SERVER,
   });
 
