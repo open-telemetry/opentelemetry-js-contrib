@@ -28,7 +28,7 @@ import { BaseOpenTelemetryComponent } from '@opentelemetry/plugin-react-load';
 export class Component1 extends BaseOpenTelemetryComponent { ... }
 ```
 
-See [/examples/react-load](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/master/examples/react-load) for a short example.
+See [/examples/react-load](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/react-load) for a short example.
 
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
@@ -41,7 +41,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [gitter-image]: https://badges.gitter.im/open-telemetry/opentelemetry-js.svg
 [gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-[license-url]: https://github.com/open-telemetry/opentelemetry-js/blob/master/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/plugin-react-load
 [npm-img]: TODO:set_img_url

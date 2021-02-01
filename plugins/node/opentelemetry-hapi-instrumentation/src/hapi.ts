@@ -68,7 +68,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     // type definition for Hapi.Server. Hapi.Server (note the uppercase) can also function
     // as a factory function, similarly to Hapi.server (lowercase), and so should
     // also be supported and instrumented. This is an issue with the DefinitelyTyped repo.
-    // Function is defined at: https://github.com/hapijs/hapi/blob/master/lib/index.js#L9
+    // Function is defined at: https://github.com/hapijs/hapi/blob/main/lib/index.js#L9
     this._logger.debug('Patching Hapi.Server');
     shimmer.wrap(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

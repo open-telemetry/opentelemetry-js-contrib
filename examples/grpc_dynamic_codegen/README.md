@@ -53,7 +53,7 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
 
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-node-sdk>
+- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node-sdk>
 
 ## LICENSE
 
