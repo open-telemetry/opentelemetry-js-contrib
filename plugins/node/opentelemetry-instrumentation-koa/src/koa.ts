@@ -160,6 +160,8 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
             context.request.ctx.parentSpan.updateName(
               `${context.method} ${context._matchedRoute}`
             );
+
+            delete context.request.ctx.parentSpan;
           }
         }
       }
