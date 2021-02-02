@@ -23,11 +23,7 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { CompositePropagator, HttpTraceContext } from '@opentelemetry/core';
 
-const provider = new WebTracerProvider({
-  instrumentations: [
-    new DocumentLoadInstrumentation()
-  ]
-});
+const provider = new WebTracerProvider();
 
 provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 
