@@ -3,7 +3,7 @@
 const https = require('https');
 const graphql = require('graphql');
 
-const url1 = 'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/package.json';
+const url1 = 'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
 function getData(url) {
   return new Promise((resolve, reject) => {

@@ -25,7 +25,7 @@ export type MongoInternalCommand = {
   q?: { [key: string]: unknown };
 };
 
-// https://github.com/mongodb/node-mongodb-native/blob/master/lib/topologies/server.js#L179
+// https://github.com/mongodb/node-mongodb-native/blob/main/lib/topologies/server.js#L179
 export type MongoInternalTopology = {
   s?: {
     // those are for mongodb@3

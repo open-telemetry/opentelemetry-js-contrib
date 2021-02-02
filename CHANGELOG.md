@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.13.0
+
+#### :bug: Bug Fix
+* `opentelemetry-test-utils`
+  * [#239](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/239) fix(plugin-ioredis): end span on response from the server and set span status according to response ([@blumamir](https://github.com/blumamir))
+* Other
+  * [#322](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/322) Fix link ([@jonaskello](https://github.com/jonaskello))
+  * [#310](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/310) fix: move semantic-conventions to regular dependencies ([@dobesv](https://github.com/dobesv))
+  * [#281](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/281) fix(koa): End span and record exception on a middleware exception ([@oguzbilgener](https://github.com/oguzbilgener))
+
+#### :rocket: Enhancement
+* Other
+  * [#318](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/318) feat: OpenTracing propagator ([@mwear](https://github.com/mwear))
+* `opentelemetry-host-metrics`, `opentelemetry-test-utils`
+  * [#315](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/315) chore: update to OTel 0.15.0 ([@Flarna](https://github.com/Flarna))
+
+#### :memo: Documentation
+* `opentelemetry-host-metrics`
+  * [#325](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/325) chore: change links to point to main ([@dyladan](https://github.com/dyladan))
+
+#### Committers: 7
+- Amir Blum ([@blumamir](https://github.com/blumamir))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Dobes Vandermeer ([@dobesv](https://github.com/dobesv))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Jonas Kello ([@jonaskello](https://github.com/jonaskello))
+- Matthew Wear ([@mwear](https://github.com/mwear))
+- Oğuz Bilgener ([@oguzbilgener](https://github.com/oguzbilgener))
+
 ## 0.12.1
 
 #### :bug: Bug Fix
@@ -201,4 +230,4 @@ Released 2020-04-27
 
 Released 2020-04-08
 
-For details about this release and all previous releases, see https://github.com/open-telemetry/opentelemetry-js/blob/master/CHANGELOG.md
+For details about this release and all previous releases, see https://github.com/open-telemetry/opentelemetry-js/blob/main/CHANGELOG.md

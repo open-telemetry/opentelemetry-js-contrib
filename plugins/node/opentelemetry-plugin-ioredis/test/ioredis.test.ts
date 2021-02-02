@@ -28,6 +28,7 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/test-utils';
 import {
   InMemorySpanExporter,
+  ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
@@ -36,6 +37,7 @@ import { IORedisPlugin, plugin } from '../src';
 import { IoredisPluginConfig, DbStatementSerializer } from '../src/types';
 import {
   DatabaseAttribute,
+  ExceptionAttribute,
   GeneralAttribute,
 } from '@opentelemetry/semantic-conventions';
 
@@ -57,6 +59,20 @@ const DEFAULT_ATTRIBUTES = {
 
 const unsetStatus: Status = {
   code: StatusCode.UNSET,
+};
+
+const predictableStackTrace =
+  '-- Stack trace replaced by test to predictable value -- ';
+const sanitizeEventForAssertion = (span: ReadableSpan) => {
+  span.events.forEach(e => {
+    // stack trace includes data such as /user/{userName}/repos/{projectName}
+    if (e.attributes?.[ExceptionAttribute.STACKTRACE]) {
+      e.attributes[ExceptionAttribute.STACKTRACE] = predictableStackTrace;
+    }
+
+    // since time will change on each test invocation, it is being replaced to predicable value
+    e.time = [0, 0];
+  });
 };
 
 describe('ioredis', () => {
@@ -131,9 +147,11 @@ describe('ioredis', () => {
         assert.strictEqual(endedSpans.length, 3);
         assert.strictEqual(endedSpans[2].name, 'test span');
 
-        client.quit(done);
-        assert.strictEqual(endedSpans.length, 4);
-        assert.strictEqual(endedSpans[3].name, 'quit');
+        client.quit(() => {
+          assert.strictEqual(endedSpans.length, 4);
+          assert.strictEqual(endedSpans[3].name, 'quit');
+          done();
+        });
       };
       const errorHandler = (err: Error) => {
         assert.ifError(err);
@@ -263,6 +281,38 @@ describe('ioredis', () => {
         });
       });
 
+      it('should set span with error when redis return reject', async () => {
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(setSpan(context.active(), span), async () => {
+          await client.set('non-int-key', 'non-int-value');
+          try {
+            // should throw 'ReplyError: ERR value is not an integer or out of range'
+            // because the value im the key is not numeric and we try to increment it
+            await client.incr('non-int-key');
+          } catch (ex) {
+            const endedSpans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(endedSpans.length, 2);
+            const ioredisSpan = endedSpans[1];
+            // redis 'incr' operation failed with exception, so span should indicate it
+            assert.strictEqual(ioredisSpan.status.code, StatusCode.ERROR);
+            const exceptionEvent = ioredisSpan.events[0];
+            assert.strictEqual(exceptionEvent.name, 'exception');
+            assert.strictEqual(
+              exceptionEvent.attributes?.[ExceptionAttribute.MESSAGE],
+              ex.message
+            );
+            assert.strictEqual(
+              exceptionEvent.attributes?.[ExceptionAttribute.STACKTRACE],
+              ex.stack
+            );
+            assert.strictEqual(
+              exceptionEvent.attributes?.[ExceptionAttribute.TYPE],
+              ex.name
+            );
+          }
+        });
+      });
+
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
@@ -322,9 +372,9 @@ describe('ioredis', () => {
             const spanNames = [
               'connect',
               'connect',
+              'info',
+              'info',
               'subscribe',
-              'info',
-              'info',
               'subscribe',
               'publish',
               'publish',
@@ -377,24 +427,48 @@ describe('ioredis', () => {
 
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
+            const evalshaSpan = endedSpans[0];
             // the script may be already cached on server therefore we get either 2 or 3 spans
             if (endedSpans.length === 3) {
               assert.strictEqual(endedSpans[2].name, 'test span');
               assert.strictEqual(endedSpans[1].name, 'eval');
               assert.strictEqual(endedSpans[0].name, 'evalsha');
+              // in this case, server returns NOSCRIPT error for evalsha,
+              // telling the client to use EVAL instead
+              sanitizeEventForAssertion(evalshaSpan);
+              testUtils.assertSpan(
+                evalshaSpan,
+                SpanKind.CLIENT,
+                attributes,
+                [
+                  {
+                    attributes: {
+                      [ExceptionAttribute.MESSAGE]:
+                        'NOSCRIPT No matching script. Please use EVAL.',
+                      [ExceptionAttribute.STACKTRACE]: predictableStackTrace,
+                      [ExceptionAttribute.TYPE]: 'ReplyError',
+                    },
+                    name: 'exception',
+                    time: [0, 0],
+                  },
+                ],
+                {
+                  code: StatusCode.ERROR,
+                }
+              );
             } else {
               assert.strictEqual(endedSpans.length, 2);
               assert.strictEqual(endedSpans[1].name, 'test span');
               assert.strictEqual(endedSpans[0].name, 'evalsha');
+              testUtils.assertSpan(
+                evalshaSpan,
+                SpanKind.CLIENT,
+                attributes,
+                [],
+                unsetStatus
+              );
             }
-            testUtils.assertSpan(
-              endedSpans[0],
-              SpanKind.CLIENT,
-              attributes,
-              [],
-              unsetStatus
-            );
-            testUtils.assertPropagation(endedSpans[0], span);
+            testUtils.assertPropagation(evalshaSpan, span);
             done();
           });
         });
