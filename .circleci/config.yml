@@ -61,7 +61,7 @@ cache_1: &cache_1
     - plugins/node/opentelemetry-plugin-redis/node_modules
     - plugins/web/opentelemetry-plugin-document-load/node_modules
     - plugins/web/opentelemetry-plugin-react-load/node_modules
-    - plugins/web/opentelemetry-plugin-user-interaction/node_modules
+    - plugins/web/opentelemetry-instrumentation-user-interaction/node_modules
     - propagators/opentelemetry-propagator-jaeger/node_modules
     - propagators/opentelemetry-propagator-grpc-census-binary/node_modules
 

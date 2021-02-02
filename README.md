@@ -71,7 +71,7 @@ OpenTelemetry can collect tracing data automatically using plugins. Vendors/User
 
 - [@opentelemetry/plugin-document-load][otel-plugin-document-load]
 - [@opentelemetry/plugin-xml-http-request][otel-plugin-xml-http-request]
-- [@opentelemetry/plugin-user-interaction][otel-plugin-user-interaction]
+- [@opentelemetry/instrumentation-user-interaction][otel-instrumentation-user-interaction]
 - [@opentelemetry/plugin-react-load][otel-plugin-react-load]
 
 ### Metapackages
@@ -130,7 +130,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-plugin-pg-pool]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-pg-pool
 [otel-plugin-pg]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-pg
 [otel-plugin-redis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-redis
-[otel-plugin-user-interaction]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-user-interaction
+[otel-instrumentation-user-interaction]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-user-interaction
 [otel-plugin-xml-http-request]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-xml-http-request
 [otel-plugin-express]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-express
 [otel-plugins-node-core-and-contrib]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/plugins-node-core-and-contrib

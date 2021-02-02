@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
+import {
+  isWrapped,
+  InstrumentationBase,
+  InstrumentationConfig,
+} from '@opentelemetry/instrumentation';
+
 import * as api from '@opentelemetry/api';
 import { getSpan, Span } from '@opentelemetry/api';
-import { BasePlugin, hrTime, isWrapped } from '@opentelemetry/core';
+import { hrTime } from '@opentelemetry/core';
 import { getElementXPath } from '@opentelemetry/web';
-import * as shimmer from 'shimmer';
 import { AttributeNames } from './enums/AttributeNames';
 import {
   AsyncTask,
@@ -37,7 +42,7 @@ const EVENT_NAVIGATION_NAME = 'Navigation:';
  * If zone.js is available then it patches the zone otherwise it patches
  * addEventListener of HTMLElement
  */
-export class UserInteractionPlugin extends BasePlugin<unknown> {
+export class UserInteractionInstrumentation extends InstrumentationBase<unknown> {
   readonly component: string = 'user-interaction';
   readonly version = VERSION;
   moduleName = this.component;
@@ -51,9 +56,11 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   // for event bubbling
   private _eventsSpanMap: WeakMap<Event, Span> = new WeakMap<Event, Span>();
 
-  constructor() {
-    super('@opentelemetry/plugin-user-interaction', VERSION);
+  constructor(config?: InstrumentationConfig) {
+    super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
   }
+
+  init() {}
 
   /**
    * This will check if last task was timeout and will save the time to
@@ -104,7 +111,7 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     }
     const xpath = getElementXPath(element, true);
     try {
-      const span = this._tracer.startSpan(
+      const span = this.tracer.startSpan(
         eventName,
         {
           attributes: {
@@ -322,11 +329,11 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   _patchHistoryApi() {
     this._unpatchHistoryApi();
 
-    shimmer.wrap(history, 'replaceState', this._patchHistoryMethod());
-    shimmer.wrap(history, 'pushState', this._patchHistoryMethod());
-    shimmer.wrap(history, 'back', this._patchHistoryMethod());
-    shimmer.wrap(history, 'forward', this._patchHistoryMethod());
-    shimmer.wrap(history, 'go', this._patchHistoryMethod());
+    this._wrap(history, 'replaceState', this._patchHistoryMethod());
+    this._wrap(history, 'pushState', this._patchHistoryMethod());
+    this._wrap(history, 'back', this._patchHistoryMethod());
+    this._wrap(history, 'forward', this._patchHistoryMethod());
+    this._wrap(history, 'go', this._patchHistoryMethod());
   }
 
   /**
@@ -351,12 +358,11 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
    * unpatch the history api methods
    */
   _unpatchHistoryApi() {
-    if (isWrapped(history.replaceState))
-      shimmer.unwrap(history, 'replaceState');
-    if (isWrapped(history.pushState)) shimmer.unwrap(history, 'pushState');
-    if (isWrapped(history.back)) shimmer.unwrap(history, 'back');
-    if (isWrapped(history.forward)) shimmer.unwrap(history, 'forward');
-    if (isWrapped(history.go)) shimmer.unwrap(history, 'go');
+    if (isWrapped(history.replaceState)) this._unwrap(history, 'replaceState');
+    if (isWrapped(history.pushState)) this._unwrap(history, 'pushState');
+    if (isWrapped(history.back)) this._unwrap(history, 'back');
+    if (isWrapped(history.forward)) this._unwrap(history, 'forward');
+    if (isWrapped(history.go)) this._unwrap(history, 'go');
   }
 
   /**
@@ -511,9 +517,9 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
   }
 
   /**
-   * implements patch function
+   * implements enable function
    */
-  protected patch() {
+  enable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
     this._logger.debug(
       'applying patch to',
@@ -524,30 +530,30 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     );
     if (ZoneWithPrototype) {
       if (isWrapped(ZoneWithPrototype.prototype.runTask)) {
-        shimmer.unwrap(ZoneWithPrototype.prototype, 'runTask');
+        this._unwrap(ZoneWithPrototype.prototype, 'runTask');
         this._logger.debug('removing previous patch from method runTask');
       }
       if (isWrapped(ZoneWithPrototype.prototype.scheduleTask)) {
-        shimmer.unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
+        this._unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
         this._logger.debug('removing previous patch from method scheduleTask');
       }
       if (isWrapped(ZoneWithPrototype.prototype.cancelTask)) {
-        shimmer.unwrap(ZoneWithPrototype.prototype, 'cancelTask');
+        this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
         this._logger.debug('removing previous patch from method cancelTask');
       }
 
       this._zonePatched = true;
-      shimmer.wrap(
+      this._wrap(
         ZoneWithPrototype.prototype,
         'runTask',
         this._patchZoneRunTask()
       );
-      shimmer.wrap(
+      this._wrap(
         ZoneWithPrototype.prototype,
         'scheduleTask',
         this._patchZoneScheduleTask()
       );
-      shimmer.wrap(
+      this._wrap(
         ZoneWithPrototype.prototype,
         'cancelTask',
         this._patchZoneCancelTask()
@@ -555,23 +561,23 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     } else {
       this._zonePatched = false;
       if (isWrapped(HTMLElement.prototype.addEventListener)) {
-        shimmer.unwrap(HTMLElement.prototype, 'addEventListener');
+        this._unwrap(HTMLElement.prototype, 'addEventListener');
         this._logger.debug(
           'removing previous patch from method addEventListener'
         );
       }
       if (isWrapped(HTMLElement.prototype.removeEventListener)) {
-        shimmer.unwrap(HTMLElement.prototype, 'removeEventListener');
+        this._unwrap(HTMLElement.prototype, 'removeEventListener');
         this._logger.debug(
           'removing previous patch from method removeEventListener'
         );
       }
-      shimmer.wrap(
+      this._wrap(
         HTMLElement.prototype,
         'addEventListener',
         this._patchElement()
       );
-      shimmer.wrap(
+      this._wrap(
         HTMLElement.prototype,
         'removeEventListener',
         this._patchRemoveEventListener()
@@ -579,13 +585,12 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
     }
 
     this._patchHistoryApi();
-    return this._moduleExports;
   }
 
   /**
    * implements unpatch function
    */
-  protected unpatch() {
+  disable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
     this._logger.debug(
       'removing patch from',
@@ -595,12 +600,22 @@ export class UserInteractionPlugin extends BasePlugin<unknown> {
       !!ZoneWithPrototype
     );
     if (ZoneWithPrototype && this._zonePatched) {
-      shimmer.unwrap(ZoneWithPrototype.prototype, 'runTask');
-      shimmer.unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
-      shimmer.unwrap(ZoneWithPrototype.prototype, 'cancelTask');
+      if (isWrapped(ZoneWithPrototype.prototype.runTask)) {
+        this._unwrap(ZoneWithPrototype.prototype, 'runTask');
+      }
+      if (isWrapped(ZoneWithPrototype.prototype.scheduleTask)) {
+        this._unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
+      }
+      if (isWrapped(ZoneWithPrototype.prototype.cancelTask)) {
+        this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
+      }
     } else {
-      shimmer.unwrap(HTMLElement.prototype, 'addEventListener');
-      shimmer.unwrap(HTMLElement.prototype, 'removeEventListener');
+      if (isWrapped(HTMLElement.prototype.addEventListener)) {
+        this._unwrap(HTMLElement.prototype, 'addEventListener');
+      }
+      if (isWrapped(HTMLElement.prototype.removeEventListener)) {
+        this._unwrap(HTMLElement.prototype, 'removeEventListener');
+      }
     }
     this._unpatchHistoryApi();
   }
