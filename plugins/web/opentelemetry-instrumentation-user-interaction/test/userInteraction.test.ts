@@ -17,14 +17,18 @@ const originalSetTimeout = window.setTimeout;
 import { context } from '@opentelemetry/api';
 import { ROOT_CONTEXT } from '@opentelemetry/context-base';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
-import { isWrapped, LogLevel } from '@opentelemetry/core';
+import {
+  isWrapped,
+  registerInstrumentations,
+} from '@opentelemetry/instrumentation';
+import { LogLevel } from '@opentelemetry/core';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/tracing';
 import { WebTracerProvider } from '@opentelemetry/web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import 'zone.js';
-import { UserInteractionPlugin } from '../src';
+import { UserInteractionInstrumentation } from '../src';
 import { WindowWithZone } from '../src/types';
 import {
   assertClickSpan,
@@ -37,10 +41,10 @@ import {
 const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
-describe('UserInteractionPlugin', () => {
+describe('UserInteractionInstrumentation', () => {
   describe('when zone.js is available', () => {
     let contextManager: ZoneContextManager;
-    let userInteractionPlugin: UserInteractionPlugin;
+    let userInteractionInstrumentation: UserInteractionInstrumentation;
     let sandbox: sinon.SinonSandbox;
     let webTracerProvider: WebTracerProvider;
     let dummySpanExporter: DummySpanExporter;
@@ -48,7 +52,6 @@ describe('UserInteractionPlugin', () => {
     let requests: sinon.SinonFakeXMLHttpRequest[] = [];
     beforeEach(() => {
       contextManager = new ZoneContextManager().enable();
-      context.setGlobalContextManager(contextManager);
       sandbox = sinon.createSandbox();
       history.pushState({ test: 'testing' }, '', `${location.pathname}`);
       const fakeXhr = sandbox.useFakeXMLHttpRequest();
@@ -65,16 +68,27 @@ describe('UserInteractionPlugin', () => {
 
       sandbox.useFakeTimers();
 
-      userInteractionPlugin = new UserInteractionPlugin();
       webTracerProvider = new WebTracerProvider({
         logLevel: LogLevel.ERROR,
-        plugins: [userInteractionPlugin, new XMLHttpRequestInstrumentation()],
       });
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
       webTracerProvider.addSpanProcessor(
         new tracing.SimpleSpanProcessor(dummySpanExporter)
       );
+
+      webTracerProvider.register({
+        contextManager,
+      });
+      userInteractionInstrumentation = new UserInteractionInstrumentation();
+
+      registerInstrumentations({
+        tracerProvider: webTracerProvider,
+        instrumentations: [
+          userInteractionInstrumentation,
+          new XMLHttpRequestInstrumentation(),
+        ],
+      });
 
       // this is needed as window is treated as context and karma is adding
       // context which is then detected as spanContext
@@ -109,9 +123,7 @@ describe('UserInteractionPlugin', () => {
 
     it('should ignore periodic tasks', done => {
       fakeInteraction(() => {
-        const interval = setInterval(() => {
-          // console.log('interval ....');
-        }, 1);
+        const interval = setInterval(() => {}, 1);
         originalSetTimeout(() => {
           assert.equal(
             exportSpy.args.length,
@@ -346,7 +358,7 @@ describe('UserInteractionPlugin', () => {
       );
       assert.strictEqual(isWrapped(history.go), true, 'go should be wrapped');
 
-      userInteractionPlugin.disable();
+      userInteractionInstrumentation.disable();
 
       assert.strictEqual(
         isWrapped(ZoneWithPrototype.prototype.runTask),
