@@ -53,7 +53,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    */
   constructor(config: InstrumentationConfig = {}) {
     super('@opentelemetry/plugin-document-load', VERSION, config);
-    this._onDocumentLoaded = this._onDocumentLoaded.bind(this);
   }
 
   init() {}
@@ -255,6 +254,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
     if (window.document.readyState === 'complete') {
       this._onDocumentLoaded();
     } else {
+      this._onDocumentLoaded = this._onDocumentLoaded.bind(this);
       window.addEventListener('load', this._onDocumentLoaded);
     }
   }
@@ -263,6 +263,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    * implements patch function
    */
   enable() {
+    this.disable();
     this._waitForPageLoad();
   }
 

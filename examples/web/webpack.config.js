@@ -1,3 +1,5 @@
+'use strict';
+
 const webpack = require('webpack');
 const webpackMerge = require('webpack-merge');
 const path = require('path');
@@ -7,6 +9,7 @@ const directory = path.resolve(__dirname);
 const common = {
   mode: 'development',
   entry: {
+    'document-load': 'examples/document-load/index.js',
     'user-interaction': 'examples/user-interaction/index.js',
   },
   output: {
