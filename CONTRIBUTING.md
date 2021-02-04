@@ -16,7 +16,7 @@ Reporting bugs is an important contribution. Please make sure to include:
 ### Before you start
 
 Please read project contribution
-[guide](https://github.com/open-telemetry/community/blob/master/CONTRIBUTING.md)
+[guide](https://github.com/open-telemetry/community/blob/main/CONTRIBUTING.md)
 for general practices for OpenTelemetry project.
 
 #### Conventional commit
@@ -42,16 +42,16 @@ git remote add upstream https://github.com/open-telemetry/opentelemetry-js-contr
 git remote -v
 ```
 
-To update your fork, fetch the upstream repo's branches and commits, then merge your master with upstream's master:
+To update your fork, fetch the upstream repo's branches and commits, then merge your main with upstream's main:
 ```
 git fetch upstream
-git checkout master
-git merge upstream/master
+git checkout main
+git merge upstream/main
 ```
 
-Remember to always work in a branch of your local copy, as you might otherwise have to contend with conflicts in master.
+Remember to always work in a branch of your local copy, as you might otherwise have to contend with conflicts in main.
 
-Please also see [GitHub workflow](https://github.com/open-telemetry/community/blob/master/CONTRIBUTING.md#github-workflow) section of general project contributing guide.
+Please also see [GitHub workflow](https://github.com/open-telemetry/community/blob/main/CONTRIBUTING.md#github-workflow) section of general project contributing guide.
 
 ### Running the tests
 

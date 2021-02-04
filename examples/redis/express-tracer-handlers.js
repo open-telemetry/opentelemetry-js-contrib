@@ -5,7 +5,6 @@ const api = require('@opentelemetry/api');
 function getMiddlewareTracer(tracer) {
   return (req, res, next) => {
     const span = tracer.startSpan(`express.middleware.tracer(${req.method} ${req.path})`, {
-      parent: tracer.getCurrentSpan(),
       kind: api.SpanKind.SERVER,
     });
 
@@ -16,7 +15,7 @@ function getMiddlewareTracer(tracer) {
       originalSend.apply(res, args);
     };
 
-    tracer.withSpan(span, next);
+    api.context.with(api.setSpan(api.ROOT_CONTEXT, span), next);
   };
 }
 

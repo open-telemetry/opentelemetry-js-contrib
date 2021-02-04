@@ -1,5 +1,6 @@
 'use strict';
 
+const api = require('@opentelemetry/api');
 const tracer = require('./tracer')('example-mongodb-http-client');
 // eslint-disable-next-line import/order
 const http = require('http');
@@ -14,7 +15,7 @@ function makeRequest() {
   let queries = 0;
   let responses = 0;
 
-  tracer.withSpan(span, () => {
+  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
     queries += 1;
     http.get({
       host: 'localhost',
@@ -30,7 +31,7 @@ function makeRequest() {
       });
     });
   });
-  tracer.withSpan(span, () => {
+  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
     queries += 1;
     http.get({
       host: 'localhost',
@@ -46,7 +47,7 @@ function makeRequest() {
       });
     });
   });
-  tracer.withSpan(span, () => {
+  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
     queries += 1;
     http.get({
       host: 'localhost',

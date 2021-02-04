@@ -1,6 +1,6 @@
 {
-  "name": "@opentelemetry/plugin-user-interaction",
-  "version": "0.12.1",
+  "name": "@opentelemetry/instrumentation-user-interaction",
+  "version": "0.13.0",
   "description": "OpenTelemetry UserInteraction automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -82,8 +82,8 @@
   "dependencies": {
     "@opentelemetry/api": "^0.15.0",
     "@opentelemetry/core": "^0.15.0",
-    "@opentelemetry/web": "^0.15.0",
-    "shimmer": "^1.2.1"
+    "@opentelemetry/instrumentation": "^0.15.0",
+    "@opentelemetry/web": "^0.15.0"
   },
   "peerDependencies": {
     "zone.js": "0.10.3"
