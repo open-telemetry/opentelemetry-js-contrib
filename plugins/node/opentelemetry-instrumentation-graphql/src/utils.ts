@@ -142,15 +142,14 @@ export function getOperation(
   if (operationName) {
     return document.definitions
       .filter(
-        definition => OPERATION_VALUES.indexOf(definition?.operation) !== -1
-      )
-      .find(
         definition =>
-          operationName === (definition.name && definition.name.value)
-      );
+          OPERATION_VALUES.indexOf((definition as any)?.operation) !== -1
+      )
+      .find(definition => operationName === (definition as any)?.name?.value);
   } else {
     return document.definitions.find(
-      definition => OPERATION_VALUES.indexOf(definition?.operation) !== -1
+      definition =>
+        OPERATION_VALUES.indexOf((definition as any)?.operation) !== -1
     );
   }
 }

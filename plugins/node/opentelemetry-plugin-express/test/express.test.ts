@@ -314,7 +314,7 @@ describe('Express Plugin', () => {
         return res.status(200).end('test');
       });
       const server = http.createServer(app);
-      await new Promise(resolve => server.listen(0, resolve));
+      await new Promise<void>(resolve => server.listen(0, resolve));
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       const res = await httpRequest.get(`http://localhost:${port}/toto/tata`);
@@ -341,7 +341,7 @@ describe('Express Plugin', () => {
         return next();
       });
       const server = http.createServer(app);
-      await new Promise(resolve => server.listen(0, resolve));
+      await new Promise<void>(resolve => server.listen(0, resolve));
 
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
@@ -400,7 +400,7 @@ describe('Express Plugin', () => {
       });
 
       server = http.createServer(app);
-      await new Promise(resolve => server.listen(0, resolve));
+      await new Promise<void>(resolve => server.listen(0, resolve));
     });
 
     afterEach(() => {
@@ -458,7 +458,7 @@ describe('Express Plugin', () => {
         return next();
       });
       const server = http.createServer(app);
-      await new Promise(resolve => server.listen(0, resolve));
+      await new Promise<void>(resolve => server.listen(0, resolve));
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(setSpan(context.active(), rootSpan), async () => {
