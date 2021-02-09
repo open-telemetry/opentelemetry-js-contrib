@@ -1,5 +1,6 @@
 'use strict';
 
+const api = require('@opentelemetry/api');
 const tracer = require('./tracer')('postgres-client-service');
 // eslint-disable-next-line import/order
 const http = require('http');
@@ -7,7 +8,7 @@ const http = require('http');
 function makeRequest() {
   const span = tracer.startSpan('makeRequest');
   const randomId = Math.floor(Math.random() * 10);
-  tracer.withSpan(span, () => {
+  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
     console.log('Client traceId ', span.context().traceId);
     http.get({
       host: 'localhost',

@@ -15,15 +15,14 @@
  */
 const originalSetTimeout = window.setTimeout;
 
-import { context } from '@opentelemetry/api';
 import { isWrapped, LogLevel } from '@opentelemetry/core';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import * as tracing from '@opentelemetry/tracing';
 import { WebTracerProvider } from '@opentelemetry/web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { UserInteractionPlugin } from '../src';
+import { UserInteractionInstrumentation } from '../src';
 import {
   assertClickSpan,
   DummySpanExporter,
@@ -34,18 +33,15 @@ import {
 const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
-describe('UserInteractionPlugin', () => {
+describe('UserInteractionInstrumentation', () => {
   describe('when zone.js is NOT available', () => {
-    let contextManager: ZoneContextManager;
-    let userInteractionPlugin: UserInteractionPlugin;
+    let userInteractionInstrumentation: UserInteractionInstrumentation;
     let sandbox: sinon.SinonSandbox;
     let webTracerProvider: WebTracerProvider;
     let dummySpanExporter: DummySpanExporter;
     let exportSpy: sinon.SinonSpy;
     let requests: sinon.SinonFakeXMLHttpRequest[] = [];
     beforeEach(() => {
-      contextManager = new ZoneContextManager().enable();
-      context.setGlobalContextManager(contextManager);
       sandbox = sinon.createSandbox();
       const fakeXhr = sandbox.useFakeXMLHttpRequest();
       fakeXhr.onCreate = function (xhr: sinon.SinonFakeXMLHttpRequest) {
@@ -61,15 +57,18 @@ describe('UserInteractionPlugin', () => {
 
       sandbox.useFakeTimers();
 
-      userInteractionPlugin = new UserInteractionPlugin();
+      userInteractionInstrumentation = new UserInteractionInstrumentation({
+        enabled: false,
+      });
 
-      sinon
-        .stub(userInteractionPlugin, 'getZoneWithPrototype')
-        .callsFake(() => undefined);
+      sandbox
+        .stub(userInteractionInstrumentation, 'getZoneWithPrototype')
+        .callsFake(() => {
+          return false as any;
+        });
 
       webTracerProvider = new WebTracerProvider({
         logLevel: LogLevel.ERROR,
-        plugins: [userInteractionPlugin, new XMLHttpRequestInstrumentation()],
       });
 
       dummySpanExporter = new DummySpanExporter();
@@ -77,6 +76,15 @@ describe('UserInteractionPlugin', () => {
       webTracerProvider.addSpanProcessor(
         new tracing.SimpleSpanProcessor(dummySpanExporter)
       );
+      webTracerProvider.register();
+
+      registerInstrumentations({
+        tracerProvider: webTracerProvider,
+        instrumentations: [
+          userInteractionInstrumentation,
+          new XMLHttpRequestInstrumentation(),
+        ],
+      });
 
       // this is needed as window is treated as context and karma is adding
       // context which is then detected as spanContext
@@ -86,7 +94,6 @@ describe('UserInteractionPlugin', () => {
       requests = [];
       sandbox.restore();
       exportSpy.restore();
-      context.disable();
     });
 
     it('should not break removeEventListener', () => {
@@ -242,7 +249,7 @@ describe('UserInteractionPlugin', () => {
     });
 
     it('should not create span when start span fails', done => {
-      userInteractionPlugin['_tracer'].startSpan = function () {
+      userInteractionInstrumentation['_tracer'].startSpan = function () {
         throw 'foo';
       };
 
@@ -404,7 +411,7 @@ describe('UserInteractionPlugin', () => {
       });
     });
 
-    it('should handle unpatch', () => {
+    it('should handle disable', () => {
       assert.strictEqual(
         isWrapped(HTMLElement.prototype.addEventListener),
         true,
@@ -438,7 +445,7 @@ describe('UserInteractionPlugin', () => {
       );
       assert.strictEqual(isWrapped(history.go), true, 'go should be wrapped');
 
-      userInteractionPlugin.disable();
+      userInteractionInstrumentation.disable();
 
       assert.strictEqual(
         isWrapped(HTMLElement.prototype.addEventListener),
