@@ -335,8 +335,7 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
         const rootSpan = tracer.startSpan('rootSpan');
         // Suppress this ts error due the Hapi plugin type definition is incomplete. server.register can accept nested plugin. See reference https://hapi.dev/api/?v=20.0.0#-routeoptionshandler
         await server.register({
-          // @ts-ignore
-          plugin: nestedPackagePlugin,
+          plugin: nestedPackagePlugin as any,
         });
         await server.start();
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);

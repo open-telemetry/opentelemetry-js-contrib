@@ -71,7 +71,7 @@ describe('Koa Instrumentation - Router Tests', () => {
 
     app = new koa();
     server = http.createServer(app.callback());
-    await new Promise(resolve => server.listen(0, resolve));
+    await new Promise<void>(resolve => server.listen(0, resolve));
     port = (server.address() as AddressInfo).port;
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
