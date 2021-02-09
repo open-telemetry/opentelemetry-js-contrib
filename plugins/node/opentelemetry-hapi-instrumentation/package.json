@@ -42,9 +42,9 @@
   },
   "devDependencies": {
     "@hapi/hapi": "20.0.1",
-    "@opentelemetry/context-async-hooks": "^0.15.0",
-    "@opentelemetry/node": "^0.15.0",
-    "@opentelemetry/tracing": "^0.15.0",
+    "@opentelemetry/context-async-hooks": "0.15.0",
+    "@opentelemetry/node": "0.15.0",
+    "@opentelemetry/tracing": "0.15.0",
     "@types/hapi__hapi": "20.0.1",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",

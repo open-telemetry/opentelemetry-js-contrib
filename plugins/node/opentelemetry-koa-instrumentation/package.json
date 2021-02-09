@@ -44,9 +44,9 @@
   },
   "devDependencies": {
     "@koa/router": "9.4.0",
-    "@opentelemetry/context-async-hooks": "^0.15.0",
-    "@opentelemetry/node": "^0.15.0",
-    "@opentelemetry/tracing": "^0.15.0",
+    "@opentelemetry/context-async-hooks": "0.15.0",
+    "@opentelemetry/node": "0.15.0",
+    "@opentelemetry/tracing": "0.15.0",
     "@types/koa": "2.11.4",
     "@types/koa__router": "8.0.2",
     "@types/mocha": "7.0.2",
