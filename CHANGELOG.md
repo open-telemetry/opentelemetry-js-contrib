@@ -1,6 +1,6 @@
 # CHANGELOG
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. Do not remove the "Unreleased" header; it is used in the automated release workflow.
 
 ## Unreleased
 

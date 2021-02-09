@@ -2,7 +2,31 @@
 
 This document explains how to publish all OT modules at version x.y.z. Ensure that you’re following semver when choosing a version number.
 
-Release Process:
+## Auto-generate a Release PR
+
+Navigate to the [Create a Release PR Worflow](https://github.com/open-telemetry/opentelemetry-js-contrib/actions/workflows/release-pr.yml). Click the "Run workflow" dropdown, enter the semver-compliant version to release, then click "Run workflow". It will generate a release pull request from a branch named like `release/x.y.z`.
+
+## Review Release PR
+
+If necessary, update sample code or documentation on the `release/x.y.z` branch to be included in the release. Another maintainer should approve the PR, specifically validating the automatic updates and verifying the tests are passing.
+
+NOTE: If any major changes are merged while the release PR is open, the CHANGELOG on the `release/x.y.z` branch must be manually updated to reflect the change.
+
+## Merge Release PR
+
+After approval, merge the release PR. This will automatically publish all packages. Verify:
+
+* The [publish workflow](https://github.com/open-telemetry/opentelemetry-js-contrib/actions/workflows/publish.yml) runs successfully
+* The new version is available in NPM, e.g. for the [Jaeger Propagator](https://www.npmjs.com/package/@opentelemetry/propagator-jaeger)
+* A [GitHub Release](https://github.com/open-telemetry/opentelemetry-js-contrib/releases) was cut correctly, with a tag pointing to the new version, and a body of the changelog
+
+That's it! No need to read on unless something above went wrong.
+
+# Manual Publishing Process
+
+If any step of the above automated process fails, complete the release manually by picking up at the failed step.
+
+Manual Release Process Steps:
 
 * [Update to latest locally](#update-to-latest-locally)
 * [Create a new branch](#create-a-new-branch)

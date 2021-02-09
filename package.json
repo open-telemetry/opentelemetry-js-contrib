@@ -2,7 +2,7 @@
   "name": "opentelemetry-contrib",
   "version": "0.13.0",
   "description": "This is a repository for OpenTelemetry JavaScript contributions.",
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": "https://github.com/willarmiros/opentelemetry-js-contrib",
   "publishConfig": {
     "access": "public"
   },
@@ -16,7 +16,7 @@
     "compile": "lerna run compile",
     "test": "lerna run test",
     "test:browser": "lerna run test:browser",
-    "bootstrap": "lerna bootstrap",
+    "bootstrap": "lerna bootstrap --no-ci",
     "bump": "lerna publish",
     "codecov": "lerna run codecov",
     "codecov:browser": "lerna run codecov:browser",
