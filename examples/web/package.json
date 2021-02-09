@@ -34,14 +34,14 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
-    "@opentelemetry/context-zone": "^0.15.0",
-    "@opentelemetry/core": "^0.15.0",
-    "@opentelemetry/exporter-collector": "^0.15.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.15.0",
+    "@opentelemetry/context-zone": "^0.16.0",
+    "@opentelemetry/core": "^0.16.0",
+    "@opentelemetry/exporter-collector": "^0.16.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.16.0",
     "@opentelemetry/instrumentation-user-interaction": "^0.12.1",
-    "@opentelemetry/propagator-b3": "^0.15.0",
-    "@opentelemetry/tracing": "^0.15.0",
-    "@opentelemetry/web": "^0.15.0"
+    "@opentelemetry/propagator-b3": "^0.16.0",
+    "@opentelemetry/tracing": "^0.16.0",
+    "@opentelemetry/web": "^0.16.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"
 }

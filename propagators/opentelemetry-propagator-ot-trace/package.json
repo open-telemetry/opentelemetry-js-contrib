@@ -41,7 +41,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.15.0"
+    "@opentelemetry/api": "^0.16.0"
   },
   "devDependencies": {
     "@types/mocha": "8.2.0",
