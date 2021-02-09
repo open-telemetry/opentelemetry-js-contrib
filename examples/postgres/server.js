@@ -1,5 +1,6 @@
 'use strict';
 
+const api = require('@opentelemetry/api');
 // eslint-disable-next-line import/order
 const tracer = require('./tracer')('postgres-server-service');
 const { SpanKind, StatusCode } = require('@opentelemetry/api');
@@ -30,10 +31,9 @@ app.get('/:cmd', (req, res) => {
   const currentSpan = tracer.getCurrentSpan();
   console.log(`traceid: ${currentSpan.context().traceId}`);
   const span = tracer.startSpan(cmd, {
-    parent: currentSpan,
     kind: SpanKind.SERVER,
   });
-  tracer.withSpan(span, () => {
+  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
     try {
       pool.query(queryText, (err, ret) => {
         if (err) throw err;

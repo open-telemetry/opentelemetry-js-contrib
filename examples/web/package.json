@@ -1,0 +1,47 @@
+{
+  "name": "web-examples",
+  "private": true,
+  "version": "0.12.0",
+  "description": "Example of using web plugins in browser",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack-dev-server -d --progress --colors --port 8090 --config webpack.config.js --hot --inline --host 0.0.0.0 --content-base examples"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "tracing",
+    "web"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.10",
+    "babel-loader": "^8.2.2",
+    "ts-loader": "^6.2.2",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0",
+    "webpack-merge": "^4.2.2"
+  },
+  "dependencies": {
+    "@opentelemetry/context-zone": "^0.15.0",
+    "@opentelemetry/core": "^0.15.0",
+    "@opentelemetry/exporter-collector": "^0.15.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.15.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.12.1",
+    "@opentelemetry/propagator-b3": "^0.15.0",
+    "@opentelemetry/tracing": "^0.15.0",
+    "@opentelemetry/web": "^0.15.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"
+}
