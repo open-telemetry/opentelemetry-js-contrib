@@ -1,0 +1,132 @@
+name: Unit Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        container: ["node:8", "node:10", "node:12", "node:14"]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.container }}
+    services:
+      mongo:
+        image: mongo
+        ports:
+        - 27017:27017
+      postgres:
+        image: circleci/postgres:9.6-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: circle_database
+        ports:
+        - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis
+        ports:
+        - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mysql:
+        image: circleci/mysql:5.7
+        env:
+          MYSQL_USER: otel
+          MYSQL_PASSWORD: secret
+          MYSQL_DATABASE: circle_database
+          MYSQL_ROOT_PASSWORD: rootpw
+        ports:
+        - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      RUN_POSTGRES_TESTS: 1
+      RUN_MYSQL_TESTS: 1
+      RUN_MONGODB_TESTS: 1
+      RUN_REDIS_TESTS: 1
+      POSTGRES_USER: postgres
+      POSTGRES_DB: circle_database
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      OPENTELEMETRY_REDIS_HOST: redis
+      OPENTELEMETRY_REDIS_PORT: 6379
+      MONGODB_DB: opentelemetry-tests
+      MONGODB_HOST: mongo
+      MONGODB_PORT: 27017
+      MYSQL_USER: otel
+      MYSQL_PASSWORD: secret
+      MYSQL_DATABASE: circle_database
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      NPM_CONFIG_UNSAFE_PERM: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Cache Dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            package-lock.json
+            detectors/node/*/node_modules
+            metapackages/*/node_modules
+            packages/*/node_modules
+            plugins/node/*/node_modules
+            plugins/web/*/node_modules
+            propagators/*/node_modules
+          key: ${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
+      - name: Install Root Dependencies
+        run: npm install --ignore-scripts
+      - name: Boostrap Dependencies
+        run: npx lerna bootstrap --no-ci
+      - name: Unit tests
+        run: npm run test
+      - name: Report Coverage
+        if: matrix.container == 'node:14'
+        run: npm run codecov
+  browser-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: circleci/node:12-browsers
+    env:
+      NPM_CONFIG_UNSAFE_PERM: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Permission Setup
+        run: sudo chmod -R 777 /github /__w
+      - name: Cache Dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            package-lock.json
+            detectors/node/*/node_modules
+            metapackages/*/node_modules
+            packages/*/node_modules
+            plugins/node/*/node_modules
+            plugins/web/*/node_modules
+            propagators/*/node_modules
+          key: ${{ runner.os }}-node:12-${{ hashFiles('**/package.json') }}
+      - name: Install Root Dependencies
+        run: npm install --ignore-scripts
+      - name: Boostrap Dependencies
+        run: npx lerna bootstrap --no-ci
+      - name: Unit tests
+        run: npm run test:browser
+      - name: Report Coverage
+        run: npm run codecov:browser
