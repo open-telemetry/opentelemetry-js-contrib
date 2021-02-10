@@ -121,6 +121,12 @@ export const traceSendCommand = (
       const origResolve = cmd.resolve;
       /* eslint-disable @typescript-eslint/no-explicit-any */
       cmd.resolve = function (result: any) {
+        try {
+          config?.responseHook?.(span, cmd.name, cmd.args, result);
+        } catch {
+          // we have nothing to do with exception from hook
+        }
+
         endSpan(span, null);
         origResolve(result);
       };

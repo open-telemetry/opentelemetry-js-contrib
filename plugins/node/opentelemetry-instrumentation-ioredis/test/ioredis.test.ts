@@ -21,6 +21,7 @@ import {
   Status,
   getSpan,
   setSpan,
+  Span,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -708,6 +709,68 @@ describe('ioredis', () => {
           } catch (error) {
             assert.ifError(error);
           }
+        });
+      });
+    });
+
+    describe('Instrumenting with a custom responseHook', () => {
+      it('should call responseHook when set in config', async () => {
+        instrumentation.disable();
+        const config: IORedisInstrumentationConfig = {
+          responseHook: (
+            span: Span,
+            cmdName: string,
+            _cmdArgs: Array<string | Buffer | number>,
+            response: any
+          ) => {
+            assert.strictEqual(cmdName, 'incr');
+            // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
+            assert.strictEqual(response, 1);
+            span.setAttribute(
+              'attribute key from hook',
+              'custom value from hook'
+            );
+          },
+        };
+        instrumentation = new IORedisInstrumentation(config);
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(setSpan(context.active(), span), async () => {
+          await client.incr('new-key');
+          const endedSpans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(endedSpans.length, 1);
+          assert.strictEqual(
+            endedSpans[0].attributes['attribute key from hook'],
+            'custom value from hook'
+          );
+        });
+      });
+
+      it('should ignore responseHook which throws exception', async () => {
+        instrumentation.disable();
+        const config: IORedisInstrumentationConfig = {
+          responseHook: (
+            _span: Span,
+            _cmdName: string,
+            _cmdArgs: Array<string | Buffer | number>,
+            _response: any
+          ) => {
+            throw Error('error thrown in responseHook');
+          },
+        };
+        instrumentation = new IORedisInstrumentation(config);
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(setSpan(context.active(), span), async () => {
+          await client.incr('new-key');
+          const endedSpans = memoryExporter.getFinishedSpans();
+
+          // hook throw exception, but span should not be affected
+          assert.strictEqual(endedSpans.length, 1);
         });
       });
     });
