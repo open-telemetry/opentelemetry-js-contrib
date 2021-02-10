@@ -503,8 +503,6 @@ describe('mysql@2.x', () => {
         const span = provider.getTracer('default').startSpan('test span');
         context.with(setSpan(context.active(), span), () => {
           const sql = 'SELECT 1+? as solution';
-          // @ts-ignore this is documented https://github.com/mysqljs/mysql#performing-queries
-          // but does not match the typings
           poolClusterConnection.query({ sql }, [1], (err, res) => {
             assert.ifError(err);
             assert.ok(res);
