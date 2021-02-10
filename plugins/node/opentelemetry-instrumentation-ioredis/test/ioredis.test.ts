@@ -366,9 +366,9 @@ describe('ioredis', () => {
           try {
             // use lazyConnect so we can call the `connect` function and await it.
             // this ensures that all operations are sequential and predictable.
-            const pub = new ioredis(URL, {lazyConnect: true});
+            const pub = new ioredis(URL, { lazyConnect: true });
             await pub.connect();
-            const sub = new ioredis(URL, {lazyConnect: true});
+            const sub = new ioredis(URL, { lazyConnect: true });
             await sub.connect();
             await sub.subscribe('news', 'music');
             await pub.publish('news', 'Hello world!');
