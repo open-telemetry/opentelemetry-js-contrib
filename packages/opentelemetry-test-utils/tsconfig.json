@@ -1,10 +1,12 @@
 {
-  "extends": "../../tsconfig.base",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "build"
   },
   "include": [
-    "*.ts"
-  ]
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "references": []
 }

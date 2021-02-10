@@ -1,7 +1,7 @@
 module.exports = {
-  "env": {
-      "mocha": true,
-      "node": true
-  },
-  ...require('../../../eslint.config.js')
+    "env": {
+        "mocha": true,
+        "node": true
+    },
+    ...require('../../../eslint.config.js')
 }
