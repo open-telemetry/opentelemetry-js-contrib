@@ -2,7 +2,7 @@
   "name": "opentelemetry-contrib",
   "version": "0.13.0",
   "description": "This is a repository for OpenTelemetry JavaScript contributions.",
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": "https://github.com/open-telemetry/opentelemetry-js-contrib",
   "publishConfig": {
     "access": "public"
   },
