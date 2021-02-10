@@ -33,6 +33,7 @@ import {
   DatabaseAttribute,
   GeneralAttribute,
 } from '@opentelemetry/semantic-conventions';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
@@ -121,11 +122,11 @@ export const traceSendCommand = (
       const origResolve = cmd.resolve;
       /* eslint-disable @typescript-eslint/no-explicit-any */
       cmd.resolve = function (result: any) {
-        try {
-          config?.responseHook?.(span, cmd.name, cmd.args, result);
-        } catch {
-          // we have nothing to do with exception from hook
-        }
+        safeExecuteInTheMiddle(
+          () => config?.responseHook?.(span, cmd.name, cmd.args, result),
+          () => {},
+          true
+        );
 
         endSpan(span, null);
         origResolve(result);
