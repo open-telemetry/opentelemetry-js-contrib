@@ -766,7 +766,7 @@ describe('ioredis', () => {
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(setSpan(context.active(), span), async () => {
-          await client.incr('new-key');
+          await client.incr('some-key');
           const endedSpans = memoryExporter.getFinishedSpans();
 
           // hook throw exception, but span should not be affected
