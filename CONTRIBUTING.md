@@ -79,7 +79,7 @@ When two or more approaches must be compared, please write a benchmark in the be
 This repo is generally meant for hosting components that work with popular open-source frameworks and tools. However, it is also possible to contribute components specific to a 3rd party vendor in this repo.
 
 ### Adding a New Vendor Component
-Vendor components that are hosted in this repo will be versioned the same as all other components, and released in lockstep with them under the `@opentelemetry` org in NPM.
+Vendor components that are hosted in this repo will be versioned the same as all other contrib components, and released in lockstep with them under the `@opentelemetry` org in NPM.
 
 In exchange, vendor component contributors are expected to:
 
