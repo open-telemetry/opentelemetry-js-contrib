@@ -51,8 +51,8 @@ export type DbStatementSerializer = (
 export interface RedisResponseCustomAttributeFunction {
   (
     span: Span,
-    cmdName: IoredisCommand['name'],
-    cmdArgs: IoredisCommand['args'],
+    cmdName: IORedisCommand['name'],
+    cmdArgs: IORedisCommand['args'],
     /* eslint-disable @typescript-eslint/no-explicit-any */
     response: any
   ): void;
