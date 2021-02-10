@@ -83,9 +83,15 @@ Vendor components that are hosted in this repo will be versioned the same as all
 
 In exchange, vendor component contributors are expected to:
 
-- Assign at least one full-time engineer to their component(s) in the [CODEOWNERS](.github/CODEOWNERS) file
-- Review pull requests that touch their component(s)
-- Respond to issues related to their component(s), as determined by the maintainers
+- Include documentation for the component that covers:
+  - The installation and getting started process for the component
+  - Any configuration for the component
+  - Any APIs exposed by the component
+  - Design information for the component if relevant
+- Add enough unit tests to *at least* meet the current coverage
+- Assign at least one full-time engineer to their component in the [CODEOWNERS](.github/CODEOWNERS) file
+- Review pull requests that touch their component
+- Respond to issues related to their component, as determined by the maintainers
 - Fix failing unit tests or any other blockers to the CI/CD workflow
 - Update their components' usage of Core APIs upon the introduction of breaking changes upstream
 
