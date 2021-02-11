@@ -5,8 +5,7 @@
     "outDir": "build"
   },
   "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
+    "*.ts"
   ],
   "references": []
 }
