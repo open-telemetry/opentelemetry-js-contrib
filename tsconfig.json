@@ -1,0 +1,72 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "packages/opentelemetry-host-metrics"
+    },
+    {
+      "path": "packages/opentelemetry-test-utils"
+    },
+    {
+      "path": "plugins/node/opentelemetry-hapi-instrumentation"
+    },
+    {
+      "path": "plugins/node/opentelemetry-instrumentation-dns"
+    },
+    {
+      "path": "plugins/node/opentelemetry-instrumentation-graphql"
+    },
+    {
+      "path": "plugins/node/opentelemetry-instrumentation-ioredis"
+    },
+    {
+      "path": "plugins/node/opentelemetry-koa-instrumentation"
+    },
+    {
+      "path": "plugins/node/opentelemetry-plugin-dns"
+    },
+    {
+      "path": "plugins/node/opentelemetry-plugin-express"
+    },
+    {
+      "path": "plugins/node/opentelemetry-plugin-ioredis"
+    },
+    {
+      "path": "plugins/node/opentelemetry-plugin-mongodb"
+    },
+    {
+      "path": "plugins/node/opentelemetry-plugin-mysql"
+    },
+    {
+      "path": "plugins/node/opentelemetry-plugin-pg-pool"
+    },
+    {
+      "path": "plugins/node/opentelemetry-plugin-pg"
+    },
+    {
+      "path": "plugins/node/opentelemetry-plugin-redis"
+    },
+    {
+      "path": "plugins/web/opentelemetry-instrumentation-user-interaction"
+    },
+    {
+      "path": "plugins/web/opentelemetry-plugin-document-load"
+    },
+    {
+      "path": "plugins/web/opentelemetry-plugin-react-load"
+    },
+    {
+      "path": "propagators/opentelemetry-propagator-grpc-census-binary"
+    },
+    {
+      "path": "propagators/opentelemetry-propagator-jaeger"
+    },
+    {
+      "path": "propagators/opentelemetry-propagator-ot-trace"
+    },
+    {
+      "path": "detectors/node/opentelemetry-resource-detector-github"
+    }
+  ]
+}
