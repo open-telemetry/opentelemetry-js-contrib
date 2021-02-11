@@ -91,20 +91,19 @@ jobs:
             detectors/node*/package-lock.json
           key: ${{ runner.os }}-unit_test-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
 
-      - name: Install Root Dependencies
-        run: npm install --ignore-scripts
-
-      - name: Install and Build (cache miss) 🔧
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          npx lerna bootstrap --no-ci
-          npm run compile
-
-      - name: Install and Build (cache hit) 🔧
+      # On a cache hit, use ci to speed up the install process
+      - name: Bootstrap (cache hit)
         if: steps.cache.outputs.cache-hit == 'true'
         run: |
-          npx lerna bootstrap
-          npm run compile
+          npm ci --ignore-scripts
+          npx lerna bootstrap --ignore-scripts
+
+      # On a cache miss, fall back to a regular install
+      - name: Bootstrap (cache miss)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          npm install --ignore-scripts
+          npx lerna bootstrap --no-ci --ignore-scripts -- --only=dev
 
       - name: Unit tests
         run: npm run test
@@ -139,19 +138,20 @@ jobs:
             detectors/node*/package-lock.json
           key: ${{ runner.os }}-unit_test-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
 
-      - name: Install Root Dependencies
-        run: npm install --ignore-scripts
-
-      - name: Install and Build (cache miss) 🔧
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          npx lerna bootstrap --no-ci
-          npm run compile
-
-      - name: Install and Build (cache hit) 🔧
+      # On a cache hit, use ci to speed up the install process
+      - name: Bootstrap (cache hit)
         if: steps.cache.outputs.cache-hit == 'true'
         run: |
-          npx lerna bootstrap
+          npm ci --ignore-scripts
+          npx lerna bootstrap --ignore-scripts
+          npm run compile
+
+      # On a cache miss, fall back to a regular install
+      - name: Bootstrap (cache miss)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          npm install --ignore-scripts
+          npx lerna bootstrap --no-ci --ignore-scripts -- --only=dev
           npm run compile
 
       - name: Unit tests
