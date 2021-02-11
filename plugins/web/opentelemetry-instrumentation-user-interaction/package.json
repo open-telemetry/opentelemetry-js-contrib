@@ -13,7 +13,6 @@
     "precompile": "tsc --version",
     "version": "node ../../../scripts/version-update.js",
     "compile": "tsc --build",
-    "prepare": "npm run compile",
     "tdd": "karma start",
     "test:browser": "nyc karma start --single-run",
     "watch": "tsc -w"

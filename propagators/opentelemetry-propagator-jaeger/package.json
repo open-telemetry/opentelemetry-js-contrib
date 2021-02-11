@@ -17,7 +17,6 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version",
     "compile": "tsc --build",
-    "prepare": "npm run compile",
     "version": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },

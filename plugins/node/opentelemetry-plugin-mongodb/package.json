@@ -14,8 +14,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version",
     "version": "node ../../../scripts/version-update.js",
-    "compile": "tsc --build",
-    "prepare": "npm run compile"
+    "compile": "tsc --build"
   },
   "keywords": [
     "opentelemetry",
