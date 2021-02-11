@@ -721,7 +721,7 @@ describe('ioredis', () => {
             span: Span,
             cmdName: string,
             _cmdArgs: Array<string | Buffer | number>,
-            response: any
+            response: unknown
           ) => {
             assert.strictEqual(cmdName, 'incr');
             // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
@@ -755,7 +755,7 @@ describe('ioredis', () => {
             _span: Span,
             _cmdName: string,
             _cmdArgs: Array<string | Buffer | number>,
-            _response: any
+            _response: unknown
           ) => {
             throw Error('error thrown in responseHook');
           },

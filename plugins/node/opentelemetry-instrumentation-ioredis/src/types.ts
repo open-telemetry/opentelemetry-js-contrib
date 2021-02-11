@@ -46,15 +46,15 @@ export type DbStatementSerializer = (
  * @param cmdName - The name of the command (eg. set, get, mset)
  * @param cmdArgs - Array of arguments passed to the command
  * @param response - The response object which is returned to the user who called this command.
- *  Can be used to set custom attributes on the span
+ *  Can be used to set custom attributes on the span.
+ *  The type of the response varies depending on the specific command.
  */
 export interface RedisResponseCustomAttributeFunction {
   (
     span: Span,
     cmdName: IORedisCommand['name'],
     cmdArgs: IORedisCommand['args'],
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    response: any
+    response: unknown
   ): void;
 }
 
