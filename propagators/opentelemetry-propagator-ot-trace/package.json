@@ -1,11 +1,12 @@
 {
   "name": "@opentelemetry/propagator-ot-trace",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "The OpenTelemetry OTTracepropagator implements the propagation format used by the \"basic tracer\" implementations from the OpenTracing project",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
+    "precompile": "tsc --version",
     "compile": "tsc --build",
     "clean": "tsc --build --clean",
     "test": "nyc ts-mocha -p tsconfig.json test/**/*.test.ts",
@@ -14,7 +15,8 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "version": "node ../../scripts/version-update.js",
-    "watch": "tsc --build --watch"
+    "watch": "tsc --build --watch",
+    "prepare": "npm run compile"
   },
   "keywords": [
     "opentelemetry",
