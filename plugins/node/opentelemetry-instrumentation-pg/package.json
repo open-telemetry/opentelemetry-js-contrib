@@ -7,7 +7,7 @@
   "repository": "open-telemetry/opentelemetry-js",
   "scripts": {
     "clean": "rimraf build/*",
-    "compile": "np  m run version:update && tsc -p .",
+    "compile": "npm run version:update && tsc -p .",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../../",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
