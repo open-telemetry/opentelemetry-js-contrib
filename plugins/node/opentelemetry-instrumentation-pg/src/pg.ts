@@ -41,13 +41,6 @@ import { AttributeNames } from './enums';
 import { VERSION } from './version';
 
 export interface PostgresInstrumentationConfig {
-  ignoreMethods?: string[];
-  /**
-   * URLs that partially match any regex in ignoreUrls will not be traced.
-   * In addition, URLs that are _exact matches_ of strings in ignoreUrls will
-   * also not be traced.
-   */
-  ignoreUrls?: Array<string | RegExp>;
   /**
    * If true, additional information about query parameters and
    * results will be attached (as `attributes`) to spans representing
@@ -63,8 +56,6 @@ export class PostgresInstrumentation extends InstrumentationBase {
   static readonly DB_TYPE = 'sql';
 
   static readonly BASE_SPAN_NAME = PostgresInstrumentation.COMPONENT + '.query';
-
-  readonly supportedVersions = ['7.*', '8.*'];
 
   constructor(
     config: InstrumentationConfig & PostgresInstrumentationConfig = {}

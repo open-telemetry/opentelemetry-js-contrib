@@ -18,7 +18,6 @@ import {
   Attributes,
   StatusCode,
   context,
-  NoopLogger,
   Span,
   SpanKind,
   Status,
@@ -98,7 +97,6 @@ describe('pg-pool@2.x', () => {
   let contextManager: AsyncHooksContextManager;
   let instrumentation: PostgresInstrumentation;
   const provider = new BasicTracerProvider();
-  const logger = new NoopLogger();
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI:
   // assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
@@ -116,9 +114,7 @@ describe('pg-pool@2.x', () => {
       testUtils.startDocker('postgres');
     }
 
-    instrumentation = new PostgresInstrumentation({
-      logger,
-    });
+    instrumentation = new PostgresInstrumentation();
 
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);

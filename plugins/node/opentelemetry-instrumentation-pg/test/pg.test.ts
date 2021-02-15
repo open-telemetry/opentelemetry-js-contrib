@@ -18,7 +18,6 @@ import {
   Attributes,
   StatusCode,
   context,
-  NoopLogger,
   Span,
   SpanKind,
   Status,
@@ -90,7 +89,6 @@ describe('pg@7.x', () => {
   let contextManager: AsyncHooksContextManager;
   const provider = new BasicTracerProvider();
   const tracer = provider.getTracer('external');
-  const logger = new NoopLogger();
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
@@ -107,9 +105,7 @@ describe('pg@7.x', () => {
       testUtils.startDocker('postgres');
     }
 
-    instrumentation = new PostgresInstrumentation({
-      logger,
-    });
+    instrumentation = new PostgresInstrumentation();
 
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
@@ -130,12 +126,10 @@ describe('pg@7.x', () => {
   beforeEach(() => {
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
-    // instrumentation.enable();
   });
 
   afterEach(() => {
     memoryExporter.reset();
-    // instrumentation.disable();
     context.disable();
   });
 
