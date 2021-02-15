@@ -33,8 +33,4 @@ export enum AttributeNames {
   // PG specific -- not specified by spec
   PG_VALUES = 'pg.values',
   PG_PLAN = 'pg.plan',
-
-  // PG-POOL specific -- not specified by spec
-  IDLE_TIMEOUT_MILLIS = 'idle.timeout.millis',
-  MAX_CLIENT = 'max',
 }
