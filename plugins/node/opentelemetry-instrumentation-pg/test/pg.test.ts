@@ -34,7 +34,7 @@ import {
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import type * as pg from 'pg';
-import { PostgresInstrumentation } from '../src';
+import { PgInstrumentation } from '../src';
 import { AttributeNames } from '../src/enums';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -50,9 +50,9 @@ const CONFIG = {
 };
 
 const DEFAULT_ATTRIBUTES = {
-  [AttributeNames.COMPONENT]: PostgresInstrumentation.COMPONENT,
+  [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT,
   [AttributeNames.DB_INSTANCE]: CONFIG.database,
-  [AttributeNames.DB_TYPE]: PostgresInstrumentation.DB_TYPE,
+  [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE,
   [AttributeNames.PEER_HOSTNAME]: CONFIG.host,
   [AttributeNames.PEER_ADDRESS]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
   [AttributeNames.PEER_PORT]: CONFIG.port,
@@ -85,7 +85,7 @@ const runCallbackTest = (
 
 describe('pg@7.x', () => {
   let client: pg.Client;
-  let instrumentation: PostgresInstrumentation;
+  let instrumentation: PgInstrumentation;
   let contextManager: AsyncHooksContextManager;
   const provider = new BasicTracerProvider();
   const tracer = provider.getTracer('external');
@@ -105,7 +105,7 @@ describe('pg@7.x', () => {
       testUtils.startDocker('postgres');
     }
 
-    instrumentation = new PostgresInstrumentation();
+    instrumentation = new PgInstrumentation();
 
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
@@ -134,7 +134,7 @@ describe('pg@7.x', () => {
   });
 
   it('should return an instrumentation', () => {
-    assert.ok(instrumentation instanceof PostgresInstrumentation);
+    assert.ok(instrumentation instanceof PgInstrumentation);
   });
 
   it('should have correct name', () => {

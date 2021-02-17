@@ -30,18 +30,32 @@ registerInstrumentations({
 });
 ```
 
-If instead you would just want to load a specific instrumentation (**pg** in this case);
+If instead you would just want to load a specific instrumentation only (**pg** in this case);
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
-const { PostgresInstrumentation } = require('@opentelemetry/instrumentation-pg');
+const { PgInstrumentation } = require('@opentelemetry/instrumentation-pg');
 
 const provider = new NodeTracerProvider();
-const pgInstrumentation = new PostgresInstrumentation();
+const pgInstrumentation = new PgInstrumentation();
 pgInstrumentation.setTracerProvider(provider);
 ```
 
-PostgresInstrumentation contains both pg and [`pg.Pool`](https://node-postgres.com/api/pool) so it will be instrumented automatically.
+You can combine loading default plugins and PgInstrumentation at the same:
+
+```js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { PgInstrumentation } = require('@opentelemetry/instrumentation-pg');
+const provider = new NodeTracerProvider();
+registerInstrumentations({
+  instrumentations: [
+    new PgInstrumentation(),
+  ],
+  tracerProvider: provider,
+});
+```
+
+PgInstrumentation contains both pg and [`pg.Pool`](https://node-postgres.com/api/pool) so it will be instrumented automatically.
 
 See [examples/postgres](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/postgres) for a short example.
 

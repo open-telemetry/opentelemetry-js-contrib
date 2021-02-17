@@ -7,7 +7,7 @@ const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-const { PostgresInstrumentation } = require('@opentelemetry/instrumentation-pg');
+const { PgInstrumentation } = require('@opentelemetry/instrumentation-pg');
 
 const EXPORTER = process.env.EXPORTER || '';
 
@@ -16,7 +16,7 @@ module.exports = (serviceName) => {
 
   registerInstrumentations({
     instrumentations: [
-      new PostgresInstrumentation(),
+      new PgInstrumentation(),
       new HttpInstrumentation(),
     ]
   });

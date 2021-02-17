@@ -40,7 +40,7 @@ import * as utils from './utils';
 import { AttributeNames } from './enums';
 import { VERSION } from './version';
 
-export interface PostgresInstrumentationConfig {
+export interface PgInstrumentationConfig {
   /**
    * If true, additional information about query parameters and
    * results will be attached (as `attributes`) to spans representing
@@ -51,15 +51,13 @@ export interface PostgresInstrumentationConfig {
 
 const PG_POOL_COMPONENT = 'pg-pool';
 
-export class PostgresInstrumentation extends InstrumentationBase {
+export class PgInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'pg';
   static readonly DB_TYPE = 'sql';
 
-  static readonly BASE_SPAN_NAME = PostgresInstrumentation.COMPONENT + '.query';
+  static readonly BASE_SPAN_NAME = PgInstrumentation.COMPONENT + '.query';
 
-  constructor(
-    config: InstrumentationConfig & PostgresInstrumentationConfig = {}
-  ) {
+  constructor(config: InstrumentationConfig & PgInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-pg',
       VERSION,
@@ -119,7 +117,7 @@ export class PostgresInstrumentation extends InstrumentationBase {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
       plugin._logger.debug(
-        `Patching ${PostgresInstrumentation.COMPONENT}.Client.prototype.query`
+        `Patching ${PgInstrumentation.COMPONENT}.Client.prototype.query`
       );
       return function query(this: PgClientExtended, ...args: unknown[]) {
         let span: Span;
@@ -132,8 +130,7 @@ export class PostgresInstrumentation extends InstrumentationBase {
             span = utils.handleParameterizedQuery.call(
               this,
               plugin.tracer,
-              plugin._config as InstrumentationConfig &
-                PostgresInstrumentationConfig,
+              plugin._config as InstrumentationConfig & PgInstrumentationConfig,
               query,
               params
             );
@@ -145,8 +142,7 @@ export class PostgresInstrumentation extends InstrumentationBase {
           span = utils.handleConfigQuery.call(
             this,
             plugin.tracer,
-            plugin._config as InstrumentationConfig &
-              PostgresInstrumentationConfig,
+            plugin._config as InstrumentationConfig & PgInstrumentationConfig,
             queryConfig
           );
         } else {
@@ -230,8 +226,8 @@ export class PostgresInstrumentation extends InstrumentationBase {
         const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {
           kind: SpanKind.CLIENT,
           attributes: {
-            [AttributeNames.COMPONENT]: PostgresInstrumentation.COMPONENT, // required
-            [AttributeNames.DB_TYPE]: PostgresInstrumentation.DB_TYPE, // required
+            [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT, // required
+            [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE, // required
             [AttributeNames.DB_INSTANCE]: this.options.database, // required
             [AttributeNames.PEER_HOSTNAME]: this.options.host, // required
             [AttributeNames.PEER_ADDRESS]: jdbcString, // required

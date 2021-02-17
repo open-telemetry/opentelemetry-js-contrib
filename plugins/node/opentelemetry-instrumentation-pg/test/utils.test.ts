@@ -24,7 +24,7 @@ import {
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import * as pg from 'pg';
-import { PostgresInstrumentationConfig } from '../src';
+import { PgInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/enums';
 import { PgClientExtended, NormalizedQueryConfig } from '../src/types';
 import * as utils from '../src/utils';
@@ -51,7 +51,7 @@ describe('utils.ts', () => {
   const provider = new BasicTracerProvider();
   const tracer = provider.getTracer('external');
 
-  const instrumentationConfig: PostgresInstrumentationConfig &
+  const instrumentationConfig: PgInstrumentationConfig &
     InstrumentationConfig = {};
 
   before(() => {
@@ -90,8 +90,7 @@ describe('utils.ts', () => {
     });
 
     it('tracks pg.values if enabled explicitly', async () => {
-      const extPluginConfig: PostgresInstrumentationConfig &
-        InstrumentationConfig = {
+      const extPluginConfig: PgInstrumentationConfig & InstrumentationConfig = {
         ...instrumentationConfig,
         enhancedDatabaseReporting: true,
       };
@@ -131,8 +130,7 @@ describe('utils.ts', () => {
     });
 
     it('tracks pg.values if enabled explicitly', async () => {
-      const extPluginConfig: PostgresInstrumentationConfig &
-        InstrumentationConfig = {
+      const extPluginConfig: PgInstrumentationConfig & InstrumentationConfig = {
         ...instrumentationConfig,
         enhancedDatabaseReporting: true,
       };

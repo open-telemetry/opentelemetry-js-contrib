@@ -25,7 +25,7 @@ import {
   setSpan,
 } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
-import { PostgresInstrumentation } from '../src';
+import { PgInstrumentation } from '../src';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/test-utils';
 import {
@@ -52,9 +52,9 @@ const CONFIG = {
 };
 
 const DEFAULT_PGPOOL_ATTRIBUTES = {
-  [AttributeNames.COMPONENT]: PostgresInstrumentation.COMPONENT,
+  [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT,
   [AttributeNames.DB_INSTANCE]: CONFIG.database,
-  [AttributeNames.DB_TYPE]: PostgresInstrumentation.DB_TYPE,
+  [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE,
   [AttributeNames.PEER_HOSTNAME]: CONFIG.host,
   [AttributeNames.PEER_ADDRESS]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
   [AttributeNames.PEER_PORT]: CONFIG.port,
@@ -64,9 +64,9 @@ const DEFAULT_PGPOOL_ATTRIBUTES = {
 };
 
 const DEFAULT_PG_ATTRIBUTES = {
-  [AttributeNames.COMPONENT]: PostgresInstrumentation.COMPONENT,
+  [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT,
   [AttributeNames.DB_INSTANCE]: CONFIG.database,
-  [AttributeNames.DB_TYPE]: PostgresInstrumentation.DB_TYPE,
+  [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE,
   [AttributeNames.PEER_HOSTNAME]: CONFIG.host,
   [AttributeNames.PEER_ADDRESS]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
   [AttributeNames.PEER_PORT]: CONFIG.port,
@@ -95,7 +95,7 @@ const runCallbackTest = (
 describe('pg-pool@2.x', () => {
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncHooksContextManager;
-  let instrumentation: PostgresInstrumentation;
+  let instrumentation: PgInstrumentation;
   const provider = new BasicTracerProvider();
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI:
   // assumes local postgres db is already available
@@ -114,7 +114,7 @@ describe('pg-pool@2.x', () => {
       testUtils.startDocker('postgres');
     }
 
-    instrumentation = new PostgresInstrumentation();
+    instrumentation = new PgInstrumentation();
 
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
@@ -144,7 +144,7 @@ describe('pg-pool@2.x', () => {
   });
 
   it('should return an instrumentation', () => {
-    assert.ok(instrumentation instanceof PostgresInstrumentation);
+    assert.ok(instrumentation instanceof PgInstrumentation);
   });
 
   it('should have correct name', () => {

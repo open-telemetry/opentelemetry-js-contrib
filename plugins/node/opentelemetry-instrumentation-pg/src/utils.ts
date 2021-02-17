@@ -25,7 +25,7 @@ import {
   PgPoolExtended,
 } from './types';
 import * as pgTypes from 'pg';
-import { PostgresInstrumentation, PostgresInstrumentationConfig } from './pg';
+import { PgInstrumentation, PgInstrumentationConfig } from './pg';
 
 function arrayStringifyHelper(arr: Array<unknown>): string {
   return '[' + arr.toString() + ']';
@@ -51,9 +51,9 @@ function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
   return tracer.startSpan(name, {
     kind: SpanKind.CLIENT,
     attributes: {
-      [AttributeNames.COMPONENT]: PostgresInstrumentation.COMPONENT, // required
+      [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT, // required
       [AttributeNames.DB_INSTANCE]: client.connectionParameters.database, // required
-      [AttributeNames.DB_TYPE]: PostgresInstrumentation.DB_TYPE, // required
+      [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE, // required
       [AttributeNames.PEER_ADDRESS]: jdbcString, // required
       [AttributeNames.PEER_HOSTNAME]: client.connectionParameters.host, // required
       [AttributeNames.PEER_PORT]: client.connectionParameters.port,
@@ -66,12 +66,12 @@ function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
 export function handleConfigQuery(
   this: PgClientExtended,
   tracer: Tracer,
-  instrumentationConfig: PostgresInstrumentationConfig,
+  instrumentationConfig: PgInstrumentationConfig,
   queryConfig: NormalizedQueryConfig
 ) {
   // Set child span name
   const queryCommand = getCommandFromText(queryConfig.name || queryConfig.text);
-  const name = PostgresInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
+  const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
@@ -99,13 +99,13 @@ export function handleConfigQuery(
 export function handleParameterizedQuery(
   this: PgClientExtended,
   tracer: Tracer,
-  instrumentationConfig: PostgresInstrumentationConfig,
+  instrumentationConfig: PgInstrumentationConfig,
   query: string,
   values: unknown[]
 ) {
   // Set child span name
   const queryCommand = getCommandFromText(query);
-  const name = PostgresInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
+  const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
@@ -125,7 +125,7 @@ export function handleTextQuery(
 ) {
   // Set child span name
   const queryCommand = getCommandFromText(query);
-  const name = PostgresInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
+  const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
@@ -145,11 +145,7 @@ export function handleInvalidQuery(
   ...args: unknown[]
 ) {
   let result;
-  const span = pgStartSpan(
-    tracer,
-    this,
-    PostgresInstrumentation.BASE_SPAN_NAME
-  );
+  const span = pgStartSpan(tracer, this, PgInstrumentation.BASE_SPAN_NAME);
   try {
     result = originalQuery.apply(this, args as never);
   } catch (e) {
