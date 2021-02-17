@@ -25,6 +25,7 @@ To load all of the [default supported plugins](https://github.com/open-telemetry
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const provider = new NodeTracerProvider();
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+
 registerInstrumentations({
   tracerProvider: provider,
 });
@@ -46,6 +47,8 @@ You can combine loading default plugins and PgInstrumentation at the same:
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { PgInstrumentation } = require('@opentelemetry/instrumentation-pg');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+
 const provider = new NodeTracerProvider();
 registerInstrumentations({
   instrumentations: [
