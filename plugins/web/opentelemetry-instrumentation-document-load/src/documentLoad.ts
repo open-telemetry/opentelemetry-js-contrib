@@ -171,7 +171,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       keys.forEach((key: string) => {
         if (hasKey(performanceNavigationTiming, key)) {
           const value = performanceNavigationTiming[key];
-          if (typeof value === 'number' && value >= 0) {
+          if (typeof value === 'number') {
             entries[key] = value;
           }
         }
@@ -185,7 +185,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
         keys.forEach((key: string) => {
           if (hasKey(performanceTiming, key)) {
             const value = performanceTiming[key];
-            if (typeof value === 'number' && value >= 0) {
+            if (typeof value === 'number') {
               entries[key] = value;
             }
           }

@@ -63,10 +63,8 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
         this._logger.debug(`patching mongodb.Server.prototype.${fn}`);
         shimmer.wrap(
           this._moduleExports.Server.prototype,
-          // Forced to ignore due to incomplete typings
-          // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-          // @ts-ignore
-          fn,
+          // Forced to cast due to incomplete typings
+          fn as any,
           this._getPatchCommand(fn)
         );
       }

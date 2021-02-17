@@ -524,53 +524,45 @@ describe('DocumentLoad Instrumentation', () => {
   }
 
   describe('when navigation entries types are NOT available then fallback to "performance.timing"', () => {
-    let spyEntries: any;
+    const sandbox = sinon.createSandbox();
     beforeEach(() => {
-      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([]);
-      spyEntries.withArgs('resource').returns([]);
-
-      Object.defineProperty(window.performance, 'timing', {
-        writable: true,
-        value: entriesFallback,
+      sandbox.stub(window.performance, 'getEntriesByType').value(undefined);
+      sandbox.stub(window.performance, 'timing').get(() => {
+        return entriesFallback;
       });
     });
     afterEach(() => {
-      spyEntries.restore();
+      sandbox.restore();
     });
 
     shouldExportCorrectSpan();
   });
 
   describe('when getEntriesByType is not defined then fallback to "performance.timing"', () => {
+    const sandbox = sinon.createSandbox();
     beforeEach(() => {
-      Object.defineProperty(window.performance, 'getEntriesByType', {
-        writable: true,
-        value: undefined,
+      sandbox.stub(window.performance, 'getEntriesByType').value(undefined);
+      sandbox.stub(window.performance, 'timing').get(() => {
+        return entriesFallback;
       });
-
-      Object.defineProperty(window.performance, 'timing', {
-        writable: true,
-        value: entriesFallback,
-      });
+    });
+    afterEach(() => {
+      sandbox.restore();
     });
 
     shouldExportCorrectSpan();
   });
 
   describe('when navigation entries types and "performance.timing" are NOT available', () => {
-    let spyEntries: any;
+    const sandbox = sinon.createSandbox();
     beforeEach(() => {
-      Object.defineProperty(window.performance, 'timing', {
-        writable: true,
-        value: undefined,
+      sandbox.stub(window.performance, 'getEntriesByType').value(undefined);
+      sandbox.stub(window.performance, 'timing').get(() => {
+        return undefined;
       });
-      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([]);
-      spyEntries.withArgs('resource').returns([]);
     });
     afterEach(() => {
-      spyEntries.restore();
+      sandbox.restore();
     });
 
     it('should not create any span', done => {
@@ -580,5 +572,28 @@ describe('DocumentLoad Instrumentation', () => {
         done();
       });
     });
+  });
+
+  describe('when fetchStart is negative still create spans', () => {
+    const sandbox = sinon.createSandbox();
+    beforeEach(() => {
+      const navEntriesWithNegativeFetch = Object.assign({}, entries, {
+        fetchStart: -1,
+      });
+      sandbox
+        .stub(window.performance, 'getEntriesByType')
+        .withArgs('navigation')
+        .returns([navEntriesWithNegativeFetch])
+        .withArgs('resource')
+        .returns([]);
+
+      sandbox.stub(window.performance, 'timing').get(() => {
+        return undefined;
+      });
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+    shouldExportCorrectSpan();
   });
 });
