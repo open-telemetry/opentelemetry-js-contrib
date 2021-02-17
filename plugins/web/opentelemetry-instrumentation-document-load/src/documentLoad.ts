@@ -260,15 +260,17 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   }
 
   /**
-   * implements patch function
+   * implements enable function
    */
   enable() {
-    this.disable();
+    // remove previously attached load to avoid adding the same event twice
+    // in case of multiple enable calling.
+    window.removeEventListener('load', this._onDocumentLoaded);
     this._waitForPageLoad();
   }
 
   /**
-   * implements unpatch function
+   * implements disable function
    */
   disable() {
     window.removeEventListener('load', this._onDocumentLoaded);
