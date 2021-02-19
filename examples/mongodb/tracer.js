@@ -11,8 +11,8 @@ module.exports = (serviceName) => {
     plugins: {
       mongodb: {
         enabled: true,
-        path: "@opentelemetry/plugin-mongodb",
-        enhancedDatabaseReporting: true
+        path: '@opentelemetry/plugin-mongodb',
+        enhancedDatabaseReporting: true,
       },
       http: {
         enabled: true,
