@@ -1,6 +1,6 @@
 'use strict';
 
-const api = require("@opentelemetry/api")
+const api = require('@opentelemetry/api');
 // eslint-disable-next-line import/order
 const tracer = require('./tracer')('example-grpc-capitalize-client');
 const path = require('path');
