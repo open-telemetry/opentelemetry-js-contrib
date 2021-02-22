@@ -28,11 +28,9 @@ import { ZoneContextManager } from '@opentelemetry/context-zone';
 // import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 
 const provider = new WebTracerProvider({
-  contextManager: new ZoneContextManager(), // optional
-  plugins: [
-    new UserInteractionInstrumentation()
-  ]
+  contextManager: new ZoneContextManager()
 });
+
 provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 
 // and some test
