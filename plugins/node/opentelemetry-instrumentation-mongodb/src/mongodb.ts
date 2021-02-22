@@ -47,6 +47,7 @@ import {
 export class MongoDBInstrumentation extends InstrumentationBase<
   typeof mongodb
 > {
+  private _supportedVersions = ['>=3.3 <4']
   constructor(protected _config: MongoDbInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
   }
@@ -56,13 +57,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     return [
       new InstrumentationNodeModuleDefinition<typeof mongodb>(
         'mongodb',
-        ['>=3.3 <4'],
+        this._supportedVersions,
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile<WireProtocolInternal>(
             'mongodb/lib/core/wireprotocol/index.js',
-            ['>=3.3 <4'],
+            this._supportedVersions,
             patch,
             unpatch
           ),
