@@ -8,7 +8,6 @@ const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 
 const EXPORTER = process.env.EXPORTER || '';
 
-
 module.exports = (serviceName) => {
   const provider = new NodeTracerProvider({
     plugins: {
