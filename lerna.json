@@ -2,7 +2,6 @@
   "lerna": "3.13.4",
   "npmClient": "npm",
   "packages": [
-    "examples/koa",
     "packages/*",
     "metapackages/*",
     "plugins/node/*",
