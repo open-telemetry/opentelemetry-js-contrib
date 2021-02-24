@@ -1,5 +1,5 @@
 {
-  "name": "@opentelemetry/koa-instrumentation",
+  "name": "@opentelemetry/instrumentation-koa",
   "version": "0.13.1",
   "description": "OpenTelemetry Koa automatic instrumentation package.",
   "main": "build/src/index.js",
@@ -67,7 +67,7 @@
   "dependencies": {
     "@opentelemetry/api": "^0.15.0",
     "@opentelemetry/core": "^0.15.0",
-    "@opentelemetry/semantic-conventions": "^0.15.0",
-    "shimmer": "^1.2.1"
+    "@opentelemetry/instrumentation": "^0.15.0",
+    "@opentelemetry/semantic-conventions": "^0.15.0"
   }
 }
