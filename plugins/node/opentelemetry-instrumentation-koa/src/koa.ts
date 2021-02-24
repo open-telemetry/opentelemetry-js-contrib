@@ -35,7 +35,6 @@ import { getMiddlewareMetadata } from './utils';
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   static readonly component = KoaComponentName;
-  readonly supportedVersions = ['^2.0.0'];
   constructor(config?: InstrumentationConfig) {
     super('@opentelemetry/instrumentation-koa', VERSION, config);
   }
