@@ -15,11 +15,10 @@
  */
 
 import {
-  StatusCode,
+  SpanStatusCode,
   context,
   SpanKind,
-  Status,
-  NoopLogger,
+  SpanStatus,
   getSpan,
   setSpan,
 } from '@opentelemetry/api';
@@ -57,8 +56,8 @@ const DEFAULT_ATTRIBUTES = {
   [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
 
-const unsetStatus: Status = {
-  code: StatusCode.UNSET,
+const unsetStatus: SpanStatus = {
+  code: SpanStatusCode.UNSET,
 };
 
 const predictableStackTrace =
@@ -106,7 +105,7 @@ describe('ioredis', () => {
 
     ioredis = require('ioredis');
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-    plugin.enable(ioredis, provider, new NoopLogger());
+    plugin.enable(ioredis, provider);
   });
 
   after(() => {
@@ -294,7 +293,7 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans.length, 2);
             const ioredisSpan = endedSpans[1];
             // redis 'incr' operation failed with exception, so span should indicate it
-            assert.strictEqual(ioredisSpan.status.code, StatusCode.ERROR);
+            assert.strictEqual(ioredisSpan.status.code, SpanStatusCode.ERROR);
             const exceptionEvent = ioredisSpan.events[0];
             assert.strictEqual(exceptionEvent.name, 'exception');
             assert.strictEqual(
@@ -456,7 +455,7 @@ describe('ioredis', () => {
                   },
                 ],
                 {
-                  code: StatusCode.ERROR,
+                  code: SpanStatusCode.ERROR,
                 }
               );
             } else {
@@ -609,7 +608,7 @@ describe('ioredis', () => {
     describe('Instrumenting without parent span', () => {
       before(() => {
         plugin.disable();
-        plugin.enable(ioredis, provider, new NoopLogger(), {});
+        plugin.enable(ioredis, provider);
       });
       it('should not create child span', async () => {
         await client.set(testKeyName, 'data');
@@ -627,7 +626,7 @@ describe('ioredis', () => {
         const config: IoredisPluginConfig = {
           dbStatementSerializer,
         };
-        plugin.enable(ioredis, provider, new NoopLogger(), config);
+        plugin.enable(ioredis, provider, config);
       });
 
       IOREDIS_CALLBACK_OPERATIONS.forEach(command => {

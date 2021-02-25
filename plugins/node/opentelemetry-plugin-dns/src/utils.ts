@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span, StatusCode, Attributes } from '@opentelemetry/api';
+import { Span, SpanStatusCode, SpanAttributes } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import { AddressFamily } from './enums/AddressFamily';
 import * as dns from 'dns';
@@ -35,7 +35,7 @@ export const setError = (
   const attributes = {
     [AttributeNames.DNS_ERROR_MESSAGE]: message,
     [AttributeNames.DNS_ERROR_NAME]: name,
-  } as Attributes;
+  } as SpanAttributes;
 
   if (nodeVersion.startsWith('12')) {
     attributes[AttributeNames.DNS_ERROR_CODE] = code!;
@@ -44,7 +44,7 @@ export const setError = (
   span.setAttributes(attributes);
 
   span.setStatus({
-    code: StatusCode.ERROR,
+    code: SpanStatusCode.ERROR,
     message,
   });
 };
@@ -78,7 +78,7 @@ export const setLookupAttributes = (
   address: string | dns.LookupAddress[] | dns.LookupAddress,
   family?: number
 ) => {
-  const attributes = {} as Attributes;
+  const attributes = {} as SpanAttributes;
   const isObject = typeof address === 'object';
   let addresses = address;
 

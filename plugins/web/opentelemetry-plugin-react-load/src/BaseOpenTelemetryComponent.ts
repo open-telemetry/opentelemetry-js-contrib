@@ -39,7 +39,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
   moduleName = this.component;
   private _parentSpanMap: WeakMap<React.Component, api.Span>;
   private static _tracer: api.Tracer;
-  private static _logger: api.Logger;
+  private static _logger: api.DiagLogger = api.diag;
 
   /**
    * @param props Props of the React component
@@ -66,7 +66,8 @@ export class BaseOpenTelemetryComponent extends React.Component {
    * Sets the logger for all components being instrumented
    * @param logger
    */
-  static setLogger(logger: api.Logger): void {
+  static setLogger(logger: api.DiagLogger): void {
+    api.diag.setLogger(logger);
     BaseOpenTelemetryComponent._logger = logger;
   }
 

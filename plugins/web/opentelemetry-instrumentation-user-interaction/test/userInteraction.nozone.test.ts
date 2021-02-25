@@ -15,7 +15,7 @@
  */
 const originalSetTimeout = window.setTimeout;
 
-import { isWrapped, LogLevel } from '@opentelemetry/core';
+import { isWrapped } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/tracing';
@@ -67,9 +67,7 @@ describe('UserInteractionInstrumentation', () => {
           return false as any;
         });
 
-      webTracerProvider = new WebTracerProvider({
-        logLevel: LogLevel.ERROR,
-      });
+      webTracerProvider = new WebTracerProvider();
 
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');

@@ -24,7 +24,7 @@ import { DnsInstrumentation } from '../../src/dns';
 import * as dns from 'dns';
 import * as utils from '../utils/utils';
 import { assertSpan } from '../utils/assertSpan';
-import { StatusCode } from '@opentelemetry/api';
+import { SpanStatusCode } from '@opentelemetry/api';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -125,7 +125,7 @@ describe('dns.promises.lookup()', () => {
           addresses: [],
           hostname,
           forceStatus: {
-            code: StatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
             message: error!.message,
           },
         });
@@ -147,7 +147,7 @@ describe('dns.promises.lookup()', () => {
           // tslint:disable-next-line:no-any
           hostname: hostname as any,
           forceStatus: {
-            code: StatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
             message: error!.message,
           },
         });
@@ -170,7 +170,7 @@ describe('dns.promises.lookup()', () => {
           // tslint:disable-next-line:no-any
           hostname: hostname as any,
           forceStatus: {
-            code: StatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
             message: error!.message,
           },
         });

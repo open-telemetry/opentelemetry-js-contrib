@@ -15,13 +15,12 @@
  */
 
 import {
-  Attributes,
-  StatusCode,
+  SpanAttributes,
+  SpanStatusCode,
   context,
-  NoopLogger,
   Span,
   SpanKind,
-  Status,
+  SpanStatus,
   TimedEvent,
   setSpan,
 } from '@opentelemetry/api';
@@ -74,15 +73,15 @@ const DEFAULT_PG_ATTRIBUTES = {
   [AttributeNames.DB_USER]: CONFIG.user,
 };
 
-const unsetStatus: Status = {
-  code: StatusCode.UNSET,
+const unsetStatus: SpanStatus = {
+  code: SpanStatusCode.UNSET,
 };
 
 const runCallbackTest = (
   parentSpan: Span,
-  attributes: Attributes,
+  attributes: SpanAttributes,
   events: TimedEvent[],
-  status: Status = unsetStatus,
+  status: SpanStatus = unsetStatus,
   spansLength = 1,
   spansIndex = 0
 ) => {
@@ -97,7 +96,6 @@ describe('pg-pool@2.x', () => {
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncHooksContextManager;
   const provider = new BasicTracerProvider();
-  const logger = new NoopLogger();
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI:
   // assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
@@ -127,8 +125,8 @@ describe('pg-pool@2.x', () => {
   });
 
   beforeEach(() => {
-    plugin.enable(pgPool, provider, logger);
-    pgPlugin.enable(pg, provider, logger);
+    plugin.enable(pgPool, provider);
+    pgPlugin.enable(pg, provider);
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
   });

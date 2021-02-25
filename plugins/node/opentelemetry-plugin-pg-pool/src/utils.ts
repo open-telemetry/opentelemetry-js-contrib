@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span, StatusCode } from '@opentelemetry/api';
+import { Span, SpanStatusCode } from '@opentelemetry/api';
 import { PgPoolOptionsParams, PgPoolCallback, PgPoolExtended } from './types';
 
 export function getJDBCString(params: PgPoolOptionsParams) {
@@ -33,7 +33,7 @@ export function patchCallback(span: Span, cb: PgPoolCallback): PgPoolCallback {
   ) {
     if (err) {
       span.setStatus({
-        code: StatusCode.ERROR,
+        code: SpanStatusCode.ERROR,
         message: err.message,
       });
     }

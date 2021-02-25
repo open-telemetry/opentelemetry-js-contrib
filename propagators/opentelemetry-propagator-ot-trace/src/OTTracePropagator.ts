@@ -17,6 +17,7 @@
 import {
   Baggage,
   Context,
+  createBaggage,
   getBaggage,
   getSpanContext,
   isSpanContextValid,
@@ -79,8 +80,7 @@ export class OTTracePropagator implements TextMapPropagator {
 
     const baggage = getBaggage(context);
     if (!baggage) return;
-
-    Object.entries(baggage).forEach(([k, v]) => {
+    baggage.getAllEntries().forEach(([k, v]) => {
       if (!isValidHeaderName(k) || !isValidHeaderValue(v.value)) return;
       setter.set(carrier, `${OT_BAGGAGE_PREFIX}${k}`, v.value);
     });
@@ -102,15 +102,17 @@ export class OTTracePropagator implements TextMapPropagator {
         traceFlags,
       });
 
-      const baggage: Baggage = getBaggage(context) || {};
+      let baggage: Baggage = getBaggage(context) || createBaggage();
 
       getter.keys(carrier).forEach(k => {
         if (!k.startsWith(OT_BAGGAGE_PREFIX)) return;
         const value = readHeader(carrier, getter, k);
-        baggage[k.substr(OT_BAGGAGE_PREFIX.length)] = { value };
+        baggage = baggage.setEntry(k.substr(OT_BAGGAGE_PREFIX.length), {
+          value,
+        });
       });
 
-      if (Object.keys(baggage).length > 0) {
+      if (baggage.getAllEntries().length > 0) {
         context = setBaggage(context, baggage);
       }
     }

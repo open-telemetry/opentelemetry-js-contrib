@@ -19,7 +19,7 @@ import {
   Tracer,
   SpanKind,
   Span,
-  StatusCode,
+  SpanStatusCode,
   getSpan,
   context,
 } from '@opentelemetry/api';
@@ -38,7 +38,7 @@ const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
     span.recordException(err);
     span.setStatus({
-      code: StatusCode.ERROR,
+      code: SpanStatusCode.ERROR,
       message: err.message,
     });
   }

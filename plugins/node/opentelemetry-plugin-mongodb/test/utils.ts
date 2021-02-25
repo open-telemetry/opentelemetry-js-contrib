@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { StatusCode, SpanKind } from '@opentelemetry/api';
+import { SpanStatusCode, SpanKind } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import * as mongodb from 'mongodb';
@@ -86,7 +86,7 @@ export function assertSpans(
     mongoSpan.attributes[GeneralAttribute.NET_HOST_NAME],
     process.env.MONGODB_HOST || 'localhost'
   );
-  assert.strictEqual(mongoSpan.status.code, StatusCode.UNSET);
+  assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
 
   if (isEnhancedDatabaseReportingEnabled) {
     const dbStatement = mongoSpan.attributes[

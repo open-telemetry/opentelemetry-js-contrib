@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { diag } from '@opentelemetry/api';
 import type * as ioredisTypes from 'ioredis';
 import {
   InstrumentationBase,
@@ -40,7 +41,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
         'ioredis',
         this.supportedVersions,
         moduleExports => {
-          this._logger.debug('Applying patch for ioredis');
+          diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
           }
@@ -61,7 +62,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          this._logger.debug('Removing patch for ioredis');
+          diag.debug('Removing patch for ioredis');
           this._unwrap(moduleExports.prototype, 'sendCommand');
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -74,12 +75,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
    */
   private _patchSendCommand() {
     return (original: Function) => {
-      return traceSendCommand(
-        this.tracer,
-        original,
-        this._logger,
-        this._config
-      );
+      return traceSendCommand(this.tracer, original, this._config);
     };
   }
 

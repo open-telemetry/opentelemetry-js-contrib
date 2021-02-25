@@ -40,11 +40,11 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
    * Patches Koa operations by wrapping the Koa.use function
    */
   protected patch(): typeof koa {
-    this._logger.debug('Patching Koa');
+    api.diag.debug('Patching Koa');
     if (this._moduleExports == null) {
       return this._moduleExports;
     }
-    this._logger.debug('Patching Koa.use');
+    api.diag.debug('Patching Koa.use');
     shimmer.wrap(this._moduleExports.prototype, 'use', this._getKoaUsePatch);
 
     return this._moduleExports;
@@ -54,7 +54,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
    * Unpatches all Koa operations
    */
   protected unpatch(): void {
-    this._logger.debug('Unpatching Koa');
+    api.diag.debug('Unpatching Koa');
     shimmer.unwrap(this._moduleExports.prototype, 'use');
   }
 
@@ -83,7 +83,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
    * routed middleware
    */
   private _patchRouterDispatch(dispatchLayer: KoaMiddleware): KoaMiddleware {
-    this._logger.debug('Patching @koa/router dispatch');
+    api.diag.debug('Patching @koa/router dispatch');
 
     const router = dispatchLayer.router;
 
@@ -116,7 +116,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
   ): KoaMiddleware {
     if (middlewareLayer[kLayerPatched] === true) return middlewareLayer;
     middlewareLayer[kLayerPatched] = true;
-    this._logger.debug('patching Koa middleware layer');
+    api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
       if (api.getSpan(api.context.active()) === undefined) {
         return middlewareLayer(context, next);

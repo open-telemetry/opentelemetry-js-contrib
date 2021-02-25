@@ -1,11 +1,13 @@
 {
-  "name": "dns-example",
+  "name": "mongodb-example",
   "private": true,
-  "version": "0.13.0",
-  "description": "Example of DNS integration with OpenTelemetry",
+  "version": "0.13.1",
+  "description": "Example of mongodb integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
+    "zipkin:server": "cross-env EXPORTER=zipkin node ./server.js",
     "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js",
+    "jaeger:server": "cross-env EXPORTER=jaeger node ./server.js",
     "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js"
   },
   "repository": {
@@ -14,7 +16,7 @@
   },
   "keywords": [
     "opentelemetry",
-    "dns",
+    "mongodb",
     "tracing"
   ],
   "engines": {
@@ -31,11 +33,13 @@
     "@opentelemetry/exporter-zipkin": "^0.17.0",
     "@opentelemetry/instrumentation": "^0.17.0",
     "@opentelemetry/node": "^0.17.0",
-    "@opentelemetry/plugin-dns": "^0.13.0",
-    "@opentelemetry/tracing": "^0.17.0"
+    "@opentelemetry/plugin-http": "^0.17.0",
+    "@opentelemetry/plugin-mongodb": "^0.10.0",
+    "@opentelemetry/tracing": "^0.17.0",
+    "mongodb": "^3.5.7"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
   "devDependencies": {
-    "cross-env": "^6.0.3"
+    "cross-env": "^6.0.0"
   }
 }

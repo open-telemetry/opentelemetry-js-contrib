@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan, NoopLogger } from '@opentelemetry/api';
+import { context, setSpan } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -50,7 +50,6 @@ const httpRequest = {
 };
 
 describe('Koa Instrumentation - Router Tests', () => {
-  const logger = new NoopLogger();
   const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
@@ -62,7 +61,7 @@ describe('Koa Instrumentation - Router Tests', () => {
   let port: number;
 
   before(() => {
-    plugin.enable(koa, provider, logger);
+    plugin.enable(koa, provider);
   });
 
   beforeEach(async () => {
