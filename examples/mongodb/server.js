@@ -58,7 +58,7 @@ startServer(8080);
 
 function handleInsertQuery(response) {
   const obj = { name: 'John', age: '20' };
-  db.collection('users').insertOne(obj, (err, res) => {
+  db.collection('users').insertOne(obj, (err) => {
     if (err) {
       console.log('Error code:', err.code);
       response.end(err.message);
@@ -70,7 +70,7 @@ function handleInsertQuery(response) {
 }
 
 function handleGetQuery(response) {
-  db.collection('users').find({}, (err, res) => {
+  db.collection('users').find({}, (err) => {
     if (err) {
       console.log('Error code:', err.code);
       response.end(err.message);
@@ -82,7 +82,7 @@ function handleGetQuery(response) {
 }
 
 function handleCreateCollection(response) {
-  db.createCollection('users', (err, res) => {
+  db.createCollection('users', (err) => {
     if (err) {
       console.log('Error code:', err.code);
       response.end(err.message);
