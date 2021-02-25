@@ -1,7 +1,8 @@
 'use strict';
 
-// eslint-disable-next-line
-const tracer = require('./tracer')('example-koa-server');
+const api = require('@opentelemetry/api');
+
+require('./tracer')('example-koa-server');
 
 // Adding Koa router (if desired)
 const router = require('@koa/router')();
@@ -28,7 +29,7 @@ const posts = ['post 0', 'post 1', 'post 2'];
 
 function addPost(ctx) {
   posts.push(`post ${posts.length}`);
-  const currentSpan = tracer.getCurrentSpan();
+  const currentSpan = api.getSpan(api.context.active());
   currentSpan.addEvent('Added post');
   currentSpan.setAttribute('Date', new Date());
   ctx.body = `Added post: ${posts[posts.length - 1]}`;
@@ -47,7 +48,7 @@ async function showNewPost(ctx) {
 
 function runTest(ctx) {
   console.log('runTest');
-  const currentSpan = tracer.getCurrentSpan();
+  const currentSpan = api.getSpan(api.context.active());
   const { traceId } = currentSpan.context();
   console.log(`traceid: ${traceId}`);
   console.log(`Jaeger URL: http://localhost:16686/trace/${traceId}`);
