@@ -28,7 +28,7 @@ app.get('/:cmd', (req, res) => {
       values: [req.query.id, req.query.text],
     };
   }
-  const currentSpan = tracer.getCurrentSpan();
+  const currentSpan = api.getSpan(api.context.active());
   console.log(`traceid: ${currentSpan.context().traceId}`);
   const span = tracer.startSpan(cmd, {
     kind: SpanKind.SERVER,
