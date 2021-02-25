@@ -365,8 +365,12 @@ describe('ioredis', () => {
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(setSpan(context.active(), span), async () => {
           try {
-            const pub = new ioredis(URL);
-            const sub = new ioredis(URL);
+            // use lazyConnect so we can call the `connect` function and await it.
+            // this ensures that all operations are sequential and predictable.
+            const pub = new ioredis(URL, { lazyConnect: true });
+            await pub.connect();
+            const sub = new ioredis(URL, { lazyConnect: true });
+            await sub.connect();
             await sub.subscribe('news', 'music');
             await pub.publish('news', 'Hello world!');
             await pub.publish('music', 'Hello again!');
@@ -374,15 +378,14 @@ describe('ioredis', () => {
             await sub.quit();
             await pub.quit();
             const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 11);
+            assert.strictEqual(endedSpans.length, 10);
             span.end();
-            assert.strictEqual(endedSpans.length, 12);
+            assert.strictEqual(endedSpans.length, 11);
             const spanNames = [
               'connect',
+              'info',
               'connect',
               'info',
-              'info',
-              'subscribe',
               'subscribe',
               'publish',
               'publish',
@@ -392,7 +395,7 @@ describe('ioredis', () => {
               'test span',
             ];
             let i = 0;
-            while (i < 12) {
+            while (i < 11) {
               assert.strictEqual(endedSpans[i].name, spanNames[i]);
               i++;
             }
@@ -402,7 +405,7 @@ describe('ioredis', () => {
               [DatabaseAttribute.DB_STATEMENT]: 'subscribe news music',
             };
             testUtils.assertSpan(
-              endedSpans[5],
+              endedSpans[4],
               SpanKind.CLIENT,
               attributes,
               [],
