@@ -1,7 +1,7 @@
 {
   "name": "postgres-example",
   "private": true,
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Example of Postgres integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js",
     "jaeger:server": "cross-env EXPORTER=jaeger node ./server.js",
     "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js",
-    "docker:start": "docker run -d -p 54320:5432 --name otpostgres postgres:alpine",
+    "docker:start": "docker run -d -p 54320:5432 -e POSTGRES_PASSWORD=postgres --name otpostgres postgres:alpine",
     "docker:stop": "docker stop otpostgres & docker rm otpostgres"
   },
   "repository": {
@@ -33,11 +33,10 @@
     "@opentelemetry/api": "^0.17.0",
     "@opentelemetry/exporter-jaeger": "^0.17.0",
     "@opentelemetry/exporter-zipkin": "^0.17.0",
-    "@opentelemetry/instrumentation": "^0.17.0",
     "@opentelemetry/node": "^0.17.0",
-    "@opentelemetry/plugin-http": "^0.17.0",
-    "@opentelemetry/plugin-pg": "^0.13.0",
-    "@opentelemetry/plugin-pg-pool": "^0.13.0",
+    "@opentelemetry/instrumentation": "^0.17.0",
+    "@opentelemetry/instrumentation-http": "^0.17.0",
+    "@opentelemetry/instrumentation-pg": "^0.13.1",
     "@opentelemetry/tracing": "^0.17.0",
     "express": "^4.17.1",
     "pg": "^7.12.1"

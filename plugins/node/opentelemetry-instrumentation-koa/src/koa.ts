@@ -15,9 +15,14 @@
  */
 
 import * as api from '@opentelemetry/api';
-import { BasePlugin } from '@opentelemetry/core';
+import {
+  isWrapped,
+  InstrumentationBase,
+  InstrumentationConfig,
+  InstrumentationNodeModuleDefinition,
+} from '@opentelemetry/instrumentation';
+
 import type * as koa from 'koa';
-import * as shimmer from 'shimmer';
 import {
   KoaMiddleware,
   KoaContext,
@@ -28,34 +33,37 @@ import { VERSION } from './version';
 import { getMiddlewareMetadata } from './utils';
 
 /** Koa instrumentation for OpenTelemetry */
-export class KoaInstrumentation extends BasePlugin<typeof koa> {
+export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   static readonly component = KoaComponentName;
-  readonly supportedVersions = ['^2.0.0'];
-
-  constructor(readonly moduleName: string) {
-    super('@opentelemetry/koa-instrumentation', VERSION);
+  constructor(config?: InstrumentationConfig) {
+    super('@opentelemetry/instrumentation-koa', VERSION, config);
   }
-
-  /**
-   * Patches Koa operations by wrapping the Koa.use function
-   */
-  protected patch(): typeof koa {
-    api.diag.debug('Patching Koa');
-    if (this._moduleExports == null) {
-      return this._moduleExports;
-    }
-    api.diag.debug('Patching Koa.use');
-    shimmer.wrap(this._moduleExports.prototype, 'use', this._getKoaUsePatch);
-
-    return this._moduleExports;
-  }
-
-  /**
-   * Unpatches all Koa operations
-   */
-  protected unpatch(): void {
-    api.diag.debug('Unpatching Koa');
-    shimmer.unwrap(this._moduleExports.prototype, 'use');
+  protected init() {
+    return new InstrumentationNodeModuleDefinition<typeof koa>(
+      'koa',
+      ['^2.0.0'],
+      moduleExports => {
+        if (moduleExports == null) {
+          return moduleExports;
+        }
+        api.diag.debug('Patching Koa');
+        if (isWrapped(moduleExports.prototype.use)) {
+          this._unwrap(moduleExports.prototype, 'use');
+        }
+        this._wrap(
+          moduleExports.prototype,
+          'use',
+          this._getKoaUsePatch.bind(this)
+        );
+        return moduleExports;
+      },
+      moduleExports => {
+        api.diag.debug('Unpatching Koa');
+        if (isWrapped(moduleExports.prototype.use)) {
+          this._unwrap(moduleExports.prototype, 'use');
+        }
+      }
+    );
   }
 
   /**
@@ -64,6 +72,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
    * @param {KoaMiddleware} middleware - the original middleware function
    */
   private _getKoaUsePatch(original: (middleware: KoaMiddleware) => koa) {
+    const plugin = this;
     return function use(this: koa, middlewareFunction: KoaMiddleware) {
       let patchedFunction: KoaMiddleware;
       if (middlewareFunction.router) {
@@ -127,7 +136,7 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
         isRouter,
         layerPath
       );
-      const span = this._tracer.startSpan(metadata.name, {
+      const span = this.tracer.startSpan(metadata.name, {
         attributes: metadata.attributes,
       });
 
@@ -147,5 +156,3 @@ export class KoaInstrumentation extends BasePlugin<typeof koa> {
     };
   }
 }
-
-export const plugin = new KoaInstrumentation(KoaComponentName);

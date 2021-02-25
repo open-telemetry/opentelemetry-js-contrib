@@ -41,7 +41,7 @@ export function startDocker(db: 'redis' | 'mysql' | 'postgres') {
       break;
 
     case 'postgres':
-      dockerRunCmd = `docker run -d -p 54320:5432 --name ot${db} ${db}:alpine`;
+      dockerRunCmd = `docker run -d -p 54320:5432 -e POSTGRES_PASSWORD=postgres --name ot${db} ${db}:alpine`;
       break;
   }
 
