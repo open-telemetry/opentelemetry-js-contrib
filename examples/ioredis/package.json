@@ -20,7 +20,7 @@
     "tracing"
   ],
   "engines": {
-    "node": ">=8"
+    "node": ">=8.5.0"
   },
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -30,7 +30,7 @@
   "dependencies": {
     "@opentelemetry/api": "^0.15.0",
     "@opentelemetry/exporter-jaeger": "^0.15.0",
-    "@opentelemetry/instrumentation-ioredis": "^0.13.0",
+    "@opentelemetry/instrumentation-ioredis": "^0.13.1",
     "@opentelemetry/node": "^0.15.0",
     "@opentelemetry/tracing": "^0.15.0",
     "ioredis": "^4.22.0"
