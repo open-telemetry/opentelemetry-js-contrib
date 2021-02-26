@@ -30,7 +30,7 @@
     "@opentelemetry/exporter-jaeger": "^0.15.0",
     "@opentelemetry/exporter-zipkin": "^0.15.0",
     "@opentelemetry/node": "^0.15.0",
-    "@opentelemetry/instrumentation-dns": "^0.13.0",
+    "@opentelemetry/instrumentation-dns": "^0.13.1",
     "@opentelemetry/tracing": "^0.15.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
