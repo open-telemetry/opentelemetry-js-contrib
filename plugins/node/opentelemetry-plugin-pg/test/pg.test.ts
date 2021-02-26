@@ -440,7 +440,7 @@ describe('pg@7.x', () => {
           assert.strictEqual(ctx.params, undefined);
         },
       };
-      plugin.enable(pg, provider, logger, config);
+      plugin.enable(pg, provider, config);
 
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
@@ -471,7 +471,7 @@ describe('pg@7.x', () => {
           assert.strictEqual(ctx.params, values);
         },
       };
-      plugin.enable(pg, provider, logger, config);
+      plugin.enable(pg, provider, config);
 
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
@@ -507,7 +507,7 @@ describe('pg@7.x', () => {
           assert.strictEqual(ctx.config.values, values);
         },
       };
-      plugin.enable(pg, provider, logger, config);
+      plugin.enable(pg, provider, config);
 
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
