@@ -28,6 +28,7 @@ import {
   PgClientExtended,
   NormalizedQueryConfig,
   PostgresCallback,
+  PostgresPluginConfig,
 } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
@@ -35,6 +36,8 @@ import { VERSION } from './version';
 export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
   static readonly COMPONENT = 'pg';
   static readonly DB_TYPE = 'sql';
+
+  protected _config!: PostgresPluginConfig;
 
   static readonly BASE_SPAN_NAME = PostgresPlugin.COMPONENT + '.query';
 
@@ -79,8 +82,14 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
               query,
               params
             );
+            if (plugin._config.postQueryHook) {
+              plugin._config.postQueryHook({ span, query, params });
+            }
           } else {
             span = utils.handleTextQuery.call(this, plugin._tracer, query);
+            if (plugin._config.postQueryHook) {
+              plugin._config.postQueryHook({ span, query });
+            }
           }
         } else if (typeof args[0] === 'object') {
           const queryConfig = args[0] as NormalizedQueryConfig;
@@ -90,6 +99,9 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             plugin._config,
             queryConfig
           );
+          if (plugin._config.postQueryHook) {
+            plugin._config.postQueryHook({ span, config: queryConfig });
+          }
         } else {
           return utils.handleInvalidQuery.call(
             this,
