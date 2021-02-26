@@ -50,6 +50,7 @@ IORedis instrumentation has few options available to choose from. You can set th
 | Options | Type | Description |
 | ------- | ---- | ----------- |
 | `dbStatementSerializer` | `DbStatementSerializer` | IORedis instrumentation will serialize db.statement using the specified function. |
+| `responseHook` | `RedisResponseCustomAttributeFunction` | Function for adding custom attributes on db response |
 
 #### Custom db.statement Serializer
 The instrumentation serializes the whole command into a Span attribute called `db.statement`. The standard serialization format is `{cmdName} {cmdArgs.join(',')}`.
