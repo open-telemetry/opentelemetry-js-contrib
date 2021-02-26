@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { context, setSpan, NoopLogger } from '@opentelemetry/api';
+import * as KoaRouter from '@koa/router';
+import { context, setSpan } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -24,12 +25,16 @@ import {
 import {
   ExceptionAttribute,
   ExceptionEventName,
+  HttpAttribute,
 } from '@opentelemetry/semantic-conventions';
+
+import { KoaInstrumentation } from '../src';
+const plugin = new KoaInstrumentation();
+
 import * as assert from 'assert';
 import * as koa from 'koa';
 import * as http from 'http';
 import { AddressInfo } from 'net';
-import { plugin } from '../src';
 import { AttributeNames, KoaLayerType } from '../src/types';
 
 const httpRequest = {
@@ -51,12 +56,12 @@ const httpRequest = {
   },
 };
 
-describe('Koa Instrumentation - Core Tests', () => {
-  const logger = new NoopLogger();
+describe('Koa Instrumentation', () => {
   const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
   provider.addSpanProcessor(spanProcessor);
+  plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
   let app: koa;
@@ -64,7 +69,11 @@ describe('Koa Instrumentation - Core Tests', () => {
   let port: number;
 
   before(() => {
-    plugin.enable(koa, provider, logger);
+    plugin.enable();
+  });
+
+  after(() => {
+    plugin.disable();
   });
 
   beforeEach(async () => {
@@ -113,6 +122,130 @@ describe('Koa Instrumentation - Core Tests', () => {
     throw new Error('I failed!');
   };
 
+  describe('Instrumenting @koa/router calls', () => {
+    it('should create a child span for middlewares', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      app.use((ctx, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
+
+      const router = new KoaRouter();
+      router.get('/post/:id', ctx => {
+        ctx.body = `Post id: ${ctx.params.id}`;
+      });
+
+      app.use(router.routes());
+
+      await context.with(setSpan(context.active(), rootSpan), async () => {
+        await httpRequest.get(`http://localhost:${port}/post/0`);
+        rootSpan.end();
+
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+        const requestHandlerSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name.includes('router - /post/:id'));
+        assert.notStrictEqual(requestHandlerSpan, undefined);
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+          KoaLayerType.ROUTER
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
+          '/post/:id'
+        );
+
+        const exportedRootSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name === 'rootSpan');
+        assert.notStrictEqual(exportedRootSpan, undefined);
+      });
+    });
+
+    it('should correctly instrument nested routers', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      app.use((ctx, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
+
+      const router = new KoaRouter();
+      const nestedRouter = new KoaRouter();
+      nestedRouter.get('/post/:id', ctx => {
+        ctx.body = `Post id: ${ctx.params.id}`;
+      });
+
+      router.use('/:first', nestedRouter.routes());
+      app.use(router.routes());
+
+      await context.with(setSpan(context.active(), rootSpan), async () => {
+        await httpRequest.get(`http://localhost:${port}/test/post/0`);
+        rootSpan.end();
+
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+        const requestHandlerSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name.includes('router - /:first/post/:id'));
+        assert.notStrictEqual(requestHandlerSpan, undefined);
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+          KoaLayerType.ROUTER
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
+          '/:first/post/:id'
+        );
+
+        const exportedRootSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name === 'rootSpan');
+        assert.notStrictEqual(exportedRootSpan, undefined);
+      });
+    });
+
+    it('should correctly instrument prefixed routers', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      app.use((ctx, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
+
+      const router = new KoaRouter();
+      router.get('/post/:id', ctx => {
+        ctx.body = `Post id: ${ctx.params.id}`;
+      });
+      router.prefix('/:first');
+      app.use(router.routes());
+
+      await context.with(setSpan(context.active(), rootSpan), async () => {
+        await httpRequest.get(`http://localhost:${port}/test/post/0`);
+        rootSpan.end();
+
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+        const requestHandlerSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name.includes('router - /:first/post/:id'));
+        assert.notStrictEqual(requestHandlerSpan, undefined);
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+          KoaLayerType.ROUTER
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
+          '/:first/post/:id'
+        );
+
+        const exportedRootSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name === 'rootSpan');
+        assert.notStrictEqual(exportedRootSpan, undefined);
+      });
+    });
+  });
+
   describe('Instrumenting core middleware calls', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
@@ -126,7 +259,7 @@ describe('Koa Instrumentation - Core Tests', () => {
       await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}`);
         rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 8);
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 5);
 
         assert.notStrictEqual(
           memoryExporter
@@ -187,7 +320,7 @@ describe('Koa Instrumentation - Core Tests', () => {
       await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}`);
         rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
         const requestHandlerSpan = memoryExporter
           .getFinishedSpans()
@@ -215,7 +348,7 @@ describe('Koa Instrumentation - Core Tests', () => {
       assert.deepStrictEqual(res, 'Internal Server Error');
 
       rootSpan.end();
-      assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+      assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
       const requestHandlerSpan = memoryExporter
         .getFinishedSpans()

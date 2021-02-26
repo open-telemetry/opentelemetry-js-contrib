@@ -74,7 +74,12 @@ export class IORedisInstrumentation extends InstrumentationBase<
    */
   private _patchSendCommand() {
     return (original: Function) => {
-      return traceSendCommand(this.tracer, original, this._config);
+      return traceSendCommand(
+        this.tracer,
+        original,
+        this._logger,
+        this._config
+      );
     };
   }
 

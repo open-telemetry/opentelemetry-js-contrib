@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-import { Span } from '@opentelemetry/api';
-import { PluginConfig } from '@opentelemetry/core';
-
 import * as pgTypes from 'pg';
+import * as pgPoolTypes from 'pg-pool';
 
 export type PostgresCallback = (err: Error, res: object) => unknown;
 
@@ -40,18 +38,21 @@ export interface NormalizedQueryConfig extends pgTypes.QueryConfig {
   callback?: PostgresCallback;
 }
 
-export interface PostgresPostQueryHookFunction {
-  (ctx: QueryContext): void;
+export type PgPoolCallback = (
+  err: Error,
+  client: any,
+  done: (release?: any) => void
+) => void;
+
+export interface PgPoolOptionsParams {
+  database: string;
+  host: string;
+  port: number;
+  user: string;
+  idleTimeoutMillis: number; // the minimum amount of time that an object may sit idle in the pool before it is eligible for eviction due to idle time
+  maxClient: number; // maximum size of the pool
 }
 
-export interface QueryContext {
-  span: Span;
-  query?: string;
-  config?: NormalizedQueryConfig;
-  params?: unknown[];
-}
-
-// Options available for the Postgres Plugin
-export interface PostgresPluginConfig extends PluginConfig {
-  postQueryHook?: PostgresPostQueryHookFunction;
+export interface PgPoolExtended extends pgPoolTypes<pgTypes.Client> {
+  options: PgPoolOptionsParams;
 }
