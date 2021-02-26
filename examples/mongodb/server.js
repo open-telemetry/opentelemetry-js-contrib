@@ -1,7 +1,9 @@
 'use strict';
 
+const api = require('@opentelemetry/api');
 // eslint-disable-next-line import/order
-const tracer = require('./tracer')('example-mongodb-http-server');
+require('./tracer')('example-mongodb-http-server');
+
 const { MongoClient } = require('mongodb');
 const http = require('http');
 
@@ -28,7 +30,7 @@ function startServer(port) {
 
 /** A function which handles requests and send response. */
 function handleRequest(request, response) {
-  const currentSpan = tracer.getCurrentSpan();
+  const currentSpan = api.getSpan(api.context.active());
   // display traceid in the terminal
   const { traceId } = currentSpan.context();
   console.log(`traceid: ${traceId}`);

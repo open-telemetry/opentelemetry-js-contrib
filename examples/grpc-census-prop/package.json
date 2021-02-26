@@ -1,6 +1,6 @@
 {
   "name": "grpc-census-prop-example",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Example of using propagator-grpc-census-binary",
   "main": "index.js",
   "scripts": {
@@ -39,7 +39,7 @@
     "@opentelemetry/core": "^0.17.0",
     "@opentelemetry/node": "^0.17.0",
     "@opentelemetry/plugin-grpc": "^0.17.0",
-    "@opentelemetry/propagator-grpc-census-binary": "^0.13.0",
+    "@opentelemetry/propagator-grpc-census-binary": "^0.13.1",
     "@opentelemetry/tracing": "^0.17.0",
     "grpc": "^1.24.2",
     "node-pre-gyp": "0.12.0"

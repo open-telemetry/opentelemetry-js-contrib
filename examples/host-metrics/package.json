@@ -1,7 +1,7 @@
 {
   "name": "host-metrics-example",
   "private": true,
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Example of using @opentelemetry/host-metrics",
   "main": "index.js",
   "scripts": {
@@ -30,7 +30,7 @@
     "@opentelemetry/core": "^0.17.0",
     "@opentelemetry/exporter-collector": "^0.17.0",
     "@opentelemetry/exporter-prometheus": "^0.17.0",
-    "@opentelemetry/host-metrics": "^0.13.0",
+    "@opentelemetry/host-metrics": "^0.13.1",
     "@opentelemetry/instrumentation": "^0.17.0",
     "@opentelemetry/metrics": "^0.17.0"
   },
