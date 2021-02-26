@@ -22,6 +22,7 @@ import {
   StatusCode,
   getSpan,
   context,
+  Logger,
 } from '@opentelemetry/api';
 import {
   IORedisCommand,
@@ -33,6 +34,7 @@ import {
   DatabaseAttribute,
   GeneralAttribute,
 } from '@opentelemetry/semantic-conventions';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
@@ -83,6 +85,7 @@ const defaultDbStatementSerializer: DbStatementSerializer = (
 export const traceSendCommand = (
   tracer: Tracer,
   original: Function,
+  logger: Logger,
   config?: IORedisInstrumentationConfig
 ) => {
   const dbStatementSerializer =
@@ -121,6 +124,16 @@ export const traceSendCommand = (
       const origResolve = cmd.resolve;
       /* eslint-disable @typescript-eslint/no-explicit-any */
       cmd.resolve = function (result: any) {
+        safeExecuteInTheMiddle(
+          () => config?.responseHook?.(span, cmd.name, cmd.args, result),
+          e => {
+            if (e) {
+              logger.error('ioredis response hook failed', e);
+            }
+          },
+          true
+        );
+
         endSpan(span, null);
         origResolve(result);
       };

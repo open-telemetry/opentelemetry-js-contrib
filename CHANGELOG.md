@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.13.1
+
+#### :rocket: Enhancement
+* [#330](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/330) Allow negative performance timings ([@mhennoch](https://github.com/mhennoch))
+* [#302](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/302) feat: add instrumentation-dns ([@Flarna](https://github.com/Flarna))
+* [#301](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/301) feat: add ioredis instrumentation ([@Flarna](https://github.com/Flarna))
+* [#324](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/324) User interaction instrumentation ([@obecny](https://github.com/obecny))
+
+#### :house: Internal
+* [#328](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/328) added github workflow for unit tests ([@willarmiros](https://github.com/willarmiros))
+
+#### Committers: 4
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- MartenH ([@mhennoch](https://github.com/mhennoch))
+- William Armiros ([@willarmiros](https://github.com/willarmiros))
+
 ## 0.13.0
 
 #### :bug: Bug Fix

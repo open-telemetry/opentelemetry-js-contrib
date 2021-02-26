@@ -21,12 +21,7 @@ import {
   Span,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import {
-  BasePlugin,
-  otperformance,
-  PluginConfig,
-  TRACE_PARENT_HEADER,
-} from '@opentelemetry/core';
+import { otperformance, TRACE_PARENT_HEADER } from '@opentelemetry/core';
 import {
   addSpanNetworkEvent,
   addSpanNetworkEvents,
@@ -35,6 +30,10 @@ import {
   PerformanceLegacy,
   PerformanceTimingNames as PTN,
 } from '@opentelemetry/web';
+import {
+  InstrumentationBase,
+  InstrumentationConfig,
+} from '@opentelemetry/instrumentation';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
@@ -42,21 +41,21 @@ import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 /**
  * This class represents a document load plugin
  */
-export class DocumentLoad extends BasePlugin<unknown> {
+export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   readonly component: string = 'document-load';
   readonly version: string = '1';
   moduleName = this.component;
-  protected _config!: PluginConfig;
+  protected _config!: InstrumentationConfig;
 
   /**
    *
    * @param config
    */
-  constructor(config: PluginConfig = {}) {
-    super('@opentelemetry/plugin-document-load', VERSION);
-    this._onDocumentLoaded = this._onDocumentLoaded.bind(this);
-    this._config = config;
+  constructor(config: InstrumentationConfig = {}) {
+    super('@opentelemetry/plugin-document-load', VERSION, config);
   }
+
+  init() {}
 
   /**
    * callback to be executed when page is loaded
@@ -91,7 +90,6 @@ export class DocumentLoad extends BasePlugin<unknown> {
     const metaElement = [...document.getElementsByTagName('meta')].find(
       e => e.getAttribute('name') === TRACE_PARENT_HEADER
     );
-
     const entries = this._getEntries();
     const traceparent = (metaElement && metaElement.content) || '';
     context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
@@ -173,7 +171,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
       keys.forEach((key: string) => {
         if (hasKey(performanceNavigationTiming, key)) {
           const value = performanceNavigationTiming[key];
-          if (typeof value === 'number' && value >= 0) {
+          if (typeof value === 'number') {
             entries[key] = value;
           }
         }
@@ -187,7 +185,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
         keys.forEach((key: string) => {
           if (hasKey(performanceTiming, key)) {
             const value = performanceTiming[key];
-            if (typeof value === 'number' && value >= 0) {
+            if (typeof value === 'number') {
               entries[key] = value;
             }
           }
@@ -236,7 +234,7 @@ export class DocumentLoad extends BasePlugin<unknown> {
       hasKey(entries, performanceName) &&
       typeof entries[performanceName] === 'number'
     ) {
-      const span = this._tracer.startSpan(
+      const span = this.tracer.startSpan(
         spanName,
         {
           startTime: entries[performanceName],
@@ -256,22 +254,25 @@ export class DocumentLoad extends BasePlugin<unknown> {
     if (window.document.readyState === 'complete') {
       this._onDocumentLoaded();
     } else {
+      this._onDocumentLoaded = this._onDocumentLoaded.bind(this);
       window.addEventListener('load', this._onDocumentLoaded);
     }
   }
 
   /**
-   * implements patch function
+   * implements enable function
    */
-  protected patch() {
+  enable() {
+    // remove previously attached load to avoid adding the same event twice
+    // in case of multiple enable calling.
+    window.removeEventListener('load', this._onDocumentLoaded);
     this._waitForPageLoad();
-    return this._moduleExports;
   }
 
   /**
-   * implements unpatch function
+   * implements disable function
    */
-  protected unpatch() {
+  disable() {
     window.removeEventListener('load', this._onDocumentLoaded);
   }
 }
