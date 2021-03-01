@@ -19,6 +19,7 @@ npm install --save @opentelemetry/instrumentation-document-load
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
 import { WebTracerProvider } from '@opentelemetry/web';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { CompositePropagator, HttpTraceContext } from '@opentelemetry/core';
