@@ -92,7 +92,7 @@ function createResolverSpan(
   path: string[],
   parentSpan?: api.Span
 ): api.Span {
-  const attributes: api.Attributes = {
+  const attributes: api.SpanAttributes = {
     [SpanAttributes.FIELD_NAME]: info.fieldName,
     [SpanAttributes.FIELD_PATH]: path.join('.'),
     [SpanAttributes.FIELD_TYPE]: info.returnType.toString(),

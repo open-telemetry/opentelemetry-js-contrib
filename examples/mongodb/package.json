@@ -1,16 +1,14 @@
 {
-  "name": "hapi-example",
+  "name": "mongodb-example",
   "private": true,
   "version": "0.13.1",
-  "description": "Example of Hapi auto-instrumentation with OpenTelemetry",
+  "description": "Example of mongodb integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
     "zipkin:server": "cross-env EXPORTER=zipkin node ./server.js",
     "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js",
     "jaeger:server": "cross-env EXPORTER=jaeger node ./server.js",
-    "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js",
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix"
+    "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js"
   },
   "repository": {
     "type": "git",
@@ -18,12 +16,11 @@
   },
   "keywords": [
     "opentelemetry",
-    "hapi",
-    "tracing",
-    "instrumentation"
+    "mongodb",
+    "tracing"
   ],
   "engines": {
-    "node": ">=8"
+    "node": ">=8.5.0"
   },
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -31,20 +28,18 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "dependencies": {
-    "@hapi/hapi": "^19.2.0",
     "@opentelemetry/api": "^0.17.0",
     "@opentelemetry/exporter-jaeger": "^0.17.0",
     "@opentelemetry/exporter-zipkin": "^0.17.0",
-    "@opentelemetry/hapi-instrumentation": "^0.13.1",
     "@opentelemetry/instrumentation": "^0.17.0",
+    "@opentelemetry/instrumentation-http": "^0.17.0",
     "@opentelemetry/node": "^0.17.0",
-    "@opentelemetry/plugin-http": "^0.17.0",
+    "@opentelemetry/plugin-mongodb": "^0.13.1",
     "@opentelemetry/tracing": "^0.17.0",
-    "axios": "^0.19.0"
+    "mongodb": "^3.5.7"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
   "devDependencies": {
-    "cross-env": "^6.0.0",
-    "eslint": "^7.4.0"
+    "cross-env": "^6.0.0"
   }
 }

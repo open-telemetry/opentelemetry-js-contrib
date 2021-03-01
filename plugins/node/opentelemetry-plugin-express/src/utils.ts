@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Attributes } from '@opentelemetry/api';
+import { SpanAttributes } from '@opentelemetry/api';
 import {
   ExpressLayer,
   AttributeNames,
@@ -50,7 +50,7 @@ export const getLayerMetadata = (
   layer: ExpressLayer,
   layerPath?: string
 ): {
-  attributes: Attributes;
+  attributes: SpanAttributes;
   name: string;
 } => {
   if (layer.name === 'router') {

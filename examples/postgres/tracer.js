@@ -18,7 +18,7 @@ module.exports = (serviceName) => {
     instrumentations: [
       new PgInstrumentation(),
       new HttpInstrumentation(),
-    ]
+    ],
   });
 
   let exporter;

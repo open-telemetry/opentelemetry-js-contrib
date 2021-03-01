@@ -21,16 +21,24 @@ npm install --save @opentelemetry/instrumentation-dns
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { DnsInstrumentation } = require('@opentelemetry/instrumentation-dns');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider({
-  // be sure to disable old plugin
-  plugins: {
-    dns: { enabled: false, path: '@opentelemetry/plugin-dns' }
-  }
-});
+const provider = new NodeTracerProvider();
+provider.register();
 
-const dnsInstrumentation = new DnsInstrumentation({
-  // see under for available configuration
+registerInstrumentations({
+  instrumentations: [
+    new DnsInstrumentation({
+      // see under for available configuration
+    }),
+    {
+      // be sure to disable old plugin but only if it was installed
+      plugins: {
+        dns: { enabled: false, path: '@opentelemetry/plugin-dns' }
+      },
+    }
+  ],
+  tracerProvider: provider,
 });
 ```
 

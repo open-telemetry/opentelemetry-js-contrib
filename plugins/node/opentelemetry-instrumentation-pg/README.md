@@ -23,8 +23,9 @@ To load all of the [default supported plugins](https://github.com/open-telemetry
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
-const provider = new NodeTracerProvider();
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const provider = new NodeTracerProvider();
+provider.register();
 
 registerInstrumentations({
   tracerProvider: provider,
@@ -38,6 +39,7 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const { PgInstrumentation } = require('@opentelemetry/instrumentation-pg');
 
 const provider = new NodeTracerProvider();
+provider.register();
 const pgInstrumentation = new PgInstrumentation();
 pgInstrumentation.setTracerProvider(provider);
 ```
@@ -50,6 +52,7 @@ const { PgInstrumentation } = require('@opentelemetry/instrumentation-pg');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
+provider.register();
 registerInstrumentations({
   instrumentations: [
     new PgInstrumentation(),

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, getSpan, setSpan } from '@opentelemetry/api';
+import { context, diag, getSpan, setSpan } from '@opentelemetry/api';
 import { BasePlugin } from '@opentelemetry/core';
 import type * as Hapi from '@hapi/hapi';
 import { VERSION } from './version';
@@ -52,12 +52,12 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
    * Patches Hapi operations by wrapping the Hapi.server and Hapi.Server functions
    */
   protected patch(): typeof Hapi {
-    this._logger.debug('Patching Hapi');
+    diag.debug('Patching Hapi');
     if (this._moduleExports == null) {
       return this._moduleExports;
     }
 
-    this._logger.debug('Patching Hapi.server');
+    diag.debug('Patching Hapi.server');
     shimmer.wrap(
       this._moduleExports,
       'server',
@@ -69,7 +69,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     // as a factory function, similarly to Hapi.server (lowercase), and so should
     // also be supported and instrumented. This is an issue with the DefinitelyTyped repo.
     // Function is defined at: https://github.com/hapijs/hapi/blob/main/lib/index.js#L9
-    this._logger.debug('Patching Hapi.Server');
+    diag.debug('Patching Hapi.Server');
     shimmer.wrap(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this._moduleExports as any,
@@ -84,7 +84,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
    * Unpatches all Hapi operations
    */
   protected unpatch(): void {
-    this._logger.debug('Unpatching Hapi');
+    diag.debug('Unpatching Hapi');
     shimmer.massUnwrap([this._moduleExports], ['server', 'Server']);
   }
 
@@ -141,7 +141,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     original: RegisterFunction<T>
   ): RegisterFunction<T> {
     const instrumentation: HapiInstrumentation = this;
-    this._logger.debug('Patching Hapi.Server register function');
+    diag.debug('Patching Hapi.Server register function');
     return function register(
       this: Hapi.Server,
       pluginInput: HapiPluginInput<T>,
@@ -177,7 +177,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     pluginName?: string
   ) {
     const instrumentation: HapiInstrumentation = this;
-    instrumentation._logger.debug('Patching Hapi.Server ext function');
+    diag.debug('Patching Hapi.Server ext function');
 
     return function ext(
       this: ThisParameterType<typeof original>,
@@ -238,7 +238,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     pluginName?: string
   ) {
     const instrumentation: HapiInstrumentation = this;
-    instrumentation._logger.debug('Patching Hapi.Server route function');
+    diag.debug('Patching Hapi.Server route function');
     return function route(
       this: Hapi.Server,
       route: HapiServerRouteInput

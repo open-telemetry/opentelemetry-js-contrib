@@ -20,7 +20,7 @@ import {
   Tracer,
   SpanKind,
   Span,
-  StatusCode,
+  SpanStatusCode,
 } from '@opentelemetry/api';
 import { RedisCommand, RedisPluginClientTypes } from './types';
 import { EventEmitter } from 'events';
@@ -33,7 +33,7 @@ import {
 const endSpan = (span: Span, err?: Error | null) => {
   if (err) {
     span.setStatus({
-      code: StatusCode.ERROR,
+      code: SpanStatusCode.ERROR,
       message: err.message,
     });
   }

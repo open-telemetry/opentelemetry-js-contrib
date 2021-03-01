@@ -22,10 +22,11 @@ import {
 
 import {
   context,
+  diag,
   getSpan,
   Span,
   SpanKind,
-  StatusCode,
+  SpanStatusCode,
 } from '@opentelemetry/api';
 import * as pgTypes from 'pg';
 import * as pgPoolTypes from 'pg-pool';
@@ -116,7 +117,7 @@ export class PgInstrumentation extends InstrumentationBase {
   private _getClientQueryPatch() {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
-      plugin._logger.debug(
+      diag.debug(
         `Patching ${PgInstrumentation.COMPONENT}.Client.prototype.query`
       );
       return function query(this: PgClientExtended, ...args: unknown[]) {
@@ -202,7 +203,7 @@ export class PgInstrumentation extends InstrumentationBase {
             .catch((error: Error) => {
               return new Promise((_, reject) => {
                 span.setStatus({
-                  code: StatusCode.ERROR,
+                  code: SpanStatusCode.ERROR,
                   message: error.message,
                 });
                 span.end();
@@ -271,7 +272,7 @@ export class PgInstrumentation extends InstrumentationBase {
               .catch((error: Error) => {
                 return new Promise((_, reject) => {
                   span.setStatus({
-                    code: StatusCode.ERROR,
+                    code: SpanStatusCode.ERROR,
                     message: error.message,
                   });
                   span.end();

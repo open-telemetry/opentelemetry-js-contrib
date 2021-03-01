@@ -15,7 +15,13 @@
  */
 
 import { BasePlugin, isWrapped } from '@opentelemetry/core';
-import { context, StatusCode, Span, getSpan } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  SpanStatusCode,
+  Span,
+  getSpan,
+} from '@opentelemetry/api';
 import * as pgTypes from 'pg';
 import * as shimmer from 'shimmer';
 import {
@@ -60,9 +66,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
   private _getClientQueryPatch() {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
-      plugin._logger.debug(
-        `Patching ${PostgresPlugin.COMPONENT}.Client.prototype.query`
-      );
+      diag.debug(`Patching ${PostgresPlugin.COMPONENT}.Client.prototype.query`);
       return function query(this: PgClientExtended, ...args: unknown[]) {
         let span: Span;
 
@@ -155,7 +159,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             .catch((error: Error) => {
               return new Promise((_, reject) => {
                 span.setStatus({
-                  code: StatusCode.ERROR,
+                  code: SpanStatusCode.ERROR,
                   message: error.message,
                 });
                 span.end();

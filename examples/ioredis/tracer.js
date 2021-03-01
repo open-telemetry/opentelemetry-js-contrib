@@ -5,6 +5,7 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-ioredis');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
 
@@ -15,7 +16,10 @@ provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 // Initialize the OpenTelemetry APIs to use the BasicTracer bindings
 provider.register();
 
-// eslint-disable-next-line no-new
-new IORedisInstrumentation();
+registerInstrumentations({
+  instrumentations: [
+    new IORedisInstrumentation(),
+  ],
+});
 
 module.exports = opentelemetry.trace.getTracer('ioredis-example');

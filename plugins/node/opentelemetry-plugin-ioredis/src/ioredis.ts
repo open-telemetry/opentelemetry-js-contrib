@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { diag } from '@opentelemetry/api';
 import { BasePlugin } from '@opentelemetry/core';
 import type * as ioredisTypes from 'ioredis';
 import * as shimmer from 'shimmer';
@@ -31,14 +32,14 @@ export class IORedisPlugin extends BasePlugin<typeof ioredisTypes> {
   }
 
   protected patch(): typeof ioredisTypes {
-    this._logger.debug('Patching ioredis.prototype.sendCommand');
+    diag.debug('Patching ioredis.prototype.sendCommand');
     shimmer.wrap(
       this._moduleExports.prototype,
       'sendCommand',
       this._patchSendCommand()
     );
 
-    this._logger.debug('patching ioredis.prototype.connect');
+    diag.debug('patching ioredis.prototype.connect');
     shimmer.wrap(
       this._moduleExports.prototype,
       'connect',

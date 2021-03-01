@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan, NoopLogger, SpanKind } from '@opentelemetry/api';
+import { context, setSpan, SpanKind } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -45,7 +45,6 @@ describe('Multiple enable on the plugin', () => {
   let contextManager: AsyncHooksContextManager;
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
-  const logger = new NoopLogger();
   const provider = new BasicTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
@@ -54,8 +53,8 @@ describe('Multiple enable on the plugin', () => {
 
   before(done => {
     // enable twice to simulate loading to different versions
-    plugin.enable(mongodb, provider, logger);
-    plugin.enable(mongodb, provider, logger);
+    plugin.enable(mongodb, provider);
+    plugin.enable(mongodb, provider);
     accessCollection(URL, DB_NAME, COLLECTION_NAME)
       .then(result => {
         client = result.client;
