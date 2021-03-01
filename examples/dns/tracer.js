@@ -3,6 +3,7 @@
 const opentelemetry = require('@opentelemetry/api');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
+const { DnsInstrumentation } = require('@opentelemetry/instrumentation-dns');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
@@ -29,16 +30,12 @@ module.exports = (serviceName) => {
   provider.register();
 
   registerInstrumentations({
-    instrumentations: [{
-      plugins: {
-        dns: {
-          enabled: true,
-          path: '@opentelemetry/plugin-dns',
-          // Avoid dns lookup loop with http zipkin calls
-          ignoreHostnames: ['localhost'],
-        },
-      },
-    }],
+    instrumentations: [
+      new DnsInstrumentation({
+        // Avoid dns lookup loop with http zipkin calls
+        ignoreHostnames: ['localhost'],
+      }),
+    ],
   });
 
   return opentelemetry.trace.getTracer(serviceName);
