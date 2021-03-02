@@ -41,9 +41,9 @@
     "access": "public"
   },
   "devDependencies": {
-    "@opentelemetry/core": "0.17.0",
-    "@opentelemetry/node": "0.17.0",
-    "@opentelemetry/tracing": "0.17.0",
+    "@opentelemetry/core": "0.18.0",
+    "@opentelemetry/node": "0.18.0",
+    "@opentelemetry/tracing": "0.18.0",
     "@types/mocha": "7.0.2",
     "@types/node": "14.0.27",
     "@types/semver": "7.3.1",
@@ -62,9 +62,9 @@
     "typescript": "3.9.7"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.17.0",
-    "@opentelemetry/instrumentation": "^0.17.0",
-    "@opentelemetry/semantic-conventions": "^0.17.0",
+    "@opentelemetry/api": "^0.18.0",
+    "@opentelemetry/instrumentation": "^0.18.0",
+    "@opentelemetry/semantic-conventions": "^0.18.0",
     "semver": "^7.3.2"
   }
 }
