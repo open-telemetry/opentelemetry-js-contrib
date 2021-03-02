@@ -43,7 +43,6 @@
   },
   "devDependencies": {
     "@babel/core": "7.11.1",
-    "@opentelemetry/context-base": "0.18.0",
     "@opentelemetry/context-zone-peer-dep": "0.18.0",
     "@opentelemetry/instrumentation-xml-http-request": "0.18.0",
     "@opentelemetry/tracing": "0.18.0",
