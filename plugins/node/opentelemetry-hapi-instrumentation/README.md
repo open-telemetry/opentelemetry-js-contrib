@@ -21,26 +21,42 @@ npm install --save @opentelemetry/hapi-instrumentation
 
 OpenTelemetry Hapi Instrumentation allows the user to automatically collect trace data and export them to their backend of choice, to give observability to distributed systems.
 
-To load a specific instrumentation (Hapi in this case), specify it in the Node Tracer's configuration.
+To load a specific instrumentation (Hapi in this case), specify it in the registerInstrumentations' configuration.
+
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider({
-  plugins: {
-    '@hapi/hapi': {
-      enabled: true,
-      // You may use a package name or absolute path to the file.
-      path: '@opentelemetry/hapi-instrumentation',
-    }
-  }
+const provider = new NodeTracerProvider();
+provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    {
+      plugins: {
+        '@hapi/hapi': {
+          enabled: true,
+          // You may use a package name or absolute path to the file.
+          path: '@opentelemetry/hapi-instrumentation',
+        }
+      },
+    },
+  ],
+  tracerProvider: provider,
 });
 ```
 
 To load all of the [supported instrumentations](https://github.com/open-telemetry/opentelemetry-js#plugins), use below approach. Each instrumentation is only loaded when the module that it patches is loaded; in other words, there is no computational overhead for listing instrumentations for unused modules.
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
+provider.register();
+registerInstrumentations({
+  tracerProvider: provider,
+});
+
 ```
 
 See [examples/hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/hapi) for a short example using Hapi

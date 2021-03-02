@@ -16,21 +16,30 @@ Example of usage:
 ```javascript
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { GrpcCensusPropagator } = require("@opentelemetry/propagator-grpc-census-binary");
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider({
-  plugins: {
-    grpc: {
-      enabled: true,
-      path: '@opentelemetry/plugin-grpc',
-    }
-  }
-});
+const provider = new NodeTracerProvider();
 
 // Register GrpcCensusPropagator so we can propagate content using
 // the 'grpc-trace-bin' header in our incoming/outgoing gRPC calls.
 provider.register({
   propagator: new GrpcCensusPropagator()
 });
+
+registerInstrumentations({
+  instrumentations: [
+    {
+      plugins: {
+        grpc: {
+          enabled: true,
+          path: '@opentelemetry/plugin-grpc',
+        }
+      },
+    },
+  ],
+  tracerProvider: provider,
+});
+
 ```
 
 Also, see [examples/grpc-census-prop](../../examples/grpc-census-prop) for a

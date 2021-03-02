@@ -15,11 +15,10 @@
  */
 
 import {
-  StatusCode,
+  SpanStatusCode,
   context,
   SpanKind,
-  Status,
-  NoopLogger,
+  SpanStatus,
   getSpan,
   setSpan,
 } from '@opentelemetry/api';
@@ -54,8 +53,8 @@ const DEFAULT_ATTRIBUTES = {
   [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
 
-const unsetStatus: Status = {
-  code: StatusCode.UNSET,
+const unsetStatus: SpanStatus = {
+  code: SpanStatusCode.UNSET,
 };
 
 describe('redis@2.x', () => {
@@ -90,7 +89,7 @@ describe('redis@2.x', () => {
 
     redis = require('redis');
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-    plugin.enable(redis, provider, new NoopLogger());
+    plugin.enable(redis, provider);
   });
 
   after(() => {

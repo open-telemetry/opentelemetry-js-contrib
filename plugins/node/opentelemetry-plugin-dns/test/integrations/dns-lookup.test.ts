@@ -19,24 +19,22 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { NoopLogger } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { plugin } from '../../src/dns';
 import * as dns from 'dns';
 import * as utils from '../utils/utils';
 import { assertSpan } from '../utils/assertSpan';
-import { StatusCode } from '@opentelemetry/api';
+import { SpanStatusCode } from '@opentelemetry/api';
 
 const memoryExporter = new InMemorySpanExporter();
-const logger = new NoopLogger();
-const provider = new NodeTracerProvider({ logger });
+const provider = new NodeTracerProvider();
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 describe('dns.lookup()', () => {
   before(function (done) {
     // mandatory
     if (process.env.CI) {
-      plugin.enable(dns, provider, provider.logger);
+      plugin.enable(dns, provider);
       done();
       return;
     }
@@ -48,7 +46,7 @@ describe('dns.lookup()', () => {
       }
       done();
     });
-    plugin.enable(dns, provider, provider.logger);
+    plugin.enable(dns, provider);
   });
 
   afterEach(() => {
@@ -107,7 +105,7 @@ describe('dns.lookup()', () => {
           addresses: [{ address, family }],
           hostname,
           forceStatus: {
-            code: StatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
             message: err!.message,
           },
         });
@@ -128,7 +126,7 @@ describe('dns.lookup()', () => {
           addresses: [],
           hostname,
           forceStatus: {
-            code: StatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
             message: error!.message,
           },
         });
@@ -150,7 +148,7 @@ describe('dns.lookup()', () => {
           // tslint:disable-next-line:no-any
           hostname: hostname as any,
           forceStatus: {
-            code: StatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
             message: error!.message,
           },
         });

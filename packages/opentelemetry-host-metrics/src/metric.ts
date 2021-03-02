@@ -233,7 +233,6 @@ export class HostMetrics extends BaseMetrics {
       },
       {
         maxTimeoutUpdateMS: this._maxTimeoutUpdateMS,
-        logger: this._logger,
       }
     );
   }

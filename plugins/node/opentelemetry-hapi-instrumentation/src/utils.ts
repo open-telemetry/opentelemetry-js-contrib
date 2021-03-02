@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Attributes } from '@opentelemetry/api';
+import { SpanAttributes } from '@opentelemetry/api';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 import type * as Hapi from '@hapi/hapi';
 import {
@@ -70,7 +70,7 @@ export const getRouteMetadata = (
   route: Hapi.ServerRoute,
   pluginName?: string
 ): {
-  attributes: Attributes;
+  attributes: SpanAttributes;
   name: string;
 } => {
   if (pluginName) {
@@ -98,7 +98,7 @@ export const getExtMetadata = (
   extPoint: Hapi.ServerRequestExtType,
   pluginName?: string
 ): {
-  attributes: Attributes;
+  attributes: SpanAttributes;
   name: string;
 } => {
   if (pluginName) {

@@ -1,7 +1,7 @@
 {
   "name": "web-examples",
   "private": true,
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Example of using web plugins in browser",
   "main": "index.js",
   "scripts": {
@@ -34,15 +34,16 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
-    "@opentelemetry/context-zone": "^0.15.0",
-    "@opentelemetry/core": "^0.15.0",
-    "@opentelemetry/exporter-collector": "^0.15.0",
+    "@opentelemetry/context-zone": "^0.17.0",
+    "@opentelemetry/core": "^0.17.0",
+    "@opentelemetry/exporter-collector": "^0.17.0",
+    "@opentelemetry/instrumentation": "^0.17.0",
     "@opentelemetry/instrumentation-document-load": "^0.13.1",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.15.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.17.0",
     "@opentelemetry/instrumentation-user-interaction": "^0.13.1",
-    "@opentelemetry/propagator-b3": "^0.15.0",
-    "@opentelemetry/tracing": "^0.15.0",
-    "@opentelemetry/web": "^0.15.0"
+    "@opentelemetry/propagator-b3": "^0.17.0",
+    "@opentelemetry/tracing": "^0.17.0",
+    "@opentelemetry/web": "^0.17.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"
 }

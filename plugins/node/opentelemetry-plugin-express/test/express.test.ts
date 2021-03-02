@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan, NoopLogger, Span, Tracer } from '@opentelemetry/api';
+import { context, setSpan, Span, Tracer } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -86,7 +86,6 @@ const serverWithMiddleware = async (
 };
 
 describe('Express Plugin', () => {
-  const logger = new NoopLogger();
   const provider = new NodeTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
@@ -95,7 +94,7 @@ describe('Express Plugin', () => {
   let contextManager: AsyncHooksContextManager;
 
   before(() => {
-    plugin.enable(express, provider, logger);
+    plugin.enable(express, provider);
   });
 
   beforeEach(() => {
@@ -330,7 +329,7 @@ describe('Express Plugin', () => {
       const config: ExpressPluginConfig = {
         ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
       };
-      plugin.enable(express, provider, logger, config);
+      plugin.enable(express, provider, config);
       const rootSpan = tracer.startSpan('rootSpan');
       const app = express();
       app.use(express.json());
@@ -380,7 +379,7 @@ describe('Express Plugin', () => {
 
     beforeEach(async () => {
       plugin.disable();
-      plugin.enable(express, provider, logger, config);
+      plugin.enable(express, provider, config);
       rootSpan = tracer.startSpan('rootSpan') as ExpressPluginSpan;
       const app = express();
       app.use((req, res, next) =>

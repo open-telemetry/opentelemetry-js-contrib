@@ -46,6 +46,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         if (moduleExports == null) {
           return moduleExports;
         }
+        api.diag.debug('Patching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }
@@ -57,6 +58,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         return moduleExports;
       },
       moduleExports => {
+        api.diag.debug('Unpatching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }
@@ -90,7 +92,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
    * routed middleware
    */
   private _patchRouterDispatch(dispatchLayer: KoaMiddleware): KoaMiddleware {
-    this._logger.debug('Patching @koa/router dispatch');
+    api.diag.debug('Patching @koa/router dispatch');
 
     const router = dispatchLayer.router;
 
@@ -123,7 +125,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   ): KoaMiddleware {
     if (middlewareLayer[kLayerPatched] === true) return middlewareLayer;
     middlewareLayer[kLayerPatched] = true;
-    this._logger.debug('patching Koa middleware layer');
+    api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
       if (api.getSpan(api.context.active()) === undefined) {
         return middlewareLayer(context, next);
