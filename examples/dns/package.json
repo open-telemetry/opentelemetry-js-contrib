@@ -26,13 +26,13 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.17.0",
-    "@opentelemetry/exporter-jaeger": "^0.17.0",
-    "@opentelemetry/exporter-zipkin": "^0.17.0",
-    "@opentelemetry/instrumentation": "^0.17.0",
+    "@opentelemetry/api": "^0.18.0",
+    "@opentelemetry/exporter-jaeger": "^0.18.0",
+    "@opentelemetry/exporter-zipkin": "^0.18.0",
+    "@opentelemetry/instrumentation": "^0.18.0",
     "@opentelemetry/instrumentation-dns": "^0.13.1",
-    "@opentelemetry/node": "^0.17.0",
-    "@opentelemetry/tracing": "^0.17.0"
+    "@opentelemetry/node": "^0.18.0",
+    "@opentelemetry/tracing": "^0.18.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
   "devDependencies": {
