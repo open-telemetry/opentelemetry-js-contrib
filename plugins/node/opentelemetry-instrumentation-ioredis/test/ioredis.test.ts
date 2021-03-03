@@ -628,9 +628,7 @@ describe('ioredis', () => {
     });
 
     describe('Instrumentation with requireParentSpan', () => {
-
-      it(`should instrument with requireParentSpan equal false`, async () => {
-
+      it('should instrument with requireParentSpan equal false', async () => {
         instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: false,
@@ -656,11 +654,9 @@ describe('ioredis', () => {
           [],
           unsetStatus
         );
-
       });
 
-      it(`should not instrument with requireParentSpan equal true`, async () => {
-
+      it('should not instrument with requireParentSpan equal true', async () => {
         instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: true,
@@ -675,7 +671,6 @@ describe('ioredis', () => {
 
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       });
-
     });
 
     describe('Instrumenting with a custom db.statement serializer', () => {
