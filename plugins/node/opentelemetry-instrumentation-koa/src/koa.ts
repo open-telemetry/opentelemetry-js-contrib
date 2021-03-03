@@ -22,7 +22,7 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
-import type * as koa from 'koa';
+import * as koa from 'koa';
 import {
   KoaMiddleware,
   KoaContext,
@@ -30,7 +30,6 @@ import {
   kLayerPatched,
   KoaLayerType,
   AttributeNames,
-  KoaPluginSpan,
 } from './types';
 import { VERSION } from './version';
 import { getMiddlewareMetadata } from './utils';
@@ -130,7 +129,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
     middlewareLayer[kLayerPatched] = true;
     api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
-      const parent = api.getSpan(api.context.active()) as KoaPluginSpan;
+      const parent = api.getSpan(api.context.active());
       if (parent === undefined) {
         return middlewareLayer(context, next);
       }
@@ -144,7 +143,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         attributes: metadata.attributes,
       });
 
-      if (!parent?.parentSpanId) {
+      if (!context.request.ctx.parentSpan) {
         context.request.ctx.parentSpan = parent;
       }
 
