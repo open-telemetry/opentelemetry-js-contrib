@@ -22,7 +22,7 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
-import * as koa from 'koa';
+import type * as koa from 'koa';
 import {
   KoaMiddleware,
   KoaContext,
