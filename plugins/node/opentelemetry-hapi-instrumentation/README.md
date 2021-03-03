@@ -25,38 +25,42 @@ To load a specific instrumentation (Hapi in this case), specify it in the regist
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const provider = new NodeTracerProvider();
+provider.register();
 
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+registerInstrumentations({
+  tracerProvider: provider,
+});
+```
+
+If instead you would just want to load a specific instrumentation only (**hapi** in this case);
+
+```js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
+const provider = new NodeTracerProvider();
+provider.register();
+
+const hapiInstrumentation = new HapiInstrumentation();
+hapiInstrumentation.setTracerProvider(provider);
+```
+
+You can combine loading default plugins and HapiInstrumentation at the same time:
+
+```js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const provider = new NodeTracerProvider();
 provider.register();
 
 registerInstrumentations({
   instrumentations: [
-    {
-      plugins: {
-        '@hapi/hapi': {
-          enabled: true,
-          // You may use a package name or absolute path to the file.
-          path: '@opentelemetry/hapi-instrumentation',
-        }
-      },
-    },
+    new HapiInstrumentation(),
   ],
   tracerProvider: provider,
 });
-```
-
-To load all of the [supported instrumentations](https://github.com/open-telemetry/opentelemetry-js#plugins), use below approach. Each instrumentation is only loaded when the module that it patches is loaded; in other words, there is no computational overhead for listing instrumentations for unused modules.
-```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-
-const provider = new NodeTracerProvider();
-provider.register();
-registerInstrumentations({
-  tracerProvider: provider,
-});
-
 ```
 
 See [examples/hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/hapi) for a short example using Hapi

@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-import { context, diag, getSpan, setSpan } from '@opentelemetry/api';
-import { BasePlugin } from '@opentelemetry/core';
+import * as api from '@opentelemetry/api';
+import {
+  InstrumentationBase,
+  InstrumentationConfig,
+  InstrumentationNodeModuleDefinition,
+  isWrapped,
+} from '@opentelemetry/instrumentation';
+
 import type * as Hapi from '@hapi/hapi';
 import { VERSION } from './version';
 import {
@@ -29,7 +35,6 @@ import {
   PatchableExtMethod,
   ServerExtDirectInput,
 } from './types';
-import * as shimmer from 'shimmer';
 import {
   getRouteMetadata,
   getPluginName,
@@ -41,51 +46,46 @@ import {
 } from './utils';
 
 /** Hapi instrumentation for OpenTelemetry */
-export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
-  static readonly component = HapiComponentName;
-
-  constructor(readonly moduleName: string) {
-    super('@opentelemetry/hapi-instrumentation', VERSION);
+export class HapiInstrumentation extends InstrumentationBase {
+  constructor(config?: InstrumentationConfig) {
+    super('@opentelemetry/instrumentation-hapi', VERSION, config);
   }
 
-  /**
-   * Patches Hapi operations by wrapping the Hapi.server and Hapi.Server functions
-   */
-  protected patch(): typeof Hapi {
-    diag.debug('Patching Hapi');
-    if (this._moduleExports == null) {
-      return this._moduleExports;
-    }
+  protected init() {
+    return new InstrumentationNodeModuleDefinition<typeof Hapi>(
+      HapiComponentName,
+      ['>=17.0.0'],
+      moduleExports => {
+        if (!isWrapped(moduleExports.server)) {
+          api.diag.debug('Patching Hapi.server');
+          this._wrap(
+            moduleExports,
+            'server',
+            this._getServerPatch.bind(this)
+          );
+        }
 
-    diag.debug('Patching Hapi.server');
-    shimmer.wrap(
-      this._moduleExports,
-      'server',
-      this._getServerPatch.bind(this)
+        // Casting as any is necessary here due to an issue with the @types/hapi__hapi
+        // type definition for Hapi.Server. Hapi.Server (note the uppercase) can also function
+        // as a factory function, similarly to Hapi.server (lowercase), and so should
+        // also be supported and instrumented. This is an issue with the DefinitelyTyped repo.
+        // Function is defined at: https://github.com/hapijs/hapi/blob/main/lib/index.js#L9
+        if (!isWrapped(moduleExports.Server)) {
+          api.diag.debug('Patching Hapi.Server');
+          this._wrap(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            moduleExports as any,
+            'Server',
+            this._getServerPatch.bind(this)
+          );
+        }
+        return moduleExports;
+      },
+      moduleExports => {
+        api.diag.debug('Unpatching Hapi');
+        this._massUnwrap([moduleExports], ['server', 'Server']);
+      }
     );
-
-    // Casting as any is necessary here due to an issue with the @types/hapi__hapi
-    // type definition for Hapi.Server. Hapi.Server (note the uppercase) can also function
-    // as a factory function, similarly to Hapi.server (lowercase), and so should
-    // also be supported and instrumented. This is an issue with the DefinitelyTyped repo.
-    // Function is defined at: https://github.com/hapijs/hapi/blob/main/lib/index.js#L9
-    diag.debug('Patching Hapi.Server');
-    shimmer.wrap(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this._moduleExports as any,
-      'Server',
-      this._getServerPatch.bind(this)
-    );
-
-    return this._moduleExports;
-  }
-
-  /**
-   * Unpatches all Hapi operations
-   */
-  protected unpatch(): void {
-    diag.debug('Unpatching Hapi');
-    shimmer.massUnwrap([this._moduleExports], ['server', 'Server']);
   }
 
   /**
@@ -99,10 +99,11 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     original: (options?: Hapi.ServerOptions) => Hapi.Server
   ) {
     const instrumentation: HapiInstrumentation = this;
+    const self = this;
     return function server(this: Hapi.Server, opts?: Hapi.ServerOptions) {
       const newServer: Hapi.Server = original.apply(this, [opts]);
 
-      shimmer.wrap(newServer, 'route', originalRouter => {
+      self._wrap(newServer, 'route', originalRouter => {
         return instrumentation._getServerRoutePatch.bind(instrumentation)(
           originalRouter
         );
@@ -111,7 +112,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       // Casting as any is necessary here due to multiple overloads on the Hapi.ext
       // function, which requires supporting a variety of different parameters
       // as extension inputs
-      shimmer.wrap(newServer, 'ext', originalExtHandler => {
+      self._wrap(newServer, 'ext', originalExtHandler => {
         return instrumentation._getServerExtPatch.bind(instrumentation)(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           originalExtHandler as any
@@ -120,7 +121,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
 
       // Casting as any is necessary here due to multiple overloads on the Hapi.Server.register
       // function, which requires supporting a variety of different types of Plugin inputs
-      shimmer.wrap(
+      self._wrap(
         newServer,
         'register',
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,7 +142,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     original: RegisterFunction<T>
   ): RegisterFunction<T> {
     const instrumentation: HapiInstrumentation = this;
-    diag.debug('Patching Hapi.Server register function');
+    api.diag.debug('Patching Hapi.Server register function');
     return function register(
       this: Hapi.Server,
       pluginInput: HapiPluginInput<T>,
@@ -177,7 +178,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     pluginName?: string
   ) {
     const instrumentation: HapiInstrumentation = this;
-    diag.debug('Patching Hapi.Server ext function');
+    api.diag.debug('Patching Hapi.Server ext function');
 
     return function ext(
       this: ThisParameterType<typeof original>,
@@ -238,7 +239,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     pluginName?: string
   ) {
     const instrumentation: HapiInstrumentation = this;
-    diag.debug('Patching Hapi.Server route function');
+    api.diag.debug('Patching Hapi.Server route function');
     return function route(
       this: Hapi.Server,
       route: HapiServerRouteInput
@@ -273,8 +274,9 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     const instrumentation: HapiInstrumentation = this;
     const pluginName = getPluginName(plugin);
     const oldHandler = plugin.register;
+    const self = this;
     const newRegisterHandler = function (server: Hapi.Server, options: T) {
-      shimmer.wrap(server, 'route', original => {
+      self._wrap(server, 'route', original => {
         return instrumentation._getServerRoutePatch.bind(instrumentation)(
           original,
           pluginName
@@ -284,7 +286,7 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       // Casting as any is necessary here due to multiple overloads on the Hapi.ext
       // function, which requires supporting a variety of different parameters
       // as extension inputs
-      shimmer.wrap(server, 'ext', originalExtHandler => {
+      self._wrap(server, 'ext', originalExtHandler => {
         return instrumentation._getServerExtPatch.bind(instrumentation)(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           originalExtHandler as any,
@@ -329,15 +331,15 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
       const newHandler: PatchableExtMethod = async function (
         ...params: Parameters<Hapi.Lifecycle.Method>
       ) {
-        if (getSpan(context.active()) === undefined) {
+        if (api.getSpan(api.context.active()) === undefined) {
           return await method(...params);
         }
         const metadata = getExtMetadata(extPoint, pluginName);
-        const span = instrumentation._tracer.startSpan(metadata.name, {
+        const span = instrumentation.tracer.startSpan(metadata.name, {
           attributes: metadata.attributes,
         });
         let res;
-        await context.with(setSpan(context.active(), span), async () => {
+        await api.context.with(api.setSpan(api.context.active(), span), async () => {
           res = await method(...params);
         });
         span.end();
@@ -369,11 +371,11 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
         h: Hapi.ResponseToolkit,
         err?: Error
       ) {
-        if (getSpan(context.active()) === undefined) {
+        if (api.getSpan(api.context.active()) === undefined) {
           return await oldHandler(request, h, err);
         }
         const metadata = getRouteMetadata(route, pluginName);
-        const span = instrumentation._tracer.startSpan(metadata.name, {
+        const span = instrumentation.tracer.startSpan(metadata.name, {
           attributes: metadata.attributes,
         });
         const res = await oldHandler(request, h, err);
@@ -390,5 +392,3 @@ export class HapiInstrumentation extends BasePlugin<typeof Hapi> {
     return route;
   }
 }
-
-export const plugin = new HapiInstrumentation(HapiComponentName);
