@@ -93,8 +93,9 @@ export const traceSendCommand = (
     if (arguments.length < 1 || typeof cmd !== 'object') {
       return original.apply(this, arguments);
     }
-    // Do not trace if there is not parent span
-    if (getSpan(context.active()) === undefined) {
+
+    const hasNoParentSpan = getSpan(context.active()) === undefined;
+    if (config?.requireParentSpan === true && hasNoParentSpan) {
       return original.apply(this, arguments);
     }
 
