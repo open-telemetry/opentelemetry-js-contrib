@@ -59,7 +59,7 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
   allowValues: false,
 };
 
-const supportedVersions = ['15.*'];
+const supportedVersions = ['>=14'];
 
 export class GraphQLInstrumentation extends InstrumentationBase {
   constructor(
