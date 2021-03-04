@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 const originalSetTimeout = window.setTimeout;
-import { context } from '@opentelemetry/api';
-import { ROOT_CONTEXT } from '@opentelemetry/context-base';
+import { context, ROOT_CONTEXT } from '@opentelemetry/api';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import {
   isWrapped,
