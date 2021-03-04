@@ -69,8 +69,8 @@ OpenTelemetry can collect tracing data automatically using plugins. Vendors/User
 
 ### Web Plugins
 
-- [@opentelemetry/plugin-document-load][otel-plugin-document-load]
-- [@opentelemetry/plugin-xml-http-request][otel-plugin-xml-http-request]
+- [@opentelemetry/instrumentation-document-load][otel-instrumentation-document-load]
+- [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
 - [@opentelemetry/instrumentation-user-interaction][otel-instrumentation-user-interaction]
 - [@opentelemetry/plugin-react-load][otel-plugin-react-load]
 
@@ -122,7 +122,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-plugin-http]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-http
 [otel-plugin-https]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-https
 [otel-plugin-dns]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-dns
-[otel-plugin-document-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-document-load
+[otel-instrumentation-document-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-document-load
 [otel-plugin-react-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-react-load
 [otel-plugin-ioredis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-ioredis
 [otel-plugin-mongodb]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-mongodb
@@ -131,7 +131,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-plugin-pg]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-pg
 [otel-plugin-redis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-redis
 [otel-instrumentation-user-interaction]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-user-interaction
-[otel-plugin-xml-http-request]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-xml-http-request
+[otel-instrumentation-xml-http-request]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-xml-http-request
 [otel-plugin-express]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-express
 [otel-plugins-node-core-and-contrib]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/plugins-node-core-and-contrib
 [otel-contrib-hapi-instrumentation]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-hapi-instrumentation
