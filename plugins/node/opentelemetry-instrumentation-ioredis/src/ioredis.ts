@@ -25,14 +25,22 @@ import { IORedisInstrumentationConfig } from './types';
 import { traceConnection, traceSendCommand } from './utils';
 import { VERSION } from './version';
 
+const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
+  requireParentSpan: true,
+};
+
 export class IORedisInstrumentation extends InstrumentationBase<
   typeof ioredisTypes
 > {
   static readonly DB_SYSTEM = 'redis';
   readonly supportedVersions = ['>1 <5'];
 
-  constructor(protected _config: IORedisInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-ioredis', VERSION, _config);
+  constructor(_config: IORedisInstrumentationConfig = {}) {
+    super(
+      '@opentelemetry/instrumentation-ioredis',
+      VERSION,
+      Object.assign({}, DEFAULT_CONFIG, _config)
+    );
   }
 
   init(): InstrumentationNodeModuleDefinition<typeof ioredisTypes>[] {
