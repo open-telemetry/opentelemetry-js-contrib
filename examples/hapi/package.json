@@ -39,7 +39,6 @@
     "@opentelemetry/instrumentation-hapi": "^0.13.1",
     "@opentelemetry/instrumentation-http": "^0.18.0",
     "@opentelemetry/node": "^0.18.0",
-    "@opentelemetry/plugin-http": "^0.18.0",
     "@opentelemetry/tracing": "^0.18.0",
     "axios": "^0.19.0"
   },

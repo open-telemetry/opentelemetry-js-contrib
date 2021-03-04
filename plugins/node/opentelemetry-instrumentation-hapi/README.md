@@ -12,7 +12,7 @@ For automatic instrumentation see the
 ## Installation
 
 ```bash
-npm install --save @opentelemetry/hapi-instrumentation
+npm install --save @opentelemetry/instrumentation-hapi
 ```
 ### Supported Versions
  - @hapi/hapi `^17.0.0`

@@ -58,11 +58,7 @@ export class HapiInstrumentation extends InstrumentationBase {
       moduleExports => {
         if (!isWrapped(moduleExports.server)) {
           api.diag.debug('Patching Hapi.server');
-          this._wrap(
-            moduleExports,
-            'server',
-            this._getServerPatch.bind(this)
-          );
+          this._wrap(moduleExports, 'server', this._getServerPatch.bind(this));
         }
 
         // Casting as any is necessary here due to an issue with the @types/hapi__hapi
@@ -339,9 +335,12 @@ export class HapiInstrumentation extends InstrumentationBase {
           attributes: metadata.attributes,
         });
         let res;
-        await api.context.with(api.setSpan(api.context.active(), span), async () => {
-          res = await method(...params);
-        });
+        await api.context.with(
+          api.setSpan(api.context.active(), span),
+          async () => {
+            res = await method(...params);
+          }
+        );
         span.end();
         return res;
       };

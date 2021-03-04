@@ -23,4 +23,3 @@ export function getPlugin() {
   }
   return plugin;
 }
-
