@@ -1,7 +1,7 @@
 {
   "name": "redis-example",
   "private": true,
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "Example of HTTP integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -36,7 +36,7 @@
     "@opentelemetry/instrumentation": "^0.18.0",
     "@opentelemetry/node": "^0.18.0",
     "@opentelemetry/plugin-http": "^0.18.0",
-    "@opentelemetry/plugin-redis": "^0.13.1",
+    "@opentelemetry/plugin-redis": "^0.14.0",
     "@opentelemetry/tracing": "^0.18.0",
     "axios": "^0.19.0",
     "express": "^4.17.1",
