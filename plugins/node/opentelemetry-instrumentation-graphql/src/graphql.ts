@@ -23,7 +23,6 @@ import {
   InstrumentationNodeModuleFile,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { Maybe } from 'graphql/jsutils/Maybe';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLFieldResolver } from 'graphql/type/definition';
 import { SpanAttributes, SpanNames } from './enum';
@@ -40,6 +39,7 @@ import {
   OtelExecutionArgs,
   ObjectWithGraphQLData,
   OPERATION_NOT_SUPPORTED,
+  Maybe,
 } from './types';
 import {
   addSpanSource,
@@ -59,7 +59,7 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
   allowValues: false,
 };
 
-const supportedVersions = ['15.*'];
+const supportedVersions = ['>=14'];
 
 export class GraphQLInstrumentation extends InstrumentationBase {
   constructor(
