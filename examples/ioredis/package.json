@@ -1,7 +1,7 @@
-  {
+{
   "name": "ioredis-example",
   "private": true,
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "Example of HTTP integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -31,7 +31,7 @@
     "@opentelemetry/api": "^0.18.0",
     "@opentelemetry/exporter-jaeger": "^0.18.0",
     "@opentelemetry/instrumentation": "^0.18.0",
-    "@opentelemetry/instrumentation-ioredis": "^0.13.1",
+    "@opentelemetry/instrumentation-ioredis": "^0.14.0",
     "@opentelemetry/node": "^0.18.0",
     "@opentelemetry/tracing": "^0.18.0",
     "ioredis": "^4.22.0"
