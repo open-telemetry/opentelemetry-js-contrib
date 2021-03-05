@@ -16,10 +16,14 @@ All notable changes to this project will be documented in this file.
 * [#381](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/381) chore: fixing the graphql example and allowing support version of graph from ver 14 ([@obecny](https://github.com/obecny))
 * [#372](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/372) feat(instrumentation-ioredis): add requireParentSpan option to config ([@blumamir](https://github.com/blumamir))
 
-### Committers: 4
+### :house: Internal
+* [#371](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/371) chore: bump core to 0.18 ([@dyladan](https://github.com/dyladan))
+
+### Committers: 5
 
 * Amir Blum ([@blumamir](https://github.com/blumamir))
 * Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+* Daniel Dyla ([@dyladan](https://github.com/dyladan))
 * Hongbo Miao ([@Hongbo-Miao](https://github.com/Hongbo-Miao))
 * Valentin Marchaud ([@vmarchaud](https://github.com/vmarchaud))
 
