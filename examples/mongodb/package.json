@@ -1,7 +1,7 @@
 {
   "name": "mongodb-example",
   "private": true,
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "Example of mongodb integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -34,7 +34,7 @@
     "@opentelemetry/instrumentation": "^0.18.0",
     "@opentelemetry/instrumentation-http": "^0.18.0",
     "@opentelemetry/node": "^0.18.0",
-    "@opentelemetry/plugin-mongodb": "^0.13.1",
+    "@opentelemetry/plugin-mongodb": "^0.14.0",
     "@opentelemetry/tracing": "^0.18.0",
     "mongodb": "^3.5.7"
   },

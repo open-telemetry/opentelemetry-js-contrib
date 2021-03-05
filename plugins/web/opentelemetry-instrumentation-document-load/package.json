@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-document-load",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "OpenTelemetry document-load automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
