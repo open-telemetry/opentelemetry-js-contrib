@@ -16,7 +16,6 @@
 
 import type * as graphqlTypes from 'graphql';
 import * as api from '@opentelemetry/api';
-import type { Maybe } from 'graphql/jsutils/Maybe';
 import { GraphQLObjectType } from 'graphql/type/definition';
 import {
   AllowedOperationTypes,
@@ -32,6 +31,7 @@ import {
   GraphQLInstrumentationParsedConfig,
   ObjectWithGraphQLData,
   OtelPatched,
+  Maybe,
 } from './types';
 
 const OPERATION_VALUES = Object.values(AllowedOperationTypes);
