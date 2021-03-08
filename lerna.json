@@ -10,16 +10,17 @@
     "propagators/*",
     "detectors/node/*"
   ],
-  "version": "0.13.1",
+  "version": "0.14.0",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",
     "labels": {
       "breaking": ":boom: Breaking Change",
-      "enhancement": ":rocket: (Enhancement)",
       "bug": ":bug: (Bug Fix)",
       "core": ":wrench: Core",
       "document": ":books: (Refine Doc)",
-      "feature-request": ":sparkles: (Feature)"
+      "enhancement": ":rocket: (Enhancement)",
+      "feature-request": ":sparkles: (Feature)",
+      "internal": ":house: Internal"
     },
     "cacheDir": ".changelog"
   }
