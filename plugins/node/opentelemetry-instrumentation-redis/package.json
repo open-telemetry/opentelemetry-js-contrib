@@ -50,7 +50,6 @@
     "@types/mocha": "7.0.2",
     "@types/node": "14.0.27",
     "@types/redis": "2.8.25",
-    "@types/shimmer": "1.0.1",
     "codecov": "3.7.2",
     "cross-env": "7.0.2",
     "gts": "3.1.0",
@@ -66,7 +65,6 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^0.18.0",
-    "@opentelemetry/core": "^0.18.0",
     "@opentelemetry/instrumentation": "^0.18.0",
     "@opentelemetry/semantic-conventions": "^0.18.0"
   }
