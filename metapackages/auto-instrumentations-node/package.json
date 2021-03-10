@@ -52,6 +52,7 @@
     "@opentelemetry/instrumentation-grpc": "^0.18.0",
     "@opentelemetry/instrumentation-koa": "^0.14.0",
     "@opentelemetry/instrumentation-ioredis": "^0.14.0",
+    "@opentelemetry/instrumentation-mongodb": "^0.14.0",
     "@opentelemetry/instrumentation-pg": "^0.14.0"
   }
 }

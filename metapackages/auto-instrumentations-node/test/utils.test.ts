@@ -32,12 +32,12 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-grpc',
         '@opentelemetry/instrumentation-koa',
         '@opentelemetry/instrumentation-ioredis',
-        // '@opentelemetry/instrumentation-mongodb',
+        '@opentelemetry/instrumentation-mongodb',
         // '@opentelemetry/instrumentation-mysql',
         '@opentelemetry/instrumentation-pg',
         // '@opentelemetry/instrumentation-redis',
       ];
-      assert.strictEqual(instrumentations.length, 8);
+      assert.strictEqual(instrumentations.length, 9);
       for (let i = 0, j = instrumentations.length; i < j; i++) {
         assert.strictEqual(
           instrumentations[i].instrumentationName,

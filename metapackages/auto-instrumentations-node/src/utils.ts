@@ -23,7 +23,6 @@ import {
   ExpressInstrumentation,
   ExpressInstrumentationConfig,
 } from '@opentelemetry/instrumentation-express';
-import { GrpcInstrumentationConfig } from '@opentelemetry/instrumentation-grpc/build/src/types';
 import {
   HttpInstrumentation,
   HttpInstrumentationConfig,
@@ -32,7 +31,10 @@ import {
   GraphQLInstrumentation,
   GraphQLInstrumentationConfig,
 } from '@opentelemetry/instrumentation-graphql';
-import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
+import {
+  GrpcInstrumentation,
+  // GrpcInstrumentationConfig,
+} from '@opentelemetry/instrumentation-grpc';
 import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 // import {
 //   MySQLInstrumentation,
@@ -42,10 +44,10 @@ import {
   IORedisInstrumentation,
   IORedisInstrumentationConfig,
 } from '@opentelemetry/instrumentation-ioredis';
-// import {
-//   MongoDBInstrumentation,
-//   MongoDBInstrumentationConfig,
-// } from '@opentelemetry/instrumentation-mongodb';
+import {
+  MongoDBInstrumentation,
+  MongoDBInstrumentationConfig,
+} from '@opentelemetry/instrumentation-mongodb';
 import {
   PgInstrumentation,
   PgInstrumentationConfig,
@@ -68,7 +70,7 @@ type InstrumentationMapKeys =
   | '@opentelemetry/instrumentation-koa'
   | '@opentelemetry/instrumentation-ioredis'
   | '@opentelemetry/instrumentation-express'
-  // | '@opentelemetry/instrumentation-mongodb'
+  | '@opentelemetry/instrumentation-mongodb'
   // | '@opentelemetry/instrumentation-mysql'
   | '@opentelemetry/instrumentation-pg';
 // | '@opentelemetry/instrumentation-redis'
@@ -79,10 +81,11 @@ type InstrumentationConfigMap = {
   '@opentelemetry/instrumentation-http'?: HttpInstrumentationConfig;
   '@opentelemetry/instrumentation-graphql'?: GraphQLInstrumentationConfig &
     InstrumentationConfig;
-  '@opentelemetry/instrumentation-grpc'?: GrpcInstrumentationConfig;
+  // '@opentelemetry/instrumentation-grpc'?: GrpcInstrumentationConfig;
+  '@opentelemetry/instrumentation-grpc'?: InstrumentationConfig;
   '@opentelemetry/instrumentation-koa'?: InstrumentationConfig;
   '@opentelemetry/instrumentation-ioredis'?: IORedisInstrumentationConfig;
-  // '@opentelemetry/instrumentation-mongodb'?: MongoInstrumentationConfig,
+  '@opentelemetry/instrumentation-mongodb'?: MongoDBInstrumentationConfig;
   // '@opentelemetry/instrumentation-mysql'?: MysqlInstrumentationConfig,
   '@opentelemetry/instrumentation-pg'?: PgInstrumentationConfig;
   // '@opentelemetry/instrumentation-redis'?: RedisInstrumentationConfig,
@@ -96,7 +99,7 @@ const InstrumentationMap: Record<InstrumentationMapKeys, any> = {
   '@opentelemetry/instrumentation-grpc': GrpcInstrumentation,
   '@opentelemetry/instrumentation-koa': KoaInstrumentation,
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
-  // '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
+  '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
   // '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
   // '@opentelemetry/instrumentation-redis': RedisInstrumentation,
@@ -110,7 +113,7 @@ const defaultConfigs: InstrumentationConfigMap = {
   '@opentelemetry/instrumentation-grpc': { enabled: true },
   '@opentelemetry/instrumentation-koa': { enabled: true },
   '@opentelemetry/instrumentation-ioredis': { enabled: true },
-  // '@opentelemetry/instrumentation-mongodb': { enabled: true },
+  '@opentelemetry/instrumentation-mongodb': { enabled: true },
   // '@opentelemetry/instrumentation-mysql': { enabled: true },
   '@opentelemetry/instrumentation-pg': { enabled: true },
   // '@opentelemetry/instrumentation-redis': { enabled: true }
