@@ -16,7 +16,7 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export interface MongoDbInstrumentationConfig extends InstrumentationConfig {
+export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, additional information about query parameters and
    * results will be attached (as `attributes`) to spans representing
