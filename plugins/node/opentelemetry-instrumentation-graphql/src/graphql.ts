@@ -65,7 +65,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   constructor(
     config: GraphQLInstrumentationConfig & InstrumentationConfig = {}
   ) {
-    super('graphql', VERSION, Object.assign({}, DEFAULT_CONFIG, config));
+    super('@opentelemetry/instrumentation-graphql', VERSION, Object.assign({}, DEFAULT_CONFIG, config));
   }
 
   private _getConfig(): GraphQLInstrumentationParsedConfig {

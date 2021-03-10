@@ -63,11 +63,11 @@ type InstrumentationMapKeys =
   | '@opentelemetry/instrumentation-dns'
   | '@opentelemetry/instrumentation-express'
   | '@opentelemetry/instrumentation-http'
+  | '@opentelemetry/instrumentation-graphql'
   | '@opentelemetry/instrumentation-grpc'
   | '@opentelemetry/instrumentation-koa'
   | '@opentelemetry/instrumentation-ioredis'
   | '@opentelemetry/instrumentation-express'
-  | '@opentelemetry/instrumentation-graphql'
   // | '@opentelemetry/instrumentation-mongodb'
   // | '@opentelemetry/instrumentation-mysql'
   | '@opentelemetry/instrumentation-pg';
@@ -77,10 +77,11 @@ type InstrumentationConfigMap = {
   '@opentelemetry/instrumentation-dns'?: DnsInstrumentationConfig;
   '@opentelemetry/instrumentation-express'?: ExpressInstrumentationConfig;
   '@opentelemetry/instrumentation-http'?: HttpInstrumentationConfig;
+  '@opentelemetry/instrumentation-graphql'?: GraphQLInstrumentationConfig &
+    InstrumentationConfig;
   '@opentelemetry/instrumentation-grpc'?: GrpcInstrumentationConfig;
   '@opentelemetry/instrumentation-koa'?: InstrumentationConfig;
   '@opentelemetry/instrumentation-ioredis'?: IORedisInstrumentationConfig;
-  '@opentelemetry/instrumentation-graphql'?: GraphQLInstrumentationConfig & InstrumentationConfig;
   // '@opentelemetry/instrumentation-mongodb'?: MongoInstrumentationConfig,
   // '@opentelemetry/instrumentation-mysql'?: MysqlInstrumentationConfig,
   '@opentelemetry/instrumentation-pg'?: PgInstrumentationConfig;
@@ -91,10 +92,10 @@ const InstrumentationMap: Record<InstrumentationMapKeys, any> = {
   '@opentelemetry/instrumentation-dns': DnsInstrumentation,
   '@opentelemetry/instrumentation-express': ExpressInstrumentation,
   '@opentelemetry/instrumentation-http': HttpInstrumentation,
+  '@opentelemetry/instrumentation-graphql': GraphQLInstrumentation,
   '@opentelemetry/instrumentation-grpc': GrpcInstrumentation,
   '@opentelemetry/instrumentation-koa': KoaInstrumentation,
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
-  '@opentelemetry/instrumentation-graphql': GraphQLInstrumentation,
   // '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
   // '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
@@ -105,10 +106,10 @@ const defaultConfigs: InstrumentationConfigMap = {
   '@opentelemetry/instrumentation-dns': { enabled: true },
   '@opentelemetry/instrumentation-express': { enabled: true },
   '@opentelemetry/instrumentation-http': { enabled: true },
+  '@opentelemetry/instrumentation-graphql': { enabled: true },
   '@opentelemetry/instrumentation-grpc': { enabled: true },
   '@opentelemetry/instrumentation-koa': { enabled: true },
   '@opentelemetry/instrumentation-ioredis': { enabled: true },
-  '@opentelemetry/instrumentation-graphql': { enabled: true },
   // '@opentelemetry/instrumentation-mongodb': { enabled: true },
   // '@opentelemetry/instrumentation-mysql': { enabled: true },
   '@opentelemetry/instrumentation-pg': { enabled: true },

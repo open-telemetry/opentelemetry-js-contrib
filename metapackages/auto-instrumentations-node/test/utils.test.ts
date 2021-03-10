@@ -28,6 +28,7 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-dns',
         '@opentelemetry/instrumentation-express',
         '@opentelemetry/instrumentation-http',
+        '@opentelemetry/instrumentation-graphql',
         '@opentelemetry/instrumentation-grpc',
         '@opentelemetry/instrumentation-koa',
         '@opentelemetry/instrumentation-ioredis',
@@ -36,12 +37,12 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-pg',
         // '@opentelemetry/instrumentation-redis',
       ];
-      assert.strictEqual(instrumentations.length, 7);
+      assert.strictEqual(instrumentations.length, 8);
       for (let i = 0, j = instrumentations.length; i < j; i++) {
         assert.strictEqual(
           instrumentations[i].instrumentationName,
           expectedInstrumentations[i],
-          `Instrumentation ${ expectedInstrumentations[i] }, not loaded`
+          `Instrumentation ${expectedInstrumentations[i]}, not loaded`
         );
       }
     });
@@ -89,8 +90,7 @@ describe('utils', () => {
         },
       });
       const instrumentation = instrumentations.find(
-        instr =>
-          instr.instrumentationName === name
+        instr => instr.instrumentationName === name
       );
       assert.strictEqual(instrumentation, undefined);
 
