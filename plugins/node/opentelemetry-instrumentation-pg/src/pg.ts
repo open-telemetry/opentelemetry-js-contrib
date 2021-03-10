@@ -41,7 +41,7 @@ import * as utils from './utils';
 import { AttributeNames } from './enums';
 import { VERSION } from './version';
 
-export interface PgInstrumentationConfig {
+export interface PgInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, additional information about query parameters and
    * results will be attached (as `attributes`) to spans representing
@@ -58,7 +58,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
   static readonly BASE_SPAN_NAME = PgInstrumentation.COMPONENT + '.query';
 
-  constructor(config: InstrumentationConfig & PgInstrumentationConfig = {}) {
+  constructor(config: PgInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-pg',
       VERSION,
