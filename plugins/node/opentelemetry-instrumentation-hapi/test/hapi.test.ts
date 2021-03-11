@@ -21,9 +21,11 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
+import { getPlugin } from './plugin';
+const plugin = getPlugin();
+
 import * as assert from 'assert';
 import * as hapi from '@hapi/hapi';
-import { plugin } from '../src';
 import { AttributeNames, HapiLayerType } from '../src/types';
 
 describe('Hapi Instrumentation - Core Tests', () => {
@@ -36,7 +38,8 @@ describe('Hapi Instrumentation - Core Tests', () => {
   let server: hapi.Server;
 
   before(() => {
-    plugin.enable(hapi, provider);
+    plugin.enable();
+    plugin.setTracerProvider(provider);
   });
 
   beforeEach(async () => {

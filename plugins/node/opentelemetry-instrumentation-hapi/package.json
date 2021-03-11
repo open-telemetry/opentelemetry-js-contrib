@@ -1,5 +1,5 @@
 {
-  "name": "@opentelemetry/hapi-instrumentation",
+  "name": "@opentelemetry/instrumentation-hapi",
   "version": "0.14.0",
   "description": "OpenTelemetry Hapi automatic instrumentation package.",
   "main": "build/src/index.js",
@@ -48,7 +48,6 @@
     "@types/hapi__hapi": "20.0.1",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
-    "@types/shimmer": "1.0.1",
     "codecov": "3.7.0",
     "gts": "3.1.0",
     "mocha": "7.2.0",
@@ -63,8 +62,7 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^0.18.0",
-    "@opentelemetry/core": "^0.18.0",
-    "@opentelemetry/semantic-conventions": "^0.18.0",
-    "shimmer": "^1.2.1"
+    "@opentelemetry/instrumentation": "^0.18.0",
+    "@opentelemetry/semantic-conventions": "^0.18.0"
   }
 }
