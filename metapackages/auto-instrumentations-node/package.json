@@ -3,7 +3,7 @@
   "version": "0.14.0",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
@@ -53,6 +53,7 @@
     "@opentelemetry/instrumentation-koa": "^0.14.0",
     "@opentelemetry/instrumentation-ioredis": "^0.14.0",
     "@opentelemetry/instrumentation-mongodb": "^0.14.0",
-    "@opentelemetry/instrumentation-pg": "^0.14.0"
+    "@opentelemetry/instrumentation-pg": "^0.14.0",
+    "@opentelemetry/instrumentation-redis": "^0.14.0"
   }
 }

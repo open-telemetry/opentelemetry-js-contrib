@@ -26,7 +26,7 @@ import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 // import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
-// import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
+import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
 
 const InstrumentationMap = {
   '@opentelemetry/instrumentation-dns': DnsInstrumentation,
@@ -39,7 +39,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
   // '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
-  // '@opentelemetry/instrumentation-redis':RedisInstrumentation,
+  '@opentelemetry/instrumentation-redis': RedisInstrumentation,
 };
 
 // Config types inferred automatically from the first argument of the constructor

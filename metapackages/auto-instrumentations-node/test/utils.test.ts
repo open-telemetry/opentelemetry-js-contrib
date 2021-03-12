@@ -35,9 +35,9 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-mongodb',
         // '@opentelemetry/instrumentation-mysql',
         '@opentelemetry/instrumentation-pg',
-        // '@opentelemetry/instrumentation-redis',
+        '@opentelemetry/instrumentation-redis',
       ];
-      assert.strictEqual(instrumentations.length, 9);
+      assert.strictEqual(instrumentations.length, 10);
       for (let i = 0, j = instrumentations.length; i < j; i++) {
         assert.strictEqual(
           instrumentations[i].instrumentationName,
@@ -47,7 +47,7 @@ describe('utils', () => {
       }
     });
 
-    it('should merge user config with default one', () => {
+    it('should use user config', () => {
       function applyCustomAttributesOnSpan() {}
 
       const instrumentations = getNodeAutoInstrumentations({
