@@ -22,7 +22,7 @@ npm install --save @opentelemetry/instrumentation-redis
 
 OpenTelemetry Redis Instrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [redis](https://www.npmjs.com/package/redis).
 
-To load a specific instrumentation (**redis** in this case), specify it in the registerInstrumentations's configuration
+To load a specific instrumentation (**redis** in this case), specify it in the registerInstrumentations' configuration
 ```javascript
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis');
