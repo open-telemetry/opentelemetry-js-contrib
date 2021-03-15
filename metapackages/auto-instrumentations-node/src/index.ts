@@ -14,5 +14,4 @@
  * limitations under the License.
  */
 
-export * from './graphql';
-export { GraphQLInstrumentationConfig } from './types';
+export { getNodeAutoInstrumentations, InstrumentationConfigMap } from './utils';

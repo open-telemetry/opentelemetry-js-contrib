@@ -29,7 +29,7 @@ import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 export const OPERATION_NOT_SUPPORTED =
   'Operation$operationName$not' + ' supported';
 
-export interface GraphQLInstrumentationConfig {
+export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
   /**
    * When set to true it will not remove attributes values from schema source.
    * By default all values that can be sensitive are removed and replaced

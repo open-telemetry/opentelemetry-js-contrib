@@ -28,7 +28,7 @@ import {
   MongoInternalCommand,
   MongoInternalTopology,
   WireProtocolInternal,
-  MongoDbInstrumentationConfig,
+  MongoDBInstrumentationConfig,
   CursorState,
 } from './types';
 import { VERSION } from './version';
@@ -49,7 +49,7 @@ const supportedVersions = ['>=3.3 <4'];
 export class MongoDBInstrumentation extends InstrumentationBase<
   typeof mongodb
 > {
-  constructor(protected _config: MongoDbInstrumentationConfig = {}) {
+  constructor(protected _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
   }
 

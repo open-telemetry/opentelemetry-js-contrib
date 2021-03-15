@@ -9,7 +9,8 @@
     "karma.conf.js",
     "src/platform/browser/*.ts",
     "test/index-webpack.ts",
-    "webpack/*.js"
+    "webpack/*.js",
+    ".eslintrc.js"
   ],
   "all": true
 }
