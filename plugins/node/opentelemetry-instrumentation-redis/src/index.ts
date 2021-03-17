@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './graphql';
-export { GraphQLInstrumentationConfig } from './types';
+export * from './redis';
+export { RedisInstrumentationConfig } from './types';

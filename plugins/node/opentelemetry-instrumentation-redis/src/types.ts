@@ -14,5 +14,26 @@
  * limitations under the License.
  */
 
-export * from './graphql';
-export { GraphQLInstrumentationConfig } from './types';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import type * as redisTypes from 'redis';
+
+// exported from
+// https://github.com/NodeRedis/node_redis/blob/master/lib/command.js
+export interface RedisCommand {
+  command: string;
+  args: string[];
+  buffer_args: boolean;
+  callback: redisTypes.Callback<unknown>;
+  call_on_write: boolean;
+}
+
+export interface RedisPluginClientTypes {
+  options?: {
+    host: string;
+    port: string;
+  };
+
+  address?: string;
+}
+
+export type RedisInstrumentationConfig = InstrumentationConfig;

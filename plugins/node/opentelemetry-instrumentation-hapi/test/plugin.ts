@@ -14,5 +14,12 @@
  * limitations under the License.
  */
 
-export * from './graphql';
-export { GraphQLInstrumentationConfig } from './types';
+import { HapiInstrumentation } from '../src';
+
+let plugin: HapiInstrumentation;
+export function getPlugin() {
+  if (!plugin) {
+    plugin = new HapiInstrumentation();
+  }
+  return plugin;
+}
