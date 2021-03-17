@@ -10,6 +10,7 @@ const common = {
   mode: 'development',
   entry: {
     'document-load': 'examples/document-load/index.js',
+    'meta': 'examples/meta/index.js',
     'user-interaction': 'examples/user-interaction/index.js',
   },
   output: {
@@ -46,7 +47,7 @@ const common = {
 };
 
 module.exports = webpackMerge(common, {
-  devtool: 'eval-source-map',
+  // devtool: 'eval-source-map',
   devServer: {
     contentBase: path.resolve(__dirname),
   },

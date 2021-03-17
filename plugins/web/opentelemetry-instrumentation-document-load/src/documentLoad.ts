@@ -52,7 +52,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    * @param config
    */
   constructor(config: InstrumentationConfig = {}) {
-    super('@opentelemetry/plugin-document-load', VERSION, config);
+    super('@opentelemetry/instrumentation-document-load', VERSION, config);
   }
 
   init() {}
