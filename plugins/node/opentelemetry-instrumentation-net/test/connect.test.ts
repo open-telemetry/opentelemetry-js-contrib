@@ -30,7 +30,6 @@ import * as path from 'path';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
-const tracer = provider.getTracer('default');
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 function assertClientSpan(span: ReadableSpan) {
@@ -198,7 +197,8 @@ describe('NetInstrumentation', () => {
   describe('invalid input', () => {
     it('should produce an error span when connect throws', done => {
       assert.throws(() => {
-        socket.connect({ port: {} });
+        // Invalid cast on purpose to avoid compiler errors.
+        socket.connect({ port: {} } as { port: number });
       });
 
       assert.strictEqual(getSpan().status.code, SpanStatusCode.ERROR);
@@ -216,7 +216,7 @@ describe('NetInstrumentation', () => {
         assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
         done();
       });
-      socket.connect();
+      socket.connect((undefined as unknown) as string);
     });
   });
 

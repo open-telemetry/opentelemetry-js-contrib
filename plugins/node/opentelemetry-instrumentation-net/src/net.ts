@@ -32,7 +32,7 @@ import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import { Net } from './types';
 import { VERSION } from './version';
 import { platform } from 'os';
-import { Socket, TcpSocketConnectOpts, IpcSocketConnectOpts } from 'net';
+import { Socket } from 'net';
 
 const IPC_TRANSPORT = platform() == 'win32' ? 'pipe' : 'Unix';
 
@@ -49,12 +49,13 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
         moduleExports => {
           diag.debug('Applying patch for net module');
           if (isWrapped(moduleExports.Socket.prototype.connect)) {
-            this._unwrap(moduleExports.Socket.prototype.connect, 'connect');
+            this._unwrap(moduleExports.Socket.prototype, 'connect');
           }
           this._wrap(
             moduleExports.Socket.prototype,
             'connect',
-            this._getPatchedConnect()
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this._getPatchedConnect() as any
           );
           return moduleExports;
         },
@@ -70,7 +71,7 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
   private _getPatchedConnect() {
     return (original: (...args: unknown[]) => void) => {
       const plugin = this;
-      return function patchedConnect(...args: unknown[]) {
+      return function patchedConnect(this: Socket, ...args: unknown[]) {
         const options = normalizedArgs(args);
 
         if (!options) {
@@ -83,7 +84,7 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
           : startTcpSpan(plugin.tracer, options, this);
 
         return safeExecuteInTheMiddle(
-          () => original.apply(this, [...args]),
+          () => original.apply(this, args),
           error => {
             if (error !== undefined) {
               span.setStatus({
@@ -99,28 +100,35 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
   }
 }
 
-function normalizedArgs(
-  args: unknown[]
-): TcpSocketConnectOpts | IpcSocketConnectOpts | undefined {
-  if (!args[0]) {
+interface NormalizedOptions {
+  host?: string;
+  port?: number;
+  path?: string;
+}
+
+function normalizedArgs(args: unknown[]): NormalizedOptions | null | undefined {
+  const opt = args[0];
+  if (!opt) {
     return;
   }
 
-  switch (typeof args[0]) {
+  switch (typeof opt) {
     case 'number':
       return {
-        port: args[0],
+        port: opt,
         host: typeof args[1] === 'string' ? args[1] : 'localhost',
       };
     case 'object':
-      if (Array.isArray(args[0])) {
-        return normalizedArgs(args[0]);
+      if (Array.isArray(opt)) {
+        return normalizedArgs(opt);
       }
-      return args[0];
+      return opt;
     case 'string':
       return {
-        path: args[0],
+        path: opt,
       };
+    default:
+      return;
   }
 }
 
@@ -193,7 +201,7 @@ function startGenericSpan(tracer: Tracer, socket: Socket) {
 
 function startIpcSpan(
   tracer: Tracer,
-  options: IpcNetConnectOpts,
+  options: NormalizedOptions,
   socket: Socket
 ) {
   const span = tracer.startSpan('ipc.connect', {
@@ -211,7 +219,7 @@ function startIpcSpan(
 
 function startTcpSpan(
   tracer: Tracer,
-  options: TcpSocketConnectOpts,
+  options: NormalizedOptions,
   socket: Socket
 ) {
   const span = tracer.startSpan('tcp.connect', {

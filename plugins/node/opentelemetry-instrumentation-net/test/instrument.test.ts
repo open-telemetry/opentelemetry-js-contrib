@@ -63,7 +63,7 @@ describe('NetInstrumentation', () => {
   describe('disabling instrumentation', () => {
     it('should not call tracer methods for creating span', done => {
       instrumentation.disable();
-      socket = net.connect(PORT, () => {
+      socket = net.connect(PORT, 'localhost', () => {
         const spans = memoryExporter.getFinishedSpans();
         assert.strictEqual(spans.length, 0);
         assert.strictEqual(net.Socket.prototype.connect.__wrapped, undefined);
