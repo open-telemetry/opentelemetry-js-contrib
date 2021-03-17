@@ -141,22 +141,43 @@ function spanErrorHandler(span: Span) {
   };
 }
 
-function registerListeners(socket: Socket, span: Span) {
+interface ListenerOpts {
+  hostAttributes?: boolean;
+}
+
+function registerListeners(
+  socket: Socket,
+  span: Span,
+  { hostAttributes = false }: ListenerOpts = {}
+) {
   const setSpanError = spanErrorHandler(span);
-  const onEnd = spanEndHandler(span);
+  const setSpanEnd = spanEndHandler(span);
+
+  const setHostAttributes = () => {
+    span.setAttributes({
+      [GeneralAttribute.NET_PEER_IP]: socket.remoteAddress,
+      [GeneralAttribute.NET_HOST_IP]: socket.localAddress,
+      [GeneralAttribute.NET_HOST_PORT]: socket.localPort,
+    });
+  };
 
   socket.once('error', setSpanError);
 
+  if (hostAttributes) {
+    socket.once('connect', setHostAttributes);
+  }
+
   const removeListeners = () => {
     socket.removeListener('error', setSpanError);
+    socket.removeListener('connect', setHostAttributes);
     for (const event of SOCKET_EVENTS) {
-      socket.removeListener(event, onEnd);
+      socket.removeListener(event, setSpanEnd);
       socket.removeListener(event, removeListeners);
     }
   };
 
   for (const event of SOCKET_EVENTS) {
-    socket.once(event, onEnd);
+    socket.once(event, setSpanEnd);
     socket.once(event, removeListeners);
   }
 }
@@ -166,6 +187,7 @@ function startGenericSpan(tracer: Tracer, socket: Socket) {
   const span = tracer.startSpan('connect', {
     kind: SpanKind.CLIENT,
   });
+
   registerListeners(socket, span);
 }
 
@@ -201,32 +223,7 @@ function startTcpSpan(
     },
   });
 
-  const addHostAttributes = () => {
-    span.setAttributes({
-      [GeneralAttribute.NET_PEER_IP]: socket.remoteAddress,
-      [GeneralAttribute.NET_HOST_IP]: socket.localAddress,
-      [GeneralAttribute.NET_HOST_PORT]: socket.localPort,
-    });
-  };
-
-  const onError = spanEndHandler(span);
-  const onEnd = spanEndHandler(span);
-
-  const removeListeners = () => {
-    socket.removeListener('connect', addHostAttributes);
-    socket.removeListener('error', onError);
-    for (const event of SOCKET_EVENTS) {
-      socket.removeListener(event, onEnd);
-      socket.removeListener(event, removeListeners);
-    }
-  };
-
-  socket.once('connect', addHostAttributes);
-
-  for (const event of SOCKET_EVENTS) {
-    socket.once(event, onEnd);
-    socket.once(event, removeListeners);
-  }
+  registerListeners(socket, span, { hostAttributes: true });
 
   return span;
 }
