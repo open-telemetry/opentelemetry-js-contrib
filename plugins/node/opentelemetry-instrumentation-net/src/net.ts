@@ -124,7 +124,7 @@ function normalizedArgs(
   }
 }
 
-const SOCKET_EVENTS = ['connect', 'error', 'close', 'timeout'];
+const SOCKET_EVENTS = ['connect', 'error', 'close'];
 
 function spanEndHandler(span: Span) {
   return () => {

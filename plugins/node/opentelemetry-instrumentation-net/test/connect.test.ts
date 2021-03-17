@@ -221,15 +221,36 @@ describe('NetInstrumentation', () => {
   });
 
   describe('cleanup', () => {
-    it('should clean up listeners', done => {
+    function assertNoDanglingListeners() {
+      const events = new Set(socket.eventNames());
+      for (const event of ['connect', 'error', 'close']) {
+        assert.equal(events.has(event), false);
+      }
+    }
+
+    it('should clean up listeners when destroying the socket', done => {
       socket.connect(PORT);
       socket.destroy();
       socket.once('close', () => {
-        const events = new Set(socket.eventNames());
-        for (const event of ['connect', 'timeout', 'error', 'close']) {
-          assert.equal(events.has(event), false);
-        }
+        assertNoDanglingListeners();
         done();
+      });
+    });
+
+    it('should clean up listeners when successfully connecting', done => {
+      socket.connect(PORT, () => {
+        assertNoDanglingListeners();
+        done();
+      });
+    });
+
+    it('should finish previous span when connecting twice', done => {
+      socket.connect(PORT, () => {
+        socket.connect(PORT, () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 2);
+          done();
+        });
       });
     });
   });
