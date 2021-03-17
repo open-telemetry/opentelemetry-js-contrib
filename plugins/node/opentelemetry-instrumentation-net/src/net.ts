@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-import { diag, Tracer, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import {
+  diag,
+  Tracer,
+  Span,
+  SpanKind,
+  SpanStatusCode,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
+  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
-import {
-  ConnectCallback,
-  Net,
-  NetInstrumentationConfig,
-} from './types';
+import { Net } from './types';
 import { VERSION } from './version';
 import { platform } from 'os';
 import { Socket, TcpSocketConnectOpts, IpcSocketConnectOpts } from 'net';
@@ -34,7 +37,7 @@ import { Socket, TcpSocketConnectOpts, IpcSocketConnectOpts } from 'net';
 const IPC_TRANSPORT = platform() == 'win32' ? 'pipe' : 'Unix';
 
 export class NetInstrumentation extends InstrumentationBase<Net> {
-  constructor(protected _config: NetInstrumentationConfig = {}) {
+  constructor(protected _config: InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-net', VERSION, _config);
   }
 
@@ -48,8 +51,11 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
           if (isWrapped(moduleExports.Socket.prototype.connect)) {
             this._unwrap(moduleExports.Socket.prototype.connect, 'connect');
           }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          this._wrap(moduleExports.Socket.prototype, 'connect', this._getPatchedConnect() as any);
+          this._wrap(
+            moduleExports.Socket.prototype,
+            'connect',
+            this._getPatchedConnect()
+          );
           return moduleExports;
         },
         moduleExports => {
@@ -64,18 +70,18 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
   private _getPatchedConnect() {
     return (original: (...args: unknown[]) => void) => {
       const plugin = this;
-      return function patchedConnect(
-        ...args: unknown[]
-      ) {
+      return function patchedConnect(...args: unknown[]) {
         const options = normalizedArgs(args);
 
         if (!options) {
-          startGenericSpan(plugin, this);
+          startGenericSpan(plugin.tracer, this);
           return original.apply(this, args);
         }
 
-        const span = options.path ? startIpcSpan(plugin, options, this) : startTcpSpan(plugin, options, this);
-        
+        const span = options.path
+          ? startIpcSpan(plugin.tracer, options, this)
+          : startTcpSpan(plugin.tracer, options, this);
+
         return safeExecuteInTheMiddle(
           () => original.apply(this, [...args]),
           error => {
@@ -88,13 +94,14 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
             }
           }
         );
-
       };
     };
   }
 }
 
-function normalizedArgs(args: unknown[]): TcpSocketConnectOpts | IpcSocketConnectOpts | undefined {
+function normalizedArgs(
+  args: unknown[]
+): TcpSocketConnectOpts | IpcSocketConnectOpts | undefined {
   if (!args[0]) {
     return;
   }
@@ -155,15 +162,19 @@ function registerListeners(socket: Socket, span: Span) {
 }
 
 /* It might still be useful to pick up errors due to invalid connect arguments. */
-function startGenericSpan(plugin: NetInstrumentation, socket: Socket) {
-  const span = plugin.tracer.startSpan('connect', {
+function startGenericSpan(tracer: Tracer, socket: Socket) {
+  const span = tracer.startSpan('connect', {
     kind: SpanKind.CLIENT,
   });
   registerListeners(socket, span);
 }
 
-function startIpcSpan(plugin: NetInstrumentation, options: IpcNetConnectOpts, socket: Socket) {
-  const span = plugin.tracer.startSpan('ipc.connect', {
+function startIpcSpan(
+  tracer: Tracer,
+  options: IpcNetConnectOpts,
+  socket: Socket
+) {
+  const span = tracer.startSpan('ipc.connect', {
     kind: SpanKind.CLIENT,
     attributes: {
       [GeneralAttribute.NET_TRANSPORT]: IPC_TRANSPORT,
@@ -171,13 +182,17 @@ function startIpcSpan(plugin: NetInstrumentation, options: IpcNetConnectOpts, so
     },
   });
 
-  registerListeners(socket, span); 
+  registerListeners(socket, span);
 
   return span;
 }
 
-function startTcpSpan(plugin: NetInstrumentation, options: TcpSocketConnectOpts, socket: Socket) {
-  const span = plugin.tracer.startSpan('tcp.connect', {
+function startTcpSpan(
+  tracer: Tracer,
+  options: TcpSocketConnectOpts,
+  socket: Socket
+) {
+  const span = tracer.startSpan('tcp.connect', {
     kind: SpanKind.CLIENT,
     attributes: {
       [GeneralAttribute.NET_TRANSPORT]: 'IP.TCP',

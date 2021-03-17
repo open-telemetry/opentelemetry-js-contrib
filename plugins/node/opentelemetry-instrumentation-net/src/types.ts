@@ -15,11 +15,5 @@
  */
 
 import type * as net from 'net';
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export type Net = typeof net;
-
-export interface NetInstrumentationConfig extends InstrumentationConfig {
-}
-
-export type ConnectCallbackSignature = () => void;

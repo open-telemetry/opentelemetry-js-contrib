@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   ReadableSpan,
@@ -57,7 +57,11 @@ describe('NetInstrumentation', () => {
 
   function assertIpcSpan(span: ReadableSpan) {
     assertClientSpan(span);
-    assertAttrib(span, GeneralAttribute.NET_TRANSPORT, os.platform() == 'win32' ? 'pipe' : 'Unix');
+    assertAttrib(
+      span,
+      GeneralAttribute.NET_TRANSPORT,
+      os.platform() == 'win32' ? 'pipe' : 'Unix'
+    );
     assertAttrib(span, GeneralAttribute.NET_PEER_NAME, IPC_PATH);
   }
 
@@ -79,12 +83,12 @@ describe('NetInstrumentation', () => {
     require('net');
   });
 
-  before((done) => {
+  before(done => {
     tcpServer = net.createServer();
     tcpServer.listen(PORT, done);
   });
 
-  before((done) => {
+  before(done => {
     ipcServer = net.createServer();
     ipcServer.listen(IPC_PATH, done);
   });
@@ -120,13 +124,16 @@ describe('NetInstrumentation', () => {
     });
 
     it('should produce a span given options', done => {
-      socket = net.connect({
-        port: PORT,
-        host: 'localhost'
-      }, () => {
-        assertTcpSpan(getSpan(), socket);
-        done();
-      });
+      socket = net.connect(
+        {
+          port: PORT,
+          host: 'localhost',
+        },
+        () => {
+          assertTcpSpan(getSpan(), socket);
+          done();
+        }
+      );
     });
   });
 
@@ -146,13 +153,16 @@ describe('NetInstrumentation', () => {
     });
 
     it('should produce a span given options', done => {
-      socket = net.createConnection({
-        port: PORT,
-        host: 'localhost'
-      }, () => {
-        assertTcpSpan(getSpan(), socket);
-        done();
-      });
+      socket = net.createConnection(
+        {
+          port: PORT,
+          host: 'localhost',
+        },
+        () => {
+          assertTcpSpan(getSpan(), socket);
+          done();
+        }
+      );
     });
   });
 
@@ -172,32 +182,37 @@ describe('NetInstrumentation', () => {
     });
 
     it('should produce a span given options', done => {
-      socket.connect({
-        port: PORT,
-        host: 'localhost'
-      }, () => {
-        assertTcpSpan(getSpan(), socket);
-        done();
-      });
+      socket.connect(
+        {
+          port: PORT,
+          host: 'localhost',
+        },
+        () => {
+          assertTcpSpan(getSpan(), socket);
+          done();
+        }
+      );
     });
   });
 
   describe('invalid input', () => {
     it('should produce an error span when connect throws', done => {
-
       assert.throws(() => {
         socket.connect({ port: {} });
       });
 
-      done();
-      
       assert.strictEqual(getSpan().status.code, SpanStatusCode.ERROR);
+
+      done();
     });
 
     it('should produce a generic span in case transport type can not be determined', done => {
       socket.once('close', () => {
-        let span = getSpan();
-        assert.strictEqual(span.attributes[GeneralAttribute.NET_TRANSPORT], undefined);
+        const span = getSpan();
+        assert.strictEqual(
+          span.attributes[GeneralAttribute.NET_TRANSPORT],
+          undefined
+        );
         assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
         done();
       });
