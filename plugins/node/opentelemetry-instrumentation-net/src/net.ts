@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  diag,
-  Tracer,
-  Span,
-  SpanKind,
-  SpanStatusCode,
-} from '@opentelemetry/api';
+import { diag, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -29,12 +23,10 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
-import { Net } from './types';
+import { Net, NormalizedOptions, SocketEvent } from './types';
+import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
 import { VERSION } from './version';
-import { platform } from 'os';
 import { Socket } from 'net';
-
-const IPC_TRANSPORT = platform() == 'win32' ? 'pipe' : 'Unix';
 
 export class NetInstrumentation extends InstrumentationBase<Net> {
   constructor(protected _config: InstrumentationConfig = {}) {
@@ -72,13 +64,13 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
     return (original: (...args: unknown[]) => void) => {
       const plugin = this;
       return function patchedConnect(this: Socket, ...args: unknown[]) {
-        const options = normalizedArgs(args);
+        const options = getNormalizedArgs(args);
 
         const span = options
           ? options.path
-            ? startIpcSpan(plugin.tracer, options, this)
-            : startTcpSpan(plugin.tracer, options, this)
-          : startGenericSpan(plugin.tracer, this);
+            ? plugin._startIpcSpan(options, this)
+            : plugin._startTcpSpan(options, this)
+          : plugin._startGenericSpan(this);
 
         return safeExecuteInTheMiddle(
           () => original.apply(this, args),
@@ -95,41 +87,53 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
       };
     };
   }
-}
 
-interface NormalizedOptions {
-  host?: string;
-  port?: number;
-  path?: string;
-}
+  /* It might still be useful to pick up errors due to invalid connect arguments. */
+  private _startGenericSpan(socket: Socket) {
+    const span = this.tracer.startSpan('connect', {
+      kind: SpanKind.CLIENT,
+    });
 
-function normalizedArgs(args: unknown[]): NormalizedOptions | null | undefined {
-  const opt = args[0];
-  if (!opt) {
-    return;
+    registerListeners(socket, span);
+
+    return span;
   }
 
-  switch (typeof opt) {
-    case 'number':
-      return {
-        port: opt,
-        host: typeof args[1] === 'string' ? args[1] : 'localhost',
-      };
-    case 'object':
-      if (Array.isArray(opt)) {
-        return normalizedArgs(opt);
-      }
-      return opt;
-    case 'string':
-      return {
-        path: opt,
-      };
-    default:
-      return;
+  private _startIpcSpan(options: NormalizedOptions, socket: Socket) {
+    const span = this.tracer.startSpan('ipc.connect', {
+      kind: SpanKind.CLIENT,
+      attributes: {
+        [GeneralAttribute.NET_TRANSPORT]: IPC_TRANSPORT,
+        [GeneralAttribute.NET_PEER_NAME]: options.path,
+      },
+    });
+
+    registerListeners(socket, span);
+
+    return span;
+  }
+
+  private _startTcpSpan(options: NormalizedOptions, socket: Socket) {
+    const span = this.tracer.startSpan('tcp.connect', {
+      kind: SpanKind.CLIENT,
+      attributes: {
+        [GeneralAttribute.NET_TRANSPORT]: GeneralAttribute.IP_TCP,
+        [GeneralAttribute.NET_PEER_NAME]: options.host,
+        [GeneralAttribute.NET_PEER_PORT]: options.port,
+      },
+    });
+
+    registerListeners(socket, span, { hostAttributes: true });
+
+    return span;
   }
 }
 
-const SOCKET_EVENTS = ['connect', 'error', 'close'];
+const SOCKET_EVENTS = [
+  SocketEvent.CLOSE,
+  SocketEvent.CONNECT,
+  SocketEvent.ERROR,
+];
 
 function spanEndHandler(span: Span) {
   return () => {
@@ -146,14 +150,10 @@ function spanErrorHandler(span: Span) {
   };
 }
 
-interface ListenerOpts {
-  hostAttributes?: boolean;
-}
-
 function registerListeners(
   socket: Socket,
   span: Span,
-  { hostAttributes = false }: ListenerOpts = {}
+  { hostAttributes = false }: { hostAttributes?: boolean } = {}
 ) {
   const setSpanError = spanErrorHandler(span);
   const setSpanEnd = spanEndHandler(span);
@@ -166,15 +166,15 @@ function registerListeners(
     });
   };
 
-  socket.once('error', setSpanError);
+  socket.once(SocketEvent.ERROR, setSpanError);
 
   if (hostAttributes) {
-    socket.once('connect', setHostAttributes);
+    socket.once(SocketEvent.CONNECT, setHostAttributes);
   }
 
   const removeListeners = () => {
-    socket.removeListener('error', setSpanError);
-    socket.removeListener('connect', setHostAttributes);
+    socket.removeListener(SocketEvent.ERROR, setSpanError);
+    socket.removeListener(SocketEvent.CONNECT, setHostAttributes);
     for (const event of SOCKET_EVENTS) {
       socket.removeListener(event, setSpanEnd);
       socket.removeListener(event, removeListeners);
@@ -185,52 +185,4 @@ function registerListeners(
     socket.once(event, setSpanEnd);
     socket.once(event, removeListeners);
   }
-}
-
-/* It might still be useful to pick up errors due to invalid connect arguments. */
-function startGenericSpan(tracer: Tracer, socket: Socket) {
-  const span = tracer.startSpan('connect', {
-    kind: SpanKind.CLIENT,
-  });
-
-  registerListeners(socket, span);
-
-  return span;
-}
-
-function startIpcSpan(
-  tracer: Tracer,
-  options: NormalizedOptions,
-  socket: Socket
-) {
-  const span = tracer.startSpan('ipc.connect', {
-    kind: SpanKind.CLIENT,
-    attributes: {
-      [GeneralAttribute.NET_TRANSPORT]: IPC_TRANSPORT,
-      [GeneralAttribute.NET_PEER_NAME]: options.path,
-    },
-  });
-
-  registerListeners(socket, span);
-
-  return span;
-}
-
-function startTcpSpan(
-  tracer: Tracer,
-  options: NormalizedOptions,
-  socket: Socket
-) {
-  const span = tracer.startSpan('tcp.connect', {
-    kind: SpanKind.CLIENT,
-    attributes: {
-      [GeneralAttribute.NET_TRANSPORT]: 'IP.TCP',
-      [GeneralAttribute.NET_PEER_NAME]: options.host,
-      [GeneralAttribute.NET_PEER_PORT]: options.port,
-    },
-  });
-
-  registerListeners(socket, span, { hostAttributes: true });
-
-  return span;
 }

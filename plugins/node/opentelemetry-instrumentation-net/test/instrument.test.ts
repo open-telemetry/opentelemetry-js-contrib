@@ -24,6 +24,7 @@ import { NodeTracerProvider } from '@opentelemetry/node';
 import { NetInstrumentation } from '../src/net';
 import * as Sinon from 'sinon';
 import * as net from 'net';
+import { HOST, PORT } from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -31,7 +32,6 @@ const tracer = provider.getTracer('default');
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 describe('NetInstrumentation', () => {
-  const PORT = 42123;
   let instrumentation: NetInstrumentation;
   let socket: net.Socket;
   let tcpServer: net.Server;
@@ -64,7 +64,7 @@ describe('NetInstrumentation', () => {
   describe('disabling instrumentation', () => {
     it('should not call tracer methods for creating span', done => {
       instrumentation.disable();
-      socket = net.connect(PORT, 'localhost', () => {
+      socket = net.connect(PORT, HOST, () => {
         const spans = memoryExporter.getFinishedSpans();
         assert.strictEqual(spans.length, 0);
         assert.strictEqual(isWrapped(net.Socket.prototype.connect), false);

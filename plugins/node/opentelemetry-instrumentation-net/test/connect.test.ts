@@ -14,63 +14,31 @@
  * limitations under the License.
  */
 
-import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { SpanStatusCode } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
-  ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
-import * as assert from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/node';
-import { NetInstrumentation } from '../src/net';
 import * as net from 'net';
-import * as os from 'os';
-import * as path from 'path';
+import * as assert from 'assert';
+import { NetInstrumentation } from '../src/net';
+import { SocketEvent } from '../src/types';
+import { assertIpcSpan, assertTcpSpan, IPC_PATH, HOST, PORT } from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
-function assertClientSpan(span: ReadableSpan) {
-  assert.strictEqual(span.kind, SpanKind.CLIENT);
-}
-
-function assertAttrib(span: ReadableSpan, attrib: string, value: any) {
-  assert.strictEqual(span.attributes[attrib], value);
+function getSpan() {
+  const spans = memoryExporter.getFinishedSpans();
+  assert.strictEqual(spans.length, 1);
+  const [span] = spans;
+  return span;
 }
 
 describe('NetInstrumentation', () => {
-  const PORT = 42123;
-  const HOST = 'localhost';
-  const IPC_PATH = path.join(os.tmpdir(), 'otel-js-net-test-ipc');
-
-  function assertTcpSpan(span: ReadableSpan, socket: net.Socket) {
-    assertClientSpan(span);
-    assertAttrib(span, GeneralAttribute.NET_TRANSPORT, 'IP.TCP');
-    assertAttrib(span, GeneralAttribute.NET_PEER_NAME, HOST);
-    assertAttrib(span, GeneralAttribute.NET_PEER_PORT, PORT);
-    assertAttrib(span, GeneralAttribute.NET_HOST_IP, socket.localAddress);
-    assertAttrib(span, GeneralAttribute.NET_HOST_PORT, socket.localPort);
-  }
-
-  function assertIpcSpan(span: ReadableSpan) {
-    assertClientSpan(span);
-    assertAttrib(
-      span,
-      GeneralAttribute.NET_TRANSPORT,
-      os.platform() == 'win32' ? 'pipe' : 'Unix'
-    );
-    assertAttrib(span, GeneralAttribute.NET_PEER_NAME, IPC_PATH);
-  }
-
-  function getSpan() {
-    const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1);
-    const [span] = spans;
-    return span;
-  }
-
   let instrumentation: NetInstrumentation;
   let socket: net.Socket;
   let tcpServer: net.Server;
@@ -126,7 +94,7 @@ describe('NetInstrumentation', () => {
       socket = net.connect(
         {
           port: PORT,
-          host: 'localhost',
+          host: HOST,
         },
         () => {
           assertTcpSpan(getSpan(), socket);
@@ -155,7 +123,7 @@ describe('NetInstrumentation', () => {
       socket = net.createConnection(
         {
           port: PORT,
-          host: 'localhost',
+          host: HOST,
         },
         () => {
           assertTcpSpan(getSpan(), socket);
@@ -184,7 +152,7 @@ describe('NetInstrumentation', () => {
       socket.connect(
         {
           port: PORT,
-          host: 'localhost',
+          host: HOST,
         },
         () => {
           assertTcpSpan(getSpan(), socket);
@@ -207,7 +175,7 @@ describe('NetInstrumentation', () => {
     });
 
     it('should produce a generic span in case transport type can not be determined', done => {
-      socket.once('close', () => {
+      socket.once(SocketEvent.CLOSE, () => {
         const span = getSpan();
         assert.strictEqual(
           span.attributes[GeneralAttribute.NET_TRANSPORT],
@@ -223,7 +191,11 @@ describe('NetInstrumentation', () => {
   describe('cleanup', () => {
     function assertNoDanglingListeners() {
       const events = new Set(socket.eventNames());
-      for (const event of ['connect', 'error', 'close']) {
+      for (const event of [
+        SocketEvent.CLOSE,
+        SocketEvent.CONNECT,
+        SocketEvent.ERROR,
+      ]) {
         assert.equal(events.has(event), false);
       }
     }
@@ -231,7 +203,7 @@ describe('NetInstrumentation', () => {
     it('should clean up listeners when destroying the socket', done => {
       socket.connect(PORT);
       socket.destroy();
-      socket.once('close', () => {
+      socket.once(SocketEvent.CLOSE, () => {
         assertNoDanglingListeners();
         done();
       });

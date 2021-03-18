@@ -17,3 +17,15 @@
 import type * as net from 'net';
 
 export type Net = typeof net;
+
+export interface NormalizedOptions {
+  host?: string;
+  port?: number;
+  path?: string;
+}
+
+export enum SocketEvent {
+  CLOSE = 'close',
+  CONNECT = 'connect',
+  ERROR = 'error',
+}
