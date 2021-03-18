@@ -80,6 +80,7 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
                 code: SpanStatusCode.ERROR,
                 message: error.message,
               });
+              span.recordException(error);
               span.end();
             }
           }
