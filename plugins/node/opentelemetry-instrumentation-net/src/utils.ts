@@ -17,6 +17,7 @@
 import { NormalizedOptions } from './types';
 import { platform } from 'os';
 
+// @TODO Can be replaced with constants from the semantic conventions package once released.
 export const IPC_PIPE = 'pipe';
 export const IPC_UNIX = 'Unix';
 export const IPC_TRANSPORT = platform() === 'win32' ? IPC_PIPE : IPC_UNIX;
