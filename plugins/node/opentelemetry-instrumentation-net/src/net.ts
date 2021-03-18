@@ -74,14 +74,11 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
       return function patchedConnect(this: Socket, ...args: unknown[]) {
         const options = normalizedArgs(args);
 
-        if (!options) {
-          startGenericSpan(plugin.tracer, this);
-          return original.apply(this, args);
-        }
-
-        const span = options.path
-          ? startIpcSpan(plugin.tracer, options, this)
-          : startTcpSpan(plugin.tracer, options, this);
+        const span = options
+          ? options.path
+            ? startIpcSpan(plugin.tracer, options, this)
+            : startTcpSpan(plugin.tracer, options, this)
+          : startGenericSpan(plugin.tracer, this);
 
         return safeExecuteInTheMiddle(
           () => original.apply(this, args),
@@ -197,6 +194,8 @@ function startGenericSpan(tracer: Tracer, socket: Socket) {
   });
 
   registerListeners(socket, span);
+
+  return span;
 }
 
 function startIpcSpan(
