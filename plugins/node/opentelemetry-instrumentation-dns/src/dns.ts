@@ -15,7 +15,7 @@
  */
 
 import { LookupAddress } from 'dns';
-import { Span, SpanKind } from '@opentelemetry/api';
+import { diag, Span, SpanKind } from '@opentelemetry/api';
 import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import {
   InstrumentationBase,
@@ -48,7 +48,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
         'dns',
         ['*'],
         moduleExports => {
-          this._logger.debug('Applying patch for dns');
+          diag.debug('Applying patch for dns');
           if (isWrapped(moduleExports.lookup)) {
             this._unwrap(moduleExports, 'lookup');
           }
@@ -68,7 +68,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          this._logger.debug('Removing patch for dns');
+          diag.debug('Removing patch for dns');
           this._unwrap(moduleExports, 'lookup');
           if (semver.gte(process.version, '10.6.0')) {
             this._unwrap(moduleExports.promises, 'lookup');
@@ -93,7 +93,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
   private _getPatchLookupFunction(
     original: (hostname: string, ...args: unknown[]) => void
   ) {
-    this._logger.debug('patch lookup function');
+    diag.debug('patch lookup function');
     const plugin = this;
     return function patchedLookup(
       this: {},
@@ -102,14 +102,14 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
     ) {
       if (
         utils.isIgnored(hostname, plugin._config.ignoreHostnames, (e: Error) =>
-          plugin._logger.error('caught ignoreHostname error: ', e)
+          diag.error('caught ignoreHostname error: ', e)
         )
       ) {
         return original.apply(this, [hostname, ...args]);
       }
 
       const argsCount = args.length;
-      plugin._logger.debug('wrap lookup callback function and starts span');
+      diag.debug('wrap lookup callback function and starts span');
       const name = utils.getOperationName('lookup');
       const span = plugin.tracer.startSpan(name, {
         kind: SpanKind.CLIENT,
@@ -170,14 +170,13 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
     original: Function,
     span: Span
   ): LookupCallbackSignature {
-    const plugin = this;
     return function wrappedLookupCallback(
       this: {},
       err: NodeJS.ErrnoException | null,
       address: string | LookupAddress[],
       family?: AddressFamily
     ): void {
-      plugin._logger.debug('executing wrapped lookup callback function');
+      diag.debug('executing wrapped lookup callback function');
 
       if (err !== null) {
         utils.setError(err, span, process.version);
@@ -186,7 +185,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
       }
 
       span.end();
-      plugin._logger.debug('executing original lookup callback function');
+      diag.debug('executing original lookup callback function');
       return original.apply(this, arguments);
     };
   }

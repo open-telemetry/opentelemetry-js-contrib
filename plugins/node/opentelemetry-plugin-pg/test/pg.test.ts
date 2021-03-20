@@ -15,13 +15,12 @@
  */
 
 import {
-  Attributes,
-  StatusCode,
+  SpanAttributes,
+  SpanStatusCode,
   context,
-  NoopLogger,
   Span,
   SpanKind,
-  Status,
+  SpanStatus,
   TimedEvent,
   setSpan,
   getSpan,
@@ -37,6 +36,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import { plugin, PostgresPlugin } from '../src';
 import { AttributeNames } from '../src/enums';
+import { PostgresPluginConfig } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -59,18 +59,18 @@ const DEFAULT_ATTRIBUTES = {
   [AttributeNames.DB_USER]: CONFIG.user,
 };
 
-const unsetStatus: Status = {
-  code: StatusCode.UNSET,
+const unsetStatus: SpanStatus = {
+  code: SpanStatusCode.UNSET,
 };
-const errorStatus: Status = {
-  code: StatusCode.ERROR,
+const errorStatus: SpanStatus = {
+  code: SpanStatusCode.ERROR,
 };
 
 const runCallbackTest = (
   span: Span | null,
-  attributes: Attributes,
+  attributes: SpanAttributes,
   events: TimedEvent[],
-  status: Status = unsetStatus,
+  status: SpanStatus = unsetStatus,
   spansLength = 1,
   spansIndex = 0
 ) => {
@@ -88,7 +88,6 @@ describe('pg@7.x', () => {
   let contextManager: AsyncHooksContextManager;
   const provider = new BasicTracerProvider();
   const tracer = provider.getTracer('external');
-  const logger = new NoopLogger();
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
@@ -117,7 +116,7 @@ describe('pg@7.x', () => {
   });
 
   beforeEach(() => {
-    plugin.enable(pg, provider, logger);
+    plugin.enable(pg, provider);
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
   });
@@ -428,6 +427,110 @@ describe('pg@7.x', () => {
       context.with(setSpan(context.active(), spans[1]), () => {
         client.query('SELECT NOW()').then(queryHandler);
       });
+    });
+
+    it('should call postQueryHook with query text if set', async () => {
+      plugin.disable();
+      let called = false;
+      const query = 'SELECT NOW()';
+      const config: PostgresPluginConfig = {
+        postQueryHook: ctx => {
+          called = true;
+          assert.strictEqual(ctx.query, query);
+          assert.strictEqual(ctx.params, undefined);
+        },
+      };
+      plugin.enable(pg, provider, config);
+
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [AttributeNames.DB_STATEMENT]: query,
+      };
+      const events: TimedEvent[] = [];
+      const span = tracer.startSpan('test span');
+      await context.with(setSpan(context.active(), span), async () => {
+        try {
+          const resPromise = await client.query(query);
+          assert.ok(resPromise);
+          runCallbackTest(span, attributes, events);
+        } catch (e) {
+          assert.ok(false, e.message);
+        }
+      });
+      assert.strictEqual(called, true);
+    });
+    it('should call postQueryHook with query text and params if set', async () => {
+      plugin.disable();
+      let called = false;
+      const values = ['0'];
+      const query = 'SELECT $1::text';
+      const config: PostgresPluginConfig = {
+        postQueryHook: ctx => {
+          called = true;
+          assert.strictEqual(ctx.query, query);
+          assert.strictEqual(ctx.params, values);
+        },
+      };
+      plugin.enable(pg, provider, config);
+
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [AttributeNames.DB_STATEMENT]: query,
+      };
+      const events: TimedEvent[] = [];
+      const span = tracer.startSpan('test span');
+      await context.with(setSpan(context.active(), span), async () => {
+        const resPromise = await client.query(query, values);
+        try {
+          assert.ok(resPromise);
+          runCallbackTest(span, attributes, events);
+        } catch (e) {
+          assert.ok(false, e.message);
+        }
+      });
+      assert.strictEqual(called, true);
+    });
+
+    it('should call postQueryHook with query config if set', async () => {
+      plugin.disable();
+      const name = 'fetch-text';
+      const query = 'SELECT $1::text';
+      const values = ['0'];
+      let called = false;
+      const config: PostgresPluginConfig = {
+        postQueryHook: ctx => {
+          called = true;
+          if (!ctx.config) {
+            assert.ok(false, 'ctx.config was undefined');
+          }
+          assert.strictEqual(ctx.config.text, query);
+          assert.strictEqual(ctx.config.values, values);
+        },
+      };
+      plugin.enable(pg, provider, config);
+
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [AttributeNames.PG_PLAN]: name,
+        [AttributeNames.DB_STATEMENT]: query,
+      };
+      const events: TimedEvent[] = [];
+      const span = tracer.startSpan('test span');
+
+      await context.with(setSpan(context.active(), span), async () => {
+        try {
+          const resPromise = await client.query({
+            name: name,
+            text: query,
+            values: values,
+          });
+          assert.strictEqual(resPromise.command, 'SELECT');
+          runCallbackTest(span, attributes, events);
+        } catch (e) {
+          assert.ok(false, e.message);
+        }
+      });
+      assert.strictEqual(called, true);
     });
   });
 });

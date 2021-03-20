@@ -19,17 +19,27 @@ npm install --save @opentelemetry/plugin-dns
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider({
-  plugins: {
-    dns: {
-      enabled: true,
-      // You may use a package name or absolute path to the file.
-      path: '@opentelemetry/plugin-dns',
-      // dns plugin options
-    }
-  }
+const provider = new NodeTracerProvider();
+provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    {
+      plugins: {
+        dns: {
+          enabled: true,
+          // You may use a package name or absolute path to the file.
+          path: '@opentelemetry/plugin-dns',
+          // dns plugin options
+        }
+      }
+    },
+  ],
+  tracerProvider: provider,
 });
+
 ```
 
 ### Zipkin
@@ -37,16 +47,24 @@ const provider = new NodeTracerProvider({
 If you use Zipkin, you must use `ignoreHostnames` in order to not trace those calls. If the server is local. You can set :
 
 ```js
-const provider = new NodeTracerProvider({
-  plugins: {
-    dns: {
-      enabled: true,
-      // You may use a package name or absolute path to the file.
-      path: '@opentelemetry/plugin-dns',
-      ignoreHostnames: ['localhost']
-    }
-  }
+const provider = new NodeTracerProvider();
+provider.register();
+registerInstrumentations({
+  instrumentations: [
+    {
+      plugins: {
+        dns: {
+          enabled: true,
+          // You may use a package name or absolute path to the file.
+          path: '@opentelemetry/plugin-dns',
+          ignoreHostnames: ['localhost']
+        }
+      }
+    },
+  ],
+  tracerProvider: provider,
 });
+
 ```
 
 ### Dns Plugin Options

@@ -24,33 +24,29 @@ const { GraphQLInstrumentation } = require('@opentelemetry/instrumentation-graph
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const exporter = new CollectorTraceExporter({
   serviceName: 'basic-service',
 });
 
-const provider = new NodeTracerProvider({
-  plugins: {
-    http: { enabled: false, path: '@opentelemetry/plugin-http' },
-    https: { enabled: false, path: '@opentelemetry/plugin-https' },
-    express: { enabled: false, path: '@opentelemetry/plugin-express' },
-  },
-});
-
-const graphQLInstrumentation = new GraphQLInstrumentation({
-// optional params
-  // allowAttributes: true,
-  // depth: 2,
-  // mergeItems: true,
-});
-
-graphQLInstrumentation.setTracerProvider(provider); // optional; uses global tracer by default
-
-graphQLInstrumentation.enable();
+const provider = new NodeTracerProvider();
 
 provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    new GraphQLInstrumentation({
+    // optional params
+      // allowAttributes: true,
+      // depth: 2,
+      // mergeItems: true,
+    }),
+  ],
+  tracerProvider: provider,
+});
 
 ```
 

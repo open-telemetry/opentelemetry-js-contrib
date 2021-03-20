@@ -5,21 +5,11 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
 module.exports = (serviceName) => {
-  const provider = new NodeTracerProvider({
-    plugins: {
-      mongodb: {
-        enabled: true,
-        path: "@opentelemetry/plugin-mongodb",
-        enhancedDatabaseReporting: true
-      },
-      http: {
-        enabled: true,
-        path: '@opentelemetry/plugin-http',
-      },
-    },
-  });
+  const provider = new NodeTracerProvider();
 
   provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter({
     serviceName,
@@ -30,6 +20,22 @@ module.exports = (serviceName) => {
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
+
+  registerInstrumentations({
+    instrumentations: [
+      new HttpInstrumentation(),
+      {
+        plugins: {
+          mongodb: {
+            enabled: true,
+            path: '@opentelemetry/plugin-mongodb',
+            enhancedDatabaseReporting: true,
+          },
+        },
+      },
+    ],
+    tracerProvider: provider,
+  });
 
   return opentelemetry.trace.getTracer('mysql-example');
 };

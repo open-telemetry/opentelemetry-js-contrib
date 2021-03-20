@@ -17,9 +17,9 @@
 import * as childProcess from 'child_process';
 import {
   SpanKind,
-  Attributes,
+  SpanAttributes,
   Span,
-  Status,
+  SpanStatus,
   TimedEvent,
 } from '@opentelemetry/api';
 import * as assert from 'assert';
@@ -41,7 +41,7 @@ export function startDocker(db: 'redis' | 'mysql' | 'postgres') {
       break;
 
     case 'postgres':
-      dockerRunCmd = `docker run -d -p 54320:5432 --name ot${db} ${db}:alpine`;
+      dockerRunCmd = `docker run -d -p 54320:5432 -e POSTGRES_PASSWORD=postgres --name ot${db} ${db}:alpine`;
       break;
   }
 
@@ -83,9 +83,9 @@ function run(cmd: string) {
 export const assertSpan = (
   span: ReadableSpan,
   kind: SpanKind,
-  attributes: Attributes,
+  attributes: SpanAttributes,
   events: TimedEvent[],
-  status: Status
+  status: SpanStatus
 ) => {
   assert.strictEqual(span.spanContext.traceId.length, 32);
   assert.strictEqual(span.spanContext.spanId.length, 16);

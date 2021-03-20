@@ -16,8 +16,9 @@
 
 import { BasePlugin } from '@opentelemetry/core';
 import {
+  diag,
   getSpan,
-  StatusCode,
+  SpanStatusCode,
   Span,
   SpanKind,
   context,
@@ -52,15 +53,15 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
    * Patches MongoDB operations.
    */
   protected patch() {
-    this._logger.debug('Patching MongoDB');
+    diag.debug('Patching MongoDB');
     if (this._hasPatched === true) {
-      this._logger.debug('Patch is already applied, ignoring.');
+      diag.debug('Patch is already applied, ignoring.');
       return this._moduleExports;
     }
 
     if (this._moduleExports.Server) {
       for (const fn of this._SERVER_METHODS) {
-        this._logger.debug(`patching mongodb.Server.prototype.${fn}`);
+        diag.debug(`patching mongodb.Server.prototype.${fn}`);
         shimmer.wrap(
           this._moduleExports.Server.prototype,
           // Forced to cast due to incomplete typings
@@ -71,7 +72,7 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
     }
 
     if (this._moduleExports.Cursor) {
-      this._logger.debug(
+      diag.debug(
         'patching mongodb.Cursor.prototype functions:',
         this._CURSOR_METHODS
       );
@@ -253,7 +254,7 @@ export class MongoDBPlugin extends BasePlugin<typeof mongodb> {
       const error = args[0];
       if (error instanceof Error) {
         span.setStatus({
-          code: StatusCode.ERROR,
+          code: SpanStatusCode.ERROR,
           message: error.message,
         });
       }

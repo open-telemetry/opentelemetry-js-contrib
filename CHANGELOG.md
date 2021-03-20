@@ -4,6 +4,46 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.14.0
+
+### :bug: Bug Fix
+
+* [#367](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/367) docs(readme): fix links ([@Hongbo-Miao](https://github.com/Hongbo-Miao))
+
+### :rocket: Enhancement
+
+* [#354](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/354) refactor: migrate mongodb to instrumentation #250 ([@vmarchaud](https://github.com/vmarchaud))
+* [#381](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/381) chore: fixing the graphql example and allowing support version of graph from ver 14 ([@obecny](https://github.com/obecny))
+* [#372](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/372) feat(instrumentation-ioredis): add requireParentSpan option to config ([@blumamir](https://github.com/blumamir))
+
+### :house: Internal
+* [#371](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/371) chore: bump core to 0.18 ([@dyladan](https://github.com/dyladan))
+
+### Committers: 5
+
+* Amir Blum ([@blumamir](https://github.com/blumamir))
+* Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+* Daniel Dyla ([@dyladan](https://github.com/dyladan))
+* Hongbo Miao ([@Hongbo-Miao](https://github.com/Hongbo-Miao))
+* Valentin Marchaud ([@vmarchaud](https://github.com/vmarchaud))
+
+## 0.13.1
+
+#### :rocket: Enhancement
+* [#330](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/330) Allow negative performance timings ([@mhennoch](https://github.com/mhennoch))
+* [#302](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/302) feat: add instrumentation-dns ([@Flarna](https://github.com/Flarna))
+* [#301](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/301) feat: add ioredis instrumentation ([@Flarna](https://github.com/Flarna))
+* [#324](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/324) User interaction instrumentation ([@obecny](https://github.com/obecny))
+
+#### :house: Internal
+* [#328](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/328) added github workflow for unit tests ([@willarmiros](https://github.com/willarmiros))
+
+#### Committers: 4
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- MartenH ([@mhennoch](https://github.com/mhennoch))
+- William Armiros ([@willarmiros](https://github.com/willarmiros))
+
 ## 0.13.0
 
 #### :bug: Bug Fix

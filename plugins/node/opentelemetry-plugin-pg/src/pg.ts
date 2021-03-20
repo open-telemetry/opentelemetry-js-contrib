@@ -15,13 +15,20 @@
  */
 
 import { BasePlugin, isWrapped } from '@opentelemetry/core';
-import { context, StatusCode, Span, getSpan } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  SpanStatusCode,
+  Span,
+  getSpan,
+} from '@opentelemetry/api';
 import * as pgTypes from 'pg';
 import * as shimmer from 'shimmer';
 import {
   PgClientExtended,
   NormalizedQueryConfig,
   PostgresCallback,
+  PostgresPluginConfig,
 } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
@@ -29,6 +36,8 @@ import { VERSION } from './version';
 export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
   static readonly COMPONENT = 'pg';
   static readonly DB_TYPE = 'sql';
+
+  protected _config!: PostgresPluginConfig;
 
   static readonly BASE_SPAN_NAME = PostgresPlugin.COMPONENT + '.query';
 
@@ -57,9 +66,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
   private _getClientQueryPatch() {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
-      plugin._logger.debug(
-        `Patching ${PostgresPlugin.COMPONENT}.Client.prototype.query`
-      );
+      diag.debug(`Patching ${PostgresPlugin.COMPONENT}.Client.prototype.query`);
       return function query(this: PgClientExtended, ...args: unknown[]) {
         let span: Span;
 
@@ -75,8 +82,14 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
               query,
               params
             );
+            if (plugin._config.postQueryHook) {
+              plugin._config.postQueryHook({ span, query, params });
+            }
           } else {
             span = utils.handleTextQuery.call(this, plugin._tracer, query);
+            if (plugin._config.postQueryHook) {
+              plugin._config.postQueryHook({ span, query });
+            }
           }
         } else if (typeof args[0] === 'object') {
           const queryConfig = args[0] as NormalizedQueryConfig;
@@ -86,6 +99,9 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             plugin._config,
             queryConfig
           );
+          if (plugin._config.postQueryHook) {
+            plugin._config.postQueryHook({ span, config: queryConfig });
+          }
         } else {
           return utils.handleInvalidQuery.call(
             this,
@@ -143,7 +159,7 @@ export class PostgresPlugin extends BasePlugin<typeof pgTypes> {
             .catch((error: Error) => {
               return new Promise((_, reject) => {
                 span.setStatus({
-                  code: StatusCode.ERROR,
+                  code: SpanStatusCode.ERROR,
                   message: error.message,
                 });
                 span.end();

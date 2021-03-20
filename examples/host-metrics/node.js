@@ -4,6 +4,7 @@ const { HostMetrics } = require('@opentelemetry/host-metrics');
 // const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
 const { MeterProvider } = require('@opentelemetry/metrics');
 const { CollectorMetricExporter } = require('@opentelemetry/exporter-collector');
+
 const exporter = new CollectorMetricExporter({
   headers: {},
   serviceName: 'test-host-metrics',
@@ -29,6 +30,6 @@ const hostMetrics = new HostMetrics({ meterProvider, name: 'example-host-metrics
 hostMetrics.start();
 
 // keep running
-(function wait () {
-   setTimeout(wait, 1000);
-})();
+(function wait() {
+  setTimeout(wait, 1000);
+}());

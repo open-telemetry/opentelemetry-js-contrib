@@ -1,6 +1,8 @@
 'use strict';
 
-const tracer = require('./tracer')('example-hapi-server');
+const api = require('@opentelemetry/api');
+require('./tracer')('example-hapi-server');
+
 // eslint-disable-next-line
 const Hapi = require('@hapi/hapi');
 
@@ -62,7 +64,7 @@ const posts = ['post 0', 'post 1', 'post 2'];
 
 function addPost(_, h) {
   posts.push(`post ${posts.length}`);
-  const currentSpan = tracer.getCurrentSpan();
+  const currentSpan = api.getSpan(api.context.active());
   currentSpan.addEvent('Added post');
   currentSpan.setAttribute('Date', new Date());
   console.log(`Added post: ${posts[posts.length - 1]}`);
@@ -80,7 +82,7 @@ async function showNewPost(request) {
 }
 
 function runTest(_, h) {
-  const currentSpan = tracer.getCurrentSpan();
+  const currentSpan = api.getSpan(api.context.active());
   const { traceId } = currentSpan.context();
   console.log(`traceid: ${traceId}`);
   console.log(`Jaeger URL: http://localhost:16686/trace/${traceId}`);

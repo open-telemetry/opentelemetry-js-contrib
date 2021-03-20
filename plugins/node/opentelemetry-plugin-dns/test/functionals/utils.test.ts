@@ -15,12 +15,7 @@
  */
 
 import { BasicTracerProvider, Span } from '@opentelemetry/tracing';
-import {
-  ROOT_CONTEXT,
-  SpanKind,
-  TraceFlags,
-  NoopLogger,
-} from '@opentelemetry/api';
+import { diag, ROOT_CONTEXT, SpanKind, TraceFlags } from '@opentelemetry/api';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { AttributeNames } from '../../src/enums/AttributeNames';
@@ -98,9 +93,8 @@ describe('Utility', () => {
 
     it('should not re-throw when function throws an exception', () => {
       satisfiesPatternStub.restore();
-      const log = new NoopLogger();
       const onException = (e: Error) => {
-        log.error('error', e);
+        diag.error('error', e);
       };
       for (const callback of [undefined, onException]) {
         assert.doesNotThrow(() =>

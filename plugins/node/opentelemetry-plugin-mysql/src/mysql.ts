@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin, isWrapped } from '@opentelemetry/core';
-import { StatusCode, Span, SpanKind } from '@opentelemetry/api';
+import { diag, SpanStatusCode, Span, SpanKind } from '@opentelemetry/api';
 import type * as mysqlTypes from 'mysql';
 import * as shimmer from 'shimmer';
 import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
@@ -71,9 +71,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
   private _patchCreateConnection() {
     return (originalCreateConnection: Function) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug(
-        'MysqlPlugin#patch: patched mysql createConnection'
-      );
+      diag.debug('MysqlPlugin#patch: patched mysql createConnection');
 
       return function createConnection(
         _connectionUri: string | mysqlTypes.ConnectionConfig
@@ -96,7 +94,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
   private _patchCreatePool() {
     return (originalCreatePool: Function) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug('MysqlPlugin#patch: patched mysql createPool');
+      diag.debug('MysqlPlugin#patch: patched mysql createPool');
       return function createPool(_config: string | mysqlTypes.PoolConfig) {
         const pool = originalCreatePool(...arguments);
 
@@ -116,9 +114,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
   private _patchCreatePoolCluster() {
     return (originalCreatePoolCluster: Function) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug(
-        'MysqlPlugin#patch: patched mysql createPoolCluster'
-      );
+      diag.debug('MysqlPlugin#patch: patched mysql createPoolCluster');
       return function createPool(_config: string | mysqlTypes.PoolConfig) {
         const cluster = originalCreatePoolCluster(...arguments);
 
@@ -138,9 +134,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
   private _patchGetConnection(pool: mysqlTypes.Pool | mysqlTypes.PoolCluster) {
     return (originalGetConnection: Function) => {
       const thisPlugin = this;
-      thisPlugin._logger.debug(
-        'MysqlPlugin#patch: patched mysql pool getConnection'
-      );
+      diag.debug('MysqlPlugin#patch: patched mysql pool getConnection');
       return function getConnection(
         arg1?: unknown,
         arg2?: unknown,
@@ -193,7 +187,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
   private _patchQuery(connection: mysqlTypes.Connection | mysqlTypes.Pool) {
     return (originalQuery: Function): mysqlTypes.QueryFunction => {
       const thisPlugin = this;
-      thisPlugin._logger.debug('MysqlPlugin: patched mysql query');
+      diag.debug('MysqlPlugin: patched mysql query');
 
       const format = this._moduleExports.format;
 
@@ -237,7 +231,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
           return streamableQuery
             .on('error', err =>
               span.setStatus({
-                code: StatusCode.ERROR,
+                code: SpanStatusCode.ERROR,
                 message: err.message,
               })
             )
@@ -266,7 +260,7 @@ export class MysqlPlugin extends BasePlugin<typeof mysqlTypes> {
       ) {
         if (err) {
           span.setStatus({
-            code: StatusCode.ERROR,
+            code: SpanStatusCode.ERROR,
             message: err.message,
           });
         }

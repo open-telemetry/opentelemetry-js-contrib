@@ -24,16 +24,23 @@ import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing
 import { WebTracerProvider } from '@opentelemetry/web';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 // or if you already have zone.js
 // import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 
 const provider = new WebTracerProvider({
-  contextManager: new ZoneContextManager(), // optional
-  plugins: [
-    new UserInteractionInstrumentation()
-  ]
+  contextManager: new ZoneContextManager()
 });
+
 provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    new UserInteractionInstrumentation(),
+  ],
+  tracerProvider: provider,
+});
 
 // and some test
 const btn1 = document.createElement('button');

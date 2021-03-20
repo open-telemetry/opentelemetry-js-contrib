@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { SpanKind, Status, StatusCode } from '@opentelemetry/api';
+import { SpanKind, SpanStatus, SpanStatusCode } from '@opentelemetry/api';
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
 import { ReadableSpan } from '@opentelemetry/tracing';
 import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
@@ -28,7 +28,7 @@ export const assertSpan = (
   validations: {
     addresses: LookupAddress[];
     hostname: string;
-    forceStatus?: Status;
+    forceStatus?: SpanStatus;
   }
 ) => {
   if (span.spanContext.traceId) {
@@ -62,7 +62,7 @@ export const assertSpan = (
 
   assert.deepStrictEqual(
     span.status,
-    validations.forceStatus || { code: StatusCode.UNSET }
+    validations.forceStatus || { code: SpanStatusCode.UNSET }
   );
 
   assert.ok(hrTimeToNanoseconds(span.duration), 'must have positive duration');

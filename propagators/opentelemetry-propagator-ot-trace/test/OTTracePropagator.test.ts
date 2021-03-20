@@ -27,6 +27,7 @@ import {
   setBaggage,
   getBaggage,
   ROOT_CONTEXT,
+  createBaggage,
 } from '@opentelemetry/api';
 import * as assert from 'assert';
 import {
@@ -143,10 +144,10 @@ describe('OTTracePropagator', () => {
 
       let context = setSpanContext(ROOT_CONTEXT, spanContext);
 
-      const baggage: Baggage = {
+      const baggage: Baggage = createBaggage({
         foo: { value: 'bar' },
         bar: { value: 'baz' },
-      };
+      });
 
       context = setBaggage(context, baggage);
 
@@ -165,10 +166,10 @@ describe('OTTracePropagator', () => {
 
       let context = setSpanContext(ROOT_CONTEXT, spanContext);
 
-      const baggage: Baggage = {
+      const baggage: Baggage = createBaggage({
         fθθ: { value: 'bar' },
         bar: { value: 'baz' },
-      };
+      });
 
       context = setBaggage(context, baggage);
 
@@ -186,10 +187,10 @@ describe('OTTracePropagator', () => {
 
       let context = setSpanContext(ROOT_CONTEXT, spanContext);
 
-      const baggage: Baggage = {
+      const baggage: Baggage = createBaggage({
         foo: { value: 'bαr' },
         bar: { value: 'baz' },
-      };
+      });
 
       context = setBaggage(context, baggage);
 
@@ -337,10 +338,10 @@ describe('OTTracePropagator', () => {
       const baggage = getBaggage(context);
 
       assert.ok(baggage);
-      assert.deepStrictEqual(baggage, {
-        foo: { value: 'bar' },
-        bar: { value: 'baz' },
-      });
+      assert.deepStrictEqual(baggage.getAllEntries(), [
+        ['foo', { value: 'bar' }],
+        ['bar', { value: 'baz' }],
+      ]);
     });
   });
 });

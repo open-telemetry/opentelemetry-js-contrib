@@ -15,7 +15,13 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import { context, StatusCode, SpanKind, getSpan } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  SpanStatusCode,
+  SpanKind,
+  getSpan,
+} from '@opentelemetry/api';
 import { AttributeNames } from './enums';
 import * as shimmer from 'shimmer';
 import * as pgPoolTypes from 'pg-pool';
@@ -53,9 +59,7 @@ export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
   private _getPoolConnectPatch() {
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
-      plugin._logger.debug(
-        `Patching ${PostgresPoolPlugin.COMPONENT}.prototype.connect`
-      );
+      diag.debug(`Patching ${PostgresPoolPlugin.COMPONENT}.prototype.connect`);
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
         const jdbcString = utils.getJDBCString(this.options);
         // setup span
@@ -107,7 +111,7 @@ export class PostgresPoolPlugin extends BasePlugin<typeof pgPoolTypes> {
               .catch((error: Error) => {
                 return new Promise((_, reject) => {
                   span.setStatus({
-                    code: StatusCode.ERROR,
+                    code: SpanStatusCode.ERROR,
                     message: error.message,
                   });
                   span.end();
