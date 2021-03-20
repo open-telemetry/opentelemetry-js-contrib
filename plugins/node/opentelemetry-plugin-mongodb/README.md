@@ -21,26 +21,41 @@ npm install --save @opentelemetry/plugin-mongodb
 
 OpenTelemetry Mongodb Instrumentation allows the user to automatically collect trace data and export them to their backend of choice, to give observability to distributed systems.
 
-To load a specific plugin (mongodb in this case), specify it in the Node Tracer's configuration.
+To load a specific plugin (mongodb in this case), specify it in the registerInstrumentations's configuration.
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider({
-  plugins: {
-    mongodb: {
-      enabled: true,
-      // You may use a package name or absolute path to the file.
-      path: '@opentelemetry/plugin-mongodb',
-    }
-  }
+const provider = new NodeTracerProvider();
+provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    {
+      plugins: {
+        mongodb: {
+          enabled: true,
+          // You may use a package name or absolute path to the file.
+          path: '@opentelemetry/plugin-mongodb',
+        }
+      },
+    },
+  ],
+  tracerProvider: provider,
 });
+
 ```
 
 To load all of the [supported plugins](https://github.com/open-telemetry/opentelemetry-js#plugins), use below approach. Each plugin is only loaded when the module that it patches is loaded; in other words, there is no computational overhead for listing plugins for unused modules.
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
+provider.register();
+registerInstrumentations({
+  tracerProvider: provider,
+});
 ```
 
 See [examples/mongodb](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/mongodb) for a short example.
@@ -52,9 +67,6 @@ Mongodb plugin has few options available to choose from. You can set the followi
 | Options | Type | Description |
 | ------- | ---- | ----------- |
 | [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-api/src/trace/instrumentation/Plugin.ts#L91) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
-
-
-
 
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

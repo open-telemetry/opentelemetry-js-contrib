@@ -16,7 +16,7 @@
 
 import { kLayerPatched } from './express';
 import { Request } from 'express';
-import { Attributes, Span } from '@opentelemetry/api';
+import { SpanAttributes, Span } from '@opentelemetry/api';
 import { PluginConfig } from '@opentelemetry/core';
 
 /**
@@ -64,7 +64,7 @@ export type ExpressLayer = {
 };
 
 export type LayerMetadata = {
-  attributes: Attributes;
+  attributes: SpanAttributes;
   name: string;
 };
 

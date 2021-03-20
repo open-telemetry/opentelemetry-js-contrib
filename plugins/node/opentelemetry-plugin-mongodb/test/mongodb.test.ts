@@ -17,7 +17,7 @@
 // for testing locally use this command to run docker
 // docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=localhost -p 27017:27017 --name otmongo mongo
 
-import { context, setSpan, SpanKind, NoopLogger } from '@opentelemetry/api';
+import { context, setSpan, SpanKind } from '@opentelemetry/api';
 import { PluginConfig } from '@opentelemetry/core';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -50,7 +50,6 @@ describe('MongoDBPlugin', () => {
   let contextManager: AsyncHooksContextManager;
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
-  const logger = new NoopLogger();
   const enhancedDbConfig: PluginConfig = { enhancedDatabaseReporting: true };
   const provider = new BasicTracerProvider();
   const memoryExporter = new InMemorySpanExporter();
@@ -58,7 +57,7 @@ describe('MongoDBPlugin', () => {
   provider.addSpanProcessor(spanProcessor);
 
   before(done => {
-    plugin.enable(mongodb, provider, logger);
+    plugin.enable(mongodb, provider);
     accessCollection(URL, DB_NAME, COLLECTION_NAME)
       .then(result => {
         client = result.client;
@@ -157,7 +156,7 @@ describe('MongoDBPlugin', () => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = provider.getTracer('default').startSpan('insertRootSpan');
 
-      plugin.enable(mongodb, provider, logger, enhancedDbConfig);
+      plugin.enable(mongodb, provider, enhancedDbConfig);
 
       context.with(setSpan(context.active(), span), () => {
         collection.insertMany(insertData, (err, result) => {

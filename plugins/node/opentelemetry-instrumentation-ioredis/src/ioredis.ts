@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { diag } from '@opentelemetry/api';
 import type * as ioredisTypes from 'ioredis';
 import {
   InstrumentationBase,
@@ -24,14 +25,22 @@ import { IORedisInstrumentationConfig } from './types';
 import { traceConnection, traceSendCommand } from './utils';
 import { VERSION } from './version';
 
+const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
+  requireParentSpan: true,
+};
+
 export class IORedisInstrumentation extends InstrumentationBase<
   typeof ioredisTypes
 > {
   static readonly DB_SYSTEM = 'redis';
   readonly supportedVersions = ['>1 <5'];
 
-  constructor(protected _config: IORedisInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-ioredis', VERSION, _config);
+  constructor(_config: IORedisInstrumentationConfig = {}) {
+    super(
+      '@opentelemetry/instrumentation-ioredis',
+      VERSION,
+      Object.assign({}, DEFAULT_CONFIG, _config)
+    );
   }
 
   init(): InstrumentationNodeModuleDefinition<typeof ioredisTypes>[] {
@@ -40,7 +49,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
         'ioredis',
         this.supportedVersions,
         moduleExports => {
-          this._logger.debug('Applying patch for ioredis');
+          diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
           }
@@ -61,7 +70,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          this._logger.debug('Removing patch for ioredis');
+          diag.debug('Removing patch for ioredis');
           this._unwrap(moduleExports.prototype, 'sendCommand');
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -74,12 +83,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
    */
   private _patchSendCommand() {
     return (original: Function) => {
-      return traceSendCommand(
-        this.tracer,
-        original,
-        this._logger,
-        this._config
-      );
+      return traceSendCommand(this.tracer, original, this._config);
     };
   }
 

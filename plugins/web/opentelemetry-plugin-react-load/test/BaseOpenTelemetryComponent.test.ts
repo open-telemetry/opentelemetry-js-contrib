@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-import { context, Logger, propagation, trace } from '@opentelemetry/api';
-import { ConsoleLogger, isWrapped } from '@opentelemetry/core';
+import {
+  context,
+  DiagConsoleLogger,
+  propagation,
+  trace,
+} from '@opentelemetry/api';
+import { isWrapped } from '@opentelemetry/core';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import {
   BasicTracerProvider,
@@ -51,7 +56,6 @@ interface TestCases {
 
 describe('ReactLoad Instrumentation', () => {
   let provider: BasicTracerProvider;
-  let logger: Logger;
   let spanProcessor: SimpleSpanProcessor;
   let dummyExporter: DummyExporter;
   let contextManager: StackContextManager;
@@ -65,7 +69,6 @@ describe('ReactLoad Instrumentation', () => {
     context.setGlobalContextManager(contextManager);
 
     provider = new BasicTracerProvider();
-    logger = new ConsoleLogger();
 
     dummyExporter = new DummyExporter();
     spanProcessor = new SimpleSpanProcessor(dummyExporter);
@@ -75,7 +78,7 @@ describe('ReactLoad Instrumentation', () => {
     trace.setGlobalTracerProvider(provider);
 
     BaseOpenTelemetryComponent.setTracer('default');
-    BaseOpenTelemetryComponent.setLogger(logger);
+    BaseOpenTelemetryComponent.setLogger(new DiagConsoleLogger());
   });
 
   after(() => {

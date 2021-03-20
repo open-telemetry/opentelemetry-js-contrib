@@ -19,10 +19,10 @@ import {
   Tracer,
   SpanKind,
   Span,
-  StatusCode,
+  SpanStatusCode,
   getSpan,
   context,
-  Logger,
+  diag,
 } from '@opentelemetry/api';
 import {
   IORedisCommand,
@@ -40,7 +40,7 @@ const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
   if (err) {
     span.recordException(err);
     span.setStatus({
-      code: StatusCode.ERROR,
+      code: SpanStatusCode.ERROR,
       message: err.message,
     });
   }
@@ -85,7 +85,6 @@ const defaultDbStatementSerializer: DbStatementSerializer = (
 export const traceSendCommand = (
   tracer: Tracer,
   original: Function,
-  logger: Logger,
   config?: IORedisInstrumentationConfig
 ) => {
   const dbStatementSerializer =
@@ -94,8 +93,9 @@ export const traceSendCommand = (
     if (arguments.length < 1 || typeof cmd !== 'object') {
       return original.apply(this, arguments);
     }
-    // Do not trace if there is not parent span
-    if (getSpan(context.active()) === undefined) {
+
+    const hasNoParentSpan = getSpan(context.active()) === undefined;
+    if (config?.requireParentSpan === true && hasNoParentSpan) {
       return original.apply(this, arguments);
     }
 
@@ -128,7 +128,7 @@ export const traceSendCommand = (
           () => config?.responseHook?.(span, cmd.name, cmd.args, result),
           e => {
             if (e) {
-              logger.error('ioredis response hook failed', e);
+              diag.error('ioredis response hook failed', e);
             }
           },
           true

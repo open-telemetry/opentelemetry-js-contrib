@@ -15,13 +15,12 @@
  */
 
 import {
-  Attributes,
-  StatusCode,
+  SpanAttributes,
+  SpanStatusCode,
   context,
-  NoopLogger,
   Span,
   SpanKind,
-  Status,
+  SpanStatus,
   TimedEvent,
   setSpan,
   getSpan,
@@ -60,18 +59,18 @@ const DEFAULT_ATTRIBUTES = {
   [AttributeNames.DB_USER]: CONFIG.user,
 };
 
-const unsetStatus: Status = {
-  code: StatusCode.UNSET,
+const unsetStatus: SpanStatus = {
+  code: SpanStatusCode.UNSET,
 };
-const errorStatus: Status = {
-  code: StatusCode.ERROR,
+const errorStatus: SpanStatus = {
+  code: SpanStatusCode.ERROR,
 };
 
 const runCallbackTest = (
   span: Span | null,
-  attributes: Attributes,
+  attributes: SpanAttributes,
   events: TimedEvent[],
-  status: Status = unsetStatus,
+  status: SpanStatus = unsetStatus,
   spansLength = 1,
   spansIndex = 0
 ) => {
@@ -89,7 +88,6 @@ describe('pg@7.x', () => {
   let contextManager: AsyncHooksContextManager;
   const provider = new BasicTracerProvider();
   const tracer = provider.getTracer('external');
-  const logger = new NoopLogger();
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
@@ -118,7 +116,7 @@ describe('pg@7.x', () => {
   });
 
   beforeEach(() => {
-    plugin.enable(pg, provider, logger);
+    plugin.enable(pg, provider);
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
   });
@@ -442,7 +440,7 @@ describe('pg@7.x', () => {
           assert.strictEqual(ctx.params, undefined);
         },
       };
-      plugin.enable(pg, provider, logger, config);
+      plugin.enable(pg, provider, config);
 
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
@@ -473,7 +471,7 @@ describe('pg@7.x', () => {
           assert.strictEqual(ctx.params, values);
         },
       };
-      plugin.enable(pg, provider, logger, config);
+      plugin.enable(pg, provider, config);
 
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
@@ -509,7 +507,7 @@ describe('pg@7.x', () => {
           assert.strictEqual(ctx.config.values, values);
         },
       };
-      plugin.enable(pg, provider, logger, config);
+      plugin.enable(pg, provider, config);
 
       const attributes = {
         ...DEFAULT_ATTRIBUTES,

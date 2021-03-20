@@ -1,7 +1,9 @@
 'use strict';
 
+const api = require('@opentelemetry/api');
 // eslint-disable-next-line import/order
-const tracer = require('./tracer')('example-mongodb-http-server');
+require('./tracer')('example-mongodb-http-server');
+
 const { MongoClient } = require('mongodb');
 const http = require('http');
 
@@ -28,7 +30,7 @@ function startServer(port) {
 
 /** A function which handles requests and send response. */
 function handleRequest(request, response) {
-  const currentSpan = tracer.getCurrentSpan();
+  const currentSpan = api.getSpan(api.context.active());
   // display traceid in the terminal
   const { traceId } = currentSpan.context();
   console.log(`traceid: ${traceId}`);
@@ -58,7 +60,7 @@ startServer(8080);
 
 function handleInsertQuery(response) {
   const obj = { name: 'John', age: '20' };
-  db.collection('users').insertOne(obj, (err, res) => {
+  db.collection('users').insertOne(obj, (err) => {
     if (err) {
       console.log('Error code:', err.code);
       response.end(err.message);
@@ -70,7 +72,7 @@ function handleInsertQuery(response) {
 }
 
 function handleGetQuery(response) {
-  db.collection('users').find({}, (err, res) => {
+  db.collection('users').find({}, (err) => {
     if (err) {
       console.log('Error code:', err.code);
       response.end(err.message);
@@ -82,7 +84,7 @@ function handleGetQuery(response) {
 }
 
 function handleCreateCollection(response) {
-  db.createCollection('users', (err, res) => {
+  db.createCollection('users', (err) => {
     if (err) {
       console.log('Error code:', err.code);
       response.end(err.message);

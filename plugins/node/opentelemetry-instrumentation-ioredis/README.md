@@ -22,25 +22,31 @@ npm install --save @opentelemetry/instrumentation-ioredis
 
 ## Usage
 
-To load a specific instrumentation (**ioredis** in this case), specify it in the Node Tracer's configuration
+To load a specific instrumentation (**ioredis** in this case), specify it in the registerInstrumentations's configuration
 
 ```javascript
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-ioredis');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider({
-  // be sure to disable old plugin
-  plugins: {
-    ioredis: { enabled: false, path: '@opentelemetry/plugin-ioredis' }
-  },
-});
+const provider = new NodeTracerProvider();
 provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
-const ioredisInstrumentation = new IORedisInstrumentation({
-  // see under for available configuration
-});
-
+registerInstrumentations({
+  instrumentations: [
+    new IORedisInstrumentation({
+      // see under for available configuration
+    }),
+    {
+      // be sure to disable old plugin but only if it was installed
+      plugins: {
+        ioredis: { enabled: false, path: '@opentelemetry/plugin-ioredis' }
+      },
+    }
+  ],
+  tracerProvider: provider,
+})
 ```
 
 ### IORedis Instrumentation Options
@@ -51,6 +57,7 @@ IORedis instrumentation has few options available to choose from. You can set th
 | ------- | ---- | ----------- |
 | `dbStatementSerializer` | `DbStatementSerializer` | IORedis instrumentation will serialize db.statement using the specified function. |
 | `responseHook` | `RedisResponseCustomAttributeFunction` | Function for adding custom attributes on db response |
+| `requireParentSpan` | `boolean` | Require parent to create ioredis span, default when unset is true |
 
 #### Custom db.statement Serializer
 The instrumentation serializes the whole command into a Span attribute called `db.statement`. The standard serialization format is `{cmdName} {cmdArgs.join(',')}`.

@@ -17,7 +17,6 @@
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
 import type * as api from '@opentelemetry/api';
-import type { Maybe } from 'graphql/jsutils/Maybe';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
 import { DocumentNode } from 'graphql/language/ast';
 import {
@@ -30,7 +29,7 @@ import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 export const OPERATION_NOT_SUPPORTED =
   'Operation$operationName$not' + ' supported';
 
-export interface GraphQLInstrumentationConfig {
+export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
   /**
    * When set to true it will not remove attributes values from schema source.
    * By default all values that can be sensitive are removed and replaced
@@ -137,5 +136,14 @@ export interface OtelPatched {
 export interface GraphQLPath {
   prev: GraphQLPath | undefined;
   key: string | number;
-  typename: string | undefined;
+  /**
+   * optional as it didn't exist yet in ver 14
+   */
+  typename?: string | undefined;
 }
+
+/**
+ * Moving this type from ver 15 of graphql as it is nto available in ver. 14s
+ * this way it can compile against ver 14.
+ */
+export type Maybe<T> = null | undefined | T;

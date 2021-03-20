@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { diag } from '@opentelemetry/api';
 import { BasePlugin } from '@opentelemetry/core';
 import type * as redisTypes from 'redis';
 import * as shimmer from 'shimmer';
@@ -34,23 +35,21 @@ export class RedisPlugin extends BasePlugin<typeof redisTypes> {
 
   protected patch() {
     if (this._moduleExports.RedisClient) {
-      this._logger.debug(
-        'Patching redis.RedisClient.prototype.internal_send_command'
-      );
+      diag.debug('Patching redis.RedisClient.prototype.internal_send_command');
       shimmer.wrap(
         this._moduleExports.RedisClient.prototype,
         'internal_send_command',
         this._getPatchInternalSendCommand()
       );
 
-      this._logger.debug('patching redis.create_stream');
+      diag.debug('patching redis.create_stream');
       shimmer.wrap(
         this._moduleExports.RedisClient.prototype,
         'create_stream',
         this._getPatchCreateStream()
       );
 
-      this._logger.debug('patching redis.createClient');
+      diag.debug('patching redis.createClient');
       shimmer.wrap(
         this._moduleExports,
         'createClient',

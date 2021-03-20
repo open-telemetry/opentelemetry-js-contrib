@@ -132,7 +132,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
 
       return span;
     } catch (e) {
-      this._logger.error(this.component, e);
+      api.diag.error(this.component, e);
     }
     return undefined;
   }
@@ -521,7 +521,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    */
   enable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
-    this._logger.debug(
+    api.diag.debug(
       'applying patch to',
       this.moduleName,
       this.version,
@@ -531,15 +531,15 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     if (ZoneWithPrototype) {
       if (isWrapped(ZoneWithPrototype.prototype.runTask)) {
         this._unwrap(ZoneWithPrototype.prototype, 'runTask');
-        this._logger.debug('removing previous patch from method runTask');
+        api.diag.debug('removing previous patch from method runTask');
       }
       if (isWrapped(ZoneWithPrototype.prototype.scheduleTask)) {
         this._unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
-        this._logger.debug('removing previous patch from method scheduleTask');
+        api.diag.debug('removing previous patch from method scheduleTask');
       }
       if (isWrapped(ZoneWithPrototype.prototype.cancelTask)) {
         this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
-        this._logger.debug('removing previous patch from method cancelTask');
+        api.diag.debug('removing previous patch from method cancelTask');
       }
 
       this._zonePatched = true;
@@ -562,13 +562,11 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       this._zonePatched = false;
       if (isWrapped(HTMLElement.prototype.addEventListener)) {
         this._unwrap(HTMLElement.prototype, 'addEventListener');
-        this._logger.debug(
-          'removing previous patch from method addEventListener'
-        );
+        api.diag.debug('removing previous patch from method addEventListener');
       }
       if (isWrapped(HTMLElement.prototype.removeEventListener)) {
         this._unwrap(HTMLElement.prototype, 'removeEventListener');
-        this._logger.debug(
+        api.diag.debug(
           'removing previous patch from method removeEventListener'
         );
       }
@@ -592,7 +590,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    */
   disable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
-    this._logger.debug(
+    api.diag.debug(
       'removing patch from',
       this.moduleName,
       this.version,

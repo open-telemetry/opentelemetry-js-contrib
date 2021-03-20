@@ -15,10 +15,10 @@
  */
 
 import {
-  StatusCode,
+  SpanStatusCode,
   context,
   SpanKind,
-  Status,
+  SpanStatus,
   getSpan,
   setSpan,
   Span,
@@ -60,8 +60,8 @@ const DEFAULT_ATTRIBUTES = {
   [GeneralAttribute.NET_PEER_ADDRESS]: URL,
 };
 
-const unsetStatus: Status = {
-  code: StatusCode.UNSET,
+const unsetStatus: SpanStatus = {
+  code: SpanStatusCode.UNSET,
 };
 
 const predictableStackTrace =
@@ -302,7 +302,7 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans.length, 2);
             const ioredisSpan = endedSpans[1];
             // redis 'incr' operation failed with exception, so span should indicate it
-            assert.strictEqual(ioredisSpan.status.code, StatusCode.ERROR);
+            assert.strictEqual(ioredisSpan.status.code, SpanStatusCode.ERROR);
             const exceptionEvent = ioredisSpan.events[0];
             assert.strictEqual(exceptionEvent.name, 'exception');
             assert.strictEqual(
@@ -464,7 +464,7 @@ describe('ioredis', () => {
                   },
                 ],
                 {
-                  code: StatusCode.ERROR,
+                  code: SpanStatusCode.ERROR,
                 }
               );
             } else {
@@ -623,6 +623,52 @@ describe('ioredis', () => {
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
         assert.strictEqual(result, 1);
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      });
+    });
+
+    describe('Instrumentation with requireParentSpan', () => {
+      it('should instrument with requireParentSpan equal false', async () => {
+        instrumentation.disable();
+        const config: IORedisInstrumentationConfig = {
+          requireParentSpan: false,
+        };
+        instrumentation = new IORedisInstrumentation(config);
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+
+        await client.set(testKeyName, 'data');
+        const result = await client.del(testKeyName);
+        assert.strictEqual(result, 1);
+
+        const endedSpans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(endedSpans.length, 2);
+
+        testUtils.assertSpan(
+          endedSpans[0],
+          SpanKind.CLIENT,
+          {
+            ...DEFAULT_ATTRIBUTES,
+            [DatabaseAttribute.DB_STATEMENT]: `set ${testKeyName} data`,
+          },
+          [],
+          unsetStatus
+        );
+      });
+
+      it('should not instrument with requireParentSpan equal true', async () => {
+        instrumentation.disable();
+        const config: IORedisInstrumentationConfig = {
+          requireParentSpan: true,
+        };
+        instrumentation = new IORedisInstrumentation(config);
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+
+        await client.set(testKeyName, 'data');
+        const result = await client.del(testKeyName);
+        assert.strictEqual(result, 1);
+
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       });
     });

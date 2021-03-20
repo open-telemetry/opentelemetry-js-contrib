@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin, hrTime } from '@opentelemetry/core';
-import { Attributes, getSpan, context } from '@opentelemetry/api';
+import { diag, SpanAttributes, getSpan, context } from '@opentelemetry/api';
 import * as express from 'express';
 import * as core from 'express-serve-static-core';
 import * as shimmer from 'shimmer';
@@ -45,6 +45,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
   static readonly component = 'express';
   readonly supportedVersions = ['^4.0.0'];
   protected _config!: ExpressPluginConfig;
+  protected _logger = diag;
 
   constructor(readonly moduleName: string) {
     super('@opentelemetry/plugin-express', VERSION);
@@ -54,7 +55,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
    * Patches Express operations.
    */
   protected patch() {
-    this._logger.debug('Patching Express');
+    diag.debug('Patching Express');
 
     if (this._moduleExports === undefined || this._moduleExports === null) {
       return this._moduleExports;
@@ -173,7 +174,7 @@ export class ExpressPlugin extends BasePlugin<typeof express> {
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
           .join('');
-        const attributes: Attributes = {
+        const attributes: SpanAttributes = {
           [AttributeNames.COMPONENT]: ExpressPlugin.component,
           [AttributeNames.HTTP_ROUTE]: route.length > 0 ? route : undefined,
         };

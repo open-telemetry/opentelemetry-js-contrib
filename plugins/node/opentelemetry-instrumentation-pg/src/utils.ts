@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span, StatusCode, Tracer, SpanKind } from '@opentelemetry/api';
+import { Span, SpanStatusCode, Tracer, SpanKind } from '@opentelemetry/api';
 import { AttributeNames } from './enums';
 import {
   PgClientExtended,
@@ -150,7 +150,7 @@ export function handleInvalidQuery(
     result = originalQuery.apply(this, args as never);
   } catch (e) {
     // span.recordException(e);
-    span.setStatus({ code: StatusCode.ERROR, message: e.message });
+    span.setStatus({ code: SpanStatusCode.ERROR, message: e.message });
     throw e;
   } finally {
     span.end();
@@ -170,7 +170,7 @@ export function patchCallback(
     if (err) {
       // span.recordException(err);
       span.setStatus({
-        code: StatusCode.ERROR,
+        code: SpanStatusCode.ERROR,
         message: err.message,
       });
     }
@@ -191,7 +191,7 @@ export function patchCallbackPGPool(
   ) {
     if (err) {
       span.setStatus({
-        code: StatusCode.ERROR,
+        code: SpanStatusCode.ERROR,
         message: err.message,
       });
     }

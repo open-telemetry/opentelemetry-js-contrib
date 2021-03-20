@@ -15,7 +15,7 @@
  */
 
 import { BasePlugin } from '@opentelemetry/core';
-import { Span, SpanKind, SpanOptions } from '@opentelemetry/api';
+import { diag, Span, SpanKind, SpanOptions } from '@opentelemetry/api';
 import { LookupAddress } from 'dns';
 import * as semver from 'semver';
 import * as shimmer from 'shimmer';
@@ -48,11 +48,7 @@ export class DnsPlugin extends BasePlugin<Dns> {
 
   /** Patches DNS functions. */
   protected patch() {
-    this._logger.debug(
-      'applying patch to %s@%s',
-      this.moduleName,
-      this.version
-    );
+    diag.debug('applying patch to %s@%s', this.moduleName, this.version);
 
     shimmer.wrap<{ lookup: LookupFunction }, 'lookup'>(
       this._moduleExports,
@@ -98,7 +94,7 @@ export class DnsPlugin extends BasePlugin<Dns> {
   private _getPatchLookupFunction(
     original: (hostname: string, ...args: unknown[]) => void
   ) {
-    this._logger.debug('patch lookup function');
+    diag.debug('patch lookup function');
     const plugin = this;
     return function patchedLookup(
       this: {},
@@ -107,14 +103,14 @@ export class DnsPlugin extends BasePlugin<Dns> {
     ) {
       if (
         utils.isIgnored(hostname, plugin._config.ignoreHostnames, (e: Error) =>
-          plugin._logger.error('caught ignoreHostname error: ', e)
+          diag.error('caught ignoreHostname error: ', e)
         )
       ) {
         return original.apply(this, [hostname, ...args]);
       }
 
       const argsCount = args.length;
-      plugin._logger.debug('wrap lookup callback function and starts span');
+      diag.debug('wrap lookup callback function and starts span');
       const name = utils.getOperationName('lookup');
       const span = plugin._startDnsSpan(name, {
         attributes: {
@@ -180,7 +176,7 @@ export class DnsPlugin extends BasePlugin<Dns> {
       address: string | LookupAddress[],
       family?: AddressFamily
     ): void {
-      plugin._logger.debug('executing wrapped lookup callback function');
+      diag.debug('executing wrapped lookup callback function');
 
       if (err !== null) {
         utils.setError(err, span, plugin.version);
@@ -189,7 +185,7 @@ export class DnsPlugin extends BasePlugin<Dns> {
       }
 
       span.end();
-      plugin._logger.debug('executing original lookup callback function');
+      diag.debug('executing original lookup callback function');
       return original.apply(this, arguments);
     };
   }

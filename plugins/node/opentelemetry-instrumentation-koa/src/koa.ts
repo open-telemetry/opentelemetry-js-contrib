@@ -28,6 +28,8 @@ import {
   KoaContext,
   KoaComponentName,
   kLayerPatched,
+  KoaLayerType,
+  AttributeNames,
 } from './types';
 import { VERSION } from './version';
 import { getMiddlewareMetadata } from './utils';
@@ -46,6 +48,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         if (moduleExports == null) {
           return moduleExports;
         }
+        api.diag.debug('Patching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }
@@ -57,6 +60,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         return moduleExports;
       },
       moduleExports => {
+        api.diag.debug('Unpatching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }
@@ -90,7 +94,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
    * routed middleware
    */
   private _patchRouterDispatch(dispatchLayer: KoaMiddleware): KoaMiddleware {
-    this._logger.debug('Patching @koa/router dispatch');
+    api.diag.debug('Patching @koa/router dispatch');
 
     const router = dispatchLayer.router;
 
@@ -123,9 +127,10 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   ): KoaMiddleware {
     if (middlewareLayer[kLayerPatched] === true) return middlewareLayer;
     middlewareLayer[kLayerPatched] = true;
-    this._logger.debug('patching Koa middleware layer');
+    api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
-      if (api.getSpan(api.context.active()) === undefined) {
+      const parent = api.getSpan(api.context.active());
+      if (parent === undefined) {
         return middlewareLayer(context, next);
       }
       const metadata = getMiddlewareMetadata(
@@ -137,6 +142,28 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       const span = this.tracer.startSpan(metadata.name, {
         attributes: metadata.attributes,
       });
+
+      if (!context.request.ctx.parentSpan) {
+        context.request.ctx.parentSpan = parent;
+      }
+
+      if (
+        metadata.attributes[AttributeNames.KOA_TYPE] === KoaLayerType.ROUTER
+      ) {
+        if (context.request.ctx.parentSpan.name) {
+          const parentRoute = context.request.ctx.parentSpan.name.split(' ')[1];
+          if (
+            context._matchedRoute &&
+            !context._matchedRoute.toString().includes(parentRoute)
+          ) {
+            context.request.ctx.parentSpan.updateName(
+              `${context.method} ${context._matchedRoute}`
+            );
+
+            delete context.request.ctx.parentSpan;
+          }
+        }
+      }
 
       return api.context.with(
         api.setSpan(api.context.active(), span),

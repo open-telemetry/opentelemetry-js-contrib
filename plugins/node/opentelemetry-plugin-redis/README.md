@@ -22,26 +22,40 @@ npm install --save @opentelemetry/plugin-redis
 
 OpenTelemetry Redis Instrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [redis](https://www.npmjs.com/package/redis).
 
-To load a specific plugin (**redis** in this case), specify it in the Node Tracer's configuration
+To load a specific plugin (**redis** in this case), specify it in the registerInstrumentations's configuration
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider({
-  plugins: {
-    redis: {
-      enabled: true,
-      // You may use a package name or absolute path to the file.
-      path: '@opentelemetry/plugin-redis',
-    }
-  }
+const provider = new NodeTracerProvider();
+provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    {
+      plugins: {
+        redis: {
+          enabled: true,
+          // You may use a package name or absolute path to the file.
+          path: '@opentelemetry/plugin-redis',
+        }
+      },
+    },
+  ],
+  tracerProvider: provider,
 });
 ```
 
 To load all of the [supported plugins](https://github.com/open-telemetry/opentelemetry-js#plugins), use below approach. Each plugin is only loaded when the module that it patches is loaded; in other words, there is no computational overhead for listing plugins for unused modules.
 ```javascript
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
+provider.register();
+registerInstrumentations({
+  tracerProvider: provider,
+});
 ```
 
 See [examples/redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/redis) for a short example.

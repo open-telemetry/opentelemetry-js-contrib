@@ -15,12 +15,12 @@
  */
 
 import {
-  Attributes,
-  StatusCode,
+  SpanAttributes,
+  SpanStatusCode,
   context,
   Span,
   SpanKind,
-  Status,
+  SpanStatus,
   TimedEvent,
   setSpan,
 } from '@opentelemetry/api';
@@ -73,15 +73,15 @@ const DEFAULT_PG_ATTRIBUTES = {
   [AttributeNames.DB_USER]: CONFIG.user,
 };
 
-const unsetStatus: Status = {
-  code: StatusCode.UNSET,
+const unsetStatus: SpanStatus = {
+  code: SpanStatusCode.UNSET,
 };
 
 const runCallbackTest = (
   parentSpan: Span,
-  attributes: Attributes,
+  attributes: SpanAttributes,
   events: TimedEvent[],
-  status: Status = unsetStatus,
+  status: SpanStatus = unsetStatus,
   spansLength = 1,
   spansIndex = 0
 ) => {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { NoopLogger, StatusCode, context, setSpan } from '@opentelemetry/api';
+import { SpanStatusCode, context, setSpan } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/test-utils';
@@ -42,8 +42,7 @@ describe('mysql@2.x', () => {
   let connection: mysql.Connection;
   let pool: mysql.Pool;
   let poolCluster: mysql.PoolCluster;
-  const provider = new NodeTracerProvider({ plugins: {} });
-  const logger = new NoopLogger();
+  const provider = new NodeTracerProvider();
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
@@ -77,7 +76,7 @@ describe('mysql@2.x', () => {
   beforeEach(() => {
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
-    plugin.enable(mysql, provider, logger);
+    plugin.enable(mysql, provider);
     connection = mysql.createConnection({
       port,
       user,
@@ -625,6 +624,6 @@ function assertSpan(
   );
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
-    assert.strictEqual(span.status.code, StatusCode.ERROR);
+    assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
   }
 }

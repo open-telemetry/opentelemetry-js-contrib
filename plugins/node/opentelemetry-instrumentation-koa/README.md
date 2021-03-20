@@ -26,6 +26,8 @@ To load all of the [default supported plugins](https://github.com/open-telemetry
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const provider = new NodeTracerProvider();
+provider.register();
+
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 registerInstrumentations({
   tracerProvider: provider,
@@ -38,6 +40,8 @@ If instead you would just want to load a specific instrumentation only (**koa** 
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { KoaInstrumentation } = require('@opentelemetry/instrumentation-koa');
 const provider = new NodeTracerProvider();
+provider.register();
+
 const koaInstrumentation = new KoaInstrumentation();
 koaInstrumentation.setTracerProvider(provider);
 ```
@@ -49,6 +53,8 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const { KoaInstrumentation } = require('@opentelemetry/instrumentation-koa');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const provider = new NodeTracerProvider();
+provider.register();
+
 registerInstrumentations({
   instrumentations: [
     new KoaInstrumentation(),

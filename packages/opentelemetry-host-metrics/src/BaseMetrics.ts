@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { Logger, NoopLogger } from '@opentelemetry/api';
-import * as api from '@opentelemetry/api-metrics';
+import * as api from '@opentelemetry/api';
+import * as apiMetrics from '@opentelemetry/api-metrics';
 import * as metrics from '@opentelemetry/metrics';
 
 import { VERSION } from './version';
@@ -24,7 +24,6 @@ import { VERSION } from './version';
  * Metrics Collector Configuration
  */
 export interface MetricsCollectorConfig {
-  logger?: Logger;
   // maximum timeout to wait for stats collection default is 500ms
   maxTimeoutUpdateMS?: number;
   // Meter Provider
@@ -48,22 +47,21 @@ const DEFAULT_KEY = 'name';
  * Base Class for metrics
  */
 export abstract class BaseMetrics {
-  protected _logger: Logger | undefined;
+  protected _logger = api.diag;
   protected _maxTimeoutUpdateMS: number;
   protected _meter: metrics.Meter;
   private _name: string;
-  private _boundCounters: { [key: string]: api.BoundCounter } = {};
+  private _boundCounters: { [key: string]: apiMetrics.BoundCounter } = {};
   private _metricNameSeparator: string;
 
   constructor(config: MetricsCollectorConfig) {
-    this._logger = config.logger || new NoopLogger();
     this._name = config.name || DEFAULT_NAME;
     this._maxTimeoutUpdateMS =
       config.maxTimeoutUpdateMS || DEFAULT_MAX_TIMEOUT_UPDATE_MS;
     this._metricNameSeparator =
       config.metricNameSeparator || DEFAULT_METRIC_NAME_SEPARATOR;
     const meterProvider =
-      config.meterProvider! || api.metrics.getMeterProvider();
+      config.meterProvider! || apiMetrics.metrics.getMeterProvider();
     if (!config.meterProvider) {
       this._logger.warn('No meter provider, using default');
     }

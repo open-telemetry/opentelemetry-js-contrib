@@ -1,0 +1,87 @@
+# OpenTelemetry Hapi Instrumentation for Node.js
+[![Gitter chat][gitter-image]][gitter-url]
+[![dependencies][dependencies-image]][dependencies-url]
+[![devDependencies][devDependencies-image]][devDependencies-url]
+[![Apache License][license-image]][license-image]
+
+This module provides automatic instrumentation for [`Hapi`](https://hapi.dev).
+
+For automatic instrumentation see the
+[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+
+## Installation
+
+```bash
+npm install --save @opentelemetry/instrumentation-hapi
+```
+### Supported Versions
+ - @hapi/hapi `^17.0.0`
+
+## Usage
+
+OpenTelemetry Hapi Instrumentation allows the user to automatically collect trace data and export them to their backend of choice, to give observability to distributed systems.
+
+To load a specific instrumentation (Hapi in this case), specify it in the registerInstrumentations' configuration.
+
+```js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const provider = new NodeTracerProvider();
+provider.register();
+
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+registerInstrumentations({
+  tracerProvider: provider,
+});
+```
+
+If instead you would just want to load a specific instrumentation only (**hapi** in this case);
+
+```js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
+const provider = new NodeTracerProvider();
+provider.register();
+
+const hapiInstrumentation = new HapiInstrumentation();
+hapiInstrumentation.setTracerProvider(provider);
+```
+
+You can combine loading default plugins and HapiInstrumentation at the same time:
+
+```js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const provider = new NodeTracerProvider();
+provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    new HapiInstrumentation(),
+  ],
+  tracerProvider: provider,
+});
+```
+
+See [examples/hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/hapi) for a short example using Hapi
+
+## Hapi Instrumentation Support
+This package provides automatic tracing for hapi server routes and [request lifecycle](https://github.com/hapijs/hapi/blob/main/API.md#request-lifecycle) extensions defined either directly or via a Hapi plugin.
+
+## Useful links
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us on [gitter][gitter-url]
+
+## License
+
+Apache 2.0 - See [LICENSE][license-url] for more information.
+
+[gitter-image]: https://badges.gitter.im/open-telemetry/opentelemetry-js.svg
+[gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
+[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
+[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=plugins/node/opentelemetry-hapi-instrumentation
+[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins/node/opentelemetry-hapi-instrumentation
+[devDependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=plugins/node/opentelemetry-hapi-instrumentation
+[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins/node/opentelemetry-hapi-instrumentation&type=dev

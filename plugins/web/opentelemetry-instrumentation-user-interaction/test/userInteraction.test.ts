@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 const originalSetTimeout = window.setTimeout;
-import { context } from '@opentelemetry/api';
-import { ROOT_CONTEXT } from '@opentelemetry/context-base';
+import { context, ROOT_CONTEXT } from '@opentelemetry/api';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import {
   isWrapped,
   registerInstrumentations,
 } from '@opentelemetry/instrumentation';
-import { LogLevel } from '@opentelemetry/core';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/tracing';
 import { WebTracerProvider } from '@opentelemetry/web';
@@ -68,9 +66,7 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.useFakeTimers();
 
-      webTracerProvider = new WebTracerProvider({
-        logLevel: LogLevel.ERROR,
-      });
+      webTracerProvider = new WebTracerProvider();
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
       webTracerProvider.addSpanProcessor(

@@ -15,12 +15,12 @@
  */
 
 import {
-  Attributes,
-  StatusCode,
+  SpanAttributes,
+  SpanStatusCode,
   context,
   Span,
   SpanKind,
-  Status,
+  SpanStatus,
   TimedEvent,
   setSpan,
   getSpan,
@@ -59,18 +59,18 @@ const DEFAULT_ATTRIBUTES = {
   [AttributeNames.DB_USER]: CONFIG.user,
 };
 
-const unsetStatus: Status = {
-  code: StatusCode.UNSET,
+const unsetStatus: SpanStatus = {
+  code: SpanStatusCode.UNSET,
 };
-const errorStatus: Status = {
-  code: StatusCode.ERROR,
+const errorStatus: SpanStatus = {
+  code: SpanStatusCode.ERROR,
 };
 
 const runCallbackTest = (
   span: Span | null,
-  attributes: Attributes,
+  attributes: SpanAttributes,
   events: TimedEvent[],
-  status: Status = unsetStatus,
+  status: SpanStatus = unsetStatus,
   spansLength = 1,
   spansIndex = 0
 ) => {
