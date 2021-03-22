@@ -42,7 +42,6 @@
   },
   "devDependencies": {
     "@opentelemetry/context-async-hooks": "0.18.0",
-    "@opentelemetry/node": "0.18.0",
     "@opentelemetry/tracing": "0.18.0",
     "@opentelemetry/test-utils": "0.14.0",
     "@types/mocha": "7.0.2",
