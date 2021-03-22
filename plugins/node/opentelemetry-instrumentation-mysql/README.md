@@ -1,0 +1,64 @@
+# OpenTelemetry mysql Instrumentation for Node.js
+[![dependencies][dependencies-image]][dependencies-url]
+[![devDependencies][devDependencies-image]][devDependencies-url]
+[![Apache License][license-image]][license-image]
+
+This module provides automatic instrumentation for [`mysql`](https://www.npmjs.com/package/mysql).
+
+For automatic instrumentation see the
+[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+
+## Installation
+
+```bash
+npm install --save @opentelemetry/instrumentation-mysql
+```
+
+## Supported Versions
+- `2.x`
+
+## Usage
+
+OpenTelemetry MySQL Instrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [mysql](https://www.npmjs.com/package/mysql).
+
+To load a specific plugin (**MySQL** in this case), specify it in the registerInstrumentations's configuration
+```js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { MysqlInstrumentation } = require('@opentelemetry/instrumentation-mysql');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+
+const provider = new NodeTracerProvider();
+provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    new MysqlInstrumentation(),
+    {
+      // be sure to disable old plugin but only if it was installed
+      plugins: {
+        mysql: { enabled: false, path: '@opentelemetry/plugin-mysql' }
+      },
+    }
+  ],
+  tracerProvider: provider,
+})
+```
+
+See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/mysql) for a short example.
+
+## Useful links
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us on [gitter][gitter-url]
+
+## License
+
+Apache 2.0 - See [LICENSE][license-url] for more information.
+
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
+[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
+[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=plugins/node/opentelemetry-instrumentation-mysql
+[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-mysql
+[devDependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=plugins/node/opentelemetry-instrumentation-mysql
+[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-mysql&type=dev
