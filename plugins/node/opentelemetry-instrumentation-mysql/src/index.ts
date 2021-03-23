@@ -15,4 +15,4 @@
  */
 
 export * from './mysql';
-export { MysqlInstrumentationConfig } from './types';
+export { MySQLInstrumentationConfig } from './types';

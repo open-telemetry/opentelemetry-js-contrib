@@ -16,4 +16,4 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export type MysqlInstrumentationConfig = InstrumentationConfig;
+export type MySQLInstrumentationConfig = InstrumentationConfig;

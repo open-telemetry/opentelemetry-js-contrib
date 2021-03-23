@@ -24,7 +24,7 @@ OpenTelemetry MySQL Instrumentation allows the user to automatically collect tra
 To load a specific plugin (**MySQL** in this case), specify it in the registerInstrumentations's configuration
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
-const { MysqlInstrumentation } = require('@opentelemetry/instrumentation-mysql');
+const { MySQLInstrumentation } = require('@opentelemetry/instrumentation-mysql');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
@@ -33,7 +33,7 @@ provider.register();
 
 registerInstrumentations({
   instrumentations: [
-    new MysqlInstrumentation(),
+    new MySQLInstrumentation(),
     {
       // be sure to disable old plugin but only if it was installed
       plugins: {

@@ -25,7 +25,7 @@ import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
 import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
-import { MysqlInstrumentation } from '@opentelemetry/instrumentation-mysql';
+import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
 
 const InstrumentationMap = {
@@ -38,7 +38,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
   '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
-  '@opentelemetry/instrumentation-mysql': MysqlInstrumentation,
+  '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-redis': RedisInstrumentation,
 };
 

@@ -37,7 +37,7 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-pg',
         '@opentelemetry/instrumentation-redis',
       ];
-      assert.strictEqual(instrumentations.length, 10);
+      assert.strictEqual(instrumentations.length, 11);
       for (let i = 0, j = instrumentations.length; i < j; i++) {
         assert.strictEqual(
           instrumentations[i].instrumentationName,

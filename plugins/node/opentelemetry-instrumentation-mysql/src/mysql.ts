@@ -22,21 +22,21 @@ import {
 } from '@opentelemetry/instrumentation';
 import { DatabaseAttribute } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql';
-import { MysqlInstrumentationConfig } from './types';
+import { MySQLInstrumentationConfig } from './types';
 import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
 import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
-export class MysqlInstrumentation extends InstrumentationBase<
+export class MySQLInstrumentation extends InstrumentationBase<
   typeof mysqlTypes
 > {
   static readonly COMPONENT = 'mysql';
   static readonly COMMON_ATTRIBUTES = {
-    [DatabaseAttribute.DB_SYSTEM]: MysqlInstrumentation.COMPONENT,
+    [DatabaseAttribute.DB_SYSTEM]: MySQLInstrumentation.COMPONENT,
   };
 
-  constructor(protected _config: MysqlInstrumentationConfig = {}) {
+  constructor(protected _config: MySQLInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mysql', VERSION, _config);
   }
 
@@ -94,7 +94,7 @@ export class MysqlInstrumentation extends InstrumentationBase<
   private _patchCreateConnection(format: formatType) {
     return (originalCreateConnection: Function) => {
       const thisPlugin = this;
-      diag.debug('MysqlInstrumentation#patch: patched mysql createConnection');
+      diag.debug('MySQLInstrumentation#patch: patched mysql createConnection');
 
       return function createConnection(
         _connectionUri: string | mysqlTypes.ConnectionConfig
@@ -117,7 +117,7 @@ export class MysqlInstrumentation extends InstrumentationBase<
   private _patchCreatePool(format: formatType) {
     return (originalCreatePool: Function) => {
       const thisPlugin = this;
-      diag.debug('MysqlInstrumentation#patch: patched mysql createPool');
+      diag.debug('MySQLInstrumentation#patch: patched mysql createPool');
       return function createPool(_config: string | mysqlTypes.PoolConfig) {
         const pool = originalCreatePool(...arguments);
 
@@ -137,7 +137,7 @@ export class MysqlInstrumentation extends InstrumentationBase<
   private _patchCreatePoolCluster(format: formatType) {
     return (originalCreatePoolCluster: Function) => {
       const thisPlugin = this;
-      diag.debug('MysqlInstrumentation#patch: patched mysql createPoolCluster');
+      diag.debug('MySQLInstrumentation#patch: patched mysql createPoolCluster');
       return function createPool(_config: string | mysqlTypes.PoolConfig) {
         const cluster = originalCreatePoolCluster(...arguments);
 
@@ -161,7 +161,7 @@ export class MysqlInstrumentation extends InstrumentationBase<
     return (originalGetConnection: Function) => {
       const thisPlugin = this;
       diag.debug(
-        'MysqlInstrumentation#patch: patched mysql pool getConnection'
+        'MySQLInstrumentation#patch: patched mysql pool getConnection'
       );
       return function getConnection(
         arg1?: unknown,
@@ -227,7 +227,7 @@ export class MysqlInstrumentation extends InstrumentationBase<
   ) {
     return (originalQuery: Function): mysqlTypes.QueryFunction => {
       const thisPlugin = this;
-      diag.debug('MysqlInstrumentation: patched mysql query');
+      diag.debug('MySQLInstrumentation: patched mysql query');
 
       return function query(
         query: string | mysqlTypes.Query | mysqlTypes.QueryOptions,
@@ -242,7 +242,7 @@ export class MysqlInstrumentation extends InstrumentationBase<
         const span = thisPlugin.tracer.startSpan(getSpanName(query), {
           kind: SpanKind.CLIENT,
           attributes: {
-            ...MysqlInstrumentation.COMMON_ATTRIBUTES,
+            ...MySQLInstrumentation.COMMON_ATTRIBUTES,
             ...getConnectionAttributes(connection.config),
           },
         });
