@@ -33,7 +33,7 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-koa',
         '@opentelemetry/instrumentation-ioredis',
         '@opentelemetry/instrumentation-mongodb',
-        // '@opentelemetry/instrumentation-mysql',
+        '@opentelemetry/instrumentation-mysql',
         '@opentelemetry/instrumentation-pg',
         '@opentelemetry/instrumentation-redis',
       ];
