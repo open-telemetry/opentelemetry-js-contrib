@@ -31,14 +31,14 @@ import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
 const InstrumentationMap = {
   '@opentelemetry/instrumentation-dns': DnsInstrumentation,
   '@opentelemetry/instrumentation-express': ExpressInstrumentation,
-  '@opentelemetry/instrumentation-http': HttpInstrumentation,
   '@opentelemetry/instrumentation-graphql': GraphQLInstrumentation,
   '@opentelemetry/instrumentation-grpc': GrpcInstrumentation,
-  '@opentelemetry/instrumentation-koa': KoaInstrumentation,
+  '@opentelemetry/instrumentation-http': HttpInstrumentation,
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
+  '@opentelemetry/instrumentation-koa': KoaInstrumentation,
   '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
-  '@opentelemetry/instrumentation-pg': PgInstrumentation,
   '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
+  '@opentelemetry/instrumentation-pg': PgInstrumentation,
   '@opentelemetry/instrumentation-redis': RedisInstrumentation,
 };
 

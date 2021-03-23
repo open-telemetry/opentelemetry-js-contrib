@@ -27,11 +27,11 @@ describe('utils', () => {
       const expectedInstrumentations = [
         '@opentelemetry/instrumentation-dns',
         '@opentelemetry/instrumentation-express',
-        '@opentelemetry/instrumentation-http',
         '@opentelemetry/instrumentation-graphql',
         '@opentelemetry/instrumentation-grpc',
-        '@opentelemetry/instrumentation-koa',
+        '@opentelemetry/instrumentation-http',
         '@opentelemetry/instrumentation-ioredis',
+        '@opentelemetry/instrumentation-koa',
         '@opentelemetry/instrumentation-mongodb',
         '@opentelemetry/instrumentation-mysql',
         '@opentelemetry/instrumentation-pg',
