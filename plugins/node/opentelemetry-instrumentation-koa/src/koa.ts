@@ -28,6 +28,8 @@ import {
   KoaContext,
   KoaComponentName,
   kLayerPatched,
+  KoaLayerType,
+  AttributeNames,
 } from './types';
 import { VERSION } from './version';
 import { getMiddlewareMetadata } from './utils';
@@ -127,7 +129,8 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
     middlewareLayer[kLayerPatched] = true;
     api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
-      if (api.getSpan(api.context.active()) === undefined) {
+      const parent = api.getSpan(api.context.active());
+      if (parent === undefined) {
         return middlewareLayer(context, next);
       }
       const metadata = getMiddlewareMetadata(
@@ -139,6 +142,28 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       const span = this.tracer.startSpan(metadata.name, {
         attributes: metadata.attributes,
       });
+
+      if (!context.request.ctx.parentSpan) {
+        context.request.ctx.parentSpan = parent;
+      }
+
+      if (
+        metadata.attributes[AttributeNames.KOA_TYPE] === KoaLayerType.ROUTER
+      ) {
+        if (context.request.ctx.parentSpan.name) {
+          const parentRoute = context.request.ctx.parentSpan.name.split(' ')[1];
+          if (
+            context._matchedRoute &&
+            !context._matchedRoute.toString().includes(parentRoute)
+          ) {
+            context.request.ctx.parentSpan.updateName(
+              `${context.method} ${context._matchedRoute}`
+            );
+
+            delete context.request.ctx.parentSpan;
+          }
+        }
+      }
 
       return api.context.with(
         api.setSpan(api.context.active(), span),
