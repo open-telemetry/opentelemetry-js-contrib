@@ -58,10 +58,10 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/master/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=packages/opentelemetry-propagator-ot-trace
-[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-propagator-ot-trace
-[devdependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=packages/opentelemetry-propagator-ot-trace
-[devdependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-propagator-ot-trace&type=dev
+[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=propagators%2Fopentelemetry-propagator-ot-trace
+[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=propagators%2Fopentelemetry-propagator-ot-trace
+[devdependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=propagators/opentelemetry-propagator-ot-trace
+[devdependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=propagators%2Fopentelemetry-propagator-ot-trace&type=dev
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/propagator-ot-trace
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fpropagator-ot-trace.svg
 [rfc7230-url]: https://tools.ietf.org/html/rfc7230#section-3.2
