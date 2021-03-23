@@ -43,7 +43,7 @@ export function assertIpcSpan(span: ReadableSpan) {
 }
 
 export function assertClientSpan(span: ReadableSpan) {
-  assert.strictEqual(span.kind, SpanKind.CLIENT);
+  assert.strictEqual(span.kind, SpanKind.INTERNAL);
 }
 
 export function assertAttrib(span: ReadableSpan, attrib: string, value: any) {
