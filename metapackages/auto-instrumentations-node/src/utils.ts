@@ -25,20 +25,20 @@ import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
 import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
-// import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
+import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
 
 const InstrumentationMap = {
   '@opentelemetry/instrumentation-dns': DnsInstrumentation,
   '@opentelemetry/instrumentation-express': ExpressInstrumentation,
-  '@opentelemetry/instrumentation-http': HttpInstrumentation,
   '@opentelemetry/instrumentation-graphql': GraphQLInstrumentation,
   '@opentelemetry/instrumentation-grpc': GrpcInstrumentation,
-  '@opentelemetry/instrumentation-koa': KoaInstrumentation,
+  '@opentelemetry/instrumentation-http': HttpInstrumentation,
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
+  '@opentelemetry/instrumentation-koa': KoaInstrumentation,
   '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
+  '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
-  // '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-redis': RedisInstrumentation,
 };
 
