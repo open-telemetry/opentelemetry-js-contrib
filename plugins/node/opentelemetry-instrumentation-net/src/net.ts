@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { diag, Span, SpanStatusCode } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -91,9 +91,7 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
 
   /* It might still be useful to pick up errors due to invalid connect arguments. */
   private _startGenericSpan(socket: Socket) {
-    const span = this.tracer.startSpan('connect', {
-      kind: SpanKind.INTERNAL,
-    });
+    const span = this.tracer.startSpan('connect');
 
     registerListeners(socket, span);
 
@@ -102,7 +100,6 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
 
   private _startIpcSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('ipc.connect', {
-      kind: SpanKind.INTERNAL,
       attributes: {
         [GeneralAttribute.NET_TRANSPORT]: IPC_TRANSPORT,
         [GeneralAttribute.NET_PEER_NAME]: options.path,
@@ -116,7 +113,6 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
 
   private _startTcpSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('tcp.connect', {
-      kind: SpanKind.INTERNAL,
       attributes: {
         [GeneralAttribute.NET_TRANSPORT]: GeneralAttribute.IP_TCP,
         [GeneralAttribute.NET_PEER_NAME]: options.host,
