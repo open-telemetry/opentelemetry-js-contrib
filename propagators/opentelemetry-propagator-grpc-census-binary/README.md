@@ -61,9 +61,9 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=propagators/opentelemetry-propagator-grpc-census-binary
+[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=propagators%2Fopentelemetry-propagator-grpc-census-binary
 [dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=propagators%2Fopentelemetry-propagator-grpc-census-binary
-[devDependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=propagators/opentelemetry-propagator-grpc-census-binary
+[devDependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=propagators%2Fopentelemetry-propagator-grpc-census-binary
 [devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=propagators%2Fopentelemetry-propagator-grpc-census-binary&type=dev
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/propagator-grpc-census-binary
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fpropagator-grpc-census-binary.svg
