@@ -53,6 +53,7 @@
     "@opentelemetry/instrumentation-koa": "^0.14.0",
     "@opentelemetry/instrumentation-ioredis": "^0.14.0",
     "@opentelemetry/instrumentation-mongodb": "^0.14.0",
+    "@opentelemetry/instrumentation-mysql": "^0.14.0",
     "@opentelemetry/instrumentation-pg": "^0.14.0",
     "@opentelemetry/instrumentation-redis": "^0.14.0"
   }
