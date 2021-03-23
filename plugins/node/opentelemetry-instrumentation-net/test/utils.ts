@@ -28,7 +28,7 @@ export const HOST = 'localhost';
 export const IPC_PATH = path.join(os.tmpdir(), 'otel-js-net-test-ipc');
 
 export function assertTcpSpan(span: ReadableSpan, socket: Socket) {
-  assertClientSpan(span);
+  assertSpanKind(span);
   assertAttrib(span, GeneralAttribute.NET_TRANSPORT, GeneralAttribute.IP_TCP);
   assertAttrib(span, GeneralAttribute.NET_PEER_NAME, HOST);
   assertAttrib(span, GeneralAttribute.NET_PEER_PORT, PORT);
@@ -37,12 +37,12 @@ export function assertTcpSpan(span: ReadableSpan, socket: Socket) {
 }
 
 export function assertIpcSpan(span: ReadableSpan) {
-  assertClientSpan(span);
+  assertSpanKind(span);
   assertAttrib(span, GeneralAttribute.NET_TRANSPORT, IPC_TRANSPORT);
   assertAttrib(span, GeneralAttribute.NET_PEER_NAME, IPC_PATH);
 }
 
-export function assertClientSpan(span: ReadableSpan) {
+export function assertSpanKind(span: ReadableSpan) {
   assert.strictEqual(span.kind, SpanKind.INTERNAL);
 }
 
