@@ -74,3 +74,26 @@ The `opentelemetry-js-contrib` project is written in TypeScript.
 When two or more approaches must be compared, please write a benchmark in the benchmark/index.js module so that we can keep track of the most efficient algorithm.
 
 - `npm run bench` to run your benchmark.
+
+## Contributing Vendor Components
+This repo is generally meant for hosting components that work with popular open-source frameworks and tools. However, it is also possible to contribute components specific to a 3rd party vendor in this repo.
+
+### Adding a New Vendor Component
+Vendor components that are hosted in this repo will be versioned the same as all other contrib components, and released in lockstep with them under the `@opentelemetry` org in NPM.
+
+In exchange, vendor component contributors are expected to:
+
+- Include documentation for the component that covers:
+  - The installation and getting started process for the component
+  - Any configuration for the component
+  - Any APIs exposed by the component
+  - Design information for the component if relevant
+- Add enough unit tests to *at least* meet the current coverage
+- Assign at least one full-time engineer to their component in the [CODEOWNERS](.github/CODEOWNERS) file
+- Review pull requests that touch their component
+- Respond to issues related to their component, as determined by the maintainers
+- Fix failing unit tests or any other blockers to the CI/CD workflow
+- Update their components' usage of Core APIs upon the introduction of breaking changes upstream
+
+### Removing Vendor Components
+All vendor components are subject to removal from the repo at the sole discretion of the maintainers. Reasons for removal include but are not limited to failing to adhere to any of the expectations defined above in a timely manner. "Timely manner" can vary depending on the urgency of the task, for example if a flaky unit test is blocking a release for the entire repo that would be far more urgent than responding to a question about usage. As a rule of thumb, 2-3 business days is a good goal for non-urgent response times.
