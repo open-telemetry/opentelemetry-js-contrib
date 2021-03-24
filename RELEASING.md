@@ -17,7 +17,7 @@ NOTE: If any major changes are merged while the release PR is open, the CHANGELO
 After approval, merge the release PR. This will automatically publish all packages. Verify:
 
 * The [publish workflow](https://github.com/open-telemetry/opentelemetry-js-contrib/actions/workflows/publish.yml) runs successfully
-* The new version is available in NPM, e.g. for the [Jaeger Propagator](https://www.npmjs.com/package/@opentelemetry/propagator-jaeger)
+* The new version is available in NPM, e.g. for the [Express instrumentation package](https://www.npmjs.com/package/@opentelemetry/instrumentation-express)
 * A [GitHub Release](https://github.com/open-telemetry/opentelemetry-js-contrib/releases) was cut correctly, with a tag pointing to the new version, and a body of the changelog
 
 That's it! No need to read on unless something above went wrong.
