@@ -27,17 +27,17 @@ describe('utils', () => {
       const expectedInstrumentations = [
         '@opentelemetry/instrumentation-dns',
         '@opentelemetry/instrumentation-express',
-        '@opentelemetry/instrumentation-http',
         '@opentelemetry/instrumentation-graphql',
         '@opentelemetry/instrumentation-grpc',
-        '@opentelemetry/instrumentation-koa',
+        '@opentelemetry/instrumentation-http',
         '@opentelemetry/instrumentation-ioredis',
+        '@opentelemetry/instrumentation-koa',
         '@opentelemetry/instrumentation-mongodb',
-        // '@opentelemetry/instrumentation-mysql',
+        '@opentelemetry/instrumentation-mysql',
         '@opentelemetry/instrumentation-pg',
         '@opentelemetry/instrumentation-redis',
       ];
-      assert.strictEqual(instrumentations.length, 10);
+      assert.strictEqual(instrumentations.length, 11);
       for (let i = 0, j = instrumentations.length; i < j; i++) {
         assert.strictEqual(
           instrumentations[i].instrumentationName,
