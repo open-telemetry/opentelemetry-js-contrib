@@ -21,6 +21,7 @@
       "feature-request": ":sparkles: (Feature)",
       "internal": ":house: Internal"
     },
-    "cacheDir": ".changelog"
+    "cacheDir": ".changelog",
+    "ignoreCommitters": ["github-actions"]
   }
 }
