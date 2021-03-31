@@ -33,8 +33,8 @@
     "@opentelemetry/exporter-zipkin": "^0.18.0",
     "@opentelemetry/instrumentation": "^0.18.0",
     "@opentelemetry/instrumentation-http": "^0.18.0",
+    "@opentelemetry/instrumentation-mongodb": "^0.14.0",
     "@opentelemetry/node": "^0.18.0",
-    "@opentelemetry/plugin-mongodb": "^0.14.0",
     "@opentelemetry/tracing": "^0.18.0",
     "mongodb": "^3.5.7"
   },
