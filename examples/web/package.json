@@ -1,7 +1,7 @@
 {
   "name": "web-examples",
   "private": true,
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Example of using web plugins in browser",
   "main": "index.js",
   "scripts": {
@@ -35,13 +35,13 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^0.18.0",
-    "@opentelemetry/auto-instrumentations-web": "^0.14.0",
+    "@opentelemetry/auto-instrumentations-web": "^0.15.0",
     "@opentelemetry/context-zone": "^0.18.0",
     "@opentelemetry/core": "^0.18.0",
     "@opentelemetry/exporter-collector": "^0.18.0",
     "@opentelemetry/instrumentation": "^0.18.0",
-    "@opentelemetry/instrumentation-document-load": "^0.14.0",
-    "@opentelemetry/instrumentation-user-interaction": "^0.14.0",
+    "@opentelemetry/instrumentation-document-load": "^0.15.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.15.0",
     "@opentelemetry/instrumentation-xml-http-request": "^0.18.0",
     "@opentelemetry/propagator-b3": "^0.18.0",
     "@opentelemetry/tracing": "^0.18.0",
