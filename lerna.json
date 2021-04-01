@@ -9,7 +9,7 @@
     "propagators/*",
     "detectors/node/*"
   ],
-  "version": "0.14.0",
+  "version": "0.15.0",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",
     "labels": {
@@ -22,6 +22,8 @@
       "internal": ":house: Internal"
     },
     "cacheDir": ".changelog",
-    "ignoreCommitters": ["github-actions"]
+    "ignoreCommitters": [
+      "github-actions"
+    ]
   }
 }
