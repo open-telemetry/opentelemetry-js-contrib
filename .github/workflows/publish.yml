@@ -1,0 +1,81 @@
+name: Publish a New Release
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+    
+jobs:
+  publish_to_npm:
+    name: Publish to NPM and GitHub
+    runs-on: ubuntu-latest
+    steps:
+
+      # Determine if PR was a valid merged release PR. If so, publish the new release. Otherwise, do nothing.
+      # This is a valid release PR if the following 3 things are true:
+      #   1. The head (source) branch of the PR matches the expected "release/x.y.z" pattern
+      #   2. The PR has been merged, rather than closed
+      #   3. The head (source) repo of the PR is not a fork, or in other words the PR is made from a branch within the main repo
+      - name: Validate Release PR
+        id: validate_pr
+        run: |
+          merged=${{ github.event.pull_request.merged }}
+          forked=${{ github.event.pull_request.head.repo.fork }}
+          echo "Source branch is ${{ github.head_ref }}; merged = $merged; from a fork = $forked"
+          if [ $(grep -E '^release/[0-9]+\.[0-9]+\..+$' <<< '${{ github.head_ref }}') ] && [ $merged = true ] && [ $forked = false ]
+          then
+            echo "::set-output name=is_release::true"
+          fi
+
+      # Get release version and draft release tag from PR metadata
+      - name: Get Release Metadata
+        if: steps.validate_pr.outputs.is_release
+        id: metadata
+        run: |
+          version=$(cut -d'/' -f2 <<< '${{ github.head_ref }}')
+          echo "::set-output name=version::$version"
+
+      - name: Checkout Repository
+        if: steps.validate_pr.outputs.is_release
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish to NPM
+        if: steps.validate_pr.outputs.is_release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: ./scripts/publish.sh
+
+      # Generates changelog without the "Unreleased" portion for use in release body
+      # Newlines must be URL-encoded to render properly in the GitHub UI
+      - name: Generate Release Body
+        if: steps.validate_pr.outputs.is_release
+        id: generate-changelog
+        env:
+          GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          description=$(npx lerna-changelog | sed '1,3d')
+          description="${description//'%'/'%25'}"
+          description="${description//$'\n'/'%0A'}"
+          description="${description//$'\r'/'%0D'}"
+          echo "::set-output name=CHANGELOG::$description"
+
+      - name: Create GitHub Release
+        if: steps.validate_pr.outputs.is_release
+        id: make-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: 'v${{ steps.metadata.outputs.version }}'
+          commitish: main
+          release_name: 'v${{ steps.metadata.outputs.version }} Release'
+          body: "${{ steps.generate-changelog.outputs.CHANGELOG }}"
+          draft: false
+          prerelease: false
