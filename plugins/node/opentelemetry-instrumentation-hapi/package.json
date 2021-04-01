@@ -42,6 +42,7 @@
   },
   "devDependencies": {
     "@hapi/hapi": "20.0.1",
+    "@hapi/podium": "4.1.1",
     "@opentelemetry/context-async-hooks": "0.18.0",
     "@opentelemetry/node": "0.18.0",
     "@opentelemetry/tracing": "0.18.0",
