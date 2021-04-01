@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
+import * as path from 'path';
+
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { VERSION } from './version';
-import { Callback, Context, Handler } from 'aws-lambda';
 import { diag, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { FaasAttribute } from '@opentelemetry/semantic-conventions';
+
+import { Callback, Context, Handler } from 'aws-lambda';
+
 import { LambdaModule } from './types';
+import { VERSION } from './version';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   constructor() {
@@ -32,29 +37,49 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   }
 
   init() {
-    // _HANDLER is always defined in Lambda.
-    const handler = process.env._HANDLER!;
-    const dotIndex = handler.lastIndexOf('.');
-    const module = handler.substring(0, dotIndex);
-    const functionName = handler.substring(dotIndex + 1);
+    // _HANDLER and LAMBDA_TASK_ROOT are always defined in Lambda.
+    const taskRoot = process.env.LAMBDA_TASK_ROOT!;
+    const handlerDef = process.env._HANDLER!;
+
+    const handler = path.basename(handlerDef);
+    const moduleRoot = handlerDef.substr(0, handlerDef.length - handler.length);
+
+    const [module, functionName] = handler.split('.', 2);
+
+    // Lambda loads user function using an absolute path.
+    let filename = path.resolve(taskRoot, moduleRoot, module);
+    if (!filename.endsWith('.js')) {
+      // Patching infrastructure currently requires a filename when requiring with an absolute path.
+      filename += '.js';
+    }
 
     return [
       new InstrumentationNodeModuleDefinition(
-        module,
+        // NB: The patching infrastructure seems to match names backwards, this must be the filename, while
+        // InstrumentationNodeModuleFile must be the module name.
+        filename,
         ['*'],
-        (moduleExports: LambdaModule) => {
-          diag.debug('Applying patch for lambdatest handler');
-          if (isWrapped(moduleExports[functionName])) {
-            this._unwrap(moduleExports, functionName);
-          }
-          this._wrap(moduleExports, functionName, this._getHandler());
-          return moduleExports;
-        },
-        (moduleExports: LambdaModule) => {
-          if (moduleExports == undefined) return;
-          diag.debug('Removing patch for lambdatest handler');
-          this._unwrap(moduleExports, functionName);
-        }
+        undefined,
+        undefined,
+        [
+          new InstrumentationNodeModuleFile(
+            module,
+            ['*'],
+            (moduleExports: LambdaModule) => {
+              diag.debug('Applying patch for lambdatest handler');
+              if (isWrapped(moduleExports[functionName])) {
+                this._unwrap(moduleExports, functionName);
+              }
+              this._wrap(moduleExports, functionName, this._getHandler());
+              return moduleExports;
+            },
+            (moduleExports?: LambdaModule) => {
+              if (moduleExports == undefined) return;
+              diag.debug('Removing patch for lambdatest handler');
+              this._unwrap(moduleExports, functionName);
+            }
+          ),
+        ]
       ),
     ];
   }

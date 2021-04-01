@@ -17,6 +17,8 @@
 // We access through node_modules to allow it to be patched.
 /* eslint-disable node/no-extraneous-require */
 
+import * as path from 'path';
+
 import { AwsLambdaInstrumentation } from '../../src/awslambda';
 import {
   InMemorySpanExporter,
@@ -69,12 +71,19 @@ describe('lambdatest handler', () => {
   } as Context;
 
   const initializeHandler = (handler: string) => {
-    oldEnv = process.env;
     process.env._HANDLER = handler;
 
     instrumentation = new AwsLambdaInstrumentation();
     instrumentation.setTracerProvider(provider);
   };
+
+  const lambdaRequire = (module: string) =>
+    require(path.resolve(__dirname, '..', module));
+
+  beforeEach(() => {
+    oldEnv = process.env;
+    process.env.LAMBDA_TASK_ROOT = path.resolve(__dirname, '..');
+  });
 
   afterEach(() => {
     process.env = oldEnv;
@@ -87,7 +96,10 @@ describe('lambdatest handler', () => {
     it('should export a valid span', async () => {
       initializeHandler('lambdatest/async.handler');
 
-      const result = await require('lambdatest/async').handler('arg', ctx);
+      const result = await lambdaRequire('lambdatest/async').handler(
+        'arg',
+        ctx
+      );
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
@@ -100,7 +112,7 @@ describe('lambdatest handler', () => {
 
       let err: Error;
       try {
-        await require('lambdatest/async').error('arg', ctx);
+        await lambdaRequire('lambdatest/async').error('arg', ctx);
       } catch (e) {
         err = e;
       }
@@ -116,7 +128,7 @@ describe('lambdatest handler', () => {
 
       let err: string;
       try {
-        await require('lambdatest/async').stringerror('arg', ctx);
+        await lambdaRequire('lambdatest/async').stringerror('arg', ctx);
       } catch (e) {
         err = e;
       }
@@ -132,7 +144,7 @@ describe('lambdatest handler', () => {
       initializeHandler('lambdatest/sync.handler');
 
       const result = await new Promise((resolve, reject) => {
-        require('lambdatest/sync').handler(
+        lambdaRequire('lambdatest/sync').handler(
           'arg',
           ctx,
           (err: Error, res: any) => {
@@ -156,7 +168,7 @@ describe('lambdatest handler', () => {
 
       let err: Error;
       try {
-        require('lambdatest/sync').error(
+        lambdaRequire('lambdatest/sync').error(
           'arg',
           ctx,
           (err: Error, res: any) => {}
@@ -177,7 +189,7 @@ describe('lambdatest handler', () => {
       let err: Error;
       try {
         await new Promise((resolve, reject) => {
-          require('lambdatest/sync').callbackerror(
+          lambdaRequire('lambdatest/sync').callbackerror(
             'arg',
             ctx,
             (err: Error, res: any) => {
@@ -204,7 +216,7 @@ describe('lambdatest handler', () => {
 
       let err: string;
       try {
-        require('lambdatest/sync').stringerror(
+        lambdaRequire('lambdatest/sync').stringerror(
           'arg',
           ctx,
           (err: Error, res: any) => {}
@@ -226,7 +238,7 @@ describe('lambdatest handler', () => {
     let err: string;
     try {
       await new Promise((resolve, reject) => {
-        require('lambdatest/sync').callbackstringerror(
+        lambdaRequire('lambdatest/sync').callbackstringerror(
           'arg',
           ctx,
           (err: Error, res: any) => {
