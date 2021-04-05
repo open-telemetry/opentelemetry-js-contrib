@@ -9,12 +9,18 @@ All notable changes to this project will be documented in this file. Do not remo
 #### :rocket: Enhancement
 * Other
   * [#366](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/366) Add automated release workflows ([@willarmiros](https://github.com/willarmiros))
+* `auto-instrumentation-web`
   * [#391](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/391) chore: adding meta package for web ([@obecny](https://github.com/obecny))
-  * [#393](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/393) feat: mysql instrumentation ([@dyladan](https://github.com/dyladan))
-  * [#327](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/327) feat: enable root span to contain route ([@DinaYakovlev](https://github.com/DinaYakovlev))
-  * [#389](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/389) feat: net module instrumentation ([@seemk](https://github.com/seemk))
+* `auto-instrumentation-node`
   * [#379](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/379) chore: creating meta package for default auto instrumentations for node ([@obecny](https://github.com/obecny))
+* `opentelemetry-instrumentation-hapi`
   * [#380](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/380) Moving Hapi Plugin to Instrumentation ([@obecny](https://github.com/obecny))
+* `opentelemetry-instrumentation-koa`
+  * [#327](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/327) feat: enable root span to contain route ([@DinaYakovlev](https://github.com/DinaYakovlev))
+* `opentelemetry-instrumentation-mysql`
+  * [#393](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/393) feat: mysql instrumentation ([@dyladan](https://github.com/dyladan))
+* `opentelemetry-instrumentation-net`
+  * [#389](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/389) feat: net module instrumentation ([@seemk](https://github.com/seemk))
 * `opentelemetry-host-metrics`
   * [#395](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/395) chore: fixing broken links, updating to correct base url, replacing gitter with github discussions ([@obecny](https://github.com/obecny))
 
