@@ -35,12 +35,12 @@
     "eslint": "^7.4.0"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.18.0",
+    "@opentelemetry/api": "^0.18.1",
     "@opentelemetry/auto-instrumentations-node": "^0.14.0",
     "@opentelemetry/exporter-collector": "^0.18.0",
-    "@opentelemetry/instrumentation": "^0.18.0",
-    "@opentelemetry/node": "^0.18.0",
-    "@opentelemetry/tracing": "^0.18.0",
+    "@opentelemetry/instrumentation": "^0.18.2",
+    "@opentelemetry/node": "^0.18.2",
+    "@opentelemetry/tracing": "^0.18.2",
     "axios": "^0.21.1",
     "express": "^4.17.1"
   }

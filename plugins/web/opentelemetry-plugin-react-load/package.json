@@ -82,12 +82,12 @@
     "react": "^16.13.1 || ^17.0.0"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.18.0",
+    "@opentelemetry/api": "^0.18.1",
     "@opentelemetry/context-zone": "^0.18.0",
-    "@opentelemetry/core": "^0.18.0",
+    "@opentelemetry/core": "^0.18.2",
     "@opentelemetry/semantic-conventions": "^0.18.0",
-    "@opentelemetry/tracing": "^0.18.0",
-    "@opentelemetry/web": "^0.18.0",
+    "@opentelemetry/tracing": "^0.18.2",
+    "@opentelemetry/web": "^0.18.2",
     "shimmer": "^1.2.1"
   }
 }
