@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dns",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "OpenTelemetry dns automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -41,9 +41,9 @@
     "access": "public"
   },
   "devDependencies": {
-    "@opentelemetry/core": "0.18.0",
-    "@opentelemetry/node": "0.18.0",
-    "@opentelemetry/tracing": "0.18.0",
+    "@opentelemetry/core": "0.18.2",
+    "@opentelemetry/node": "0.18.2",
+    "@opentelemetry/tracing": "0.18.2",
     "@types/mocha": "7.0.2",
     "@types/node": "14.0.27",
     "@types/semver": "7.3.1",

@@ -1,7 +1,6 @@
 # OpenTelemetry Propagators
 
   - [Built-in Propagators](#built-in-propagators)
-  - [Jaeger Propagator](#jaeger-propagator)
   - [B3 Propagator](#b3-propagator)
 
 
@@ -10,21 +9,6 @@
 OpenTelemetry core package provides many Built-in Propagators such as HttpTraceContext Propagator, B3 Propagator, Composite Propagator etc.
 
 [Click here](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core#built-in-propagators) to see Built-in Propagators.
-
-
-### Jaeger Propagator
-
-OpenTelemetry Jaeger propagator provides HTTP header propagation for systems that are using Jaeger HTTP header format.
-
-```js
-const api = require("@opentelemetry/api");
-const { JaegerHttpTracePropagator } = require('@opentelemetry/propagator-jaeger');
-
-/* Set Global Propagator */
-api.propagation.setGlobalPropagator(new JaegerHttpTracePropagator());
-```
-
-[Click here](opentelemetry-propagator-jaeger/README.md) for more comprehensive examples.
 
 ### GRPC Census Propagator
 
