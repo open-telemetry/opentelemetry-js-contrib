@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import api from '@opentelemetry/api';
-import { getSpan } from '@opentelemetry/api';
+import * as api from '@opentelemetry/api';
 import * as restify from 'restify';
 import { Server } from 'restify';
+import * as types from './types';
 import { VERSION } from './version';
+import once = require('lodash.once');
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -28,9 +29,8 @@ import {
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
 const { diag } = api;
-const RESTIFY_HANDLERS = ['use', 'pre'];
+const RESTIFY_MW_METHODS = ['use', 'pre'];
 const RESTIFY_METHODS = ['del', 'get', 'head', 'opts', 'post', 'put', 'patch'];
-const RESTIFY_VERSION_ATTRIBUTE = 'restify.version'
 
 const MODULE_NAME = 'restify';
 const SUPPORTED_VERSIONS = ['^4.0.0'];
@@ -69,11 +69,11 @@ export class RestifyInstrumentation extends InstrumentationBase<
           }
           this._wrap(Server.prototype, name as keyof Server, this._methodPatcher.bind(this));
         }
-        for (const name of RESTIFY_HANDLERS) {
+        for (const name of RESTIFY_MW_METHODS) {
           if (isWrapped(Server.prototype[name])) {
             this._unwrap(Server.prototype, name);
           }
-          this._wrap(Server.prototype, name as keyof Server, this._handlerPatcher.bind(this));
+          this._wrap(Server.prototype, name as keyof Server, this._middlewarePatcher.bind(this));
         }
         return moduleExports;
       },
@@ -84,7 +84,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
           for (const name of RESTIFY_METHODS) {
             this._unwrap(Server.prototype, name as keyof Server);
           }
-          for (const name of RESTIFY_HANDLERS) {
+          for (const name of RESTIFY_MW_METHODS) {
             this._unwrap(Server.prototype, name as keyof Server);
           }
         }
@@ -94,30 +94,72 @@ export class RestifyInstrumentation extends InstrumentationBase<
     return module;
   }
 
-  private _handlerPatcher (original: Function) {
+  private _middlewarePatcher (original: Function, methodName?: string) {
     const instrumentation = this;
-    return function (this: Server, handler: Function) {
-      return original.call(this, (req: any, res: any, next: Function) => {
-        const span = getSpan(api?.context?.active());
-        if (span) {
-          span.setAttribute(RESTIFY_VERSION_ATTRIBUTE, instrumentation._moduleVersion || 'n/a');
-        }
-        return handler(req, res, next);
-      });
+    return function (this: Server, ...handler: restify.RequestHandler[][] | restify.RequestHandler[]) {
+      return original.call(this, instrumentation._handlerPatcher({ type: types.LayerType.MIDDLEWARE, methodName }, handler));
     };
   }
 
-  private _methodPatcher (original: Function) {
+  private _methodPatcher (original: Function, methodName?: string) {
     const instrumentation = this;
-    return function (this: Server, path: any, handler: Function) {
-      return original.call(this, path, (req: any, res: any, next: Function) => {
-        const span = getSpan(api?.context?.active());
-        if (span && req?.route?.path) {
-          span.setAttribute(HttpAttribute.HTTP_ROUTE, req.route.path);
-          span.setAttribute(RESTIFY_VERSION_ATTRIBUTE, instrumentation._moduleVersion || 'n/a');
-        }
-        return handler(req, res, next);
-      });
+    return function (this: Server, path: any, ...handler: restify.RequestHandler[][] | restify.RequestHandler[]) {
+      return original.call(this, path, ...instrumentation._handlerPatcher({ type: types.LayerType.REQUEST_HANDLER, path, methodName }, handler));
     };
+  }
+
+  // will return the same type as `handler`, but all functions recusively patched
+  private _handlerPatcher (metadata: types.Metadata, handler: restify.RequestHandler | restify.RequestHandler[] | restify.RequestHandler[][]): any {
+    if (Array.isArray(handler)) {
+      return (handler as restify.RequestHandler[]).map((handler: any) => this._handlerPatcher(metadata, handler));
+    }
+    if (typeof handler === 'function') {
+      return (req: types.Request, res: restify.Response, next: restify.Next) => {
+        // const parentSpan = api.getSpan(api?.context?.active());
+        const route = (typeof req.getRoute === 'function' ? req.getRoute()?.path : req.route?.path);
+        const spanName = route || metadata.methodName || metadata.type;
+        const attributes = {
+          [types.CustomAttributeNames.VERSION]: this._moduleVersion || 'n/a',
+          [types.CustomAttributeNames.TYPE]: metadata.type,
+          [types.CustomAttributeNames.METHOD]: metadata.methodName,
+          [HttpAttribute.HTTP_ROUTE]: route,
+        }
+        const span = this.tracer.startSpan(spanName, {
+          attributes,
+        }, api.context.active()); // TODO: <- with this I intend to find and attach all consecutive handlers to HTTP span
+        // .. but instead all spans are attached to the previous handler's span.
+        const endSpan = once(span.end.bind(span));
+        req.once('after', endSpan);
+        req.once('restifyError', endSpan);
+        req.once('uncaughtException', endSpan);
+
+        const patchedNext = (err: any) => {
+          // handler has finished
+          endSpan();
+          next(err);
+        };
+        patchedNext.ifError = next.ifError;
+
+        return api.context.with(
+          api.setSpan(api.context.active(), span),
+          (req: types.Request, res: restify.Response, next: restify.Next) => {
+            try {
+              return handler(req, res, next);
+            } catch (err) {
+              span.recordException(err);
+              throw err;
+            } finally {
+              endSpan();
+            }
+          },
+          this,
+          req,
+          res,
+          patchedNext
+         );
+      };
+    }
+
+    return handler;
   }
 }

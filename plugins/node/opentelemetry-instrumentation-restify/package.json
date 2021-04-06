@@ -46,6 +46,7 @@
     "@opentelemetry/node": "0.18.0",
     "@opentelemetry/tracing": "0.18.0",
     "@types/express": "4.17.7",
+    "@types/lodash.once": "^4.1.6",
     "@types/mocha": "7.0.2",
     "@types/node": "14.0.27",
     "@types/restify": "^4.3.7",
@@ -65,6 +66,7 @@
     "@opentelemetry/api": "^0.18.0",
     "@opentelemetry/core": "^0.18.0",
     "@opentelemetry/instrumentation": "^0.18.0",
-    "@opentelemetry/semantic-conventions": "^0.18.0"
+    "@opentelemetry/semantic-conventions": "^0.18.0",
+    "lodash.once": "^4.1.1"
   }
 }
