@@ -1,68 +1,39 @@
 'use strict';
 
-/* eslint-disable */
-
 const api = require('@opentelemetry/api');
-const http = require('http');
 
 const { diag, DiagConsoleLogger, DiagLogLevel } = api;
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.VERBOSE);
 
-// eslint-disable-next-line import/order
-const tracer = require('./tracer')('example-http-server');
-// eslint-disable-next-line import/order
 const restify = require('restify');
+require('./tracer')('example-restify-server');
 
 const server = restify.createServer();
+const PORT = 8080;
 
-server.use((req, res, next) => {
-  const ctx = api.context.active();
-  const span = api.getSpan(ctx);
-  console.log('USER', 'mw', span.name, span.attributes, span?.instrumentationLibrary?.name);
+server.pre((req, res, next) => {
   next();
 });
 
+server.use([(req, res, next) => {
+  // noop to showcase use with an array
+  next();
+}, (req, res, next) => {
+  req.defaultName = 'Stranger';
+  next();
+}]);
+
 server.get('/hello/:name', (req, res, next) => {
-	console.log('USER', 'handling hello');
-	res.send(`Hello, ${req.params.name}\n`);
-	return next();
+  console.log('Handling hello');
+  res.send(`Hello, ${req.params.name || req.defaultName}\n`);
+  return next();
 });
 
-
-server.get('/bye/:name', (req, res, next) => {
-  console.log('USER', 'handling hello 2');
-  // cannot execute the operation on ended Span
-  res.send(`Bye, ${req.params.name}\n`);
-  throw new Error('errroror');
+server.get('/bye/:name', () => {
+  console.log('Handling bye');
+  throw new Error('Ooops in bye');
 });
 
-let port;
-server.listen(0, () => {
-	port = server.address().port;
-  console.log('USER', 'ready on %s', server.url);
+server.listen(PORT, () => {
+  console.log('Ready on %s', server.url);
 });
-
-setTimeout(() => {
-  http.get({
-  	hostname: 'localhost',
-  	headers: {
-  		accept: 'text/plain',
-  	},
-  	port,
-  	path: '/hello/name'
-  }, (res) => {
-  	res.on('data', (data) => console.log('USER', '::', data.toString()));
-  });
-
-  http.get({
-    hostname: 'localhost',
-    headers: {
-      accept: 'text/plain',
-    },
-    port,
-    path: '/bye/name'
-  }, (res) => {
-    res.on('data', (data) => console.log('USER', '::', data.toString()));
-  });
-}, 100);
-
