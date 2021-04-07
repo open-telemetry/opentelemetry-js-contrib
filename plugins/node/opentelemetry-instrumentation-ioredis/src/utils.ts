@@ -85,7 +85,8 @@ const defaultDbStatementSerializer: DbStatementSerializer = (
 export const traceSendCommand = (
   tracer: Tracer,
   original: Function,
-  config?: IORedisInstrumentationConfig
+  config?: IORedisInstrumentationConfig,
+  moduleVersion?: string | undefined
 ) => {
   const dbStatementSerializer =
     config?.dbStatementSerializer || defaultDbStatementSerializer;
@@ -109,6 +110,10 @@ export const traceSendCommand = (
         ),
       },
     });
+
+    if (config?.moduleVersionAttributeName && moduleVersion) {
+      span.setAttribute(config?.moduleVersionAttributeName, moduleVersion);
+    }
 
     const { host, port } = this.options;
 

@@ -71,4 +71,10 @@ export interface IORedisInstrumentationConfig extends InstrumentationConfig {
 
   /** Require parent to create ioredis span, default when unset is true */
   requireParentSpan?: boolean;
+
+  /**
+   * If passed, a span attribute will be added to all spans with key of the provided "moduleVersionAttributeName"
+   * and value of the module version.
+   */
+  moduleVersionAttributeName?: string;
 }

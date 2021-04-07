@@ -228,6 +228,13 @@ describe('ioredis', () => {
     });
 
     describe('Instrumenting query operations', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation = new IORedisInstrumentation();
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+      });
+
       IOREDIS_CALLBACK_OPERATIONS.forEach(command => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
@@ -759,6 +766,28 @@ describe('ioredis', () => {
             assert.ifError(error);
           }
         });
+      });
+    });
+
+    it('moduleVersionAttributeName should capture ioredis version', async () => {
+      const VERSION_ATTR = 'instrumentedmodule.version';
+      instrumentation.disable();
+      const config: IORedisInstrumentationConfig = {
+        moduleVersionAttributeName: VERSION_ATTR,
+      };
+      instrumentation = new IORedisInstrumentation(config);
+      instrumentation.setTracerProvider(provider);
+      require('ioredis');
+
+      const span = provider.getTracer('ioredis-test').startSpan('test span');
+      await context.with(setSpan(context.active(), span), async () => {
+        await client.set(testKeyName, 'data');
+        const endedSpans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(endedSpans.length, 1);
+        assert.match(
+          endedSpans[0].attributes[VERSION_ATTR] as string,
+          /\d{1,4}\.\d{1,4}\.\d{1,5}.*/
+        );
       });
     });
 

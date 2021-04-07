@@ -58,6 +58,7 @@ IORedis instrumentation has few options available to choose from. You can set th
 | `dbStatementSerializer` | `DbStatementSerializer` | IORedis instrumentation will serialize db.statement using the specified function. |
 | `responseHook` | `RedisResponseCustomAttributeFunction` | Function for adding custom attributes on db response |
 | `requireParentSpan` | `boolean` | Require parent to create ioredis span, default when unset is true |
+| `moduleVersionAttributeName` | `string` | If passed, a span attribute will be added to all spans with key of the provided "moduleVersionAttributeName" and value of the module version. |
 
 #### Custom db.statement Serializer
 The instrumentation serializes the whole command into a Span attribute called `db.statement`. The standard serialization format is `{cmdName} {cmdArgs.join(',')}`.
