@@ -12,7 +12,7 @@ This module is currently under active development and not ready for general use.
 ## Installation
 
 ```bash
-npm install --save @opentelemetry/instrumentation-dns
+npm install --save @opentelemetry/instrumentation-awslambda
 ```
 
 ## Usage
