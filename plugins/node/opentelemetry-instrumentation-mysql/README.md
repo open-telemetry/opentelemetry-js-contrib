@@ -36,12 +36,6 @@ provider.register();
 registerInstrumentations({
   instrumentations: [
     new MySQLInstrumentation(),
-    {
-      // be sure to disable old plugin but only if it was installed
-      plugins: {
-        mysql: { enabled: false, path: '@opentelemetry/plugin-mysql' }
-      },
-    }
   ],
   tracerProvider: provider,
 })

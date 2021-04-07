@@ -37,13 +37,7 @@ registerInstrumentations({
   instrumentations: [
     new IORedisInstrumentation({
       // see under for available configuration
-    }),
-    {
-      // be sure to disable old plugin but only if it was installed
-      plugins: {
-        ioredis: { enabled: false, path: '@opentelemetry/plugin-ioredis' }
-      },
-    }
+    })
   ],
   tracerProvider: provider,
 })
