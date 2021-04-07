@@ -115,6 +115,10 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
         }
       });
 
+      rootSpan.setAttribute(HttpAttribute.HTTP_URL, location.href);
+      rootSpan.setAttribute(HttpAttribute.HTTP_USER_AGENT, navigator.userAgent);
+      rootSpan.setAttribute(AttributeNames.PAGE_TITLE, document.title);
+
       this._addResourcesSpans(rootSpan);
 
       addSpanNetworkEvent(rootSpan, PTN.FETCH_START, entries);

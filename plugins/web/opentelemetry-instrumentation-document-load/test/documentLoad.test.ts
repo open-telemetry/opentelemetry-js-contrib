@@ -174,6 +174,11 @@ const entriesFallback = {
   loadEventEnd: 1571078170394,
 } as any;
 
+const userAgent =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36';
+
+const documentTitle = 'OpenTelemetry Blog';
+
 function ensureNetworkEventsExists(events: TimedEvent[]) {
   assert.strictEqual(events[0].name, PTN.FETCH_START);
   assert.strictEqual(events[1].name, PTN.DOMAIN_LOOKUP_START);
@@ -198,6 +203,8 @@ describe('DocumentLoad Instrumentation', () => {
       writable: true,
       value: 'complete',
     });
+    sandbox.replaceGetter(navigator, 'userAgent', () => userAgent);
+    sandbox.replaceGetter(document, 'title', () => documentTitle);
     plugin = new DocumentLoadInstrumentation({
       enabled: false,
     });
@@ -492,31 +499,38 @@ describe('DocumentLoad Instrumentation', () => {
     it('should export correct span with events', done => {
       plugin.enable();
       setTimeout(() => {
-        const rootSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
-        const fetchSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
-        const rsEvents = rootSpan.events;
+        const fetchSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+        const rootSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
         const fsEvents = fetchSpan.events;
+        const rsEvents = rootSpan.events;
 
-        assert.strictEqual(rootSpan.name, 'documentFetch');
-        assert.strictEqual(fetchSpan.name, 'documentLoad');
+        assert.strictEqual(fetchSpan.name, 'documentFetch');
+        assert.strictEqual(rootSpan.name, 'documentLoad');
 
-        ensureNetworkEventsExists(rsEvents);
-
-        assert.strictEqual(fsEvents[0].name, PTN.FETCH_START);
-        assert.strictEqual(fsEvents[1].name, PTN.UNLOAD_EVENT_START);
-        assert.strictEqual(fsEvents[2].name, PTN.UNLOAD_EVENT_END);
-        assert.strictEqual(fsEvents[3].name, PTN.DOM_INTERACTIVE);
         assert.strictEqual(
-          fsEvents[4].name,
+          rootSpan.attributes['http.url'],
+          'http://localhost:9876/context.html'
+        );
+        assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
+        assert.strictEqual(rootSpan.attributes.page_title, documentTitle);
+
+        ensureNetworkEventsExists(fsEvents);
+
+        assert.strictEqual(rsEvents[0].name, PTN.FETCH_START);
+        assert.strictEqual(rsEvents[1].name, PTN.UNLOAD_EVENT_START);
+        assert.strictEqual(rsEvents[2].name, PTN.UNLOAD_EVENT_END);
+        assert.strictEqual(rsEvents[3].name, PTN.DOM_INTERACTIVE);
+        assert.strictEqual(
+          rsEvents[4].name,
           PTN.DOM_CONTENT_LOADED_EVENT_START
         );
-        assert.strictEqual(fsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
-        assert.strictEqual(fsEvents[6].name, PTN.DOM_COMPLETE);
-        assert.strictEqual(fsEvents[7].name, PTN.LOAD_EVENT_START);
-        assert.strictEqual(fsEvents[8].name, PTN.LOAD_EVENT_END);
+        assert.strictEqual(rsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
+        assert.strictEqual(rsEvents[6].name, PTN.DOM_COMPLETE);
+        assert.strictEqual(rsEvents[7].name, PTN.LOAD_EVENT_START);
+        assert.strictEqual(rsEvents[8].name, PTN.LOAD_EVENT_END);
 
-        assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(fsEvents.length, 9);
+        assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
       });
