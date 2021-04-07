@@ -110,35 +110,26 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         },
       });
 
-      if (typeof callback === 'function') {
-        // Callback form
-        const wrapped = plugin._wrapCallback(callback, span);
-        return safeExecuteInTheMiddle(
-          () => original.apply(this, [event, context, wrapped]),
-          error => {
-            if (error != null) {
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: typeof error === 'string' ? error : error.message,
-              });
-              span.end();
-            }
+      // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
+      // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored.
+      const wrappedCallback = plugin._wrapCallback(callback, span);
+      const maybePromise = safeExecuteInTheMiddle(
+        () => original.apply(this, [event, context, wrappedCallback]),
+        error => {
+          if (error != null) {
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: typeof error === 'string' ? error : error.message,
+            });
+            span.end();
           }
-        );
-      } else {
-        const promise = safeExecuteInTheMiddle(
-          () => original.apply(this, [event, context, callback]),
-          error => {
-            if (error != null) {
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: typeof error === 'string' ? error : error.message,
-              });
-              span.end();
-            }
-          }
-        ) as Promise<{}>;
-        promise.then(
+        }
+      ) as Promise<{}> | undefined;
+      if (
+        typeof maybePromise !== 'undefined' &&
+        typeof maybePromise.then === 'function'
+      ) {
+        maybePromise.then(
           () => span.end(),
           (err: Error | string) => {
             let errMessage;
@@ -157,8 +148,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             span.end();
           }
         );
-        return promise;
       }
+      return maybePromise;
     };
   }
 
