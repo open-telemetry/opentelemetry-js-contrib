@@ -60,6 +60,16 @@ const createServer = async (setupRoutes?: Function) => {
   if (typeof setupRoutes === 'function') {
     setupRoutes(server);
   } else {
+    server.pre((req, res, next) => {
+      // this will be run before routing
+      next();
+    });
+
+    server.use((req, res, next) => {
+      // this will be run only if route was found
+      next();
+    });
+
     server.get('/route/:param', (req, res, next) => {
       res.send({ route: req?.params?.param });
     });
@@ -108,53 +118,72 @@ describe('Restify Instrumentation', () => {
   });
 
   describe('Instrumenting core middleware calls', () => {
-    it('should add restify attributes to the parent span', async () => {
-      const rootSpan = tracer.startSpan('rootSpan');
-
-      server.pre((req: any, res: any, next: any) => {
-        context.with(setSpan(context.active(), rootSpan), next);
-      });
+    it('should create a span for each handler', async () => {
+      const rootSpan = tracer.startSpan('clientSpan');
 
       await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/route/foo`);
         rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 1);
-        const span = memoryExporter
-          .getFinishedSpans()[0];
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 4);
 
-        assert.notEqual(span, undefined);
-        assert.equal(span.attributes['http.route'], '/route/:param');
-        assert.equal(span.attributes['restify.version'], 'n/a');
+        {
+          // span from pre
+          const span = memoryExporter
+            .getFinishedSpans()[0];
+          assert.notEqual(span, undefined);
+          assert.equal(span.attributes['http.route'], undefined);
+          assert.equal(span.attributes['restify.method'], 'pre');
+          assert.equal(span.attributes['restify.type'], 'middleware');
+          assert.equal(span.attributes['restify.version'], 'n/a');
+        }
+        {
+          // span from use
+          const span = memoryExporter
+            .getFinishedSpans()[1];
+          assert.notEqual(span, undefined);
+          assert.equal(span.attributes['http.route'], '/route/:param');
+          assert.equal(span.attributes['restify.method'], 'use');
+          assert.equal(span.attributes['restify.type'], 'middleware');
+          assert.equal(span.attributes['restify.version'], 'n/a');
+        }
+        {
+          // span from get
+          const span = memoryExporter
+            .getFinishedSpans()[2];
+          assert.notEqual(span, undefined);
+          assert.equal(span.attributes['http.route'], '/route/:param');
+          assert.equal(span.attributes['restify.method'], 'get');
+          assert.equal(span.attributes['restify.type'], 'request_handler');
+          assert.equal(span.attributes['restify.version'], 'n/a');
+        }
       });
     });
 
     it('should lack `http.route` but still have `restify.version` if route was 404', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
 
-      const server = await createServer((server: restify.Server) => {
-        server.pre((req: any, res: any, next: any) => {
-          context.with(setSpan(context.active(), rootSpan), next);
-        });
-      });
-      port = (server.address() as AddressInfo).port;
-
       await context.with(setSpan(context.active(), rootSpan), async () => {
-        const res = await httpRequest.get(`http://localhost:${port}/route/foo`);
+        const res = await httpRequest.get(`http://localhost:${port}/not-found`);
         rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 1);
-        const span = memoryExporter
-          .getFinishedSpans()[0];
+        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
-        assert.notEqual(span, undefined);
-        assert.equal(span.attributes['http.route'], undefined);
-        assert.equal(span.attributes['restify.version'], 'n/a');
-        assert.strictEqual(res, '{"code":"ResourceNotFound","message":"/route/foo does not exist"}');
+        {
+          // span from pre
+          const span = memoryExporter
+            .getFinishedSpans()[0];
+          assert.notEqual(span, undefined);
+          assert.equal(span.attributes['http.route'], undefined);
+          assert.equal(span.attributes['restify.method'], 'pre');
+          assert.equal(span.attributes['restify.type'], 'middleware');
+          assert.equal(span.attributes['restify.version'], 'n/a');
+        }
+        assert.strictEqual(res, '{"code":"ResourceNotFound","message":"/not-found does not exist"}');
       });
     });
 
-    it('should not create span if there is no parent span', async () => {
+    it('should create spans even if there is no parent', async () => {
       const res = await httpRequest.get(`http://localhost:${port}/route/bar`);
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
       assert.strictEqual(res, '{"route":"bar"}');
     });
   });
