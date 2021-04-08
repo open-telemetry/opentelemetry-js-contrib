@@ -22,13 +22,8 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-// import {
-//   ExceptionAttribute,
-//   ExceptionEventName,
-//   HttpAttribute,
-// } from '@opentelemetry/semantic-conventions';
 
-import { RestifyInstrumentation } from '../src';
+import RestifyInstrumentation from '../src';
 const plugin = new RestifyInstrumentation();
 
 import { strict as assert } from 'assert';
