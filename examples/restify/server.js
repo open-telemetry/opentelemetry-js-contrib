@@ -29,9 +29,9 @@ server.get('/hello/:name', (req, res, next) => {
   return next();
 });
 
-server.get('/bye/:name', () => {
+server.get('/bye/:name', (req, res, next) => {
   console.log('Handling bye');
-  throw new Error('Ooops in bye');
+  return next(new Error('Ooops in bye'));
 });
 
 server.listen(PORT, () => {
