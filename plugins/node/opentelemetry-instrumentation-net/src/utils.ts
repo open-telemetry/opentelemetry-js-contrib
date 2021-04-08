@@ -15,12 +15,11 @@
  */
 
 import { NormalizedOptions } from './types';
+import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
 import { platform } from 'os';
 
-// @TODO Can be replaced with constants from the semantic conventions package once released.
-export const IPC_PIPE = 'pipe';
-export const IPC_UNIX = 'Unix';
-export const IPC_TRANSPORT = platform() === 'win32' ? IPC_PIPE : IPC_UNIX;
+export const IPC_TRANSPORT =
+  platform() === 'win32' ? GeneralAttribute.PIPE : GeneralAttribute.UNIX;
 
 export function getNormalizedArgs(
   args: unknown[]
