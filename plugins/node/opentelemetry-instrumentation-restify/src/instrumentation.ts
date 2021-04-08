@@ -135,12 +135,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
         }, api.context.active()); // TODO: <- with this I intend to find and attach all consecutive handlers to HTTP span
         // .. but instead all spans are attached to the previous handler's span.
         const endSpan = once(span.end.bind(span));
-        req.once('after', endSpan);
-        req.once('restifyError', endSpan);
-        req.once('uncaughtException', endSpan);
-
         const patchedNext = (err: any) => {
-          // handler has finished
           endSpan();
           next(err);
         };
