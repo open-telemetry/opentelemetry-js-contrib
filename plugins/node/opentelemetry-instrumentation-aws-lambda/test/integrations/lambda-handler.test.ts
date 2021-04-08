@@ -18,6 +18,7 @@
 /* eslint-disable node/no-extraneous-require */
 
 import * as path from 'path';
+import * as semver from 'semver';
 
 import { AwsLambdaInstrumentation } from '../../src/index';
 import {
@@ -68,6 +69,10 @@ const assertSpanFailure = (span: ReadableSpan) => {
 };
 
 describe('lambda handler', () => {
+  if (!semver.satisfies(process.version, '>=10.0.0')) {
+    it.skip('lambda only supports Node 10+');
+  }
+
   let instrumentation: AwsLambdaInstrumentation;
 
   let oldEnv: NodeJS.ProcessEnv;
