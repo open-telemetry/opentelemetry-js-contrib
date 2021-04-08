@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// for testing locally "npm run docker:start" / "npm run docker:stop"
+// for testing locally "npm run docker:start"
 
 import { context, setSpan, SpanKind } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
