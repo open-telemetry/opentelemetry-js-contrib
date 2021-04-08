@@ -37,7 +37,7 @@ import { Callback, Context, Handler } from 'aws-lambda';
 
 import { LambdaModule } from './types';
 import { VERSION } from './version';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { BasicTracerProvider } from '@opentelemetry/tracing';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _tracerProvider: TracerProvider | undefined;
@@ -47,9 +47,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   }
 
   init() {
-    // _HANDLER and LAMBDA_TASK_ROOT are always defined in Lambda.
-    const taskRoot = process.env.LAMBDA_TASK_ROOT!;
-    const handlerDef = process.env._HANDLER!;
+    const taskRoot = process.env.LAMBDA_TASK_ROOT;
+    const handlerDef = process.env._HANDLER;
+
+    // _HANDLER and LAMBDA_TASK_ROOT are always defined in Lambda but guard bail out if in the future this changes.
+    if (!taskRoot || !handlerDef) {
+      return [];
+    }
 
     const handler = path.basename(handlerDef);
     const moduleRoot = handlerDef.substr(0, handlerDef.length - handler.length);
@@ -105,7 +109,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     const plugin = this;
 
     return function patchedHandler(
-      this: {},
+      this: never,
       event: {},
       context: Context,
       callback: Callback
@@ -136,10 +140,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           }
         }
       ) as Promise<{}> | undefined;
-      if (
-        typeof maybePromise !== 'undefined' &&
-        typeof maybePromise.then === 'function'
-      ) {
+      if (typeof maybePromise?.then === 'function') {
         return maybePromise.then(
           value =>
             new Promise(resolve =>
@@ -162,7 +163,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   private _wrapCallback(original: Callback, span: Span): Callback {
     const plugin = this;
-    return function wrappedCallback(this: {}, err, res) {
+    return function wrappedCallback(this: never, err, res) {
       diag.debug('executing wrapped lookup callback function');
 
       plugin._endSpan(span, err, () => {
@@ -195,8 +196,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
 
     span.end();
-    // Lambda only runs on Node so always true in practice.
-    if (this._tracerProvider instanceof NodeTracerProvider) {
+    if (this._tracerProvider instanceof BasicTracerProvider) {
       this._tracerProvider
         .getActiveSpanProcessor()
         .forceFlush()

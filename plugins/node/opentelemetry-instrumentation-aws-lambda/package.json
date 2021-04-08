@@ -28,7 +28,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.5.0"
+    "node": ">=10.0.0"
   },
   "files": [
     "build/src/**/*.js",
@@ -43,7 +43,6 @@
   "devDependencies": {
     "@opentelemetry/core": "0.18.0",
     "@opentelemetry/node": "0.18.0",
-    "@opentelemetry/tracing": "0.18.0",
     "@types/aws-lambda": "8.10.73",
     "@types/mocha": "7.0.2",
     "@types/node": "14.0.27",
@@ -64,10 +63,10 @@
     "typescript": "3.9.7"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.18.0",
-    "@opentelemetry/instrumentation": "^0.18.0",
-    "@opentelemetry/node": "^0.18.0",
-    "@opentelemetry/resources": "^0.18.0",
-    "@opentelemetry/semantic-conventions": "^0.18.0"
+    "@opentelemetry/api": "0.18.0",
+    "@opentelemetry/instrumentation": "0.18.0",
+    "@opentelemetry/resources": "0.18.0",
+    "@opentelemetry/semantic-conventions": "0.18.0",
+    "@opentelemetry/tracing": "0.18.0"
   }
 }
