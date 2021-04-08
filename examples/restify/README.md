@@ -1,23 +1,13 @@
 # Overview
 
-OpenTelemetry HTTP Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can use Zipkin or Jaeger for this example), to give observability to distributed systems.
+OpenTelemetry Restify Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can use Zipkin or Jaeger for this example). This example demonstrates tracing calls made to Restify API. All generated spans include following attributes:
 
-This is a simple example that demonstrates tracing HTTP request from client to server. The example
-shows key aspects of tracing such as
+- `http.route`: resolved route;
+- `restify.method`: server method used to register the handler. One of `use`, `pre`, `del`, `get`, `head`, `opts`, `post`, `put` or `patch`;
+- `restify.type`: either `middleware` or `request_handler`;
+- `restify.version`: `restify` version running.
 
-- Root Span (on Client)
-- Child Span (on Client)
-- Child Span from a Remote Parent (on Server)
-- SpanContext Propagation (from Client to Server)
-- Span Events
-- Span Attributes
-
-## Installation
-
-```sh
-# from this directory
-npm install
-```
+## Setup
 
 Setup [Zipkin Tracing](https://zipkin.io/pages/quickstart.html)
 or
@@ -25,51 +15,25 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
 
 ## Run the Application
 
+First install the dependencies:
+
+```sh
+npm install
+```
+
 ### Zipkin
 
-- Run the server
-
-   ```sh
-   # from this directory
-   npm run zipkin:server
-   ```
-
-- Run the client
-
-   ```sh
-   # from this directory
-   npm run zipkin:client
-   ```
-
-#### Zipkin UI
-
-`zipkin:server` script should output the `traceid` in the terminal (e.g `traceid: 4815c3d576d930189725f1f1d1bdfcc6`).
-Go to Zipkin with your browser <http://localhost:9411/zipkin/traces/(your-trace-id)> (e.g <http://localhost:9411/zipkin/traces/4815c3d576d930189725f1f1d1bdfcc6)>
-
-<p align="center"><img src="./images/zipkin-ui.png?raw=true"/></p>
+```sh
+npm run zipkin:server # Run the server
+npm run zipkin:client # Run the client in a separate terminal
+```
 
 ### Jaeger
 
-- Run the server
-
-   ```sh
-   # from this directory
-   npm run jaeger:server
-   ```
-
-- Run the client
-
-   ```sh
-   # from this directory
-   npm run jaeger:client
-   ```
-
-#### Jaeger UI
-
-`jaeger:server` script should output the `traceid` in the terminal (e.g `traceid: 4815c3d576d930189725f1f1d1bdfcc6`).
-Go to Jaeger with your browser <http://localhost:16686/trace/(your-trace-id)> (e.g <http://localhost:16686/trace/4815c3d576d930189725f1f1d1bdfcc6)>
-
-<p align="center"><img src="images/jaeger-ui.png?raw=true"/></p>
+```sh
+npm run jaeger:server # Run the server
+npm run jaeger:client # Run the client in a separate terminal
+```
 
 ## Useful links
 
