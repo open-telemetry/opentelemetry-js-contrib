@@ -33,7 +33,7 @@ const RESTIFY_MW_METHODS = ['use', 'pre'];
 const RESTIFY_METHODS = ['del', 'get', 'head', 'opts', 'post', 'put', 'patch'];
 
 const MODULE_NAME = 'restify';
-const SUPPORTED_VERSIONS = ['^4.0.0'];
+const SUPPORTED_VERSIONS = ['>=4.0.0'];
 
 export class RestifyInstrumentation extends InstrumentationBase<
   typeof restify
