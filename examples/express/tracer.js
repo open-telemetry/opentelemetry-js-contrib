@@ -1,37 +1,36 @@
 'use strict';
 
 const opentelemetry = require('@opentelemetry/api');
+
+// Not functionally required but gives some insight what happens behind the scenes
+const { diag, DiagConsoleLogger, DiagLogLevel } = opentelemetry;
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
+
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 
-const EXPORTER = process.env.EXPORTER || '';
+const Exporter = (process.env.EXPORTER || '')
+  .toLowerCase().startsWith('z') ? ZipkinExporter : JaegerExporter;
+const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
+const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
 module.exports = (serviceName) => {
-  const provider = new NodeTracerProvider({
-    plugins: {
-      express: {
-        enabled: true,
-        path: '@opentelemetry/plugin-express',
-      },
-      http: {
-        enabled: true,
-        path: '@opentelemetry/plugin-http',
-      },
-    },
+  const provider = new NodeTracerProvider();
+  registerInstrumentations({
+    tracerProvider: provider,
+    instrumentations: [
+      // Express instrumentation expects HTTP layer to be instrumented
+      HttpInstrumentation,
+      ExpressInstrumentation,
+    ],
   });
 
-  let exporter;
-  if (EXPORTER.toLowerCase().startsWith('z')) {
-    exporter = new ZipkinExporter({
-      serviceName,
-    });
-  } else {
-    exporter = new JaegerExporter({
-      serviceName,
-    });
-  }
+  const exporter = new Exporter({
+    serviceName,
+  });
 
   provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
