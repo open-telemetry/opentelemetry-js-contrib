@@ -21,9 +21,9 @@ import * as path from 'path';
 
 import { AwsLambdaInstrumentation } from '../../src/index';
 import {
+  BatchSpanProcessor,
   InMemorySpanExporter,
   ReadableSpan,
-  SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { Context } from 'aws-lambda';
@@ -36,7 +36,7 @@ import {
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+provider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
 
 const assertSpanSuccess = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);

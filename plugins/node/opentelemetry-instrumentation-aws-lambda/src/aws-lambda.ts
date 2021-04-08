@@ -23,7 +23,13 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { diag, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import {
+  diag,
+  Span,
+  SpanKind,
+  SpanStatusCode,
+  TracerProvider,
+} from '@opentelemetry/api';
 import { CLOUD_RESOURCE } from '@opentelemetry/resources';
 import { FaasAttribute } from '@opentelemetry/semantic-conventions';
 
@@ -31,8 +37,11 @@ import { Callback, Context, Handler } from 'aws-lambda';
 
 import { LambdaModule } from './types';
 import { VERSION } from './version';
+import { NodeTracerProvider } from '@opentelemetry/node';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
+  private _tracerProvider: TracerProvider | undefined;
+
   constructor() {
     super('@opentelemetry/instrumentation-awslambda', VERSION);
   }
@@ -123,7 +132,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         error => {
           if (error != null) {
             // Exception thrown synchronously before resolving callback / promise.
-            AwsLambdaInstrumentation._endSpan(span, error);
+            plugin._endSpan(span, error, () => {});
           }
         }
       ) as Promise<{}> | undefined;
@@ -131,29 +140,43 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         typeof maybePromise !== 'undefined' &&
         typeof maybePromise.then === 'function'
       ) {
-        maybePromise.then(
-          () => AwsLambdaInstrumentation._endSpan(span, undefined),
-          (err: Error | string) => {
-            AwsLambdaInstrumentation._endSpan(span, err);
-          }
+        return maybePromise.then(
+          value =>
+            new Promise(resolve =>
+              plugin._endSpan(span, undefined, () => resolve(value))
+            ),
+          (err: Error | string) =>
+            new Promise((resolve, reject) =>
+              plugin._endSpan(span, err, () => reject(err))
+            )
         );
       }
       return maybePromise;
     };
   }
 
+  setTracerProvider(tracerProvider: TracerProvider) {
+    super.setTracerProvider(tracerProvider);
+    this._tracerProvider = tracerProvider;
+  }
+
   private _wrapCallback(original: Callback, span: Span): Callback {
+    const plugin = this;
     return function wrappedCallback(this: {}, err, res) {
       diag.debug('executing wrapped lookup callback function');
 
-      AwsLambdaInstrumentation._endSpan(span, err);
-
-      diag.debug('executing original lookup callback function');
-      return original.apply(this, [err, res]);
+      plugin._endSpan(span, err, () => {
+        diag.debug('executing original lookup callback function');
+        return original.apply(this, [err, res]);
+      });
     };
   }
 
-  private static _endSpan(span: Span, err?: string | Error | null) {
+  private _endSpan(
+    span: Span,
+    err: string | Error | null | undefined,
+    callback: () => void
+  ) {
     if (err) {
       span.recordException(err);
     }
@@ -172,6 +195,15 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
 
     span.end();
+    // Lambda only runs on Node so always true in practice.
+    if (this._tracerProvider instanceof NodeTracerProvider) {
+      this._tracerProvider
+        .getActiveSpanProcessor()
+        .forceFlush()
+        .finally(() => callback());
+    } else {
+      callback();
+    }
   }
 
   private static _extractAccountId(arn: string): string | undefined {
