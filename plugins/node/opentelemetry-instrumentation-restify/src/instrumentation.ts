@@ -46,6 +46,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
   }
 
   private _moduleVersion: string | undefined;
+  private _isDisabled = false;
 
   init() {
     const module = new InstrumentationNodeModuleDefinition<typeof restify>(
@@ -62,6 +63,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
       SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
         diag.debug(`Applying patch for ${MODULE_NAME}@${moduleVersion}`);
+        this._isDisabled = false;
         const Server: any = moduleExports;
         for (const name of RESTIFY_METHODS) {
           if (isWrapped(Server.prototype[name])) {
@@ -79,6 +81,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
       },
       (moduleExports, moduleVersion) => {
         diag.debug(`Removing patch for ${MODULE_NAME}@${moduleVersion}`);
+        this._isDisabled = true;
         if (moduleExports) {
           const Server: any = moduleExports;
           for (const name of RESTIFY_METHODS) {
@@ -115,6 +118,9 @@ export class RestifyInstrumentation extends InstrumentationBase<
     }
     if (typeof handler === 'function') {
       return (req: types.Request, res: restify.Response, next: restify.Next) => {
+        if (this._isDisabled) {
+          return handler(req, res, next);
+        }
         // const parentSpan = api.getSpan(api?.context?.active());
         const route = (typeof req.getRoute === 'function' ? req.getRoute()?.path : req.route?.path);
         const spanName = route || metadata.methodName || metadata.type;
