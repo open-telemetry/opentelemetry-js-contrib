@@ -32,15 +32,14 @@
     "@opentelemetry/exporter-jaeger": "^0.18.0",
     "@opentelemetry/exporter-zipkin": "^0.18.0",
     "@opentelemetry/instrumentation": "^0.18.0",
+    "@opentelemetry/instrumentation-express": "^0.15.0",
+    "@opentelemetry/instrumentation-http": "^0.18.2",
     "@opentelemetry/node": "^0.18.0",
-    "@opentelemetry/plugin-express": "file:../../plugins/node/opentelemetry-plugin-express",
-    "@opentelemetry/plugin-http": "^0.18.0",
     "@opentelemetry/tracing": "^0.18.0",
     "axios": "^0.19.0",
+    "cross-env": "^7.0.3",
     "express": "^4.17.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
-  "devDependencies": {
-    "cross-env": "^6.0.0"
-  }
+  "devDependencies": {}
 }
