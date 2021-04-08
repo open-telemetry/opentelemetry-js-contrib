@@ -43,7 +43,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _tracerProvider: TracerProvider | undefined;
 
   constructor() {
-    super('@opentelemetry/instrumentation-awslambda', VERSION);
+    super('@opentelemetry/instrumentation-aws-lambda', VERSION);
   }
 
   init() {

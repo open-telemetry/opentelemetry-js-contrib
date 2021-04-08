@@ -19,7 +19,7 @@
   },
   "keywords": [
     "opentelemetry",
-    "awslambda",
+    "aws-lambda",
     "nodejs",
     "tracing",
     "profiling",

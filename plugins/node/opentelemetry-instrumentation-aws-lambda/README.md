@@ -20,7 +20,7 @@ npm install --save @opentelemetry/instrumentation-aws-lambda
 Create a file to initialize the instrumentation, such as `lambda-wrapper.js`.
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
-const { AwsLambdaInstrumentation } = require('@opentelemetry/instrumentation-awslambda');
+const { AwsLambdaInstrumentation } = require('@opentelemetry/instrumentation-aws-lambda');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
@@ -51,9 +51,9 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[dependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=plugins%2Fnode%2Fopentelemetry-instrumentation-awslambda
-[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-awslambda
-[devDependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=plugins%2Fnode%2Fopentelemetry-instrumentation-awslambda&type=dev
-[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-awslambda&type=dev
-[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-awslambda
-[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-awslambda.svg
+[dependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=plugins%2Fnode%2Fopentelemetry-instrumentation-aws-lambda
+[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-aws-lambda
+[devDependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=plugins%2Fnode%2Fopentelemetry-instrumentation-aws-lambda&type=dev
+[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-aws-lambda&type=dev
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-aws-lambda
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-aws-lambda.svg
