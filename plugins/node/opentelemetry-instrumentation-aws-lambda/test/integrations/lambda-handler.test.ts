@@ -71,6 +71,7 @@ const assertSpanFailure = (span: ReadableSpan) => {
 describe('lambda handler', () => {
   if (!semver.satisfies(process.version, '>=10.0.0')) {
     it.skip('lambda only supports Node 10+');
+    return;
   }
 
   let instrumentation: AwsLambdaInstrumentation;
