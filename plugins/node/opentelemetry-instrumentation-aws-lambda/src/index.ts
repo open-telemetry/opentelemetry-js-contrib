@@ -14,8 +14,4 @@
  * limitations under the License.
  */
 
-import { Handler } from 'aws-lambda';
-
-export interface LambdaModule {
-  [name: string]: Handler;
-}
+export * from './aws-lambda';

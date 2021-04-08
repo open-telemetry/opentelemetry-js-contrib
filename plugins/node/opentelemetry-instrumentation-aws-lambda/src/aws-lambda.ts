@@ -24,6 +24,7 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { diag, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { CLOUD_RESOURCE } from '@opentelemetry/resources';
 import { FaasAttribute } from '@opentelemetry/semantic-conventions';
 
 import { Callback, Context, Handler } from 'aws-lambda';
@@ -66,7 +67,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             module,
             ['*'],
             (moduleExports: LambdaModule) => {
-              diag.debug('Applying patch for lambdatest handler');
+              diag.debug('Applying patch for lambda handler');
               if (isWrapped(moduleExports[functionName])) {
                 this._unwrap(moduleExports, functionName);
               }
@@ -75,7 +76,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             },
             (moduleExports?: LambdaModule) => {
               if (moduleExports == undefined) return;
-              diag.debug('Removing patch for lambdatest handler');
+              diag.debug('Removing patch for lambda handler');
               this._unwrap(moduleExports, functionName);
             }
           ),
@@ -106,22 +107,23 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         attributes: {
           [FaasAttribute.FAAS_EXECUTION]: context.awsRequestId,
           [FaasAttribute.FAAS_ID]: context.invokedFunctionArn,
-          // TODO(anuraaga): Add cloud.account.id when there is a JS accessor for it.
+          [CLOUD_RESOURCE.ACCOUNT_ID]: AwsLambdaInstrumentation._extractAccountId(
+            context.invokedFunctionArn
+          ),
         },
       });
 
       // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
-      // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored.
+      // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
+      // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
+      // win and the latter will be ignored.
       const wrappedCallback = plugin._wrapCallback(callback, span);
       const maybePromise = safeExecuteInTheMiddle(
         () => original.apply(this, [event, context, wrappedCallback]),
         error => {
           if (error != null) {
-            span.setStatus({
-              code: SpanStatusCode.ERROR,
-              message: typeof error === 'string' ? error : error.message,
-            });
-            span.end();
+            // Exception thrown synchronously before resolving callback / promise.
+            AwsLambdaInstrumentation._endSpan(span, error);
           }
         }
       ) as Promise<{}> | undefined;
@@ -130,22 +132,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         typeof maybePromise.then === 'function'
       ) {
         maybePromise.then(
-          () => span.end(),
+          () => AwsLambdaInstrumentation._endSpan(span, undefined),
           (err: Error | string) => {
-            let errMessage;
-            if (typeof err === 'string') {
-              errMessage = err;
-            } else if (err) {
-              errMessage = err.message;
-            }
-            if (errMessage) {
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: errMessage,
-              });
-            }
-
-            span.end();
+            AwsLambdaInstrumentation._endSpan(span, err);
           }
         );
       }
@@ -157,22 +146,39 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     return function wrappedCallback(this: {}, err, res) {
       diag.debug('executing wrapped lookup callback function');
 
-      let errMessage;
-      if (typeof err === 'string') {
-        errMessage = err;
-      } else if (err) {
-        errMessage = err.message;
-      }
-      if (errMessage) {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: errMessage,
-        });
-      }
+      AwsLambdaInstrumentation._endSpan(span, err);
 
-      span.end();
       diag.debug('executing original lookup callback function');
       return original.apply(this, [err, res]);
     };
+  }
+
+  private static _endSpan(span: Span, err?: string | Error | null) {
+    if (err) {
+      span.recordException(err);
+    }
+
+    let errMessage;
+    if (typeof err === 'string') {
+      errMessage = err;
+    } else if (err) {
+      errMessage = err.message;
+    }
+    if (errMessage) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: errMessage,
+      });
+    }
+
+    span.end();
+  }
+
+  private static _extractAccountId(arn: string): string | undefined {
+    const parts = arn.split(':');
+    if (parts.length >= 5) {
+      return parts[4];
+    }
+    return undefined;
   }
 }

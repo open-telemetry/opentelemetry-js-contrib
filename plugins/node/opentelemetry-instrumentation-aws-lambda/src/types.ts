@@ -14,4 +14,6 @@
  * limitations under the License.
  */
 
-export * from './awslambda';
+import { Handler } from 'aws-lambda';
+
+export type LambdaModule = Record<string, Handler>;

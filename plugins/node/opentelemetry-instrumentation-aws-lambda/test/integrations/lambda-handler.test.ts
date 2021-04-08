@@ -19,7 +19,7 @@
 
 import * as path from 'path';
 
-import { AwsLambdaInstrumentation } from '../../src/awslambda';
+import { AwsLambdaInstrumentation } from '../../src/index';
 import {
   InMemorySpanExporter,
   ReadableSpan,
@@ -29,7 +29,10 @@ import { NodeTracerProvider } from '@opentelemetry/node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import { FaasAttribute } from '@opentelemetry/semantic-conventions';
+import {
+  ExceptionAttribute,
+  FaasAttribute,
+} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -57,9 +60,14 @@ const assertSpanFailure = (span: ReadableSpan) => {
   assert.strictEqual(span.attributes[FaasAttribute.FAAS_ID], 'my_arn');
   assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
   assert.strictEqual(span.status.message, 'handler error');
+  assert.strictEqual(span.events.length, 1);
+  assert.strictEqual(
+    span.events[0].attributes![ExceptionAttribute.MESSAGE],
+    'handler error'
+  );
 };
 
-describe('lambdatest handler', () => {
+describe('lambda handler', () => {
   let instrumentation: AwsLambdaInstrumentation;
 
   let oldEnv: NodeJS.ProcessEnv;
@@ -92,11 +100,11 @@ describe('lambdatest handler', () => {
     memoryExporter.reset();
   });
 
-  context('async success handler', () => {
+  describe('async success handler', () => {
     it('should export a valid span', async () => {
-      initializeHandler('lambdatest/async.handler');
+      initializeHandler('lambda-test/async.handler');
 
-      const result = await lambdaRequire('lambdatest/async').handler(
+      const result = await lambdaRequire('lambda-test/async').handler(
         'arg',
         ctx
       );
@@ -108,11 +116,11 @@ describe('lambdatest handler', () => {
     });
 
     it('should record error', async () => {
-      initializeHandler('lambdatest/async.error');
+      initializeHandler('lambda-test/async.error');
 
       let err: Error;
       try {
-        await lambdaRequire('lambdatest/async').error('arg', ctx);
+        await lambdaRequire('lambda-test/async').error('arg', ctx);
       } catch (e) {
         err = e;
       }
@@ -124,11 +132,11 @@ describe('lambdatest handler', () => {
     });
 
     it('should record string error', async () => {
-      initializeHandler('lambdatest/async.stringerror');
+      initializeHandler('lambda-test/async.stringerror');
 
       let err: string;
       try {
-        await lambdaRequire('lambdatest/async').stringerror('arg', ctx);
+        await lambdaRequire('lambda-test/async').stringerror('arg', ctx);
       } catch (e) {
         err = e;
       }
@@ -139,12 +147,12 @@ describe('lambdatest handler', () => {
     });
   });
 
-  context('sync success handler', () => {
+  describe('sync success handler', () => {
     it('should export a valid span', async () => {
-      initializeHandler('lambdatest/sync.handler');
+      initializeHandler('lambda-test/sync.handler');
 
       const result = await new Promise((resolve, reject) => {
-        lambdaRequire('lambdatest/sync').handler(
+        lambdaRequire('lambda-test/sync').handler(
           'arg',
           ctx,
           (err: Error, res: any) => {
@@ -164,11 +172,11 @@ describe('lambdatest handler', () => {
     });
 
     it('should record error', async () => {
-      initializeHandler('lambdatest/sync.error');
+      initializeHandler('lambda-test/sync.error');
 
       let err: Error;
       try {
-        lambdaRequire('lambdatest/sync').error(
+        lambdaRequire('lambda-test/sync').error(
           'arg',
           ctx,
           (err: Error, res: any) => {}
@@ -184,12 +192,12 @@ describe('lambdatest handler', () => {
     });
 
     it('should record error in callback', async () => {
-      initializeHandler('lambdatest/sync.callbackerror');
+      initializeHandler('lambda-test/sync.callbackerror');
 
       let err: Error;
       try {
         await new Promise((resolve, reject) => {
-          lambdaRequire('lambdatest/sync').callbackerror(
+          lambdaRequire('lambda-test/sync').callbackerror(
             'arg',
             ctx,
             (err: Error, res: any) => {
@@ -212,11 +220,11 @@ describe('lambdatest handler', () => {
     });
 
     it('should record string error', async () => {
-      initializeHandler('lambdatest/sync.stringerror');
+      initializeHandler('lambda-test/sync.stringerror');
 
       let err: string;
       try {
-        lambdaRequire('lambdatest/sync').stringerror(
+        lambdaRequire('lambda-test/sync').stringerror(
           'arg',
           ctx,
           (err: Error, res: any) => {}
@@ -233,12 +241,12 @@ describe('lambdatest handler', () => {
   });
 
   it('should record string error in callback', async () => {
-    initializeHandler('lambdatest/sync.callbackstringerror');
+    initializeHandler('lambda-test/sync.callbackstringerror');
 
     let err: string;
     try {
       await new Promise((resolve, reject) => {
-        lambdaRequire('lambdatest/sync').callbackstringerror(
+        lambdaRequire('lambda-test/sync').callbackstringerror(
           'arg',
           ctx,
           (err: Error, res: any) => {

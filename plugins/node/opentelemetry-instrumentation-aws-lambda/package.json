@@ -1,5 +1,5 @@
 {
-  "name": "@opentelemetry/instrumentation-awslambda",
+  "name": "@opentelemetry/instrumentation-aws-lambda",
   "version": "0.15.0",
   "description": "OpenTelemetry AWS Lambda automatic instrumentation package.",
   "main": "build/src/index.js",
@@ -66,6 +66,7 @@
   "dependencies": {
     "@opentelemetry/api": "^0.18.0",
     "@opentelemetry/instrumentation": "^0.18.0",
+    "@opentelemetry/resources": "^0.18.0",
     "@opentelemetry/semantic-conventions": "^0.18.0"
   }
 }
