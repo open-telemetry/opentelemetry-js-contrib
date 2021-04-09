@@ -28,7 +28,7 @@ import {
   MongoInternalCommand,
   MongoInternalTopology,
   WireProtocolInternal,
-  MongoDbInstrumentationConfig,
+  MongoDBInstrumentationConfig,
   CursorState,
 } from './types';
 import { VERSION } from './version';
@@ -49,7 +49,7 @@ const supportedVersions = ['>=3.3 <4'];
 export class MongoDBInstrumentation extends InstrumentationBase<
   typeof mongodb
 > {
-  constructor(protected _config: MongoDbInstrumentationConfig = {}) {
+  constructor(protected _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
   }
 
@@ -397,6 +397,9 @@ export class MongoDBInstrumentation extends InstrumentationBase<
    * @param resultHandler A callback function.
    */
   private _patchEnd(span: Span, resultHandler: Function): Function {
+    // mongodb is using "tick" when calling a callback, this way the context
+    // in final callback (resultHandler) is lost
+    const activeContext = context.active();
     return function patchedEnd(this: {}, ...args: unknown[]) {
       const error = args[0];
       if (error instanceof Error) {
@@ -406,7 +409,10 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         });
       }
       span.end();
-      return resultHandler.apply(this, args);
+
+      return context.with(activeContext, () => {
+        return resultHandler.apply(this, args);
+      });
     };
   }
 }

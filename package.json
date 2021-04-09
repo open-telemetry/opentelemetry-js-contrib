@@ -1,6 +1,6 @@
 {
   "name": "opentelemetry-contrib",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "This is a repository for OpenTelemetry JavaScript contributions.",
   "repository": {
     "type": "git",
@@ -19,7 +19,7 @@
     "compile": "lerna run compile",
     "test": "lerna run test",
     "test:browser": "lerna run test:browser",
-    "bootstrap": "lerna bootstrap",
+    "bootstrap": "lerna bootstrap --no-ci",
     "bump": "lerna publish",
     "codecov": "lerna run codecov",
     "codecov:browser": "lerna run codecov:browser",

@@ -15,4 +15,4 @@
  */
 
 export * from './mongodb';
-export { MongoDbInstrumentationConfig } from './types';
+export { MongoDBInstrumentationConfig } from './types';

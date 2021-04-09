@@ -15,3 +15,4 @@
  */
 
 export * from './graphql';
+export { GraphQLInstrumentationConfig } from './types';
