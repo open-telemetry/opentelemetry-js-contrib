@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mysql",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "OpenTelemetry mysql automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -41,9 +41,9 @@
     "access": "public"
   },
   "devDependencies": {
-    "@opentelemetry/context-async-hooks": "0.18.0",
-    "@opentelemetry/tracing": "0.18.0",
-    "@opentelemetry/test-utils": "0.14.0",
+    "@opentelemetry/context-async-hooks": "0.18.2",
+    "@opentelemetry/test-utils": "^0.15.0",
+    "@opentelemetry/tracing": "0.18.2",
     "@types/mocha": "7.0.2",
     "@types/mysql": "2.15.18",
     "@types/node": "14.0.27",
