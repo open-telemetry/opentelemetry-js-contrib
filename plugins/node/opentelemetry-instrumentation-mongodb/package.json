@@ -6,6 +6,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
+    "docker:start": "docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=localhost -p 27017:27017 --rm mongo",
     "test": "nyc ts-mocha --parallel -p tsconfig.json 'test/**/*.test.ts'",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -15,7 +16,8 @@
     "precompile": "tsc --version",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p .",
-    "prepare": "npm run compile"
+    "prepare": "npm run compile",
+    "watch": "tsc -w"
   },
   "keywords": [
     "opentelemetry",
