@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-// for testing locally use this command to run docker
-// docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=localhost -p 27017:27017 --name otmongo mongo
+// for testing locally "npm run docker:start"
 
 import { context, setSpan, SpanKind } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
@@ -99,6 +98,7 @@ describe('MongoDBInstrumentation', () => {
 
   afterEach(done => {
     collection.deleteMany({}, done);
+    memoryExporter.reset();
   });
 
   after(() => {
@@ -109,6 +109,9 @@ describe('MongoDBInstrumentation', () => {
 
   /** Should intercept query */
   describe('Instrumenting query operations', () => {
+    beforeEach(() => {
+      memoryExporter.reset();
+    });
     it('should create a child span for insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = provider.getTracer('default').startSpan('insertRootSpan');
@@ -161,6 +164,10 @@ describe('MongoDBInstrumentation', () => {
 
   /** Should intercept cursor */
   describe('Instrumenting cursor operations', () => {
+    beforeEach(() => {
+      memoryExporter.reset();
+    });
+
     it('should create a child span for find', done => {
       const span = provider.getTracer('default').startSpan('findRootSpan');
       context.with(setSpan(context.active(), span), () => {
@@ -212,6 +219,10 @@ describe('MongoDBInstrumentation', () => {
 
   /** Should intercept command */
   describe('Instrumenting command operations', () => {
+    beforeEach(() => {
+      memoryExporter.reset();
+    });
+
     it('should create a child span for create index', done => {
       const span = provider.getTracer('default').startSpan('indexRootSpan');
       context.with(setSpan(context.active(), span), () => {
@@ -229,8 +240,47 @@ describe('MongoDBInstrumentation', () => {
     });
   });
 
+  describe('Mixed operations with callback', () => {
+    beforeEach(() => {
+      memoryExporter.reset();
+    });
+
+    it('should create a span for find after callback insert', done => {
+      const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+      const span = provider.getTracer('default').startSpan('insertRootSpan');
+      context.with(setSpan(context.active(), span), () => {
+        collection.insertMany(insertData, (err, result) => {
+          span.end();
+          assert.ifError(err);
+          const spans = memoryExporter.getFinishedSpans();
+          const mainSpan = spans[spans.length - 1];
+          assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
+          memoryExporter.reset();
+
+          collection.find({ a: 1 }).toArray((err, result) => {
+            const spans2 = memoryExporter.getFinishedSpans();
+            spans2.push(mainSpan);
+
+            assert.ifError(err);
+            assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT);
+            assert.strictEqual(
+              mainSpan.spanContext.spanId,
+              spans2[0].parentSpanId
+            );
+            memoryExporter.reset();
+            done();
+          });
+        });
+      });
+    });
+  });
+
   /** Should intercept command */
   describe('Removing Instrumentation', () => {
+    beforeEach(() => {
+      memoryExporter.reset();
+    });
+
     it('should unpatch plugin', () => {
       assert.doesNotThrow(() => {
         instrumentation.disable();

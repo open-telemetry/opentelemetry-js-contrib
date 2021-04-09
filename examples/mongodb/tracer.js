@@ -7,6 +7,7 @@ const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
+const { MongoDBInstrumentation } = require('@opentelemetry/instrumentation-mongodb');
 
 module.exports = (serviceName) => {
   const provider = new NodeTracerProvider();
@@ -24,13 +25,12 @@ module.exports = (serviceName) => {
   registerInstrumentations({
     instrumentations: [
       new HttpInstrumentation(),
+      new MongoDBInstrumentation({
+        enhancedDatabaseReporting: true,
+      }),
       {
         plugins: {
-          mongodb: {
-            enabled: true,
-            path: '@opentelemetry/plugin-mongodb',
-            enhancedDatabaseReporting: true,
-          },
+          mongodb: { enabled: false },
         },
       },
     ],
