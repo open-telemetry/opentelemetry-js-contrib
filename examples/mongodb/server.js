@@ -60,13 +60,17 @@ startServer(8080);
 
 function handleInsertQuery(response) {
   const obj = { name: 'John', age: '20' };
-  db.collection('users').insertOne(obj, (err) => {
+  const collection = db.collection('users');
+  collection.insertOne(obj, (err) => {
     if (err) {
       console.log('Error code:', err.code);
       response.end(err.message);
     } else {
       console.log('1 document inserted');
-      response.end();
+      // find document to test context propagation using callback
+      collection.findOne({}, function () {
+        response.end();
+      });
     }
   });
 }
