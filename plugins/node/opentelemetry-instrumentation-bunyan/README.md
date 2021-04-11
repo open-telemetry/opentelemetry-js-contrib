@@ -1,0 +1,71 @@
+# OpenTelemetry instrumentation for bunyan
+
+[![NPM Published Version][npm-img]][npm-url]
+[![dependencies][dependencies-image]][dependencies-url]
+[![devDependencies][devDependencies-image]][devDependencies-url]
+[![Apache License][license-image]][license-image]
+
+This module provides injection of trace context to [`bunyan`](https://www.npmjs.com/package/bunyan).
+
+## Installation
+
+```bash
+npm install --save @opentelemetry/instrumentation-bunyan
+```
+
+## Usage
+
+```js
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { BunyanInstrumentation } = require('@opentelemetry/instrumentation-bunyan');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+
+const provider = new NodeTracerProvider();
+provider.register();
+
+registerInstrumentations({
+  instrumentations: [
+    new BunyanInstrumentation({
+      // Optional hook to insert additional context to bunyan records.
+      // Called after trace context is added to the record.
+      logHook: (record, span) => {
+        record['resource.service.name'] = provider.resource.attributes['service.name'];
+      },
+    }),
+    // other instrumentations
+  ],
+  tracerProvider: provider,
+});
+
+bunyan.createLogger({ name: 'example' }).info('foo');
+// {"name":"example","msg":"foo","trace_id":"e21c7a95fff34e04f77c7bd518779621","span_id":"b7589a981fde09f4","trace_flags":"01", ...}
+```
+
+### Fields added to bunyan records
+
+For the current active span, the following will be added to the bunyan record:
+* `trace_id`
+* `span_id`
+* `trace_flags`
+
+When no span context is active or the span context is invalid, injection is skipped.
+
+## Useful links
+
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+
+## License
+
+Apache 2.0 - See [LICENSE][license-url] for more information.
+
+[discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
+[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
+[dependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=plugins%2Fnode%2Fopentelemetry-instrumentation-bunyan
+[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-bunyan
+[devDependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=plugins%2Fnode%2Fopentelemetry-instrumentation-bunyan&type=dev
+[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-bunyan&type=dev
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-bunyan
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-bunyan.svg
