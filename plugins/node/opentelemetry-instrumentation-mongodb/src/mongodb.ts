@@ -197,14 +197,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object'
         ) {
-          return original.call(
-            this,
-            server,
-            ns,
-            cmd,
-            typeof options === 'function' ? callback : options,
-            callback
-          );
+          return original.call(this, server, ns, cmd, options, callback);
         }
         const commandType = instrumentation._getCommandType(cmd);
         const type =
@@ -220,7 +213,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           ns,
           cmd,
           typeof options === 'function' ? patchedCallback : options,
-          patchedCallback
+          typeof options === 'function' ? undefined : patchedCallback
         );
       };
     };
@@ -253,7 +246,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
             ns,
             cmd,
             cursorState,
-            typeof options === 'function' ? callback : options,
+            options,
             callback
           );
         }
@@ -269,7 +262,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           cmd,
           cursorState,
           typeof options === 'function' ? patchedCallback : options,
-          patchedCallback
+          typeof options === 'function' ? undefined : patchedCallback
         );
       };
     };
@@ -298,7 +291,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
             ns,
             cursorState,
             batchSize,
-            typeof options === 'function' ? callback : options,
+            options,
             callback
           );
         }
@@ -314,7 +307,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           cursorState,
           batchSize,
           typeof options === 'function' ? patchedCallback : options,
-          patchedCallback
+          typeof options === 'function' ? undefined : patchedCallback
         );
       };
     };
