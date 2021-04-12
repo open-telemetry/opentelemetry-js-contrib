@@ -200,7 +200,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       this._tracerProvider
         .getActiveSpanProcessor()
         .forceFlush()
-        .finally(() => callback());
+        .then(
+          () => callback(),
+          () => callback()
+        );
     } else {
       callback();
     }
