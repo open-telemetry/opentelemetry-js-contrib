@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import { context, getSpan, isSpanContextValid } from '@opentelemetry/api';
+import { context, diag, getSpan, isSpanContextValid } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { BunyanInstrumentationConfig } from './types';
 import { VERSION } from './version';
@@ -92,7 +93,17 @@ export class BunyanInstrumentation extends InstrumentationBase<
         record['span_id'] = spanContext.spanId;
         record['trace_flags'] = `0${spanContext.traceFlags.toString(16)}`;
 
-        instrumentation.getConfig().logHook!(record, span);
+        safeExecuteInTheMiddle(
+          () => {
+            instrumentation.getConfig().logHook!(record, span);
+          },
+          err => {
+            if (err) {
+              diag.error('bunyan instrumentation: error calling logHook', err);
+            }
+          },
+          true
+        );
 
         return original.apply(this, args);
       };

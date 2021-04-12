@@ -118,6 +118,25 @@ describe('BunyanInstrumentation', () => {
         assert.strictEqual('foo', record['msg']);
       });
     });
+
+    it('does not propagate exceptions from user hooks', () => {
+      const span = tracer.startSpan('abc');
+      instrumentation.setConfig({
+        enabled: true,
+        logHook: () => {
+          throw new Error('Oops');
+        },
+      });
+      context.with(setSpan(context.active(), span), () => {
+        const { traceId, spanId } = span.context();
+        logger.info('foo');
+        sinon.assert.calledOnce(writeSpy);
+        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        assert.strictEqual(record['trace_id'], traceId);
+        assert.strictEqual(record['span_id'], spanId);
+        assert.strictEqual('foo', record['msg']);
+      });
+    });
   });
 
   describe('disabled instrumentation', () => {
