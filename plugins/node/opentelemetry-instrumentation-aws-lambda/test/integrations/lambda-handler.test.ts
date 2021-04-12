@@ -89,7 +89,7 @@ describe('lambda handler', () => {
     require(path.resolve(__dirname, '..', module));
 
   beforeEach(() => {
-    oldEnv = process.env;
+    oldEnv = { ...process.env };
     process.env.LAMBDA_TASK_ROOT = path.resolve(__dirname, '..');
   });
 
