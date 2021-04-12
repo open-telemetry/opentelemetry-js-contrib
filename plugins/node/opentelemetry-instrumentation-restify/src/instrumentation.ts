@@ -42,7 +42,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
     super(`@opentelemetry/instrumentation-${MODULE_NAME}`, VERSION);
   }
 
-  private _moduleVersion: string | undefined;
+  private _moduleVersion?: string;
   private _isDisabled = false;
 
   init() {
