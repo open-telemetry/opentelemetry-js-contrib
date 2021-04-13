@@ -106,7 +106,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
   private _callHook(span: Span, record: Record<string, string>) {
     const hook = this.getConfig().logHook;
 
-    if (!hook) {
+    if (typeof hook !== 'function') {
       return;
     }
 
