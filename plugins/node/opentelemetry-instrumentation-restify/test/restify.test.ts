@@ -24,6 +24,7 @@ import {
 } from '@opentelemetry/tracing';
 
 import RestifyInstrumentation from '../src';
+import * as types from '../src/types';
 const plugin = new RestifyInstrumentation();
 
 import * as assert from 'assert';
@@ -227,6 +228,31 @@ describe('Restify Instrumentation', () => {
           assert.strictEqual(span.attributes['restify.version'], 'n/a');
         }
       });
+    });
+
+    it('should rename HTTP span', async () => {
+      const httpSpan: types.InstrumentationSpan = tracer.startSpan('HTTP GET');
+
+      const testLocalServer = await createServer((server: restify.Server) => {
+        server.pre((req, res, next) => {
+          // to simulate HTTP instrumentation
+          context.with(setSpan(context.active(), httpSpan), next);
+        });
+        server.get('/route/:param', getHandler);
+      });
+      const testLocalPort = testLocalServer.address().port;
+
+      try {
+        const res = await httpRequest.get(
+          `http://localhost:${testLocalPort}/route/hello`
+        );
+        httpSpan.end();
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
+        assert.strictEqual(httpSpan.name, 'GET /route/:param');
+        assert.strictEqual(res, '{"route":"hello"}');
+      } finally {
+        testLocalServer.close();
+      }
     });
 
     it('should create spans even if there is no parent', async () => {

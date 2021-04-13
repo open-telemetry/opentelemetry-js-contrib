@@ -20,6 +20,7 @@ import { Server } from 'restify';
 import * as types from './types';
 import { VERSION } from './version';
 import once = require('lodash.once');
+import * as c from './constants';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -29,17 +30,12 @@ import {
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
 
 const { diag } = api;
-const RESTIFY_MW_METHODS = ['use', 'pre'];
-const RESTIFY_METHODS = ['del', 'get', 'head', 'opts', 'post', 'put', 'patch'];
-
-const MODULE_NAME = 'restify';
-const SUPPORTED_VERSIONS = ['>=4.0.0'];
 
 export class RestifyInstrumentation extends InstrumentationBase<
   typeof restify
 > {
   constructor() {
-    super(`@opentelemetry/instrumentation-${MODULE_NAME}`, VERSION);
+    super(`@opentelemetry/instrumentation-${c.MODULE_NAME}`, VERSION);
   }
 
   private _moduleVersion?: string;
@@ -47,8 +43,8 @@ export class RestifyInstrumentation extends InstrumentationBase<
 
   init() {
     const module = new InstrumentationNodeModuleDefinition<typeof restify>(
-      MODULE_NAME,
-      SUPPORTED_VERSIONS,
+      c.MODULE_NAME,
+      c.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
         this._moduleVersion = moduleVersion;
         return moduleExports;
@@ -58,12 +54,12 @@ export class RestifyInstrumentation extends InstrumentationBase<
     module.files.push(
       new InstrumentationNodeModuleFile<typeof restify>(
         'restify/lib/server.js',
-        SUPPORTED_VERSIONS,
+        c.SUPPORTED_VERSIONS,
         (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for ${MODULE_NAME}@${moduleVersion}`);
+          diag.debug(`Applying patch for ${c.MODULE_NAME}@${moduleVersion}`);
           this._isDisabled = false;
           const Server: any = moduleExports;
-          for (const name of RESTIFY_METHODS) {
+          for (const name of c.RESTIFY_METHODS) {
             if (isWrapped(Server.prototype[name])) {
               this._unwrap(Server.prototype, name);
             }
@@ -73,7 +69,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
               this._methodPatcher.bind(this)
             );
           }
-          for (const name of RESTIFY_MW_METHODS) {
+          for (const name of c.RESTIFY_MW_METHODS) {
             if (isWrapped(Server.prototype[name])) {
               this._unwrap(Server.prototype, name);
             }
@@ -86,14 +82,14 @@ export class RestifyInstrumentation extends InstrumentationBase<
           return moduleExports;
         },
         (moduleExports, moduleVersion) => {
-          diag.debug(`Removing patch for ${MODULE_NAME}@${moduleVersion}`);
+          diag.debug(`Removing patch for ${c.MODULE_NAME}@${moduleVersion}`);
           this._isDisabled = true;
           if (moduleExports) {
             const Server: any = moduleExports;
-            for (const name of RESTIFY_METHODS) {
+            for (const name of c.RESTIFY_METHODS) {
               this._unwrap(Server.prototype, name as keyof Server);
             }
-            for (const name of RESTIFY_MW_METHODS) {
+            for (const name of c.RESTIFY_MW_METHODS) {
               this._unwrap(Server.prototype, name as keyof Server);
             }
           }
@@ -152,16 +148,36 @@ export class RestifyInstrumentation extends InstrumentationBase<
         if (this._isDisabled) {
           return handler(req, res, next);
         }
-        // const parentSpan = api.getSpan(api?.context?.active());
         const route =
           typeof req.getRoute === 'function'
             ? req.getRoute()?.path
             : req.route?.path;
+
+        // replace HTTP instrumentations name with one that contains a route
+        // in first handlers, we might not now the route yet, in which case the HTTP
+        // span has to be stored and fixed in later handler.
+        // https://github.com/open-telemetry/opentelemetry-specification/blob/a44d863edcdef63b0adce7b47df001933b7a158a/specification/trace/semantic_conventions/http.md#name
+        if (req[c.REQ_SPAN] === undefined) {
+          req[c.REQ_SPAN] = api.getSpan(
+            api.context.active()
+          ) as types.InstrumentationSpan;
+        }
+        if (
+          route &&
+          req[c.REQ_SPAN] &&
+          req[c.REQ_SPAN]?.name?.startsWith('HTTP ')
+        ) {
+          (req[c.REQ_SPAN] as types.InstrumentationSpan).updateName(
+            `${req.method} ${route}`
+          );
+          req[c.REQ_SPAN] = false;
+        }
+
         const fnName = handler.name || undefined;
-        const spanName = (metadata.type === types.LayerType.REQUEST_HANDLER ?
-          `request handler - ${route}` :
-          `middleware - ${fnName || 'anonymous'}`
-        );
+        const spanName =
+          metadata.type === types.LayerType.REQUEST_HANDLER
+            ? `request handler - ${route}`
+            : `middleware - ${fnName || 'anonymous'}`;
         const attributes = {
           [types.CustomAttributeNames.NAME]: fnName,
           [types.CustomAttributeNames.VERSION]: this._moduleVersion || 'n/a',

@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { Span } from '@opentelemetry/api';
 import * as restify from 'restify';
+import { REQ_SPAN } from './constants';
 
 export enum CustomAttributeNames {
   TYPE = 'restify.type',
@@ -28,6 +30,8 @@ export enum LayerType {
 }
 
 declare interface RequestWithRoute extends restify.Request {
+  // undefined /* uninitialized */ | false /* renamed */ | InstrumentationSpan /* not yet renamed */
+  [REQ_SPAN]?: any;
   route: { path: string };
   getRoute: () => { path: string };
 }
@@ -42,3 +46,10 @@ export declare type Metadata = {
 export type NestedRequestHandlers = Array<
   NestedRequestHandlers | restify.RequestHandler
 >;
+
+/**
+ * extends opentelemetry/api Span object to instrument the root span name of http instrumentation
+ */
+export interface InstrumentationSpan extends Span {
+  name?: string;
+}
