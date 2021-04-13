@@ -11,7 +11,7 @@ const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/tra
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 
-const { RestifyInstrumentation: Instrumentation } = require('../../plugins/node/opentelemetry-instrumentation-restify/build/src');
+const { RestifyInstrumentation: Instrumentation } = require('../../plugins/node/opentelemetry-instrumentation-restify');
 const { HttpInstrumentation } = require('../../../opentelemetry-js/packages/opentelemetry-instrumentation-http');
 
 const Exporter = ((exporterParam) => {
@@ -31,7 +31,6 @@ module.exports = (serviceName) => {
   const provider = new NodeTracerProvider();
   registerInstrumentations({
     tracerProvider: provider,
-    // when boostraping with lerna for testing purposes
     instrumentations: [
       HttpInstrumentation,
       Instrumentation,

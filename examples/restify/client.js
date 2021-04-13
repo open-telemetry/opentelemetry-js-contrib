@@ -1,7 +1,7 @@
 'use strict';
 
-const api = require('@opentelemetry/api');
-const tracer = require('./tracer')('example-http-client');
+// required to initialize the service name for the auto-instrumentation
+require('./tracer')('example-restify-client');
 // eslint-disable-next-line import/order
 const http = require('http');
 
@@ -10,21 +10,17 @@ function makeRequest(path) {
   // span corresponds to outgoing requests. Here, we have manually created
   // the span, which is created to track work that happens outside of the
   // request lifecycle entirely.
-  const span = tracer.startSpan(`makeRequest to ${path}`);
-  api.context.with(api.setSpan(api.context.active(), span), () => {
-    http.get({
-      host: 'localhost',
-      headers: {
-        accept: 'text/plain',
-      },
-      port: 8080,
-      path,
-    }, (response) => {
-      response.on('data', (chunk) => console.log(path, '::', chunk.toString('utf8')));
-      response.on('end', () => {
-        console.log(path, 'status', response.statusCode);
-        span.end();
-      });
+  http.get({
+    host: 'localhost',
+    headers: {
+      accept: 'text/plain',
+    },
+    port: 8080,
+    path,
+  }, (response) => {
+    response.on('data', (chunk) => console.log(path, '::', chunk.toString('utf8')));
+    response.on('end', () => {
+      console.log(path, 'status', response.statusCode);
     });
   });
 
