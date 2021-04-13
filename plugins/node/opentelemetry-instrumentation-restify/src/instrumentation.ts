@@ -157,8 +157,13 @@ export class RestifyInstrumentation extends InstrumentationBase<
           typeof req.getRoute === 'function'
             ? req.getRoute()?.path
             : req.route?.path;
-        const spanName = route || metadata.methodName || metadata.type;
+        const fnName = handler.name || undefined;
+        const spanName = (metadata.type === types.LayerType.REQUEST_HANDLER ?
+          `request handler - ${route}` :
+          `middleware - ${fnName || 'anonymous'}`
+        );
         const attributes = {
+          [types.CustomAttributeNames.NAME]: fnName,
           [types.CustomAttributeNames.VERSION]: this._moduleVersion || 'n/a',
           [types.CustomAttributeNames.TYPE]: metadata.type,
           [types.CustomAttributeNames.METHOD]: metadata.methodName,

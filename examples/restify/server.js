@@ -15,15 +15,23 @@ server.pre((req, res, next) => {
   next();
 });
 
-server.use([(req, res, next) => {
-  // noop to showcase use with an array
-  next();
-}, (req, res, next) => {
+// `setDefaultName` shows up in spans as the name
+const setDefaultName = (req, res, next) => {
   req.defaultName = 'Stranger';
   next();
-}]);
+};
 
-server.get('/hello/:name', (req, res, next) => {
+server.use([(req, res, next) => {
+  /*
+    noop to showcase use with an array.
+    as this is an anonymous fn, the name is not known and cannot be displayed in traces.
+   */
+  next();
+}, setDefaultName]);
+
+// named function to be used in traces
+// eslint-disable-next-line prefer-arrow-callback
+server.get('/hello/:name', function hello(req, res, next) {
   console.log('Handling hello');
   res.send(`Hello, ${req.params.name || req.defaultName}\n`);
   return next();

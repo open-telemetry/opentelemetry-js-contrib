@@ -17,6 +17,7 @@ import * as restify from 'restify';
 
 export enum CustomAttributeNames {
   TYPE = 'restify.type',
+  NAME = 'restify.name',
   METHOD = 'restify.method',
   VERSION = 'restify.version',
 }
