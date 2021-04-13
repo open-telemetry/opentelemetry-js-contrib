@@ -191,8 +191,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
             attributes,
           },
           api.context.active()
-        ); // TODO: <- with this I intend to find and attach all consecutive handlers to HTTP span
-        // .. but instead all spans are attached to the previous handler's span.
+        );
         const endSpan = once(span.end.bind(span));
         const patchedNext = (err?: any) => {
           endSpan();
