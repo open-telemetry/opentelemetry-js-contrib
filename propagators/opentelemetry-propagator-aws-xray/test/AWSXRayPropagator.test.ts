@@ -121,7 +121,7 @@ describe('AWSXRayPropagator', () => {
   describe('.extract()', () => {
     it('extract nothing from context', () => {
       // context remains untouched
-      assert.deepStrictEqual(
+      assert.strictEqual(
         xrayPropagator.extract(ROOT_CONTEXT, carrier, defaultTextMapGetter),
         ROOT_CONTEXT
       );

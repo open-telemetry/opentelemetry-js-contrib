@@ -31,7 +31,7 @@ import {
   INVALID_SPAN_CONTEXT,
 } from '@opentelemetry/api';
 
-export const AWSXRAY_TRACE_ID_HEADER = 'X-Amzn-Trace-Id';
+export const AWSXRAY_TRACE_ID_HEADER = 'x-amzn-trace-id';
 
 const TRACE_HEADER_DELIMITER = ';';
 const KV_DELIMITER = '=';
@@ -118,11 +118,9 @@ export class AWSXRayPropagator implements TextMapPropagator {
 
       if (trimmedPart.startsWith(TRACE_ID_KEY)) {
         parsedTraceId = AWSXRayPropagator._parseTraceId(value);
-      }
-      if (trimmedPart.startsWith(PARENT_ID_KEY)) {
+      } else if (trimmedPart.startsWith(PARENT_ID_KEY)) {
         parsedSpanId = AWSXRayPropagator._parseSpanId(value);
-      }
-      if (trimmedPart.startsWith(SAMPLED_FLAG_KEY)) {
+      } else if (trimmedPart.startsWith(SAMPLED_FLAG_KEY)) {
         parsedTraceFlags = AWSXRayPropagator._parseTraceFlag(value);
       }
     }
