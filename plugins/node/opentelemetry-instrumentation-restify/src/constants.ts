@@ -23,7 +23,6 @@ export const RESTIFY_METHODS = [
   'put',
   'patch',
 ];
-
 export const MODULE_NAME = 'restify';
 export const SUPPORTED_VERSIONS = ['>=4.0.0'];
 export const REQ_SPAN = Symbol('REQ_SPAN');
