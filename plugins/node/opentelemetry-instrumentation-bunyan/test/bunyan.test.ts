@@ -82,7 +82,7 @@ describe('BunyanInstrumentation', () => {
       const span = tracer.startSpan('abc');
       instrumentation.setConfig({
         enabled: true,
-        logHook: record => {
+        logHook: (_span, record) => {
           record['resource.service.name'] = 'test-service';
         },
       });
@@ -173,7 +173,7 @@ describe('BunyanInstrumentation', () => {
       const span = tracer.startSpan('abc');
       instrumentation.setConfig({
         enabled: false,
-        logHook: record => {
+        logHook: (_span, record) => {
           record['resource.service.name'] = 'test-service';
         },
       });

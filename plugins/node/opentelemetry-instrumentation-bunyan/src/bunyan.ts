@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { context, diag, getSpan, isSpanContextValid } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  getSpan,
+  isSpanContextValid,
+  Span,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -25,12 +31,10 @@ import { BunyanInstrumentationConfig } from './types';
 import { VERSION } from './version';
 import type * as BunyanLogger from 'bunyan';
 
-function defaultHook() {}
-
 export class BunyanInstrumentation extends InstrumentationBase<
   typeof BunyanLogger
 > {
-  constructor(config: BunyanInstrumentationConfig = { logHook: defaultHook }) {
+  constructor(config: BunyanInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-bunyan', VERSION, config);
   }
 
@@ -68,15 +72,13 @@ export class BunyanInstrumentation extends InstrumentationBase<
   }
 
   setConfig(config: BunyanInstrumentationConfig) {
-    this._config = Object.assign({ logHook: defaultHook }, config);
+    this._config = config;
   }
 
   private _getPatchedEmit() {
     return (original: (...args: unknown[]) => void) => {
       const instrumentation = this;
       return function patchedEmit(this: BunyanLogger, ...args: unknown[]) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const record = args[0] as any;
         const span = getSpan(context.active());
 
         if (!span) {
@@ -89,24 +91,33 @@ export class BunyanInstrumentation extends InstrumentationBase<
           return original.apply(this, args);
         }
 
+        const record = args[0] as Record<string, string>;
         record['trace_id'] = spanContext.traceId;
         record['span_id'] = spanContext.spanId;
         record['trace_flags'] = `0${spanContext.traceFlags.toString(16)}`;
 
-        safeExecuteInTheMiddle(
-          () => {
-            instrumentation.getConfig().logHook!(record, span);
-          },
-          err => {
-            if (err) {
-              diag.error('bunyan instrumentation: error calling logHook', err);
-            }
-          },
-          true
-        );
+        instrumentation._callHook(span, record);
 
         return original.apply(this, args);
       };
     };
+  }
+
+  private _callHook(span: Span, record: Record<string, string>) {
+    const hook = this.getConfig().logHook;
+
+    if (!hook) {
+      return;
+    }
+
+    safeExecuteInTheMiddle(
+      () => hook(span, record),
+      err => {
+        if (err) {
+          diag.error('bunyan instrumentation: error calling logHook', err);
+        }
+      },
+      true
+    );
   }
 }

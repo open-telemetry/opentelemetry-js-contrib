@@ -5,7 +5,7 @@
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
-This module provides injection of trace context to [`bunyan`](https://www.npmjs.com/package/bunyan).
+This module provides automatic instrumentation for injection of trace context to [`bunyan`](https://www.npmjs.com/package/bunyan).
 
 ## Installation
 
