@@ -255,6 +255,41 @@ describe('Restify Instrumentation', () => {
       }
     });
 
+    it('should work with verbose API', async () => {
+      const testLocalServer = await createServer((server: restify.Server) => {
+        server.get(
+          {
+            path: '/route/:param',
+          },
+          getHandler
+        );
+      });
+      const testLocalPort = testLocalServer.address().port;
+
+      try {
+        const res = await httpRequest.get(
+          `http://localhost:${testLocalPort}/route/hello`
+        );
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+        {
+          // span from get
+          const span = memoryExporter.getFinishedSpans()[0];
+          assert.notStrictEqual(span, undefined);
+          assert.strictEqual(span.attributes['http.route'], '/route/:param');
+          assert.strictEqual(span.attributes['restify.method'], 'get');
+          assert.strictEqual(
+            span.attributes['restify.type'],
+            'request_handler'
+          );
+          assert.strictEqual(span.attributes['restify.name'], 'getHandler');
+          assert.strictEqual(span.attributes['restify.version'], 'n/a');
+        }
+        assert.strictEqual(res, '{"route":"hello"}');
+      } finally {
+        testLocalServer.close();
+      }
+    });
+
     it('should create spans even if there is no parent', async () => {
       const res = await httpRequest.get(`http://localhost:${port}/route/bar`);
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
