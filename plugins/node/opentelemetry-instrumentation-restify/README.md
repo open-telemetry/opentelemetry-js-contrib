@@ -21,12 +21,20 @@ npm install --save @opentelemetry/instrumentation-restify
 ## Usage
 
 ```js
+const { RestifyInstrumentation } = require('@opentelemetry/instrumentation-restify');
+const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { NodeTracerProvider } = require('@opentelemetry/node');
-const RestifyInstrumentation = require('@opentelemetry/instrumentation-restify');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
+
+provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
-new RestifyInstrumentation();
+
+registerInstrumentations({
+  instrumentations: [new RestifyInstrumentation()],
+  tracerProvider: provider,
+});
 ```
 
 See [examples/restify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/restify) for a short example.
