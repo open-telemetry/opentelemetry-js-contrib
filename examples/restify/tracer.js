@@ -11,8 +11,8 @@ const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/tra
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 
+const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { RestifyInstrumentation: Instrumentation } = require('../../plugins/node/opentelemetry-instrumentation-restify');
-const { HttpInstrumentation } = require('../../../opentelemetry-js/packages/opentelemetry-instrumentation-http');
 
 const Exporter = ((exporterParam) => {
   if (typeof exporterParam === 'string') {
