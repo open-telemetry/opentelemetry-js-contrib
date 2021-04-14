@@ -42,7 +42,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
     return [
       new InstrumentationNodeModuleDefinition<typeof BunyanLogger>(
         'bunyan',
-        ['*'],
+        ['<2.0'],
         logger => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const proto = logger.prototype as any;
