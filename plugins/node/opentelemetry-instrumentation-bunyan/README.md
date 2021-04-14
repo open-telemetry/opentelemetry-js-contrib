@@ -28,7 +28,7 @@ registerInstrumentations({
     new BunyanInstrumentation({
       // Optional hook to insert additional context to bunyan records.
       // Called after trace context is added to the record.
-      logHook: (record, span) => {
+      logHook: (span, record) => {
         record['resource.service.name'] = provider.resource.attributes['service.name'];
       },
     }),
