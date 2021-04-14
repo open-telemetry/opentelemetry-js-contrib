@@ -1,0 +1,5 @@
+{
+  "name": "lambda-test",
+  "version": "0.0.0",
+  "description": "Lambda handlers used in unit tests."
+}
