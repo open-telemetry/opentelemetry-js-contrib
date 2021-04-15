@@ -30,7 +30,6 @@ const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-iored
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({
