@@ -30,7 +30,6 @@ const { MySQLInstrumentation } = require('@opentelemetry/instrumentation-mysql')
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({

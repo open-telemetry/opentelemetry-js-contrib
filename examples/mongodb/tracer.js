@@ -28,11 +28,6 @@ module.exports = (serviceName) => {
       new MongoDBInstrumentation({
         enhancedDatabaseReporting: true,
       }),
-      {
-        plugins: {
-          mongodb: { enabled: false },
-        },
-      },
     ],
     tracerProvider: provider,
   });

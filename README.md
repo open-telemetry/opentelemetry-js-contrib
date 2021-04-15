@@ -44,11 +44,11 @@ This is a repository for OpenTelemetry JavaScript contributions that are not par
 [core repository](https://github.com/open-telemetry/opentelemetry-js) and
 core distribution of the API and SDK.
 
-## Plugins
+## Instrumentations
 
 OpenTelemetry can collect tracing data automatically using instrumentations. Vendors/Users can also create and use their own. Currently, OpenTelemetry supports automatic tracing for:
 
-### Node Plugins
+### Node Instrumentations
 
 - [@opentelemetry/instrumentation-grpc][otel-instrumentation-grpc]
 - [@opentelemetry/instrumentation-http][otel-instrumentation-http]
@@ -63,7 +63,7 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 - [@opentelemetry/instrumentation-koa][otel-contrib-instrumentation-koa]
 - [@opentelemetry/instrumentation-graphql][otel-contrib-instrumentation-graphql]
 
-### Web Plugins
+### Web Instrumentations
 
 - [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
 - [@opentelemetry/instrumentation-document-load][otel-contrib-instrumentation-document-load]
@@ -72,7 +72,7 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 
 ### Metapackages
 
-Multiple plugins may be leveraged via metapackages.
+Multiple instrumentations may be leveraged via metapackages.
 
 - [@opentelemetry/auto-instrumentations-node][otel-contrib-auto-instr-node] - Metapackage which bundles opentelemetry node core and contrib instrumentations
 - [@opentelemetry/auto-instrumentations-web][otel-contrib-auto-instr-web] - Metapackage which bundles opentelemetry web core and contrib instrumentations
