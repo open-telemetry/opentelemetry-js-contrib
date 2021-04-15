@@ -15,7 +15,7 @@
  */
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { AWSXRayIdGenerator } from '../src';
+import { AWSXRayIdGenerator } from '../../src';
 
 const idGenerator = new AWSXRayIdGenerator();
 
