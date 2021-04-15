@@ -12,7 +12,7 @@ const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-const { RestifyInstrumentation: Instrumentation } = require('../../plugins/node/opentelemetry-instrumentation-restify');
+const { RestifyInstrumentation } = require('../../plugins/node/opentelemetry-instrumentation-restify');
 
 const Exporter = ((exporterParam) => {
   if (typeof exporterParam === 'string') {
@@ -33,7 +33,7 @@ module.exports = (serviceName) => {
     tracerProvider: provider,
     instrumentations: [
       HttpInstrumentation,
-      Instrumentation,
+      RestifyInstrumentation,
     ],
   });
 
