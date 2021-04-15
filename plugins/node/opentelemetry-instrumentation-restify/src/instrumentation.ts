@@ -27,7 +27,7 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
-import { types as checkType } from 'util';
+import { isPromise, isAsyncFunction } from './utils';
 
 const { diag } = api;
 
@@ -56,7 +56,9 @@ export class RestifyInstrumentation extends InstrumentationBase<
         'restify/lib/server.js',
         constants.SUPPORTED_VERSIONS,
         (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for ${constants.MODULE_NAME}@${moduleVersion}`);
+          diag.debug(
+            `Applying patch for ${constants.MODULE_NAME}@${moduleVersion}`
+          );
           this._isDisabled = false;
           const Server: any = moduleExports;
           for (const name of constants.RESTIFY_METHODS) {
@@ -82,7 +84,9 @@ export class RestifyInstrumentation extends InstrumentationBase<
           return moduleExports;
         },
         (moduleExports, moduleVersion) => {
-          diag.debug(`Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`);
+          diag.debug(
+            `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
+          );
           this._isDisabled = true;
           if (moduleExports) {
             const Server: any = moduleExports;
@@ -200,24 +204,26 @@ export class RestifyInstrumentation extends InstrumentationBase<
 
         const wrapPromise = (promise: Promise<unknown>) => {
           return promise
-            .catch((err) => {
-              span.recordException(err);
-              throw err;
-            })
-            .finally(() => {
+            .then(value => {
               span.end();
+              return value;
+            })
+            .catch(err => {
+              span.recordException(err);
+              span.end();
+              throw err;
             });
-        }
+        };
 
         return api.context.with(
           api.setSpan(api.context.active(), span),
           (req: types.Request, res: restify.Response, next: restify.Next) => {
-            if (checkType.isAsyncFunction(handler)) {
+            if (isAsyncFunction(handler)) {
               return wrapPromise(handler(req, res, next));
             }
             try {
               const result = handler(req, res, next);
-              if (checkType.isPromise(result)) {
+              if (isPromise(result)) {
                 return wrapPromise(result);
               }
               span.end();
