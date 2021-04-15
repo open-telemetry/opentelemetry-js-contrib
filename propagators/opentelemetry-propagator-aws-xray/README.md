@@ -30,8 +30,6 @@ module.exports = ("service_name_here") => {
   // ...}
 ```
 
-For more details, see the [Getting Started guide](https://aws-otel.github.io/docs/getting-started/javascript-sdk).
-
 ### Propagator Details
 
 Example header:`X-Amzn-Trace-Id: Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1`
