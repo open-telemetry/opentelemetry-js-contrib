@@ -41,26 +41,51 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Node
+        if: steps.validate_pr.outputs.is_release
         uses: actions/setup-node@v2
         with:
           node-version: '14.x'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Cache Dependencies
+        if: steps.validate_pr.outputs.is_release
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            package-lock.json
+            detectors/node/*/node_modules
+            metapackages/*/node_modules
+            packages/*/node_modules
+            plugins/node/*/node_modules
+            plugins/web/*/node_modules
+            propagators/*/node_modules
+          key: ${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
+
+      - name: Build Packages
+        if: steps.validate_pr.outputs.is_release
+        run: |
+          npm install
+          npx lerna bootstrap --no-ci
+
       - name: Publish to NPM
         if: steps.validate_pr.outputs.is_release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: ./scripts/publish.sh
+        run: npx lerna publish ${{ steps.metadata.outputs.version }} --no-push --no-git-tag-version --no-verify-access --yes
 
-      # Generates changelog without the "Unreleased" portion for use in release body
-      # Newlines must be URL-encoded to render properly in the GitHub UI
-      - name: Generate Release Body
+      # Parses the CHANGELOG.md file for the latest version's entry, to be used in GitHub release body
+      # Assumes the CHANGELOG's first H2 entry is "Unreleased", followed by version entries
+      - name: Get Release Body
         if: steps.validate_pr.outputs.is_release
-        id: generate-changelog
-        env:
-          GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
+        id: get-changelog
         run: |
-          description=$(npx lerna-changelog | sed '1,3d')
+          echo "Getting changelog entry for version ${{ steps.metadata.outputs.version }}"
+          startline=$(sed -n "/## ${{ steps.metadata.outputs.version }}/=" CHANGELOG.md)
+          startline=$((startline+2))
+          endline=$(sed -n '/^## /=' CHANGELOG.md | head -n 3 | tail -n 1)
+          endline=$((endline-2))
+          description=$(sed -n "$startline,$endline p" CHANGELOG.md)
           description="${description//'%'/'%25'}"
           description="${description//$'\n'/'%0A'}"
           description="${description//$'\r'/'%0D'}"
@@ -76,6 +101,6 @@ jobs:
           tag_name: 'v${{ steps.metadata.outputs.version }}'
           commitish: main
           release_name: 'v${{ steps.metadata.outputs.version }} Release'
-          body: "${{ steps.generate-changelog.outputs.CHANGELOG }}"
+          body: "${{ steps.get-changelog.outputs.CHANGELOG }}"
           draft: false
           prerelease: false
