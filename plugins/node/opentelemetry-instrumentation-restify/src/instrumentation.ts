@@ -19,7 +19,6 @@ import * as restify from 'restify';
 import { Server } from 'restify';
 import * as types from './types';
 import { VERSION } from './version';
-import once = require('lodash.once');
 import * as c from './constants';
 import {
   InstrumentationBase,
@@ -192,9 +191,8 @@ export class RestifyInstrumentation extends InstrumentationBase<
           },
           api.context.active()
         );
-        const endSpan = once(span.end.bind(span));
         const patchedNext = (err?: any) => {
-          endSpan();
+          span.end();
           next(err);
         };
         patchedNext.ifError = next.ifError;
@@ -208,7 +206,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
               span.recordException(err);
               throw err;
             } finally {
-              endSpan();
+              span.end();
             }
           },
           this,
