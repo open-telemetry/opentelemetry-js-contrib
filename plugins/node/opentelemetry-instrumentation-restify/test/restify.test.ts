@@ -49,6 +49,16 @@ const httpRequest = {
     });
   },
 };
+const noop = (value: unknown) => {};
+const defer = (): { promise: Promise<unknown>, resolve: Function, reject: Function } => {
+  let resolve = noop;
+  let reject = noop;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
 
 const useHandler: restify.RequestHandler = (req, res, next) => {
   // only run if route was found
@@ -285,6 +295,139 @@ describe('Restify Instrumentation', () => {
           assert.strictEqual(span.attributes['restify.version'], 'n/a');
         }
         assert.strictEqual(res, '{"route":"hello"}');
+      } finally {
+        testLocalServer.close();
+      }
+    });
+
+    it('should work with async handlers', async () => {
+      const {
+        promise: work,
+        resolve: resolveWork,
+      } = defer();
+      const {
+        promise: started,
+        resolve: resolveStarted,
+      } = defer();
+      // status to assert the correctness of the test
+      let status = 'uninit';
+      const asyncHandler: restify.RequestHandler = async (req, res, next) => {
+        status = 'started';
+        resolveStarted();
+        await work;
+        status = 'done';
+        return getHandler(req, res, next);
+      };
+      const testLocalServer = await createServer((server: restify.Server) => {
+        server.get(
+          '/route/:param',
+          asyncHandler
+        );
+      });
+      const testLocalPort = testLocalServer.address().port;
+
+      try {
+        const requestPromise = httpRequest.get(
+          `http://localhost:${testLocalPort}/route/hello`
+        ).then((res) => {
+          // assert request results
+          assert.strictEqual(res, '{"route":"hello"}');
+        });
+
+        // assert pre request state
+        assert.strictEqual(status, 'uninit');
+        await started;
+
+        // assert started state
+        assert.strictEqual(status, 'started');
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+        resolveWork();
+        await requestPromise;
+
+        // assert done state
+        assert.strictEqual(status, 'done');
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+        {
+          // span from get
+          const span = memoryExporter.getFinishedSpans()[0];
+          assert.notStrictEqual(span, undefined);
+          assert.strictEqual(span.attributes['http.route'], '/route/:param');
+          assert.strictEqual(span.attributes['restify.method'], 'get');
+          assert.strictEqual(
+            span.attributes['restify.type'],
+            'request_handler'
+          );
+          assert.strictEqual(span.attributes['restify.name'], 'asyncHandler');
+          assert.strictEqual(span.attributes['restify.version'], 'n/a');
+        }
+      } finally {
+        testLocalServer.close();
+      }
+    });
+
+    it('should work with promise-returning handlers', async () => {
+      const {
+        promise: work,
+        resolve: resolveWork,
+      } = defer();
+      const {
+        promise: started,
+        resolve: resolveStarted,
+      } = defer();
+      // status to assert the correctness of the test
+      let status = 'uninit';
+      const promiseReturningHandler: restify.RequestHandler = (req, res, next) => {
+        status = 'started';
+        resolveStarted();
+        return work.then(() => {
+          status = 'done';
+          return getHandler(req, res, next)
+        });
+      };
+      const testLocalServer = await createServer((server: restify.Server) => {
+        server.get(
+          '/route/:param',
+          promiseReturningHandler
+        );
+      });
+      const testLocalPort = testLocalServer.address().port;
+
+      try {
+        const requestPromise = httpRequest.get(
+          `http://localhost:${testLocalPort}/route/hello`
+        ).then((res) => {
+          // assert request results
+          assert.strictEqual(res, '{"route":"hello"}');
+        });
+
+        // assert pre request state
+        assert.strictEqual(status, 'uninit');
+        await started;
+
+        // assert started state
+        assert.strictEqual(status, 'started');
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+        resolveWork();
+        await requestPromise;
+
+        // assert done state
+        assert.strictEqual(status, 'done');
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+        {
+          // span from get
+          const span = memoryExporter.getFinishedSpans()[0];
+          assert.notStrictEqual(span, undefined);
+          assert.strictEqual(span.attributes['http.route'], '/route/:param');
+          assert.strictEqual(span.attributes['restify.method'], 'get');
+          assert.strictEqual(
+            span.attributes['restify.type'],
+            'request_handler'
+          );
+          assert.strictEqual(span.attributes['restify.name'], 'promiseReturningHandler');
+          assert.strictEqual(span.attributes['restify.version'], 'n/a');
+        }
       } finally {
         testLocalServer.close();
       }

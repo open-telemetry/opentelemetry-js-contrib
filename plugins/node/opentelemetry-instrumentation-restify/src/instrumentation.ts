@@ -27,6 +27,7 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { HttpAttribute } from '@opentelemetry/semantic-conventions';
+import { types as checkType } from 'util';
 
 const { diag } = api;
 
@@ -197,16 +198,34 @@ export class RestifyInstrumentation extends InstrumentationBase<
         };
         patchedNext.ifError = next.ifError;
 
+        const wrapPromise = (promise: Promise<unknown>) => {
+          return promise
+            .catch((err) => {
+              span.recordException(err);
+              throw err;
+            })
+            .finally(() => {
+              span.end();
+            });
+        }
+
         return api.context.with(
           api.setSpan(api.context.active(), span),
           (req: types.Request, res: restify.Response, next: restify.Next) => {
+            if (checkType.isAsyncFunction(handler)) {
+              return wrapPromise(handler(req, res, next));
+            }
             try {
-              return handler(req, res, next);
+              const result = handler(req, res, next);
+              if (checkType.isPromise(result)) {
+                return wrapPromise(result);
+              }
+              span.end();
+              return result;
             } catch (err) {
               span.recordException(err);
-              throw err;
-            } finally {
               span.end();
+              throw err;
             }
           },
           this,
