@@ -20,6 +20,7 @@ import {
   getSpan,
   isSpanContextValid,
   Span,
+  SpanContext,
 } from '@opentelemetry/api';
 import {
   InstrumentationBase,
@@ -28,9 +29,17 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { WinstonInstrumentationConfig } from './types';
+import {
+  WinstonInstrumentationConfig,
+  Winston2LogMethod,
+  Winston2LoggerModule,
+  Winston3LogMethod,
+  Winston3Logger,
+} from './types';
 import { VERSION } from './version';
-import type { Logger as WinstonLogger } from 'winston';
+
+const winston3Versions = ['>=3 <4'];
+const winstonPre3Versions = ['>=1 <3'];
 
 export class WinstonInstrumentation extends InstrumentationBase {
   constructor(config: WinstonInstrumentationConfig = {}) {
@@ -41,24 +50,19 @@ export class WinstonInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition<{}>(
         'winston',
-        ['*'],
+        winston3Versions,
         moduleExports => moduleExports,
         () => {},
         [
-          new InstrumentationNodeModuleFile<WinstonLogger>(
+          new InstrumentationNodeModuleFile<Winston3Logger>(
             'winston/lib/winston/logger.js',
-            ['>=3.0'],
+            winston3Versions,
             logger => {
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
               }
 
-              this._wrap(
-                logger.prototype,
-                'write',
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                this._getPatchedWrite() as any
-              );
+              this._wrap(logger.prototype, 'write', this._getPatchedWrite());
               return logger;
             },
             logger => {
@@ -66,14 +70,31 @@ export class WinstonInstrumentation extends InstrumentationBase {
               this._unwrap(logger.prototype, 'write');
             }
           ),
-          new InstrumentationNodeModuleFile<{}>(
+        ]
+      ),
+      new InstrumentationNodeModuleDefinition<{}>(
+        'winston',
+        winstonPre3Versions,
+        moduleExports => moduleExports,
+        () => {},
+        [
+          new InstrumentationNodeModuleFile<Winston2LoggerModule>(
             'winston/lib/winston/logger.js',
-            ['<3'],
-            logger => {
-              return logger;
+            winstonPre3Versions,
+            fileExports => {
+              const proto = fileExports.Logger.prototype;
+
+              if (isWrapped(proto.log)) {
+                this._unwrap(proto, 'log');
+              }
+
+              this._wrap(proto, 'log', this._getPatchedLog());
+
+              return fileExports;
             },
-            logger => {
-              console.log(logger);
+            fileExports => {
+              if (fileExports === undefined) return;
+              this._unwrap(fileExports.Logger.prototype, 'log');
             }
           ),
         ]
@@ -108,9 +129,12 @@ export class WinstonInstrumentation extends InstrumentationBase {
   }
 
   private _getPatchedWrite() {
-    return (original: (...args: unknown[]) => void) => {
+    return (original: Winston3LogMethod) => {
       const instrumentation = this;
-      return function patchedWrite(this: WinstonLogger, ...args: unknown[]) {
+      return function patchedWrite(
+        this: never,
+        ...args: Parameters<typeof original>
+      ) {
         const span = getSpan(context.active());
 
         if (!span) {
@@ -123,15 +147,76 @@ export class WinstonInstrumentation extends InstrumentationBase {
           return original.apply(this, args);
         }
 
-        const record = args[0] as Record<string, string>;
-        record['trace_id'] = spanContext.traceId;
-        record['span_id'] = spanContext.spanId;
-        record['trace_flags'] = `0${spanContext.traceFlags.toString(16)}`;
-
+        const record = args[0];
+        injectRecord(spanContext, record);
         instrumentation._callHook(span, record);
 
         return original.apply(this, args);
       };
     };
   }
+
+  private _getPatchedLog() {
+    return (original: Winston2LogMethod) => {
+      const instrumentation = this;
+      return function patchedLog(
+        this: unknown,
+        ...args: Parameters<typeof original>
+      ) {
+        const span = getSpan(context.active());
+
+        if (!span) {
+          return original.apply(this, args);
+        }
+
+        const spanContext = span.context();
+
+        if (!isSpanContextValid(spanContext)) {
+          return original.apply(this, args);
+        }
+
+        for (let i = args.length - 1; i >= 0; i--) {
+          if (typeof args[i] === 'object') {
+            const record = args[i];
+            injectRecord(spanContext, record);
+            instrumentation._callHook(span, record);
+            return original.apply(this, args);
+          }
+        }
+
+        const record = injectRecord(spanContext);
+        console.log(record);
+
+        const insertAt =
+          typeof args[args.length - 1] === 'function'
+            ? args.length - 1
+            : args.length;
+        console.log(insertAt);
+        console.log(args);
+
+        args.splice(insertAt, 0, record);
+        console.log(args);
+        instrumentation._callHook(span, record);
+
+        return original.apply(this, args);
+      };
+    };
+  }
+}
+
+function injectRecord(
+  spanContext: SpanContext,
+  record?: Record<string, string>
+) {
+  const fields = {
+    trace_id: spanContext.traceId,
+    span_id: spanContext.spanId,
+    trace_flags: `0${spanContext.traceFlags.toString(16)}`,
+  };
+
+  if (!record) {
+    return fields;
+  }
+
+  return Object.assign(record, fields);
 }

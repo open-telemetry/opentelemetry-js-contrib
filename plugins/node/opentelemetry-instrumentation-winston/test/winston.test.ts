@@ -31,8 +31,8 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
-import * as Winston from 'winston';
-import { Logger } from 'winston';
+import type * as Winston from 'winston';
+import type { Winston3Logger } from '../src/types';
 import { WinstonInstrumentation } from '../src/winston';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -44,7 +44,7 @@ context.setGlobalContextManager(new AsyncHooksContextManager());
 const kMessage = 'log-message';
 
 describe('WinstonInstrumentation', () => {
-  let logger: Logger;
+  let logger: Winston3Logger;
   let stream;
   let writeSpy: sinon.SinonSpy;
   let winston: typeof Winston;
