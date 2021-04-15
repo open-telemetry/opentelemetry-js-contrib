@@ -185,17 +185,13 @@ export class WinstonInstrumentation extends InstrumentationBase {
         }
 
         const record = injectRecord(spanContext);
-        console.log(record);
 
         const insertAt =
           typeof args[args.length - 1] === 'function'
             ? args.length - 1
             : args.length;
-        console.log(insertAt);
-        console.log(args);
 
         args.splice(insertAt, 0, record);
-        console.log(args);
         instrumentation._callHook(span, record);
 
         return original.apply(this, args);
