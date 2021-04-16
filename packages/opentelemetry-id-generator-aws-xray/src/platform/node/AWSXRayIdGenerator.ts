@@ -54,14 +54,5 @@ function generateRandomBytes(bytes: number): string {
     SHARED_BUFFER.writeUInt32BE((Math.random() * 2 ** 32) >>> 0, i * 4);
   }
 
-  // If buffer is all 0, set the last byte to 1 to guarantee a valid w3c id is generated
-  for (let i = 0; i < bytes; i++) {
-    if (SHARED_BUFFER[i] > 0) {
-      break;
-    } else if (i === bytes - 1) {
-      SHARED_BUFFER[bytes - 1] = 1;
-    }
-  }
-
   return SHARED_BUFFER.toString('hex', 0, bytes);
 }
