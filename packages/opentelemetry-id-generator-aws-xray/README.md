@@ -24,15 +24,12 @@ configure the following:
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { AWSXRayIdGenerator } = require('@opentelemetry/id-generator-aws-xray');
-// ...
 
-module.exports = ("service_name_here") => {
-   const tracerConfig = {
-    idGenerator: new AWSXRayIdGenerator(),
-    resources: resources
-  };
-  const tracerProvider = new NodeTracerProvider(tracerConfig);
-  // ...}
+const tracerConfig = {
+  idGenerator: new AWSXRayIdGenerator(),
+  resources: resources
+};
+const tracerProvider = new NodeTracerProvider(tracerConfig);
 ```
 
 ### Trace ID Details
@@ -51,10 +48,13 @@ A trace ID consists of two parts; the timestamp and the unique identifier.
 * the last 24 hexadecimal digits is an random identifier for the trace
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+
 ### License
+
 Apache 2.0 - See [LICENSE][license-url] for more information.
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
