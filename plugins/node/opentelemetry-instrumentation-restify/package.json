@@ -1,30 +1,29 @@
 {
-  "name": "@opentelemetry/host-metrics",
+  "name": "@opentelemetry/instrumentation-restify",
   "version": "0.15.0",
-  "description": "OpenTelemetry Host Metrics for Node.js",
+  "description": "OpenTelemetry restify automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "clean": "rimraf build/*",
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
-    "compile": "npm run version:update && tsc -p .",
+    "tdd": "yarn test -- --watch-extensions ts --watch",
+    "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version",
+    "version:update": "node ../../../scripts/version-update.js",
+    "compile": "npm run version:update && tsc -p .",
     "prepare": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json test/**/*.test.ts",
-    "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
   "keywords": [
     "opentelemetry",
-    "metrics",
+    "restify",
     "nodejs",
     "tracing",
-    "profiling",
-    "plugin"
+    "instrumentation"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -42,29 +41,28 @@
     "access": "public"
   },
   "devDependencies": {
-    "@opentelemetry/exporter-prometheus": "0.18.2",
-    "@types/mocha": "8.0.2",
+    "@opentelemetry/context-async-hooks": "0.18.0",
+    "@opentelemetry/node": "0.18.0",
+    "@opentelemetry/tracing": "0.18.0",
+    "@types/mocha": "7.0.2",
     "@types/node": "14.0.27",
-    "@types/sinon": "9.0.4",
-    "codecov": "3.8.0",
+    "@types/restify": "^4.3.7",
+    "codecov": "3.7.2",
     "gts": "3.1.0",
     "mocha": "7.2.0",
-    "mock-require": "3.0.3",
-    "nan": "2.14.2",
     "nyc": "15.1.0",
+    "restify": "^4.3.4",
     "rimraf": "3.0.2",
-    "semver": "7.3.2",
-    "sinon": "10.0.0",
-    "ts-loader": "8.0.7",
     "ts-mocha": "8.0.0",
-    "ts-node": "8.10.2",
+    "ts-node": "9.0.0",
+    "tslint-consistent-codestyle": "1.16.0",
+    "tslint-microsoft-contrib": "6.2.0",
     "typescript": "4.1.3"
   },
   "dependencies": {
     "@opentelemetry/api": "^0.18.0",
-    "@opentelemetry/api-metrics": "^0.18.0",
     "@opentelemetry/core": "^0.18.0",
-    "@opentelemetry/metrics": "^0.18.0",
-    "systeminformation": "^4.31.0"
+    "@opentelemetry/instrumentation": "^0.18.0",
+    "@opentelemetry/semantic-conventions": "^0.18.0"
   }
 }
