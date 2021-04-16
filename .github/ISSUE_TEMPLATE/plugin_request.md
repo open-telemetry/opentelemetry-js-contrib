@@ -16,13 +16,13 @@ A clear and concise description of what the problem is. Ex. I'm always frustrate
 -->
 
 
-### Is it applicable for Node or Browser or both
+### Is it applicable for Node or Browser or both?
 
 
-### Do you expect this plugin to be commonly used
+### Do you expect this plugin to be commonly used?
 Weekly Downloads:
 
-### What version of plugin are you interested in using
+### What version of plugin are you interested in using?
 Versions:
 
 ### Additional context
