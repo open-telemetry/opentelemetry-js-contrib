@@ -86,7 +86,7 @@ export const traceSendCommand = (
   tracer: Tracer,
   original: Function,
   config?: IORedisInstrumentationConfig,
-  moduleVersion?: string | undefined
+  moduleVersion?: string
 ) => {
   const dbStatementSerializer =
     config?.dbStatementSerializer || defaultDbStatementSerializer;
