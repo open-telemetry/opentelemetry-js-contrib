@@ -12,9 +12,12 @@ For automatic instrumentation see the
 
 ## Installation
 
+This instrumentation relies on HTTP calls to also be instrumented. Make sure you install and enable both.
+
 ```bash
-npm install --save @opentelemetry/instrumentation-express
+npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrumentation-express
 ```
+
 ### Supported Versions
  - `^4.0.0`
 
@@ -22,35 +25,52 @@ npm install --save @opentelemetry/instrumentation-express
 
 OpenTelemetry Express Instrumentation allows the user to automatically collect trace data and export them to their backend of choice, to give observability to distributed systems.
 
-To load a specific instrumentation (express in this case), specify it in the Node Tracer's configuration.
+To load the instrumentation, specify it in the Node Tracer's configuration:
+
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
 
 const provider = new NodeTracerProvider();
+registerInstrumentations({
+  tracerProvider: provider,
+  instrumentations: [
+    // Express instrumentation expects HTTP layer to be instrumented
+    HttpInstrumentation,
+    ExpressInstrumentation,
+  ],
+});
 provider.register();
-new ExpressInstrumentation();
 ```
 
 See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/express) for a short example.
 
 ### Caveats
 
-Because of the way express works, it's hard to correctly compute the time taken by asynchronous middlewares and request handlers. For this reason, the time you'll see reported for asynchronous middlewares and request handlers will only represent the synchronous execution time, and **not** any asynchronous work.
+Because of the way express works, it's hard to correctly compute the time taken by asynchronous middlewares and request handlers. For this reason, the time you'll see reported for asynchronous middlewares and request handlers still only represent the synchronous execution time, and **not** any asynchronous work.
 
 ### Express Instrumentation Options
 
 Express instrumentation has few options available to choose from. You can set the following:
 
-| Options | Type | Description |
-| ------- | ---- | ----------- |
-| `ignoreLayers` | `IgnoreMatcher[]` | Express instrumentation will not trace all layers that match. |
-| `ignoreLayersType`| `ExpressLayerType[]` | Express instrumentation will ignore the layers that match based on their type. |
+| Options | Type | Example | Description |
+| ------- | ---- | ------- | ----------- |
+| `ignoreLayers` | `IgnoreMatcher[]` | `[/^\/_internal\//]` | Ignore layers that by match. |
+| `ignoreLayersType`| `ExpressLayerType[]` | `['request_handler']` | Ignore layers of specified type. |
 
-For reference, here are the three different layer type:
-  - `router` is the name of `express.Router()`
-  - `middleware`
-  - `request_handler` is the name for anything thats not a router or a middleware.
+`ignoreLayers` accepts an array of elements of types:
+
+- `string` for full match of the path,
+- `RegExp` for partial match of the path,
+- `function` in the form of `(path) => boolean` for custom logic.
+
+`ignoreLayersType` accepts an array of following strings:
+
+- `router` is the name of `express.Router()`,
+- `middleware`,
+- `request_handler` is the name for anything that's not a router or a middleware.
 
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
