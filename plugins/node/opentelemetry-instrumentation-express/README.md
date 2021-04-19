@@ -34,15 +34,16 @@ const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
 
 const provider = new NodeTracerProvider();
+provider.register();
+
 registerInstrumentations({
-  tracerProvider: provider,
   instrumentations: [
     // Express instrumentation expects HTTP layer to be instrumented
-    HttpInstrumentation,
-    ExpressInstrumentation,
+    new HttpInstrumentation(),
+    new ExpressInstrumentation(),
   ],
+  tracerProvider: provider,
 });
-provider.register();
 ```
 
 See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/express) for a short example.

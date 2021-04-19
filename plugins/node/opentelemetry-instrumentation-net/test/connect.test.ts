@@ -218,6 +218,7 @@ describe('NetInstrumentation', () => {
 
     it('should finish previous span when connecting twice', done => {
       socket.connect(PORT, () => {
+        socket.destroy();
         socket.connect(PORT, () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 2);

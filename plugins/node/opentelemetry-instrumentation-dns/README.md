@@ -31,12 +31,6 @@ registerInstrumentations({
     new DnsInstrumentation({
       // see under for available configuration
     }),
-    {
-      // be sure to disable old plugin but only if it was installed
-      plugins: {
-        dns: { enabled: false, path: '@opentelemetry/plugin-dns' }
-      },
-    }
   ],
   tracerProvider: provider,
 });
