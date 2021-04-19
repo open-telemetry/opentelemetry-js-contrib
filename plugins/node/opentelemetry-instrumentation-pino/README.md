@@ -26,8 +26,7 @@ provider.register();
 registerInstrumentations({
   instrumentations: [
     new PinoInstrumentation({
-      // Optional hook to insert additional context to log metadata.
-      // Called after trace context is injected to metadata.
+      // Optional hook to insert additional context to log object.
       logHook: (span, record) => {
         record['resource.service.name'] = provider.resource.attributes['service.name'];
       },
