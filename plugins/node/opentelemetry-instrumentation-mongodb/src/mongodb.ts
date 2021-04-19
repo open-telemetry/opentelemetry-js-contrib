@@ -142,14 +142,11 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           typeof resultHandler !== 'function' ||
           typeof ops !== 'object'
         ) {
-          return original.call(
-            this,
-            server,
-            ns,
-            ops,
-            typeof options === 'function' ? callback : options,
-            callback
-          );
+          if (typeof options === 'function') {
+            return original.call(this, server, ns, ops, options);
+          } else {
+            return original.call(this, server, ns, ops, options, callback);
+          }
         }
         const span = instrumentation.tracer.startSpan(
           `mongodb.${operationName}`,
@@ -165,14 +162,12 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           operationName !== 'insert' ? (ops[0] as any) : undefined
         );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
-        return original.call(
-          this,
-          server,
-          ns,
-          ops,
-          typeof options === 'function' ? patchedCallback : options,
-          patchedCallback
-        );
+        // handle when options is the callback to send the correct number of args
+        if (typeof options === 'function') {
+          return original.call(this, server, ns, ops, patchedCallback);
+        } else {
+          return original.call(this, server, ns, ops, options, patchedCallback);
+        }
       };
     };
   }
@@ -197,14 +192,11 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object'
         ) {
-          return original.call(
-            this,
-            server,
-            ns,
-            cmd,
-            typeof options === 'function' ? callback : options,
-            callback
-          );
+          if (typeof options === 'function') {
+            return original.call(this, server, ns, cmd, options);
+          } else {
+            return original.call(this, server, ns, cmd, options, callback);
+          }
         }
         const commandType = instrumentation._getCommandType(cmd);
         const type =
@@ -214,14 +206,12 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         });
         instrumentation._populateAttributes(span, ns, server, cmd);
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
-        return original.call(
-          this,
-          server,
-          ns,
-          cmd,
-          typeof options === 'function' ? patchedCallback : options,
-          patchedCallback
-        );
+        // handle when options is the callback to send the correct number of args
+        if (typeof options === 'function') {
+          return original.call(this, server, ns, cmd, patchedCallback);
+        } else {
+          return original.call(this, server, ns, cmd, options, patchedCallback);
+        }
       };
     };
   }
@@ -247,30 +237,46 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object'
         ) {
-          return original.call(
-            this,
-            server,
-            ns,
-            cmd,
-            cursorState,
-            typeof options === 'function' ? callback : options,
-            callback
-          );
+          if (typeof options === 'function') {
+            return original.call(this, server, ns, cmd, cursorState, options);
+          } else {
+            return original.call(
+              this,
+              server,
+              ns,
+              cmd,
+              cursorState,
+              options,
+              callback
+            );
+          }
         }
         const span = instrumentation.tracer.startSpan('mongodb.find', {
           kind: SpanKind.CLIENT,
         });
         instrumentation._populateAttributes(span, ns, server, cmd);
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
-        return original.call(
-          this,
-          server,
-          ns,
-          cmd,
-          cursorState,
-          typeof options === 'function' ? patchedCallback : options,
-          patchedCallback
-        );
+        // handle when options is the callback to send the correct number of args
+        if (typeof options === 'function') {
+          return original.call(
+            this,
+            server,
+            ns,
+            cmd,
+            cursorState,
+            patchedCallback
+          );
+        } else {
+          return original.call(
+            this,
+            server,
+            ns,
+            cmd,
+            cursorState,
+            options,
+            patchedCallback
+          );
+        }
       };
     };
   }
@@ -292,30 +298,53 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (!currentSpan || typeof resultHandler !== 'function') {
-          return original.call(
-            this,
-            server,
-            ns,
-            cursorState,
-            batchSize,
-            typeof options === 'function' ? callback : options,
-            callback
-          );
+          if (typeof options === 'function') {
+            return original.call(
+              this,
+              server,
+              ns,
+              cursorState,
+              batchSize,
+              options
+            );
+          } else {
+            return original.call(
+              this,
+              server,
+              ns,
+              cursorState,
+              batchSize,
+              options,
+              callback
+            );
+          }
         }
         const span = instrumentation.tracer.startSpan('mongodb.getMore', {
           kind: SpanKind.CLIENT,
         });
         instrumentation._populateAttributes(span, ns, server, cursorState.cmd);
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
-        return original.call(
-          this,
-          server,
-          ns,
-          cursorState,
-          batchSize,
-          typeof options === 'function' ? patchedCallback : options,
-          patchedCallback
-        );
+        // handle when options is the callback to send the correct number of args
+        if (typeof options === 'function') {
+          return original.call(
+            this,
+            server,
+            ns,
+            cursorState,
+            batchSize,
+            patchedCallback
+          );
+        } else {
+          return original.call(
+            this,
+            server,
+            ns,
+            cursorState,
+            batchSize,
+            options,
+            patchedCallback
+          );
+        }
       };
     };
   }
