@@ -14,13 +14,6 @@ const EXPORTER = process.env.EXPORTER || '';
 module.exports = (serviceName) => {
   const provider = new NodeTracerProvider();
 
-  registerInstrumentations({
-    instrumentations: [
-      new PgInstrumentation(),
-      new HttpInstrumentation(),
-    ],
-  });
-
   let exporter;
   if (EXPORTER.toLowerCase().startsWith('z')) {
     exporter = new ZipkinExporter({
@@ -38,6 +31,13 @@ module.exports = (serviceName) => {
 
   // Initialize the OpenTelemetry APIs to use the BasicTracer bindings
   provider.register();
+
+  registerInstrumentations({
+    instrumentations: [
+      new PgInstrumentation(),
+      new HttpInstrumentation(),
+    ],
+  });
 
   return opentelemetry.trace.getTracer('example-postgres');
 };
