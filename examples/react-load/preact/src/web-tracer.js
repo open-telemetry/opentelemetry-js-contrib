@@ -15,7 +15,7 @@ export default (serviceName) => {
   provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
   provider.register({
-  contextManager: new ZoneContextManager(),
+    contextManager: new ZoneContextManager(),
   });
 
   const tracer = provider.getTracer(serviceName);

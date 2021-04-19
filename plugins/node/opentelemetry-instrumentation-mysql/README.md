@@ -30,18 +30,11 @@ const { MySQLInstrumentation } = require('@opentelemetry/instrumentation-mysql')
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({
   instrumentations: [
     new MySQLInstrumentation(),
-    {
-      // be sure to disable old plugin but only if it was installed
-      plugins: {
-        mysql: { enabled: false, path: '@opentelemetry/plugin-mysql' }
-      },
-    }
   ],
   tracerProvider: provider,
 })

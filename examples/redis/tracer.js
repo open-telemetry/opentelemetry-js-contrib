@@ -5,6 +5,9 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
+const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis');
 
 const EXPORTER = process.env.EXPORTER || '';
 
@@ -26,6 +29,14 @@ module.exports = (serviceName) => {
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
+
+  registerInstrumentations({
+    instrumentations: [
+      new HttpInstrumentation(),
+      new RedisInstrumentation(),
+    ],
+    tracerProvider: provider,
+  });
 
   return opentelemetry.trace.getTracer('redis-example');
 };

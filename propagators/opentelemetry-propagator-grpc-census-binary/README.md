@@ -17,6 +17,7 @@ Example of usage:
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { GrpcCensusPropagator } = require("@opentelemetry/propagator-grpc-census-binary");
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { GrpcInstrumentation } = require('opentelemetry/instrumentation-grpc');
 
 const provider = new NodeTracerProvider();
 
@@ -28,14 +29,7 @@ provider.register({
 
 registerInstrumentations({
   instrumentations: [
-    {
-      plugins: {
-        grpc: {
-          enabled: true,
-          path: '@opentelemetry/plugin-grpc',
-        }
-      },
-    },
+    new GrpcInstrumentation(),
   ],
   tracerProvider: provider,
 });
