@@ -19,20 +19,10 @@ npm install @opentelemetry/instrumentation-graphql
 'use strict';
 
 const { GraphQLInstrumentation } = require('@opentelemetry/instrumentation-graphql');
-
-const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { NodeTracerProvider } = require('@opentelemetry/node');
-const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const exporter = new CollectorTraceExporter({
-  serviceName: 'basic-service',
-});
-
 const provider = new NodeTracerProvider();
-
-provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({

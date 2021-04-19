@@ -5,21 +5,15 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/tracing');
 const { HttpTraceContext } = require('@opentelemetry/core');
 const { GrpcCensusPropagator } = require('@opentelemetry/propagator-grpc-census-binary');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { GrpcInstrumentation } = require('@opentelemetry/instrumentation-grpc');
 
 /**
  * Return an OpenTelemetry tracer configured to use the gRPC plugin and with the
  * requested propagator
  */
 module.exports = (serviceName, binaryPropagator) => {
-  const provider = new NodeTracerProvider({
-    plugins: {
-      grpc: {
-        enabled: true,
-        // You may use a package name or absolute path to the file.
-        path: '@opentelemetry/plugin-grpc',
-      },
-    },
-  });
+  const provider = new NodeTracerProvider();
 
   // It is recommended to use this `BatchSpanProcessor` for better performance
   // and optimization, especially in production.
@@ -35,6 +29,12 @@ module.exports = (serviceName, binaryPropagator) => {
       propagator: new HttpTraceContext(),
     });
   }
+
+  registerInstrumentations({
+    instrumentations: [
+      new GrpcInstrumentation(),
+    ],
+  });
 
   return opentelemetry.trace.getTracer(serviceName);
 };
