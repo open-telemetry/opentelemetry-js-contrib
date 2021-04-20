@@ -273,8 +273,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         spanContext &&
         (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
       ) {
-        // Trace header provided by Lambda only sampled if user is using X-Ray, in which case we need to use it as a
-        // parent.
+        // Trace header provided by Lambda only sampled if a sampled context was propagated from
+        // an upstream cloud service such as S3, or the user is using X-Ray. In these cases, we
+        // need to use it as the parent.
         return parent;
       }
     }
