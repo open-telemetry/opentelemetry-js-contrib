@@ -33,6 +33,7 @@ import type * as pino from 'pino';
 const pinoVersions = ['>=5.14.0 <7'];
 
 export class PinoInstrumentation extends InstrumentationBase {
+  // TODO: https://github.com/open-telemetry/opentelemetry-js/issues/2131
   _isEnabled: boolean = false;
 
   constructor(config: PinoInstrumentationConfig = {}) {
