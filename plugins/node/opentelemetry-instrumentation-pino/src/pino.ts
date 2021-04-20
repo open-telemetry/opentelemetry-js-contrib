@@ -20,31 +20,20 @@ import {
   getSpan,
   isSpanContextValid,
   Span,
-  SpanContext,
 } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
-  InstrumentationNodeModuleFile,
-  isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import {
-  Pino,
-  PinoInstrumentationConfig,
-  PinoLogger,
-  PinoGenLsCacheFunction,
-} from './types';
+import { Pino, PinoInstrumentationConfig } from './types';
 import { VERSION } from './version';
-import * as semver from 'semver';
+import type * as pino from 'pino';
 
-const pinoVersions = ['>=5 <7'];
-const pino5Versions = '5.x';
-const pino6Versions = '6.x';
+const pinoVersions = ['>=5.14.0 <7'];
 
 export class PinoInstrumentation extends InstrumentationBase {
-  _pinoWriteSym: symbol | undefined;
-  _instrumentedLoggers = new Set<PinoLogger>();
+  _isEnabled: boolean = false;
 
   constructor(config: PinoInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-pino', VERSION, config);
@@ -55,73 +44,40 @@ export class PinoInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition<Pino>(
         'pino',
         pinoVersions,
-        (pinoModule, version) => {
-          if (version === undefined) {
-            return pinoModule;
-          }
-
-          if (semver.satisfies(version, pino5Versions)) {
-            const proto = Object.getPrototypeOf(pinoModule());
-
-            if (isWrapped(proto[pinoModule.symbols.writeSym])) {
-              this._unwrap(proto, pinoModule.symbols.writeSym);
+        pinoModule => {
+          const instrumentation = this;
+          const patchedPino = Object.assign((...args: unknown[]) => {
+            if (args.length == 0) {
+              return pinoModule({ mixin: instrumentation._getMixinFunction() });
             }
 
-            this._wrap(
-              proto,
-              pinoModule.symbols.writeSym,
-              this._getPatchedWrite()
-            );
-          } else if (semver.satisfies(version, pino6Versions)) {
-            this._pinoWriteSym = pinoModule.symbols.writeSym;
-          }
-
-          return pinoModule;
-        },
-        (pinoModule, version) => {
-          if (pinoModule === undefined || version === undefined) return;
-
-          if (semver.satisfies(version, pino5Versions)) {
-            this._unwrap(
-              Object.getPrototypeOf(pinoModule()),
-              pinoModule.symbols.writeSym
-            );
-          } else if (semver.satisfies(version, pino6Versions)) {
-            if (this._pinoWriteSym !== undefined) {
-              for (const logger of this._instrumentedLoggers) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                this._unwrap(logger as any, this._pinoWriteSym);
+            if (args.length == 1) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const optsOrStream = args[0] as any;
+              if (
+                typeof optsOrStream === 'string' ||
+                (optsOrStream !== undefined &&
+                  typeof optsOrStream['write'] === 'function')
+              ) {
+                args.splice(0, 0, {
+                  mixin: instrumentation._getMixinFunction(),
+                });
+                return pinoModule(...(args as Parameters<Pino>));
               }
-              this._instrumentedLoggers.clear();
             }
-            this._pinoWriteSym = undefined;
-          }
+
+            args[0] = instrumentation._combineOptions(
+              args[0] as pino.LoggerOptions
+            );
+
+            return pinoModule(...(args as Parameters<Pino>));
+          }, pinoModule);
+
+          return patchedPino;
         },
-        [
-          new InstrumentationNodeModuleFile<{
-            genLsCache: PinoGenLsCacheFunction;
-          }>(
-            'pino/lib/levels.js',
-            [pino6Versions],
-            fileExports => {
-              if (isWrapped(fileExports.genLsCache)) {
-                this._unwrap(fileExports, 'genLsCache');
-              }
-
-              this._wrap(
-                fileExports,
-                'genLsCache',
-                this._getPatchedGenLsCache()
-              );
-
-              return fileExports;
-            },
-            fileExports => {
-              if (fileExports === undefined) return;
-              this._unwrap(fileExports, 'genLsCache');
-            }
-          ),
-        ]
+        () => {
+          this._isEnabled = false;
+        }
       ),
     ];
   }
@@ -132,6 +88,16 @@ export class PinoInstrumentation extends InstrumentationBase {
 
   setConfig(config: PinoInstrumentationConfig) {
     this._config = config;
+  }
+
+  enable() {
+    super.enable();
+    this._isEnabled = true;
+  }
+
+  disable() {
+    super.disable();
+    this._isEnabled = false;
   }
 
   private _callHook(span: Span, record: Record<string, string>) {
@@ -152,79 +118,54 @@ export class PinoInstrumentation extends InstrumentationBase {
     );
   }
 
-  private _getPatchedGenLsCache() {
-    return (original: PinoGenLsCacheFunction) => {
-      const instrumentation = this;
-      return function patchedGenLsCache(logger: PinoLogger): PinoLogger {
-        if (instrumentation._pinoWriteSym === undefined) {
-          return logger;
-        }
+  private _getMixinFunction() {
+    const instrumentation = this;
+    return function otelMixin() {
+      if (!instrumentation._isEnabled) {
+        return {};
+      }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const anyLogger = logger as any;
-        const pinoWrite = anyLogger[instrumentation._pinoWriteSym];
+      const span = getSpan(context.active());
 
-        if (pinoWrite === undefined) {
-          return logger;
-        }
+      if (!span) {
+        return {};
+      }
 
-        instrumentation._wrap(
-          anyLogger,
-          instrumentation._pinoWriteSym,
-          instrumentation._getPatchedWrite()
-        );
-        instrumentation._instrumentedLoggers.add(logger);
+      const spanContext = span.context();
 
-        return original(logger);
+      if (!isSpanContextValid(spanContext)) {
+        return {};
+      }
+
+      const record = {
+        trace_id: spanContext.traceId,
+        span_id: spanContext.spanId,
+        trace_flags: `0${spanContext.traceFlags.toString(16)}`,
       };
+
+      instrumentation._callHook(span, record);
+
+      return record;
     };
   }
 
-  private _getPatchedWrite() {
-    return (
-      original: (record: Record<string, string> | undefined | null) => void
-    ) => {
-      const instrumentation = this;
-      return function patchedWrite(
-        this: PinoLogger,
-        ...args: Parameters<typeof original>
-      ) {
-        const span = getSpan(context.active());
+  private _combineOptions(options?: pino.LoggerOptions) {
+    if (options === undefined) {
+      return { mixin: this._getMixinFunction() };
+    }
 
-        if (!span) {
-          return original.apply(this, args);
-        }
+    if (options.mixin === undefined) {
+      options.mixin = this._getMixinFunction();
+      return options;
+    }
 
-        const spanContext = span.context();
+    const originalMixin = options.mixin;
+    const otelMixin = this._getMixinFunction();
 
-        if (!isSpanContextValid(spanContext)) {
-          return original.apply(this, args);
-        }
-
-        const record = patchedRecord(spanContext, args[0]);
-        instrumentation._callHook(span, record);
-
-        args[0] = record;
-
-        return original.apply(this, args);
-      };
+    options.mixin = () => {
+      return Object.assign(otelMixin(), originalMixin());
     };
+
+    return options;
   }
-}
-
-function patchedRecord(
-  spanContext: SpanContext,
-  record: Record<string, string> | undefined | null
-) {
-  const fields = {
-    trace_id: spanContext.traceId,
-    span_id: spanContext.spanId,
-    trace_flags: `0${spanContext.traceFlags.toString(16)}`,
-  };
-
-  if (!record) {
-    return fields;
-  }
-
-  return Object.assign(record, fields);
 }

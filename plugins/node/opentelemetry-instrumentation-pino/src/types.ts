@@ -26,5 +26,3 @@ export interface PinoInstrumentationConfig extends InstrumentationConfig {
 }
 
 export type Pino = typeof pino;
-export type PinoLogger = pino.BaseLogger;
-export type PinoGenLsCacheFunction = (logger: PinoLogger) => PinoLogger;

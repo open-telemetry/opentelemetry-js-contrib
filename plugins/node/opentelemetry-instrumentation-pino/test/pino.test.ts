@@ -26,7 +26,6 @@ import {
   Span,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
-import { isWrapped } from '@opentelemetry/instrumentation';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { Writable } from 'stream';
 import * as assert from 'assert';
@@ -44,20 +43,24 @@ context.setGlobalContextManager(new AsyncHooksContextManager());
 const kMessage = 'log-message';
 
 describe('PinoInstrumentation', () => {
-  let stream;
+  let stream: Writable;
   let writeSpy: sinon.SinonSpy;
   let pino: typeof Pino;
   let instrumentation: PinoInstrumentation;
   let logger: Pino.Logger;
 
-  function assertInjection(span: Span) {
-    sinon.assert.calledOnce(writeSpy);
+  function assertRecord(record: any, span: Span) {
     const { traceId, spanId, traceFlags } = span.context();
-    const record = JSON.parse(writeSpy.firstCall.args[0].toString());
     assert.strictEqual(record['trace_id'], traceId);
     assert.strictEqual(record['span_id'], spanId);
     assert.strictEqual(record['trace_flags'], `0${traceFlags.toString(16)}`);
     assert.strictEqual(kMessage, record['msg']);
+  }
+
+  function assertInjection(span: Span) {
+    sinon.assert.calledOnce(writeSpy);
+    const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+    assertRecord(record, span);
     return record;
   }
 
@@ -93,7 +96,6 @@ describe('PinoInstrumentation', () => {
   describe('enabled instrumentation', () => {
     beforeEach(() => {
       init();
-      assert.ok(isWrapped((logger as any)[pino.symbols.writeSym]));
     });
 
     it('injects span context to records', () => {
@@ -153,6 +155,88 @@ describe('PinoInstrumentation', () => {
     });
   });
 
+  describe('logger construction', () => {
+    let stdoutSpy: sinon.SinonSpy;
+
+    beforeEach(() => {
+      stream = new Writable();
+      stream._write = () => {};
+      writeSpy = sinon.spy(stream, 'write');
+      stdoutSpy = sinon.spy(process.stdout, 'write');
+    });
+
+    afterEach(() => {
+      stdoutSpy.restore();
+    });
+
+    it('does not fail when constructing logger without arguments', () => {
+      logger = pino();
+      const span = tracer.startSpan('abc');
+      context.with(setSpan(context.active(), span), () => {
+        logger.info(kMessage);
+      });
+      const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
+      assertRecord(record, span);
+    });
+
+    it('preserves user options and adds a mixin', () => {
+      logger = pino({ name: 'LogLog' }, stream);
+
+      const span = tracer.startSpan('abc');
+      context.with(setSpan(context.active(), span), () => {
+        const record = testInjection(span);
+        assert.strictEqual(record['name'], 'LogLog');
+      });
+    });
+
+    describe('binary arguments', () => {
+      it('is possible to construct logger with undefined options', () => {
+        logger = pino((undefined as unknown) as Pino.LoggerOptions, stream);
+        const span = tracer.startSpan('abc');
+        context.with(setSpan(context.active(), span), () => {
+          testInjection(span);
+        });
+      });
+
+      it('preserves user mixins', () => {
+        logger = pino(
+          {
+            name: 'LogLog',
+            mixin: () => ({ a: 2, b: 'bar' }),
+          },
+          stream
+        );
+
+        const span = tracer.startSpan('abc');
+        context.with(setSpan(context.active(), span), () => {
+          const record = testInjection(span);
+          assert.strictEqual(record['a'], 2);
+          assert.strictEqual(record['b'], 'bar');
+          assert.strictEqual(record['name'], 'LogLog');
+        });
+      });
+
+      it('ensures user mixin values take precedence', () => {
+        logger = pino(
+          {
+            mixin() {
+              return { trace_id: '123' };
+            },
+          },
+          stream
+        );
+
+        const span = tracer.startSpan('abc');
+        context.with(setSpan(context.active(), span), () => {
+          logger.info(kMessage);
+        });
+
+        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        assert.strictEqual(record['trace_id'], '123');
+      });
+    });
+  });
+
   describe('disabled instrumentation', () => {
     before(() => {
       instrumentation.disable();
@@ -182,6 +266,14 @@ describe('PinoInstrumentation', () => {
       context.with(setSpan(context.active(), span), () => {
         const record = testNoInjection();
         assert.strictEqual(record['resource.service.name'], undefined);
+      });
+    });
+
+    it('injects span context once re-enabled', () => {
+      instrumentation.enable();
+      const span = tracer.startSpan('abc');
+      context.with(setSpan(context.active(), span), () => {
+        testInjection(span);
       });
     });
   });
