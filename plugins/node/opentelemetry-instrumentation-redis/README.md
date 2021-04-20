@@ -30,18 +30,11 @@ const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis')
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({
   instrumentations: [
     new RedisInstrumentation(),
-    {
-      // be sure to disable old plugin but only if it was installed
-      plugins: {
-        redis: { enabled: false, path: '@opentelemetry/plugin-redis' }
-      },
-    }
   ],
   tracerProvider: provider,
 })

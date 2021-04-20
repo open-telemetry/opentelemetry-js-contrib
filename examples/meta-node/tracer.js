@@ -30,26 +30,6 @@ module.exports = () => {
           },
         },
       }),
-      // disable old plugins - this can be removed once plugins are deprecated
-      // and removed from registerInstrumentations
-      {
-        plugins: {
-          mongodb: { enabled: false, path: '@opentelemetry/plugin-mongodb' },
-          grpc: { enabled: false, path: '@opentelemetry/plugin-grpc' },
-          '@grpc/grpc-js': { enabled: false, path: '@opentelemetry/plugin-grpc-js' },
-          http: { enabled: false, path: '@opentelemetry/plugin-http' },
-          https: { enabled: false, path: '@opentelemetry/plugin-httsps' },
-          mysql: { enabled: false, path: '@opentelemetry/plugin-mysql' },
-          pg: { enabled: false, path: '@opentelemetry/plugin-pg' },
-          redis: { enabled: false, path: '@opentelemetry/plugin-redis' },
-          ioredis: { enabled: false, path: '@opentelemetry/plugin-ioredis' },
-          'pg-pool': { enabled: false, path: '@opentelemetry/plugin-pg-pool' },
-          express: { enabled: false, path: '@opentelemetry/plugin-express' },
-          '@hapi/hapi': { enabled: false, path: '@opentelemetry/hapi-instrumentation' },
-          koa: { enabled: false, path: '@opentelemetry/koa-instrumentation' },
-          dns: { enabled: false, path: '@opentelemetry/plugin-dns' },
-        },
-      },
     ],
     tracerProvider: provider,
   });
