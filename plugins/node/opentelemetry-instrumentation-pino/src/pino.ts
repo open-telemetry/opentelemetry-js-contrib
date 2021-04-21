@@ -57,8 +57,7 @@ export class PinoInstrumentation extends InstrumentationBase {
               const optsOrStream = args[0] as any;
               if (
                 typeof optsOrStream === 'string' ||
-                (optsOrStream !== undefined &&
-                  typeof optsOrStream['write'] === 'function')
+                typeof optsOrStream?.write === 'function'
               ) {
                 args.splice(0, 0, {
                   mixin: instrumentation._getMixinFunction(),
