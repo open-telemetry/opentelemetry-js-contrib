@@ -29,7 +29,7 @@ export enum CPU_LABELS {
   SYSTEM = 'system',
   IDLE = 'idle',
   INTERRUPT = 'interrupt',
-  NICE = 'nice'
+  NICE = 'nice',
 }
 
 export enum NETWORK_LABELS {

@@ -30,21 +30,20 @@ export function getCpuUsageData(): CpuUsageData[] {
     cpuUsageTime = new Date().getTime() - process.uptime() * 1000;
   }
 
-  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000
+  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000;
 
-  return (os.cpus().map((cpu, cpuNumber) => {
+  return os.cpus().map((cpu, cpuNumber) => {
+    const idle = cpu.times.idle * MILLISECOND;
+    const user = cpu.times.user * MILLISECOND;
+    const system = cpu.times.sys * MILLISECOND;
+    const interrupt = cpu.times.irq * MILLISECOND;
+    const nice = cpu.times.nice * MILLISECOND;
 
-    const idle = cpu.times.idle * MILLISECOND
-    const user = cpu.times.user * MILLISECOND
-    const system = cpu.times.sys * MILLISECOND
-    const interrupt = cpu.times.irq * MILLISECOND
-    const nice = cpu.times.nice * MILLISECOND
-
-    const idleP = idle / timeElapsed
-    const userP = user / timeElapsed
-    const systemP = system / timeElapsed
-    const interruptP = interrupt / timeElapsed
-    const niceP = nice / timeElapsed
+    const idleP = idle / timeElapsed;
+    const userP = user / timeElapsed;
+    const systemP = system / timeElapsed;
+    const interruptP = interrupt / timeElapsed;
+    const niceP = nice / timeElapsed;
 
     return {
       cpuNumber: String(cpuNumber),
@@ -57,9 +56,9 @@ export function getCpuUsageData(): CpuUsageData[] {
       systemP,
       idleP,
       interruptP,
-      niceP
+      niceP,
     };
-  }));
+  });
 }
 
 /**
