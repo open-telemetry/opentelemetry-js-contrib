@@ -65,6 +65,6 @@
     "@opentelemetry/api-metrics": "^0.18.2",
     "@opentelemetry/core": "^0.18.2",
     "@opentelemetry/metrics": "^0.18.2",
-    "systeminformation": "^4.31.0"
+    "systeminformation": "^5.0.0"
   }
 }
