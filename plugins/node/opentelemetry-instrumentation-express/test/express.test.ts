@@ -24,7 +24,7 @@ import {
 import * as assert from 'assert';
 import { CustomAttributeNames, ExpressInstrumentationSpan } from '../src/types';
 import { ExpressInstrumentation } from '../src';
-import { HttpAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
@@ -164,7 +164,7 @@ describe('ExpressInstrumentation', () => {
           .find(span => span.name.includes('request handler'));
         assert.notStrictEqual(requestHandlerSpan, undefined);
         assert.strictEqual(
-          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
+          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
           '/toto/:id'
         );
         assert.strictEqual(

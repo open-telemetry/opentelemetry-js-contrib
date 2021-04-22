@@ -31,10 +31,7 @@ import {
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import { RedisInstrumentation } from '../src';
-import {
-  DatabaseAttribute,
-  GeneralAttribute,
-} from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new RedisInstrumentation();
 instrumentation.enable();
@@ -52,10 +49,10 @@ const CONFIG = {
 const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
-  [DatabaseAttribute.DB_SYSTEM]: RedisInstrumentation.COMPONENT,
-  [GeneralAttribute.NET_PEER_HOSTNAME]: CONFIG.host,
-  [GeneralAttribute.NET_PEER_PORT]: CONFIG.port,
-  [GeneralAttribute.NET_PEER_ADDRESS]: URL,
+  [SemanticAttributes.DB_SYSTEM]: RedisInstrumentation.COMPONENT,
+  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
+  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+  [SemanticAttributes.NET_PEER_IP]: URL,
 };
 
 const unsetStatus: SpanStatus = {
@@ -183,7 +180,7 @@ describe('redis@2.x', () => {
         it(`should create a child span for ${operation.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [DatabaseAttribute.DB_STATEMENT]: operation.command,
+            [SemanticAttributes.DB_STATEMENT]: operation.command,
           };
           const span = tracer.startSpan('test span');
           context.with(setSpan(context.active(), span), () => {

@@ -15,10 +15,7 @@
  */
 
 import { SpanAttributes } from '@opentelemetry/api';
-import {
-  DatabaseAttribute,
-  GeneralAttribute,
-} from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import type {
   ConnectionConfig,
   PoolActualConfig,
@@ -37,11 +34,11 @@ export function getConnectionAttributes(
   const { host, port, database, user } = getConfig(config);
 
   return {
-    [GeneralAttribute.NET_PEER_HOSTNAME]: host,
-    [GeneralAttribute.NET_PEER_PORT]: port,
-    [GeneralAttribute.NET_PEER_ADDRESS]: getJDBCString(host, port, database),
-    [DatabaseAttribute.DB_NAME]: database,
-    [DatabaseAttribute.DB_USER]: user,
+    [SemanticAttributes.NET_PEER_NAME]: host,
+    [SemanticAttributes.NET_PEER_PORT]: port,
+    [SemanticAttributes.NET_PEER_IP]: getJDBCString(host, port, database),
+    [SemanticAttributes.DB_NAME]: database,
+    [SemanticAttributes.DB_USER]: user,
   };
 }
 
