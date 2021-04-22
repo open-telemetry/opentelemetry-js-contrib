@@ -30,7 +30,7 @@ import {
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
-import { HttpAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const exporter = new InMemorySpanExporter();
 const provider = new BasicTracerProvider();
@@ -310,7 +310,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.ok(
           (rootSpan.attributes[
-            HttpAttribute.HTTP_RESPONSE_CONTENT_LENGTH
+            SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH
           ] as number) > 0
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
@@ -404,11 +404,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[HttpAttribute.HTTP_URL],
+          spanResource1.attributes[SemanticAttributes.HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[HttpAttribute.HTTP_URL],
+          spanResource2.attributes[SemanticAttributes.HTTP_URL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -439,7 +439,7 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[HttpAttribute.HTTP_URL],
+          spanResource1.attributes[SemanticAttributes.HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
 

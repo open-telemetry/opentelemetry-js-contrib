@@ -22,7 +22,10 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
+import {
+  SemanticAttributes,
+  NetTransportValues,
+} from '@opentelemetry/semantic-conventions';
 import { Net, NormalizedOptions, SocketEvent } from './types';
 import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
 import { VERSION } from './version';
@@ -101,8 +104,8 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
   private _startIpcSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('ipc.connect', {
       attributes: {
-        [GeneralAttribute.NET_TRANSPORT]: IPC_TRANSPORT,
-        [GeneralAttribute.NET_PEER_NAME]: options.path,
+        [SemanticAttributes.NET_TRANSPORT]: IPC_TRANSPORT,
+        [SemanticAttributes.NET_PEER_NAME]: options.path,
       },
     });
 
@@ -114,9 +117,9 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
   private _startTcpSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('tcp.connect', {
       attributes: {
-        [GeneralAttribute.NET_TRANSPORT]: GeneralAttribute.IP_TCP,
-        [GeneralAttribute.NET_PEER_NAME]: options.host,
-        [GeneralAttribute.NET_PEER_PORT]: options.port,
+        [SemanticAttributes.NET_TRANSPORT]: NetTransportValues.IP_TCP,
+        [SemanticAttributes.NET_PEER_NAME]: options.host,
+        [SemanticAttributes.NET_PEER_PORT]: options.port,
       },
     });
 
@@ -157,9 +160,9 @@ function registerListeners(
 
   const setHostAttributes = () => {
     span.setAttributes({
-      [GeneralAttribute.NET_PEER_IP]: socket.remoteAddress,
-      [GeneralAttribute.NET_HOST_IP]: socket.localAddress,
-      [GeneralAttribute.NET_HOST_PORT]: socket.localPort,
+      [SemanticAttributes.NET_PEER_IP]: socket.remoteAddress,
+      [SemanticAttributes.NET_HOST_IP]: socket.localAddress,
+      [SemanticAttributes.NET_HOST_PORT]: socket.localPort,
     });
   };
 

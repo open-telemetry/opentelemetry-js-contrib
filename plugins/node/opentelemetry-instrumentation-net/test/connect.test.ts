@@ -19,7 +19,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import * as net from 'net';
 import * as assert from 'assert';
@@ -178,7 +178,7 @@ describe('NetInstrumentation', () => {
       socket.once(SocketEvent.CLOSE, () => {
         const span = getSpan();
         assert.strictEqual(
-          span.attributes[GeneralAttribute.NET_TRANSPORT],
+          span.attributes[SemanticAttributes.NET_TRANSPORT],
           undefined
         );
         assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
