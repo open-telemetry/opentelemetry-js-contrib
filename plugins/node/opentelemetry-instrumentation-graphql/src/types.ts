@@ -29,6 +29,10 @@ import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 export const OPERATION_NOT_SUPPORTED =
   'Operation$operationName$not' + ' supported';
 
+export interface GraphQLInstrumentationExecutionResponseHook {
+  (span: api.Span, data: graphqlTypes.ExecutionResult): void;
+}
+
 export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
   /**
    * When set to true it will not remove attributes values from schema source.
@@ -53,6 +57,14 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   mergeItems?: boolean;
+
+  /**
+   * Hook that allows adding custom span attributes based on the data
+   * returned from "execute" GraphQL actions.
+   *
+   * @default undefined
+   */
+  responseHook?: GraphQLInstrumentationExecutionResponseHook;
 }
 
 /**
