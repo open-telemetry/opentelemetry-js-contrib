@@ -28,7 +28,7 @@
   <strong>
     <a href="CONTRIBUTING.md">Contributing<a/>
     &nbsp;&nbsp;&bull;&nbsp;&nbsp;
-    <a href="plugins/">Plugins<a/>
+    <a href="plugins/">Instrumentations<a/>
     &nbsp;&nbsp;&bull;&nbsp;&nbsp;
     <a href="propagators/">Propagators<a/>
     &nbsp;&nbsp;&bull;&nbsp;&nbsp;
@@ -44,39 +44,38 @@ This is a repository for OpenTelemetry JavaScript contributions that are not par
 [core repository](https://github.com/open-telemetry/opentelemetry-js) and
 core distribution of the API and SDK.
 
-## Plugins
+## Instrumentations
 
-OpenTelemetry can collect tracing data automatically using plugins. Vendors/Users can also create and use their own. Currently, OpenTelemetry supports automatic tracing for:
+OpenTelemetry can collect tracing data automatically using instrumentations. Vendors/Users can also create and use their own. Currently, OpenTelemetry supports automatic tracing for:
 
-### Node Plugins
+### Node Instrumentations
 
-- [@opentelemetry/plugin-grpc][otel-plugin-grpc]
-- [@opentelemetry/plugin-http][otel-plugin-http]
-- [@opentelemetry/plugin-https][otel-plugin-https]
-- [@opentelemetry/plugin-mongodb][otel-plugin-mongodb]
-- [@opentelemetry/plugin-mysql][otel-plugin-mysql]
-- [@opentelemetry/plugin-pg][otel-plugin-pg]
-- [@opentelemetry/plugin-pg-pool][otel-plugin-pg-pool]
-- [@opentelemetry/plugin-redis][otel-plugin-redis]
-- [@opentelemetry/plugin-ioredis][otel-plugin-ioredis]
-- [@opentelemetry/plugin-express][otel-plugin-express]
-- [@opentelemetry/plugin-dns][otel-plugin-dns]
-- [@opentelemetry/hapi-instrumentation][otel-contrib-hapi-instrumentation]
+- [@opentelemetry/instrumentation-grpc][otel-instrumentation-grpc]
+- [@opentelemetry/instrumentation-http][otel-instrumentation-http]
+- [@opentelemetry/instrumentation-mongodb][otel-contrib-instrumentation-mongodb]
+- [@opentelemetry/instrumentation-mysql][otel-contrib-instrumentation-mysql]
+- [@opentelemetry/instrumentation-pg][otel-contrib-instrumentation-pg]
+- [@opentelemetry/instrumentation-redis][otel-contrib-instrumentation-redis]
+- [@opentelemetry/instrumentation-ioredis][otel-contrib-instrumentation-ioredis]
+- [@opentelemetry/instrumentation-express][otel-contrib-instrumentation-express]
+- [@opentelemetry/instrumentation-dns][otel-contrib-instrumentation-dns]
+- [@opentelemetry/instrumentation-hapi][otel-contrib-instrumentation-hapi]
 - [@opentelemetry/instrumentation-koa][otel-contrib-instrumentation-koa]
 - [@opentelemetry/instrumentation-graphql][otel-contrib-instrumentation-graphql]
 
-### Web Plugins
+### Web Instrumentations
 
-- [@opentelemetry/instrumentation-document-load][otel-instrumentation-document-load]
 - [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
-- [@opentelemetry/instrumentation-user-interaction][otel-instrumentation-user-interaction]
-- [@opentelemetry/plugin-react-load][otel-plugin-react-load]
+- [@opentelemetry/instrumentation-document-load][otel-contrib-instrumentation-document-load]
+- [@opentelemetry/instrumentation-user-interaction][otel-contrib-instrumentation-user-interaction]
+- [@opentelemetry/plugin-react-load][otel-contrib-plugin-react-load]
 
 ### Metapackages
 
-Multiple plugins may be leveraged via metapackages.
+Multiple instrumentations may be leveraged via metapackages.
 
-- [@opentelemetry/plugins-node-core-and-contrib][otel-plugins-node-core-and-contrib] - all officially supported core and contrib plugins.
+- [@opentelemetry/auto-instrumentations-node][otel-contrib-auto-instr-node] - Metapackage which bundles opentelemetry node core and contrib instrumentations
+- [@opentelemetry/auto-instrumentations-web][otel-contrib-auto-instr-web] - Metapackage which bundles opentelemetry web core and contrib instrumentations
 
 ## Supported Runtimes
 
@@ -116,22 +115,24 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [up-for-grabs-issues]: https://github.com/open-telemetry/opentelemetry-js-contrib/issues?q=is%3Aissue+is%3Aopen+label%3Aup-for-grabs
 [good-first-issues]: https://github.com/open-telemetry/openTelemetry-js-contrib/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
-[otel-plugin-grpc]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-grpc
-[otel-plugin-http]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-http
-[otel-plugin-https]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-https
-[otel-plugin-dns]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-dns
-[otel-instrumentation-document-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-document-load
-[otel-plugin-react-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-react-load
-[otel-plugin-ioredis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-ioredis
-[otel-plugin-mongodb]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-mongodb
-[otel-plugin-mysql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-mysql
-[otel-plugin-pg-pool]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-pg-pool
-[otel-plugin-pg]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-pg
-[otel-plugin-redis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-redis
-[otel-instrumentation-user-interaction]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-user-interaction
+
+[otel-instrumentation-grpc]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-grpc
+[otel-instrumentation-http]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-http
 [otel-instrumentation-xml-http-request]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-xml-http-request
-[otel-plugin-express]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-plugin-express
-[otel-plugins-node-core-and-contrib]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/plugins-node-core-and-contrib
-[otel-contrib-hapi-instrumentation]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-hapi-instrumentation
-[otel-contrib-instrumentation-koa]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa
+
+[otel-contrib-instrumentation-dns]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns
+[otel-contrib-instrumentation-document-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-document-load
+[otel-contrib-instrumentation-express]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express
 [otel-contrib-instrumentation-graphql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-graphql
+[otel-contrib-instrumentation-hapi]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-hapi
+[otel-contrib-instrumentation-ioredis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis
+[otel-contrib-instrumentation-koa]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa
+[otel-contrib-instrumentation-mongodb]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb
+[otel-contrib-instrumentation-mysql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql
+[otel-contrib-instrumentation-pg]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pg
+[otel-contrib-instrumentation-redis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis
+[otel-contrib-instrumentation-user-interaction]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-user-interaction
+[otel-contrib-plugin-react-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-react-load
+
+[otel-contrib-auto-instr-node]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-node
+[otel-contrib-auto-instr-web]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-web

@@ -4,7 +4,9 @@ about: Create a report to help us improve
 labels: bug
 ---
 
+<!-- 
 Please answer these questions before submitting a bug report.
+-->
 
 ### What version of OpenTelemetry are you using?
 
@@ -13,7 +15,9 @@ Please answer these questions before submitting a bug report.
 
 
 ### What did you do?
+<!-- 
 If possible, provide a recipe for reproducing the error.
+-->
 
 
 ### What did you expect to see?
@@ -23,4 +27,7 @@ If possible, provide a recipe for reproducing the error.
 
 
 ### Additional context
+<!-- 
 Add any other context about the problem here.
+-->
+
