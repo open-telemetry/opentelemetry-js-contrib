@@ -33,7 +33,7 @@ import {
   TracerProvider,
 } from '@opentelemetry/api';
 import { CLOUD_RESOURCE } from '@opentelemetry/resources';
-import { FaasAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 import { Callback, Context, Handler } from 'aws-lambda';
 
@@ -120,8 +120,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       const span = plugin.tracer.startSpan(name, {
         kind: SpanKind.SERVER,
         attributes: {
-          [FaasAttribute.FAAS_EXECUTION]: context.awsRequestId,
-          [FaasAttribute.FAAS_ID]: context.invokedFunctionArn,
+          [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
+          'faas.id': context.invokedFunctionArn,
           [CLOUD_RESOURCE.ACCOUNT_ID]: AwsLambdaInstrumentation._extractAccountId(
             context.invokedFunctionArn
           ),
