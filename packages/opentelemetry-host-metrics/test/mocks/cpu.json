@@ -1,4 +1,22 @@
-{
-  "user": 1899243,
-  "system": 258553
+[{
+  "model": "CPU @ 2.60GHz",
+  "speed": 2600,
+  "times": {
+    "user": 90713560,
+    "nice": 0,
+    "sys": 63192630,
+    "idle": 374870700,
+    "irq": 0
+  }
+}, {
+  "model": "CPU @ 2.60GHz",
+  "speed": 2600,
+  "times": {
+    "user": 11005420,
+    "nice": 0,
+    "sys": 7678120,
+    "idle": 510034800,
+    "irq": 0
+  }
 }
+]

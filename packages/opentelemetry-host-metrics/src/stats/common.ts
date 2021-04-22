@@ -18,37 +18,48 @@ import * as os from 'os';
 
 import { CpuUsageData, MemoryData } from '../types';
 
-const MICROSECOND = 1 / 1e6;
+const MILLISECOND = 1 / 1e3;
 let cpuUsageTime: number | undefined = undefined;
 
 /**
  * It returns cpu load delta from last time - to be used with SumObservers.
  * When called first time it will return 0 and then delta will be calculated
  */
-export function getCpuUsageData(): CpuUsageData {
+export function getCpuUsageData(): CpuUsageData[] {
   if (typeof cpuUsageTime !== 'number') {
     cpuUsageTime = new Date().getTime() - process.uptime() * 1000;
   }
 
-  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000;
-  const elapsedUsage = process.cpuUsage();
+  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000
 
-  const user = elapsedUsage.user * MICROSECOND;
-  const system = elapsedUsage.system * MICROSECOND;
-  const idle = Math.max(0, timeElapsed - user - system);
+  return (os.cpus().map((cpu, cpuNumber) => {
 
-  const userP = user / timeElapsed;
-  const systemP = system / timeElapsed;
-  const idleP = idle / timeElapsed;
+    const idle = cpu.times.idle * MILLISECOND
+    const user = cpu.times.user * MILLISECOND
+    const system = cpu.times.sys * MILLISECOND
+    const interrupt = cpu.times.irq * MILLISECOND
+    const nice = cpu.times.nice * MILLISECOND
 
-  return {
-    user: user,
-    system: system,
-    idle: idle,
-    userP: userP,
-    systemP: systemP,
-    idleP: idleP,
-  };
+    const idleP = idle / timeElapsed
+    const userP = user / timeElapsed
+    const systemP = system / timeElapsed
+    const interruptP = interrupt / timeElapsed
+    const niceP = nice / timeElapsed
+
+    return {
+      cpuNumber: String(cpuNumber),
+      idle,
+      user,
+      system,
+      interrupt,
+      nice,
+      userP,
+      systemP,
+      idleP,
+      interruptP,
+      niceP
+    };
+  }));
 }
 
 /**

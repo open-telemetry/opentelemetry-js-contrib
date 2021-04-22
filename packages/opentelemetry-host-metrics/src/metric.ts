@@ -36,50 +36,92 @@ export class HostMetrics extends BaseMetrics {
 
   private _updateCpuTime(
     observerBatchResult: api.BatchObserverResult,
-    cpuUsage: CpuUsageData
+    cpuUsages: CpuUsageData[]
   ): void {
-    observerBatchResult.observe(
-      {
-        state: enums.CPU_LABELS.USER,
-      },
-      [this._cpuTimeObserver?.observation(cpuUsage.user)]
-    );
-    observerBatchResult.observe(
-      {
-        state: enums.CPU_LABELS.SYSTEM,
-      },
-      [this._cpuTimeObserver?.observation(cpuUsage.system)]
-    );
-    observerBatchResult.observe(
-      {
-        state: enums.CPU_LABELS.IDLE,
-      },
-      [this._cpuTimeObserver?.observation(cpuUsage.idle)]
-    );
+    for (let i = 0, j = cpuUsages.length; i < j; i++) {
+      const cpuUsage = cpuUsages[i];
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.USER,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuTimeObserver?.observation(cpuUsage.user)]
+      );
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.SYSTEM,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuTimeObserver?.observation(cpuUsage.system)]
+      );
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.IDLE,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuTimeObserver?.observation(cpuUsage.idle)]
+      );
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.INTERRUPT,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuTimeObserver?.observation(cpuUsage.interrupt)]
+      );
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.NICE,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuTimeObserver?.observation(cpuUsage.nice)]
+      );
+    }
+
   }
 
   private _updateCpuUtilisation(
     observerBatchResult: api.BatchObserverResult,
-    cpuUsage: CpuUsageData
+    cpuUsages: CpuUsageData[]
   ): void {
-    observerBatchResult.observe(
-      {
-        state: enums.CPU_LABELS.USER,
-      },
-      [this._cpuUtilizationObserver?.observation(cpuUsage.userP)]
-    );
-    observerBatchResult.observe(
-      {
-        state: enums.CPU_LABELS.SYSTEM,
-      },
-      [this._cpuUtilizationObserver?.observation(cpuUsage.systemP)]
-    );
-    observerBatchResult.observe(
-      {
-        state: enums.CPU_LABELS.IDLE,
-      },
-      [this._cpuUtilizationObserver?.observation(cpuUsage.idleP)]
-    );
+    for (let i = 0, j = cpuUsages.length; i < j; i++) {
+      const cpuUsage = cpuUsages[i];
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.USER,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuUtilizationObserver?.observation(cpuUsage.userP)]
+      );
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.SYSTEM,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuUtilizationObserver?.observation(cpuUsage.systemP)]
+      );
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.IDLE,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuUtilizationObserver?.observation(cpuUsage.idleP)]
+      );
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.INTERRUPT,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuUtilizationObserver?.observation(cpuUsage.interruptP)]
+      );
+      observerBatchResult.observe(
+        {
+          state: enums.CPU_LABELS.NICE,
+          cpu: cpuUsage.cpuNumber
+        },
+        [this._cpuUtilizationObserver?.observation(cpuUsage.niceP)]
+      );
+    }
+
   }
 
   private _updateMemUsage(
