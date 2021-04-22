@@ -20,7 +20,9 @@ import {
   ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
+import { Span } from '@opentelemetry/api';
 import * as assert from 'assert';
+import type * as graphqlTypes from 'graphql';
 import { GraphQLInstrumentation } from '../src';
 import { SpanAttributes, SpanNames } from '../src/enum';
 import { GraphQLInstrumentationConfig } from '../src/types';
@@ -967,6 +969,57 @@ describe('graphql', () => {
         SpanAttributes.ERROR_VALIDATION_NAME
       );
       assert.ok(event.attributes!['exception.message']);
+    });
+  });
+
+  describe('when specifying a responseHook configuration', () => {
+    let spans: ReadableSpan[];
+    let graphqlResult: graphqlTypes.ExecutionResult;
+    const dataAttributeName = 'graphql_data';
+
+    afterEach(() => {
+      exporter.reset();
+      graphQLInstrumentation.disable();
+      spans = [];
+    });
+
+    describe('AND valid responseHook', () => {
+      beforeEach(async () => {
+        create({
+          responseHook: (span: Span, data: graphqlTypes.ExecutionResult) => {
+            span.setAttribute(dataAttributeName, JSON.stringify(data));
+          },
+        });
+        graphqlResult = await graphql(schema, sourceList1);
+        spans = exporter.getFinishedSpans();
+      });
+
+      it('should attach response hook data to the resulting spans', () => {
+        const querySpan = spans.find(
+          span => span.attributes['graphql.operation.name'] == 'query'
+        );
+        const instrumentationResult = querySpan?.attributes[dataAttributeName];
+        assert.deepStrictEqual(
+          instrumentationResult,
+          JSON.stringify(graphqlResult)
+        );
+      });
+    });
+
+    describe('AND invalid responseHook', () => {
+      beforeEach(async () => {
+        create({
+          responseHook: (_span: Span, _data: graphqlTypes.ExecutionResult) => {
+            throw 'some kind of failure!';
+          },
+        });
+        graphqlResult = await graphql(schema, sourceList1);
+        spans = exporter.getFinishedSpans();
+      });
+
+      it('should not do any harm when throwing an exception', () => {
+        assert.deepStrictEqual(graphqlResult.data?.books?.length, 13);
+      });
     });
   });
 
