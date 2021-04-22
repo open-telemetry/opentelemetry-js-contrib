@@ -1,0 +1,44 @@
+{
+  "name": "grpc-dynamic-codegen-example",
+  "version": "0.15.0",
+  "description": "Example of gRPC integration with OpenTelemetry",
+  "main": "index.js",
+  "scripts": {
+    "zipkin:server": "cross-env EXPORTER=zipkin node ./capitalize_server.js",
+    "zipkin:client": "cross-env EXPORTER=zipkin node ./capitalize_client.js",
+    "jaeger:server": "cross-env EXPORTER=jaeger node ./capitalize_server.js",
+    "jaeger:client": "cross-env EXPORTER=jaeger node ./capitalize_client.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "grpc",
+    "tracing"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
+  },
+  "dependencies": {
+    "@grpc/proto-loader": "^0.4.0",
+    "@opentelemetry/api": "^0.18.1",
+    "@opentelemetry/exporter-jaeger": "^0.18.2",
+    "@opentelemetry/exporter-zipkin": "^0.18.2",
+    "@opentelemetry/node": "^0.18.2",
+    "@opentelemetry/instrumentation-grpc": "^0.18.2",
+    "@opentelemetry/tracing": "^0.18.2",
+    "grpc": "^1.24.6",
+    "node-pre-gyp": "^0.17.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}

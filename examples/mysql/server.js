@@ -2,6 +2,7 @@
 
 // eslint-disable-next-line import/order
 const tracer = require('./tracer')('example-mysql-http-server');
+const api = require('@opentelemetry/api');
 const mysql = require('mysql');
 const http = require('http');
 
@@ -102,7 +103,7 @@ function handleClusterQuery(response) {
   const query = 'SELECT 1 + 1 as cluster_solution';
   cluster.getConnection((connErr, conn) => {
     conn.query(query, (err, results, _fields) => {
-      tracer.getCurrentSpan().addEvent('results');
+      api.getSpan(api.context.active()).addEvent('results');
       if (err) {
         console.log('Error code:', err.code);
         response.end(err.message);

@@ -26,10 +26,11 @@ To load a specific instrumentation (Hapi in this case), specify it in the regist
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+
 const provider = new NodeTracerProvider();
 provider.register();
 
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 registerInstrumentations({
   tracerProvider: provider,
 });
@@ -53,6 +54,7 @@ You can combine loading default plugins and HapiInstrumentation at the same time
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+
 const provider = new NodeTracerProvider();
 provider.register();
 

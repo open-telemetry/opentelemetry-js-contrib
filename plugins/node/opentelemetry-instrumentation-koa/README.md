@@ -22,37 +22,11 @@ npm install --save @opentelemetry/instrumentation-koa
 
 OpenTelemetry Koa Instrumentation allows the user to automatically collect trace data and export them to their backend of choice, to give observability to distributed systems.
 
-To load all of the [default supported plugins](https://github.com/open-telemetry/opentelemetry-js#plugins), use the below approach. Each plugin is only loaded when the module that it patches is loaded; in other words, there is no computational overhead for listing plugins for unused modules.
-
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
-const provider = new NodeTracerProvider();
-provider.register();
-
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-registerInstrumentations({
-  tracerProvider: provider,
-});
-```
-
-If instead you would just want to load a specific instrumentation only (**koa** in this case);
-
-```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
 const { KoaInstrumentation } = require('@opentelemetry/instrumentation-koa');
-const provider = new NodeTracerProvider();
-provider.register();
 
-const koaInstrumentation = new KoaInstrumentation();
-koaInstrumentation.setTracerProvider(provider);
-```
-
-You can combine loading default plugins and KoaInstrumentation at the same time:
-
-```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
-const { KoaInstrumentation } = require('@opentelemetry/instrumentation-koa');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const provider = new NodeTracerProvider();
 provider.register();
 
