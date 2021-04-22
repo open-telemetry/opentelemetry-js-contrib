@@ -24,7 +24,9 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
+  context as otelcontext,
   diag,
+  setSpan,
   Span,
   SpanKind,
   SpanStatusCode,
@@ -126,33 +128,35 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         },
       });
 
-      // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
-      // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
-      // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
-      // win and the latter will be ignored.
-      const wrappedCallback = plugin._wrapCallback(callback, span);
-      const maybePromise = safeExecuteInTheMiddle(
-        () => original.apply(this, [event, context, wrappedCallback]),
-        error => {
-          if (error != null) {
-            // Exception thrown synchronously before resolving callback / promise.
-            plugin._endSpan(span, error, () => {});
+      return otelcontext.with(setSpan(otelcontext.active(), span), () => {
+        // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
+        // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
+        // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
+        // win and the latter will be ignored.
+        const wrappedCallback = plugin._wrapCallback(callback, span);
+        const maybePromise = safeExecuteInTheMiddle(
+          () => original.apply(this, [event, context, wrappedCallback]),
+          error => {
+            if (error != null) {
+              // Exception thrown synchronously before resolving callback / promise.
+              plugin._endSpan(span, error, () => {});
+            }
           }
+        ) as Promise<{}> | undefined;
+        if (typeof maybePromise?.then === 'function') {
+          return maybePromise.then(
+            value =>
+              new Promise(resolve =>
+                plugin._endSpan(span, undefined, () => resolve(value))
+              ),
+            (err: Error | string) =>
+              new Promise((resolve, reject) =>
+                plugin._endSpan(span, err, () => reject(err))
+              )
+          );
         }
-      ) as Promise<{}> | undefined;
-      if (typeof maybePromise?.then === 'function') {
-        return maybePromise.then(
-          value =>
-            new Promise(resolve =>
-              plugin._endSpan(span, undefined, () => resolve(value))
-            ),
-          (err: Error | string) =>
-            new Promise((resolve, reject) =>
-              plugin._endSpan(span, err, () => reject(err))
-            )
-        );
-      }
-      return maybePromise;
+        return maybePromise;
+      });
     };
   }
 
