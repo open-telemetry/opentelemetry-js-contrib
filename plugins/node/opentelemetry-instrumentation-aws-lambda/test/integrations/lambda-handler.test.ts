@@ -37,6 +37,7 @@ import {
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
 provider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
+provider.register();
 
 const assertSpanSuccess = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
@@ -145,6 +146,18 @@ describe('lambda handler', () => {
       const [span] = spans;
       assertSpanFailure(span);
     });
+
+    it('context should have parent trace', async () => {
+      initializeHandler('lambda-test/async.context');
+
+      const result = await lambdaRequire('lambda-test/async').context(
+        'arg',
+        ctx
+      );
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.spanContext.traceId, result);
+    });
   });
 
   describe('sync success handler', () => {
@@ -237,6 +250,27 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
+    });
+
+    it('context should have parent trace', async () => {
+      initializeHandler('lambda-test/sync.context');
+
+      const result = await new Promise((resolve, reject) => {
+        lambdaRequire('lambda-test/sync').context(
+          'arg',
+          ctx,
+          (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          }
+        );
+      });
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.spanContext.traceId, result);
     });
   });
 

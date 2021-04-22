@@ -13,20 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const api = require('@opentelemetry/api');
-
-exports.handler = async function (event, context) {
-  return 'ok';
-};
-
-exports.error = async function (event, context) {
-  throw new Error('handler error');
-}
-
-exports.stringerror = async function (event, context) {
-  throw 'handler error';
-}
-
-exports.context = async function (event, context) {
-  return api.getSpanContext(api.context.active()).traceId;
-};
+export * from './node';
