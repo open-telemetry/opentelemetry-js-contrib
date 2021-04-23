@@ -28,6 +28,8 @@ export enum CPU_LABELS {
   USER = 'user',
   SYSTEM = 'system',
   IDLE = 'idle',
+  INTERRUPT = 'interrupt',
+  NICE = 'nice',
 }
 
 export enum NETWORK_LABELS {
