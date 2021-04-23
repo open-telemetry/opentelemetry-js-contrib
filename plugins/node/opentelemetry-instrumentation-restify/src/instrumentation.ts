@@ -26,7 +26,7 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { HttpAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { isPromise, isAsyncFunction } from './utils';
 
 const { diag } = api;
@@ -187,7 +187,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
           [types.CustomAttributeNames.VERSION]: this._moduleVersion || 'n/a',
           [types.CustomAttributeNames.TYPE]: metadata.type,
           [types.CustomAttributeNames.METHOD]: metadata.methodName,
-          [HttpAttribute.HTTP_ROUTE]: route,
+          [SemanticAttributes.HTTP_ROUTE]: route,
         };
         const span = this.tracer.startSpan(
           spanName,

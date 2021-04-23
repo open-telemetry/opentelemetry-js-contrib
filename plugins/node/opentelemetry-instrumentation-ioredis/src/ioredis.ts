@@ -33,7 +33,6 @@ export class IORedisInstrumentation extends InstrumentationBase<
   typeof ioredisTypes
 > {
   static readonly DB_SYSTEM = 'redis';
-  readonly supportedVersions = ['>1 <5'];
 
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
@@ -47,7 +46,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
     return [
       new InstrumentationNodeModuleDefinition<typeof ioredisTypes>(
         'ioredis',
-        this.supportedVersions,
+        ['>1 <5'],
         moduleExports => {
           diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {

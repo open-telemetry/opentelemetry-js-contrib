@@ -43,12 +43,12 @@
   },
   "devDependencies": {
     "@babel/core": "7.10.2",
-    "@opentelemetry/propagator-b3": "0.18.2",
+    "@opentelemetry/propagator-b3": "0.19.0",
     "@types/mocha": "7.0.2",
     "@types/node": "12.12.47",
     "@types/react": "17.0.3",
     "@types/react-addons-test-utils": "0.14.25",
-    "@types/react-dom": "16.9.8",
+    "@types/react-dom": "17.0.3",
     "@types/shimmer": "1.0.1",
     "@types/sinon": "9.0.4",
     "@types/webpack-env": "1.15.2",
@@ -82,12 +82,12 @@
     "react": "^16.13.1 || ^17.0.0"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.18.1",
-    "@opentelemetry/context-zone": "^0.18.2",
-    "@opentelemetry/core": "^0.18.2",
-    "@opentelemetry/semantic-conventions": "^0.18.2",
-    "@opentelemetry/tracing": "^0.18.2",
-    "@opentelemetry/web": "^0.18.2",
+    "@opentelemetry/api": "^1.0.0-rc.0",
+    "@opentelemetry/context-zone": "^0.19.0",
+    "@opentelemetry/core": "^0.19.0",
+    "@opentelemetry/semantic-conventions": "^0.19.0",
+    "@opentelemetry/tracing": "^0.19.0",
+    "@opentelemetry/web": "^0.19.0",
     "shimmer": "^1.2.1"
   }
 }
