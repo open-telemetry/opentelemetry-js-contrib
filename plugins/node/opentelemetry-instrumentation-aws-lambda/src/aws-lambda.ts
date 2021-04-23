@@ -24,14 +24,16 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
+  context as otelcontext,
   diag,
+  setSpan,
   Span,
   SpanKind,
   SpanStatusCode,
   TracerProvider,
 } from '@opentelemetry/api';
 import { CLOUD_RESOURCE } from '@opentelemetry/resources';
-import { FaasAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 import { Callback, Context, Handler } from 'aws-lambda';
 
@@ -118,41 +120,43 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       const span = plugin.tracer.startSpan(name, {
         kind: SpanKind.SERVER,
         attributes: {
-          [FaasAttribute.FAAS_EXECUTION]: context.awsRequestId,
-          [FaasAttribute.FAAS_ID]: context.invokedFunctionArn,
+          [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
+          'faas.id': context.invokedFunctionArn,
           [CLOUD_RESOURCE.ACCOUNT_ID]: AwsLambdaInstrumentation._extractAccountId(
             context.invokedFunctionArn
           ),
         },
       });
 
-      // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
-      // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
-      // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
-      // win and the latter will be ignored.
-      const wrappedCallback = plugin._wrapCallback(callback, span);
-      const maybePromise = safeExecuteInTheMiddle(
-        () => original.apply(this, [event, context, wrappedCallback]),
-        error => {
-          if (error != null) {
-            // Exception thrown synchronously before resolving callback / promise.
-            plugin._endSpan(span, error, () => {});
+      return otelcontext.with(setSpan(otelcontext.active(), span), () => {
+        // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
+        // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
+        // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
+        // win and the latter will be ignored.
+        const wrappedCallback = plugin._wrapCallback(callback, span);
+        const maybePromise = safeExecuteInTheMiddle(
+          () => original.apply(this, [event, context, wrappedCallback]),
+          error => {
+            if (error != null) {
+              // Exception thrown synchronously before resolving callback / promise.
+              plugin._endSpan(span, error, () => {});
+            }
           }
+        ) as Promise<{}> | undefined;
+        if (typeof maybePromise?.then === 'function') {
+          return maybePromise.then(
+            value =>
+              new Promise(resolve =>
+                plugin._endSpan(span, undefined, () => resolve(value))
+              ),
+            (err: Error | string) =>
+              new Promise((resolve, reject) =>
+                plugin._endSpan(span, err, () => reject(err))
+              )
+          );
         }
-      ) as Promise<{}> | undefined;
-      if (typeof maybePromise?.then === 'function') {
-        return maybePromise.then(
-          value =>
-            new Promise(resolve =>
-              plugin._endSpan(span, undefined, () => resolve(value))
-            ),
-          (err: Error | string) =>
-            new Promise((resolve, reject) =>
-              plugin._endSpan(span, err, () => reject(err))
-            )
-        );
-      }
-      return maybePromise;
+        return maybePromise;
+      });
     };
   }
 

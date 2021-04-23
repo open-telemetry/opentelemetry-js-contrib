@@ -62,6 +62,7 @@ describe('MongoDBInstrumentation', () => {
     instrumentation.setTracerProvider(provider);
     provider.addSpanProcessor(spanProcessor);
     context.setGlobalContextManager(contextManager);
+    shouldTest = true;
     accessCollection(URL, DB_NAME, COLLECTION_NAME)
       .then(result => {
         client = result.client;
@@ -97,8 +98,11 @@ describe('MongoDBInstrumentation', () => {
   });
 
   afterEach(done => {
-    collection.deleteMany({}, done);
     memoryExporter.reset();
+    if (shouldTest) {
+      return collection.deleteMany({}, done);
+    }
+    done();
   });
 
   after(() => {
