@@ -1,0 +1,45 @@
+{
+  "name": "tls-example",
+  "private": true,
+  "version": "0.15.0",
+  "description": "Example of NET & TLS integration with OpenTelemetry",
+  "main": "index.js",
+  "scripts": {
+    "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js",
+    "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "net",
+    "tls",
+    "tracing"
+  ],
+  "engines": {
+    "node": ">=8.5.0"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^0.18.1",
+    "@opentelemetry/exporter-jaeger": "^0.18.2",
+    "@opentelemetry/exporter-zipkin": "^0.18.2",
+    "@opentelemetry/instrumentation": "^0.18.2",
+    "@opentelemetry/instrumentation-net": "^0.15.0",
+    "@opentelemetry/instrumentation-http": "^0.19.0",
+    "@opentelemetry/instrumentation-tls": "file:../../plugins/node/opentelemetry-instrumentation-tls",
+    "@opentelemetry/instrumentation-dns": "^0.15.0",
+    "@opentelemetry/node": "^0.18.2",
+    "@opentelemetry/tracing": "^0.18.2"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "devDependencies": {
+    "cross-env": "^6.0.3"
+  }
+}
