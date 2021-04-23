@@ -23,7 +23,7 @@ import { NodeTracerProvider } from '@opentelemetry/node';
 import * as tls from 'tls';
 import * as assert from 'assert';
 import { TLSInstrumentation } from '../src/tls';
-import { TLSSocketEvent } from '../src/types';
+// import { TLSSocketEvent } from '../src/types';
 import { assertTLSSpan, HOST, PORT, SERVER_CERT, SERVER_KEY } from './utils';
 // import { TLSSocket } from 'tls';
 
