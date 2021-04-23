@@ -59,7 +59,7 @@
     "tslint-microsoft-contrib": "6.2.0",
     "typescript": "4.1.3",
     "winston": "3.3.3",
-    "winston2": "npm:winston@2.4.5"
+    "winston2": "npm:winston@3.3.3"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.0.0-rc.0",
