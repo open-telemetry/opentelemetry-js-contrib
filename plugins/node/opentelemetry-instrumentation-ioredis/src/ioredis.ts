@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
-import type * as ioredisTypes from 'ioredis';
+import { diag } from "@opentelemetry/api";
+import type * as ioredisTypes from "ioredis";
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
-} from '@opentelemetry/instrumentation';
-import { IORedisInstrumentationConfig } from './types';
-import { traceConnection, traceSendCommand } from './utils';
-import { VERSION } from './version';
+} from "@opentelemetry/instrumentation";
+import { IORedisInstrumentationConfig } from "./types";
+import { traceConnection, traceSendCommand } from "./utils";
+import { VERSION } from "./version";
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
@@ -32,12 +32,11 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
 export class IORedisInstrumentation extends InstrumentationBase<
   typeof ioredisTypes
 > {
-  static readonly DB_SYSTEM = 'redis';
-  readonly supportedVersions = ['>1 <5'];
+  static readonly DB_SYSTEM = "redis";
 
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
-      '@opentelemetry/instrumentation-ioredis',
+      "@opentelemetry/instrumentation-ioredis",
       VERSION,
       Object.assign({}, DEFAULT_CONFIG, _config)
     );
@@ -46,33 +45,33 @@ export class IORedisInstrumentation extends InstrumentationBase<
   init(): InstrumentationNodeModuleDefinition<typeof ioredisTypes>[] {
     return [
       new InstrumentationNodeModuleDefinition<typeof ioredisTypes>(
-        'ioredis',
-        this.supportedVersions,
+        "ioredis",
+        [">1 <5"],
         (moduleExports, moduleVersion?: string | undefined) => {
-          diag.debug('Applying patch for ioredis');
+          diag.debug("Applying patch for ioredis");
           if (isWrapped(moduleExports.prototype.sendCommand)) {
-            this._unwrap(moduleExports.prototype, 'sendCommand');
+            this._unwrap(moduleExports.prototype, "sendCommand");
           }
           this._wrap(
             moduleExports.prototype,
-            'sendCommand',
+            "sendCommand",
             this._patchSendCommand(moduleVersion)
           );
           if (isWrapped(moduleExports.prototype.connect)) {
-            this._unwrap(moduleExports.prototype, 'connect');
+            this._unwrap(moduleExports.prototype, "connect");
           }
           this._wrap(
             moduleExports.prototype,
-            'connect',
+            "connect",
             this._patchConnection()
           );
           return moduleExports;
         },
-        moduleExports => {
+        (moduleExports) => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch for ioredis');
-          this._unwrap(moduleExports.prototype, 'sendCommand');
-          this._unwrap(moduleExports.prototype, 'connect');
+          diag.debug("Removing patch for ioredis");
+          this._unwrap(moduleExports.prototype, "sendCommand");
+          this._unwrap(moduleExports.prototype, "connect");
         }
       ),
     ];

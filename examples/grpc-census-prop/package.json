@@ -1,6 +1,6 @@
 {
   "name": "grpc-census-prop-example",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Example of using propagator-grpc-census-binary",
   "main": "index.js",
   "scripts": {
@@ -34,15 +34,14 @@
     "@opencensus/instrumentation-grpc": "0.0.21",
     "@opencensus/nodejs": "0.0.21",
     "@opencensus/propagation-binaryformat": "0.0.21",
-    "@opentelemetry/api": "^0.18.0",
-    "@opentelemetry/core": "^0.18.0",
-    "@opentelemetry/instrumentation": "^0.18.0",
-    "@opentelemetry/node": "^0.18.0",
-    "@opentelemetry/plugin-grpc": "^0.18.0",
-    "@opentelemetry/propagator-grpc-census-binary": "^0.14.0",
-    "@opentelemetry/tracing": "^0.18.0",
-    "grpc": "^1.24.2",
-    "node-pre-gyp": "0.12.0"
+    "@opentelemetry/api": "^1.0.0-rc.0",
+    "@opentelemetry/core": "^0.19.0",
+    "@opentelemetry/instrumentation": "^0.19.0",
+    "@opentelemetry/instrumentation-grpc": "^0.19.0",
+    "@opentelemetry/node": "^0.19.0",
+    "@opentelemetry/propagator-grpc-census-binary": "^0.15.0",
+    "@opentelemetry/tracing": "^0.19.0",
+    "grpc": "^1.24.2"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
   "devDependencies": {

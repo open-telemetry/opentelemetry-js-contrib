@@ -30,10 +30,7 @@ import {
   DbStatementSerializer,
 } from './types';
 import { IORedisInstrumentation } from './ioredis';
-import {
-  DatabaseAttribute,
-  GeneralAttribute,
-} from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
 const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
@@ -52,16 +49,16 @@ export const traceConnection = (tracer: Tracer, original: Function) => {
     const span = tracer.startSpan('connect', {
       kind: SpanKind.CLIENT,
       attributes: {
-        [DatabaseAttribute.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
-        [DatabaseAttribute.DB_STATEMENT]: 'connect',
+        [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
+        [SemanticAttributes.DB_STATEMENT]: 'connect',
       },
     });
     const { host, port } = this.options;
 
     span.setAttributes({
-      [GeneralAttribute.NET_PEER_NAME]: host,
-      [GeneralAttribute.NET_PEER_PORT]: port,
-      [GeneralAttribute.NET_PEER_ADDRESS]: `redis://${host}:${port}`,
+      [SemanticAttributes.NET_PEER_NAME]: host,
+      [SemanticAttributes.NET_PEER_PORT]: port,
+      [SemanticAttributes.NET_PEER_IP]: `redis://${host}:${port}`,
     });
     try {
       const client = original.apply(this, arguments);
@@ -103,8 +100,8 @@ export const traceSendCommand = (
     const span = tracer.startSpan(cmd.name, {
       kind: SpanKind.CLIENT,
       attributes: {
-        [DatabaseAttribute.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
-        [DatabaseAttribute.DB_STATEMENT]: dbStatementSerializer(
+        [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
+        [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
           cmd.name,
           cmd.args
         ),
@@ -118,9 +115,9 @@ export const traceSendCommand = (
     const { host, port } = this.options;
 
     span.setAttributes({
-      [GeneralAttribute.NET_PEER_NAME]: host,
-      [GeneralAttribute.NET_PEER_PORT]: port,
-      [GeneralAttribute.NET_PEER_ADDRESS]: `redis://${host}:${port}`,
+      [SemanticAttributes.NET_PEER_NAME]: host,
+      [SemanticAttributes.NET_PEER_PORT]: port,
+      [SemanticAttributes.NET_PEER_IP]: `redis://${host}:${port}`,
     });
 
     try {

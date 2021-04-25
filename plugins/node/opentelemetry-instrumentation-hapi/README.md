@@ -26,10 +26,11 @@ To load a specific instrumentation (Hapi in this case), specify it in the regist
 
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+
 const provider = new NodeTracerProvider();
 provider.register();
 
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 registerInstrumentations({
   tracerProvider: provider,
 });
@@ -53,6 +54,7 @@ You can combine loading default plugins and HapiInstrumentation at the same time
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+
 const provider = new NodeTracerProvider();
 provider.register();
 
@@ -65,6 +67,10 @@ registerInstrumentations({
 ```
 
 See [examples/hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/hapi) for a short example using Hapi
+
+<!-- 
+The dev dependency of `@hapi/podium@4.1.1` is required to force the compatible type declarations. See: https://github.com/hapijs/hapi/issues/4240
+-->
 
 ## Hapi Instrumentation Support
 This package provides automatic tracing for hapi server routes and [request lifecycle](https://github.com/hapijs/hapi/blob/main/API.md#request-lifecycle) extensions defined either directly or via a Hapi plugin.

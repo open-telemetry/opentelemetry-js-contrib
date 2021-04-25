@@ -29,23 +29,21 @@ import { NodeTracerProvider } from '@opentelemetry/node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import {
-  ExceptionAttribute,
-  FaasAttribute,
-} from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
 provider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
+provider.register();
 
 const assertSpanSuccess = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
   assert.strictEqual(span.name, 'my_function');
   assert.strictEqual(
-    span.attributes[FaasAttribute.FAAS_EXECUTION],
+    span.attributes[SemanticAttributes.FAAS_EXECUTION],
     'aws_request_id'
   );
-  assert.strictEqual(span.attributes[FaasAttribute.FAAS_ID], 'my_arn');
+  assert.strictEqual(span.attributes['faas.id'], 'my_arn');
   assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
   assert.strictEqual(span.status.message, undefined);
 };
@@ -54,15 +52,15 @@ const assertSpanFailure = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
   assert.strictEqual(span.name, 'my_function');
   assert.strictEqual(
-    span.attributes[FaasAttribute.FAAS_EXECUTION],
+    span.attributes[SemanticAttributes.FAAS_EXECUTION],
     'aws_request_id'
   );
-  assert.strictEqual(span.attributes[FaasAttribute.FAAS_ID], 'my_arn');
+  assert.strictEqual(span.attributes['faas.id'], 'my_arn');
   assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
   assert.strictEqual(span.status.message, 'handler error');
   assert.strictEqual(span.events.length, 1);
   assert.strictEqual(
-    span.events[0].attributes![ExceptionAttribute.MESSAGE],
+    span.events[0].attributes![SemanticAttributes.EXCEPTION_MESSAGE],
     'handler error'
   );
 };
@@ -144,6 +142,18 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assertSpanFailure(span);
+    });
+
+    it('context should have parent trace', async () => {
+      initializeHandler('lambda-test/async.context');
+
+      const result = await lambdaRequire('lambda-test/async').context(
+        'arg',
+        ctx
+      );
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.spanContext.traceId, result);
     });
   });
 
@@ -237,6 +247,27 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
+    });
+
+    it('context should have parent trace', async () => {
+      initializeHandler('lambda-test/sync.context');
+
+      const result = await new Promise((resolve, reject) => {
+        lambdaRequire('lambda-test/sync').context(
+          'arg',
+          ctx,
+          (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          }
+        );
+      });
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.spanContext.traceId, result);
     });
   });
 

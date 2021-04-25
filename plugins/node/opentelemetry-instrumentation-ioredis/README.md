@@ -30,20 +30,13 @@ const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-iored
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({
   instrumentations: [
     new IORedisInstrumentation({
       // see under for available configuration
-    }),
-    {
-      // be sure to disable old plugin but only if it was installed
-      plugins: {
-        ioredis: { enabled: false, path: '@opentelemetry/plugin-ioredis' }
-      },
-    }
+    })
   ],
   tracerProvider: provider,
 })

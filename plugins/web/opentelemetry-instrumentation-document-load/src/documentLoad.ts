@@ -36,7 +36,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
-import { HttpAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 /**
  * This class represents a document load plugin
@@ -211,7 +211,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       parentSpan
     );
     if (span) {
-      span.setAttribute(HttpAttribute.HTTP_URL, resource.name);
+      span.setAttribute(SemanticAttributes.HTTP_URL, resource.name);
       addSpanNetworkEvents(span, resource);
       this._endSpan(span, PTN.RESPONSE_END, resource);
     }

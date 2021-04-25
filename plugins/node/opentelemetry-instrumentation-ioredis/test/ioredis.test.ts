@@ -38,11 +38,7 @@ import {
   IORedisInstrumentationConfig,
   DbStatementSerializer,
 } from '../src/types';
-import {
-  DatabaseAttribute,
-  ExceptionAttribute,
-  GeneralAttribute,
-} from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -54,10 +50,10 @@ const CONFIG = {
 const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
-  [DatabaseAttribute.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
-  [GeneralAttribute.NET_PEER_NAME]: CONFIG.host,
-  [GeneralAttribute.NET_PEER_PORT]: CONFIG.port,
-  [GeneralAttribute.NET_PEER_ADDRESS]: URL,
+  [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
+  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
+  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+  [SemanticAttributes.NET_PEER_IP]: URL,
 };
 
 const unsetStatus: SpanStatus = {
@@ -69,8 +65,10 @@ const predictableStackTrace =
 const sanitizeEventForAssertion = (span: ReadableSpan) => {
   span.events.forEach(e => {
     // stack trace includes data such as /user/{userName}/repos/{projectName}
-    if (e.attributes?.[ExceptionAttribute.STACKTRACE]) {
-      e.attributes[ExceptionAttribute.STACKTRACE] = predictableStackTrace;
+    if (e.attributes?.[SemanticAttributes.EXCEPTION_STACKTRACE]) {
+      e.attributes[
+        SemanticAttributes.EXCEPTION_STACKTRACE
+      ] = predictableStackTrace;
     }
 
     // since time will change on each test invocation, it is being replaced to predicable value
@@ -133,7 +131,7 @@ describe('ioredis', () => {
       let client: ioredisTypes.Redis;
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [DatabaseAttribute.DB_STATEMENT]: 'connect',
+        [SemanticAttributes.DB_STATEMENT]: 'connect',
       };
       const readyHandler = () => {
         const endedSpans = memoryExporter.getFinishedSpans();
@@ -239,7 +237,7 @@ describe('ioredis', () => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [DatabaseAttribute.DB_STATEMENT]: `${
+            [SemanticAttributes.DB_STATEMENT]: `${
               command.name
             } ${command.args.join(' ')}`,
           };
@@ -271,7 +269,7 @@ describe('ioredis', () => {
       it('should create a child span for hset promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: `hset ${hashKeyName} random random`,
+          [SemanticAttributes.DB_STATEMENT]: `hset ${hashKeyName} random random`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(setSpan(context.active(), span), async () => {
@@ -313,15 +311,17 @@ describe('ioredis', () => {
             const exceptionEvent = ioredisSpan.events[0];
             assert.strictEqual(exceptionEvent.name, 'exception');
             assert.strictEqual(
-              exceptionEvent.attributes?.[ExceptionAttribute.MESSAGE],
+              exceptionEvent.attributes?.[SemanticAttributes.EXCEPTION_MESSAGE],
               ex.message
             );
             assert.strictEqual(
-              exceptionEvent.attributes?.[ExceptionAttribute.STACKTRACE],
+              exceptionEvent.attributes?.[
+                SemanticAttributes.EXCEPTION_STACKTRACE
+              ],
               ex.stack
             );
             assert.strictEqual(
-              exceptionEvent.attributes?.[ExceptionAttribute.TYPE],
+              exceptionEvent.attributes?.[SemanticAttributes.EXCEPTION_TYPE],
               ex.name
             );
           }
@@ -331,7 +331,7 @@ describe('ioredis', () => {
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: 'scan 0',
+          [SemanticAttributes.DB_STATEMENT]: 'scan 0',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         context.with(setSpan(context.active(), span), () => {
@@ -409,7 +409,7 @@ describe('ioredis', () => {
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
-              [DatabaseAttribute.DB_STATEMENT]: 'subscribe news music',
+              [SemanticAttributes.DB_STATEMENT]: 'subscribe news music',
             };
             testUtils.assertSpan(
               endedSpans[4],
@@ -428,7 +428,7 @@ describe('ioredis', () => {
       it('should create a child span for lua', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
+          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -461,10 +461,10 @@ describe('ioredis', () => {
                 [
                   {
                     attributes: {
-                      [ExceptionAttribute.MESSAGE]:
+                      [SemanticAttributes.EXCEPTION_MESSAGE]:
                         'NOSCRIPT No matching script. Please use EVAL.',
-                      [ExceptionAttribute.STACKTRACE]: predictableStackTrace,
-                      [ExceptionAttribute.TYPE]: 'ReplyError',
+                      [SemanticAttributes.EXCEPTION_STACKTRACE]: predictableStackTrace,
+                      [SemanticAttributes.EXCEPTION_TYPE]: 'ReplyError',
                     },
                     name: 'exception',
                     time: [0, 0],
@@ -495,7 +495,7 @@ describe('ioredis', () => {
       it('should create a child span for multi/transaction', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: 'multi',
+          [SemanticAttributes.DB_STATEMENT]: 'multi',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -531,7 +531,7 @@ describe('ioredis', () => {
       it('should create a child span for pipeline', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: 'set foo bar',
+          [SemanticAttributes.DB_STATEMENT]: 'set foo bar',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -565,7 +565,7 @@ describe('ioredis', () => {
       it('should create a child span for get promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: `get ${testKeyName}`,
+          [SemanticAttributes.DB_STATEMENT]: `get ${testKeyName}`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(setSpan(context.active(), span), async () => {
@@ -594,7 +594,7 @@ describe('ioredis', () => {
       it('should create a child span for del', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [DatabaseAttribute.DB_STATEMENT]: `del ${testKeyName}`,
+          [SemanticAttributes.DB_STATEMENT]: `del ${testKeyName}`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(setSpan(context.active(), span), async () => {
@@ -656,7 +656,7 @@ describe('ioredis', () => {
           SpanKind.CLIENT,
           {
             ...DEFAULT_ATTRIBUTES,
-            [DatabaseAttribute.DB_STATEMENT]: `set ${testKeyName} data`,
+            [SemanticAttributes.DB_STATEMENT]: `set ${testKeyName} data`,
           },
           [],
           unsetStatus
@@ -697,7 +697,7 @@ describe('ioredis', () => {
         it(`should tag the span with a custom db.statement for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [DatabaseAttribute.DB_STATEMENT]: dbStatementSerializer(
+            [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
               command.name,
               command.args
             ),

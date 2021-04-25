@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const api = require('@opentelemetry/api');
 
 exports.handler = function (event, context, callback) {
   callback(null, 'ok');
@@ -33,3 +34,7 @@ exports.stringerror = function (event, context, callback) {
 exports.callbackstringerror = function (event, context, callback) {
   callback('handler error');
 }
+
+exports.context = function (event, context, callback) {
+  callback(null, api.getSpanContext(api.context.active()).traceId);
+};

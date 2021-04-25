@@ -22,11 +22,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import {
-  ExceptionAttribute,
-  ExceptionEventName,
-  HttpAttribute,
-} from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 import { KoaInstrumentation } from '../src';
 const plugin = new KoaInstrumentation();
@@ -152,7 +148,7 @@ describe('Koa Instrumentation', () => {
         );
 
         assert.strictEqual(
-          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
+          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
           '/post/:id'
         );
 
@@ -194,7 +190,7 @@ describe('Koa Instrumentation', () => {
         );
 
         assert.strictEqual(
-          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
+          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
           '/:first/post/:id'
         );
 
@@ -234,7 +230,7 @@ describe('Koa Instrumentation', () => {
         );
 
         assert.strictEqual(
-          requestHandlerSpan?.attributes[HttpAttribute.HTTP_ROUTE],
+          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
           '/:first/post/:id'
         );
 
@@ -364,12 +360,12 @@ describe('Koa Instrumentation', () => {
         .find(span => span.name === 'rootSpan');
       assert.ok(exportedRootSpan);
       const exceptionEvent = requestHandlerSpan.events.find(
-        event => event.name === ExceptionEventName
+        event => event.name === 'exception'
       );
       assert.ok(exceptionEvent, 'There should be an exception event recorded');
       assert.deepStrictEqual(exceptionEvent.name, 'exception');
       assert.deepStrictEqual(
-        exceptionEvent.attributes![ExceptionAttribute.MESSAGE],
+        exceptionEvent.attributes![SemanticAttributes.EXCEPTION_MESSAGE],
         'I failed!'
       );
     });
