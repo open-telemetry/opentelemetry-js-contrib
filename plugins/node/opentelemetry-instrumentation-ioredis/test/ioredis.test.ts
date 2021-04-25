@@ -778,9 +778,10 @@ describe('ioredis', () => {
             span: Span,
             requestInfo: IoRedisRequestHookInformation
           ) => {
-            assert.match(
-              requestInfo.moduleVersion as string,
-              /\d{1,4}\.\d{1,4}\.\d{1,5}.*/
+            assert.ok(
+              /\d{1,4}\.\d{1,4}\.\d{1,5}.*/.test(
+                requestInfo.moduleVersion as string
+              )
             );
             assert.strictEqual(requestInfo.cmdName, 'incr');
             assert.deepStrictEqual(requestInfo.cmdArgs, ['request-hook-test']);
