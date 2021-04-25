@@ -47,7 +47,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
       new InstrumentationNodeModuleDefinition<typeof ioredisTypes>(
         'ioredis',
         ['>1 <5'],
-        (moduleExports, moduleVersion?: string | undefined) => {
+        (moduleExports, moduleVersion?: string) => {
           diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
@@ -80,7 +80,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
   /**
    * Patch send command internal to trace requests
    */
-  private _patchSendCommand(moduleVersion?: string | undefined) {
+  private _patchSendCommand(moduleVersion?: string) {
     return (original: Function) => {
       return traceSendCommand(
         this.tracer,
