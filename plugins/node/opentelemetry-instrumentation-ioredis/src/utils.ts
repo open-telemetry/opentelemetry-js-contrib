@@ -108,8 +108,21 @@ export const traceSendCommand = (
       },
     });
 
-    if (config?.moduleVersionAttributeName && moduleVersion) {
-      span.setAttribute(config?.moduleVersionAttributeName, moduleVersion);
+    if (config?.requestHook) {
+      safeExecuteInTheMiddle(
+        () =>
+          config?.requestHook!(span, {
+            moduleVersion,
+            cmdName: cmd.name,
+            cmdArgs: cmd.args,
+          }),
+        e => {
+          if (e) {
+            diag.error('ioredis instrumentation: request hook failed', e);
+          }
+        },
+        true
+      );
     }
 
     const { host, port } = this.options;
@@ -130,7 +143,7 @@ export const traceSendCommand = (
           () => config?.responseHook?.(span, cmd.name, cmd.args, result),
           e => {
             if (e) {
-              diag.error('ioredis response hook failed', e);
+              diag.error('ioredis instrumentation: response hook failed', e);
             }
           },
           true
