@@ -3,6 +3,9 @@
   "version": "0.15.0",
   "description": "AWS X-Ray ID generator for OpenTelemetry",
   "main": "build/src/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "browser": {
     "./src/platform/index.ts": "./src/platform/browser/index.ts",
     "./build/src/platform/index.js": "./build/src/platform/browser/index.js"
