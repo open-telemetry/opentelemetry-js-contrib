@@ -21,6 +21,7 @@ import {
   SpanStatus,
   getSpan,
   setSpan,
+  Span,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -38,6 +39,7 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as redisTypes from 'redis';
+import { RedisResponseCustomAttributeFunction } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -128,23 +130,27 @@ describe('redis@2.x', () => {
     const REDIS_OPERATIONS: Array<{
       description: string;
       command: string;
+      args: string[];
       method: (cb: redisTypes.Callback<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         command: 'hset',
+        args: ['hash', 'random', 'random'],
         method: (cb: redisTypes.Callback<number>) =>
           client.hset('hash', 'random', 'random', cb),
       },
       {
         description: 'get',
         command: 'get',
+        args: ['test'],
         method: (cb: redisTypes.Callback<string | null>) =>
           client.get('test', cb),
       },
       {
         description: 'delete',
         command: 'del',
+        args: ['test'],
         method: (cb: redisTypes.Callback<number>) => client.del('test', cb),
       },
     ];
@@ -230,6 +236,126 @@ describe('redis@2.x', () => {
           });
         });
       });
+    });
+
+    describe('dbStatementSerializer config', () => {
+      const dbStatementSerializer = (cmdName: string, cmdArgs: string[]) => {
+        return Array.isArray(cmdArgs) && cmdArgs.length ? `${cmdName} ${cmdArgs.join(' ')}` : cmdName;
+      };
+
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setConfig({ dbStatementSerializer })
+        instrumentation.enable();
+      });
+
+      REDIS_OPERATIONS.forEach(operation => {
+        it(`should properly execute the db statement serializer for operation ${operation.description}`, (done) => {
+          const span = tracer.startSpan('test span');
+          context.with(setSpan(context.active(), span), () => {
+            operation.method((err, _) => {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans.length, 2);
+              const expectedStatement = dbStatementSerializer(operation.command, operation.args);
+              assert.strictEqual(endedSpans[0].attributes[SemanticAttributes.DB_STATEMENT], expectedStatement);
+              done();
+            });
+          });            
+        });
+      })
+    });
+
+    describe('responseHook config', () => {
+      describe('valid responseHook', () => {
+        const dataFieldName = 'redis.data';
+
+        const responseHook: RedisResponseCustomAttributeFunction = (
+          span: Span,
+          _cmdName: string,
+          _cmdArgs: string[],
+          response: unknown
+        ) => {
+          span.setAttribute(dataFieldName, new String(response).toString());
+        }
+
+        before(() => {
+          instrumentation.disable();
+          instrumentation.setConfig({ responseHook })
+          instrumentation.enable();
+        });
+
+        REDIS_OPERATIONS.forEach(operation => {
+          it(`should apply responseHook for operation ${operation.description}`, (done) => {
+            operation.method((err, reply) => {
+              assert.ifError(err);
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans[0].attributes[dataFieldName], new String(reply).toString());
+              done();
+            });         
+          });
+        });
+      })
+
+      describe('invalid responseHook', () => {
+        const badResponseHook: RedisResponseCustomAttributeFunction = (
+          _span: Span,
+          _cmdName: string,
+          _cmdArgs: string[],
+          _response: unknown
+        ) => {
+          throw 'Some kind of error';
+        }
+
+        before(() => {
+          instrumentation.disable();
+          instrumentation.setConfig({ responseHook: badResponseHook })
+          instrumentation.enable();
+        });
+
+        REDIS_OPERATIONS.forEach(operation => {
+          it(`should not fail because of responseHook error for operation ${operation.description}`, (done) => {
+            operation.method((err, _reply) => {
+              assert.ifError(err);
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans.length, 1);
+              done();
+            });         
+          });
+        });
+      })
+    });
+
+    describe('requireParentSpan config', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setConfig({ requireParentSpan: true })
+        instrumentation.enable();
+      });
+
+      REDIS_OPERATIONS.forEach(operation => {
+        it(`should not create span without parent span for operation ${operation.description}`, (done) => {
+          operation.method((err, _) => {
+            assert.ifError(err);
+            const endedSpans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(endedSpans.length, 0);
+            done();
+          });         
+        });
+
+        it(`should create span when a parent span exists for operation ${operation.description}`, (done) => {
+          const span = tracer.startSpan('test span');
+          context.with(setSpan(context.active(), span), () => {
+            operation.method((err, _) => {
+              assert.ifError(err);
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans.length, 1);
+              done();
+            });         
+          });
+        });
+      })
     });
   });
 });
