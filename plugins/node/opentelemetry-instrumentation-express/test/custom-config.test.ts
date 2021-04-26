@@ -127,7 +127,7 @@ describe('ExpressInstrumentation', () => {
       });
     });
 
-    it('should construct span name correctly', async () => {
+    it('should not repeat middleware paths in the span name', async () => {
       app.use((req, res, next) =>
         context.with(setSpan(context.active(), rootSpan), next)
       );
