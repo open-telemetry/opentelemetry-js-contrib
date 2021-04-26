@@ -49,8 +49,8 @@ IORedis instrumentation has few options available to choose from. You can set th
 | Options | Type | Description |
 | ------- | ---- | ----------- |
 | `dbStatementSerializer` | `DbStatementSerializer` | IORedis instrumentation will serialize db.statement using the specified function. |
-| `requestHook` | `RedisRequestCustomAttributeFunction` | Function for adding custom attributes on db request |
-| `responseHook` | `RedisResponseCustomAttributeFunction` | Function for adding custom attributes on db response |
+| `requestHook` | `RedisRequestCustomAttributeFunction` (function) | Function for adding custom attributes on db request. Receives params: `(span: Span, { moduleVersion, cmdName, cmdArgs } : ExpressRequestHookInformation)` |
+| `responseHook` | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response |
 | `requireParentSpan` | `boolean` | Require parent to create ioredis span, default when unset is true |
 
 #### Custom db.statement Serializer
