@@ -46,7 +46,7 @@ export interface IORedisRequestHookInformation {
 }
 
 export interface RedisRequestCustomAttributeFunction {
-  (span: Span, requestInfo: IoRedisRequestHookInformation): void;
+  (span: Span, requestInfo: IORedisRequestHookInformation): void;
 }
 
 /**

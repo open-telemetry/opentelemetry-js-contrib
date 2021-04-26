@@ -37,7 +37,7 @@ import { IORedisInstrumentation } from '../src';
 import {
   IORedisInstrumentationConfig,
   DbStatementSerializer,
-  IoRedisRequestHookInformation,
+  IORedisRequestHookInformation,
 } from '../src/types';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -776,7 +776,7 @@ describe('ioredis', () => {
         const config: IORedisInstrumentationConfig = {
           requestHook: (
             span: Span,
-            requestInfo: IoRedisRequestHookInformation
+            requestInfo: IORedisRequestHookInformation
           ) => {
             assert.ok(
               /\d{1,4}\.\d{1,4}\.\d{1,5}.*/.test(
@@ -813,7 +813,7 @@ describe('ioredis', () => {
         const config: IORedisInstrumentationConfig = {
           requestHook: (
             span: Span,
-            _requestInfo: IoRedisRequestHookInformation
+            _requestInfo: IORedisRequestHookInformation
           ) => {
             span.setAttribute(
               'attribute key BEFORE exception',

@@ -83,7 +83,7 @@ const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-iored
 const ioredisInstrumentation = new IORedisInstrumentation({
 requestHook: function (
     span: Span,
-    requestInfo: IoRedisRequestHookInformation
+    requestInfo: IORedisRequestHookInformation
   ) {
     if (requestInfo.moduleVersion) {
       span.setAttribute(
