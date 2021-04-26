@@ -62,9 +62,7 @@ It is also possible to define a custom serialization function. The function will
 Here is a simple example to serialize the command name skipping arguments:
 
 ```javascript
-const {
-  IORedisInstrumentation,
-} = require("@opentelemetry/instrumentation-ioredis");
+const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-ioredis');
 
 const ioredisInstrumentation = new IORedisInstrumentation({
   dbStatementSerializer: function (cmdName, cmdArgs) {
@@ -89,7 +87,7 @@ requestHook: function (
   ) {
     if (requestInfo.moduleVersion) {
       span.setAttribute(
-        "instrumented_library.version",
+        'instrumented_library.version',
         requestInfo.moduleVersion
       );
     }
