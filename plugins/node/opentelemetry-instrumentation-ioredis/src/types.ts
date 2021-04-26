@@ -40,7 +40,7 @@ export type DbStatementSerializer = (
   cmdArgs: IORedisCommand['args']
 ) => string;
 
-export interface IoRedisRequestHookInformation {
+export interface IORedisRequestHookInformation {
   moduleVersion?: string;
   cmdName: IORedisCommand['name'];
   cmdArgs: IORedisCommand['args'];
