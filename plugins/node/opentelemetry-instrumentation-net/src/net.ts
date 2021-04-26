@@ -26,10 +26,11 @@ import {
   SemanticAttributes,
   NetTransportValues,
 } from '@opentelemetry/semantic-conventions';
-import { Net, NormalizedOptions, SocketEvent } from './types';
+import { Net, NormalizedOptions, SocketEvent, TLSAttributes } from './types';
 import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
 import { VERSION } from './version';
 import { Socket } from 'net';
+import { TLSSocket } from 'tls';
 
 export class NetInstrumentation extends InstrumentationBase<Net> {
   constructor(protected _config: InstrumentationConfig = {}) {
@@ -69,11 +70,11 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
       return function patchedConnect(this: Socket, ...args: unknown[]) {
         const options = getNormalizedArgs(args);
 
-        const span = options
-          ? options.path
-            ? plugin._startIpcSpan(options, this)
-            : plugin._startTcpSpan(options, this)
-          : plugin._startGenericSpan(this);
+        // const span = plugin._startSpan(options, this)
+        const span =
+          this instanceof TLSSocket
+            ? plugin._startTLSSpan(options, this)
+            : plugin._startSpan(options, this);
 
         return safeExecuteInTheMiddle(
           () => original.apply(this, args),
@@ -90,6 +91,61 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
         );
       };
     };
+  }
+
+  private _startSpan(
+    options: NormalizedOptions | undefined | null,
+    socket: Socket
+  ) {
+    if (!options) {
+      return this._startGenericSpan(socket);
+    }
+    if (options.path) {
+      return this._startIpcSpan(options, socket);
+    }
+    return this._startTcpSpan(options, socket);
+  }
+
+  private _startTLSSpan(
+    options: NormalizedOptions | undefined | null,
+    socket: TLSSocket
+  ) {
+    const tlsSpan = this.tracer.startSpan('tls.connect');
+
+    const netSpan = this._startSpan(options, socket);
+
+    /* if we use once and tls.connect() uses a callback this is never executed */
+    socket.prependOnceListener(SocketEvent.SECURE_CONNECT, () => {
+      const peerCertificate = socket.getPeerCertificate(true);
+      const cipher = socket.getCipher();
+      const protocol = socket.getProtocol();
+      const attributes = {
+        [TLSAttributes.PROTOCOL]: String(protocol),
+        [TLSAttributes.AUTHORIZED]: String(socket.authorized),
+        [TLSAttributes.CIPHER_NAME]: cipher.name,
+        [TLSAttributes.CIPHER_VERSION]: cipher.version,
+        [TLSAttributes.CERTIFICATE_FINGERPRINT]: peerCertificate.fingerprint,
+        [TLSAttributes.CERTIFICATE_SERIAL_NUMBER]: peerCertificate.serialNumber,
+        [TLSAttributes.CERTIFICATE_VALID_FROM]: peerCertificate.valid_from,
+        [TLSAttributes.CERTIFICATE_VALID_TO]: peerCertificate.valid_to,
+        [TLSAttributes.ALPN_PROTOCOL]: '',
+      };
+      if (socket.alpnProtocol) {
+        attributes[TLSAttributes.ALPN_PROTOCOL] = socket.alpnProtocol;
+      }
+
+      tlsSpan.setAttributes(attributes);
+      tlsSpan.end();
+    });
+    socket.once(SocketEvent.ERROR, (e: Error) => {
+      tlsSpan.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: e.message,
+      });
+      tlsSpan.end();
+    });
+
+    return netSpan;
   }
 
   /* It might still be useful to pick up errors due to invalid connect arguments. */

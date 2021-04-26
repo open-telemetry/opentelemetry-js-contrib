@@ -23,9 +23,20 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import * as net from 'net';
 import * as assert from 'assert';
+import * as tls from 'tls';
 import { NetInstrumentation } from '../src/net';
 import { SocketEvent } from '../src/types';
-import { assertIpcSpan, assertTcpSpan, IPC_PATH, HOST, PORT } from './utils';
+import {
+  assertIpcSpan,
+  assertTcpSpan,
+  assertTLSSpan,
+  IPC_PATH,
+  HOST,
+  PORT,
+  TLS_SERVER_CERT,
+  TLS_SERVER_KEY,
+  TLS_PORT,
+} from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -38,11 +49,22 @@ function getSpan() {
   return span;
 }
 
+function getTLSSpans() {
+  const spans = memoryExporter.getFinishedSpans();
+  assert.strictEqual(spans.length, 2);
+  const [netSpan, tlsSpan] = spans;
+  return {
+    netSpan,
+    tlsSpan,
+  };
+}
+
 describe('NetInstrumentation', () => {
   let instrumentation: NetInstrumentation;
   let socket: net.Socket;
   let tcpServer: net.Server;
   let ipcServer: net.Server;
+  let tlsServer: tls.Server;
 
   before(() => {
     instrumentation = new NetInstrumentation();
@@ -60,6 +82,15 @@ describe('NetInstrumentation', () => {
     ipcServer.listen(IPC_PATH, done);
   });
 
+  before(done => {
+    tlsServer = tls.createServer({
+      cert: TLS_SERVER_CERT,
+      key: TLS_SERVER_KEY,
+    });
+
+    tlsServer.listen(TLS_PORT, done);
+  });
+
   beforeEach(() => {
     socket = new net.Socket();
   });
@@ -73,6 +104,7 @@ describe('NetInstrumentation', () => {
     instrumentation.disable();
     tcpServer.close();
     ipcServer.close();
+    tlsServer.close();
   });
 
   describe('successful net.connect produces a span', () => {
@@ -162,6 +194,65 @@ describe('NetInstrumentation', () => {
     });
   });
 
+  describe('successful tls.connect produces a span', () => {
+    it('should produce a span with "onSecure" callback', done => {
+      const tlsSocket = tls.connect(
+        TLS_PORT,
+        HOST,
+        {
+          ca: [TLS_SERVER_CERT],
+          checkServerIdentity: () => {
+            return undefined;
+          },
+        },
+        () => {
+          assertTLSSpan(getTLSSpans(), tlsSocket);
+          done();
+        }
+      );
+    });
+
+    it('should produce a span without "onSecure" callback', done => {
+      const tlsSocket = tls.connect(TLS_PORT, HOST, {
+        ca: [TLS_SERVER_CERT],
+        checkServerIdentity: () => {
+          return undefined;
+        },
+      });
+      tlsServer.on('connection', c => {
+        c.end();
+      });
+      tlsSocket.on('end', () => {
+        assertTLSSpan(getTLSSpans(), tlsSocket);
+        done();
+      });
+    });
+
+    it('should produce an error span when certificate is not trusted', done => {
+      const tlsSocket = tls.connect(
+        TLS_PORT,
+        HOST,
+        {
+          ca: [],
+          checkServerIdentity: () => {
+            return undefined;
+          },
+        },
+        () => {
+          assertTLSSpan(getTLSSpans(), tlsSocket);
+          done();
+        }
+      );
+      tlsSocket.on('error', error => {
+        const { tlsSpan } = getTLSSpans();
+        // assertTcpSpan(netSpan, tlsSocket, TLS_PORT)
+        assert.strictEqual(tlsSpan.status.message, 'self signed certificate');
+        assert.strictEqual(tlsSpan.status.code, SpanStatusCode.ERROR);
+        done();
+      });
+    });
+  });
+
   describe('invalid input', () => {
     it('should produce an error span when connect throws', done => {
       assert.throws(() => {
@@ -195,6 +286,7 @@ describe('NetInstrumentation', () => {
         SocketEvent.CLOSE,
         SocketEvent.CONNECT,
         SocketEvent.ERROR,
+        SocketEvent.SECURE_CONNECT,
       ]) {
         assert.equal(events.has(event), false);
       }
@@ -225,6 +317,23 @@ describe('NetInstrumentation', () => {
           done();
         });
       });
+    });
+
+    it('should clean up listeners for tls.connect', done => {
+      tls.connect(
+        TLS_PORT,
+        HOST,
+        {
+          ca: [TLS_SERVER_CERT],
+          checkServerIdentity: () => {
+            return undefined;
+          },
+        },
+        () => {
+          assertNoDanglingListeners();
+          done();
+        }
+      );
     });
   });
 });
