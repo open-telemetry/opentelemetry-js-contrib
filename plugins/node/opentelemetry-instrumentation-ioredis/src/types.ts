@@ -18,7 +18,6 @@ import type * as ioredisTypes from 'ioredis';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Span } from '@opentelemetry/api';
 
-// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IORedisCommand {
   reject: (err: Error) => void;
   resolve: (result: {}) => void;
@@ -71,7 +70,6 @@ export interface RedisResponseCustomAttributeFunction {
 /**
  * Options available for the IORedis Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-ioredis#ioredis-instrumentation-options))
  */
-// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IORedisInstrumentationConfig extends InstrumentationConfig {
   /** Custom serializer function for the db.statement tag */
   dbStatementSerializer?: DbStatementSerializer;
