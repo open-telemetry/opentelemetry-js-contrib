@@ -34,7 +34,7 @@ import {
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { HttpAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 /**
  * This symbol is used to mark express layer as being already instrumented
@@ -183,7 +183,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
           .filter(path => path !== '/' && path !== '/*')
           .join('');
         const attributes: SpanAttributes = {
-          [HttpAttribute.HTTP_ROUTE]: route.length > 0 ? route : undefined,
+          [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : undefined,
         };
         const metadata = getLayerMetadata(layer, layerPath);
         const type = metadata.attributes[

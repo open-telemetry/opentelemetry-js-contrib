@@ -68,6 +68,10 @@ registerInstrumentations({
 
 See [examples/hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/hapi) for a short example using Hapi
 
+<!-- 
+The dev dependency of `@hapi/podium@4.1.1` is required to force the compatible type declarations. See: https://github.com/hapijs/hapi/issues/4240
+-->
+
 ## Hapi Instrumentation Support
 This package provides automatic tracing for hapi server routes and [request lifecycle](https://github.com/hapijs/hapi/blob/main/API.md#request-lifecycle) extensions defined either directly or via a Hapi plugin.
 

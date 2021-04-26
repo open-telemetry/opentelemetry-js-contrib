@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-import { SpanStatusCode, SpanKind } from '@opentelemetry/api';
+import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { ReadableSpan } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import * as mongodb from 'mongodb';
-import {
-  DatabaseAttribute,
-  GeneralAttribute,
-} from '@opentelemetry/semantic-conventions';
 
 export interface MongoDBAccess {
   client: mongodb.MongoClient;
@@ -79,18 +76,18 @@ export function assertSpans(
   assert.strictEqual(mongoSpan.name, expectedName);
   assert.strictEqual(mongoSpan.kind, expectedKind);
   assert.strictEqual(
-    mongoSpan.attributes[DatabaseAttribute.DB_SYSTEM],
+    mongoSpan.attributes[SemanticAttributes.DB_SYSTEM],
     'mongodb'
   );
   assert.strictEqual(
-    mongoSpan.attributes[GeneralAttribute.NET_HOST_NAME],
+    mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
     process.env.MONGODB_HOST || 'localhost'
   );
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
 
   if (isEnhancedDatabaseReportingEnabled) {
     const dbStatement = mongoSpan.attributes[
-      DatabaseAttribute.DB_STATEMENT
+      SemanticAttributes.DB_STATEMENT
     ] as any;
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');
