@@ -153,7 +153,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           kind: SpanKind.SERVER,
           attributes: {
             [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
-            [SemanticAttributes.FAAS_ID]: context.invokedFunctionArn,
+            'faas.id': context.invokedFunctionArn,
             [CLOUD_RESOURCE.ACCOUNT_ID]: AwsLambdaInstrumentation._extractAccountId(
               context.invokedFunctionArn
             ),

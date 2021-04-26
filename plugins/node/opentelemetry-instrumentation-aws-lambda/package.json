@@ -41,6 +41,7 @@
     "access": "public"
   },
   "devDependencies": {
+    "@opentelemetry/core": "0.19.0",
     "@opentelemetry/node": "0.19.0",
     "@types/aws-lambda": "8.10.73",
     "@types/mocha": "7.0.2",

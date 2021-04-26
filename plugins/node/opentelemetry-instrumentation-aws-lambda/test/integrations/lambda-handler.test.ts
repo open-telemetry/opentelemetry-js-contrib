@@ -441,14 +441,8 @@ describe('lambda handler', () => {
       );
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext.traceId,
-        unsampledAwsSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, unsampledAwsSpanContext.spanId);
+      // Parent unsampled so no exported spans.
+      assert.strictEqual(spans.length, 0);
     });
 
     it('uses lambda context if sampled and http context present', async () => {
@@ -519,14 +513,8 @@ describe('lambda handler', () => {
       );
       assert.strictEqual(result, 'ok');
       const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpanSuccess(span);
-      assert.strictEqual(
-        span.spanContext.traceId,
-        unsampledHttpSpanContext.traceId
-      );
-      assert.strictEqual(span.parentSpanId, unsampledHttpSpanContext.spanId);
+      // Parent unsampled so no spans exported.
+      assert.strictEqual(spans.length, 0);
     });
   });
 });
