@@ -15,33 +15,30 @@
  */
 
 import {
-  getSpan,
-  SpanStatusCode,
-  Span,
   context,
   diag,
+  getSpan,
+  Span,
   SpanKind,
+  SpanStatusCode,
 } from '@opentelemetry/api';
-import type * as mongodb from 'mongodb';
-import {
-  MongodbCommandType,
-  MongoInternalCommand,
-  MongoInternalTopology,
-  WireProtocolInternal,
-  MongoDBInstrumentationConfig,
-  CursorState,
-} from './types';
-import { VERSION } from './version';
-import {
-  DatabaseAttribute,
-  GeneralAttribute,
-} from '@opentelemetry/semantic-conventions';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import type * as mongodb from 'mongodb';
+import {
+  CursorState,
+  MongodbCommandType,
+  MongoDBInstrumentationConfig,
+  MongoInternalCommand,
+  MongoInternalTopology,
+  WireProtocolInternal,
+} from './types';
+import { VERSION } from './version';
 
 const supportedVersions = ['>=3.3 <4'];
 
@@ -383,10 +380,10 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     // add network attributes to determine the remote server
     if (topology && topology.s) {
       span.setAttributes({
-        [GeneralAttribute.NET_HOST_NAME]: `${
+        [SemanticAttributes.NET_HOST_NAME]: `${
           topology.s.options?.host ?? topology.s.host
         }`,
-        [GeneralAttribute.NET_HOST_PORT]: `${
+        [SemanticAttributes.NET_HOST_PORT]: `${
           topology.s.options?.port ?? topology.s.port
         }`,
       });
@@ -400,9 +397,9 @@ export class MongoDBInstrumentation extends InstrumentationBase<
 
     // add database related attributes
     span.setAttributes({
-      [DatabaseAttribute.DB_SYSTEM]: 'mongodb',
-      [DatabaseAttribute.DB_NAME]: dbName,
-      [DatabaseAttribute.DB_MONGODB_COLLECTION]: dbCollection,
+      [SemanticAttributes.DB_SYSTEM]: 'mongodb',
+      [SemanticAttributes.DB_NAME]: dbName,
+      [SemanticAttributes.DB_MONGODB_COLLECTION]: dbCollection,
     });
 
     if (command === undefined) return;
@@ -417,7 +414,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
             return obj;
           }, {} as { [key: string]: unknown });
 
-    span.setAttribute(DatabaseAttribute.DB_STATEMENT, JSON.stringify(query));
+    span.setAttribute(SemanticAttributes.DB_STATEMENT, JSON.stringify(query));
   }
 
   /**

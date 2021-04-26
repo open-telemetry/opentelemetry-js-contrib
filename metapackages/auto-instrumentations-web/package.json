@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-web",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
@@ -27,10 +27,10 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "devDependencies": {
-    "@babel/core": "7.12.10",
-    "@types/mocha": "8.2.0",
-    "@types/node": "14.0.27",
-    "@types/sinon": "9.0.10",
+    "@babel/core": "7.13.16",
+    "@types/mocha": "8.2.2",
+    "@types/node": "14.14.41",
+    "@types/sinon": "9.0.11",
     "@types/webpack-env": "1.16.0",
     "babel-loader": "8.2.2",
     "codecov": "3.8.1",
@@ -46,20 +46,19 @@
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
     "sinon": "10.0.0",
-    "ts-loader": "8.0.14",
+    "ts-loader": "8.2.0",
     "ts-mocha": "8.0.0",
-    "ts-node": "9.1.1",
-    "typescript": "4.1.3",
+    "typescript": "4.2.4",
     "webpack": "4.46.0",
-    "webpack-cli": "4.3.1",
+    "webpack-cli": "4.6.0",
     "webpack-merge": "5.7.3"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.18.1",
-    "@opentelemetry/instrumentation": "^0.18.2",
-    "@opentelemetry/instrumentation-document-load": "^0.15.0",
-    "@opentelemetry/instrumentation-fetch": "^0.18.2",
-    "@opentelemetry/instrumentation-user-interaction": "^0.15.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.18.2"
+    "@opentelemetry/api": "^1.0.0-rc.0",
+    "@opentelemetry/instrumentation": "^0.19.0",
+    "@opentelemetry/instrumentation-document-load": "^0.16.0",
+    "@opentelemetry/instrumentation-fetch": "^0.19.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.16.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.19.0"
   }
 }

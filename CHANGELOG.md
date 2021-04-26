@@ -4,6 +4,46 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.16.0
+
+#### :boom: Breaking Change
+* `opentelemetry-host-metrics`
+  * [#429](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/429) Remove plugins ([@obecny](https://github.com/obecny))
+
+#### :bug: Bug Fix
+* [#403](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/403) chore: fixing context propagation on mongo callback ([@obecny](https://github.com/obecny))
+
+#### :rocket: Enhancement
+* `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#440](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/440) chore: update core to 0.19, api to rc0 ([@dyladan](https://github.com/dyladan))
+* `opentelemetry-id-generator-aws-xray`
+  * [#423](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/423) feat: add x-ray id generator ([@anuraaga](https://github.com/anuraaga))
+* Other
+  * [#432](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/432) feat: pino instrumentation ([@seemk](https://github.com/seemk))
+  * [#425](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/425) feat: winston instrumentation ([@seemk](https://github.com/seemk))
+  * [#416](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/416) feat: restify instrumentation ([@Rauno56](https://github.com/Rauno56))
+  * [#419](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/419) feat: bunyan instrumentation ([@seemk](https://github.com/seemk))
+
+#### :house: Internal
+* `opentelemetry-host-metrics`, `opentelemetry-test-utils`
+  * [#437](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/437) chore: clean some unused deps ([@Rauno56](https://github.com/Rauno56))
+* Other
+  * [#434](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/434) chore: clean up images from restify example ([@Rauno56](https://github.com/Rauno56))
+
+#### :memo: Documentation
+* [#413](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/413) document: fix express example ([@Rauno56](https://github.com/Rauno56))
+
+#### Committers: 9
+- Anuraag Agrawal ([@anuraaga](https://github.com/anuraaga))
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Rauno Viskus ([@Rauno56](https://github.com/Rauno56))
+- Severin Neumann ([@svrnm](https://github.com/svrnm))
+- Siim Kallas ([@seemk](https://github.com/seemk))
+- Valentin Marchaud ([@vmarchaud](https://github.com/vmarchaud))
+- William Armiros ([@willarmiros](https://github.com/willarmiros))
+- [@gregoryfranklin](https://github.com/gregoryfranklin)
+
 ## 0.15.0
 
 #### :rocket: Enhancement

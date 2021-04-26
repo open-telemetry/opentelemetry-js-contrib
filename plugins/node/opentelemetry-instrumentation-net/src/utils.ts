@@ -15,11 +15,11 @@
  */
 
 import { NormalizedOptions } from './types';
-import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
+import { NetTransportValues } from '@opentelemetry/semantic-conventions';
 import { platform } from 'os';
 
 export const IPC_TRANSPORT =
-  platform() === 'win32' ? GeneralAttribute.PIPE : GeneralAttribute.UNIX;
+  platform() === 'win32' ? NetTransportValues.PIPE : NetTransportValues.UNIX;
 
 export function getNormalizedArgs(
   args: unknown[]

@@ -90,7 +90,7 @@ describe('Host Metrics', () => {
       return mockedOS.freemem();
     });
     sandbox.stub(os, 'totalmem').returns(mockedOS.totalmem());
-    sandbox.stub(process, 'cpuUsage').returns(cpuJson);
+    sandbox.stub(os, 'cpus').returns(cpuJson);
     sandbox.stub(process, 'uptime').returns(0);
     sandbox.stub(SI, 'networkStats').callsFake(() => {
       return mockedSI.networkStats();
@@ -152,18 +152,36 @@ describe('Host Metrics', () => {
 
   it('should export CPU time metrics', () => {
     const records = getRecords(exportSpy.args[0][0], 'system.cpu.time');
-    assert.strictEqual(records.length, 3);
-    ensureValue(records[0], { state: 'user' }, 1.899243);
-    ensureValue(records[1], { state: 'system' }, 0.258553);
-    ensureValue(records[2], { state: 'idle' }, 0.842204);
+    assert.strictEqual(records.length, 10);
+
+    ensureValue(records[0], { state: 'user', cpu: '0' }, 90713.56);
+    ensureValue(records[1], { state: 'system', cpu: '0' }, 63192.630000000005);
+    ensureValue(records[2], { state: 'idle', cpu: '0' }, 374870.7);
+    ensureValue(records[3], { state: 'interrupt', cpu: '0' }, 0);
+    ensureValue(records[4], { state: 'nice', cpu: '0' }, 0);
+
+    ensureValue(records[5], { state: 'user', cpu: '1' }, 11005.42);
+    ensureValue(records[6], { state: 'system', cpu: '1' }, 7678.12);
+    ensureValue(records[7], { state: 'idle', cpu: '1' }, 510034.8);
+    ensureValue(records[8], { state: 'interrupt', cpu: '1' }, 0);
+    ensureValue(records[9], { state: 'nice', cpu: '1' }, 0);
   });
 
   it('should export CPU utilization metrics', () => {
     const records = getRecords(exportSpy.args[0][0], 'system.cpu.utilization');
-    assert.strictEqual(records.length, 3);
-    ensureValue(records[0], { state: 'user' }, 0.633081);
-    ensureValue(records[1], { state: 'system' }, 0.08618433333333332);
-    ensureValue(records[2], { state: 'idle' }, 0.28073466666666663);
+    assert.strictEqual(records.length, 10);
+
+    ensureValue(records[0], { state: 'user', cpu: '0' }, 30237.853333333333);
+    ensureValue(records[1], { state: 'system', cpu: '0' }, 21064.210000000003);
+    ensureValue(records[2], { state: 'idle', cpu: '0' }, 124956.90000000001);
+    ensureValue(records[3], { state: 'interrupt', cpu: '0' }, 0);
+    ensureValue(records[4], { state: 'nice', cpu: '0' }, 0);
+
+    ensureValue(records[5], { state: 'user', cpu: '1' }, 3668.4733333333334);
+    ensureValue(records[6], { state: 'system', cpu: '1' }, 2559.3733333333334);
+    ensureValue(records[7], { state: 'idle', cpu: '1' }, 170011.6);
+    ensureValue(records[8], { state: 'interrupt', cpu: '1' }, 0);
+    ensureValue(records[9], { state: 'nice', cpu: '1' }, 0);
   });
 
   it('should export Memory usage metrics', done => {

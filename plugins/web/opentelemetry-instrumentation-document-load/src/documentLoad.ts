@@ -36,7 +36,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
-import { HttpAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 /**
  * This class represents a document load plugin
@@ -73,7 +73,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    * @param rootSpan
    */
   private _addResourcesSpans(rootSpan: Span): void {
-    const resources: PerformanceResourceTiming[] = otperformance.getEntriesByType?.(
+    const resources: PerformanceResourceTiming[] = ((otperformance as unknown) as Performance).getEntriesByType?.(
       'resource'
     ) as PerformanceResourceTiming[];
     if (resources) {
@@ -165,9 +165,9 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    */
   private _getEntries() {
     const entries: PerformanceEntries = {};
-    const performanceNavigationTiming = (otperformance.getEntriesByType?.(
+    const performanceNavigationTiming = ((otperformance as unknown) as Performance).getEntriesByType?.(
       'navigation'
-    )[0] as unknown) as PerformanceEntries;
+    )[0] as PerformanceEntries;
 
     if (performanceNavigationTiming) {
       const keys = Object.values(PTN);
@@ -214,7 +214,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       parentSpan
     );
     if (span) {
-      span.setAttribute(HttpAttribute.HTTP_URL, resource.name);
+      span.setAttribute(SemanticAttributes.HTTP_URL, resource.name);
       addSpanNetworkEvents(span, resource);
       this._endSpan(span, PTN.RESPONSE_END, resource);
     }

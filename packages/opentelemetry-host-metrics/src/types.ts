@@ -31,12 +31,17 @@ export interface NetworkData {
  * CPU usage data
  */
 export interface CpuUsageData {
+  cpuNumber: string;
   system: number;
   user: number;
   idle: number;
+  nice: number;
+  interrupt: number;
   systemP: number;
   userP: number;
   idleP: number;
+  interruptP: number;
+  niceP: number;
 }
 
 /**

@@ -16,10 +16,7 @@
 
 import { context, setSpan, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import {
-  DatabaseAttribute,
-  GeneralAttribute,
-} from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as testUtils from '@opentelemetry/test-utils';
 import {
   BasicTracerProvider,
@@ -612,13 +609,13 @@ function assertSpan(
   values?: any,
   errorMessage?: string
 ) {
-  assert.strictEqual(span.attributes[DatabaseAttribute.DB_SYSTEM], 'mysql');
-  assert.strictEqual(span.attributes[DatabaseAttribute.DB_NAME], database);
-  assert.strictEqual(span.attributes[GeneralAttribute.NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[GeneralAttribute.NET_PEER_HOSTNAME], host);
-  assert.strictEqual(span.attributes[DatabaseAttribute.DB_USER], user);
+  assert.strictEqual(span.attributes[SemanticAttributes.DB_SYSTEM], 'mysql');
+  assert.strictEqual(span.attributes[SemanticAttributes.DB_NAME], database);
+  assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_PORT], port);
+  assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], host);
+  assert.strictEqual(span.attributes[SemanticAttributes.DB_USER], user);
   assert.strictEqual(
-    span.attributes[DatabaseAttribute.DB_STATEMENT],
+    span.attributes[SemanticAttributes.DB_STATEMENT],
     mysqlTypes.format(sql, values)
   );
   if (errorMessage) {

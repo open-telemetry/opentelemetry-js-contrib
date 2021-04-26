@@ -1,8 +1,11 @@
 {
   "name": "@opentelemetry/id-generator-aws-xray",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "AWS X-Ray ID generator for OpenTelemetry",
   "main": "build/src/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "browser": {
     "./src/platform/index.ts": "./src/platform/browser/index.ts",
     "./build/src/platform/index.js": "./build/src/platform/browser/index.js"
@@ -44,9 +47,9 @@
     "README.md"
   ],
   "devDependencies": {
-    "@types/mocha": "8.2.0",
-    "@types/node": "14.14.12",
-    "@types/sinon": "9.0.4",
+    "@types/mocha": "8.2.2",
+    "@types/node": "14.14.41",
+    "@types/sinon": "9.0.11",
     "@types/webpack-env": "1.16.0",
     "codecov": "3.8.1",
     "gts": "3.1.0",
@@ -61,13 +64,13 @@
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
     "sinon": "10.0.0",
-    "ts-loader": "8.0.12",
+    "ts-loader": "8.2.0",
     "ts-mocha": "8.0.0",
-    "typescript": "4.1.3",
+    "typescript": "4.2.4",
     "webpack": "4.46.0"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.18.0",
-    "@opentelemetry/core": "^0.18.0"
+    "@opentelemetry/api": "^1.0.0-rc.0",
+    "@opentelemetry/core": "^0.19.0"
   }
 }

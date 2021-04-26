@@ -17,7 +17,7 @@
 import { SpanKind, SpanStatus, SpanStatusCode } from '@opentelemetry/api';
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
 import { ReadableSpan } from '@opentelemetry/tracing';
-import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import type { LookupAddress } from 'dns';
 import { AttributeNames } from '../../src/enums/AttributeNames';
@@ -45,7 +45,7 @@ export const assertSpan = (
     span.status.message
   );
   assert.strictEqual(
-    span.attributes[GeneralAttribute.NET_PEER_HOSTNAME],
+    span.attributes[SemanticAttributes.NET_PEER_NAME],
     validations.hostname
   );
 
