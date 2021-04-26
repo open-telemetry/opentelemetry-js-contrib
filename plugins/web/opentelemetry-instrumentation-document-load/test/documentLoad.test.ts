@@ -177,8 +177,6 @@ const entriesFallback = {
 const userAgent =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36';
 
-const documentTitle = 'OpenTelemetry Blog';
-
 function ensureNetworkEventsExists(events: TimedEvent[]) {
   assert.strictEqual(events[0].name, PTN.FETCH_START);
   assert.strictEqual(events[1].name, PTN.DOMAIN_LOOKUP_START);
@@ -204,7 +202,6 @@ describe('DocumentLoad Instrumentation', () => {
       value: 'complete',
     });
     sandbox.replaceGetter(navigator, 'userAgent', () => userAgent);
-    sandbox.replaceGetter(document, 'title', () => documentTitle);
     plugin = new DocumentLoadInstrumentation({
       enabled: false,
     });
@@ -512,7 +509,6 @@ describe('DocumentLoad Instrumentation', () => {
           'http://localhost:9876/context.html'
         );
         assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
-        assert.strictEqual(rootSpan.attributes.page_title, documentTitle);
 
         ensureNetworkEventsExists(fsEvents);
 
