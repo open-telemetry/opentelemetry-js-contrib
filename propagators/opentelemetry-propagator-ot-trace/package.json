@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagator-ot-trace",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "The OpenTelemetry OTTracepropagator implements the propagation format used by the \"basic tracer\" implementations from the OpenTracing project",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -60,7 +60,6 @@
     "karma-webpack": "4.0.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "3.0.2",
     "ts-loader": "8.0.12",
     "ts-mocha": "8.0.0",
     "typescript": "4.1.3",
