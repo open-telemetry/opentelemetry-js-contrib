@@ -2,7 +2,7 @@
 
 [![NPM Published Version][npm-img]][npm-url]
 [![dependencies][dependencies-image]][dependencies-url]
-[![devDependencies][devdependencies-image]][devdependencies-url]
+[![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
 This module provides automatic instrumentation for [`ioredis`](https://github.com/luin/ioredis).
@@ -112,6 +112,6 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [dependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=plugins%2Fnode%2Fopentelemetry-instrumentation-ioredis
 [dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-ioredis
 [devdependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=plugins%2Fnode%2Fopentelemetry-instrumentation-ioredis&type=dev
-[devdependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-ioredis&type=dev
+[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-ioredis&type=dev
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-ioredis
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-ioredis.svg
