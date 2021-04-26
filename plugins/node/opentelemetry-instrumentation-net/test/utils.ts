@@ -16,7 +16,10 @@
 
 import { SpanKind } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/tracing';
-import { GeneralAttribute } from '@opentelemetry/semantic-conventions';
+import {
+  NetTransportValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as path from 'path';
 import * as os from 'os';
@@ -29,17 +32,21 @@ export const IPC_PATH = path.join(os.tmpdir(), 'otel-js-net-test-ipc');
 
 export function assertTcpSpan(span: ReadableSpan, socket: Socket) {
   assertSpanKind(span);
-  assertAttrib(span, GeneralAttribute.NET_TRANSPORT, GeneralAttribute.IP_TCP);
-  assertAttrib(span, GeneralAttribute.NET_PEER_NAME, HOST);
-  assertAttrib(span, GeneralAttribute.NET_PEER_PORT, PORT);
-  assertAttrib(span, GeneralAttribute.NET_HOST_IP, socket.localAddress);
-  assertAttrib(span, GeneralAttribute.NET_HOST_PORT, socket.localPort);
+  assertAttrib(
+    span,
+    SemanticAttributes.NET_TRANSPORT,
+    NetTransportValues.IP_TCP
+  );
+  assertAttrib(span, SemanticAttributes.NET_PEER_NAME, HOST);
+  assertAttrib(span, SemanticAttributes.NET_PEER_PORT, PORT);
+  assertAttrib(span, SemanticAttributes.NET_HOST_IP, socket.localAddress);
+  assertAttrib(span, SemanticAttributes.NET_HOST_PORT, socket.localPort);
 }
 
 export function assertIpcSpan(span: ReadableSpan) {
   assertSpanKind(span);
-  assertAttrib(span, GeneralAttribute.NET_TRANSPORT, IPC_TRANSPORT);
-  assertAttrib(span, GeneralAttribute.NET_PEER_NAME, IPC_PATH);
+  assertAttrib(span, SemanticAttributes.NET_TRANSPORT, IPC_TRANSPORT);
+  assertAttrib(span, SemanticAttributes.NET_PEER_NAME, IPC_PATH);
 }
 
 export function assertSpanKind(span: ReadableSpan) {

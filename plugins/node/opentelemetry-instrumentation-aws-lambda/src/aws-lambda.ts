@@ -42,7 +42,8 @@ import {
   AWSXRayPropagator,
 } from '@opentelemetry/propagator-aws-xray';
 import { CLOUD_RESOURCE } from '@opentelemetry/resources';
-import { FaasAttribute } from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { BasicTracerProvider } from '@opentelemetry/tracing';
 
 import {
   APIGatewayProxyEventHeaders,
@@ -53,7 +54,6 @@ import {
 
 import { LambdaModule } from './types';
 import { VERSION } from './version';
-import { BasicTracerProvider } from '@opentelemetry/tracing';
 
 const awsPropagator = new AWSXRayPropagator();
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
@@ -152,8 +152,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         {
           kind: SpanKind.SERVER,
           attributes: {
-            [FaasAttribute.FAAS_EXECUTION]: context.awsRequestId,
-            [FaasAttribute.FAAS_ID]: context.invokedFunctionArn,
+            [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
+            [SemanticAttributes.FAAS_ID]: context.invokedFunctionArn,
             [CLOUD_RESOURCE.ACCOUNT_ID]: AwsLambdaInstrumentation._extractAccountId(
               context.invokedFunctionArn
             ),
