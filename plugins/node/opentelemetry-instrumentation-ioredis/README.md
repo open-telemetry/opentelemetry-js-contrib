@@ -75,20 +75,25 @@ const ioredisInstrumentation = new IORedisInstrumentation({
 
 #### Using `requestHook`
 
-Instrumentation user can configure a custom "hook" function which will be called on every request with the relevant span and request information. User can then set custom attributes on the span or run any instrumentation extension logic per request.
+Instrumentation user can configure a custom "hook" function which will be called on every request with the relevant span and request information. User can then set custom attributes on the span or run any instrumentation-extension logic per request.
 
-Here is a simple example that adds and attribute of `ioredis` instrumented version:
+Here is a simple example that adds a span attribute of `ioredis` instrumented version on each request:
 
 ```javascript
 const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-ioredis');
 
 const ioredisInstrumentation = new IORedisInstrumentation({
-  requestHook: function(
-            span: Span,
-            requestInfo: IoRedisRequestHookInformation
-          ) {
-    span.setAttribute('instrumented_library.version', requestInfo.moduleVersion)
-  })
+requestHook: function (
+    span: Span,
+    requestInfo: IoRedisRequestHookInformation
+  ) {
+    if (requestInfo.moduleVersion) {
+      span.setAttribute(
+        "instrumented_library.version",
+        requestInfo.moduleVersion
+      );
+    }
+  }
 });
 
 ```
