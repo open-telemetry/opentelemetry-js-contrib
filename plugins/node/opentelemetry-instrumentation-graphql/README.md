@@ -34,7 +34,6 @@ registerInstrumentations({
       // mergeItems: true,
     }),
   ],
-  tracerProvider: provider,
 });
 
 ```
