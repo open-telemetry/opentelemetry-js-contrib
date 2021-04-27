@@ -70,7 +70,6 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
       return function patchedConnect(this: Socket, ...args: unknown[]) {
         const options = getNormalizedArgs(args);
 
-        // const span = plugin._startSpan(options, this)
         const span =
           this instanceof TLSSocket
             ? plugin._startTLSSpan(options, this)
