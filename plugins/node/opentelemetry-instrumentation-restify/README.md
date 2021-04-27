@@ -15,8 +15,10 @@ For automatic instrumentation see the
 ```bash
 npm install --save @opentelemetry/instrumentation-restify
 ```
+
 ### Supported Versions
- - `>=4.0.0`
+
+- `>=4.0.0`
 
 ## Usage
 
@@ -32,14 +34,16 @@ provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({
-  instrumentations: [new RestifyInstrumentation()],
-  tracerProvider: provider,
+  instrumentations: [
+    new RestifyInstrumentation()
+  ],
 });
 ```
 
 See [examples/restify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/restify) for a short example.
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us on [gitter][gitter-url]

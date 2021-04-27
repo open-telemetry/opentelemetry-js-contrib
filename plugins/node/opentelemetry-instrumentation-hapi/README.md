@@ -15,8 +15,10 @@ For automatic instrumentation see the
 ```bash
 npm install --save @opentelemetry/instrumentation-hapi
 ```
+
 ### Supported Versions
- - @hapi/hapi `^17.0.0`
+
+- @hapi/hapi `^17.0.0`
 
 ## Usage
 
@@ -27,12 +29,15 @@ To load a specific instrumentation (Hapi in this case), specify it in the regist
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
 
 const provider = new NodeTracerProvider();
 provider.register();
 
 registerInstrumentations({
-  tracerProvider: provider,
+  instrumentations: [
+    new HapiInstrumentation(),
+  ],
 });
 ```
 
@@ -48,24 +53,6 @@ const hapiInstrumentation = new HapiInstrumentation();
 hapiInstrumentation.setTracerProvider(provider);
 ```
 
-You can combine loading default plugins and HapiInstrumentation at the same time:
-
-```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
-const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
-  instrumentations: [
-    new HapiInstrumentation(),
-  ],
-  tracerProvider: provider,
-});
-```
-
 See [examples/hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/hapi) for a short example using Hapi
 
 <!-- 
@@ -73,9 +60,11 @@ The dev dependency of `@hapi/podium@4.1.1` is required to force the compatible t
 -->
 
 ## Hapi Instrumentation Support
+
 This package provides automatic tracing for hapi server routes and [request lifecycle](https://github.com/hapijs/hapi/blob/main/API.md#request-lifecycle) extensions defined either directly or via a Hapi plugin.
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]

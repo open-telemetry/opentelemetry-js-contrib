@@ -15,8 +15,10 @@ For automatic instrumentation see the
 ```bash
 npm install --save @opentelemetry/instrumentation-koa
 ```
+
 ### Supported Versions
- - Koa `^2.0.0`
+
+- Koa `^2.0.0`
 
 ## Usage
 
@@ -34,7 +36,6 @@ registerInstrumentations({
   instrumentations: [
     new KoaInstrumentation(),
   ],
-  tracerProvider: provider,
 });
 ```
 
@@ -45,6 +46,7 @@ See [examples/koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tr
 This package provides automatic tracing for middleware added using either the core [`Koa`](https://github.com/koajs/koa) package or the [`@koa/router`](https://github.com/koajs/router) package.
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
