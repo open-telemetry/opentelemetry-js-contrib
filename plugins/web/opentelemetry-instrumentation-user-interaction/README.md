@@ -39,7 +39,6 @@ registerInstrumentations({
   instrumentations: [
     new UserInteractionInstrumentation(),
   ],
-  tracerProvider: provider,
 });
 
 // and some test
@@ -83,12 +82,14 @@ function getData(url) {
 ```
 
 ## Example Screenshots
+
 ![Screenshot of the running example](images/main.jpg)
 ![Screenshot of the running example](images/click.jpg)
 ![Screenshot of the running example](images/main-sync.jpg)
 ![Screenshot of the running example](images/click-sync.jpg)
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
@@ -108,4 +109,3 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-user-interaction.svg
 [zone-js]: https://www.npmjs.com/package/zone.js
 [@opentelemetry/context-zone]: https://www.npmjs.com/package/@opentelemetry/context-zone
-

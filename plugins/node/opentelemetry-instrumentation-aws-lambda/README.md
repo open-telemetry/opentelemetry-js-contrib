@@ -18,6 +18,7 @@ npm install --save @opentelemetry/instrumentation-aws-lambda
 ## Usage
 
 Create a file to initialize the instrumentation, such as `lambda-wrapper.js`.
+
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { AwsLambdaInstrumentation } = require('@opentelemetry/instrumentation-aws-lambda');
@@ -30,7 +31,6 @@ registerInstrumentations({
   instrumentations: [
     new AwsLambdaInstrumentation()
   ],
-  tracerProvider: provider,
 });
 ```
 

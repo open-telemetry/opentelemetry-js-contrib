@@ -32,7 +32,6 @@ registerInstrumentations({
       // see under for available configuration
     }),
   ],
-  tracerProvider: provider,
 });
 ```
 

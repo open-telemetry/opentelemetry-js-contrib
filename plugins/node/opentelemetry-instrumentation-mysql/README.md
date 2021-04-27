@@ -17,6 +17,7 @@ npm install --save @opentelemetry/instrumentation-mysql
 ```
 
 ## Supported Versions
+
 - `2.x`
 
 ## Usage
@@ -24,6 +25,7 @@ npm install --save @opentelemetry/instrumentation-mysql
 OpenTelemetry MySQL Instrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [mysql](https://www.npmjs.com/package/mysql).
 
 To load a specific plugin (**MySQL** in this case), specify it in the registerInstrumentations's configuration
+
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { MySQLInstrumentation } = require('@opentelemetry/instrumentation-mysql');
@@ -36,13 +38,13 @@ registerInstrumentations({
   instrumentations: [
     new MySQLInstrumentation(),
   ],
-  tracerProvider: provider,
 })
 ```
 
 See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/mysql) for a short example.
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
