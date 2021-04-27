@@ -16,7 +16,7 @@
 
 import { hrTime } from '@opentelemetry/core';
 import { getSpan, context, diag, SpanAttributes } from '@opentelemetry/api';
-import * as express from 'express';
+import type * as express from 'express';
 import {
   ExpressLayer,
   ExpressRouter,
@@ -52,6 +52,14 @@ export class ExpressInstrumentation extends InstrumentationBase<
       VERSION,
       Object.assign({}, config)
     );
+  }
+
+  getConfig(): ExpressInstrumentationConfig {
+    return this._config;
+  }
+
+  setConfig(config: ExpressInstrumentationConfig) {
+    this._config = config;
   }
 
   init() {
@@ -182,6 +190,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
           .join('');
+        console.log('route', route);
         const attributes: SpanAttributes = {
           [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : undefined,
         };
@@ -196,26 +205,40 @@ export class ExpressInstrumentation extends InstrumentationBase<
           metadata.attributes[CustomAttributeNames.EXPRESS_TYPE] ===
           ExpressLayerType.REQUEST_HANDLER
         ) {
+          console.log('parent branch');
           const parent = getSpan(
             context.active()
           ) as ExpressInstrumentationSpan;
           if (parent?.name) {
             const parentRoute = parent.name.split(' ')[1];
+            console.log('parentroute', parentRoute);
             if (!route.includes(parentRoute)) {
-              parent.updateName(`${req.method} ${route}`);
+              console.log('update parent', instrumentation.getConfig());
+              const spanName =
+                instrumentation.getConfig().spanNameHook?.(req, type, route) ||
+                `${req.method} ${route}`;
+              parent.updateName(spanName);
             }
           }
         }
 
+        console.log('AAAAAAAAAA');
+
         // verify against the config if the layer should be ignored
         if (isLayerIgnored(metadata.name, type, instrumentation._config)) {
+          console.log('ignored layer');
           return original.apply(this, arguments);
         }
         if (getSpan(context.active()) === undefined) {
+          console.log('no span active');
           return original.apply(this, arguments);
         }
 
-        const span = instrumentation.tracer.startSpan(metadata.name, {
+        console.log('start span', instrumentation.getConfig());
+        const spanName =
+          instrumentation.getConfig().spanNameHook?.(req, type, route) ||
+          metadata.name;
+        const span = instrumentation.tracer.startSpan(spanName, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
         const startTime = hrTime();

@@ -80,6 +80,12 @@ export enum ExpressLayerType {
 
 export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 
+export type SpanNameHook = (
+  request: Request,
+  layerType: ExpressLayerType,
+  route: string
+) => string;
+
 /**
  * Options available for the Express Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-Instrumentation-express#express-Instrumentation-options))
  */
@@ -88,6 +94,7 @@ export interface ExpressInstrumentationConfig extends InstrumentationConfig {
   ignoreLayers?: IgnoreMatcher[];
   /** Ignore specific layers based on their type */
   ignoreLayersType?: ExpressLayerType[];
+  spanNameHook?: SpanNameHook;
 }
 
 /**
