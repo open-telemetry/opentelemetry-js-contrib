@@ -47,12 +47,12 @@ registerInstrumentations({
       ],
     }),
   ],
-  tracerProvider: provider,
 });
 
 ```
 
 ## Optional: Send a trace parent from your server
+
 This instrumentation supports connecting the server side spans for the initial HTML load with the client side span for the load from the browser's timing API. This works by having the server send its parent trace context (trace ID, span ID and trace sampling decision) to the client.
 
 Because the browser does not send a trace context header for the initial page navigation, the server needs to fake a trace context header in a middleware and then send that trace context header back to the client as a meta tag *traceparent* . The *traceparent* meta tag should be in the [trace context W3C draft format][trace-context-url] . For example:
@@ -83,6 +83,7 @@ Because the browser does not send a trace context header for the initial page na
 See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/tracer-web) for a short example.
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]

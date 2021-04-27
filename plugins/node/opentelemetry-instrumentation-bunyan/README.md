@@ -34,7 +34,6 @@ registerInstrumentations({
     }),
     // other instrumentations
   ],
-  tracerProvider: provider,
 });
 
 bunyan.createLogger({ name: 'example' }).info('foo');
@@ -44,6 +43,7 @@ bunyan.createLogger({ name: 'example' }).info('foo');
 ### Fields added to bunyan records
 
 For the current active span, the following will be added to the bunyan record:
+
 * `trace_id`
 * `span_id`
 * `trace_flags`
@@ -52,9 +52,9 @@ When no span context is active or the span context is invalid, injection is skip
 
 ## Useful links
 
-- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 
