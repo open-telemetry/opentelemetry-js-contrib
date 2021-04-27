@@ -25,9 +25,11 @@ npm install --save @opentelemetry/instrumentation-ioredis
 To load a specific instrumentation (**ioredis** in this case), specify it in the registerInstrumentations's configuration
 
 ```javascript
-const { NodeTracerProvider } = require('@opentelemetry/node');
-const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-ioredis');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { NodeTracerProvider } = require("@opentelemetry/node");
+const {
+  IORedisInstrumentation,
+} = require("@opentelemetry/instrumentation-ioredis");
+const { registerInstrumentations } = require("@opentelemetry/instrumentation");
 
 const provider = new NodeTracerProvider();
 provider.register();
@@ -36,20 +38,21 @@ registerInstrumentations({
   instrumentations: [
     new IORedisInstrumentation({
       // see under for available configuration
-    })
+    }),
   ],
-})
+});
 ```
 
 ### IORedis Instrumentation Options
 
 IORedis instrumentation has few options available to choose from. You can set the following:
 
-| Options | Type | Description |
-| ------- | ---- | ----------- |
-| `dbStatementSerializer` | `DbStatementSerializer` | IORedis instrumentation will serialize db.statement using the specified function. |
-| `responseHook` | `RedisResponseCustomAttributeFunction` | Function for adding custom attributes on db response |
-| `requireParentSpan` | `boolean` | Require parent to create ioredis span, default when unset is true |
+| Options                 | Type                                              | Description                                                                                                       |
+| ----------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `dbStatementSerializer` | `DbStatementSerializer`                           | IORedis instrumentation will serialize db.statement using the specified function.                                 |
+| `requestHook`           | `RedisRequestCustomAttributeFunction` (function)  | Function for adding custom attributes on db request. Receives params: `span, { moduleVersion, cmdName, cmdArgs }` |
+| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response                                                              |
+| `requireParentSpan`     | `boolean`                                         | Require parent to create ioredis span, default when unset is true                                                 |
 
 #### Custom db.statement Serializer
 
@@ -64,6 +67,30 @@ const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-iored
 const ioredisInstrumentation = new IORedisInstrumentation({
   dbStatementSerializer: function (cmdName, cmdArgs) {
     return cmdName;
+  },
+});
+```
+
+#### Using `requestHook`
+
+Instrumentation user can configure a custom "hook" function which will be called on every request with the relevant span and request information. User can then set custom attributes on the span or run any instrumentation-extension logic per request.
+
+Here is a simple example that adds a span attribute of `ioredis` instrumented version on each request:
+
+```javascript
+const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-ioredis');
+
+const ioredisInstrumentation = new IORedisInstrumentation({
+requestHook: function (
+    span: Span,
+    requestInfo: IORedisRequestHookInformation
+  ) {
+    if (requestInfo.moduleVersion) {
+      span.setAttribute(
+        'instrumented_library.version',
+        requestInfo.moduleVersion
+      );
+    }
   }
 });
 
