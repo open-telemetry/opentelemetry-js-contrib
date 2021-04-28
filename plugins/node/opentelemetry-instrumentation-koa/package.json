@@ -47,8 +47,6 @@
     "@opentelemetry/context-async-hooks": "0.19.0",
     "@opentelemetry/node": "0.19.0",
     "@opentelemetry/tracing": "0.19.0",
-    "@types/koa": "2.13.1",
-    "@types/koa__router": "8.0.4",
     "@types/mocha": "7.0.2",
     "@types/node": "12.20.10",
     "codecov": "3.8.1",
@@ -65,6 +63,8 @@
   "dependencies": {
     "@opentelemetry/api": "^1.0.0-rc.0",
     "@opentelemetry/instrumentation": "^0.19.0",
-    "@opentelemetry/semantic-conventions": "^0.19.0"
+    "@opentelemetry/semantic-conventions": "^0.19.0",
+    "@types/koa": "2.13.1",
+    "@types/koa__router": "8.0.4"
   }
 }
