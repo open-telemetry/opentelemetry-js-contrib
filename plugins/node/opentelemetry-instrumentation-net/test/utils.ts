@@ -30,7 +30,10 @@ import { TLSAttributes } from '../src/types';
 export const PORT = 42123;
 export const TLS_PORT = 42124;
 export const HOST = 'localhost';
-export const IPC_PATH = path.join(os.tmpdir(), 'otel-js-net-test-ipc');
+export const IPC_PATH =
+  os.platform() !== 'win32'
+    ? path.join(os.tmpdir(), 'otel-js-net-test-ipc')
+    : '\\\\.\\pipe\\otel-js-net-test-ipc';
 
 export function assertTcpSpan(span: ReadableSpan, socket: Socket, port = PORT) {
   assertSpanKind(span);

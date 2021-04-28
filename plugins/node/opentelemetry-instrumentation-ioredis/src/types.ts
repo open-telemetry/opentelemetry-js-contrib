@@ -39,6 +39,16 @@ export type DbStatementSerializer = (
   cmdArgs: IORedisCommand['args']
 ) => string;
 
+export interface IORedisRequestHookInformation {
+  moduleVersion?: string;
+  cmdName: IORedisCommand['name'];
+  cmdArgs: IORedisCommand['args'];
+}
+
+export interface RedisRequestCustomAttributeFunction {
+  (span: Span, requestInfo: IORedisRequestHookInformation): void;
+}
+
 /**
  * Function that can be used to add custom attributes to span on response from redis server
  * @param span - The span created for the redis command, on which attributes can be set
@@ -63,6 +73,9 @@ export interface RedisResponseCustomAttributeFunction {
 export interface IORedisInstrumentationConfig extends InstrumentationConfig {
   /** Custom serializer function for the db.statement tag */
   dbStatementSerializer?: DbStatementSerializer;
+
+  /** Function for adding custom attributes on db request */
+  requestHook?: RedisRequestCustomAttributeFunction;
 
   /** Function for adding custom attributes on db response */
   responseHook?: RedisResponseCustomAttributeFunction;

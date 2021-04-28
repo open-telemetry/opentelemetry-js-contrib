@@ -73,7 +73,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    * @param rootSpan
    */
   private _addResourcesSpans(rootSpan: Span): void {
-    const resources: PerformanceResourceTiming[] = otperformance.getEntriesByType?.(
+    const resources: PerformanceResourceTiming[] = ((otperformance as unknown) as Performance).getEntriesByType?.(
       'resource'
     ) as PerformanceResourceTiming[];
     if (resources) {
@@ -162,9 +162,9 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    */
   private _getEntries() {
     const entries: PerformanceEntries = {};
-    const performanceNavigationTiming = (otperformance.getEntriesByType?.(
+    const performanceNavigationTiming = ((otperformance as unknown) as Performance).getEntriesByType?.(
       'navigation'
-    )[0] as unknown) as PerformanceEntries;
+    )[0] as PerformanceEntries;
 
     if (performanceNavigationTiming) {
       const keys = Object.values(PTN);
