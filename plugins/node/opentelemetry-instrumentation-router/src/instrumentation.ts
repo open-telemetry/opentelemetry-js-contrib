@@ -57,6 +57,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
         diag.debug(
           `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
         );
+        return moduleExports;
       }
     );
 
@@ -85,7 +86,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
             'handle_error',
             this._errorHandlerPatcher.bind(this)
           );
-          return Layer;
+          return moduleExports;
         },
         (moduleExports, moduleVersion) => {
           diag.debug(
@@ -94,12 +95,15 @@ export default class RouterInstrumentation extends InstrumentationBase<
           const Layer: any = moduleExports;
           this._unwrap(Layer.prototype, 'handle_request');
           this._unwrap(Layer.prototype, 'handle_error');
+          return moduleExports;
         }
       )
     );
+
     return module;
   }
 
+  // Define handle_request wrapper separately to ensure the signature has the correct length
   private _requestHandlerPatcher(original: types.Layer['handle_request']) {
     const instrumentation = this;
     return function wrapped_handle_request(
@@ -129,6 +133,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
     };
   }
 
+  // Define handle_error wrapper separately to ensure the signature has the correct length
   private _errorHandlerPatcher(original: types.Layer['handle_error']) {
     const instrumentation = this;
     return function wrapped_handle_request(

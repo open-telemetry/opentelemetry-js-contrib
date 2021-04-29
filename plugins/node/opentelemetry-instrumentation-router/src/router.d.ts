@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// From https://github.com/pillarjs/router/pull/100
 declare module 'router' {
   import * as http from 'http';
 

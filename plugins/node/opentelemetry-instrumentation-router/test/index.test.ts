@@ -22,6 +22,9 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.VERBOSE);
+
 import Instrumentation from '../src';
 const plugin = new Instrumentation();
 
@@ -115,6 +118,8 @@ describe('Router instrumentation', () => {
   before(async () => {
     server = await createServer();
     plugin.enable();
+    // To force ritm to definitely reload and patch the layer
+    require('router/lib/layer.js')
   });
 
   after(() => {
@@ -138,11 +143,14 @@ describe('Router instrumentation', () => {
       const rootSpan = tracer.startSpan('clientSpan');
 
       await context.with(setSpan(context.active(), rootSpan), async () => {
+        rootSpan.end();
         assert.strictEqual(await request('/'), 'Hello World!');
         assert.strictEqual(await request('/hello/you'), 'Hello, you!');
         assert.strictEqual(await request('/deep/hello/you'), 'Hello, you!');
         assert.strictEqual(await request('/deep/hello/nobody'), 'How rude!');
         assert.strictEqual(await request('/err'), 'Server error!');
+
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 13);
       });
     });
   });
