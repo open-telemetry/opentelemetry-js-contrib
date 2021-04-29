@@ -222,11 +222,11 @@ export class ExpressInstrumentation extends InstrumentationBase<
           }
         }
 
-        console.log('AAAAAAAAAA');
-
         // verify against the config if the layer should be ignored
         if (isLayerIgnored(metadata.name, type, instrumentation._config)) {
-          console.log('ignored layer');
+          if (type === ExpressLayerType.MIDDLEWARE) {
+            (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
+          }
           return original.apply(this, arguments);
         }
         if (getSpan(context.active()) === undefined) {
