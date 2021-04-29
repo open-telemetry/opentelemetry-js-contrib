@@ -24,7 +24,7 @@ import {
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 import * as http from 'http';
-import * as router from 'router';
+import * as Router from 'router';
 
 import * as types from './types';
 import { VERSION } from './version';
@@ -34,7 +34,7 @@ import * as utils from './utils';
 const { diag } = api;
 
 export default class RouterInstrumentation extends InstrumentationBase<
-  typeof router
+  typeof Router
 > {
   constructor() {
     super(`@opentelemetry/instrumentation-${constants.MODULE_NAME}`, VERSION);
@@ -43,7 +43,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
   private _moduleVersion?: string;
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<typeof router>(
+    const module = new InstrumentationNodeModuleDefinition<typeof Router>(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
@@ -61,7 +61,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<typeof router>(
+      new InstrumentationNodeModuleFile<typeof Router>(
         'router/lib/layer.js',
         constants.SUPPORTED_VERSIONS,
         (moduleExports, moduleVersion) => {

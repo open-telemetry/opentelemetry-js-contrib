@@ -31,43 +31,47 @@ import * as assert from 'assert';
 import { AddressInfo } from 'net';
 
 const createServer = async () => {
-  const router = Router();
+  const router = new Router();
 
   router.use((req, res, next) => {
-    //
     next();
   });
 
+  router.get('/err', (req, res, next) => {
+    next(new Error('Oops'));
+  });
+
   router.get('/', (req, res) => {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.end('Hello World!');
   });
 
-  const helloRouter = Router();
+  const helloRouter = new Router();
 
   helloRouter.get('/:name', (req, res, next) => {
-    if (req.params.name.toLowerCase() === 'nobody') {
+    if (req.params?.name?.toLowerCase() === 'nobody') {
       return next();
     }
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.end(`Hello, ${req.params.name}!`);
+    res.end(`Hello, ${req.params?.name}!`);
   });
 
   helloRouter.get('/:name', (req, res, next) => {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.end('How rude!');
   });
 
   router.use('/hello', helloRouter);
 
-  const deepRouter = Router();
+  const deepRouter = new Router();
 
   deepRouter.use('/hello', helloRouter);
   router.use('/deep', deepRouter);
 
+  const errHandler: Router.ErrorRequestHandler = (err, req, res, next) => {
+    res.end('Server error!');
+  };
+  router.use(errHandler);
+
   const server = http.createServer((req, res) => {
-    router(req, res, (...args) => {
-      console.log('args', args);
+    router(req, res, (err) => {
       if (!res.headersSent) {
         res.statusCode = 404;
         res.end('Not Found');
@@ -85,7 +89,7 @@ describe('Router instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
   provider.addSpanProcessor(spanProcessor);
-  // plugin.setTracerProvider(provider);
+  plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
   let server: http.Server;
@@ -93,12 +97,12 @@ describe('Router instrumentation', () => {
   const request = (path: string, options?: http.ClientRequestArgs | string) => {
     const port = (server.address() as AddressInfo).port;
     return new Promise((resolve, reject) => {
-      return http.get(`http://localhost:${port}${path}`, resp => {
+      return http.get(`http://localhost:${port}${path}`, (resp) => {
         let data = '';
         resp.on('data', chunk => {
           data += chunk;
         });
-        resp.on('end', arg => {
+        resp.on('end', () => {
           resolve(data);
         });
         resp.on('error', err => {
@@ -110,7 +114,7 @@ describe('Router instrumentation', () => {
 
   before(async () => {
     server = await createServer();
-    // plugin.enable();
+    plugin.enable();
   });
 
   after(() => {
@@ -134,20 +138,11 @@ describe('Router instrumentation', () => {
       const rootSpan = tracer.startSpan('clientSpan');
 
       await context.with(setSpan(context.active(), rootSpan), async () => {
-        const res = await request('/');
-        assert.strictEqual(res, 'Hello World!');
-        console.error();
-        console.error();
-        console.error();
+        assert.strictEqual(await request('/'), 'Hello World!');
         assert.strictEqual(await request('/hello/you'), 'Hello, you!');
-        console.error();
-        console.error();
-        console.error();
         assert.strictEqual(await request('/deep/hello/you'), 'Hello, you!');
-        console.error();
-        console.error();
-        console.error();
         assert.strictEqual(await request('/deep/hello/nobody'), 'How rude!');
+        assert.strictEqual(await request('/err'), 'Server error!');
       });
     });
   });
