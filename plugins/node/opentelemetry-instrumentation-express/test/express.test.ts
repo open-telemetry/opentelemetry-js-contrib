@@ -24,6 +24,7 @@ import {
 import * as assert from 'assert';
 import { CustomAttributeNames, ExpressInstrumentationSpan } from '../src/types';
 import { ExpressInstrumentation } from '../src';
+import { httpRequest, createServer } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
@@ -33,25 +34,6 @@ instrumentation.disable();
 import * as express from 'express';
 import * as http from 'http';
 import { AddressInfo } from 'net';
-
-const httpRequest = {
-  get: (options: http.ClientRequestArgs | string) => {
-    return new Promise((resolve, reject) => {
-      return http.get(options, resp => {
-        let data = '';
-        resp.on('data', chunk => {
-          data += chunk;
-        });
-        resp.on('end', () => {
-          resolve(data);
-        });
-        resp.on('error', err => {
-          reject(err);
-        });
-      });
-    });
-  },
-};
 
 const serverWithMiddleware = async (
   tracer: Tracer,
@@ -76,13 +58,7 @@ const serverWithMiddleware = async (
       res.status(200).end(req.params.id);
     });
   });
-  const server = http.createServer(app);
-  await new Promise<void>(resolve =>
-    server.listen(0, () => {
-      resolve();
-    })
-  );
-
+  const { server } = await createServer(app);
   return server;
 };
 
@@ -309,9 +285,7 @@ describe('ExpressInstrumentation', () => {
       router.get('/:id', (req, res, next) => {
         return res.status(200).end('test');
       });
-      const server = http.createServer(app);
-      await new Promise<void>(resolve => server.listen(0, resolve));
-      const port = (server.address() as AddressInfo).port;
+      const { server, port } = await createServer(app);
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       const res = await httpRequest.get(`http://localhost:${port}/toto/tata`);
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
@@ -331,9 +305,7 @@ describe('ExpressInstrumentation', () => {
         }
         return next();
       });
-      const server = http.createServer(app);
-      await new Promise<void>(resolve => server.listen(0, resolve));
-      const port = (server.address() as AddressInfo).port;
+      const { server, port } = await createServer(app);
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);

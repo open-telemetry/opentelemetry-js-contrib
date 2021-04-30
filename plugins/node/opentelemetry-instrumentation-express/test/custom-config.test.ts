@@ -29,6 +29,7 @@ import {
   ExpressLayerType,
 } from '../src/types';
 import { ExpressInstrumentation } from '../src';
+import { createServer, httpRequest } from './utils';
 
 const instrumentation = new ExpressInstrumentation({
   ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
@@ -38,26 +39,6 @@ instrumentation.disable();
 
 import * as express from 'express';
 import * as http from 'http';
-import { AddressInfo } from 'net';
-
-const httpRequest = {
-  get: (options: http.ClientRequestArgs | string) => {
-    return new Promise((resolve, reject) => {
-      return http.get(options, resp => {
-        let data = '';
-        resp.on('data', chunk => {
-          data += chunk;
-        });
-        resp.on('end', () => {
-          resolve(data);
-        });
-        resp.on('error', err => {
-          reject(err);
-        });
-      });
-    });
-  },
-};
 
 describe('ExpressInstrumentation', () => {
   const provider = new NodeTracerProvider();
@@ -86,9 +67,9 @@ describe('ExpressInstrumentation', () => {
 
     beforeEach(async () => {
       app = express();
-      server = http.createServer(app);
-      await new Promise<void>(resolve => server.listen(0, resolve));
-      port = (server.address() as AddressInfo).port;
+      const httpServer = await createServer(app);
+      server = httpServer.server;
+      port = httpServer.port;
     });
 
     afterEach(() => {
