@@ -113,8 +113,7 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
 
     const netSpan = this._startSpan(options, socket);
 
-    /* if we use once and tls.connect() uses a callback this is never executed */
-    socket.prependOnceListener(SocketEvent.SECURE_CONNECT, () => {
+    const otelTlsSpanListener = () => {
       const peerCertificate = socket.getPeerCertificate(true);
       const cipher = socket.getCipher();
       const protocol = socket.getProtocol();
@@ -135,14 +134,31 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
 
       tlsSpan.setAttributes(attributes);
       tlsSpan.end();
-    });
-    socket.once(SocketEvent.ERROR, (e: Error) => {
+    }
+
+    const otelTlsErrorListener = (e: Error) => {
       tlsSpan.setStatus({
         code: SpanStatusCode.ERROR,
         message: e.message,
       });
       tlsSpan.end();
-    });
+    }
+
+    /* if we use once and tls.connect() uses a callback this is never executed */
+    socket.prependOnceListener(SocketEvent.SECURE_CONNECT, otelTlsSpanListener);
+    socket.once(SocketEvent.ERROR, otelTlsErrorListener);
+
+    const otelTlsRemoveListeners = () => {
+      socket.removeListener(SocketEvent.SECURE_CONNECT, otelTlsSpanListener);
+      socket.removeListener(SocketEvent.ERROR, otelTlsErrorListener);
+      for (const event of SOCKET_EVENTS) {
+        socket.removeListener(event, otelTlsRemoveListeners);
+      }
+    };
+
+    for (const event of [ SocketEvent.CLOSE, SocketEvent.ERROR ]) {
+      socket.once(event, otelTlsRemoveListeners);
+    }
 
     return netSpan;
   }

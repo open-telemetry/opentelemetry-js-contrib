@@ -28,14 +28,13 @@ import { IPC_TRANSPORT } from '../src/utils';
 import { TLSAttributes } from '../src/types';
 
 export const PORT = 42123;
-export const TLS_PORT = 42124;
 export const HOST = 'localhost';
 export const IPC_PATH =
   os.platform() !== 'win32'
     ? path.join(os.tmpdir(), 'otel-js-net-test-ipc')
     : '\\\\.\\pipe\\otel-js-net-test-ipc';
 
-export function assertTcpSpan(span: ReadableSpan, socket: Socket, port = PORT) {
+export function assertTcpSpan(span: ReadableSpan, socket: Socket) {
   assertSpanKind(span);
   assertAttrib(
     span,
@@ -43,7 +42,7 @@ export function assertTcpSpan(span: ReadableSpan, socket: Socket, port = PORT) {
     NetTransportValues.IP_TCP
   );
   assertAttrib(span, SemanticAttributes.NET_PEER_NAME, HOST);
-  assertAttrib(span, SemanticAttributes.NET_PEER_PORT, port);
+  assertAttrib(span, SemanticAttributes.NET_PEER_PORT, PORT);
   assertAttrib(span, SemanticAttributes.NET_HOST_IP, socket.localAddress);
   assertAttrib(span, SemanticAttributes.NET_HOST_PORT, socket.localPort);
 }
@@ -58,11 +57,22 @@ export function assertTLSSpan(
   { netSpan, tlsSpan }: { netSpan: ReadableSpan; tlsSpan: ReadableSpan },
   socket: Socket
 ) {
-  assertTcpSpan(netSpan, socket, TLS_PORT);
-  assertAttrib(tlsSpan, TLSAttributes.PROTOCOL, 'TLSv1.3');
+  assertSpanKind(netSpan);
+  assertAttrib(
+    netSpan,
+    SemanticAttributes.NET_TRANSPORT,
+    NetTransportValues.IP_TCP
+  );
+  assertAttrib(netSpan, SemanticAttributes.NET_PEER_NAME, HOST);
+  assertAttrib(netSpan, SemanticAttributes.NET_PEER_PORT, PORT);
+  // Node.JS 10 sets socket.localAddress & socket.localPort to "undefined" when a connection is
+  // ended, so one of the tests fails, so we skip them for TLS
+  // assertAttrib(span, SemanticAttributes.NET_HOST_IP, socket.localAddress);
+  //assertAttrib(netSpan, SemanticAttributes.NET_HOST_PORT, socket.localPort);
+
+  assertAttrib(tlsSpan, TLSAttributes.PROTOCOL, 'TLSv1.2');
   assertAttrib(tlsSpan, TLSAttributes.AUTHORIZED, 'true');
-  assertAttrib(tlsSpan, TLSAttributes.CIPHER_NAME, 'TLS_AES_256_GCM_SHA384');
-  assertAttrib(tlsSpan, TLSAttributes.CIPHER_VERSION, 'TLSv1.3');
+  assertAttrib(tlsSpan, TLSAttributes.CIPHER_NAME, 'ECDHE-RSA-AES128-GCM-SHA256');
   assertAttrib(
     tlsSpan,
     TLSAttributes.CERTIFICATE_FINGERPRINT,
