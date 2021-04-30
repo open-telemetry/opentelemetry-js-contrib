@@ -190,7 +190,6 @@ export class ExpressInstrumentation extends InstrumentationBase<
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
           .join('');
-        console.log('route', route);
         const attributes: SpanAttributes = {
           [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : undefined,
         };
@@ -205,19 +204,20 @@ export class ExpressInstrumentation extends InstrumentationBase<
           metadata.attributes[CustomAttributeNames.EXPRESS_TYPE] ===
           ExpressLayerType.REQUEST_HANDLER
         ) {
-          console.log('parent branch');
           const parent = getSpan(
             context.active()
           ) as ExpressInstrumentationSpan;
           if (parent?.name) {
             const parentRoute = parent.name.split(' ')[1];
-            console.log('parentroute', parentRoute);
             if (!route.includes(parentRoute)) {
-              console.log('update parent', instrumentation.getConfig());
-              const spanName =
-                instrumentation.getConfig().spanNameHook?.(req, type, route) ||
-                `${req.method} ${route}`;
-              parent.updateName(spanName);
+              parent.updateName(
+                instrumentation._spanName(
+                  req,
+                  route,
+                  null,
+                  `${req.method} ${route}`
+                )
+              );
             }
           }
         }
@@ -230,14 +230,15 @@ export class ExpressInstrumentation extends InstrumentationBase<
           return original.apply(this, arguments);
         }
         if (getSpan(context.active()) === undefined) {
-          console.log('no span active');
           return original.apply(this, arguments);
         }
 
-        console.log('start span', instrumentation.getConfig());
-        const spanName =
-          instrumentation.getConfig().spanNameHook?.(req, type, route) ||
-          metadata.name;
+        const spanName = instrumentation._spanName(
+          req,
+          route,
+          type,
+          metadata.name
+        );
         const span = instrumentation.tracer.startSpan(spanName, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
@@ -289,5 +290,28 @@ export class ExpressInstrumentation extends InstrumentationBase<
         return result;
       };
     });
+  }
+
+  _spanName(
+    req: express.Request,
+    route: string,
+    type: ExpressLayerType | null,
+    defaultName: string
+  ) {
+    const hook = this.getConfig().spanNameHook;
+
+    if (!hook) {
+      return defaultName;
+    }
+
+    try {
+      return hook(req, route, type, defaultName);
+    } catch (err) {
+      diag.error(
+        'express instrumentation: error calling span name rewrite hook',
+        err
+      );
+      return defaultName;
+    }
   }
 }

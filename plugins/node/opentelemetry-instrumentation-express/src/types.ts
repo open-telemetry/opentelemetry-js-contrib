@@ -15,7 +15,7 @@
  */
 
 import { kLayerPatched } from './express';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { SpanAttributes, Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
@@ -82,8 +82,12 @@ export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 
 export type SpanNameHook = (
   request: Request,
-  layerType: ExpressLayerType,
-  route: string
+  route: string,
+  /** Type of the layer handling the request.
+   *  If null, it means the name of the parent http instrumentation span.
+   */
+  layerType: ExpressLayerType | null,
+  defaultPath: string
 ) => string;
 
 /**
