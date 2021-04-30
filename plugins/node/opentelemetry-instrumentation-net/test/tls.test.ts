@@ -49,7 +49,7 @@ function getTLSSpans() {
 describe('NetInstrumentation', () => {
   let instrumentation: NetInstrumentation;
   let tlsServer: tls.Server;
-  let tlsSocket : tls.TLSSocket;
+  let tlsSocket: tls.TLSSocket;
 
   before(() => {
     instrumentation = new NetInstrumentation();
@@ -62,7 +62,7 @@ describe('NetInstrumentation', () => {
       cert: TLS_SERVER_CERT,
       key: TLS_SERVER_KEY,
       // Make sure tests run on nodejs v8 and v10 the same as on v12+
-      maxVersion: 'TLSv1.2'
+      maxVersion: 'TLSv1.2',
     });
     tlsServer.listen(PORT, done);
   });
@@ -136,13 +136,13 @@ describe('NetInstrumentation', () => {
   });
 
   describe('cleanup', () => {
-    function assertNoDanglingListeners(tlsSocket : tls.TLSSocket) {
+    function assertNoDanglingListeners(tlsSocket: tls.TLSSocket) {
       const events = new Set(tlsSocket.eventNames());
 
       for (const event of [
         SocketEvent.CONNECT,
         SocketEvent.SECURE_CONNECT,
-        SocketEvent.ERROR
+        SocketEvent.ERROR,
       ]) {
         assert.equal(events.has(event), false);
       }

@@ -72,7 +72,11 @@ export function assertTLSSpan(
 
   assertAttrib(tlsSpan, TLSAttributes.PROTOCOL, 'TLSv1.2');
   assertAttrib(tlsSpan, TLSAttributes.AUTHORIZED, 'true');
-  assertAttrib(tlsSpan, TLSAttributes.CIPHER_NAME, 'ECDHE-RSA-AES128-GCM-SHA256');
+  assertAttrib(
+    tlsSpan,
+    TLSAttributes.CIPHER_NAME,
+    'ECDHE-RSA-AES128-GCM-SHA256'
+  );
   assertAttrib(
     tlsSpan,
     TLSAttributes.CERTIFICATE_FINGERPRINT,

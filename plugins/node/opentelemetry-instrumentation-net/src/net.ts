@@ -134,7 +134,7 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
 
       tlsSpan.setAttributes(attributes);
       tlsSpan.end();
-    }
+    };
 
     const otelTlsErrorListener = (e: Error) => {
       tlsSpan.setStatus({
@@ -142,7 +142,7 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
         message: e.message,
       });
       tlsSpan.end();
-    }
+    };
 
     /* if we use once and tls.connect() uses a callback this is never executed */
     socket.prependOnceListener(SocketEvent.SECURE_CONNECT, otelTlsSpanListener);
@@ -156,7 +156,7 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
       }
     };
 
-    for (const event of [ SocketEvent.CLOSE, SocketEvent.ERROR ]) {
+    for (const event of [SocketEvent.CLOSE, SocketEvent.ERROR]) {
       socket.once(event, otelTlsRemoveListeners);
     }
 
