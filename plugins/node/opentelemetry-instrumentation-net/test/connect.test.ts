@@ -208,12 +208,14 @@ describe('NetInstrumentation', () => {
         () => {
           assertTLSSpan(getTLSSpans(), tlsSocket);
           done();
+          // This needs to be here to make sure that mocha can close cleanly.
+          tlsSocket.destroy();
         }
       );
     });
 
     it('should produce a span without "onSecure" callback', done => {
-      const tlsSocket = tls.connect(TLS_PORT, HOST, {
+      socket = tls.connect(TLS_PORT, HOST, {
         ca: [TLS_SERVER_CERT],
         checkServerIdentity: () => {
           return undefined;
@@ -222,14 +224,14 @@ describe('NetInstrumentation', () => {
       tlsServer.on('connection', c => {
         c.end();
       });
-      tlsSocket.on('end', () => {
-        assertTLSSpan(getTLSSpans(), tlsSocket);
+      socket.on('end', () => {
+        assertTLSSpan(getTLSSpans(), socket);
         done();
       });
     });
 
     it('should produce an error span when certificate is not trusted', done => {
-      const tlsSocket = tls.connect(
+      socket = tls.connect(
         TLS_PORT,
         HOST,
         {
@@ -239,11 +241,11 @@ describe('NetInstrumentation', () => {
           },
         },
         () => {
-          assertTLSSpan(getTLSSpans(), tlsSocket);
+          assertTLSSpan(getTLSSpans(), socket);
           done();
         }
       );
-      tlsSocket.on('error', error => {
+      socket.on('error', error => {
         const { tlsSpan } = getTLSSpans();
         // assertTcpSpan(netSpan, tlsSocket, TLS_PORT)
         assert.strictEqual(tlsSpan.status.message, 'self signed certificate');
