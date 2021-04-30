@@ -29,7 +29,6 @@ registerInstrumentations({
     new NetInstrumentation(),
     // other instrumentations
   ],
-  tracerProvider: provider,
 });
 ```
 
@@ -39,6 +38,7 @@ registerInstrumentations({
 * `net.peer.name`: host name or the IPC file path
 
 For TCP:
+
 * `net.peer.ip`
 * `net.peer.port`
 * `net.host.ip`
@@ -46,9 +46,9 @@ For TCP:
 
 ## Useful links
 
-- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 

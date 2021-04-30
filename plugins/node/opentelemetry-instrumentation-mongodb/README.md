@@ -15,6 +15,7 @@ For automatic instrumentation see the
 ```bash
 npm install --save @opentelemetry/instrumentation-mongodb
 ```
+
 ### Supported Versions
  - `'>=3.3 <4`
 
@@ -38,7 +39,6 @@ registerInstrumentations({
       // see under for available configuration
     }),
   ],
-  tracerProvider: provider,
 });
 
 ```
@@ -51,8 +51,8 @@ Mongodb instrumentation has few options available to choose from. You can set th
 | ------- | ---- | ----------- |
 | [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-api/src/trace/instrumentation/instrumentation.ts#L91) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
 
-
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
