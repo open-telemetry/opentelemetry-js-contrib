@@ -31,6 +31,7 @@ export enum SocketEvent {
   SECURE_CONNECT = 'secureConnect',
 }
 
+/* The following attributes are not offical, see open-telemetry/opentelemetry-specification#1652 */
 export enum TLSAttributes {
   PROTOCOL = 'tls.protocol',
   AUTHORIZED = 'tls.authorized',
