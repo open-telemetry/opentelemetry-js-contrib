@@ -47,10 +47,10 @@
     "access": "public"
   },
   "devDependencies": {
-    "@babel/core": "7.13.16",
+    "@babel/core": "7.14.0",
     "@opentelemetry/propagator-b3": "0.19.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "12.20.10",
+    "@types/node": "12.20.11",
     "@types/react": "17.0.4",
     "@types/react-addons-test-utils": "0.14.25",
     "@types/react-dom": "17.0.3",
