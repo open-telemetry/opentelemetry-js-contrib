@@ -35,7 +35,7 @@
     "@opentelemetry/exporter-zipkin": "^0.19.0",
     "@opentelemetry/instrumentation": "^0.19.0",
     "@opentelemetry/instrumentation-http": "^0.19.0",
-    "@opentelemetry/instrumentation-pg": "file:///Users/neumanns/Projects/opentelemetry-js-contrib/plugins/node/opentelemetry-instrumentation-pg",
+    "@opentelemetry/instrumentation-pg": "^0.15.0",
     "@opentelemetry/node": "^0.19.0",
     "@opentelemetry/tracing": "^0.19.0",
     "express": "^4.17.1",
