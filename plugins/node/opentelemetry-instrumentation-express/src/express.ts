@@ -209,6 +209,9 @@ export class ExpressInstrumentation extends InstrumentationBase<
 
         // verify against the config if the layer should be ignored
         if (isLayerIgnored(metadata.name, type, instrumentation._config)) {
+          if (type === ExpressLayerType.MIDDLEWARE) {
+            (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
+          }
           return original.apply(this, arguments);
         }
         if (getSpan(context.active()) === undefined) {

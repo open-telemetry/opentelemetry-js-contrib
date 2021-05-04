@@ -27,11 +27,11 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
 provider.register();
+
 registerInstrumentations({
   instrumentations: [
     new PgInstrumentation(),
   ],
-  tracerProvider: provider,
 });
 ```
 
@@ -53,6 +53,7 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 - [pg-pool](https://npmjs.com/package/pg-pool): `2.x`, `3.*` (Installed by `pg`)
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]

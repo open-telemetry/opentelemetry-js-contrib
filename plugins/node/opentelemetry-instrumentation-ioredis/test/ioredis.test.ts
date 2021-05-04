@@ -37,6 +37,7 @@ import { IORedisInstrumentation } from '../src';
 import {
   IORedisInstrumentationConfig,
   DbStatementSerializer,
+  IORedisRequestHookInformation,
 } from '../src/types';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -226,6 +227,13 @@ describe('ioredis', () => {
     });
 
     describe('Instrumenting query operations', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation = new IORedisInstrumentation();
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+      });
+
       IOREDIS_CALLBACK_OPERATIONS.forEach(command => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
@@ -762,22 +770,25 @@ describe('ioredis', () => {
       });
     });
 
-    describe('Instrumenting with a custom responseHook', () => {
-      it('should call responseHook when set in config', async () => {
+    describe('Instrumenting with a custom hooks', () => {
+      it('should call requestHook when set in config', async () => {
         instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
-          responseHook: (
+          requestHook: (
             span: Span,
-            cmdName: string,
-            _cmdArgs: Array<string | Buffer | number>,
-            response: unknown
+            requestInfo: IORedisRequestHookInformation
           ) => {
-            assert.strictEqual(cmdName, 'incr');
-            // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
-            assert.strictEqual(response, 1);
+            assert.ok(
+              /\d{1,4}\.\d{1,4}\.\d{1,5}.*/.test(
+                requestInfo.moduleVersion as string
+              )
+            );
+            assert.strictEqual(requestInfo.cmdName, 'incr');
+            assert.deepStrictEqual(requestInfo.cmdArgs, ['request-hook-test']);
+
             span.setAttribute(
-              'attribute key from hook',
-              'custom value from hook'
+              'attribute key from request hook',
+              'custom value from request hook'
             );
           },
         };
@@ -787,7 +798,75 @@ describe('ioredis', () => {
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(setSpan(context.active(), span), async () => {
-          await client.incr('new-key');
+          await client.incr('request-hook-test');
+          const endedSpans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(endedSpans.length, 1);
+          assert.strictEqual(
+            endedSpans[0].attributes['attribute key from request hook'],
+            'custom value from request hook'
+          );
+        });
+      });
+
+      it('should ignore requestHook which throws exception', async () => {
+        instrumentation.disable();
+        const config: IORedisInstrumentationConfig = {
+          requestHook: (
+            span: Span,
+            _requestInfo: IORedisRequestHookInformation
+          ) => {
+            span.setAttribute(
+              'attribute key BEFORE exception',
+              'this attribute is added to span BEFORE exception is thrown thus we can expect it'
+            );
+            throw Error('error thrown in requestHook');
+          },
+        };
+        instrumentation = new IORedisInstrumentation(config);
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(setSpan(context.active(), span), async () => {
+          await client.incr('request-hook-throw-test');
+          const endedSpans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(endedSpans.length, 1);
+          assert.strictEqual(
+            endedSpans[0].attributes['attribute key BEFORE exception'],
+            'this attribute is added to span BEFORE exception is thrown thus we can expect it'
+          );
+        });
+      });
+
+      it('should call responseHook when set in config', async () => {
+        instrumentation.disable();
+        const config: IORedisInstrumentationConfig = {
+          responseHook: (
+            span: Span,
+            cmdName: string,
+            _cmdArgs: Array<string | Buffer | number>,
+            response: unknown
+          ) => {
+            try {
+              assert.strictEqual(cmdName, 'incr');
+              // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
+              assert.strictEqual(response, 1);
+              span.setAttribute(
+                'attribute key from hook',
+                'custom value from hook'
+              );
+            } catch (err) {
+              console.log(err);
+            }
+          },
+        };
+        instrumentation = new IORedisInstrumentation(config);
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(setSpan(context.active(), span), async () => {
+          await client.incr('response-hook-test');
           const endedSpans = memoryExporter.getFinishedSpans();
           assert.strictEqual(endedSpans.length, 1);
           assert.strictEqual(
@@ -815,7 +894,7 @@ describe('ioredis', () => {
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(setSpan(context.active(), span), async () => {
-          await client.incr('some-key');
+          await client.incr('response-hook-throw-test');
           const endedSpans = memoryExporter.getFinishedSpans();
 
           // hook throw exception, but span should not be affected

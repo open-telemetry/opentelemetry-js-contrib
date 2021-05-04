@@ -19,7 +19,8 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 ```
 
 ### Supported Versions
- - `^4.0.0`
+
+- `^4.0.0`
 
 ## Usage
 
@@ -42,7 +43,6 @@ registerInstrumentations({
     new HttpInstrumentation(),
     new ExpressInstrumentation(),
   ],
-  tracerProvider: provider,
 });
 ```
 
@@ -74,6 +74,7 @@ Express instrumentation has few options available to choose from. You can set th
 - `request_handler` is the name for anything that's not a router or a middleware.
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]

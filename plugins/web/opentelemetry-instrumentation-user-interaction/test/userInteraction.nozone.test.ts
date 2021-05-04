@@ -15,6 +15,7 @@
  */
 const originalSetTimeout = window.setTimeout;
 
+import { trace } from '@opentelemetry/api';
 import { isWrapped } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
@@ -77,7 +78,6 @@ describe('UserInteractionInstrumentation', () => {
       webTracerProvider.register();
 
       registerInstrumentations({
-        tracerProvider: webTracerProvider,
         instrumentations: [
           userInteractionInstrumentation,
           new XMLHttpRequestInstrumentation(),
@@ -92,6 +92,7 @@ describe('UserInteractionInstrumentation', () => {
       requests = [];
       sandbox.restore();
       exportSpy.restore();
+      trace.disable();
     });
 
     it('should not break removeEventListener', () => {
