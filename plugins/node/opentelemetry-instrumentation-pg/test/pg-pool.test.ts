@@ -36,6 +36,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
 import { AttributeNames } from '../src/enums';
+import { SemanticAttributes, DbSystemValues } from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -52,25 +53,23 @@ const CONFIG = {
 };
 
 const DEFAULT_PGPOOL_ATTRIBUTES = {
-  [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT,
-  [AttributeNames.DB_INSTANCE]: CONFIG.database,
-  [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE,
-  [AttributeNames.PEER_HOSTNAME]: CONFIG.host,
-  [AttributeNames.PEER_ADDRESS]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [AttributeNames.PEER_PORT]: CONFIG.port,
-  [AttributeNames.DB_USER]: CONFIG.user,
+  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+  [SemanticAttributes.DB_NAME]: CONFIG.database,
+  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
+  [SemanticAttributes.DB_CONNECTION_STRING]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+  [SemanticAttributes.DB_USER]: CONFIG.user,
   [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
   [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
 };
 
 const DEFAULT_PG_ATTRIBUTES = {
-  [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT,
-  [AttributeNames.DB_INSTANCE]: CONFIG.database,
-  [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE,
-  [AttributeNames.PEER_HOSTNAME]: CONFIG.host,
-  [AttributeNames.PEER_ADDRESS]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [AttributeNames.PEER_PORT]: CONFIG.port,
-  [AttributeNames.DB_USER]: CONFIG.user,
+  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+  [SemanticAttributes.DB_NAME]: CONFIG.database,
+  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
+  [SemanticAttributes.DB_CONNECTION_STRING]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+  [SemanticAttributes.DB_USER]: CONFIG.user,
 };
 
 const unsetStatus: SpanStatus = {
@@ -162,7 +161,7 @@ describe('pg-pool@2.x', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: 'SELECT NOW()',
+        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
@@ -186,7 +185,7 @@ describe('pg-pool@2.x', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: 'SELECT NOW()',
+        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const parentSpan = provider
@@ -242,7 +241,7 @@ describe('pg-pool@2.x', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: 'SELECT NOW()',
+        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
@@ -261,7 +260,7 @@ describe('pg-pool@2.x', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: 'SELECT NOW()',
+        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const parentSpan = provider
