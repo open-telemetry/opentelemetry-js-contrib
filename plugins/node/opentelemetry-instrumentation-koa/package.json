@@ -50,7 +50,7 @@
     "@types/koa": "2.13.1",
     "@types/koa__router": "8.0.4",
     "@types/mocha": "7.0.2",
-    "@types/node": "12.20.10",
+    "@types/node": "12.20.11",
     "codecov": "3.8.1",
     "gts": "3.1.0",
     "koa": "2.13.1",
