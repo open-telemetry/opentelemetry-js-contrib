@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { context, propagation, TimedEvent } from '@opentelemetry/api';
+import {
+  context,
+  HrTime,
+  propagation,
+  SpanAttributes,
+} from '@opentelemetry/api';
 import { HttpTraceContext, TRACE_PARENT_HEADER } from '@opentelemetry/core';
 import {
   BasicTracerProvider,
@@ -597,3 +602,15 @@ describe('DocumentLoad Instrumentation', () => {
     shouldExportCorrectSpan();
   });
 });
+
+/**
+ * Represents a timed event.
+ * A timed event is an event with a timestamp.
+ */
+interface TimedEvent {
+  time: HrTime;
+  /** The name of the event. */
+  name: string;
+  /** The attributes of the event. */
+  attributes?: SpanAttributes;
+}

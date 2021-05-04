@@ -16,11 +16,11 @@
 
 import * as childProcess from 'child_process';
 import {
-  SpanKind,
-  SpanAttributes,
+  HrTime,
   Span,
+  SpanAttributes,
+  SpanKind,
   SpanStatus,
-  TimedEvent,
 } from '@opentelemetry/api';
 import * as assert from 'assert';
 import { ReadableSpan } from '@opentelemetry/tracing';
@@ -126,3 +126,15 @@ export const assertPropagation = (
   );
   assert.notStrictEqual(targetSpanContext.spanId, sourceSpanContext.spanId);
 };
+
+/**
+ * Represents a timed event.
+ * A timed event is an event with a timestamp.
+ */
+export interface TimedEvent {
+  time: HrTime;
+  /** The name of the event. */
+  name: string;
+  /** The attributes of the event. */
+  attributes?: SpanAttributes;
+}
