@@ -36,7 +36,10 @@ import * as assert from 'assert';
 import type * as pg from 'pg';
 import { PgInstrumentation } from '../src';
 import { AttributeNames } from '../src/enums';
-import { SemanticAttributes, DbSystemValues } from '@opentelemetry/semantic-conventions';
+import {
+  SemanticAttributes,
+  DbSystemValues,
+} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -49,7 +52,6 @@ const CONFIG = {
     ? parseInt(process.env.POSTGRES_PORT, 10)
     : 54320,
 };
-
 
 const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,

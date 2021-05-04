@@ -36,7 +36,10 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
 import { AttributeNames } from '../src/enums';
-import { SemanticAttributes, DbSystemValues } from '@opentelemetry/semantic-conventions';
+import {
+  SemanticAttributes,
+  DbSystemValues,
+} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 

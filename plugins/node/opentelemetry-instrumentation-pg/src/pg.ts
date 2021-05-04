@@ -39,7 +39,10 @@ import {
 } from './types';
 import * as utils from './utils';
 import { AttributeNames } from './enums';
-import { SemanticAttributes, DbSystemValues } from '@opentelemetry/semantic-conventions';
+import {
+  SemanticAttributes,
+  DbSystemValues,
+} from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
 
 export interface PgInstrumentationConfig extends InstrumentationConfig {
