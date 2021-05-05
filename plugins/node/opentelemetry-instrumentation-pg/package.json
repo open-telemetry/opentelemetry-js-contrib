@@ -4,7 +4,7 @@
   "description": "OpenTelemetry postgres automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
-  "repository": "open-telemetry/opentelemetry-js",
+  "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf build/*",
     "compile": "npm run version:update && tsc -p .",
