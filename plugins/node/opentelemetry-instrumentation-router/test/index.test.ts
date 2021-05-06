@@ -37,6 +37,7 @@ const createServer = async () => {
   const router = new Router();
 
   router.use((req, res, next) => {
+    // anonymous middleware
     next();
   });
 
@@ -50,14 +51,15 @@ const createServer = async () => {
 
   const helloRouter = new Router();
 
-  helloRouter.get('/:name', (req, res, next) => {
+  const preName: Router.RequestHandler = (req, res, next) => {
     if (req.params?.name?.toLowerCase() === 'nobody') {
       return next();
     }
     res.end(`Hello, ${req.params?.name}!`);
-  });
+  };
+  helloRouter.get('/:name', preName);
 
-  helloRouter.get('/:name', (req, res, next) => {
+  helloRouter.get('/:name', function announceRude(req, res, next) {
     res.end('How rude!');
   });
 
@@ -69,8 +71,12 @@ const createServer = async () => {
   router.use('/deep', deepRouter);
 
   const errHandler: Router.ErrorRequestHandler = (err, req, res, next) => {
-    res.end('Server error!');
+    res.end(`Server error: ${err.message}!`);
   };
+
+  router.use(function postMiddleware(req, res, next) {
+    next();
+  });
   router.use(errHandler);
 
   const server = http.createServer((req, res) => {
@@ -86,6 +92,35 @@ const createServer = async () => {
 
   return server;
 };
+
+const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
+  assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
+  assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
+  assert.strictEqual(actualSpans.length, expectedSpans.length, 'Expected span count different from actual');
+  actualSpans.forEach((span, idx) => {
+    const expected = expectedSpans[idx];
+    if (expected === null) return;
+    try {
+      assert.notStrictEqual(span, undefined);
+      assert.notStrictEqual(expected, undefined);
+      assert.strictEqual(span.attributes['router.name'], expected.name);
+      assert.strictEqual(span.attributes['router.type'], expected.type);
+      assert.strictEqual(span.attributes['router.version'], '1.3.5');
+      assert.strictEqual(span.attributes['http.route'], expected.route);
+    } catch (e) {
+      e.message = `At span[${idx}]: ${e.message}`;
+      throw e;
+    }
+  });
+};
+
+const spans = {
+  anonymousUse: { type: 'middleware', route: '/' },
+  preName: { type: 'request_handler', name: 'preName', route: '/hello/:name' },
+  announceRude: { type: 'request_handler', name: 'announceRude', route: '/hello/:name' },
+  postMiddleware: { name: 'postMiddleware', type: 'middleware', route: '/:name' },
+};
+
 
 describe('Router instrumentation', () => {
   const provider = new NodeTracerProvider();
@@ -115,18 +150,11 @@ describe('Router instrumentation', () => {
     });
   };
 
-  before(async () => {
-    server = await createServer();
-    plugin.enable();
-    // To force ritm to definitely reload and patch the layer
-    require('router/lib/layer.js')
-  });
-
-  after(() => {
-    plugin.disable();
-  });
-
   beforeEach(async () => {
+    plugin.enable();
+    // To force `require-in-the-middle` to definitely reload and patch the layer
+    require('router/lib/layer.js')
+    server = await createServer();
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
@@ -136,22 +164,98 @@ describe('Router instrumentation', () => {
     memoryExporter.reset();
     context.disable();
     server.close();
+    plugin.disable();
   });
 
-  describe('Instrumenting', () => {
-    it('should work', async () => {
+  describe('Instrumenting handler calls', () => {
+    it('should create a span for each handler', async () => {
       const rootSpan = tracer.startSpan('clientSpan');
 
       await context.with(setSpan(context.active(), rootSpan), async () => {
+        assert.strictEqual(await request('/hello/nobody'), 'How rude!');
         rootSpan.end();
-        assert.strictEqual(await request('/'), 'Hello World!');
-        assert.strictEqual(await request('/hello/you'), 'Hello, you!');
-        assert.strictEqual(await request('/deep/hello/you'), 'Hello, you!');
-        assert.strictEqual(await request('/deep/hello/nobody'), 'How rude!');
-        assert.strictEqual(await request('/err'), 'Server error!');
 
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 13);
+        assertSpans(
+          memoryExporter.getFinishedSpans(),
+          [
+            spans.anonymousUse,
+            spans.preName,
+            spans.announceRude,
+            null,
+          ]
+        );
       });
+    });
+
+    it('should gather full route for nested routers', async () => {
+      const rootSpan = tracer.startSpan('clientSpan');
+
+      await context.with(setSpan(context.active(), rootSpan), async () => {
+        assert.strictEqual(await request('/deep/hello/world'), 'Hello, world!');
+        rootSpan.end();
+
+        assertSpans(
+          memoryExporter.getFinishedSpans(),
+          [
+            spans.anonymousUse,
+            { ...spans.preName, route: '/deep/hello/:name' },
+            null,
+          ]
+        );
+      });
+    });
+
+    it('should create spans for requests that did not result with response from the router', async () => {
+      const rootSpan = tracer.startSpan('clientSpan');
+
+      await context.with(setSpan(context.active(), rootSpan), async () => {
+        assert.strictEqual(await request('/not-found'), 'Not Found');
+        rootSpan.end();
+
+        assertSpans(
+          memoryExporter.getFinishedSpans(),
+          [
+            spans.anonymousUse,
+            { ...spans.postMiddleware, route: '/' },
+            null,
+          ]
+        );
+      });
+    });
+
+    it('should create spans for errored routes', async () => {
+      const rootSpan = tracer.startSpan('clientSpan');
+
+      await context.with(setSpan(context.active(), rootSpan), async () => {
+        assert.strictEqual(await request('/err'), 'Server error: Oops!');
+        rootSpan.end();
+
+        assertSpans(
+          memoryExporter.getFinishedSpans(),
+          [
+            spans.anonymousUse,
+            { ...spans.preName, name: undefined, route: '/err' },
+            { ...spans.anonymousUse, name: 'errHandler', route: '/err' },
+            null,
+          ]
+        );
+      });
+    });
+
+    it('should rename HTTP span', async () => {
+      // const httpSpan: types.InstrumentationSpan = tracer.startSpan('HTTP GET');
+
+      // try {
+      //   const res = await httpRequest.get(
+      //     `http://localhost:${testLocalPort}/route/hello`
+      //   );
+      //   httpSpan.end();
+      //   assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
+      //   assert.strictEqual(httpSpan.name, 'GET /route/:param');
+      //   assert.strictEqual(res, '{"route":"hello"}');
+      // } finally {
+      //   testLocalServer.close();
+      // }
     });
   });
 
