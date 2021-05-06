@@ -116,8 +116,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
         return original.call(this, req, res, next);
       }
       const { span, wrappedNext } = instrumentation._setupSpan(
-        this.handle,
-        this.method,
+        this,
         req,
         res,
         next
@@ -147,8 +146,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
         return original.call(this, error, req, res, next);
       }
       const { span, wrappedNext } = instrumentation._setupSpan(
-        this.handle,
-        this.method,
+        this,
         req,
         res,
         next
@@ -166,15 +164,13 @@ export default class RouterInstrumentation extends InstrumentationBase<
   }
 
   private _setupSpan(
-    handle: Function,
-    method: string | undefined,
+    layer: types.Layer,
     req: types.RouterIncomingMessage,
     res: http.ServerResponse,
     next: types.Next
   ) {
-    // Router sets "<anonymous>" as the default
-    const fnName = handle.name;
-    const type = method
+    const fnName = layer.handle.name || undefined;
+    const type = layer.method
       ? types.LayerType.REQUEST_HANDLER
       : types.LayerType.MIDDLEWARE;
     const route = utils.getRoute(req);
@@ -200,7 +196,8 @@ export default class RouterInstrumentation extends InstrumentationBase<
     const endSpan = () => {
       if (!called) {
         called = true;
-        utils.renameHttpSpan(api.getSpan(api.context.active()), method, route);
+        // This is not the way to get HTTP span. Open issues: #466 and #464
+        utils.renameHttpSpan(api.getSpan(api.context.active()), layer.method, route);
         return span.end();
       }
     };
