@@ -115,14 +115,14 @@ export default class RouterInstrumentation extends InstrumentationBase<
       if (utils.isInternal(this.handle) || this.handle.length > 3) {
         return original.call(this, req, res, next);
       }
-      const { span, wrappedNext } = instrumentation._setupSpan(
+      const { context, wrappedNext } = instrumentation._setupSpan(
         this,
         req,
         res,
         next
       );
       return api.context.with(
-        api.setSpan(api.context.active(), span),
+        context,
         original,
         this,
         req,
@@ -145,14 +145,14 @@ export default class RouterInstrumentation extends InstrumentationBase<
       if (utils.isInternal(this.handle) || this.handle.length !== 4) {
         return original.call(this, error, req, res, next);
       }
-      const { span, wrappedNext } = instrumentation._setupSpan(
+      const { context, wrappedNext } = instrumentation._setupSpan(
         this,
         req,
         res,
         next
       );
       return api.context.with(
-        api.setSpan(api.context.active(), span),
+        context,
         original,
         this,
         error,
@@ -184,6 +184,9 @@ export default class RouterInstrumentation extends InstrumentationBase<
       [types.CustomAttributeNames.TYPE]: type,
       [SemanticAttributes.HTTP_ROUTE]: route,
     };
+
+    const parent = api.context.active();
+    const parentSpan = api.getSpan(parent);
     const span = this.tracer.startSpan(
       spanName,
       {
@@ -192,26 +195,20 @@ export default class RouterInstrumentation extends InstrumentationBase<
       api.context.active()
     );
 
-    let called = false;
-    const endSpan = () => {
-      if (!called) {
-        called = true;
-        // This is not the way to get HTTP span. Open issues: #466 and #464
-        utils.renameHttpSpan(api.getSpan(api.context.active()), layer.method, route);
-        return span.end();
-      }
-    };
-    // prependListener fires correctly, if syncronous internal handlers would be tracked as well
-    // TODO: define what "correctly" means here. Also affects the renaming of http span.
-    res.prependOnceListener('finish', endSpan);
+    utils.renameHttpSpan(parentSpan, layer.method, route);
+    // make sure spans are ended at least when response is finished
+    res.prependOnceListener('finish', () => span.end());
 
     const wrappedNext: types.Next = (...args) => {
-      endSpan();
+      span.end();
+      if (parent) {
+         return api.context.with(parent, next, undefined, ...args);
+      }
       return next(...args);
     };
 
     return {
-      span,
+      context: api.setSpan(parent, span),
       wrappedNext,
     };
   }

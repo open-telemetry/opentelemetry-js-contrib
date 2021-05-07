@@ -15,15 +15,13 @@
  */
 
 import { context, setSpan } from '@opentelemetry/api';
+import * as api from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-
-import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
-diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.VERBOSE);
 
 import Instrumentation from '../src';
 const plugin = new Instrumentation();
@@ -33,7 +31,7 @@ import * as Router from 'router';
 import * as assert from 'assert';
 import { AddressInfo } from 'net';
 
-const createServer = async () => {
+const createServer = async ({ parentSpan } = {}) => {
   const router = new Router();
 
   router.use((req, res, next) => {
@@ -45,8 +43,8 @@ const createServer = async () => {
     next(new Error('Oops'));
   });
 
-  router.get('/', (req, res) => {
-    res.end('Hello World!');
+  router.get('/deep/hello/someone', (req, res, next) => {
+    next();
   });
 
   const helloRouter = new Router();
@@ -79,14 +77,23 @@ const createServer = async () => {
   });
   router.use(errHandler);
 
-  const server = http.createServer((req, res) => {
+  const defaultHandler = (req, res) => {
     router(req, res, (err) => {
+      if (err) {
+        res.statusCode = 500;
+        res.end(err.message);
+      }
       if (!res.headersSent) {
         res.statusCode = 404;
         res.end('Not Found');
       }
+      parentSpan && parentSpan.end();
     });
-  });
+  };
+  const handler = parentSpan ?
+    context.bind(defaultHandler, setSpan(context.active(), parentSpan)) :
+    defaultHandler;
+  const server = http.createServer(handler);
 
   await new Promise<void>(resolve => server.listen(0, resolve));
 
@@ -118,7 +125,7 @@ const spans = {
   anonymousUse: { type: 'middleware', route: '/' },
   preName: { type: 'request_handler', name: 'preName', route: '/hello/:name' },
   announceRude: { type: 'request_handler', name: 'announceRude', route: '/hello/:name' },
-  postMiddleware: { name: 'postMiddleware', type: 'middleware', route: '/:name' },
+  postMiddleware: { type: 'middleware', name: 'postMiddleware', route: '/:name' },
 };
 
 
@@ -132,8 +139,8 @@ describe('Router instrumentation', () => {
   let contextManager: AsyncHooksContextManager;
   let server: http.Server;
 
-  const request = (path: string, options?: http.ClientRequestArgs | string) => {
-    const port = (server.address() as AddressInfo).port;
+  const request = (path: string, serverOverwrite?: http.Server) => {
+    const port = ((serverOverwrite ?? server).address() as AddressInfo).port;
     return new Promise((resolve, reject) => {
       return http.get(`http://localhost:${port}${path}`, (resp) => {
         let data = '';
@@ -242,24 +249,32 @@ describe('Router instrumentation', () => {
       });
     });
 
-    it('should rename HTTP span', async () => {
-      // const httpSpan: types.InstrumentationSpan = tracer.startSpan('HTTP GET');
+    it('should create spans under parent', async () => {
+      const parentSpan = tracer.startSpan('HTTP GET');
+      const testLocalServer = await createServer({ parentSpan });
 
-      // try {
-      //   const res = await httpRequest.get(
-      //     `http://localhost:${testLocalPort}/route/hello`
-      //   );
-      //   httpSpan.end();
-      //   assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
-      //   assert.strictEqual(httpSpan.name, 'GET /route/:param');
-      //   assert.strictEqual(res, '{"route":"hello"}');
-      // } finally {
-      //   testLocalServer.close();
-      // }
+      try {
+        assert.strictEqual(await request('/deep/hello/someone', testLocalServer), 'Hello, someone!');
+        assertSpans(
+          memoryExporter.getFinishedSpans(),
+          [
+            spans.anonymousUse,
+            { ...spans.preName, name: undefined, route: '/deep/hello/someone' },
+            { ...spans.preName, route: '/deep/hello/:name' },
+          ]
+        );
+
+        memoryExporter.getFinishedSpans().forEach((span, idx) => {
+          assert.strictEqual(span.parentSpanId, parentSpan.spanContext.spanId, `span[${idx}] has invalid parent`);
+        });
+        assert.strictEqual(parentSpan.name, 'GET /deep/hello/someone');
+      } finally {
+        testLocalServer.close();
+      }
     });
   });
 
-  describe('Disabling instrumentation', () => {
+  describe.skip('Disabling instrumentation', () => {
     it('should not create new spans', async () => {
       plugin.disable();
       const rootSpan = tracer.startSpan('rootSpan');

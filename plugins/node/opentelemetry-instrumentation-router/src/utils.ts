@@ -27,14 +27,16 @@ export const isInternal = (fn: Function) => {
   }
   return false;
 };
+
 export const getRoute = (req: types.RouterIncomingMessage) =>
   req.baseUrl + (req.route?.path || '') || '/';
+
 export const renameHttpSpan = (
   span?: types.InstrumentationSpan,
   method?: string,
   route?: string
 ) => {
-  if (method && route && span?.name?.startsWith('HTTP ')) {
-    (span as types.InstrumentationSpan).updateName(`${method} ${route}`);
+  if (typeof method === 'string' && typeof route === 'string' && span?.name?.startsWith('HTTP ')) {
+    (span as types.InstrumentationSpan).updateName(`${method.toUpperCase()} ${route}`);
   }
 };
