@@ -179,14 +179,14 @@ export default class RouterInstrumentation extends InstrumentationBase<
     };
 
     const parent = api.context.active();
-    const parentSpan = api.getSpan(parent);
+    const parentSpan = api.getSpan(parent) as types.InstrumentationSpan;
     const span = this.tracer.startSpan(
       spanName,
       {
         attributes,
       },
-      api.context.active()
-    );
+      parent
+    ) as types.InstrumentationSpan;
 
     utils.renameHttpSpan(parentSpan, layer.method, route);
     // make sure spans are ended at least when response is finished
