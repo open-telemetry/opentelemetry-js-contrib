@@ -274,16 +274,11 @@ describe('Router instrumentation', () => {
     });
   });
 
-  describe.skip('Disabling instrumentation', () => {
+  describe('Disabling instrumentation', () => {
     it('should not create new spans', async () => {
       plugin.disable();
-      const rootSpan = tracer.startSpan('rootSpan');
-
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        rootSpan.end();
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-        assert.notStrictEqual(memoryExporter.getFinishedSpans()[0], undefined);
-      });
+      await request('/hello/nobody');
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
     });
   });
 });
