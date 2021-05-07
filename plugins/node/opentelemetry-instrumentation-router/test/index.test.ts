@@ -102,7 +102,7 @@ const createServer = async ({ parentSpan } = {}) => {
 
 const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
   assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
-  assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
+  assert(Array.isArray(expectedSpans), 'Expected `expectedSpans` to be an array');
   assert.strictEqual(actualSpans.length, expectedSpans.length, 'Expected span count different from actual');
   actualSpans.forEach((span, idx) => {
     const expected = expectedSpans[idx];
