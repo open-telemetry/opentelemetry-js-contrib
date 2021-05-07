@@ -27,6 +27,11 @@ router.get('/hello/:name', function greetingHandler(req, res) {
   res.end(`Hello, ${req.params.name}!`);
 });
 
+// eslint-disable-next-line prefer-arrow-callback
+router.get('/err', function erroringRoute(req, res, next) {
+  next(new Error('Broken!'));
+});
+
 // eslint-disable-next-line prefer-arrow-callback, func-names
 const server = http.createServer(function (req, res) {
   router(req, res, (...args) => {

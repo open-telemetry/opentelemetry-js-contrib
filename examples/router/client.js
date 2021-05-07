@@ -32,4 +32,7 @@ function makeRequest(path) {
 }
 
 makeRequest('/hello/world');
+// 404
 makeRequest('/bye/world');
+// error
+makeRequest('/err');
