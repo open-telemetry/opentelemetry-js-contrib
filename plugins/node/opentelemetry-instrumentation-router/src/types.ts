@@ -13,34 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as http from 'http';
 import { Span } from '@opentelemetry/api';
 
 export enum LayerType {
   MIDDLEWARE = 'middleware',
   REQUEST_HANDLER = 'request_handler',
-}
-export interface RouterIncomingMessage extends http.IncomingMessage {
-  baseUrl: string;
-  route?: {
-    path: string;
-  };
-}
-export type Next = (...args: any[]) => void;
-export interface Layer {
-  handle: Function;
-  method?: string;
-  handle_request: (
-    req: RouterIncomingMessage,
-    res: http.ServerResponse,
-    next: Next
-  ) => void;
-  handle_error: (
-    error: Error,
-    req: RouterIncomingMessage,
-    res: http.ServerResponse,
-    next: Next
-  ) => void;
 }
 
 export enum CustomAttributeNames {

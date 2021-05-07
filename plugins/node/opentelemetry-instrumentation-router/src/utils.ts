@@ -16,6 +16,7 @@
 
 import * as constants from './constants';
 import * as types from './types';
+import * as Router from 'router';
 
 export const isInternal = (fn: Function) => {
   // Note that both of those functions are sync
@@ -28,7 +29,7 @@ export const isInternal = (fn: Function) => {
   return false;
 };
 
-export const getRoute = (req: types.RouterIncomingMessage) =>
+export const getRoute = (req: Router.RoutedRequest) =>
   req.baseUrl + (req.route?.path || '') || '/';
 
 export const renameHttpSpan = (
@@ -36,7 +37,13 @@ export const renameHttpSpan = (
   method?: string,
   route?: string
 ) => {
-  if (typeof method === 'string' && typeof route === 'string' && span?.name?.startsWith('HTTP ')) {
-    (span as types.InstrumentationSpan).updateName(`${method.toUpperCase()} ${route}`);
+  if (
+    typeof method === 'string' &&
+    typeof route === 'string' &&
+    span?.name?.startsWith('HTTP ')
+  ) {
+    (span as types.InstrumentationSpan).updateName(
+      `${method.toUpperCase()} ${route}`
+    );
   }
 };

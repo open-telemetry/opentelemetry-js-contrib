@@ -104,13 +104,13 @@ export default class RouterInstrumentation extends InstrumentationBase<
   }
 
   // Define handle_request wrapper separately to ensure the signature has the correct length
-  private _requestHandlerPatcher(original: types.Layer['handle_request']) {
+  private _requestHandlerPatcher(original: Router.Layer['handle_request']) {
     const instrumentation = this;
     return function wrapped_handle_request(
-      this: types.Layer,
-      req: types.RouterIncomingMessage,
+      this: Router.Layer,
+      req: Router.RoutedRequest,
       res: http.ServerResponse,
-      next: types.Next
+      next: Router.NextFunction
     ) {
       if (utils.isInternal(this.handle) || this.handle.length > 3) {
         return original.call(this, req, res, next);
@@ -121,26 +121,19 @@ export default class RouterInstrumentation extends InstrumentationBase<
         res,
         next
       );
-      return api.context.with(
-        context,
-        original,
-        this,
-        req,
-        res,
-        wrappedNext
-      );
+      return api.context.with(context, original, this, req, res, wrappedNext);
     };
   }
 
   // Define handle_error wrapper separately to ensure the signature has the correct length
-  private _errorHandlerPatcher(original: types.Layer['handle_error']) {
+  private _errorHandlerPatcher(original: Router.Layer['handle_error']) {
     const instrumentation = this;
     return function wrapped_handle_request(
-      this: types.Layer,
+      this: Router.Layer,
       error: Error,
-      req: types.RouterIncomingMessage,
+      req: Router.RoutedRequest,
       res: http.ServerResponse,
-      next: types.Next
+      next: Router.NextFunction
     ) {
       if (utils.isInternal(this.handle) || this.handle.length !== 4) {
         return original.call(this, error, req, res, next);
@@ -164,10 +157,10 @@ export default class RouterInstrumentation extends InstrumentationBase<
   }
 
   private _setupSpan(
-    layer: types.Layer,
-    req: types.RouterIncomingMessage,
+    layer: Router.Layer,
+    req: Router.RoutedRequest,
     res: http.ServerResponse,
-    next: types.Next
+    next: Router.NextFunction
   ) {
     const fnName = layer.handle.name || undefined;
     const type = layer.method
@@ -199,10 +192,10 @@ export default class RouterInstrumentation extends InstrumentationBase<
     // make sure spans are ended at least when response is finished
     res.prependOnceListener('finish', () => span.end());
 
-    const wrappedNext: types.Next = (...args) => {
+    const wrappedNext: Router.NextFunction = (...args) => {
       span.end();
       if (parent) {
-         return api.context.with(parent, next, undefined, ...args);
+        return api.context.with(parent, next, undefined, ...args);
       }
       return next(...args);
     };

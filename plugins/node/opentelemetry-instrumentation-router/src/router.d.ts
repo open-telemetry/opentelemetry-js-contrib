@@ -21,7 +21,6 @@ declare module 'router' {
   export = Router;
 
   namespace Router {
-
     interface RouterOptions {
       strict?: boolean;
       caseSensitive?: boolean;
@@ -29,41 +28,64 @@ declare module 'router' {
     }
 
     interface Layer {
-      name: string,
-      handle: RequestHandler | ErrorRequestHandler,
-      handle_request: RequestHandler,
-      handle_error: ErrorRequestHandler,
-      match: (path: string) => boolean,
+      name: string;
+      method: string;
+      handle: RequestHandler | ErrorRequestHandler;
+      handle_request: RequestHandler;
+      handle_error: ErrorRequestHandler;
+      match: (path: string) => boolean;
     }
 
     interface IncomingRequest extends http.IncomingMessage {
-      url: string,
-      method: string,
-      originalUrl?: string,
+      url: string;
+      method: string;
+      originalUrl?: string;
       params?: {
-        [key: string]: any,
-      },
+        [key: string]: any;
+      };
     }
 
     interface RoutedRequest extends IncomingRequest {
-      baseUrl: string,
-      next?: NextFunction,
-      route?: IRoute
+      baseUrl: string;
+      next?: NextFunction;
+      route?: IRoute;
     }
 
-    type RequestParamHandler = (req: IncomingRequest, res: http.ServerResponse, next: NextFunction, value: string, name: string) => void;
+    type RequestParamHandler = (
+      req: IncomingRequest,
+      res: http.ServerResponse,
+      next: NextFunction,
+      value: string,
+      name: string
+    ) => void;
 
-    type RouteHandler = (req: RoutedRequest, res: http.ServerResponse, next: NextFunction) => void;
-    type RequestHandler = (req: IncomingRequest, res: http.ServerResponse, next: NextFunction) => void;
+    type RouteHandler = (
+      req: RoutedRequest,
+      res: http.ServerResponse,
+      next: NextFunction
+    ) => void;
+    type RequestHandler = (
+      req: IncomingRequest,
+      res: http.ServerResponse,
+      next: NextFunction
+    ) => void;
 
-    type NextFunction = (err?: Error | "route" | "router") => void;
+    type NextFunction = (err?: Error | 'route' | 'router') => void;
     type Callback = (err?: Error) => void;
 
-    type ErrorRequestHandler = (err: Error, req: IncomingRequest, res: http.ServerResponse, next: NextFunction) => void;
+    type ErrorRequestHandler = (
+      err: Error,
+      req: IncomingRequest,
+      res: http.ServerResponse,
+      next: NextFunction
+    ) => void;
 
     type PathParams = string | RegExp | Array<string | RegExp>;
 
-    type RequestHandlerParams = RouteHandler | ErrorRequestHandler | Array<RouteHandler | ErrorRequestHandler>;
+    type RequestHandlerParams =
+      | RouteHandler
+      | ErrorRequestHandler
+      | Array<RouteHandler | ErrorRequestHandler>;
 
     interface IRouterMatcher<T> {
       (path: PathParams, ...handlers: RouteHandler[]): T;
@@ -109,7 +131,9 @@ declare module 'router' {
        *
        * @deprecated since version 4.11
        */
-      param(callback: (name: string, matcher: RegExp) => RequestParamHandler): this;
+      param(
+        callback: (name: string, matcher: RegExp) => RequestParamHandler
+      ): this;
 
       /**
        * Special-cased "all" method, applying the given route `path`,
@@ -119,7 +143,11 @@ declare module 'router' {
 
       use: IRouterHandler<this> & IRouterMatcher<this>;
 
-      handle: (req: http.IncomingMessage, res: http.ServerResponse, cb: Callback) => void;
+      handle: (
+        req: http.IncomingMessage,
+        res: http.ServerResponse,
+        cb: Callback
+      ) => void;
 
       route(prefix: PathParams): IRoute;
       // Stack of configured routes
@@ -142,7 +170,7 @@ declare module 'router' {
       copy: IRouterMatcher<this>;
       link: IRouterMatcher<this>;
       lock: IRouterMatcher<this>;
-      "m-search": IRouterMatcher<this>;
+      'm-search': IRouterMatcher<this>;
       merge: IRouterMatcher<this>;
       mkactivity: IRouterMatcher<this>;
       mkcalendar: IRouterMatcher<this>;
@@ -188,7 +216,7 @@ declare module 'router' {
       copy: IRouterHandler<this>;
       link: IRouterHandler<this>;
       lock: IRouterHandler<this>;
-      "m-search": IRouterHandler<this>;
+      'm-search': IRouterHandler<this>;
       merge: IRouterHandler<this>;
       mkactivity: IRouterHandler<this>;
       mkcalendar: IRouterHandler<this>;
@@ -212,9 +240,13 @@ declare module 'router' {
     }
 
     interface RouterConstructor extends IRouter {
-      new(options?: RouterOptions): IRouter & ((req: http.IncomingMessage, res: http.ServerResponse, cb: Callback) => void);
+      new (options?: RouterOptions): IRouter &
+        ((
+          req: http.IncomingMessage,
+          res: http.ServerResponse,
+          cb: Callback
+        ) => void);
     }
-
   }
 
   const Router: Router.RouterConstructor;
