@@ -176,77 +176,49 @@ describe('Router instrumentation', () => {
 
   describe('Instrumenting handler calls', () => {
     it('should create a span for each handler', async () => {
-      const rootSpan = tracer.startSpan('clientSpan');
-
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        assert.strictEqual(await request('/hello/nobody'), 'How rude!');
-        rootSpan.end();
-
-        assertSpans(
-          memoryExporter.getFinishedSpans(),
-          [
-            spans.anonymousUse,
-            spans.preName,
-            spans.announceRude,
-            null,
-          ]
-        );
-      });
+      assert.strictEqual(await request('/hello/nobody'), 'How rude!');
+      assertSpans(
+        memoryExporter.getFinishedSpans(),
+        [
+          spans.anonymousUse,
+          spans.preName,
+          spans.announceRude,
+        ]
+      );
     });
 
     it('should gather full route for nested routers', async () => {
-      const rootSpan = tracer.startSpan('clientSpan');
-
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        assert.strictEqual(await request('/deep/hello/world'), 'Hello, world!');
-        rootSpan.end();
-
-        assertSpans(
-          memoryExporter.getFinishedSpans(),
-          [
-            spans.anonymousUse,
-            { ...spans.preName, route: '/deep/hello/:name' },
-            null,
-          ]
-        );
-      });
+      assert.strictEqual(await request('/deep/hello/world'), 'Hello, world!');
+      assertSpans(
+        memoryExporter.getFinishedSpans(),
+        [
+          spans.anonymousUse,
+          { ...spans.preName, route: '/deep/hello/:name' },
+        ]
+      );
     });
 
     it('should create spans for requests that did not result with response from the router', async () => {
-      const rootSpan = tracer.startSpan('clientSpan');
-
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        assert.strictEqual(await request('/not-found'), 'Not Found');
-        rootSpan.end();
-
-        assertSpans(
-          memoryExporter.getFinishedSpans(),
-          [
-            spans.anonymousUse,
-            { ...spans.postMiddleware, route: '/' },
-            null,
-          ]
-        );
-      });
+      assert.strictEqual(await request('/not-found'), 'Not Found');
+      assertSpans(
+        memoryExporter.getFinishedSpans(),
+        [
+          spans.anonymousUse,
+          { ...spans.postMiddleware, route: '/' },
+        ]
+      );
     });
 
     it('should create spans for errored routes', async () => {
-      const rootSpan = tracer.startSpan('clientSpan');
-
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        assert.strictEqual(await request('/err'), 'Server error: Oops!');
-        rootSpan.end();
-
-        assertSpans(
-          memoryExporter.getFinishedSpans(),
-          [
-            spans.anonymousUse,
-            { ...spans.preName, name: undefined, route: '/err' },
-            { ...spans.anonymousUse, name: 'errHandler', route: '/err' },
-            null,
-          ]
-        );
-      });
+      assert.strictEqual(await request('/err'), 'Server error: Oops!');
+      assertSpans(
+        memoryExporter.getFinishedSpans(),
+        [
+          spans.anonymousUse,
+          { ...spans.preName, name: undefined, route: '/err' },
+          { ...spans.anonymousUse, name: 'errHandler', route: '/err' },
+        ]
+      );
     });
 
     it('should create spans under parent', async () => {
