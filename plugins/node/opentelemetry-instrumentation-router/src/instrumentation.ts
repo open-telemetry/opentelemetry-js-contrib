@@ -192,7 +192,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
     // make sure spans are ended at least when response is finished
     res.prependOnceListener('finish', () => span.end());
 
-    const wrappedNext: Router.NextFunction = (err) => {
+    const wrappedNext: Router.NextFunction = err => {
       if (err) {
         span.recordException(err);
       }
