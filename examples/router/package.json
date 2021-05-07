@@ -35,6 +35,7 @@
     "@opentelemetry/instrumentation-http": "^0.18.0",
     "@opentelemetry/instrumentation-router": "file:../../plugins/node/opentelemetry-instrumentation-router",
     "@opentelemetry/node": "^0.18.0",
+    "@opentelemetry/tracing": "^0.18.0",
     "router": "^1.3.5"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",

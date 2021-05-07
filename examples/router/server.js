@@ -1,6 +1,5 @@
 'use strict';
 
-const api = require('@opentelemetry/api');
 require('./tracer')('example-router-server');
 
 // `setDefaultName` shows up in spans as the name
@@ -34,8 +33,12 @@ router.get('/err', function erroringRoute(req, res, next) {
 
 // eslint-disable-next-line prefer-arrow-callback, func-names
 const server = http.createServer(function (req, res) {
-  router(req, res, (...args) => {
-    res.statusCode = 404;
+  router(req, res, (error) => {
+    if (error) {
+      res.statusCode = 500;
+    } else {
+      res.statusCode = 404;
+    }
     res.end();
   });
 });
