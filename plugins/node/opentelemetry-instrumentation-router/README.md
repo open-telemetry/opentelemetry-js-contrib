@@ -1,11 +1,11 @@
-# OpenTelemetry __package name__ Instrumentation for Node.js
+# OpenTelemetry router Instrumentation for Node.js
 
 [![Gitter chat][gitter-image]][gitter-url]
 [![dependencies][dependencies-image]][dependencies-url]
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for [`__package name__`](https://github.com/__package name__/node-__package name__) and allows the user to automatically collect trace data and export them to their backend of choice.
+This module provides automatic instrumentation for [`router`](https://github.com/pillarjs/router) and allows the user to automatically collect trace data and export them to their backend of choice.
 
 For automatic instrumentation see the
 [@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
@@ -13,18 +13,18 @@ For automatic instrumentation see the
 ## Installation
 
 ```bash
-npm install --save @opentelemetry/instrumentation-__package name__
+npm install --save @opentelemetry/instrumentation-router
 ```
 ### Supported Versions
- - `>=4.0.0`
+ - `>=1.0.0`
 
 ## Usage
 
 ```js
-const { __package name__Instrumentation } = require('@opentelemetry/instrumentation-__package name__');
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const RouterInstrumentation = require('@opentelemetry/instrumentation-router');
 
 const provider = new NodeTracerProvider();
 
@@ -32,12 +32,12 @@ provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({
-  instrumentations: [new __package name__Instrumentation()],
+  instrumentations: [new RouterInstrumentation()],
   tracerProvider: provider,
 });
 ```
 
-See [examples/__package name__](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/__package name__) for a short example.
+See [examples/router](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/router) for a short example.
 
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
@@ -52,7 +52,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [gitter-url]: https://gitter.im/open-telemetry/opentelemetry-node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=packages/opentelemetry-instrumentation-__package name__
-[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-instrumentation-__package name__
-[devDependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=packages/opentelemetry-instrumentation-__package name__
-[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-instrumentation-__package name__&type=dev
+[dependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/status.svg?path=packages/opentelemetry-instrumentation-router
+[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-instrumentation-router
+[devDependencies-image]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib/dev-status.svg?path=packages/opentelemetry-instrumentation-router
+[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-instrumentation-router&type=dev
