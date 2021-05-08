@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-// Postgresql specific attributes not covered by semantic conventions
-export enum AttributeNames {
-  PG_VALUES = 'db.postgresql.values',
-  PG_PLAN = 'db.postgresql.plan',
-  IDLE_TIMEOUT_MILLIS = 'db.postgresql.idle.timeout.millis',
-  MAX_CLIENT = 'db.postgresql.max.client',
+import { HrTime, SpanAttributes } from '@opentelemetry/api';
+
+/**
+ * Represents a timed event.
+ * A timed event is an event with a timestamp.
+ */
+export interface TimedEvent {
+  time: HrTime;
+  /** The name of the event. */
+  name: string;
+  /** The attributes of the event. */
+  attributes?: SpanAttributes;
 }
