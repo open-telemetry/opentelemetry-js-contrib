@@ -21,7 +21,6 @@ import {
   Span,
   SpanKind,
   SpanStatus,
-  TimedEvent,
   setSpan,
 } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
@@ -36,6 +35,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
 import { AttributeNames } from '../src/enums';
+import { TimedEvent } from './types';
 import {
   SemanticAttributes,
   DbSystemValues,
