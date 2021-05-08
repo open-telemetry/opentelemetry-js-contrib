@@ -36,6 +36,10 @@ import * as assert from 'assert';
 import type * as pg from 'pg';
 import { PgInstrumentation } from '../src';
 import { AttributeNames } from '../src/enums';
+import {
+  SemanticAttributes,
+  DbSystemValues,
+} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -50,13 +54,12 @@ const CONFIG = {
 };
 
 const DEFAULT_ATTRIBUTES = {
-  [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT,
-  [AttributeNames.DB_INSTANCE]: CONFIG.database,
-  [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE,
-  [AttributeNames.PEER_HOSTNAME]: CONFIG.host,
-  [AttributeNames.PEER_ADDRESS]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [AttributeNames.PEER_PORT]: CONFIG.port,
-  [AttributeNames.DB_USER]: CONFIG.user,
+  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+  [SemanticAttributes.DB_NAME]: CONFIG.database,
+  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
+  [SemanticAttributes.DB_CONNECTION_STRING]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+  [SemanticAttributes.DB_USER]: CONFIG.user,
 };
 
 const unsetStatus: SpanStatus = {
@@ -200,7 +203,7 @@ describe('pg@7.x', () => {
     it('should intercept client.query(text, callback)', done => {
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: 'SELECT NOW()',
+        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -220,7 +223,7 @@ describe('pg@7.x', () => {
       const values = ['0'];
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: query,
+        [SemanticAttributes.DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -239,7 +242,7 @@ describe('pg@7.x', () => {
       const query = 'SELECT NOW()';
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: query,
+        [SemanticAttributes.DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -261,7 +264,7 @@ describe('pg@7.x', () => {
       const query = 'SELECT NOW()';
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: query,
+        [SemanticAttributes.DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -281,7 +284,7 @@ describe('pg@7.x', () => {
       const values = ['0'];
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: query,
+        [SemanticAttributes.DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -301,7 +304,7 @@ describe('pg@7.x', () => {
       const values = ['0'];
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: query,
+        [SemanticAttributes.DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -326,7 +329,7 @@ describe('pg@7.x', () => {
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
         [AttributeNames.PG_PLAN]: name,
-        [AttributeNames.DB_STATEMENT]: query,
+        [SemanticAttributes.DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -350,7 +353,7 @@ describe('pg@7.x', () => {
       const query = 'SELECT NOW()';
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [AttributeNames.DB_STATEMENT]: query,
+        [SemanticAttributes.DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');

@@ -15,6 +15,10 @@
  */
 
 import { Span, SpanStatusCode, Tracer, SpanKind } from '@opentelemetry/api';
+import {
+  SemanticAttributes,
+  DbSystemValues,
+} from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums';
 import {
   PgClientExtended,
@@ -51,13 +55,12 @@ function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
   return tracer.startSpan(name, {
     kind: SpanKind.CLIENT,
     attributes: {
-      [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT, // required
-      [AttributeNames.DB_INSTANCE]: client.connectionParameters.database, // required
-      [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE, // required
-      [AttributeNames.PEER_ADDRESS]: jdbcString, // required
-      [AttributeNames.PEER_HOSTNAME]: client.connectionParameters.host, // required
-      [AttributeNames.PEER_PORT]: client.connectionParameters.port,
-      [AttributeNames.DB_USER]: client.connectionParameters.user,
+      [SemanticAttributes.DB_NAME]: client.connectionParameters.database, // required
+      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
+      [SemanticAttributes.DB_CONNECTION_STRING]: jdbcString, // required
+      [SemanticAttributes.NET_PEER_NAME]: client.connectionParameters.host, // required
+      [SemanticAttributes.NET_PEER_PORT]: client.connectionParameters.port,
+      [SemanticAttributes.DB_USER]: client.connectionParameters.user,
     },
   });
 }
@@ -76,7 +79,7 @@ export function handleConfigQuery(
 
   // Set attributes
   if (queryConfig.text) {
-    span.setAttribute(AttributeNames.DB_STATEMENT, queryConfig.text);
+    span.setAttribute(SemanticAttributes.DB_STATEMENT, queryConfig.text);
   }
   if (
     instrumentationConfig.enhancedDatabaseReporting &&
@@ -109,7 +112,7 @@ export function handleParameterizedQuery(
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
-  span.setAttribute(AttributeNames.DB_STATEMENT, query);
+  span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
   if (instrumentationConfig.enhancedDatabaseReporting) {
     span.setAttribute(AttributeNames.PG_VALUES, arrayStringifyHelper(values));
   }
@@ -129,7 +132,7 @@ export function handleTextQuery(
   const span = pgStartSpan(tracer, this, name);
 
   // Set attributes
-  span.setAttribute(AttributeNames.DB_STATEMENT, query);
+  span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
 
   return span;
 }
