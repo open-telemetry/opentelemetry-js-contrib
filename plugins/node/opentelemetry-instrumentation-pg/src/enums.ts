@@ -14,27 +14,10 @@
  * limitations under the License.
  */
 
+// Postgresql specific attributes not covered by semantic conventions
 export enum AttributeNames {
-  // required by https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/data-database.md
-  COMPONENT = 'component',
-  DB_TYPE = 'db.type',
-  DB_INSTANCE = 'db.instance',
-  DB_STATEMENT = 'db.statement',
-  PEER_ADDRESS = 'peer.address',
-  PEER_HOSTNAME = 'peer.host',
-
-  // optional
-  DB_USER = 'db.user',
-  PEER_PORT = 'peer.port',
-  PEER_IPV4 = 'peer.ipv4',
-  PEER_IPV6 = 'peer.ipv6',
-  PEER_SERVICE = 'peer.service',
-
-  // PG specific -- not specified by spec
-  PG_VALUES = 'pg.values',
-  PG_PLAN = 'pg.plan',
-
-  // PG-POOL specific -- not specified by spec
-  IDLE_TIMEOUT_MILLIS = 'idle.timeout.millis',
-  MAX_CLIENT = 'max',
+  PG_VALUES = 'db.postgresql.values',
+  PG_PLAN = 'db.postgresql.plan',
+  IDLE_TIMEOUT_MILLIS = 'db.postgresql.idle.timeout.millis',
+  MAX_CLIENT = 'db.postgresql.max.client',
 }
