@@ -94,7 +94,7 @@ const createServer = async ({
         res.statusCode = 404;
         res.end('Not Found');
       }
-      parentSpan && parentSpan.end();
+      parentSpan?.end();
     });
   };
   const handler = parentSpan
