@@ -23,7 +23,7 @@ import {
   PatchableExtMethod,
   ServerExtDirectInput,
 } from './types';
-import { AttributeNames } from "./enums/AttributeNames";
+import { AttributeNames } from './enums/AttributeNames';
 
 export function getPluginName<T>(plugin: Hapi.Plugin<T>): string {
   if ((plugin as Hapi.PluginNameVersion).name) {

@@ -62,8 +62,6 @@ export type ServerExtDirectInput = [
   (Hapi.ServerExtOptions | undefined)?
 ];
 
-;
-
 export const HapiLayerType = {
   ROUTER: 'router',
   PLUGIN: 'plugin',

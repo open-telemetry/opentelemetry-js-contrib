@@ -32,7 +32,7 @@ import * as koa from 'koa';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 import { KoaLayerType } from '../src/types';
-import { AttributeNames } from "../src/enums/AttributeNames";
+import { AttributeNames } from '../src/enums/AttributeNames';
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {

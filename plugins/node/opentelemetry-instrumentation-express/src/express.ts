@@ -25,8 +25,8 @@ import {
   ExpressInstrumentationConfig,
   ExpressInstrumentationSpan,
 } from './types';
-import { ExpressLayerType } from "./enums/ExpressLayerType";
-import { AttributeNames } from "./enums/AttributeNames";
+import { ExpressLayerType } from './enums/ExpressLayerType';
+import { AttributeNames } from './enums/AttributeNames';
 import { getLayerMetadata, storeLayerPath, isLayerIgnored } from './utils';
 import { VERSION } from './version';
 import {

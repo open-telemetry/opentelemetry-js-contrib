@@ -23,11 +23,9 @@ import {
 } from '@opentelemetry/tracing';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
-import {
-  ExpressInstrumentationSpan,
-} from '../src/types';
-import { ExpressLayerType } from "../src/enums/ExpressLayerType";
-import { AttributeNames } from "../src/enums/AttributeNames";
+import { ExpressInstrumentationSpan } from '../src/types';
+import { ExpressLayerType } from '../src/enums/ExpressLayerType';
+import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 
 const instrumentation = new ExpressInstrumentation({

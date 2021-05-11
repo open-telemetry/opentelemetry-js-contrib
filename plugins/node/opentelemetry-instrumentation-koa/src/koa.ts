@@ -30,7 +30,7 @@ import {
   kLayerPatched,
   KoaLayerType,
 } from './types';
-import { AttributeNames } from "./enums/AttributeNames";
+import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import { getMiddlewareMetadata } from './utils';
 

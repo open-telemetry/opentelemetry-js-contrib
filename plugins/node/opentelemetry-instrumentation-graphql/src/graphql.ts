@@ -26,7 +26,7 @@ import {
 import type * as graphqlTypes from 'graphql';
 import { GraphQLFieldResolver } from 'graphql/type/definition';
 import { SpanNames } from './enum';
-import { AttributeNames } from "./enums/AttributeNames";
+import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL } from './symbols';
 
 import {

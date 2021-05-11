@@ -17,7 +17,7 @@
 import { ReadableSpan } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import { SpanNames } from '../src/enum';
-import { AttributeNames } from "../src/enums/AttributeNames";
+import { AttributeNames } from '../src/enums/AttributeNames';
 
 export function assertResolveSpan(
   span: ReadableSpan,

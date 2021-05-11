@@ -16,12 +16,9 @@
 
 import * as utils from '../src/utils';
 import * as assert from 'assert';
-import {
-  ExpressInstrumentationConfig,
-  ExpressLayer,
-} from '../src/types';
-import { ExpressLayerType } from "../src/enums/ExpressLayerType";
-import { AttributeNames } from "../src/enums/AttributeNames";
+import { ExpressInstrumentationConfig, ExpressLayer } from '../src/types';
+import { ExpressLayerType } from '../src/enums/ExpressLayerType';
+import { AttributeNames } from '../src/enums/AttributeNames';
 
 describe('Utils', () => {
   describe('isLayerIgnored()', () => {

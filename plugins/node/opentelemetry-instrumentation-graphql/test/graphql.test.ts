@@ -23,7 +23,7 @@ import {
 import * as assert from 'assert';
 import { GraphQLInstrumentation } from '../src';
 import { SpanNames } from '../src/enum';
-import { AttributeNames } from "../src/enums/AttributeNames";
+import { AttributeNames } from '../src/enums/AttributeNames';
 import { GraphQLInstrumentationConfig } from '../src/types';
 import { assertResolveSpan } from './helper';
 

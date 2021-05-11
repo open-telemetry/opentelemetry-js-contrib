@@ -18,7 +18,7 @@ import * as api from '@opentelemetry/api';
 import * as restify from 'restify';
 import { Server } from 'restify';
 import * as types from './types';
-import * as AttributeNames from "./enums/AttributeNames";
+import * as AttributeNames from './enums/AttributeNames';
 import { VERSION } from './version';
 import * as constants from './constants';
 import {

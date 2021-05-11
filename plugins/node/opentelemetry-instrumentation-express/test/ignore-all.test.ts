@@ -23,7 +23,7 @@ import {
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import { ExpressInstrumentationSpan } from '../src/types';
-import { AttributeNames } from "../src/enums/AttributeNames";
+import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation, ExpressLayerType } from '../src';
 
 const instrumentation = new ExpressInstrumentation({

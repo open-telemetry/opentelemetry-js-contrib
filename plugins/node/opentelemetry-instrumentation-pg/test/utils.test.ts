@@ -25,7 +25,7 @@ import {
 import * as assert from 'assert';
 import * as pg from 'pg';
 import { PgInstrumentationConfig } from '../src';
-import { AttributeNames } from "../src/enums/AttributeNames";
+import { AttributeNames } from '../src/enums/AttributeNames';
 import { PgClientExtended, NormalizedQueryConfig } from '../src/types';
 import * as utils from '../src/utils';
 

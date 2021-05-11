@@ -22,8 +22,8 @@ import {
   IgnoreMatcher,
   ExpressInstrumentationConfig,
 } from './types';
-import { ExpressLayerType } from "./enums/ExpressLayerType";
-import { AttributeNames } from "./enums/AttributeNames";
+import { ExpressLayerType } from './enums/ExpressLayerType';
+import { AttributeNames } from './enums/AttributeNames';
 
 /**
  * Store layers path in the request to be able to construct route later

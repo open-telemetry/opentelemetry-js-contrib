@@ -15,7 +15,7 @@
  */
 
 import { Span, SpanStatusCode, Tracer, SpanKind } from '@opentelemetry/api';
-import { AttributeNames } from "./enums/AttributeNames";
+import { AttributeNames } from './enums/AttributeNames';
 import {
   SemanticAttributes,
   DbSystemValues,
