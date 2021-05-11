@@ -18,12 +18,12 @@ import { SpanAttributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import type * as Hapi from '@hapi/hapi';
 import {
-  AttributeNames,
   HapiLayerType,
   HapiLifecycleMethodNames,
   PatchableExtMethod,
   ServerExtDirectInput,
 } from './types';
+import { AttributeNames } from "./enums/AttributeNames";
 
 export function getPluginName<T>(plugin: Hapi.Plugin<T>): string {
   if ((plugin as Hapi.PluginNameVersion).name) {

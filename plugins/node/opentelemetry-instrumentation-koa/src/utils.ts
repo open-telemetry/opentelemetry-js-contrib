@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 import {
-  AttributeNames,
   KoaContext,
   KoaMiddleware,
   KoaLayerType,
 } from './types';
+import { AttributeNames } from "./enums/AttributeNames";
 import { SpanAttributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 

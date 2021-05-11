@@ -18,6 +18,7 @@ import * as api from '@opentelemetry/api';
 import * as restify from 'restify';
 import { Server } from 'restify';
 import * as types from './types';
+import * as AttributeNames from "./enums/AttributeNames";
 import { VERSION } from './version';
 import * as constants from './constants';
 import {
@@ -183,10 +184,10 @@ export class RestifyInstrumentation extends InstrumentationBase<
             ? `request handler - ${route}`
             : `middleware - ${fnName || 'anonymous'}`;
         const attributes = {
-          [types.CustomAttributeNames.NAME]: fnName,
-          [types.CustomAttributeNames.VERSION]: this._moduleVersion || 'n/a',
-          [types.CustomAttributeNames.TYPE]: metadata.type,
-          [types.CustomAttributeNames.METHOD]: metadata.methodName,
+          [AttributeNames.AttributeNames.NAME]: fnName,
+          [AttributeNames.AttributeNames.VERSION]: this._moduleVersion || 'n/a',
+          [AttributeNames.AttributeNames.TYPE]: metadata.type,
+          [AttributeNames.AttributeNames.METHOD]: metadata.methodName,
           [SemanticAttributes.HTTP_ROUTE]: route,
         };
         const span = this.tracer.startSpan(

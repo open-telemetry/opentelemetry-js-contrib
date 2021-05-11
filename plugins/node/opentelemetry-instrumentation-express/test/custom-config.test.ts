@@ -24,10 +24,10 @@ import {
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import {
-  CustomAttributeNames,
   ExpressInstrumentationSpan,
-  ExpressLayerType,
 } from '../src/types';
+import { ExpressLayerType } from "../src/enums/ExpressLayerType";
+import { AttributeNames } from "../src/enums/AttributeNames";
 import { ExpressInstrumentation } from '../src';
 
 const instrumentation = new ExpressInstrumentation({
@@ -115,7 +115,7 @@ describe('ExpressInstrumentation', () => {
             .getFinishedSpans()
             .filter(
               span =>
-                span.attributes[CustomAttributeNames.EXPRESS_TYPE] ===
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
                 ExpressLayerType.MIDDLEWARE
             ).length,
           0
@@ -164,7 +164,7 @@ describe('ExpressInstrumentation', () => {
         );
 
         assert.strictEqual(
-          requestHandlerSpan?.attributes[CustomAttributeNames.EXPRESS_TYPE],
+          requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
           'request_handler'
         );
         const exportedRootSpan = spans.find(span => span.name === 'GET /mw');

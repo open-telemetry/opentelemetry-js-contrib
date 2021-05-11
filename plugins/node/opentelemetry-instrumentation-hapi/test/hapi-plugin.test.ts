@@ -25,7 +25,8 @@ import * as assert from 'assert';
 import { getPlugin } from './plugin';
 const plugin = getPlugin();
 import * as hapi from '@hapi/hapi';
-import { AttributeNames, HapiLayerType } from '../src/types';
+import { HapiLayerType } from '../src/types';
+import { AttributeNames } from "../src/enums/AttributeNames";
 
 describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
   const provider = new NodeTracerProvider();

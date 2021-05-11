@@ -15,11 +15,11 @@
  */
 
 import { Span, SpanStatusCode, Tracer, SpanKind } from '@opentelemetry/api';
+import { AttributeNames } from "./enums/AttributeNames";
 import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
-import { AttributeNames } from './enums';
 import {
   PgClientExtended,
   NormalizedQueryConfig,

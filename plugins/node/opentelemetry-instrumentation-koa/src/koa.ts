@@ -29,8 +29,8 @@ import {
   KoaComponentName,
   kLayerPatched,
   KoaLayerType,
-  AttributeNames,
 } from './types';
+import { AttributeNames } from "./enums/AttributeNames";
 import { VERSION } from './version';
 import { getMiddlewareMetadata } from './utils';
 

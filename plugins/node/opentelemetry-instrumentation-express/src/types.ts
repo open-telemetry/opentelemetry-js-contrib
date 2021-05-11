@@ -18,6 +18,7 @@ import { kLayerPatched } from './express';
 import { Request } from 'express';
 import { SpanAttributes, Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { ExpressLayerType } from './enums/ExpressLayerType';
 
 /**
  * This const define where on the `request` object the Instrumentation will mount the
@@ -66,17 +67,6 @@ export type LayerMetadata = {
   attributes: SpanAttributes;
   name: string;
 };
-
-export enum CustomAttributeNames {
-  EXPRESS_TYPE = 'express.type',
-  EXPRESS_NAME = 'express.name',
-}
-
-export enum ExpressLayerType {
-  ROUTER = 'router',
-  MIDDLEWARE = 'middleware',
-  REQUEST_HANDLER = 'request_handler',
-}
 
 export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 

@@ -34,7 +34,7 @@ import {
 import * as assert from 'assert';
 import type * as pg from 'pg';
 import { PgInstrumentation } from '../src';
-import { AttributeNames } from '../src/enums';
+import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
 import {
   SemanticAttributes,

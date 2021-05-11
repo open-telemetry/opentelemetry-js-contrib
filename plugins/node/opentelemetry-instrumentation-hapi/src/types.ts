@@ -62,11 +62,7 @@ export type ServerExtDirectInput = [
   (Hapi.ServerExtOptions | undefined)?
 ];
 
-export const AttributeNames = {
-  HAPI_TYPE: 'hapi.type',
-  PLUGIN_NAME: 'hapi.plugin.name',
-  EXT_TYPE: 'server.ext.type',
-};
+;
 
 export const HapiLayerType = {
   ROUTER: 'router',

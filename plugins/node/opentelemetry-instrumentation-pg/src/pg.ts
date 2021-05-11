@@ -38,7 +38,7 @@ import {
   PgPoolCallback,
 } from './types';
 import * as utils from './utils';
-import { AttributeNames } from './enums';
+import { AttributeNames } from "./enums/AttributeNames";
 import {
   SemanticAttributes,
   DbSystemValues,

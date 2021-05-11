@@ -31,7 +31,8 @@ import * as assert from 'assert';
 import * as koa from 'koa';
 import * as http from 'http';
 import { AddressInfo } from 'net';
-import { AttributeNames, KoaLayerType } from '../src/types';
+import { KoaLayerType } from '../src/types';
+import { AttributeNames } from "../src/enums/AttributeNames";
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
