@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { kLayerPatched } from './express';
+import { kLayerPatched } from './';
 import { Request } from 'express';
 import { SpanAttributes, Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
