@@ -24,8 +24,10 @@ import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xm
 const InstrumentationMap = {
   '@opentelemetry/instrumentation-document-load': DocumentLoadInstrumentation,
   '@opentelemetry/instrumentation-fetch': FetchInstrumentation,
-  '@opentelemetry/instrumentation-user-interaction': UserInteractionInstrumentation,
-  '@opentelemetry/instrumentation-xml-http-request': XMLHttpRequestInstrumentation,
+  '@opentelemetry/instrumentation-user-interaction':
+    UserInteractionInstrumentation,
+  '@opentelemetry/instrumentation-xml-http-request':
+    XMLHttpRequestInstrumentation,
 };
 
 // Config types inferred automatically from the first argument of the constructor

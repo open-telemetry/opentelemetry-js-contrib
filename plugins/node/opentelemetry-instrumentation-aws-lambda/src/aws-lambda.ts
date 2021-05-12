@@ -32,8 +32,10 @@ import {
   SpanStatusCode,
   TracerProvider,
 } from '@opentelemetry/api';
-import { CLOUD_RESOURCE } from '@opentelemetry/resources';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SemanticAttributes,
+  ResourceAttributes,
+} from '@opentelemetry/semantic-conventions';
 
 import { Callback, Context, Handler } from 'aws-lambda';
 
@@ -121,10 +123,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         kind: SpanKind.SERVER,
         attributes: {
           [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
-          'faas.id': context.invokedFunctionArn,
-          [CLOUD_RESOURCE.ACCOUNT_ID]: AwsLambdaInstrumentation._extractAccountId(
-            context.invokedFunctionArn
-          ),
+          [ResourceAttributes.FAAS_ID]: context.invokedFunctionArn,
+          [ResourceAttributes.CLOUD_ACCOUNT_ID]:
+            AwsLambdaInstrumentation._extractAccountId(
+              context.invokedFunctionArn
+            ),
         },
       });
 

@@ -151,9 +151,8 @@ export function getOperation(
 }
 
 function addField(contextValue: any, path: string[], field: GraphQLField) {
-  return (contextValue[OTEL_GRAPHQL_DATA_SYMBOL].fields[
-    path.join('.')
-  ] = field);
+  return (contextValue[OTEL_GRAPHQL_DATA_SYMBOL].fields[path.join('.')] =
+    field);
 }
 
 function getField(contextValue: any, path: string[]) {

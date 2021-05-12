@@ -53,7 +53,8 @@ describe('utils', () => {
           instr.instrumentationName ===
           '@opentelemetry/instrumentation-xml-http-request'
       ) as any;
-      const config = instrumentation._config as XMLHttpRequestInstrumentationConfig;
+      const config =
+        instrumentation._config as XMLHttpRequestInstrumentationConfig;
 
       assert.strictEqual(config.clearTimingResources, clearTimingResources);
     });
