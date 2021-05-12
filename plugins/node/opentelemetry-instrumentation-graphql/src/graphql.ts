@@ -352,8 +352,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
     const span = this.tracer.startSpan(SpanNames.EXECUTE, {});
     if (operation) {
-      const name = (operation as graphqlTypes.OperationDefinitionNode)
-        .operation;
+      const name = (operation as graphqlTypes.OperationDefinitionNode)?.name
+        ?.value;
       if (name) {
         span.setAttribute(SpanAttributes.OPERATION, name);
       }
