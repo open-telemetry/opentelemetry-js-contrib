@@ -1,4 +1,4 @@
-# OpenTelemetry router Instrumentation for Node.js
+# OpenTelemetry Router Instrumentation for Node.js
 
 [![Gitter chat][gitter-image]][gitter-url]
 [![dependencies][dependencies-image]][dependencies-url]
