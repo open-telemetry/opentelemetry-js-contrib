@@ -67,9 +67,8 @@ const sanitizeEventForAssertion = (span: ReadableSpan) => {
   span.events.forEach(e => {
     // stack trace includes data such as /user/{userName}/repos/{projectName}
     if (e.attributes?.[SemanticAttributes.EXCEPTION_STACKTRACE]) {
-      e.attributes[
-        SemanticAttributes.EXCEPTION_STACKTRACE
-      ] = predictableStackTrace;
+      e.attributes[SemanticAttributes.EXCEPTION_STACKTRACE] =
+        predictableStackTrace;
     }
 
     // since time will change on each test invocation, it is being replaced to predicable value
@@ -464,7 +463,8 @@ describe('ioredis', () => {
                     attributes: {
                       [SemanticAttributes.EXCEPTION_MESSAGE]:
                         'NOSCRIPT No matching script. Please use EVAL.',
-                      [SemanticAttributes.EXCEPTION_STACKTRACE]: predictableStackTrace,
+                      [SemanticAttributes.EXCEPTION_STACKTRACE]:
+                        predictableStackTrace,
                       [SemanticAttributes.EXCEPTION_TYPE]: 'ReplyError',
                     },
                     name: 'exception',

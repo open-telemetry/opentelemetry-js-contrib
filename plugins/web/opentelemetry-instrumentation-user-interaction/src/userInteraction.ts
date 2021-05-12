@@ -622,7 +622,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * returns Zone
    */
   getZoneWithPrototype(): ZoneTypeWithPrototype | undefined {
-    const _window: WindowWithZone = (window as unknown) as WindowWithZone;
+    const _window: WindowWithZone = window as unknown as WindowWithZone;
     return _window.Zone;
   }
 }

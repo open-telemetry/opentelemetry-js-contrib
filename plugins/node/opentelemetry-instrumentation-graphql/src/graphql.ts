@@ -173,7 +173,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
         // case when apollo server is used for example
         if (arguments.length >= 2) {
-          const args = (arguments as unknown) as executeArgumentsArray;
+          const args = arguments as unknown as executeArgumentsArray;
           processedArgs = instrumentation._wrapExecuteArgs(
             args[0],
             args[1],
