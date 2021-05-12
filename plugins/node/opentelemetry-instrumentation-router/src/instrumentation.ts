@@ -112,6 +112,8 @@ export default class RouterInstrumentation extends InstrumentationBase<
       res: http.ServerResponse,
       next: Router.NextFunction
     ) {
+      // Skip creating spans if the registered handler is of invalid length, because
+      // we know router will ignore those
       if (utils.isInternal(this.handle) || this.handle.length > 3) {
         return original.call(this, req, res, next);
       }
@@ -135,6 +137,8 @@ export default class RouterInstrumentation extends InstrumentationBase<
       res: http.ServerResponse,
       next: Router.NextFunction
     ) {
+      // Skip creating spans if the registered handler is of invalid length, because
+      // we know router will ignore those
       if (utils.isInternal(this.handle) || this.handle.length !== 4) {
         return original.call(this, error, req, res, next);
       }

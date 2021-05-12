@@ -18,6 +18,7 @@ import * as constants from './constants';
 import * as types from './types';
 import * as Router from 'router';
 
+// Detect whether a function is a router package internal plumming handler
 export const isInternal = (fn: Function) => {
   // Note that both of those functions are sync
   if (fn.name === 'handle' && fn.toString() === constants.ROUTER_HANDLE_FN) {
