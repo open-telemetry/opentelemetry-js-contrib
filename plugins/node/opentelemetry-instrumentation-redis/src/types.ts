@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span } from '@opentelemetry/api'
+import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type * as redisTypes from 'redis';
 
@@ -44,7 +44,7 @@ export interface RedisPluginClientTypes {
  *
  * @returns serialized string that will be used as the db.statement attribute.
  */
- export type DbStatementSerializer = (
+export type DbStatementSerializer = (
   cmdName: RedisCommand['command'],
   cmdArgs: RedisCommand['args']
 ) => string;

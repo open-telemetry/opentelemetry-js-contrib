@@ -240,17 +240,19 @@ describe('redis@2.x', () => {
 
     describe('dbStatementSerializer config', () => {
       const dbStatementSerializer = (cmdName: string, cmdArgs: string[]) => {
-        return Array.isArray(cmdArgs) && cmdArgs.length ? `${cmdName} ${cmdArgs.join(' ')}` : cmdName;
+        return Array.isArray(cmdArgs) && cmdArgs.length
+          ? `${cmdName} ${cmdArgs.join(' ')}`
+          : cmdName;
       };
 
       before(() => {
         instrumentation.disable();
-        instrumentation.setConfig({ dbStatementSerializer })
+        instrumentation.setConfig({ dbStatementSerializer });
         instrumentation.enable();
       });
 
       REDIS_OPERATIONS.forEach(operation => {
-        it(`should properly execute the db statement serializer for operation ${operation.description}`, (done) => {
+        it(`should properly execute the db statement serializer for operation ${operation.description}`, done => {
           const span = tracer.startSpan('test span');
           context.with(setSpan(context.active(), span), () => {
             operation.method((err, _) => {
@@ -258,13 +260,19 @@ describe('redis@2.x', () => {
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
               assert.strictEqual(endedSpans.length, 2);
-              const expectedStatement = dbStatementSerializer(operation.command, operation.args);
-              assert.strictEqual(endedSpans[0].attributes[SemanticAttributes.DB_STATEMENT], expectedStatement);
+              const expectedStatement = dbStatementSerializer(
+                operation.command,
+                operation.args
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[SemanticAttributes.DB_STATEMENT],
+                expectedStatement
+              );
               done();
             });
-          });            
+          });
         });
-      })
+      });
     });
 
     describe('responseHook config', () => {
@@ -278,25 +286,28 @@ describe('redis@2.x', () => {
           response: unknown
         ) => {
           span.setAttribute(dataFieldName, new String(response).toString());
-        }
+        };
 
         before(() => {
           instrumentation.disable();
-          instrumentation.setConfig({ responseHook })
+          instrumentation.setConfig({ responseHook });
           instrumentation.enable();
         });
 
         REDIS_OPERATIONS.forEach(operation => {
-          it(`should apply responseHook for operation ${operation.description}`, (done) => {
+          it(`should apply responseHook for operation ${operation.description}`, done => {
             operation.method((err, reply) => {
               assert.ifError(err);
               const endedSpans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(endedSpans[0].attributes[dataFieldName], new String(reply).toString());
+              assert.strictEqual(
+                endedSpans[0].attributes[dataFieldName],
+                new String(reply).toString()
+              );
               done();
-            });         
+            });
           });
         });
-      })
+      });
 
       describe('invalid responseHook', () => {
         const badResponseHook: RedisResponseCustomAttributeFunction = (
@@ -306,45 +317,45 @@ describe('redis@2.x', () => {
           _response: unknown
         ) => {
           throw 'Some kind of error';
-        }
+        };
 
         before(() => {
           instrumentation.disable();
-          instrumentation.setConfig({ responseHook: badResponseHook })
+          instrumentation.setConfig({ responseHook: badResponseHook });
           instrumentation.enable();
         });
 
         REDIS_OPERATIONS.forEach(operation => {
-          it(`should not fail because of responseHook error for operation ${operation.description}`, (done) => {
+          it(`should not fail because of responseHook error for operation ${operation.description}`, done => {
             operation.method((err, _reply) => {
               assert.ifError(err);
               const endedSpans = memoryExporter.getFinishedSpans();
               assert.strictEqual(endedSpans.length, 1);
               done();
-            });         
+            });
           });
         });
-      })
+      });
     });
 
     describe('requireParentSpan config', () => {
       before(() => {
         instrumentation.disable();
-        instrumentation.setConfig({ requireParentSpan: true })
+        instrumentation.setConfig({ requireParentSpan: true });
         instrumentation.enable();
       });
 
       REDIS_OPERATIONS.forEach(operation => {
-        it(`should not create span without parent span for operation ${operation.description}`, (done) => {
+        it(`should not create span without parent span for operation ${operation.description}`, done => {
           operation.method((err, _) => {
             assert.ifError(err);
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 0);
             done();
-          });         
+          });
         });
 
-        it(`should create span when a parent span exists for operation ${operation.description}`, (done) => {
+        it(`should create span when a parent span exists for operation ${operation.description}`, done => {
           const span = tracer.startSpan('test span');
           context.with(setSpan(context.active(), span), () => {
             operation.method((err, _) => {
@@ -352,10 +363,10 @@ describe('redis@2.x', () => {
               const endedSpans = memoryExporter.getFinishedSpans();
               assert.strictEqual(endedSpans.length, 1);
               done();
-            });         
+            });
           });
         });
-      })
+      });
     });
   });
 });

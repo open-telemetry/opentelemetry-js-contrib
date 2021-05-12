@@ -30,7 +30,7 @@ import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {
-  requireParentSpan: false
+  requireParentSpan: false,
 };
 
 export class RedisInstrumentation extends InstrumentationBase<
