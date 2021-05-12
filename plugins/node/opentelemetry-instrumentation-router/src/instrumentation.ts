@@ -177,7 +177,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
         : `middleware - ${fnName || '<anonymous>'}`;
     const attributes = {
       [types.CustomAttributeNames.NAME]: fnName,
-      [types.CustomAttributeNames.VERSION]: this._moduleVersion || 'n/a',
+      [types.CustomAttributeNames.VERSION]: this._moduleVersion,
       [types.CustomAttributeNames.TYPE]: type,
       [SemanticAttributes.HTTP_ROUTE]: route,
     };
