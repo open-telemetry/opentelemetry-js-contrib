@@ -61,7 +61,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         ['^4.0.0'],
         (moduleExports, moduleVersion) => {
           diag.debug(`Applying patch for express@${moduleVersion}`);
-          const routerProto = (moduleExports.Router as unknown) as express.Router;
+          const routerProto = moduleExports.Router as unknown as express.Router;
           // patch express.Router.route
           if (isWrapped(routerProto.route)) {
             this._unwrap(routerProto, 'route');

@@ -40,10 +40,7 @@ describe('Utility', () => {
 
     it('should throw if type is unknown', () => {
       try {
-        utils.satisfiesPattern(
-          'google.com',
-          (true as unknown) as IgnoreMatcher
-        );
+        utils.satisfiesPattern('google.com', true as unknown as IgnoreMatcher);
         assert.fail();
       } catch (error) {
         assert.strictEqual(error instanceof TypeError, true);

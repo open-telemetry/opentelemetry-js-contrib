@@ -191,7 +191,7 @@ describe('PinoInstrumentation', () => {
 
     describe('binary arguments', () => {
       it('is possible to construct logger with undefined options', () => {
-        logger = pino((undefined as unknown) as Pino.LoggerOptions, stream);
+        logger = pino(undefined as unknown as Pino.LoggerOptions, stream);
         const span = tracer.startSpan('abc');
         context.with(setSpan(context.active(), span), () => {
           testInjection(span);

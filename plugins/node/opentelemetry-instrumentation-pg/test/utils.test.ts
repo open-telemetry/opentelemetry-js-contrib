@@ -51,8 +51,8 @@ describe('utils.ts', () => {
   const provider = new BasicTracerProvider();
   const tracer = provider.getTracer('external');
 
-  const instrumentationConfig: PgInstrumentationConfig &
-    InstrumentationConfig = {};
+  const instrumentationConfig: PgInstrumentationConfig & InstrumentationConfig =
+    {};
 
   before(() => {
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
