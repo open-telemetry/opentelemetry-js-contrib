@@ -43,7 +43,7 @@ export const renameHttpSpan = (
     typeof route === 'string' &&
     span?.name?.startsWith('HTTP ')
   ) {
-    (span as types.InstrumentationSpan).updateName(
+    span.updateName(
       `${method.toUpperCase()} ${route}`
     );
   }
