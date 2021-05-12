@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export * from './express';
-export { ExpressLayerType } from './enums/ExpressLayerType';
-export { ExpressInstrumentationConfig } from './types';
+export enum ExpressLayerType {
+  ROUTER = 'router',
+  MIDDLEWARE = 'middleware',
+  REQUEST_HANDLER = 'request_handler',
+}

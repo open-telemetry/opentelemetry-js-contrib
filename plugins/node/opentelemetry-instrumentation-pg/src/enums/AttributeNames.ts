@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export * from './express';
-export { ExpressLayerType } from './enums/ExpressLayerType';
-export { ExpressInstrumentationConfig } from './types';
+// Postgresql specific attributes not covered by semantic conventions
+export enum AttributeNames {
+  PG_VALUES = 'db.postgresql.values',
+  PG_PLAN = 'db.postgresql.plan',
+  IDLE_TIMEOUT_MILLIS = 'db.postgresql.idle.timeout.millis',
+  MAX_CLIENT = 'db.postgresql.max.client',
+}

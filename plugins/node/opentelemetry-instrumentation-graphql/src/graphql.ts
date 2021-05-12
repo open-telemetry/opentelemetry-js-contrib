@@ -25,7 +25,8 @@ import {
 } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLFieldResolver } from 'graphql/type/definition';
-import { SpanAttributes, SpanNames } from './enum';
+import { SpanNames } from './enum';
+import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL } from './symbols';
 
 import {
@@ -334,7 +335,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
           }
           if (errors && errors.length) {
             span.recordException({
-              name: SpanAttributes.ERROR_VALIDATION_NAME,
+              name: AttributeNames.ERROR_VALIDATION_NAME,
               message: JSON.stringify(errors),
             });
           }
@@ -355,7 +356,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       const name = (operation as graphqlTypes.OperationDefinitionNode)
         .operation;
       if (name) {
-        span.setAttribute(SpanAttributes.OPERATION, name);
+        span.setAttribute(AttributeNames.OPERATION, name);
       }
     } else {
       let operationName = ' ';
@@ -366,7 +367,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
         '$operationName$',
         operationName
       );
-      span.setAttribute(SpanAttributes.OPERATION, operationName);
+      span.setAttribute(AttributeNames.OPERATION, operationName);
     }
 
     if (processedArgs.document?.loc) {
@@ -375,7 +376,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
     if (processedArgs.variableValues && config.allowValues) {
       Object.entries(processedArgs.variableValues).forEach(([key, value]) => {
-        span.setAttribute(`${SpanAttributes.VARIABLES}${String(key)}`, value);
+        span.setAttribute(`${AttributeNames.VARIABLES}${String(key)}`, value);
       });
     }
 
