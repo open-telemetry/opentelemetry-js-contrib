@@ -24,7 +24,12 @@ import {
   getSpan,
   diag,
 } from '@opentelemetry/api';
-import { DbStatementSerializer, RedisCommand, RedisInstrumentationConfig, RedisPluginClientTypes } from './types';
+import {
+  DbStatementSerializer,
+  RedisCommand,
+  RedisInstrumentationConfig,
+  RedisPluginClientTypes,
+} from './types';
 import { EventEmitter } from 'events';
 import { RedisInstrumentation } from './';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -67,7 +72,7 @@ export const getTracedCreateStreamTrace = (
   };
 };
 
-const defaultDbStatementSerializer: DbStatementSerializer = (cmdName, _cmdArgs) => cmdName
+const defaultDbStatementSerializer: DbStatementSerializer = cmdName => cmdName;
 
 export const getTracedInternalSendCommand = (
   tracer: Tracer,
@@ -90,14 +95,18 @@ export const getTracedInternalSendCommand = (
       return original.apply(this, arguments);
     }
 
-    const dbStatementSerializer = config?.dbStatementSerializer || defaultDbStatementSerializer;
+    const dbStatementSerializer =
+      config?.dbStatementSerializer || defaultDbStatementSerializer;
     const span = tracer.startSpan(
       `${RedisInstrumentation.COMPONENT}-${cmd.command}`,
       {
         kind: SpanKind.CLIENT,
         attributes: {
           [SemanticAttributes.DB_SYSTEM]: RedisInstrumentation.COMPONENT,
-          [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(cmd.command, cmd.args),
+          [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
+            cmd.command,
+            cmd.args
+          ),
         },
       }
     );
@@ -125,13 +134,15 @@ export const getTracedInternalSendCommand = (
       ) {
         if (config?.responseHook) {
           const responseHook = config.responseHook;
-          safeExecuteInTheMiddle(() => {
-            responseHook(span, cmd.command, cmd.args, reply)
-          }, 
-          (err) => {
-            diag.error('Error executing responseHook', err)
-          },
-          true)
+          safeExecuteInTheMiddle(
+            () => {
+              responseHook(span, cmd.command, cmd.args, reply);
+            },
+            err => {
+              diag.error('Error executing responseHook', err);
+            },
+            true
+          );
         }
 
         endSpan(span, err);
