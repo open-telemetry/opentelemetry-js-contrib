@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span } from '@opentelemetry/api';
 
-/**
- * extends opentelemetry/api Span object to instrument the root span name of http instrumentation
- */
-export interface InstrumentationSpan extends Span {
-  name?: string;
+export enum AttributeNames {
+  TYPE = 'router.type',
+  NAME = 'router.name',
+  METHOD = 'router.method',
+  VERSION = 'router.version',
 }
+
+export default AttributeNames;

@@ -30,6 +30,8 @@ import * as types from './types';
 import { VERSION } from './version';
 import * as constants from './constants';
 import * as utils from './utils';
+import AttributeNames from './enums/AttributeNames.ts';
+import LayerType from './enums/LayerType.ts';
 
 const { diag } = api;
 
@@ -168,17 +170,17 @@ export default class RouterInstrumentation extends InstrumentationBase<
   ) {
     const fnName = layer.handle.name || '<anonymous>';
     const type = layer.method
-      ? types.LayerType.REQUEST_HANDLER
-      : types.LayerType.MIDDLEWARE;
+      ? LayerType.REQUEST_HANDLER
+      : LayerType.MIDDLEWARE;
     const route = utils.getRoute(req);
     const spanName =
-      type === types.LayerType.REQUEST_HANDLER
+      type === LayerType.REQUEST_HANDLER
         ? `request handler - ${route}`
         : `middleware - ${fnName}`;
     const attributes = {
-      [types.CustomAttributeNames.NAME]: fnName,
-      [types.CustomAttributeNames.VERSION]: this._moduleVersion,
-      [types.CustomAttributeNames.TYPE]: type,
+      [AttributeNames.NAME]: fnName,
+      [AttributeNames.VERSION]: this._moduleVersion,
+      [AttributeNames.TYPE]: type,
       [SemanticAttributes.HTTP_ROUTE]: route,
     };
 
