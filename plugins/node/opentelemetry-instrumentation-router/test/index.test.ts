@@ -135,8 +135,9 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
   });
 };
 
+const ANONYMOUS = '<anonymous>';
 const spans = {
-  anonymousUse: { type: 'middleware', route: '/' },
+  anonymousUse: { type: 'middleware', name: ANONYMOUS, route: '/' },
   preName: { type: 'request_handler', name: 'preName', route: '/hello/:name' },
   announceRude: {
     type: 'request_handler',
@@ -225,7 +226,7 @@ describe('Router instrumentation', () => {
       assert.strictEqual(await request('/err'), 'Server error: Oops!');
       assertSpans(memoryExporter.getFinishedSpans(), [
         spans.anonymousUse,
-        { ...spans.preName, name: undefined, route: '/err' },
+        { ...spans.preName, name: ANONYMOUS, route: '/err' },
         { ...spans.anonymousUse, name: 'errHandler', route: '/err' },
       ]);
     });
@@ -241,7 +242,7 @@ describe('Router instrumentation', () => {
         );
         assertSpans(memoryExporter.getFinishedSpans(), [
           spans.anonymousUse,
-          { ...spans.preName, name: undefined, route: '/deep/hello/someone' },
+          { ...spans.preName, name: ANONYMOUS, route: '/deep/hello/someone' },
           { ...spans.preName, route: '/deep/hello/:name' },
         ]);
 

@@ -166,7 +166,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
     res: http.ServerResponse,
     next: Router.NextFunction
   ) {
-    const fnName = layer.handle.name || undefined;
+    const fnName = layer.handle.name || '<anonymous>';
     const type = layer.method
       ? types.LayerType.REQUEST_HANDLER
       : types.LayerType.MIDDLEWARE;
@@ -174,7 +174,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
     const spanName =
       type === types.LayerType.REQUEST_HANDLER
         ? `request handler - ${route}`
-        : `middleware - ${fnName || '<anonymous>'}`;
+        : `middleware - ${fnName}`;
     const attributes = {
       [types.CustomAttributeNames.NAME]: fnName,
       [types.CustomAttributeNames.VERSION]: this._moduleVersion,
