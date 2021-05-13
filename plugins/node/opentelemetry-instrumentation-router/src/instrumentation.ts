@@ -33,8 +33,6 @@ import * as utils from './utils';
 import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
-const { diag } = api;
-
 export default class RouterInstrumentation extends InstrumentationBase<
   typeof Router
 > {
@@ -49,14 +47,14 @@ export default class RouterInstrumentation extends InstrumentationBase<
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
-        diag.debug(
+        api.diag.debug(
           `Applying patch for ${constants.MODULE_NAME}@${moduleVersion}`
         );
         this._moduleVersion = moduleVersion;
         return moduleExports;
       },
       (moduleExports, moduleVersion) => {
-        diag.debug(
+        api.diag.debug(
           `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
         );
         return moduleExports;
@@ -68,7 +66,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
         'router/lib/layer.js',
         constants.SUPPORTED_VERSIONS,
         (moduleExports, moduleVersion) => {
-          diag.debug(
+          api.diag.debug(
             `Applying patch for "lib/layer.js" of ${constants.MODULE_NAME}@${moduleVersion}`
           );
           const Layer: any = moduleExports;
@@ -91,7 +89,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
           return moduleExports;
         },
         (moduleExports, moduleVersion) => {
-          diag.debug(
+          api.diag.debug(
             `Removing patch for "lib/layer.js" of ${constants.MODULE_NAME}@${moduleVersion}`
           );
           const Layer: any = moduleExports;
