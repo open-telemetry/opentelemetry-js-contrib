@@ -24,7 +24,7 @@ import {
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 import * as http from 'http';
-import * as Router from 'router';
+import type * as Router from 'router';
 
 import * as types from './types';
 import { VERSION } from './version';
