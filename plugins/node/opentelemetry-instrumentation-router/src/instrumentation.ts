@@ -30,8 +30,8 @@ import * as types from './types';
 import { VERSION } from './version';
 import * as constants from './constants';
 import * as utils from './utils';
-import AttributeNames from './enums/AttributeNames.ts';
-import LayerType from './enums/LayerType.ts';
+import AttributeNames from './enums/AttributeNames';
+import LayerType from './enums/LayerType';
 
 const { diag } = api;
 
