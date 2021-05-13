@@ -191,16 +191,17 @@ export default class RouterInstrumentation extends InstrumentationBase<
       },
       parent
     ) as types.InstrumentationSpan;
+    const endSpan = utils.once(span.end.bind(span));
 
     utils.renameHttpSpan(parentSpan, layer.method, route);
     // make sure spans are ended at least when response is finished
-    res.prependOnceListener('finish', () => span.end());
+    res.prependOnceListener('finish', endSpan);
 
     const wrappedNext: Router.NextFunction = err => {
       if (err) {
         span.recordException(err);
       }
-      span.end();
+      endSpan();
       if (parent) {
         return api.context.with(parent, next, undefined, err);
       }

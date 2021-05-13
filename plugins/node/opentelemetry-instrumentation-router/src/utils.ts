@@ -46,3 +46,13 @@ export const renameHttpSpan = (
     span.updateName(`${method.toUpperCase()} ${route}`);
   }
 };
+
+export const once = (fn: Function) => {
+  let run = true;
+  return () => {
+    if (run) {
+      run = false;
+      fn();
+    }
+  };
+};
