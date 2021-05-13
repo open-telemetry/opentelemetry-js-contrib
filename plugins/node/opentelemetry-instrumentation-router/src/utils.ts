@@ -31,7 +31,7 @@ export const isInternal = (fn: Function) => {
 };
 
 export const getRoute = (req: Router.RoutedRequest) =>
-  req.baseUrl + (req.route?.path || '') || '/';
+  req.baseUrl + (req.route?.path ?? '') || '/';
 
 export const renameHttpSpan = (
   span?: types.InstrumentationSpan,
