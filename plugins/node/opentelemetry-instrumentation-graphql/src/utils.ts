@@ -17,12 +17,8 @@
 import type * as graphqlTypes from 'graphql';
 import * as api from '@opentelemetry/api';
 import { GraphQLObjectType } from 'graphql/type/definition';
-import {
-  AllowedOperationTypes,
-  SpanAttributes,
-  SpanNames,
-  TokenKind,
-} from './enum';
+import { AllowedOperationTypes, SpanNames, TokenKind } from './enum';
+import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 import {
   GraphQLField,
@@ -44,7 +40,7 @@ export function addSpanSource(
   end?: number
 ): void {
   const source = getSourceFromLocation(loc, allowValues, start, end);
-  span.setAttribute(SpanAttributes.SOURCE, source);
+  span.setAttribute(AttributeNames.SOURCE, source);
 }
 
 function createFieldIfNotExists(
@@ -93,9 +89,9 @@ function createResolverSpan(
   parentSpan?: api.Span
 ): api.Span {
   const attributes: api.SpanAttributes = {
-    [SpanAttributes.FIELD_NAME]: info.fieldName,
-    [SpanAttributes.FIELD_PATH]: path.join('.'),
-    [SpanAttributes.FIELD_TYPE]: info.returnType.toString(),
+    [AttributeNames.FIELD_NAME]: info.fieldName,
+    [AttributeNames.FIELD_PATH]: path.join('.'),
+    [AttributeNames.FIELD_TYPE]: info.returnType.toString(),
   };
 
   const span = tracer.startSpan(

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export * from './express';
-export { ExpressLayerType } from './enums/ExpressLayerType';
-export { ExpressInstrumentationConfig } from './types';
+export enum AttributeNames {
+  EXPRESS_TYPE = 'express.type',
+  EXPRESS_NAME = 'express.name',
+}

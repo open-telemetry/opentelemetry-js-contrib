@@ -16,12 +16,9 @@
 
 import * as utils from '../src/utils';
 import * as assert from 'assert';
-import {
-  ExpressLayerType,
-  ExpressInstrumentationConfig,
-  ExpressLayer,
-  CustomAttributeNames,
-} from '../src/types';
+import { ExpressInstrumentationConfig, ExpressLayer } from '../src/types';
+import { ExpressLayerType } from '../src/enums/ExpressLayerType';
+import { AttributeNames } from '../src/enums/AttributeNames';
 
 describe('Utils', () => {
   describe('isLayerIgnored()', () => {
@@ -103,8 +100,8 @@ describe('Utils', () => {
         ),
         {
           attributes: {
-            [CustomAttributeNames.EXPRESS_NAME]: '/test',
-            [CustomAttributeNames.EXPRESS_TYPE]: 'router',
+            [AttributeNames.EXPRESS_NAME]: '/test',
+            [AttributeNames.EXPRESS_TYPE]: 'router',
           },
           name: 'router - /test',
         }
@@ -121,8 +118,8 @@ describe('Utils', () => {
         ),
         {
           attributes: {
-            [CustomAttributeNames.EXPRESS_NAME]: '/:id',
-            [CustomAttributeNames.EXPRESS_TYPE]: 'request_handler',
+            [AttributeNames.EXPRESS_NAME]: '/:id',
+            [AttributeNames.EXPRESS_TYPE]: 'request_handler',
           },
           name: 'request handler',
         }
@@ -136,8 +133,8 @@ describe('Utils', () => {
         } as ExpressLayer),
         {
           attributes: {
-            [CustomAttributeNames.EXPRESS_NAME]: 'bodyParser',
-            [CustomAttributeNames.EXPRESS_TYPE]: 'middleware',
+            [AttributeNames.EXPRESS_NAME]: 'bodyParser',
+            [AttributeNames.EXPRESS_TYPE]: 'middleware',
           },
           name: 'middleware - bodyParser',
         }
