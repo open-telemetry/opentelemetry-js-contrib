@@ -30,11 +30,6 @@ export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
 
 export type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
 
-export enum AttributeNames {
-  KOA_TYPE = 'koa.type',
-  KOA_NAME = 'koa.name',
-}
-
 export enum KoaLayerType {
   ROUTER = 'router',
   MIDDLEWARE = 'middleware',

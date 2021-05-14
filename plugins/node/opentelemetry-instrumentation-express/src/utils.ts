@@ -17,13 +17,13 @@
 import { SpanAttributes } from '@opentelemetry/api';
 import {
   ExpressLayer,
-  CustomAttributeNames,
   PatchedRequest,
   _LAYERS_STORE_PROPERTY,
-  ExpressLayerType,
   IgnoreMatcher,
   ExpressInstrumentationConfig,
 } from './types';
+import { ExpressLayerType } from './enums/ExpressLayerType';
+import { AttributeNames } from './enums/AttributeNames';
 
 /**
  * Store layers path in the request to be able to construct route later
@@ -56,24 +56,24 @@ export const getLayerMetadata = (
   if (layer.name === 'router') {
     return {
       attributes: {
-        [CustomAttributeNames.EXPRESS_NAME]: layerPath,
-        [CustomAttributeNames.EXPRESS_TYPE]: ExpressLayerType.ROUTER,
+        [AttributeNames.EXPRESS_NAME]: layerPath,
+        [AttributeNames.EXPRESS_TYPE]: ExpressLayerType.ROUTER,
       },
       name: `router - ${layerPath}`,
     };
   } else if (layer.name === 'bound dispatch') {
     return {
       attributes: {
-        [CustomAttributeNames.EXPRESS_NAME]: layerPath ?? 'request handler',
-        [CustomAttributeNames.EXPRESS_TYPE]: ExpressLayerType.REQUEST_HANDLER,
+        [AttributeNames.EXPRESS_NAME]: layerPath ?? 'request handler',
+        [AttributeNames.EXPRESS_TYPE]: ExpressLayerType.REQUEST_HANDLER,
       },
       name: `request handler${layer.path ? ` - ${layerPath}` : ''}`,
     };
   } else {
     return {
       attributes: {
-        [CustomAttributeNames.EXPRESS_NAME]: layer.name,
-        [CustomAttributeNames.EXPRESS_TYPE]: ExpressLayerType.MIDDLEWARE,
+        [AttributeNames.EXPRESS_NAME]: layer.name,
+        [AttributeNames.EXPRESS_TYPE]: ExpressLayerType.MIDDLEWARE,
       },
       name: `middleware - ${layer.name}`,
     };
