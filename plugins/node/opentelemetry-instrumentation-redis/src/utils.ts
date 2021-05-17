@@ -31,7 +31,7 @@ import {
   RedisPluginClientTypes,
 } from './types';
 import { EventEmitter } from 'events';
-import { RedisInstrumentation } from './redis';
+import { RedisInstrumentation } from './';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 

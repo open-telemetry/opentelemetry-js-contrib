@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export * from './aws-lambda';
+export * from './instrumentation';
