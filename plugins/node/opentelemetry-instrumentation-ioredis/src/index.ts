@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './ioredis';
+export * from './instrumentation';
 export { IORedisInstrumentationConfig } from './types';

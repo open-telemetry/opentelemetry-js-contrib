@@ -32,7 +32,7 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import type * as Pino from 'pino';
 
-import { PinoInstrumentation } from '../src/pino';
+import { PinoInstrumentation } from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();

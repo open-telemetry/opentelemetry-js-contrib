@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './dns';
+export * from './instrumentation';
 export { DnsInstrumentationConfig } from './types';
