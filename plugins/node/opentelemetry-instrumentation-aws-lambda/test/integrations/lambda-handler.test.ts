@@ -19,7 +19,7 @@
 
 import * as path from 'path';
 
-import { AwsLambdaInstrumentation } from '../../src/index';
+import { AwsLambdaInstrumentation } from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,

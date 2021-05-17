@@ -20,7 +20,7 @@ import {
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/node';
-import { DnsInstrumentation } from '../../src/dns';
+import { DnsInstrumentation } from '../../src';
 import * as dns from 'dns';
 import * as utils from '../utils/utils';
 import { assertSpan } from '../utils/assertSpan';
