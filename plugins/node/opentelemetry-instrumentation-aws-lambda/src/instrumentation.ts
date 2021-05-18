@@ -39,15 +39,19 @@ import {
 
 import { Callback, Context, Handler } from 'aws-lambda';
 
-import { LambdaModule } from './types';
+import { LambdaModule, AwsLambdaInstrumentationConfig } from './types';
 import { VERSION } from './version';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _tracerProvider: TracerProvider | undefined;
 
-  constructor() {
-    super('@opentelemetry/instrumentation-aws-lambda', VERSION);
+  constructor(protected _config: AwsLambdaInstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+  }
+
+  setConfig(config: AwsLambdaInstrumentationConfig = {}) {
+    this._config = config;
   }
 
   init() {
@@ -131,6 +135,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         },
       });
 
+      if (plugin._config.requestHook) {
+        safeExecuteInTheMiddle(
+          () => plugin._config.requestHook!(span, event, context),
+          e => {
+            if (e)
+              diag.error('aws-lambda instrumentation: requestHook error', e);
+          },
+          true
+        );
+      }
+
       return otelcontext.with(setSpan(otelcontext.active(), span), () => {
         // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
         // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
@@ -142,20 +157,25 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           error => {
             if (error != null) {
               // Exception thrown synchronously before resolving callback / promise.
+              plugin._applyResponseHook(span, error);
               plugin._endSpan(span, error, () => {});
             }
           }
         ) as Promise<{}> | undefined;
         if (typeof maybePromise?.then === 'function') {
           return maybePromise.then(
-            value =>
-              new Promise(resolve =>
+            value => {
+              plugin._applyResponseHook(span, null, value);
+              return new Promise(resolve =>
                 plugin._endSpan(span, undefined, () => resolve(value))
-              ),
-            (err: Error | string) =>
-              new Promise((resolve, reject) =>
+              );
+            },
+            (err: Error | string) => {
+              plugin._applyResponseHook(span, err);
+              return new Promise((resolve, reject) =>
                 plugin._endSpan(span, err, () => reject(err))
-              )
+              );
+            }
           );
         }
         return maybePromise;
@@ -172,6 +192,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     const plugin = this;
     return function wrappedCallback(this: never, err, res) {
       diag.debug('executing wrapped lookup callback function');
+      plugin._applyResponseHook(span, err, res);
 
       plugin._endSpan(span, err, () => {
         diag.debug('executing original lookup callback function');
@@ -213,6 +234,26 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         );
     } else {
       callback();
+    }
+  }
+
+  private _applyResponseHook(
+    span: Span,
+    err?: Error | string | null,
+    res?: any
+  ) {
+    if (this._config?.responseHook) {
+      safeExecuteInTheMiddle(
+        () => this._config.responseHook!(span, err, res),
+        e => {
+          if (e)
+            diag.error(
+              'aws-lambda instrumentation: responseHook error',
+              e
+            );
+        },
+        true
+      );
     }
   }
 

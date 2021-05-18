@@ -14,6 +14,20 @@
  * limitations under the License.
  */
 
-import { Handler } from 'aws-lambda';
+import { Span } from '@opentelemetry/api';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { Handler, Context } from 'aws-lambda';
 
 export type LambdaModule = Record<string, Handler>;
+
+export type RequestHook = (span: Span, event: any, context: Context) => void;
+export type ResponseHook = (
+  span: Span,
+  err?: Error | string | null,
+  res?: any
+) => void;
+
+export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
+  requestHook?: RequestHook;
+  responseHook?: ResponseHook;
+}
