@@ -312,7 +312,7 @@ describe('lambda handler', () => {
     describe('requestHook', () => {
       it('sync - success', async () => {
         initializeHandler('lambda-test/async.handler', {
-          requestHook: (span, _event, context) => {
+          requestHook: (span, { context }) => {
             span.setAttribute(
               ResourceAttributes.FAAS_NAME,
               context.functionName
@@ -337,7 +337,7 @@ describe('lambda handler', () => {
       const ERR_ATTR = 'test.error';
 
       const config: AwsLambdaInstrumentationConfig = {
-        responseHook: (span, err, res) => {
+        responseHook: (span, { err, res }) => {
           if (err)
             span.setAttribute(
               ERR_ATTR,

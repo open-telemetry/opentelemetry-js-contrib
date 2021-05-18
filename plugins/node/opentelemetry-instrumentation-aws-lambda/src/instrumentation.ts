@@ -137,7 +137,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
       if (plugin._config.requestHook) {
         safeExecuteInTheMiddle(
-          () => plugin._config.requestHook!(span, event, context),
+          () => plugin._config.requestHook!(span, { event, context }),
           e => {
             if (e)
               diag.error('aws-lambda instrumentation: requestHook error', e);
@@ -244,7 +244,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   ) {
     if (this._config?.responseHook) {
       safeExecuteInTheMiddle(
-        () => this._config.responseHook!(span, err, res),
+        () => this._config.responseHook!(span, { err, res }),
         e => {
           if (e)
             diag.error('aws-lambda instrumentation: responseHook error', e);
