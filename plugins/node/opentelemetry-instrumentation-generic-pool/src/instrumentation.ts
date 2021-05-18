@@ -166,7 +166,11 @@ export default class Instrumentation extends InstrumentationBase<
         return api.context.with(api.setSpan(parent, span), () => {
           original.call(this, (err: unknown, client: unknown) => {
             span.end();
-            return cb(err, client);
+            // Not checking whether cb is a function because
+            // the original code doesn't do that either.
+            if (cb) {
+              return cb(err, client);
+            }
           }, priority);
         });
     };
