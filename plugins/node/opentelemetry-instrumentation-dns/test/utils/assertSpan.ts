@@ -17,7 +17,6 @@
 import { SpanKind, SpanStatus, SpanStatusCode } from '@opentelemetry/api';
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
 import { ReadableSpan } from '@opentelemetry/tracing';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import type { LookupAddress } from 'dns';
 import { AttributeNames } from '../../src/enums/AttributeNames';
