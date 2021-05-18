@@ -67,7 +67,7 @@ describe('GenericPool instrumentation', () => {
 
   beforeEach(async () => {
     plugin.enable();
-    pool = createPool.v2();
+    pool = createPool.v3();
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
