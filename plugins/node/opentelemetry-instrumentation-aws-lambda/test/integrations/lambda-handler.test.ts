@@ -393,11 +393,7 @@ describe('lambda handler', () => {
 
         let err: Error;
         try {
-          lambdaRequire('lambda-test/sync').error(
-            'arg',
-            ctx,
-            () => {}
-          );
+          lambdaRequire('lambda-test/sync').error('arg', ctx, () => {});
         } catch (e) {
           err = e;
         }
