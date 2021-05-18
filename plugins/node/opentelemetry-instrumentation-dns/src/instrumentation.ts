@@ -16,7 +16,6 @@
 
 import { LookupAddress } from 'dns';
 import { diag, Span, SpanKind } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -33,6 +32,7 @@ import {
 } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
+import { AttributeNames } from './enums/AttributeNames';
 
 /**
  * Dns instrumentation for Opentelemetry
@@ -114,7 +114,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
       const span = plugin.tracer.startSpan(name, {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SemanticAttributes.NET_PEER_NAME]: hostname,
+          [AttributeNames.DNS_HOSTNAME]: hostname,
         },
       });
 

@@ -45,7 +45,7 @@ export const assertSpan = (
     span.status.message
   );
   assert.strictEqual(
-    span.attributes[SemanticAttributes.NET_PEER_NAME],
+    span.attributes[AttributeNames.DNS_HOSTNAME],
     validations.hostname
   );
 
