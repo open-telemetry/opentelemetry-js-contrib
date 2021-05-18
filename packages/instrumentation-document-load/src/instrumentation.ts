@@ -105,6 +105,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
         );
         if (fetchSpan) {
           fetchSpan.setAttribute(ATTR_URL_FULL, location.href);
+          fetchSpan.setAttribute(ATTR_USER_AGENT_ORIGINAL, navigator.userAgent);
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(
               fetchSpan,
