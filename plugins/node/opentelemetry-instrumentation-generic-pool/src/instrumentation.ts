@@ -30,6 +30,10 @@ const MODULE_NAME = 'generic-pool';
 export default class Instrumentation extends InstrumentationBase<
   typeof genericPool
 > {
+
+  // only used for v2 - v2.3)
+  private _isDisabled = false;
+
   constructor() {
     super(`@opentelemetry/instrumentation-${MODULE_NAME}`, VERSION);
   }
@@ -84,6 +88,8 @@ export default class Instrumentation extends InstrumentationBase<
         api.diag.debug(
           `Removing patch for ${MODULE_NAME}@${moduleVersion}`
         );
+        const Pool: any = moduleExports.Pool;
+        this._unwrap(Pool.prototype, 'acquire');
         return moduleExports;
       }
     ),
@@ -94,6 +100,7 @@ export default class Instrumentation extends InstrumentationBase<
         api.diag.debug(
           `Applying patch for ${MODULE_NAME}@${moduleVersion}`
         );
+        this._isDisabled = false;
         if (isWrapped(moduleExports.Pool)) {
           this._unwrap(moduleExports, 'Pool');
         }
@@ -108,6 +115,9 @@ export default class Instrumentation extends InstrumentationBase<
         api.diag.debug(
           `Removing patch for ${MODULE_NAME}@${moduleVersion}`
         );
+        // since the object is created on the fly every time, we need to use
+        // a boolean switch here to disable the instrumentation
+        this._isDisabled = true;
         return moduleExports;
       }
     )];
@@ -158,6 +168,10 @@ export default class Instrumentation extends InstrumentationBase<
       cb: Function,
       priority: number,
       ) {
+        // only used for v2 - v2.3
+        if (instrumentation._isDisabled) {
+          return original.call(this, cb, priority);
+        }
         const parent = api.context.active();
         const span = instrumentation.tracer.startSpan(
           'generic-pool.aquire',

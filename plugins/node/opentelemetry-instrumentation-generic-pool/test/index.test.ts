@@ -28,12 +28,16 @@ const plugin = new Instrumentation();
 import * as util from 'util';
 import * as genericPool from 'generic-pool';
 import * as assert from 'assert';
+import * as semver from 'semver';
 
 const CLIENT = '_client_';
 
-const createPool = {
+const version = require('generic-pool/package.json').version;
+const isOldVersion = semver.satisfies(version, '2');
+
+const createPool = ({
   v3: () => {
-    return genericPool.createPool({
+    const pool = genericPool.createPool({
       create: () => {
         return Promise.resolve(CLIENT);
       },
@@ -41,6 +45,9 @@ const createPool = {
         return Promise.resolve();
       },
     });
+    return () => {
+      return pool.acquire();
+    }
   },
   v2: () => {
     const Pool: any = genericPool.Pool;
@@ -50,10 +57,14 @@ const createPool = {
       },
       destroy: () => {},
     });
-    pool.acquire = util.promisify(pool.acquire).bind(pool);
-    return pool;
+    return () => {
+      // We need to do that on the fly every time, because the instrumentation
+      // changes the prototype and thus the function as well.
+      const acquire = util.promisify(pool.acquire).bind(pool);
+      return acquire();
+    };
   },
-};
+})[isOldVersion ? 'v2' : 'v3'];
 
 describe('GenericPool instrumentation', () => {
   const provider = new NodeTracerProvider();
@@ -63,11 +74,11 @@ describe('GenericPool instrumentation', () => {
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
-  let pool: genericPool.Pool<unknown>;
+  let acquire: Function;
 
   beforeEach(async () => {
     plugin.enable();
-    pool = createPool.v3();
+    acquire = createPool();
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
@@ -80,7 +91,7 @@ describe('GenericPool instrumentation', () => {
   });
 
   it('should create a span for acquire', async () => {
-    assert.strictEqual(await pool.acquire(), CLIENT);
+    assert.strictEqual(await acquire(), CLIENT);
     const [span] = memoryExporter.getFinishedSpans();
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
     assert.strictEqual(span.name, 'generic-pool.aquire');
@@ -90,7 +101,7 @@ describe('GenericPool instrumentation', () => {
     const rootSpan: any = tracer.startSpan('clientSpan');
 
     await context.with(setSpan(context.active(), rootSpan), async () => {
-      assert.strictEqual(await pool.acquire(), CLIENT);
+      assert.strictEqual(await acquire(), CLIENT);
       rootSpan.end();
 
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
@@ -103,7 +114,7 @@ describe('GenericPool instrumentation', () => {
 
   it('should not create anything if disabled', async () => {
     plugin.disable();
-    assert.strictEqual(await pool.acquire(), CLIENT);
+    assert.strictEqual(await acquire(), CLIENT);
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 });
