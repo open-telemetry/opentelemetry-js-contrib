@@ -29,7 +29,9 @@ provider.register();
 
 registerInstrumentations({
   instrumentations: [
-    new AwsLambdaInstrumentation()
+    new AwsLambdaInstrumentation({
+        // see under for available configuration
+    })
   ],
 });
 ```
@@ -37,6 +39,29 @@ registerInstrumentations({
 In your Lambda function configuration, add or update the `NODE_OPTIONS` environment variable to require the wrapper, e.g.,
 
 `NODE_OPTIONS=--require lambda-wrapper`
+
+## AWS Lambda Instrumentation Options
+
+| Options | Type  | Description |
+| --- | --- | --- |
+| `requestHook` | `RequestHook` (function) | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, event, context` |
+| `responseHook` | `ResponseHook` (function) | Hook for adding custom attributes before lambda returns the response. Receives params: `span, err?, response? ` |
+
+### Hooks Usage Example
+
+```js
+const { AwsLambdaInstrumentation } = require('@opentelemetry/instrumentation-aws-lambda');
+
+new AwsLambdaInstrumentation({
+    requestHook: (span, event, context) => {
+        span.setAttributes('faas.name', context.functionName);
+    },
+    responseHook: (span, err, res) => {
+        if (err instanceof Error) span.setAttributes('faas.error', err.message);
+        if (res) span.setAttributes('faas.res', res);
+    }
+})
+```
 
 ## Useful links
 

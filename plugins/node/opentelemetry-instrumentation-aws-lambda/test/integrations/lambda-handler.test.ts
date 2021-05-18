@@ -19,7 +19,10 @@
 
 import * as path from 'path';
 
-import { AwsLambdaInstrumentation } from '../../src';
+import {
+  AwsLambdaInstrumentation,
+  AwsLambdaInstrumentationConfig,
+} from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
@@ -29,7 +32,10 @@ import { NodeTracerProvider } from '@opentelemetry/node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SemanticAttributes,
+  ResourceAttributes,
+} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -76,10 +82,13 @@ describe('lambda handler', () => {
     awsRequestId: 'aws_request_id',
   } as Context;
 
-  const initializeHandler = (handler: string) => {
+  const initializeHandler = (
+    handler: string,
+    config: AwsLambdaInstrumentationConfig = {}
+  ) => {
     process.env._HANDLER = handler;
 
-    instrumentation = new AwsLambdaInstrumentation();
+    instrumentation = new AwsLambdaInstrumentation(config);
     instrumentation.setTracerProvider(provider);
   };
 
@@ -297,5 +306,122 @@ describe('lambda handler', () => {
     const [span] = spans;
     assert.strictEqual(spans.length, 1);
     assertSpanFailure(span);
+  });
+
+  describe('hooks', () => {
+    describe('requestHook', () => {
+      it('sync - success', async () => {
+        initializeHandler('lambda-test/async.handler', {
+          requestHook: (span, _event, context) => {
+            span.setAttribute(
+              ResourceAttributes.FAAS_NAME,
+              context.functionName
+            );
+          },
+        });
+
+        await lambdaRequire('lambda-test/async').handler('arg', ctx);
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assert.strictEqual(
+          span.attributes[ResourceAttributes.FAAS_NAME],
+          ctx.functionName
+        );
+        assertSpanSuccess(span);
+      });
+    });
+
+    describe('responseHook', () => {
+      const RES_ATTR = 'test.res';
+      const ERR_ATTR = 'test.error';
+
+      const config: AwsLambdaInstrumentationConfig = {
+        responseHook: (span, err, res) => {
+          if (err)
+            span.setAttribute(
+              ERR_ATTR,
+              typeof err === 'string' ? err : err.message
+            );
+          if (res)
+            span.setAttribute(
+              RES_ATTR,
+              typeof res === 'string' ? res : JSON.stringify(res)
+            );
+        },
+      };
+      it('async - success', async () => {
+        initializeHandler('lambda-test/async.handler', config);
+
+        const res = await lambdaRequire('lambda-test/async').handler(
+          'arg',
+          ctx
+        );
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[RES_ATTR], res);
+      });
+
+      it('async - error', async () => {
+        initializeHandler('lambda-test/async.error', config);
+
+        let err: Error;
+        try {
+          await lambdaRequire('lambda-test/async').error('arg', ctx);
+        } catch (e) {
+          err = e;
+        }
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[ERR_ATTR], err!.message);
+      });
+
+      it('sync - success', async () => {
+        initializeHandler('lambda-test/sync.handler', config);
+
+        const result = await new Promise((resolve, _reject) => {
+          lambdaRequire('lambda-test/sync').handler(
+            'arg',
+            ctx,
+            (_err: Error, res: any) => resolve(res)
+          );
+        });
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[RES_ATTR], result);
+      });
+
+      it('sync - error', async () => {
+        initializeHandler('lambda-test/sync.error', config);
+
+        let err: Error;
+        try {
+          lambdaRequire('lambda-test/sync').error(
+            'arg',
+            ctx,
+            () => {}
+          );
+        } catch (e) {
+          err = e;
+        }
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[ERR_ATTR], err!.message);
+      });
+
+      it('sync - callback error', async () => {
+        initializeHandler('lambda-test/sync.callbackerror', config);
+
+        let error: Error;
+        await new Promise((resolve, _reject) => {
+          lambdaRequire('lambda-test/sync').callbackerror(
+            'arg',
+            ctx,
+            (err: Error, _res: any) => {
+              error = err;
+              resolve({});
+            }
+          );
+        });
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[ERR_ATTR], error!.message);
+      });
+    });
   });
 });

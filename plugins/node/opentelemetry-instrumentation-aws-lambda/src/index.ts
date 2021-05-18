@@ -15,4 +15,8 @@
  */
 
 export * from './instrumentation';
-export { AwsLambdaInstrumentationConfig, RequestHook, ResponseHook } from './types';
+export {
+  AwsLambdaInstrumentationConfig,
+  RequestHook,
+  ResponseHook,
+} from './types';

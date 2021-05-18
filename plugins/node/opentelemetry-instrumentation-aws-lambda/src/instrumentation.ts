@@ -247,10 +247,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         () => this._config.responseHook!(span, err, res),
         e => {
           if (e)
-            diag.error(
-              'aws-lambda instrumentation: responseHook error',
-              e
-            );
+            diag.error('aws-lambda instrumentation: responseHook error', e);
         },
         true
       );
