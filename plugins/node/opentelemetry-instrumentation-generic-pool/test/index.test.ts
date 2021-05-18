@@ -79,26 +79,31 @@ describe('GenericPool instrumentation', () => {
     plugin.disable();
   });
 
-  describe('Instrumenting handler calls', () => {
-    it('should create a span for acquire', async () => {
+  it('should create a span for acquire', async () => {
+    assert.strictEqual(await pool.acquire(), CLIENT);
+    const [span] = memoryExporter.getFinishedSpans();
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+    assert.strictEqual(span.name, 'generic-pool.aquire');
+  });
+
+  it('should attach it to the parent span', async () => {
+    const rootSpan: any = tracer.startSpan('clientSpan');
+
+    await context.with(setSpan(context.active(), rootSpan), async () => {
       assert.strictEqual(await pool.acquire(), CLIENT);
+      rootSpan.end();
+
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+
       const [span] = memoryExporter.getFinishedSpans();
       assert.strictEqual(span.name, 'generic-pool.aquire');
+      assert.strictEqual(span.parentSpanId, rootSpan.spanContext.spanId);
     });
+  });
 
-    it('should attach it to the parent span', async () => {
-      const rootSpan: any = tracer.startSpan('clientSpan');
-
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        assert.strictEqual(await pool.acquire(), CLIENT);
-        rootSpan.end();
-
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
-
-        const [span] = memoryExporter.getFinishedSpans();
-        assert.strictEqual(span.name, 'generic-pool.aquire');
-        assert.strictEqual(span.parentSpanId, rootSpan.spanContext.spanId);
-      });
-    });
+  it('should not create anything if disabled', async () => {
+    plugin.disable();
+    assert.strictEqual(await pool.acquire(), CLIENT);
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 });

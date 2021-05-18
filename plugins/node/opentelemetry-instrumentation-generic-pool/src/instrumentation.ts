@@ -57,6 +57,8 @@ export default class Instrumentation extends InstrumentationBase<
         api.diag.debug(
           `Removing patch for ${MODULE_NAME}@${moduleVersion}`
         );
+        const Pool: any = moduleExports.Pool;
+        this._unwrap(Pool.prototype, 'acquire');
         return moduleExports;
       }
     ),
