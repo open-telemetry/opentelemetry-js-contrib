@@ -5,7 +5,7 @@
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
-This module provides basic automatic instrumentation for [`generic-pool`](https://github.com/coopernurse/node-pool) and allows the user to automatically collect trace data and export them to their backend of choice.
+This module provides basic automatic instrumentation for [`generic-pool`](https://github.com/coopernurse/node-pool) creating a span for every acquire call.
 
 For automatic instrumentation see the
 [@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
@@ -25,7 +25,7 @@ npm install --save @opentelemetry/instrumentation-generic-pool
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const GenericPoolInstrumentation = require('@opentelemetry/instrumentation-generic-pool');
+const { GenericPoolInstrumentation } = require('@opentelemetry/instrumentation-generic-pool');
 
 const provider = new NodeTracerProvider();
 

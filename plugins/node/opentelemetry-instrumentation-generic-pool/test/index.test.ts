@@ -35,7 +35,7 @@ const CLIENT = '_client_';
 const version = require('generic-pool/package.json').version;
 const isOldVersion = semver.satisfies(version, '2');
 
-const createPool = ({
+const createPool = {
   v3: () => {
     const pool = genericPool.createPool({
       create: () => {
@@ -47,7 +47,7 @@ const createPool = ({
     });
     return () => {
       return pool.acquire();
-    }
+    };
   },
   v2: () => {
     const Pool: any = genericPool.Pool;
@@ -64,7 +64,7 @@ const createPool = ({
       return acquire();
     };
   },
-})[isOldVersion ? 'v2' : 'v3'];
+}[isOldVersion ? 'v2' : 'v3'];
 
 describe('GenericPool instrumentation', () => {
   const provider = new NodeTracerProvider();
