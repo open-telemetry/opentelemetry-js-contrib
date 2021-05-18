@@ -21,7 +21,7 @@ import {
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/node';
-import { DnsInstrumentation } from '../../src/dns';
+import { DnsInstrumentation } from '../../src';
 import * as Sinon from 'sinon';
 import * as dns from 'dns';
 

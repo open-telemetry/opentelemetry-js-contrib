@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-export * from './express';
+export * from './instrumentation';
 export { ExpressLayerType } from './enums/ExpressLayerType';
 export { ExpressInstrumentationConfig } from './types';

@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './mongodb';
+export * from './instrumentation';
 export { MongoDBInstrumentationConfig } from './types';

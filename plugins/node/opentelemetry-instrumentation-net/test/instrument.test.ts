@@ -21,7 +21,7 @@ import {
 import { isWrapped } from '@opentelemetry/instrumentation';
 import * as assert from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/node';
-import { NetInstrumentation } from '../src/net';
+import { NetInstrumentation } from '../src';
 import * as Sinon from 'sinon';
 import * as net from 'net';
 import { HOST, PORT } from './utils';

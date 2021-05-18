@@ -33,7 +33,7 @@ import * as sinon from 'sinon';
 import { Writable } from 'stream';
 import type * as Winston from 'winston';
 import type { Winston3Logger } from '../src/types';
-import { WinstonInstrumentation } from '../src/winston';
+import { WinstonInstrumentation } from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
