@@ -43,6 +43,7 @@
     "access": "public"
   },
   "devDependencies": {
+    "@opentelemetry/api": "1.0.0-rc.0",
     "@opentelemetry/tracing": "0.19.0",
     "@types/mocha": "8.2.2",
     "@types/node": "14.14.45",
@@ -55,8 +56,10 @@
     "ts-mocha": "8.0.0",
     "typescript": "4.2.4"
   },
+  "peerDependencies": {
+    "@opentelemetry/api": "1.0.0-rc.0"
+  },
   "dependencies": {
-    "@opentelemetry/api": "^1.0.0-rc.0",
     "@opentelemetry/instrumentation": "^0.19.0",
     "@types/graphql": "14.5.0"
   }
