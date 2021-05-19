@@ -19,7 +19,10 @@
 
 import * as path from 'path';
 
-import { AwsLambdaInstrumentation } from '../../src';
+import {
+  AwsLambdaInstrumentation,
+  traceContextEnvironmentKey,
+} from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
@@ -412,7 +415,7 @@ describe('lambda handler', () => {
 
   describe('with remote parent', () => {
     it('uses lambda context if sampled and no http context', async () => {
-      process.env['_X_AMZN_TRACE_ID'] = sampledAwsHeader;
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
       initializeHandler('lambda-test/async.handler');
 
       const result = await lambdaRequire('lambda-test/async').handler(
@@ -432,7 +435,7 @@ describe('lambda handler', () => {
     });
 
     it('uses lambda context if unsampled and no http context', async () => {
-      process.env['_X_AMZN_TRACE_ID'] = unsampledAwsHeader;
+      process.env[traceContextEnvironmentKey] = unsampledAwsHeader;
       initializeHandler('lambda-test/async.handler');
 
       const result = await lambdaRequire('lambda-test/async').handler(
@@ -446,7 +449,7 @@ describe('lambda handler', () => {
     });
 
     it('uses lambda context if sampled and http context present', async () => {
-      process.env['_X_AMZN_TRACE_ID'] = sampledAwsHeader;
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
       initializeHandler('lambda-test/async.handler');
 
       const proxyEvent = {
@@ -472,7 +475,7 @@ describe('lambda handler', () => {
     });
 
     it('uses http context if sampled and lambda context unsampled', async () => {
-      process.env['_X_AMZN_TRACE_ID'] = unsampledAwsHeader;
+      process.env[traceContextEnvironmentKey] = unsampledAwsHeader;
       initializeHandler('lambda-test/async.handler');
 
       const proxyEvent = {
@@ -498,7 +501,7 @@ describe('lambda handler', () => {
     });
 
     it('uses http context if unsampled and lambda context unsampled', async () => {
-      process.env['_X_AMZN_TRACE_ID'] = unsampledAwsHeader;
+      process.env[traceContextEnvironmentKey] = unsampledAwsHeader;
       initializeHandler('lambda-test/async.handler');
 
       const proxyEvent = {

@@ -67,6 +67,8 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   },
 };
 
+export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
+
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _tracerProvider: TracerProvider | undefined;
 
@@ -261,7 +263,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     httpHeaders: APIGatewayProxyEventHeaders
   ): OtelContext {
     let parent: OtelContext | undefined = undefined;
-    const lambdaTraceHeader = process.env['_X_AMZN_TRACE_ID'];
+    const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
     if (lambdaTraceHeader) {
       parent = awsPropagator.extract(
         otelContext.active(),
