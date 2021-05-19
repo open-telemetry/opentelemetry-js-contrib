@@ -55,6 +55,9 @@
     "webpack-cli": "4.7.0",
     "webpack-merge": "5.7.3"
   },
+  "peerDependencies": {
+    "@opentelemetry/api": "1.0.0-rc.0"
+  },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.19.0",
     "@opentelemetry/instrumentation-document-load": "^0.16.0",
