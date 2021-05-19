@@ -17,13 +17,6 @@ import { Span } from '@opentelemetry/api';
 import * as restify from 'restify';
 import { REQ_SPAN } from './constants';
 
-export enum CustomAttributeNames {
-  TYPE = 'restify.type',
-  NAME = 'restify.name',
-  METHOD = 'restify.method',
-  VERSION = 'restify.version',
-}
-
 export enum LayerType {
   MIDDLEWARE = 'middleware',
   REQUEST_HANDLER = 'request_handler',

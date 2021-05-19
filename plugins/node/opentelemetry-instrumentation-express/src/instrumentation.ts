@@ -20,13 +20,13 @@ import * as express from 'express';
 import {
   ExpressLayer,
   ExpressRouter,
-  CustomAttributeNames,
   PatchedRequest,
   _LAYERS_STORE_PROPERTY,
   ExpressInstrumentationConfig,
-  ExpressLayerType,
   ExpressInstrumentationSpan,
 } from './types';
+import { ExpressLayerType } from './enums/ExpressLayerType';
+import { AttributeNames } from './enums/AttributeNames';
 import { getLayerMetadata, storeLayerPath, isLayerIgnored } from './utils';
 import { VERSION } from './version';
 import {
@@ -61,7 +61,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         ['^4.0.0'],
         (moduleExports, moduleVersion) => {
           diag.debug(`Applying patch for express@${moduleVersion}`);
-          const routerProto = (moduleExports.Router as unknown) as express.Router;
+          const routerProto = moduleExports.Router as unknown as express.Router;
           // patch express.Router.route
           if (isWrapped(routerProto.route)) {
             this._unwrap(routerProto, 'route');
@@ -187,13 +187,13 @@ export class ExpressInstrumentation extends InstrumentationBase<
         };
         const metadata = getLayerMetadata(layer, layerPath);
         const type = metadata.attributes[
-          CustomAttributeNames.EXPRESS_TYPE
+          AttributeNames.EXPRESS_TYPE
         ] as ExpressLayerType;
 
         // Rename the root http span in case we haven't done it already
         // once we reach the request handler
         if (
-          metadata.attributes[CustomAttributeNames.EXPRESS_TYPE] ===
+          metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
           ExpressLayerType.REQUEST_HANDLER
         ) {
           const parent = getSpan(
@@ -209,6 +209,9 @@ export class ExpressInstrumentation extends InstrumentationBase<
 
         // verify against the config if the layer should be ignored
         if (isLayerIgnored(metadata.name, type, instrumentation._config)) {
+          if (type === ExpressLayerType.MIDDLEWARE) {
+            (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
+          }
           return original.apply(this, arguments);
         }
         if (getSpan(context.active()) === undefined) {
@@ -223,7 +226,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         // If we found anything that isnt a middleware, there no point of measuring
         // their time since they dont have callback.
         if (
-          metadata.attributes[CustomAttributeNames.EXPRESS_TYPE] !==
+          metadata.attributes[AttributeNames.EXPRESS_TYPE] !==
           ExpressLayerType.MIDDLEWARE
         ) {
           span.end(startTime);

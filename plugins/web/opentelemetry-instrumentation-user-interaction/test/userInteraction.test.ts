@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 const originalSetTimeout = window.setTimeout;
-import { context, ROOT_CONTEXT } from '@opentelemetry/api';
+import { context, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import {
   isWrapped,
@@ -79,7 +79,6 @@ describe('UserInteractionInstrumentation', () => {
       userInteractionInstrumentation = new UserInteractionInstrumentation();
 
       registerInstrumentations({
-        tracerProvider: webTracerProvider,
         instrumentations: [
           userInteractionInstrumentation,
           new XMLHttpRequestInstrumentation(),
@@ -95,6 +94,7 @@ describe('UserInteractionInstrumentation', () => {
       sandbox.restore();
       exportSpy.restore();
       context.disable();
+      trace.disable();
     });
 
     it('should handle task without async operation', () => {
@@ -212,7 +212,7 @@ describe('UserInteractionInstrumentation', () => {
         _createZone: Function;
       }
 
-      const ctxMngrWithPrv = (contextManager as unknown) as CtxMngrWithPrv;
+      const ctxMngrWithPrv = contextManager as unknown as CtxMngrWithPrv;
       const newZone = ctxMngrWithPrv._createZone('test', context);
 
       const element = createButton();
@@ -314,7 +314,7 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle unpatch', () => {
-      const _window: WindowWithZone = (window as unknown) as WindowWithZone;
+      const _window: WindowWithZone = window as unknown as WindowWithZone;
       const ZoneWithPrototype = _window.Zone;
       assert.strictEqual(
         isWrapped(ZoneWithPrototype.prototype.runTask),

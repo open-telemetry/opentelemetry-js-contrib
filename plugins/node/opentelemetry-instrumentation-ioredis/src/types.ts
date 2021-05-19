@@ -18,7 +18,6 @@ import type * as ioredisTypes from 'ioredis';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Span } from '@opentelemetry/api';
 
-// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IORedisCommand {
   reject: (err: Error) => void;
   resolve: (result: {}) => void;
@@ -39,6 +38,16 @@ export type DbStatementSerializer = (
   cmdName: IORedisCommand['name'],
   cmdArgs: IORedisCommand['args']
 ) => string;
+
+export interface IORedisRequestHookInformation {
+  moduleVersion?: string;
+  cmdName: IORedisCommand['name'];
+  cmdArgs: IORedisCommand['args'];
+}
+
+export interface RedisRequestCustomAttributeFunction {
+  (span: Span, requestInfo: IORedisRequestHookInformation): void;
+}
 
 /**
  * Function that can be used to add custom attributes to span on response from redis server
@@ -61,10 +70,12 @@ export interface RedisResponseCustomAttributeFunction {
 /**
  * Options available for the IORedis Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-ioredis#ioredis-instrumentation-options))
  */
-// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IORedisInstrumentationConfig extends InstrumentationConfig {
   /** Custom serializer function for the db.statement tag */
   dbStatementSerializer?: DbStatementSerializer;
+
+  /** Function for adding custom attributes on db request */
+  requestHook?: RedisRequestCustomAttributeFunction;
 
   /** Function for adding custom attributes on db response */
   responseHook?: RedisResponseCustomAttributeFunction;

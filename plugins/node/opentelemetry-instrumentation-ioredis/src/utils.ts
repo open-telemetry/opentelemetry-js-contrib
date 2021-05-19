@@ -29,7 +29,7 @@ import {
   IORedisInstrumentationConfig,
   DbStatementSerializer,
 } from './types';
-import { IORedisInstrumentation } from './ioredis';
+import { IORedisInstrumentation } from './';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
@@ -82,7 +82,8 @@ const defaultDbStatementSerializer: DbStatementSerializer = (
 export const traceSendCommand = (
   tracer: Tracer,
   original: Function,
-  config?: IORedisInstrumentationConfig
+  config?: IORedisInstrumentationConfig,
+  moduleVersion?: string
 ) => {
   const dbStatementSerializer =
     config?.dbStatementSerializer || defaultDbStatementSerializer;
@@ -107,6 +108,23 @@ export const traceSendCommand = (
       },
     });
 
+    if (config?.requestHook) {
+      safeExecuteInTheMiddle(
+        () =>
+          config?.requestHook!(span, {
+            moduleVersion,
+            cmdName: cmd.name,
+            cmdArgs: cmd.args,
+          }),
+        e => {
+          if (e) {
+            diag.error('ioredis instrumentation: request hook failed', e);
+          }
+        },
+        true
+      );
+    }
+
     const { host, port } = this.options;
 
     span.setAttributes({
@@ -125,7 +143,7 @@ export const traceSendCommand = (
           () => config?.responseHook?.(span, cmd.name, cmd.args, result),
           e => {
             if (e) {
-              diag.error('ioredis response hook failed', e);
+              diag.error('ioredis instrumentation: response hook failed', e);
             }
           },
           true

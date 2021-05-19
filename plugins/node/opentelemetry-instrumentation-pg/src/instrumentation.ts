@@ -38,7 +38,11 @@ import {
   PgPoolCallback,
 } from './types';
 import * as utils from './utils';
-import { AttributeNames } from './enums';
+import { AttributeNames } from './enums/AttributeNames';
+import {
+  SemanticAttributes,
+  DbSystemValues,
+} from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
 
 export interface PgInstrumentationConfig extends InstrumentationConfig {
@@ -54,7 +58,6 @@ const PG_POOL_COMPONENT = 'pg-pool';
 
 export class PgInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'pg';
-  static readonly DB_TYPE = 'sql';
 
   static readonly BASE_SPAN_NAME = PgInstrumentation.COMPONENT + '.query';
 
@@ -227,15 +230,14 @@ export class PgInstrumentation extends InstrumentationBase {
         const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {
           kind: SpanKind.CLIENT,
           attributes: {
-            [AttributeNames.COMPONENT]: PgInstrumentation.COMPONENT, // required
-            [AttributeNames.DB_TYPE]: PgInstrumentation.DB_TYPE, // required
-            [AttributeNames.DB_INSTANCE]: this.options.database, // required
-            [AttributeNames.PEER_HOSTNAME]: this.options.host, // required
-            [AttributeNames.PEER_ADDRESS]: jdbcString, // required
-            [AttributeNames.PEER_PORT]: this.options.port,
-            [AttributeNames.DB_USER]: this.options.user,
-            [AttributeNames.IDLE_TIMEOUT_MILLIS]: this.options
-              .idleTimeoutMillis,
+            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+            [SemanticAttributes.DB_NAME]: this.options.database, // required
+            [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
+            [SemanticAttributes.DB_CONNECTION_STRING]: jdbcString, // required
+            [SemanticAttributes.NET_PEER_PORT]: this.options.port,
+            [SemanticAttributes.DB_USER]: this.options.user,
+            [AttributeNames.IDLE_TIMEOUT_MILLIS]:
+              this.options.idleTimeoutMillis,
             [AttributeNames.MAX_CLIENT]: this.options.maxClient,
           },
         });

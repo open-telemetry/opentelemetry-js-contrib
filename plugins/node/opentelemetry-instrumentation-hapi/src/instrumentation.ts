@@ -187,7 +187,8 @@ export class HapiInstrumentation extends InstrumentationBase {
         for (let i = 0; i < eventsList.length; i++) {
           const eventObj = eventsList[i];
           if (isLifecycleExtType(eventObj.type)) {
-            const lifecycleEventObj = eventObj as Hapi.ServerExtEventsRequestObject;
+            const lifecycleEventObj =
+              eventObj as Hapi.ServerExtEventsRequestObject;
             const handler = instrumentation._wrapExtMethods(
               lifecycleEventObj.method,
               eventObj.type,

@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './redis';
+export * from './instrumentation';
 export { RedisInstrumentationConfig } from './types';

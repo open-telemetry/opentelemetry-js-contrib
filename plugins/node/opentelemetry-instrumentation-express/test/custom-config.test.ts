@@ -21,9 +21,12 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
-import { CustomAttributeNames } from '../src/types';
-import { ExpressInstrumentation, ExpressLayerType } from '../src';
+import { ExpressInstrumentationSpan } from '../src/types';
+import { ExpressLayerType } from '../src/enums/ExpressLayerType';
+import { AttributeNames } from '../src/enums/AttributeNames';
+import { ExpressInstrumentation } from '../src';
 
 const instrumentation = new ExpressInstrumentation({
   ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
@@ -75,9 +78,24 @@ describe('ExpressInstrumentation', () => {
   });
 
   describe('Instrumenting with specific config', () => {
+    let app: express.Express;
+    let server: http.Server;
+    let port: number;
+
+    beforeEach(async () => {
+      app = express();
+      server = http.createServer(app);
+      await new Promise<void>(resolve => server.listen(0, resolve));
+      port = (server.address() as AddressInfo).port;
+    });
+
+    afterEach(() => {
+      server.close();
+    });
+
     it('should ignore specific middlewares based on config', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const app = express();
+
       app.use(express.json());
       app.use((req, res, next) => {
         for (let i = 0; i < 1000; i++) {
@@ -85,10 +103,7 @@ describe('ExpressInstrumentation', () => {
         }
         return next();
       });
-      const server = http.createServer(app);
-      await new Promise<void>(resolve => server.listen(0, resolve));
 
-      const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
@@ -98,7 +113,7 @@ describe('ExpressInstrumentation', () => {
             .getFinishedSpans()
             .filter(
               span =>
-                span.attributes[CustomAttributeNames.EXPRESS_TYPE] ===
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
                 ExpressLayerType.MIDDLEWARE
             ).length,
           0
@@ -108,7 +123,51 @@ describe('ExpressInstrumentation', () => {
           .find(span => span.name === 'rootSpan');
         assert.notStrictEqual(exportedRootSpan, undefined);
       });
-      server.close();
+    });
+
+    it('should not repeat middleware paths in the span name', async () => {
+      app.use((req, res, next) =>
+        context.with(setSpan(context.active(), rootSpan), next)
+      );
+
+      app.use('/mw', (req, res, next) => {
+        next();
+      });
+
+      app.get('/mw', (req, res) => {
+        res.send('ok');
+      });
+
+      const rootSpan = tracer.startSpan(
+        'rootSpan'
+      ) as ExpressInstrumentationSpan;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(setSpan(context.active(), rootSpan), async () => {
+        const response = await httpRequest.get(`http://localhost:${port}/mw`);
+        assert.strictEqual(response, 'ok');
+        rootSpan.end();
+
+        assert.strictEqual(rootSpan.name, 'GET /mw');
+
+        const spans = memoryExporter.getFinishedSpans();
+
+        const requestHandlerSpan = memoryExporter
+          .getFinishedSpans()
+          .find(span => span.name.includes('request handler'));
+        assert.notStrictEqual(requestHandlerSpan, undefined);
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+          '/mw'
+        );
+
+        assert.strictEqual(
+          requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
+          'request_handler'
+        );
+        const exportedRootSpan = spans.find(span => span.name === 'GET /mw');
+        assert.notStrictEqual(exportedRootSpan, undefined);
+      });
     });
   });
 });

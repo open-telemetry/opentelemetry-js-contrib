@@ -6,13 +6,14 @@
 [![Apache License][license-image]][license-image]
 
 OpenTelemetry gRPC Census propagator provides gRPC header propagation for systems that use the OpenCensus 'grpc-trace-bin' binary header format. This allows for context propagation when either:
+
 * incoming gRPC calls come from services already instrumented using OpenCensus
 * outgoing gRPC calls go to services already instrumented using OpenCensus
 
 This propagator works in conjunction with the OpenTelemetry [gRPC plugin](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-grpc).
 
-
 Example of usage:
+
 ```javascript
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { GrpcCensusPropagator } = require("@opentelemetry/propagator-grpc-census-binary");
@@ -31,7 +32,6 @@ registerInstrumentations({
   instrumentations: [
     new GrpcInstrumentation(),
   ],
-  tracerProvider: provider,
 });
 
 ```
@@ -40,12 +40,14 @@ Also, see [examples/grpc-census-prop](../../examples/grpc-census-prop) for a
 worked example that shows when this propagator can be useful.
 
 ## Implementation Details
+
 See [binary-format.ts](https://github.com/census-instrumentation/opencensus-node/blob/master/packages/opencensus-propagation-binaryformat/src/binary-format.ts) for equivalent encoding/decoding of the format in OpenCensus. Note: the author of the OpenCensus binary format, [@mayurkale22](https://github.com/mayurkale22), also created BinaryTraceContext.ts in [opentelemetry-core](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core) but that was subsequently removed as part of PR [#804](https://github.com/open-telemetry/opentelemetry-js/pull/804). The implementation of GrpcCensusPropagator in _this_ module uses a version of BinaryTraceContext.ts inspired by Mayur's previous work (with minor modifications e.g. there is no longer a BinaryFormat interface to implement).
 
 ## Useful links
-- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+
+* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 
