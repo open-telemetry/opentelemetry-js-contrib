@@ -46,7 +46,7 @@
     "@opentelemetry/node": "0.19.0",
     "@opentelemetry/tracing": "0.19.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.14.45",
+    "@types/node": "14.17.0",
     "@types/sinon": "9.0.11",
     "bunyan": "1.8.15",
     "codecov": "3.8.2",
