@@ -24,24 +24,50 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  context as otelcontext,
+  Context as OtelContext,
+  context as otelContext,
   diag,
+  getSpanContext,
   setSpan,
+  propagation,
   Span,
   SpanKind,
   SpanStatusCode,
+  TextMapGetter,
+  TraceFlags,
   TracerProvider,
 } from '@opentelemetry/api';
+import {
+  AWSXRAY_TRACE_ID_HEADER,
+  AWSXRayPropagator,
+} from '@opentelemetry/propagator-aws-xray';
 import {
   SemanticAttributes,
   ResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
+import { BasicTracerProvider } from '@opentelemetry/tracing';
 
-import { Callback, Context, Handler } from 'aws-lambda';
+import {
+  APIGatewayProxyEventHeaders,
+  Callback,
+  Context,
+  Handler,
+} from 'aws-lambda';
 
 import { LambdaModule } from './types';
 import { VERSION } from './version';
-import { BasicTracerProvider } from '@opentelemetry/tracing';
+
+const awsPropagator = new AWSXRayPropagator();
+const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
+  keys(carrier): string[] {
+    return Object.keys(carrier);
+  },
+  get(carrier, key: string) {
+    return carrier[key];
+  },
+};
+
+export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _tracerProvider: TracerProvider | undefined;
@@ -114,24 +140,34 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     return function patchedHandler(
       this: never,
-      event: {},
+      // The event can be a user type, it truly is any.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      event: any,
       context: Context,
       callback: Callback
     ) {
-      const name = context.functionName;
-      const span = plugin.tracer.startSpan(name, {
-        kind: SpanKind.SERVER,
-        attributes: {
-          [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
-          [ResourceAttributes.FAAS_ID]: context.invokedFunctionArn,
-          [ResourceAttributes.CLOUD_ACCOUNT_ID]:
-            AwsLambdaInstrumentation._extractAccountId(
-              context.invokedFunctionArn
-            ),
-        },
-      });
+      const httpHeaders =
+        typeof event.headers === 'object' ? event.headers : {};
+      const parent = AwsLambdaInstrumentation._determineParent(httpHeaders);
 
-      return otelcontext.with(setSpan(otelcontext.active(), span), () => {
+      const name = context.functionName;
+      const span = plugin.tracer.startSpan(
+        name,
+        {
+          kind: SpanKind.SERVER,
+          attributes: {
+            [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
+            [ResourceAttributes.FAAS_ID]: context.invokedFunctionArn,
+            [ResourceAttributes.CLOUD_ACCOUNT_ID]:
+              AwsLambdaInstrumentation._extractAccountId(
+                context.invokedFunctionArn
+              ),
+          },
+        },
+        parent
+      );
+
+      return otelContext.with(setSpan(otelContext.active(), span), () => {
         // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
         // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
         // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
@@ -222,5 +258,45 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       return parts[4];
     }
     return undefined;
+  }
+
+  private static _determineParent(
+    httpHeaders: APIGatewayProxyEventHeaders
+  ): OtelContext {
+    let parent: OtelContext | undefined = undefined;
+    const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
+    if (lambdaTraceHeader) {
+      parent = awsPropagator.extract(
+        otelContext.active(),
+        { [AWSXRAY_TRACE_ID_HEADER]: lambdaTraceHeader },
+        headerGetter
+      );
+    }
+    if (parent) {
+      const spanContext = getSpanContext(parent);
+      if (
+        spanContext &&
+        (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
+      ) {
+        // Trace header provided by Lambda only sampled if a sampled context was propagated from
+        // an upstream cloud service such as S3, or the user is using X-Ray. In these cases, we
+        // need to use it as the parent.
+        return parent;
+      }
+    }
+    // There was not a sampled trace header from Lambda so try from HTTP headers.
+    const httpContext = propagation.extract(
+      otelContext.active(),
+      httpHeaders,
+      headerGetter
+    );
+    if (getSpanContext(httpContext)) {
+      return httpContext;
+    }
+    if (!parent) {
+      // No context in Lambda environment or HTTP headers.
+      return otelContext.active();
+    }
+    return parent;
   }
 }

@@ -29,7 +29,7 @@ import {
   PgPoolExtended,
 } from './types';
 import * as pgTypes from 'pg';
-import { PgInstrumentation, PgInstrumentationConfig } from './pg';
+import { PgInstrumentation, PgInstrumentationConfig } from './';
 
 function arrayStringifyHelper(arr: Array<unknown>): string {
   return '[' + arr.toString() + ']';

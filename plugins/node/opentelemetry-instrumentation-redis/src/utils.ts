@@ -24,7 +24,7 @@ import {
 } from '@opentelemetry/api';
 import { RedisCommand, RedisPluginClientTypes } from './types';
 import { EventEmitter } from 'events';
-import { RedisInstrumentation } from './redis';
+import { RedisInstrumentation } from './';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const endSpan = (span: Span, err?: Error | null) => {

@@ -29,7 +29,7 @@ import {
   IORedisInstrumentationConfig,
   DbStatementSerializer,
 } from './types';
-import { IORedisInstrumentation } from './ioredis';
+import { IORedisInstrumentation } from './';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
