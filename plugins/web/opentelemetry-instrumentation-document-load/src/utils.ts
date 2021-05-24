@@ -26,9 +26,9 @@ import { EventNames } from './enums/EventNames';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   const entries: PerformanceEntries = {};
-  const performanceNavigationTiming = ((otperformance as unknown) as Performance).getEntriesByType?.(
-    'navigation'
-  )[0] as PerformanceEntries;
+  const performanceNavigationTiming = (
+    otperformance as unknown as Performance
+  ).getEntriesByType?.('navigation')[0] as PerformanceEntries;
 
   if (performanceNavigationTiming) {
     const keys = Object.values(PTN);
@@ -66,9 +66,9 @@ const performancePaintNames = {
 };
 
 export const addSpanPerformancePaintEvents = (span: Span) => {
-  const performancePaintTiming = ((otperformance as unknown) as Performance).getEntriesByType?.(
-    'paint'
-  );
+  const performancePaintTiming = (
+    otperformance as unknown as Performance
+  ).getEntriesByType?.('paint');
   if (performancePaintTiming) {
     performancePaintTiming.forEach(({ name, startTime }) => {
       if (hasKey(performancePaintNames, name)) {

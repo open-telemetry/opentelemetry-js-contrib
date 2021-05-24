@@ -76,9 +76,9 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    * @param rootSpan
    */
   private _addResourcesSpans(rootSpan: Span): void {
-    const resources: PerformanceResourceTiming[] = ((otperformance as unknown) as Performance).getEntriesByType?.(
-      'resource'
-    ) as PerformanceResourceTiming[];
+    const resources: PerformanceResourceTiming[] = (
+      otperformance as unknown as Performance
+    ).getEntriesByType?.('resource') as PerformanceResourceTiming[];
     if (resources) {
       resources.forEach(resource => {
         this._initResourceSpan(resource, rootSpan);
