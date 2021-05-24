@@ -621,7 +621,7 @@ describe('lambda handler', () => {
         assert.strictEqual(span.attributes[ERR_ATTR], err!.message);
       });
 
-      it('sync - callback error', async () => {
+      it('sync - error with callback', async () => {
         initializeHandler('lambda-test/sync.callbackerror', config);
 
         let error: Error;
