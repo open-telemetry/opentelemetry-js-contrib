@@ -49,11 +49,11 @@
     "@opentelemetry/test-utils": "^0.16.0",
     "@opentelemetry/tracing": "0.19.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.14.45",
+    "@types/node": "14.17.0",
     "codecov": "3.8.2",
     "cross-env": "7.0.3",
     "gts": "3.1.0",
-    "ioredis": "4.27.2",
+    "ioredis": "4.27.3",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
@@ -64,6 +64,6 @@
     "@opentelemetry/api": "^1.0.0-rc.0",
     "@opentelemetry/instrumentation": "^0.19.0",
     "@opentelemetry/semantic-conventions": "^0.19.0",
-    "@types/ioredis": "4.26.3"
+    "@types/ioredis": "4.26.4"
   }
 }
