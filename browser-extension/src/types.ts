@@ -73,7 +73,7 @@ export enum PlaceholderValue {
   COLLECTOR_TRACE_URL = 'http://localhost:55681/v1/trace',
 }
 
-export enum Label {
+export enum Labels {
   SAVE = 'Save',
   SAVE_AND_RELOAD = 'Save & Reload',
 }
