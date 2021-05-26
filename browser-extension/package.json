@@ -18,7 +18,7 @@
   },
   "private": true,
   "keywords": [],
-  "author": "SOpenTelemetry Authors",
+  "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/chrome": "0.0.139",

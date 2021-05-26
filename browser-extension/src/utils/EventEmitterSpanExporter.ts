@@ -20,13 +20,13 @@ export class EventEmitterSpanExporter
   extends EventTarget
   implements SpanExporter
 {
-  protected _stopped = false;
+  protected _isShutdown = false;
 
   export(
     spans: ReadableSpan[],
     resultCallback: (result: ExportResult) => void
   ): void {
-    if (this._stopped) {
+    if (this._isShutdown) {
       const error = new Error('Exporter has been stopped');
       this.dispatchEvent(new CustomEvent('onError', { detail: error }));
       return resultCallback({
