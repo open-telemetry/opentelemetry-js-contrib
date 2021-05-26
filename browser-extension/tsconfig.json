@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig.base.json",
+  "extends": "../tsconfig.base",
   "compilerOptions": {
     "lib": ["es2017", "dom", "webworker"],
     "rootDir": ".",
