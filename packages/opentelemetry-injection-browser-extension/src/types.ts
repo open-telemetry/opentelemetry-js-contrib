@@ -46,6 +46,24 @@ export class Storage {
   }
 }
 
+export interface ExporterOptionProps {
+  for: ExporterType;
+  isEnabled: boolean;
+  onToggle: (exporter: ExporterType) => void;
+  onValueChange?: (
+    name: ExporterType.ZIPKIN | ExporterType.COLLECTOR_TRACE,
+    newValue: string
+  ) => void;
+  exporterPackageUrl: string;
+  placeholderValue?: PlaceholderValues;
+  value?: string;
+}
+
+export interface SaveButtonProps {
+  label: Labels;
+  onClick: () => void;
+}
+
 export interface PopupProps extends WithStyles<typeof styles> {
   settings: Settings;
   app: AppType;
@@ -62,13 +80,13 @@ export enum AppType {
 }
 
 export enum ExporterType {
-  CONSOLE = 'console',
-  ZIPKIN = 'zipkin',
-  COLLECTOR_TRACE = 'collectorTrace',
-  BACKGROUND = 'background',
+  CONSOLE = 'Console',
+  ZIPKIN = 'Zipkin',
+  COLLECTOR_TRACE = 'CollectorTrace',
+  BACKGROUND = 'Background',
 }
 
-export enum PlaceholderValue {
+export enum PlaceholderValues {
   ZIPKIN_URL = 'http://localhost:9411/api/v2/spans',
   COLLECTOR_TRACE_URL = 'http://localhost:55681/v1/trace',
 }

@@ -17,6 +17,7 @@ import * as path from 'path';
 // eslint-disable-next-line node/no-unpublished-import
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 
+// Build the extension for "Manifest Version 3" (Google Chrome only)
 const targetMV3 = {
   entry: {
     ui: './src/ui/index.tsx',
@@ -87,6 +88,7 @@ const targetMV3 = {
   },
 };
 
+// Build the extension for "Manifest Version 3" (Chromium, Firefox & others.)
 const targetMV2 = Object.assign({}, targetMV3, {
   output: {
     filename: '[name].js',
@@ -139,6 +141,8 @@ const targetMV2 = Object.assign({}, targetMV3, {
   },
 });
 
+// Read the environment variables, and check for the existence of the "MV" variable
+// This can be used to only build the one or the other target.
 module.exports = (env: { MV?: string }) => {
   const exports = [];
 

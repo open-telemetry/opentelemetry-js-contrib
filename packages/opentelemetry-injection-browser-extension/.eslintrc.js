@@ -15,5 +15,5 @@ module.exports = {
     "json5",
     "header"
   ],
-  ...require('../eslint.config.js')
+  ...require('../../eslint.config.js')
 };

@@ -40,7 +40,7 @@ export class EventEmitterSpanExporter
   }
 
   shutdown(): Promise<void> {
-    this._stopped = true;
+    this._isShutdown = true;
     return Promise.resolve();
   }
 }

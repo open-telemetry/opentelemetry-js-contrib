@@ -18,15 +18,14 @@ import * as ReactDOM from 'react-dom';
 import {
   AppType,
   ExporterType,
-  Label,
-  PlaceholderValue,
+  Labels,
   PopupProps,
   PopupState,
+  PlaceholderValues,
 } from '../types';
 import { styles } from './styles';
 import {
   AppBar,
-  Button,
   CssBaseline,
   withStyles,
   Paper,
@@ -34,16 +33,12 @@ import {
   Typography,
   Grid,
   TextField,
-  FormControlLabel,
-  Divider,
-  Switch,
-  Link,
-  FormGroup,
-  FormHelperText,
 } from '@material-ui/core';
-import { Launch as LaunchIcon } from '@material-ui/icons';
+import { ExporterOption } from './ExporterOption';
 import { capitalCase } from 'change-case';
 import { loadFromStorage } from '../utils/storage';
+import { SaveButton } from './SaveButton';
+import { OpenOptionsPage } from './OpenOptionsPage';
 
 const packageJson = require('../../package.json');
 
@@ -57,16 +52,8 @@ class App extends React.Component<PopupProps, PopupState> {
 
     this.handleFilterChange = this.handleFilterChange.bind(this);
     this.handleSaveSettings = this.handleSaveSettings.bind(this);
-    this.openOptionsPage = this.openOptionsPage.bind(this);
-  }
-
-  openOptionsPage(event: React.MouseEvent) {
-    event.preventDefault();
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-    } else {
-      window.open(chrome.runtime.getURL('options.html'));
-    }
+    this.handleUrlChange = this.handleUrlChange.bind(this);
+    this.toggleExporter = this.toggleExporter.bind(this);
   }
 
   handleFilterChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -127,7 +114,7 @@ class App extends React.Component<PopupProps, PopupState> {
     const classes = this.props.classes;
 
     const saveLabel =
-      this.props.app === AppType.POPUP ? Label.SAVE_AND_RELOAD : Label.SAVE;
+      this.props.app === AppType.POPUP ? Labels.SAVE_AND_RELOAD : Labels.SAVE;
 
     return (
       <React.Fragment>
@@ -140,18 +127,12 @@ class App extends React.Component<PopupProps, PopupState> {
               </Typography>
             ) : (
               <React.Fragment>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="small"
+                <SaveButton
+                  label={saveLabel}
                   onClick={this.handleSaveSettings}
-                >
-                  {saveLabel}
-                </Button>
+                />
                 <Typography className={classes.title} />
-                <Link href="#" onClick={this.openOptionsPage}>
-                  <LaunchIcon></LaunchIcon>
-                </Link>
+                <OpenOptionsPage />
               </React.Fragment>
             )}
           </Toolbar>
@@ -191,131 +172,39 @@ class App extends React.Component<PopupProps, PopupState> {
               Exporter Settings
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} md={12}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={exporters[ExporterType.CONSOLE].enabled}
-                        onChange={() =>
-                          this.toggleExporter(ExporterType.CONSOLE)
-                        }
-                      ></Switch>
-                    }
-                    label="Console"
-                  />
-                  <FormHelperText>
-                    Toggle to enable{' '}
-                    <Link
-                      href="https://www.npmjs.com/package/@opentelemetry/tracing"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      ConsoleExporter
-                    </Link>
-                  </FormHelperText>
-                </FormGroup>
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={exporters[ExporterType.ZIPKIN].enabled}
-                        onChange={() =>
-                          this.toggleExporter(ExporterType.ZIPKIN)
-                        }
-                      ></Switch>
-                    }
-                    label="Zipkin"
-                  />
-                  <FormHelperText>
-                    Toggle to enable{' '}
-                    <Link
-                      href="https://www.npmjs.com/package/@opentelemetry/exporter-zipkin"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      ZipkinExporter
-                    </Link>
-                  </FormHelperText>
-                </FormGroup>
-              </Grid>
-              <Grid item xs={12} md={9}>
-                <TextField
-                  label="Zipkin URL"
-                  fullWidth
-                  variant="outlined"
-                  margin="dense"
-                  helperText="Endpoint URL for zipkin, default is http://localhost:9411/api/v2/spans"
-                  placeholder={PlaceholderValue.ZIPKIN_URL}
-                  value={exporters[ExporterType.ZIPKIN].url}
-                  onChange={event =>
-                    this.handleUrlChange(
-                      ExporterType.ZIPKIN,
-                      event.target.value
-                    )
-                  }
-                />
-              </Grid>
-              <Divider />
-              <Grid item xs={12} md={3}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={
-                          exporters[ExporterType.COLLECTOR_TRACE].enabled
-                        }
-                        onChange={() =>
-                          this.toggleExporter(ExporterType.COLLECTOR_TRACE)
-                        }
-                      ></Switch>
-                    }
-                    label="OTel Collector"
-                  />
-                  <FormHelperText>
-                    Toggle to enable{' '}
-                    <Link
-                      href="https://www.npmjs.com/package/@opentelemetry/exporter-collector"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      CollectorTraceExporter
-                    </Link>
-                  </FormHelperText>
-                </FormGroup>
-              </Grid>
-              <Grid item xs={12} md={9}>
-                <TextField
-                  label="Collector Trace URL"
-                  fullWidth
-                  variant="outlined"
-                  margin="dense"
-                  helperText="Endpoint URL of the collector, default is http://localhost:55681/v1/trace"
-                  placeholder={PlaceholderValue.COLLECTOR_TRACE_URL}
-                  value={exporters[ExporterType.COLLECTOR_TRACE].url}
-                  onChange={event =>
-                    this.handleUrlChange(
-                      ExporterType.COLLECTOR_TRACE,
-                      event.target.value
-                    )
-                  }
-                />
-              </Grid>
+              <ExporterOption
+                for={ExporterType.CONSOLE}
+                isEnabled={exporters[ExporterType.CONSOLE].enabled}
+                onToggle={this.toggleExporter}
+                exporterPackageUrl="https://www.npmjs.com/package/@opentelemetry/tracing"
+              />
+              <ExporterOption
+                for={ExporterType.ZIPKIN}
+                isEnabled={exporters[ExporterType.ZIPKIN].enabled}
+                onToggle={this.toggleExporter}
+                onValueChange={this.handleUrlChange}
+                placeholderValue={PlaceholderValues.ZIPKIN_URL}
+                exporterPackageUrl="https://www.npmjs.com/package/@opentelemetry/exporter-zipkin"
+                value={exporters[ExporterType.ZIPKIN].url}
+              />
+              <ExporterOption
+                for={ExporterType.COLLECTOR_TRACE}
+                isEnabled={exporters[ExporterType.COLLECTOR_TRACE].enabled}
+                onToggle={this.toggleExporter}
+                onValueChange={this.handleUrlChange}
+                placeholderValue={PlaceholderValues.COLLECTOR_TRACE_URL}
+                exporterPackageUrl="https://www.npmjs.com/package/@opentelemetry/exporter-collector"
+                value={exporters[ExporterType.COLLECTOR_TRACE].url}
+              />
             </Grid>
           </Paper>
           <Paper className={classes.paper}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="small"
+                <SaveButton
+                  label={saveLabel}
                   onClick={this.handleSaveSettings}
-                >
-                  {saveLabel}
-                </Button>
+                />
               </Grid>
             </Grid>
           </Paper>
