@@ -14,26 +14,7 @@
  * limitations under the License.
  */
 
-import { Span } from '@opentelemetry/api';
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { Handler, Context } from 'aws-lambda';
+import GenericPoolInstrumentation from './instrumentation';
 
-export type LambdaModule = Record<string, Handler>;
-
-export type RequestHook = (
-  span: Span,
-  hookInfo: { event: any; context: Context }
-) => void;
-
-export type ResponseHook = (
-  span: Span,
-  hookInfo: {
-    err?: Error | string | null;
-    res?: any;
-  }
-) => void;
-
-export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
-  requestHook?: RequestHook;
-  responseHook?: ResponseHook;
-}
+export { GenericPoolInstrumentation };
+export default GenericPoolInstrumentation;
