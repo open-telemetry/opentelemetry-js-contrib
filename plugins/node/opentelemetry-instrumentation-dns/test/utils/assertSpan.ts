@@ -43,10 +43,6 @@ export const assertSpan = (
     span.attributes[AttributeNames.DNS_ERROR_MESSAGE],
     span.status.message
   );
-  assert.strictEqual(
-    span.attributes[AttributeNames.DNS_HOSTNAME],
-    validations.hostname
-  );
 
   validations.addresses.forEach((_, i) => {
     assert.strictEqual(
