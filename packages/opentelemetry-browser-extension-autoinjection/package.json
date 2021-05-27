@@ -1,5 +1,5 @@
 {
-  "name": "@opentelemetry/injection-browser-extension",
+  "name": "@opentelemetry/browser-extension-autoinjection",
   "version": "0.16.0",
   "description": "A browser extension that injects opentelemetry tracers into any website",
   "scripts": {
