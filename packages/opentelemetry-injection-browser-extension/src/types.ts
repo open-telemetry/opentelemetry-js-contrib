@@ -86,6 +86,23 @@ export enum ExporterType {
   BACKGROUND = 'Background',
 }
 
+export enum MessageType {
+  OTEL_EXTENSION_SPANS = 'OTEL_EXTENSION_SPANS',
+}
+
+export enum EventType {
+  ON_SPANS = 'onSpans',
+}
+
+export enum DomElements {
+  CONFIG_TAG = 'open-telemetry-instrumentation',
+}
+
+export enum DomAttributes {
+  CONFIG = 'config',
+  EXTENSION_ID = 'extensionId',
+}
+
 export enum PlaceholderValues {
   ZIPKIN_URL = 'http://localhost:9411/api/v2/spans',
   COLLECTOR_TRACE_URL = 'http://localhost:55681/v1/trace',

@@ -26,39 +26,45 @@ import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import { Settings } from '../types';
+import {
+  DomAttributes,
+  DomElements,
+  EventType,
+  ExporterType,
+  MessageType,
+  Settings,
+} from '../types';
 import { EventEmitterSpanExporter } from '../utils/EventEmitterSpanExporter';
 
-const configTag = document.getElementById('open-telemetry-instrumentation');
+const configTag = document.getElementById(DomElements['CONFIG_TAG']);
 const { exporters }: Settings = configTag
-  ? JSON.parse(String(configTag.dataset.config))
+  ? JSON.parse(String(configTag.dataset[DomAttributes['CONFIG']]))
   : {};
 
-const extensionId = configTag?.dataset.extensionId;
+const extensionId = configTag?.dataset[DomAttributes['EXTENSION_ID']];
 
-// Minimum required setup - supports only synchronous operations
 const provider = new WebTracerProvider();
 
-if (exporters.console.enabled) {
+if (exporters[ExporterType.CONSOLE].enabled) {
   provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 }
 
-if (exporters.zipkin.enabled) {
+if (exporters[ExporterType.ZIPKIN].enabled) {
   provider.addSpanProcessor(
     new BatchSpanProcessor(
       new ZipkinExporter({
-        url: exporters.zipkin.url,
+        url: exporters[ExporterType.ZIPKIN].url,
         serviceName: window.location.href,
       })
     )
   );
 }
 
-if (exporters.collectorTrace.enabled) {
+if (exporters[ExporterType.COLLECTOR_TRACE].enabled) {
   provider.addSpanProcessor(
     new BatchSpanProcessor(
       new CollectorTraceExporter({
-        url: exporters.collectorTrace.url,
+        url: exporters[ExporterType.COLLECTOR_TRACE].url,
         serviceName: window.location.href,
       })
     )
@@ -67,12 +73,14 @@ if (exporters.collectorTrace.enabled) {
 
 // This is not yet working, the idea is to submit spans to the background service worker
 // and send spans to exporters from there to work around CSP without removing it completely.
-if (exporters.background.enabled && extensionId) {
+if (exporters[ExporterType.BACKGROUND].enabled && extensionId) {
   const eventEmitterExporter = new EventEmitterSpanExporter();
-  eventEmitterExporter.addEventListener('onSpans', ((event: CustomEvent) => {
+  eventEmitterExporter.addEventListener(EventType['ON_SPANS'], ((
+    event: CustomEvent
+  ) => {
     window.postMessage(
       {
-        type: 'OTEL_EXTENSION_SPANS',
+        type: MessageType['OTEL_EXTENSION_SPANS'],
         extensionId,
         spans: JSON.stringify(event.detail),
       },

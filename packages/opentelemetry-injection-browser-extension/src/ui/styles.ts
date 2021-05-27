@@ -24,11 +24,6 @@ export const styles = (theme: Theme) =>
       width: 'auto',
       marginLeft: theme.spacing(2),
       marginRight: theme.spacing(2),
-      [theme.breakpoints.up(400 + theme.spacing(2) * 2)]: {
-        width: 800,
-        marginLeft: 'auto',
-        marginRight: 'auto',
-      },
     },
     paper: {
       marginTop: theme.spacing(3),

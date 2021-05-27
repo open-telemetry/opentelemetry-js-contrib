@@ -19,37 +19,19 @@ import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 
 // Build the extension for "Manifest Version 3" (Google Chrome only)
 const targetMV3 = {
+  devtool: 'inline-source-map',
   entry: {
-    ui: './src/ui/index.tsx',
-    instrumentation: './src/instrumentation/index.ts',
     background: './src/background/index.ts',
     contentScript: './src/contentScript/index.ts',
+    instrumentation: './src/instrumentation/index.ts',
+    ui: './src/ui/index.tsx',
   },
-  output: {
-    filename: '[name].js',
-    path: path.resolve(__dirname, 'build/mv3'),
-  },
-  plugins: [
-    new HtmlWebpackPlugin({
-      chunks: ['ui'],
-      inject: 'head',
-      template: 'src/template.html',
-      filename: 'popup.html',
-    }),
-    new HtmlWebpackPlugin({
-      chunks: ['ui'],
-      inject: 'head',
-      template: 'src/template.html',
-      filename: 'options.html',
-    }),
-  ],
-  devtool: 'inline-source-map',
   module: {
     rules: [
       {
+        exclude: /node_modules/,
         test: /\.tsx?$/,
         use: 'ts-loader',
-        exclude: /node_modules/,
       },
       {
         test: /manifest.json5$/,
@@ -74,15 +56,33 @@ const targetMV3 = {
           {
             loader: 'responsive-loader',
             options: {
-              sizes: [16, 32, 48, 128],
-              outputPath: 'icons/',
               name: '[name]_[width].[ext]',
+              outputPath: 'icons/',
+              sizes: [16, 32, 48, 128],
             },
           },
         ],
       },
     ],
   },
+  output: {
+    filename: '[name].js',
+    path: path.resolve(__dirname, 'build/mv3'),
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      chunks: ['ui'],
+      inject: 'head',
+      filename: 'options.html',
+      template: 'src/template.html',
+    }),
+    new HtmlWebpackPlugin({
+      chunks: ['ui'],
+      filename: 'popup.html',
+      inject: 'head',
+      template: 'src/template.html',
+    }),
+  ],
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
   },
@@ -90,13 +90,10 @@ const targetMV3 = {
 
 // Build the extension for "Manifest Version 3" (Chromium, Firefox & others.)
 const targetMV2 = Object.assign({}, targetMV3, {
-  output: {
-    filename: '[name].js',
-    path: path.resolve(__dirname, 'build/mv2'),
-  },
   module: {
     rules: [
       {
+        exclude: /node_modules/,
         test: /\.tsx?$/,
         use: {
           loader: 'ts-loader',
@@ -105,7 +102,6 @@ const targetMV2 = Object.assign({}, targetMV3, {
             experimentalWatchApi: true,
           },
         },
-        exclude: /node_modules/,
       },
       {
         test: /manifest.json5$/,
@@ -115,6 +111,7 @@ const targetMV2 = Object.assign({}, targetMV3, {
             options: {},
           },
           {
+            // Custom loader that helps to build the manifest files for both versions (2 and 3)
             loader: path.resolve('src/utils/manifest-loader.ts'),
             options: {
               manifestVersion: 2,
@@ -130,14 +127,18 @@ const targetMV2 = Object.assign({}, targetMV3, {
           {
             loader: 'responsive-loader',
             options: {
-              sizes: [16, 32, 48, 128],
-              outputPath: 'icons/',
               name: '[name]_[width].[ext]',
+              outputPath: 'icons/',
+              sizes: [16, 32, 48, 128],
             },
           },
         ],
       },
     ],
+  },
+  output: {
+    filename: '[name].js',
+    path: path.resolve(__dirname, 'build/mv2'),
   },
 });
 

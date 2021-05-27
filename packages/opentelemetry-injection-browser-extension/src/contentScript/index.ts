@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { DomAttributes, MessageType } from '../types';
+
 /* eslint-disable no-console */
 
 chrome.storage.local.get('settings', ({ settings }) => {
@@ -32,13 +34,19 @@ chrome.storage.local.get('settings', ({ settings }) => {
     tag.setAttribute('src', script);
     tag.setAttribute('id', 'open-telemetry-instrumentation');
     // Config is based via this data attribute, since CSP might not allow inline script tags, so this is more robust.
-    tag.setAttribute('data-config', JSON.stringify(settings));
-    tag.setAttribute('data-extension-id', chrome.runtime.id);
+    tag.setAttribute(
+      `data-${DomAttributes['CONFIG']}`,
+      JSON.stringify(settings)
+    );
+    tag.setAttribute(
+      `data-${DomAttributes['EXTENSION_ID']}`,
+      chrome.runtime.id
+    );
     document.head.appendChild(tag);
 
     window.addEventListener('message', event => {
       if (
-        event.data.type === 'OTEL_EXTENSION_SPANS' &&
+        event.data.type === MessageType['OTEL_EXTENSION_SPANS'] &&
         event.data.extensionId === chrome.runtime.id
       ) {
         chrome.runtime.sendMessage(event.data);

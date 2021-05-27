@@ -31,6 +31,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import { WebTracerProvider } from '@opentelemetry/web';
+import { MessageType } from '../types';
 
 // the following two 'require' are here for webpack.
 require('../manifest.json5');
@@ -44,7 +45,6 @@ try {
       }
 
       chrome.tabs.get(tabId, (tab: chrome.tabs.Tab) => {
-        console.log(tab);
         if (tab.url) {
           if (chrome.scripting) {
             chrome.scripting.executeScript({
@@ -55,7 +55,6 @@ try {
               files: ['contentScript.js'],
             });
           } else {
-            console.log('execute');
             chrome.tabs.executeScript(tabId, {
               file: 'contentScript.js',
               allFrames: true,
@@ -68,15 +67,19 @@ try {
 
   chrome.runtime.onMessage.addListener((request, sender) => {
     if (
-      request.type === 'OTEL_EXTENSION_SPANS' &&
+      request.type === MessageType['OTEL_EXTENSION_SPANS'] &&
       request.extensionId === chrome.runtime.id &&
       sender.id === chrome.runtime.id
     ) {
-      const spans = JSON.parse(request.spans);
-      const consoleExporter = new ConsoleSpanExporter();
-      const provider = new WebTracerProvider();
-      provider.addSpanProcessor(new SimpleSpanProcessor(consoleExporter));
-      consoleExporter.export(spans, r => console.log(r));
+      try {
+        const spans = JSON.parse(request.spans);
+        const consoleExporter = new ConsoleSpanExporter();
+        const provider = new WebTracerProvider();
+        provider.addSpanProcessor(new SimpleSpanProcessor(consoleExporter));
+        consoleExporter.export(spans, r => console.log(r));
+      } catch (e) {
+        console.log(e);
+      }
     }
   });
 } catch (e) {
