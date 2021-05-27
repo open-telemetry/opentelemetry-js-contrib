@@ -28,15 +28,32 @@ import {
 
 import * as knex from 'knex';
 
+export interface Exception extends Error {
+    errno?: number;
+    code?: string;
+    stack?: string;
+}
+
 const contextSymbol = Symbol('knexContextSymbol');
-// const getFormatter = (runner: any) => {
-//   if (runner?.client?._formatQuery) {
-//     return runner.client._formatQuery.bind(runner.client);
-//   } else if (runner?.client?.SqlString) {
-//     return runner.client.SqlString.format.bind(runner.client.SqlString);
-//   }
-//   return () => '';
-// };
+const getFormatter = (runner: any) => {
+  if (runner?.client?._formatQuery) {
+    return runner.client._formatQuery.bind(runner.client);
+  } else if (runner?.client?.SqlString) {
+    return runner.client.SqlString.format.bind(runner.client.SqlString);
+  }
+  return () => '';
+};
+const cloneErrorWithNewMessage = (err: Exception, message: string) => {
+  if (err && err instanceof Error) {
+    // @ts-ignore
+    const clonedError: any = new err.constructor(message);
+    clonedError.code = err.code;
+    clonedError.stack = err.stack;
+    clonedError.errno = err.errno;
+    return clonedError;
+  }
+  return err;
+}
 
 export class KnexInstrumentation extends InstrumentationBase<
   typeof knex
@@ -152,9 +169,13 @@ export class KnexInstrumentation extends InstrumentationBase<
           return result;
         })
         .catch((err: any) => {
-          // should remove the full query
-          // const formatter = getFormatter(this);
-          span.recordException(err);
+          // knex puts full query to the message, we want to undo that without
+          // changing the original error
+          const formatter = getFormatter(this);
+          const sensitive = formatter(query.sql, query.bindings || []) + ' - ';
+          const message = err.message.replace(sensitive, '');
+          const clonedError = cloneErrorWithNewMessage(err, message);
+          span.recordException(clonedError);
           span.end();
           throw err;
         });

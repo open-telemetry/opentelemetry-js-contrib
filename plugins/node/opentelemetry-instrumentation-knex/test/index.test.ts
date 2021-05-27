@@ -112,6 +112,39 @@ describe('Knex instrumentation', () => {
         ]);
       });
     });
+
+    it('should catch errors', async () => {
+      const parentSpan = tracer.startSpan('parentSpan');
+      const neverError = new Error('Query was expected to error');
+
+      await context.with(setSpan(context.active(), parentSpan), async () => {
+        const err = await client.insert({ title: 'test1' }).into('testTable1')
+          .then(() => {
+            throw neverError;
+          })
+          .catch((err: any) => {
+            if (err !== neverError) {
+              return err;
+            }
+            throw err;
+          });
+        parentSpan.end();
+
+        assert.strictEqual(err.code, 'SQLITE_ERROR');
+
+        const events = memoryExporter.getFinishedSpans()[0].events!;
+
+        assert.strictEqual(events.length, 1);
+        assert.strictEqual(events[0].name, 'exception');
+        assert.strictEqual(events[0].attributes?.['exception.message'], 'SQLITE_ERROR: no such table: testTable1');
+        assert.strictEqual(events[0].attributes?.['exception.type'], 'SQLITE_ERROR');
+
+        assertSpans(memoryExporter.getFinishedSpans(), [
+          { method: 'insert', statement: 'insert into `testTable1` (`title`) values (?)', parentSpan },
+          null,
+        ]);
+      });
+    });
   });
 
   describe('Disabling instrumentation', () => {
