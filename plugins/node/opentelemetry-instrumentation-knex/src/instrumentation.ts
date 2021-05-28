@@ -30,9 +30,7 @@ import * as knex from 'knex';
 
 const contextSymbol = Symbol('knexContextSymbol');
 
-export class KnexInstrumentation extends InstrumentationBase<
-  typeof knex
-> {
+export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
   constructor() {
     super(`@opentelemetry/instrumentation-${constants.MODULE_NAME}`, VERSION);
   }
@@ -65,9 +63,21 @@ export class KnexInstrumentation extends InstrumentationBase<
           api.diag.debug(
             `Applying client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
           );
-          this.ensureWrapped(Client.prototype, 'queryBuilder', this.storeContext.bind(this));
-          this.ensureWrapped(Client.prototype, 'schemaBuilder', this.storeContext.bind(this));
-          this.ensureWrapped(Client.prototype, 'raw', this.storeContext.bind(this));
+          this.ensureWrapped(
+            Client.prototype,
+            'queryBuilder',
+            this.storeContext.bind(this)
+          );
+          this.ensureWrapped(
+            Client.prototype,
+            'schemaBuilder',
+            this.storeContext.bind(this)
+          );
+          this.ensureWrapped(
+            Client.prototype,
+            'raw',
+            this.storeContext.bind(this)
+          );
           return Client;
         },
         (Client: any, moduleVersion) => {
@@ -90,7 +100,11 @@ export class KnexInstrumentation extends InstrumentationBase<
           api.diag.debug(
             `Applying runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
           );
-          this.ensureWrapped(Runner.prototype, 'query', this.wrapQuery.bind(this));
+          this.ensureWrapped(
+            Runner.prototype,
+            'query',
+            this.wrapQuery.bind(this)
+          );
           return Runner;
         },
         (Runner: any, moduleVersion) => {
@@ -106,7 +120,7 @@ export class KnexInstrumentation extends InstrumentationBase<
     return module;
   }
 
-  private wrapQuery(original: any, methodName: string) {
+  private wrapQuery(original: Function) {
     const instrumentation = this;
     return function wrapped_logging_method(this: any, query: any) {
       const config = this.client.config;
@@ -120,7 +134,8 @@ export class KnexInstrumentation extends InstrumentationBase<
       if (table) {
         attributes[SemanticAttributes.DB_SQL_TABLE] = table;
       }
-      // `method` actually refers to the knex API method - Not exactly "operation" in the spec sense, but matches most of the time.
+      // `method` actually refers to the knex API method - Not exactly "operation"
+      // in the spec sense, but matches most of the time.
       const operation = query?.method;
       if (operation) {
         attributes[SemanticAttributes.DB_OPERATION] = operation;
@@ -143,8 +158,9 @@ export class KnexInstrumentation extends InstrumentationBase<
         parent
       );
 
-      return original.apply(this, arguments)
-        .then((result: any) => {
+      return original
+        .apply(this, arguments)
+        .then((result: unknown) => {
           span.end();
           return result;
         })
@@ -159,29 +175,31 @@ export class KnexInstrumentation extends InstrumentationBase<
           span.end();
           throw err;
         });
-    }
+    };
   }
 
-  private storeContext(original: any, methodName: string) {
+  private storeContext(original: Function) {
     return function wrapped_logging_method(this: any) {
       const builder = original.apply(this, arguments);
-      // Builder is a custom promise type and when awaited it fails to propagate context. We store the parent context at the moment of initiating the builder otherwise we'd have nothing to attach the span as a child for in `query`.
-      Object.defineProperty(builder, contextSymbol, { value: api.context.active() });
+      // Builder is a custom promise type and when awaited it fails to propagate context.
+      // We store the parent context at the moment of initiating the builder
+      // otherwise we'd have nothing to attach the span as a child for in `query`.
+      Object.defineProperty(builder, contextSymbol, {
+        value: api.context.active(),
+      });
       return builder;
-    }
+    };
   }
 
-  ensureWrapped(obj: any, methodName: string, wrapper: any) {
+  ensureWrapped(obj: any, methodName: string, wrapper: (original: any) => any) {
     api.diag.debug(
-      `Applying patch for ${constants.MODULE_NAME}@${this._moduleVersion ?? '?'}`
+      `Applying patch for ${constants.MODULE_NAME}@${
+        this._moduleVersion ?? '?'
+      }`
     );
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
     }
-    this._wrap(
-      obj,
-      methodName,
-      wrapper
-    );
+    this._wrap(obj, methodName, wrapper);
   }
 }

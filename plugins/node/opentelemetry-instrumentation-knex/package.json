@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-knex",
   "version": "0.15.0",
-  "description": "OpenTelemetry knex automatic instrumentation package",
+  "description": "OpenTelemetry Knex automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",

@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-interface Exception extends Error {
-    errno?: number;
-    code?: string;
-    stack?: string;
-}
+type Exception = {
+  new (message: string): Exception;
+  constructor: Exception;
+  errno?: number;
+  code?: string;
+  stack?: string;
+};
 
 export const getFormatter = (runner: any) => {
   if (runner?.client?._formatQuery) {
@@ -31,19 +33,18 @@ export const getFormatter = (runner: any) => {
 
 export const cloneErrorWithNewMessage = (err: Exception, message: string) => {
   if (err && err instanceof Error) {
-    // @ts-ignore
-    const clonedError: any = new err.constructor(message);
+    const clonedError = new (err.constructor as Exception)(message);
     clonedError.code = err.code;
     clonedError.stack = err.stack;
     clonedError.errno = err.errno;
     return clonedError;
   }
   return err;
-}
+};
 
 const systemMap = new Map([
   ['sqlite3', 'sqlite'],
-  ['pg','postgresql'],
+  ['pg', 'postgresql'],
 ]);
 export const mapSystem = (knexSystem: string) => {
   return systemMap.get(knexSystem) || knexSystem;
