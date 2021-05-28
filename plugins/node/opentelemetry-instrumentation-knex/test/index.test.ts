@@ -157,7 +157,7 @@ describe('Knex instrumentation', () => {
             throw neverError;
           })
           .catch((err: any) => {
-            assert.match(err.message, /SQLITE_ERROR/, err);
+            assertMatch(err.message, /SQLITE_ERROR/, err);
           });
         parentSpan.end();
 
@@ -216,8 +216,8 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
     try {
       assert.notStrictEqual(span, undefined);
       assert.notStrictEqual(expected, undefined);
-      assert.match(span.name, new RegExp(expected.op));
-      assert.match(span.name, new RegExp(':memory:'));
+      assertMatch(span.name, new RegExp(expected.op));
+      assertMatch(span.name, new RegExp(':memory:'));
       assert.strictEqual(span.attributes['db.system'], 'sqlite');
       assert.strictEqual(span.attributes['db.name'], ':memory:');
       assert.strictEqual(span.attributes['db.sql.table'], expected.table);
@@ -237,4 +237,8 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       throw e;
     }
   });
+};
+
+const assertMatch = (str: string, regexp: RegExp, err?: any) => {
+  assert.ok(regexp.test(str), err ?? `Expected '${str} to match ${regexp}`);
 };
