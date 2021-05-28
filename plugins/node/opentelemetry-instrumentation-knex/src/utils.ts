@@ -23,12 +23,19 @@ type Exception = {
 };
 
 export const getFormatter = (runner: any) => {
-  if (runner?.client?._formatQuery) {
-    return runner.client._formatQuery.bind(runner.client);
-  } else if (runner?.client?.SqlString) {
-    return runner.client.SqlString.format.bind(runner.client.SqlString);
+  if (runner) {
+    if (runner.client) {
+      if (runner.client._formatQuery) {
+        return runner.client._formatQuery.bind(runner.client);
+      } else if (runner.client.SqlString) {
+        return runner.client.SqlString.format.bind(runner.client.SqlString);
+      }
+    }
+    if (runner.builder) {
+      return runner.builder.toString.bind(runner.builder);
+    }
   }
-  return () => '';
+  return () => '<noop formatter>';
 };
 
 export const cloneErrorWithNewMessage = (err: Exception, message: string) => {

@@ -56,68 +56,80 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<typeof knex>(
-        'knex/lib/client.js',
-        constants.SUPPORTED_VERSIONS,
-        (Client: any, moduleVersion) => {
-          api.diag.debug(
-            `Applying client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
-          this.ensureWrapped(
-            Client.prototype,
-            'queryBuilder',
-            this.storeContext.bind(this)
-          );
-          this.ensureWrapped(
-            Client.prototype,
-            'schemaBuilder',
-            this.storeContext.bind(this)
-          );
-          this.ensureWrapped(
-            Client.prototype,
-            'raw',
-            this.storeContext.bind(this)
-          );
-          return Client;
-        },
-        (Client: any, moduleVersion) => {
-          api.diag.debug(
-            `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
-          this._unwrap(Client.prototype, 'queryBuilder');
-          this._unwrap(Client.prototype, 'schemaBuilder');
-          this._unwrap(Client.prototype, 'raw');
-          return Client;
-        }
-      )
-    );
-
-    module.files.push(
-      new InstrumentationNodeModuleFile<typeof knex>(
-        'knex/lib/runner.js',
-        constants.SUPPORTED_VERSIONS,
-        (Runner: any, moduleVersion) => {
-          api.diag.debug(
-            `Applying runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
-          this.ensureWrapped(
-            Runner.prototype,
-            'query',
-            this.wrapQuery.bind(this)
-          );
-          return Runner;
-        },
-        (Runner: any, moduleVersion) => {
-          api.diag.debug(
-            `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
-          this._unwrap(Runner.prototype, 'query');
-          return Runner;
-        }
-      )
+      this.getClientNodeModuleFileInstrumentation('src'),
+      this.getClientNodeModuleFileInstrumentation('lib'),
+      this.getRunnerNodeModuleFileInstrumentation('src'),
+      this.getRunnerNodeModuleFileInstrumentation('lib'),
+      this.getRunnerNodeModuleFileInstrumentation('lib/execution')
     );
 
     return module;
+  }
+
+  private getRunnerNodeModuleFileInstrumentation(basePath: string) {
+    return new InstrumentationNodeModuleFile<typeof knex>(
+      `knex/${basePath}/runner.js`,
+      constants.SUPPORTED_VERSIONS,
+      (Runner: any, moduleVersion) => {
+        api.diag.debug(
+          `Applying runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
+        );
+        this.ensureWrapped(
+          moduleVersion,
+          Runner.prototype,
+          'query',
+          this.wrapQuery.bind(this)
+        );
+        return Runner;
+      },
+      (Runner: any, moduleVersion) => {
+        api.diag.debug(
+          `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
+        );
+        this._unwrap(Runner.prototype, 'query');
+        return Runner;
+      }
+    );
+  }
+
+  private getClientNodeModuleFileInstrumentation(basePath: string) {
+    return new InstrumentationNodeModuleFile<typeof knex>(
+      `knex/${basePath}/client.js`,
+      constants.SUPPORTED_VERSIONS,
+      (Client: any, moduleVersion) => {
+        api.diag.debug(
+          `Applying client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
+        );
+        this.ensureWrapped(
+          moduleVersion,
+          Client.prototype,
+          'queryBuilder',
+          this.storeContext.bind(this)
+        );
+        this.ensureWrapped(
+          moduleVersion,
+          Client.prototype,
+          'schemaBuilder',
+          this.storeContext.bind(this)
+        );
+        this.ensureWrapped(
+          moduleVersion,
+          Client.prototype,
+          'raw',
+          this.storeContext.bind(this)
+        );
+        return Client;
+      },
+      (Client: any, moduleVersion) => {
+        api.diag.debug(
+          `Removing client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
+        );
+        this._unwrap(Client.prototype, 'queryBuilder');
+        this._unwrap(Client.prototype, 'schemaBuilder');
+        this._unwrap(Client.prototype, 'raw');
+        return Client;
+      }
+    );
   }
 
   private wrapQuery(original: Function) {
@@ -191,11 +203,14 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
     };
   }
 
-  ensureWrapped(obj: any, methodName: string, wrapper: (original: any) => any) {
+  ensureWrapped(
+    moduleVersion: string | undefined,
+    obj: any,
+    methodName: string,
+    wrapper: (original: any) => any
+  ) {
     api.diag.debug(
-      `Applying patch for ${constants.MODULE_NAME}@${
-        this._moduleVersion ?? '?'
-      }`
+      `Applying ${methodName} patch for ${constants.MODULE_NAME}@${moduleVersion}`
     );
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);

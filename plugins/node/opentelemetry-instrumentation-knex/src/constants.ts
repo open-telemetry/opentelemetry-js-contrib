@@ -15,4 +15,13 @@
  */
 
 export const MODULE_NAME = 'knex';
-export const SUPPORTED_VERSIONS = ['>=0.20.11 <0.21.0', '0.20.15', '*'];
+export const SUPPORTED_VERSIONS = [
+  // use "lib/execution" as basepath, latest tested 0.95.6
+  '>=0.22.0',
+  // use "lib" as basepath
+  '>=0.10.0 <0.18.0',
+  '>=0.19.0 <=0.20.10',
+  '>=0.20.11 <0.22.0',
+  // use "src" as basepath
+  '>=0.18.0 <0.19.0',
+];
