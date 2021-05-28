@@ -65,9 +65,9 @@ export class KnexInstrumentation extends InstrumentationBase<
           api.diag.debug(
             `Applying client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
           );
-          this.ensureWrapped(moduleVersion, Client.prototype, 'queryBuilder', this.storeContext.bind(this));
-          this.ensureWrapped(moduleVersion, Client.prototype, 'schemaBuilder', this.storeContext.bind(this));
-          this.ensureWrapped(moduleVersion, Client.prototype, 'raw', this.storeContext.bind(this));
+          this.ensureWrapped(Client.prototype, 'queryBuilder', this.storeContext.bind(this));
+          this.ensureWrapped(Client.prototype, 'schemaBuilder', this.storeContext.bind(this));
+          this.ensureWrapped(Client.prototype, 'raw', this.storeContext.bind(this));
           return Client;
         },
         (Client: any, moduleVersion) => {
@@ -90,7 +90,7 @@ export class KnexInstrumentation extends InstrumentationBase<
           api.diag.debug(
             `Applying runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
           );
-          this.ensureWrapped(moduleVersion, Runner.prototype, 'query', this.wrapQuery.bind(this));
+          this.ensureWrapped(Runner.prototype, 'query', this.wrapQuery.bind(this));
           return Runner;
         },
         (Runner: any, moduleVersion) => {
@@ -171,9 +171,9 @@ export class KnexInstrumentation extends InstrumentationBase<
     }
   }
 
-  ensureWrapped(moduleVersion: string | undefined, obj: any, methodName: string, wrapper: any) {
+  ensureWrapped(obj: any, methodName: string, wrapper: any) {
     api.diag.debug(
-      `Applying patch for ${constants.MODULE_NAME}@${moduleVersion || this._moduleVersion}`
+      `Applying patch for ${constants.MODULE_NAME}@${this._moduleVersion ?? '?'}`
     );
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
