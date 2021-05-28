@@ -25,14 +25,22 @@ import {
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
+import * as types from './types';
 
 import * as knex from 'knex';
 
 const contextSymbol = Symbol('knexContextSymbol');
+const DEFAULT_CONFIG: types.Config = {
+  maxQueryLength: 1022,
+};
 
 export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
-  constructor() {
-    super(`@opentelemetry/instrumentation-${constants.MODULE_NAME}`, VERSION);
+  constructor(config: types.Config = {}) {
+    super(
+      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
+      VERSION,
+      Object.assign({}, DEFAULT_CONFIG, config)
+    );
   }
 
   private _moduleVersion?: string;
@@ -137,10 +145,14 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
     return function wrapped_logging_method(this: any, query: any) {
       const config = this.client.config;
 
+      const maxLen = (instrumentation._config as types.Config).maxQueryLength!;
       const attributes: any = {
         'knex.version': instrumentation._moduleVersion,
         [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
-        [SemanticAttributes.DB_STATEMENT]: query?.sql,
+        [SemanticAttributes.DB_STATEMENT]: utils.limitLength(
+          query?.sql,
+          maxLen
+        ),
       };
       const table = this.builder?._single?.table;
       if (table) {

@@ -24,7 +24,9 @@ import {
 import * as assert from 'assert';
 
 import Instrumentation from '../src';
-const plugin = new Instrumentation();
+const plugin = new Instrumentation({
+  maxQueryLength: 50,
+});
 
 import * as knex from 'knex';
 
@@ -129,6 +131,16 @@ describe('Knex instrumentation', () => {
           null,
         ]);
       });
+    });
+
+    it('should truncate the query', async () => {
+      const statement = `select date('now'), "${'long-'.repeat(15)}"`;
+      await client.raw(statement);
+
+      const [span] = memoryExporter.getFinishedSpans();
+      const limitedStatement = span?.attributes?.['db.statement'] as string;
+      assert.strictEqual(limitedStatement.length, 52);
+      assert.ok(statement.startsWith(limitedStatement.substr(0, 50)));
     });
 
     it('should catch errors', async () => {

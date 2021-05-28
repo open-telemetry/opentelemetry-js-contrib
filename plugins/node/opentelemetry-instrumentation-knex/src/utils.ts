@@ -66,3 +66,10 @@ export const getName = (db: string, operation?: string, table?: string) => {
   }
   return db;
 };
+
+export const limitLength = (str: string, maxLength: number) => {
+  if (str.length <= maxLength) {
+    return str;
+  }
+  return str.substr(0, maxLength) + '..';
+};
