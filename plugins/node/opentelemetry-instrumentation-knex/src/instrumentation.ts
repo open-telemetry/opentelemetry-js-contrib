@@ -23,37 +23,12 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-// import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-// import { isPromise, isAsyncFunction } from './utils';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import * as utils from './utils';
 
 import * as knex from 'knex';
 
-export interface Exception extends Error {
-    errno?: number;
-    code?: string;
-    stack?: string;
-}
-
 const contextSymbol = Symbol('knexContextSymbol');
-const getFormatter = (runner: any) => {
-  if (runner?.client?._formatQuery) {
-    return runner.client._formatQuery.bind(runner.client);
-  } else if (runner?.client?.SqlString) {
-    return runner.client.SqlString.format.bind(runner.client.SqlString);
-  }
-  return () => '';
-};
-const cloneErrorWithNewMessage = (err: Exception, message: string) => {
-  if (err && err instanceof Error) {
-    // @ts-ignore
-    const clonedError: any = new err.constructor(message);
-    clonedError.code = err.code;
-    clonedError.stack = err.stack;
-    clonedError.errno = err.errno;
-    return clonedError;
-  }
-  return err;
-}
 
 export class KnexInstrumentation extends InstrumentationBase<
   typeof knex
@@ -138,25 +113,30 @@ export class KnexInstrumentation extends InstrumentationBase<
 
       const attributes: any = {
         'knex.version': instrumentation._moduleVersion,
-        'db.type': config.client,
-        'db.statement': query?.sql,
+        [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
+        [SemanticAttributes.DB_STATEMENT]: query?.sql,
       };
-      if (query?.method) {
-        attributes['knex.method'] = query.method;
+      const table = this.builder?._single?.table;
+      if (table) {
+        attributes[SemanticAttributes.DB_SQL_TABLE] = table;
       }
-      if (config.connection) {
-        if (config.connection.user) {
-          attributes['db.user'] = config.connection.user;
-        }
-        const instance = config.connection.filename || config.connection.database;
-        if (instance) {
-          attributes['db.instance'] = instance;
-        }
+      // `method` actually refers to the knex API method - Not exactly "operation" in the spec sense, but matches most of the time.
+      const operation = query?.method;
+      if (operation) {
+        attributes[SemanticAttributes.DB_OPERATION] = operation;
+      }
+      const user = config?.connection?.user;
+      if (user) {
+        attributes[SemanticAttributes.DB_USER] = config.connection.user;
+      }
+      const name = config?.connection?.filename || config?.connection?.database;
+      if (name) {
+        attributes[SemanticAttributes.DB_NAME] = name;
       }
 
       const parent = this.builder[contextSymbol];
       const span = instrumentation.tracer.startSpan(
-        'knex.client.runner',
+        utils.getName(name, operation, table),
         {
           attributes,
         },
@@ -169,12 +149,12 @@ export class KnexInstrumentation extends InstrumentationBase<
           return result;
         })
         .catch((err: any) => {
-          // knex puts full query to the message, we want to undo that without
-          // changing the original error
-          const formatter = getFormatter(this);
-          const sensitive = formatter(query.sql, query.bindings || []) + ' - ';
-          const message = err.message.replace(sensitive, '');
-          const clonedError = cloneErrorWithNewMessage(err, message);
+          // knex adds full query with all the binding values to the message,
+          // we want to undo that without changing the original error
+          const formatter = utils.getFormatter(this);
+          const fullQuery = formatter(query.sql, query.bindings || []);
+          const message = err.message.replace(fullQuery + ' - ', '');
+          const clonedError = utils.cloneErrorWithNewMessage(err, message);
           span.recordException(clonedError);
           span.end();
           throw err;
@@ -185,6 +165,7 @@ export class KnexInstrumentation extends InstrumentationBase<
   private storeContext(original: any, methodName: string) {
     return function wrapped_logging_method(this: any) {
       const builder = original.apply(this, arguments);
+      // Builder is a custom promise type and when awaited it fails to propagate context. We store the parent context at the moment of initiating the builder otherwise we'd have nothing to attach the span as a child for in `query`.
       Object.defineProperty(builder, contextSymbol, { value: api.context.active() });
       return builder;
     }

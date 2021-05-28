@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, getSpan, setSpan } from '@opentelemetry/api';
+import { context, setSpan } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -90,9 +90,11 @@ describe('Knex instrumentation', () => {
         const last = instrumentationSpans.pop() as any;
         assertSpans(instrumentationSpans, [
           { statement: 'create table `testTable1` (`title` varchar(255))', parentSpan },
-          { method: 'insert', statement: 'insert into `testTable1` (`title`) values (?)', parentSpan },
-          { method: 'select', statement: 'select * from `testTable1`', parentSpan },
+          { op: 'insert', table: 'testTable1', statement: 'insert into `testTable1` (`title`) values (?)', parentSpan },
+          { op: 'select', table: 'testTable1', statement: 'select * from `testTable1`', parentSpan },
         ]);
+        assert.strictEqual(instrumentationSpans[0].name, ':memory:');
+        assert.strictEqual(instrumentationSpans[1].name, 'insert :memory:.testTable1');
 
         assert(last.name, 'parentSpan');
       });
@@ -107,7 +109,7 @@ describe('Knex instrumentation', () => {
         parentSpan.end();
 
         assertSpans(memoryExporter.getFinishedSpans(), [
-          { statement, method: 'raw', parentSpan },
+          { statement, op: 'raw', parentSpan },
           null,
         ]);
       });
@@ -116,31 +118,28 @@ describe('Knex instrumentation', () => {
     it('should catch errors', async () => {
       const parentSpan = tracer.startSpan('parentSpan');
       const neverError = new Error('Query was expected to error');
+      const MESSAGE = 'SQLITE_ERROR: no such table: testTable1';
+      const CODE = 'SQLITE_ERROR';
 
       await context.with(setSpan(context.active(), parentSpan), async () => {
-        const err = await client.insert({ title: 'test1' }).into('testTable1')
+        await client.insert({ title: 'test1' }).into('testTable1')
           .then(() => {
             throw neverError;
           })
           .catch((err: any) => {
-            if (err !== neverError) {
-              return err;
-            }
-            throw err;
+            assert.match(err.message, /SQLITE_ERROR/, err);
           });
         parentSpan.end();
-
-        assert.strictEqual(err.code, 'SQLITE_ERROR');
 
         const events = memoryExporter.getFinishedSpans()[0].events!;
 
         assert.strictEqual(events.length, 1);
         assert.strictEqual(events[0].name, 'exception');
-        assert.strictEqual(events[0].attributes?.['exception.message'], 'SQLITE_ERROR: no such table: testTable1');
-        assert.strictEqual(events[0].attributes?.['exception.type'], 'SQLITE_ERROR');
+        assert.strictEqual(events[0].attributes?.['exception.message'], MESSAGE);
+        assert.strictEqual(events[0].attributes?.['exception.type'], CODE);
 
         assertSpans(memoryExporter.getFinishedSpans(), [
-          { method: 'insert', statement: 'insert into `testTable1` (`title`) values (?)', parentSpan },
+          { op: 'insert', table: 'testTable1', statement: 'insert into `testTable1` (`title`) values (?)', parentSpan },
           null,
         ]);
       });
@@ -176,15 +175,17 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
   actualSpans.forEach((span, idx) => {
     const expected = expectedSpans[idx];
     if (expected === null) return;
-    // console.error('actual:', span);
     try {
       assert.notStrictEqual(span, undefined);
       assert.notStrictEqual(expected, undefined);
-      assert.strictEqual(span.attributes['db.type'], 'sqlite3');
-      assert.strictEqual(span.attributes['db.instance'], ':memory:');
+      assert.match(span.name, new RegExp(expected.op));
+      assert.match(span.name, new RegExp(':memory:'));
+      assert.strictEqual(span.attributes['db.system'], 'sqlite');
+      assert.strictEqual(span.attributes['db.name'], ':memory:');
+      assert.strictEqual(span.attributes['db.sql.table'], expected.table);
       assert.strictEqual(span.attributes['db.statement'], expected.statement);
       assert.strictEqual(typeof span.attributes['knex.version'], 'string', 'knex.version not specified');
-      assert.strictEqual(span.attributes['knex.method'], expected.method);
+      assert.strictEqual(span.attributes['db.operation'], expected.op);
       assert.strictEqual(span.parentSpanId, expected.parentSpan?.spanContext.spanId );
     } catch (e) {
       e.message = `At span[${idx}]: ${e.message}`;
