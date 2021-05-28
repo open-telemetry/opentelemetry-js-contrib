@@ -28,7 +28,7 @@ const plugin = new Instrumentation({
   maxQueryLength: 50,
 });
 
-import * as knex from 'knex';
+import knex from 'knex';
 
 describe('Knex instrumentation', () => {
   const provider = new NodeTracerProvider();
@@ -52,7 +52,6 @@ describe('Knex instrumentation', () => {
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
 
-    //@ts-ignore
     client = knex({
       client: 'sqlite3',
       connection: {
