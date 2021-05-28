@@ -50,6 +50,7 @@ describe('Knex instrumentation', () => {
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
 
+    //@ts-ignore
     client = knex({
       client: 'sqlite3',
       connection: {
