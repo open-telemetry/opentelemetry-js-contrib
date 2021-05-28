@@ -1,9 +1,3 @@
-<!-- 
-    replace
-    - "knex" with package name in npm: express, hapi
-    - "__PackageName__" with TitleCased package name: Express, Hapi
--->
-
 # OpenTelemetry knex Instrumentation for Node.js
 
 [![Gitter chat][gitter-image]][gitter-url]
@@ -27,7 +21,7 @@ npm install --save @opentelemetry/instrumentation-knex
 ## Usage
 
 ```js
-const { __PackageName__ } = require('@opentelemetry/instrumentation-knex');
+const { KnexInstrumentation } = require('@opentelemetry/instrumentation-knex');
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
@@ -38,7 +32,7 @@ provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 
 registerInstrumentations({
-  instrumentations: [new __PackageName__()],
+  instrumentations: [new KnexInstrumentation()],
   tracerProvider: provider,
 });
 ```
