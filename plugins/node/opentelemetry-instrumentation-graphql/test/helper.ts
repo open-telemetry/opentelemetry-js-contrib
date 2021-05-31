@@ -16,7 +16,8 @@
 
 import { ReadableSpan } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { SpanAttributes, SpanNames } from '../src/enum';
+import { SpanNames } from '../src/enum';
+import { AttributeNames } from '../src/enums/AttributeNames';
 
 export function assertResolveSpan(
   span: ReadableSpan,
@@ -28,10 +29,10 @@ export function assertResolveSpan(
 ) {
   const attrs = span.attributes;
   assert.deepStrictEqual(span.name, SpanNames.RESOLVE);
-  assert.deepStrictEqual(attrs[SpanAttributes.FIELD_NAME], fieldName);
-  assert.deepStrictEqual(attrs[SpanAttributes.FIELD_PATH], fieldPath);
-  assert.deepStrictEqual(attrs[SpanAttributes.FIELD_TYPE], fieldType);
-  assert.deepStrictEqual(attrs[SpanAttributes.SOURCE], source);
+  assert.deepStrictEqual(attrs[AttributeNames.FIELD_NAME], fieldName);
+  assert.deepStrictEqual(attrs[AttributeNames.FIELD_PATH], fieldPath);
+  assert.deepStrictEqual(attrs[AttributeNames.FIELD_TYPE], fieldType);
+  assert.deepStrictEqual(attrs[AttributeNames.SOURCE], source);
   if (parentSpanId) {
     assert.deepStrictEqual(span.parentSpanId, parentSpanId);
   }

@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-export * from './mysql';
+export * from './instrumentation';
 export { MySQLInstrumentationConfig } from './types';

@@ -23,7 +23,7 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import * as net from 'net';
 import * as assert from 'assert';
-import { NetInstrumentation } from '../src/net';
+import { NetInstrumentation } from '../src';
 import { SocketEvent } from '../src/types';
 import { assertIpcSpan, assertTcpSpan, IPC_PATH, HOST, PORT } from './utils';
 
@@ -184,7 +184,7 @@ describe('NetInstrumentation', () => {
         assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
         done();
       });
-      socket.connect((undefined as unknown) as string);
+      socket.connect(undefined as unknown as string);
     });
   });
 

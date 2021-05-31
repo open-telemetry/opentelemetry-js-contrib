@@ -24,28 +24,60 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  context as otelcontext,
+  Context as OtelContext,
+  context as otelContext,
   diag,
+  getSpanContext,
   setSpan,
+  propagation,
   Span,
   SpanKind,
   SpanStatusCode,
+  TextMapGetter,
+  TraceFlags,
   TracerProvider,
 } from '@opentelemetry/api';
-import { CLOUD_RESOURCE } from '@opentelemetry/resources';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-
-import { Callback, Context, Handler } from 'aws-lambda';
-
-import { LambdaModule } from './types';
-import { VERSION } from './version';
+import {
+  AWSXRAY_TRACE_ID_HEADER,
+  AWSXRayPropagator,
+} from '@opentelemetry/propagator-aws-xray';
+import {
+  SemanticAttributes,
+  ResourceAttributes,
+} from '@opentelemetry/semantic-conventions';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
+
+import {
+  APIGatewayProxyEventHeaders,
+  Callback,
+  Context,
+  Handler,
+} from 'aws-lambda';
+
+import { LambdaModule, AwsLambdaInstrumentationConfig } from './types';
+import { VERSION } from './version';
+
+const awsPropagator = new AWSXRayPropagator();
+const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
+  keys(carrier): string[] {
+    return Object.keys(carrier);
+  },
+  get(carrier, key: string) {
+    return carrier[key];
+  },
+};
+
+export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _tracerProvider: TracerProvider | undefined;
 
-  constructor() {
-    super('@opentelemetry/instrumentation-aws-lambda', VERSION);
+  constructor(protected _config: AwsLambdaInstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+  }
+
+  setConfig(config: AwsLambdaInstrumentationConfig = {}) {
+    this._config = config;
   }
 
   init() {
@@ -112,23 +144,45 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     return function patchedHandler(
       this: never,
-      event: {},
+      // The event can be a user type, it truly is any.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      event: any,
       context: Context,
       callback: Callback
     ) {
-      const name = context.functionName;
-      const span = plugin.tracer.startSpan(name, {
-        kind: SpanKind.SERVER,
-        attributes: {
-          [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
-          'faas.id': context.invokedFunctionArn,
-          [CLOUD_RESOURCE.ACCOUNT_ID]: AwsLambdaInstrumentation._extractAccountId(
-            context.invokedFunctionArn
-          ),
-        },
-      });
+      const httpHeaders =
+        typeof event.headers === 'object' ? event.headers : {};
+      const parent = AwsLambdaInstrumentation._determineParent(httpHeaders);
 
-      return otelcontext.with(setSpan(otelcontext.active(), span), () => {
+      const name = context.functionName;
+      const span = plugin.tracer.startSpan(
+        name,
+        {
+          kind: SpanKind.SERVER,
+          attributes: {
+            [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
+            [ResourceAttributes.FAAS_ID]: context.invokedFunctionArn,
+            [ResourceAttributes.CLOUD_ACCOUNT_ID]:
+              AwsLambdaInstrumentation._extractAccountId(
+                context.invokedFunctionArn
+              ),
+          },
+        },
+        parent
+      );
+
+      if (plugin._config.requestHook) {
+        safeExecuteInTheMiddle(
+          () => plugin._config.requestHook!(span, { event, context }),
+          e => {
+            if (e)
+              diag.error('aws-lambda instrumentation: requestHook error', e);
+          },
+          true
+        );
+      }
+
+      return otelContext.with(setSpan(otelContext.active(), span), () => {
         // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
         // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
         // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
@@ -139,20 +193,25 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           error => {
             if (error != null) {
               // Exception thrown synchronously before resolving callback / promise.
+              plugin._applyResponseHook(span, error);
               plugin._endSpan(span, error, () => {});
             }
           }
         ) as Promise<{}> | undefined;
         if (typeof maybePromise?.then === 'function') {
           return maybePromise.then(
-            value =>
-              new Promise(resolve =>
+            value => {
+              plugin._applyResponseHook(span, null, value);
+              return new Promise(resolve =>
                 plugin._endSpan(span, undefined, () => resolve(value))
-              ),
-            (err: Error | string) =>
-              new Promise((resolve, reject) =>
+              );
+            },
+            (err: Error | string) => {
+              plugin._applyResponseHook(span, err);
+              return new Promise((resolve, reject) =>
                 plugin._endSpan(span, err, () => reject(err))
-              )
+              );
+            }
           );
         }
         return maybePromise;
@@ -169,6 +228,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     const plugin = this;
     return function wrappedCallback(this: never, err, res) {
       diag.debug('executing wrapped lookup callback function');
+      plugin._applyResponseHook(span, err, res);
 
       plugin._endSpan(span, err, () => {
         diag.debug('executing original lookup callback function');
@@ -213,11 +273,68 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
   }
 
+  private _applyResponseHook(
+    span: Span,
+    err?: Error | string | null,
+    res?: any
+  ) {
+    if (this._config?.responseHook) {
+      safeExecuteInTheMiddle(
+        () => this._config.responseHook!(span, { err, res }),
+        e => {
+          if (e)
+            diag.error('aws-lambda instrumentation: responseHook error', e);
+        },
+        true
+      );
+    }
+  }
+
   private static _extractAccountId(arn: string): string | undefined {
     const parts = arn.split(':');
     if (parts.length >= 5) {
       return parts[4];
     }
     return undefined;
+  }
+
+  private static _determineParent(
+    httpHeaders: APIGatewayProxyEventHeaders
+  ): OtelContext {
+    let parent: OtelContext | undefined = undefined;
+    const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
+    if (lambdaTraceHeader) {
+      parent = awsPropagator.extract(
+        otelContext.active(),
+        { [AWSXRAY_TRACE_ID_HEADER]: lambdaTraceHeader },
+        headerGetter
+      );
+    }
+    if (parent) {
+      const spanContext = getSpanContext(parent);
+      if (
+        spanContext &&
+        (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
+      ) {
+        // Trace header provided by Lambda only sampled if a sampled context was propagated from
+        // an upstream cloud service such as S3, or the user is using X-Ray. In these cases, we
+        // need to use it as the parent.
+        return parent;
+      }
+    }
+    // There was not a sampled trace header from Lambda so try from HTTP headers.
+    const httpContext = propagation.extract(
+      otelContext.active(),
+      httpHeaders,
+      headerGetter
+    );
+    if (getSpanContext(httpContext)) {
+      return httpContext;
+    }
+    if (!parent) {
+      // No context in Lambda environment or HTTP headers.
+      return otelContext.active();
+    }
+    return parent;
   }
 }

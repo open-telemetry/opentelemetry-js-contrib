@@ -22,7 +22,8 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { CustomAttributeNames, ExpressInstrumentationSpan } from '../src/types';
+import { ExpressInstrumentationSpan } from '../src/types';
+import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 import { httpRequest, createServer } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -144,7 +145,7 @@ describe('ExpressInstrumentation', () => {
           '/toto/:id'
         );
         assert.strictEqual(
-          requestHandlerSpan?.attributes[CustomAttributeNames.EXPRESS_TYPE],
+          requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
           'request_handler'
         );
         const exportedRootSpan = memoryExporter

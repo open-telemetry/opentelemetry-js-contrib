@@ -14,4 +14,9 @@
  * limitations under the License.
  */
 
-export * from './aws-lambda';
+export * from './instrumentation';
+export {
+  AwsLambdaInstrumentationConfig,
+  RequestHook,
+  ResponseHook,
+} from './types';

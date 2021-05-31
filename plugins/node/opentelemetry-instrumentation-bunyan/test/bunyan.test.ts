@@ -31,7 +31,7 @@ import * as assert from 'assert';
 import * as Logger from 'bunyan';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
-import { BunyanInstrumentation } from '../src/bunyan';
+import { BunyanInstrumentation } from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();

@@ -22,7 +22,8 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { CustomAttributeNames, ExpressInstrumentationSpan } from '../src/types';
+import { ExpressInstrumentationSpan } from '../src/types';
+import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation, ExpressLayerType } from '../src';
 import { createServer, httpRequest } from './utils';
 
@@ -102,11 +103,11 @@ describe('ExpressInstrumentation', () => {
             .getFinishedSpans()
             .filter(
               span =>
-                span.attributes[CustomAttributeNames.EXPRESS_TYPE] ===
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
                   ExpressLayerType.MIDDLEWARE ||
-                span.attributes[CustomAttributeNames.EXPRESS_TYPE] ===
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
                   ExpressLayerType.ROUTER ||
-                span.attributes[CustomAttributeNames.EXPRESS_TYPE] ===
+                span.attributes[AttributeNames.EXPRESS_TYPE] ===
                   ExpressLayerType.REQUEST_HANDLER
             ).length,
           0

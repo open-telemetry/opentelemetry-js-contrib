@@ -29,6 +29,10 @@ import {
 import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
 
+const DEFAULT_CONFIG: RedisInstrumentationConfig = {
+  requireParentSpan: false,
+};
+
 export class RedisInstrumentation extends InstrumentationBase<
   typeof redisTypes
 > {
@@ -36,6 +40,10 @@ export class RedisInstrumentation extends InstrumentationBase<
 
   constructor(protected _config: RedisInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-redis', VERSION, _config);
+  }
+
+  setConfig(config: RedisInstrumentationConfig = {}) {
+    this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
   protected init() {
@@ -100,8 +108,9 @@ export class RedisInstrumentation extends InstrumentationBase<
    */
   private _getPatchInternalSendCommand() {
     const tracer = this.tracer;
+    const config = this._config;
     return function internal_send_command(original: Function) {
-      return getTracedInternalSendCommand(tracer, original);
+      return getTracedInternalSendCommand(tracer, original, config);
     };
   }
 

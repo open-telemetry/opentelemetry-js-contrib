@@ -212,7 +212,7 @@ describe('UserInteractionInstrumentation', () => {
         _createZone: Function;
       }
 
-      const ctxMngrWithPrv = (contextManager as unknown) as CtxMngrWithPrv;
+      const ctxMngrWithPrv = contextManager as unknown as CtxMngrWithPrv;
       const newZone = ctxMngrWithPrv._createZone('test', context);
 
       const element = createButton();
@@ -314,7 +314,7 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle unpatch', () => {
-      const _window: WindowWithZone = (window as unknown) as WindowWithZone;
+      const _window: WindowWithZone = window as unknown as WindowWithZone;
       const ZoneWithPrototype = _window.Zone;
       assert.strictEqual(
         isWrapped(ZoneWithPrototype.prototype.runTask),

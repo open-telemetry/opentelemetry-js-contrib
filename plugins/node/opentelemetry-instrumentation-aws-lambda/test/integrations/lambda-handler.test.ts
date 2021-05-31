@@ -19,7 +19,11 @@
 
 import * as path from 'path';
 
-import { AwsLambdaInstrumentation } from '../../src/index';
+import {
+  AwsLambdaInstrumentation,
+  AwsLambdaInstrumentationConfig,
+  traceContextEnvironmentKey,
+} from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
@@ -28,8 +32,20 @@ import {
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
-import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SemanticAttributes,
+  ResourceAttributes,
+} from '@opentelemetry/semantic-conventions';
+import {
+  context,
+  setSpanContext,
+  SpanContext,
+  SpanKind,
+  SpanStatusCode,
+  TextMapPropagator,
+} from '@opentelemetry/api';
+import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
+import { HttpTraceContext } from '@opentelemetry/core';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -65,6 +81,23 @@ const assertSpanFailure = (span: ReadableSpan) => {
   );
 };
 
+const serializeSpanContext = (
+  spanContext: SpanContext,
+  propagator: TextMapPropagator
+): string => {
+  let serialized = '';
+  propagator.inject(
+    setSpanContext(context.active(), spanContext),
+    {},
+    {
+      set(carrier: any, key: string, value: string) {
+        serialized = value;
+      },
+    }
+  );
+  return serialized;
+};
+
 describe('lambda handler', () => {
   let instrumentation: AwsLambdaInstrumentation;
 
@@ -76,15 +109,62 @@ describe('lambda handler', () => {
     awsRequestId: 'aws_request_id',
   } as Context;
 
-  const initializeHandler = (handler: string) => {
+  const initializeHandler = (
+    handler: string,
+    config: AwsLambdaInstrumentationConfig = {}
+  ) => {
     process.env._HANDLER = handler;
 
-    instrumentation = new AwsLambdaInstrumentation();
+    instrumentation = new AwsLambdaInstrumentation(config);
     instrumentation.setTracerProvider(provider);
   };
 
   const lambdaRequire = (module: string) =>
     require(path.resolve(__dirname, '..', module));
+
+  const sampledAwsSpanContext: SpanContext = {
+    traceId: '8a3c60f7d188f8fa79d48a391a778fa6',
+    spanId: '0000000000000456',
+    traceFlags: 1,
+    isRemote: true,
+  };
+  const sampledAwsHeader = serializeSpanContext(
+    sampledAwsSpanContext,
+    new AWSXRayPropagator()
+  );
+
+  const sampledHttpSpanContext: SpanContext = {
+    traceId: '8a3c60f7d188f8fa79d48a391a778fa7',
+    spanId: '0000000000000457',
+    traceFlags: 1,
+    isRemote: true,
+  };
+  const sampledHttpHeader = serializeSpanContext(
+    sampledHttpSpanContext,
+    new HttpTraceContext()
+  );
+
+  const unsampledAwsSpanContext: SpanContext = {
+    traceId: '8a3c60f7d188f8fa79d48a391a778fa8',
+    spanId: '0000000000000458',
+    traceFlags: 0,
+    isRemote: true,
+  };
+  const unsampledAwsHeader = serializeSpanContext(
+    unsampledAwsSpanContext,
+    new AWSXRayPropagator()
+  );
+
+  const unsampledHttpSpanContext: SpanContext = {
+    traceId: '8a3c60f7d188f8fa79d48a391a778fa9',
+    spanId: '0000000000000459',
+    traceFlags: 0,
+    isRemote: true,
+  };
+  const unsampledHttpHeader = serializeSpanContext(
+    unsampledHttpSpanContext,
+    new HttpTraceContext()
+  );
 
   beforeEach(() => {
     oldEnv = { ...process.env };
@@ -111,6 +191,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record error', async () => {
@@ -127,6 +208,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
+      assert.strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record string error', async () => {
@@ -142,6 +224,19 @@ describe('lambda handler', () => {
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
       assertSpanFailure(span);
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('context should have parent trace', async () => {
+      initializeHandler('lambda-test/async.context');
+
+      const result = await lambdaRequire('lambda-test/async').context(
+        'arg',
+        ctx
+      );
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.spanContext.traceId, result);
     });
 
     it('context should have parent trace', async () => {
@@ -179,6 +274,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record error', async () => {
@@ -199,6 +295,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
+      assert.strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record error in callback', async () => {
@@ -227,6 +324,7 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
+      assert.strictEqual(span.parentSpanId, undefined);
     });
 
     it('should record string error', async () => {
@@ -247,6 +345,28 @@ describe('lambda handler', () => {
       const [span] = spans;
       assert.strictEqual(spans.length, 1);
       assertSpanFailure(span);
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('context should have parent trace', async () => {
+      initializeHandler('lambda-test/sync.context');
+
+      const result = await new Promise((resolve, reject) => {
+        lambdaRequire('lambda-test/sync').context(
+          'arg',
+          ctx,
+          (err: Error, res: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res);
+            }
+          }
+        );
+      });
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.spanContext.traceId, result);
     });
 
     it('context should have parent trace', async () => {
@@ -297,5 +417,227 @@ describe('lambda handler', () => {
     const [span] = spans;
     assert.strictEqual(spans.length, 1);
     assertSpanFailure(span);
+    assert.strictEqual(span.parentSpanId, undefined);
+  });
+
+  describe('with remote parent', () => {
+    it('uses lambda context if sampled and no http context', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler');
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(
+        span.spanContext.traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+    });
+
+    it('uses lambda context if unsampled and no http context', async () => {
+      process.env[traceContextEnvironmentKey] = unsampledAwsHeader;
+      initializeHandler('lambda-test/async.handler');
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      // Parent unsampled so no exported spans.
+      assert.strictEqual(spans.length, 0);
+    });
+
+    it('uses lambda context if sampled and http context present', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler');
+
+      const proxyEvent = {
+        headers: {
+          traceparent: sampledHttpHeader,
+        },
+      };
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        proxyEvent,
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(
+        span.spanContext.traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+    });
+
+    it('uses http context if sampled and lambda context unsampled', async () => {
+      process.env[traceContextEnvironmentKey] = unsampledAwsHeader;
+      initializeHandler('lambda-test/async.handler');
+
+      const proxyEvent = {
+        headers: {
+          traceparent: sampledHttpHeader,
+        },
+      };
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        proxyEvent,
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(
+        span.spanContext.traceId,
+        sampledHttpSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
+    });
+
+    it('uses http context if unsampled and lambda context unsampled', async () => {
+      process.env[traceContextEnvironmentKey] = unsampledAwsHeader;
+      initializeHandler('lambda-test/async.handler');
+
+      const proxyEvent = {
+        headers: {
+          traceparent: unsampledHttpHeader,
+        },
+      };
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        proxyEvent,
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      // Parent unsampled so no spans exported.
+      assert.strictEqual(spans.length, 0);
+    });
+  });
+
+  describe('hooks', () => {
+    describe('requestHook', () => {
+      it('sync - success', async () => {
+        initializeHandler('lambda-test/async.handler', {
+          requestHook: (span, { context }) => {
+            span.setAttribute(
+              ResourceAttributes.FAAS_NAME,
+              context.functionName
+            );
+          },
+        });
+
+        await lambdaRequire('lambda-test/async').handler('arg', ctx);
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assert.strictEqual(
+          span.attributes[ResourceAttributes.FAAS_NAME],
+          ctx.functionName
+        );
+        assertSpanSuccess(span);
+      });
+    });
+
+    describe('responseHook', () => {
+      const RES_ATTR = 'test.res';
+      const ERR_ATTR = 'test.error';
+
+      const config: AwsLambdaInstrumentationConfig = {
+        responseHook: (span, { err, res }) => {
+          if (err)
+            span.setAttribute(
+              ERR_ATTR,
+              typeof err === 'string' ? err : err.message
+            );
+          if (res)
+            span.setAttribute(
+              RES_ATTR,
+              typeof res === 'string' ? res : JSON.stringify(res)
+            );
+        },
+      };
+      it('async - success', async () => {
+        initializeHandler('lambda-test/async.handler', config);
+
+        const res = await lambdaRequire('lambda-test/async').handler(
+          'arg',
+          ctx
+        );
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[RES_ATTR], res);
+      });
+
+      it('async - error', async () => {
+        initializeHandler('lambda-test/async.error', config);
+
+        let err: Error;
+        try {
+          await lambdaRequire('lambda-test/async').error('arg', ctx);
+        } catch (e) {
+          err = e;
+        }
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[ERR_ATTR], err!.message);
+      });
+
+      it('sync - success', async () => {
+        initializeHandler('lambda-test/sync.handler', config);
+
+        const result = await new Promise((resolve, _reject) => {
+          lambdaRequire('lambda-test/sync').handler(
+            'arg',
+            ctx,
+            (_err: Error, res: any) => resolve(res)
+          );
+        });
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[RES_ATTR], result);
+      });
+
+      it('sync - error', async () => {
+        initializeHandler('lambda-test/sync.error', config);
+
+        let err: Error;
+        try {
+          lambdaRequire('lambda-test/sync').error('arg', ctx, () => {});
+        } catch (e) {
+          err = e;
+        }
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[ERR_ATTR], err!.message);
+      });
+
+      it('sync - error with callback', async () => {
+        initializeHandler('lambda-test/sync.callbackerror', config);
+
+        let error: Error;
+        await new Promise((resolve, _reject) => {
+          lambdaRequire('lambda-test/sync').callbackerror(
+            'arg',
+            ctx,
+            (err: Error, _res: any) => {
+              error = err;
+              resolve({});
+            }
+          );
+        });
+        const [span] = memoryExporter.getFinishedSpans();
+        assert.strictEqual(span.attributes[ERR_ATTR], error!.message);
+      });
+    });
   });
 });
