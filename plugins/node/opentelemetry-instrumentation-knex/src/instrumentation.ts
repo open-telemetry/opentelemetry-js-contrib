@@ -149,11 +149,13 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
       const attributes: any = {
         'knex.version': instrumentation._moduleVersion,
         [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
-        [SemanticAttributes.DB_STATEMENT]: utils.limitLength(
+      };
+      if (maxLen !== 0) {
+        attributes[SemanticAttributes.DB_STATEMENT] = utils.limitLength(
           query?.sql,
           maxLen
-        ),
-      };
+        );
+      }
       const table = this.builder?._single?.table;
       if (table) {
         attributes[SemanticAttributes.DB_SQL_TABLE] = table;

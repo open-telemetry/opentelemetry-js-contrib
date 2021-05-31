@@ -37,7 +37,12 @@ registerInstrumentations({
 });
 ```
 
-See [examples/knex](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/knex) for a short example.
+### Configuration Options
+
+| Options | Type | Example | Description |
+| ------- | ---- | ------- | ----------- |
+| `maxQueryLength` | `number` | `100` | Truncate `db.statement` attribute to a maximum length. If the statement is truncated `'..'` is added to it's end. Default `1022`. `-1` leaves `db.statement` untouched. |
+
 
 ## Useful links
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
