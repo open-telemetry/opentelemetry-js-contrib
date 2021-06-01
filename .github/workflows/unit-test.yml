@@ -91,6 +91,8 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
+      - name: Fix npm cache permissions
+        run: chown -R 1001:121 "/github/home/.npm"
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci
       - name: Unit tests
