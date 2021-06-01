@@ -91,7 +91,7 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
-      - name: Boostrap Dependencies
+      - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci
       - name: Unit tests
         run: npm run test
@@ -124,7 +124,7 @@ jobs:
           key: ${{ runner.os }}-node:12-${{ hashFiles('**/package.json') }}
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
-      - name: Boostrap Dependencies
+      - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci
       - name: Unit tests
         run: npm run test:browser
