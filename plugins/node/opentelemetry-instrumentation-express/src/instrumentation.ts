@@ -69,7 +69,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         ['^4.0.0'],
         (moduleExports, moduleVersion) => {
           diag.debug(`Applying patch for express@${moduleVersion}`);
-          const routerProto = moduleExports.Router as unknown as express.Router;
+          const routerProto = (moduleExports.Router as unknown) as express.Router;
           // patch express.Router.route
           if (isWrapped(routerProto.route)) {
             this._unwrap(routerProto, 'route');
@@ -211,7 +211,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
             const parentRoute = parent.name.split(' ')[1];
             if (!route.includes(parentRoute)) {
               parent.updateName(
-                instrumentation._spanName(
+                instrumentation._getSpanName(
                   req,
                   route,
                   null,
@@ -233,7 +233,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
           return original.apply(this, arguments);
         }
 
-        const spanName = instrumentation._spanName(
+        const spanName = instrumentation._getSpanName(
           req,
           route,
           type,
@@ -292,7 +292,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
     });
   }
 
-  _spanName(
+  _getSpanName(
     req: express.Request,
     route: string,
     type: ExpressLayerType | null,
