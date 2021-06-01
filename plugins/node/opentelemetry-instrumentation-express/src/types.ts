@@ -73,9 +73,6 @@ export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 export type SpanNameHook = (
   request: Request,
   route: string,
-  /** Type of the layer handling the request.
-   *  If null, it means the name of the parent http instrumentation span.
-   */
   layerType: ExpressLayerType | null,
   defaultPath: string
 ) => string;
