@@ -16,7 +16,7 @@
 
 import { hrTime } from '@opentelemetry/core';
 import { getSpan, context, diag, SpanAttributes } from '@opentelemetry/api';
-import * as express from 'express';
+import type * as express from 'express';
 import {
   ExpressLayer,
   ExpressRouter,
@@ -52,6 +52,14 @@ export class ExpressInstrumentation extends InstrumentationBase<
       VERSION,
       Object.assign({}, config)
     );
+  }
+
+  getConfig(): ExpressInstrumentationConfig {
+    return this._config;
+  }
+
+  setConfig(config: ExpressInstrumentationConfig) {
+    this._config = config;
   }
 
   init() {
@@ -202,7 +210,14 @@ export class ExpressInstrumentation extends InstrumentationBase<
           if (parent?.name) {
             const parentRoute = parent.name.split(' ')[1];
             if (!route.includes(parentRoute)) {
-              parent.updateName(`${req.method} ${route}`);
+              parent.updateName(
+                instrumentation._getSpanName(
+                  req,
+                  route,
+                  null,
+                  `${req.method} ${route}`
+                )
+              );
             }
           }
         }
@@ -218,7 +233,13 @@ export class ExpressInstrumentation extends InstrumentationBase<
           return original.apply(this, arguments);
         }
 
-        const span = instrumentation.tracer.startSpan(metadata.name, {
+        const spanName = instrumentation._getSpanName(
+          req,
+          route,
+          type,
+          metadata.name
+        );
+        const span = instrumentation.tracer.startSpan(spanName, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
         const startTime = hrTime();
@@ -269,5 +290,28 @@ export class ExpressInstrumentation extends InstrumentationBase<
         return result;
       };
     });
+  }
+
+  _getSpanName(
+    req: express.Request,
+    route: string,
+    type: ExpressLayerType | null,
+    defaultName: string
+  ) {
+    const hook = this.getConfig().spanNameHook;
+
+    if (!hook) {
+      return defaultName;
+    }
+
+    try {
+      return hook(req, route, type, defaultName);
+    } catch (err) {
+      diag.error(
+        'express instrumentation: error calling span name rewrite hook',
+        err
+      );
+      return defaultName;
+    }
   }
 }
