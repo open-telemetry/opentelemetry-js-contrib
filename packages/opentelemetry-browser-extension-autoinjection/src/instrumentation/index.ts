@@ -26,22 +26,12 @@ import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import {
-  DomAttributes,
-  DomElements,
-  EventType,
-  ExporterType,
-  MessageType,
-  Settings,
-} from '../types';
-import { EventEmitterSpanExporter } from '../utils/EventEmitterSpanExporter';
+import { DomAttributes, DomElements, ExporterType, Settings } from '../types';
 
 const configTag = document.getElementById(DomElements['CONFIG_TAG']);
 const { exporters }: Settings = configTag
   ? JSON.parse(String(configTag.dataset[DomAttributes['CONFIG']]))
   : {};
-
-const extensionId = configTag?.dataset[DomAttributes['EXTENSION_ID']];
 
 const provider = new WebTracerProvider();
 
@@ -69,29 +59,6 @@ if (exporters[ExporterType.COLLECTOR_TRACE].enabled) {
       })
     )
   );
-}
-
-// This is not yet working, the idea is to submit spans to the background service worker
-// and send spans to exporters from there to work around CSP without removing it completely.
-if (exporters[ExporterType.BACKGROUND].enabled && extensionId) {
-  const eventEmitterExporter = new EventEmitterSpanExporter();
-  eventEmitterExporter.addEventListener(EventType['ON_SPANS'], ((
-    event: CustomEvent
-  ) => {
-    window.postMessage(
-      {
-        type: MessageType['OTEL_EXTENSION_SPANS'],
-        extensionId,
-        spans: JSON.stringify(event.detail),
-      },
-      window.location.protocol +
-        '//' +
-        window.location.hostname +
-        ':' +
-        window.location.port
-    );
-  }) as EventListener);
-  provider.addSpanProcessor(new BatchSpanProcessor(eventEmitterExporter));
 }
 
 provider.register({

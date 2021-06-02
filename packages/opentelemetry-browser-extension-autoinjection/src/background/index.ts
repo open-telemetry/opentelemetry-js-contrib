@@ -16,23 +16,6 @@
 
 /* eslint-disable no-console */
 
-// The following block is required to make 'window' available within the service worker, since opentelemetry-core getEnv() depends on it.
-export type {};
-interface MyServiceWorkerGlobalScope extends ServiceWorkerGlobalScope {
-  window: unknown;
-}
-declare const self: MyServiceWorkerGlobalScope;
-if (self.constructor.name !== 'Window') {
-  self.window = self;
-}
-
-import {
-  ConsoleSpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
-import { WebTracerProvider } from '@opentelemetry/web';
-import { MessageType } from '../types';
-
 // the following two 'require' are here for webpack.
 require('../manifest.json5');
 require('../icons/otel-logo.png');
@@ -64,24 +47,6 @@ try {
       });
     }
   );
-
-  chrome.runtime.onMessage.addListener((request, sender) => {
-    if (
-      request.type === MessageType['OTEL_EXTENSION_SPANS'] &&
-      request.extensionId === chrome.runtime.id &&
-      sender.id === chrome.runtime.id
-    ) {
-      try {
-        const spans = JSON.parse(request.spans);
-        const consoleExporter = new ConsoleSpanExporter();
-        const provider = new WebTracerProvider();
-        provider.addSpanProcessor(new SimpleSpanProcessor(consoleExporter));
-        consoleExporter.export(spans, r => console.log(r));
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  });
 } catch (e) {
   console.log(e);
 }

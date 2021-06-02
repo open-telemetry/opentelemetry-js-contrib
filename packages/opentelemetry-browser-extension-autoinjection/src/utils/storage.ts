@@ -34,9 +34,6 @@ export function loadFromStorage(): Promise<Storage> {
               enabled: false,
               url: '',
             },
-            [ExporterType.BACKGROUND]: {
-              enabled: false,
-            },
           },
         },
       },

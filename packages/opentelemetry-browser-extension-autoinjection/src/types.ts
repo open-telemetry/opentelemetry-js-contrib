@@ -31,9 +31,6 @@ export interface Settings {
       enabled: boolean;
       url: string;
     };
-    [ExporterType.BACKGROUND]: {
-      enabled: boolean;
-    };
   };
 }
 
@@ -83,15 +80,6 @@ export enum ExporterType {
   CONSOLE = 'Console',
   ZIPKIN = 'Zipkin',
   COLLECTOR_TRACE = 'CollectorTrace',
-  BACKGROUND = 'Background',
-}
-
-export enum MessageType {
-  OTEL_EXTENSION_SPANS = 'OTEL_EXTENSION_SPANS',
-}
-
-export enum EventType {
-  ON_SPANS = 'onSpans',
 }
 
 export enum DomElements {
@@ -100,7 +88,6 @@ export enum DomElements {
 
 export enum DomAttributes {
   CONFIG = 'config',
-  EXTENSION_ID = 'extensionId',
 }
 
 export enum PlaceholderValues {

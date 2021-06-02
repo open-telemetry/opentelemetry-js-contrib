@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { DomAttributes, MessageType } from '../types';
+import { DomAttributes } from '../types';
 
 /* eslint-disable no-console */
 
@@ -38,21 +38,7 @@ chrome.storage.local.get('settings', ({ settings }) => {
       `data-${DomAttributes['CONFIG']}`,
       JSON.stringify(settings)
     );
-    tag.setAttribute(
-      `data-${DomAttributes['EXTENSION_ID']}`,
-      chrome.runtime.id
-    );
     document.head.appendChild(tag);
-
-    window.addEventListener('message', event => {
-      if (
-        event.data.type === MessageType['OTEL_EXTENSION_SPANS'] &&
-        event.data.extensionId === chrome.runtime.id
-      ) {
-        chrome.runtime.sendMessage(event.data);
-      }
-    });
-
     console.log('[otel-extension] instrumentation.js injected');
   } else {
     console.log(
