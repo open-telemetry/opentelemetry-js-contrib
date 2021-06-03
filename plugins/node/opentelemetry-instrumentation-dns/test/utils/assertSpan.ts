@@ -30,11 +30,11 @@ export const assertSpan = (
     forceStatus?: SpanStatus;
   }
 ) => {
-  if (span.spanContext.traceId) {
-    assert.strictEqual(span.spanContext.traceId.length, 32);
+  if (span.spanContext().traceId) {
+    assert.strictEqual(span.spanContext().traceId.length, 32);
   }
-  if (span.spanContext.spanId) {
-    assert.strictEqual(span.spanContext.spanId.length, 16);
+  if (span.spanContext().spanId) {
+    assert.strictEqual(span.spanContext().spanId.length, 16);
   }
 
   assert.strictEqual(span.kind, SpanKind.CLIENT);

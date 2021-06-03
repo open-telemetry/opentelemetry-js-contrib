@@ -15,7 +15,7 @@
  */
 
 import * as restify from 'restify';
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -134,7 +134,7 @@ describe('Restify Instrumentation', () => {
     it('should create a span for each handler', async () => {
       const rootSpan = tracer.startSpan('clientSpan');
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/route/foo`);
         rootSpan.end();
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
@@ -178,7 +178,7 @@ describe('Restify Instrumentation', () => {
     it('should lack `http.route` but still have `restify.version` if route was 404', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         const res = await httpRequest.get(`http://localhost:${port}/not-found`);
         rootSpan.end();
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
@@ -203,7 +203,7 @@ describe('Restify Instrumentation', () => {
     it('should create a span for an endpoint that threw', async () => {
       const rootSpan = tracer.startSpan('clientSpan');
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/failing`);
         rootSpan.end();
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
@@ -250,7 +250,7 @@ describe('Restify Instrumentation', () => {
       const testLocalServer = await createServer((server: restify.Server) => {
         server.pre((req, res, next) => {
           // to simulate HTTP instrumentation
-          context.with(setSpan(context.active(), httpSpan), next);
+          context.with(trace.setSpan(context.active(), httpSpan), next);
         });
         server.get('/route/:param', getHandler);
       });
@@ -438,7 +438,7 @@ describe('Restify Instrumentation', () => {
       plugin.disable();
       const rootSpan = tracer.startSpan('rootSpan');
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         assert.strictEqual(
           await httpRequest.get(`http://localhost:${port}/route/foo`),
           '{"route":"foo"}'

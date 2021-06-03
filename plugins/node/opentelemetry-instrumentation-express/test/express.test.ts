@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan, Span, Tracer } from '@opentelemetry/api';
+import { context, trace, Span, Tracer } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -62,7 +62,7 @@ const serverWithMiddleware = async (
   const app = express();
   if (tracer) {
     app.use((req, res, next) =>
-      context.with(setSpan(context.active(), rootSpan), next)
+      context.with(trace.setSpan(context.active(), rootSpan), next)
     );
   }
 
@@ -114,7 +114,7 @@ describe('ExpressInstrumentation', () => {
       ) as ExpressInstrumentationSpan;
       const app = express();
       app.use((req, res, next) =>
-        context.with(setSpan(context.active(), rootSpan), next)
+        context.with(trace.setSpan(context.active(), rootSpan), next)
       );
       app.use(express.json());
       const customMiddleware: express.RequestHandler = (req, res, next) => {
@@ -140,7 +140,7 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         const response = await httpRequest.get(
           `http://localhost:${port}/toto/tata`
         );
@@ -202,7 +202,7 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         const response = await httpRequest.get(
           `http://localhost:${port}/toto/tata`
         );
@@ -241,7 +241,7 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         const response = await httpRequest.get(
           `http://localhost:${port}/toto/tata`
         );
@@ -280,7 +280,7 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         const response = await httpRequest.get(
           `http://localhost:${port}/toto/tata`
         );
@@ -336,7 +336,7 @@ describe('ExpressInstrumentation', () => {
       await new Promise<void>(resolve => server.listen(0, resolve));
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
         assert.deepEqual(memoryExporter.getFinishedSpans().length, 1);

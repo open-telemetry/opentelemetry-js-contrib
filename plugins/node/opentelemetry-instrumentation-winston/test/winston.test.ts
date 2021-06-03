@@ -20,8 +20,7 @@ import {
 } from '@opentelemetry/tracing';
 import {
   context,
-  getSpan,
-  setSpan,
+  trace,
   NoopTracerProvider,
   Span,
 } from '@opentelemetry/api';
@@ -53,7 +52,7 @@ describe('WinstonInstrumentation', () => {
   function testInjection(span: Span) {
     logger.info(kMessage);
     sinon.assert.calledOnce(writeSpy);
-    const { traceId, spanId, traceFlags } = span.context();
+    const { traceId, spanId, traceFlags } = span.spanContext();
     const record = JSON.parse(writeSpy.firstCall.args[0].toString());
     assert.strictEqual(record['trace_id'], traceId);
     assert.strictEqual(record['span_id'], spanId);
@@ -96,7 +95,7 @@ describe('WinstonInstrumentation', () => {
 
     it('injects span context to records', () => {
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         testInjection(span);
       });
     });
@@ -109,21 +108,21 @@ describe('WinstonInstrumentation', () => {
           record['resource.service.name'] = 'test-service';
         },
       });
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         const record = testInjection(span);
         assert.strictEqual(record['resource.service.name'], 'test-service');
       });
     });
 
     it('does not inject span context if no span is active', () => {
-      assert.strictEqual(getSpan(context.active()), undefined);
+      assert.strictEqual(trace.getSpan(context.active()), undefined);
       testNoInjection();
     });
 
     it('does not inject span context if span context is invalid', () => {
       const noopTracer = new NoopTracerProvider().getTracer('noop');
       const span = noopTracer.startSpan('noop');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         testNoInjection();
       });
     });
@@ -136,7 +135,7 @@ describe('WinstonInstrumentation', () => {
           throw new Error('Oops');
         },
       });
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         testInjection(span);
       });
     });
@@ -166,7 +165,7 @@ describe('WinstonInstrumentation', () => {
 
     it('does not inject span context', () => {
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         testNoInjection();
       });
     });
@@ -179,7 +178,7 @@ describe('WinstonInstrumentation', () => {
           record['resource.service.name'] = 'test-service';
         },
       });
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         const record = testNoInjection();
         assert.strictEqual(record['resource.service.name'], undefined);
       });

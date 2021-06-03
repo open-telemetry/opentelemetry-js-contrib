@@ -20,7 +20,7 @@ import {
   SpanKind,
   Span,
   SpanStatusCode,
-  getSpan,
+  trace,
   context,
   diag,
 } from '@opentelemetry/api';
@@ -92,7 +92,7 @@ export const traceSendCommand = (
       return original.apply(this, arguments);
     }
 
-    const hasNoParentSpan = getSpan(context.active()) === undefined;
+    const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
     if (config?.requireParentSpan === true && hasNoParentSpan) {
       return original.apply(this, arguments);
     }

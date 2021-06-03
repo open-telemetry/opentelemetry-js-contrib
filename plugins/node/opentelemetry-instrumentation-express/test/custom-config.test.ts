@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -105,7 +105,7 @@ describe('ExpressInstrumentation', () => {
       });
 
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         await httpRequest.get(`http://localhost:${port}/toto/tata`);
         rootSpan.end();
         assert.deepEqual(
@@ -127,7 +127,7 @@ describe('ExpressInstrumentation', () => {
 
     it('should not repeat middleware paths in the span name', async () => {
       app.use((req, res, next) =>
-        context.with(setSpan(context.active(), rootSpan), next)
+        context.with(trace.setSpan(context.active(), rootSpan), next)
       );
 
       app.use('/mw', (req, res, next) => {
@@ -143,7 +143,7 @@ describe('ExpressInstrumentation', () => {
       ) as ExpressInstrumentationSpan;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
+      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
         const response = await httpRequest.get(`http://localhost:${port}/mw`);
         assert.strictEqual(response, 'ok');
         rootSpan.end();

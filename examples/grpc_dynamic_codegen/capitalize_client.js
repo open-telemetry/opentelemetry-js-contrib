@@ -21,7 +21,7 @@ function main() {
   console.log('> ', data);
 
   const span = tracer.startSpan('tutorialsClient.capitalize');
-  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
     client.capitalize({ data: Buffer.from(data) }, (err, response) => {
       if (err) {
         console.log('could not get grpc response');
@@ -29,7 +29,7 @@ function main() {
       }
       console.log('< ', response.data.toString('utf8'));
       // display traceid in the terminal
-      console.log(`traceid: ${span.context().traceId}`);
+      console.log(`traceid: ${span.spanContext().traceId}`);
       span.end();
     });
   });

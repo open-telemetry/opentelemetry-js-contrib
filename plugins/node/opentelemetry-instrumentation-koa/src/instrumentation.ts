@@ -129,7 +129,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
     middlewareLayer[kLayerPatched] = true;
     api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
-      const parent = api.getSpan(api.context.active());
+      const parent = api.trace.getSpan(api.context.active());
       if (parent === undefined) {
         return middlewareLayer(context, next);
       }
@@ -166,7 +166,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       }
 
       return api.context.with(
-        api.setSpan(api.context.active(), span),
+        api.trace.setSpan(api.context.active(), span),
         async () => {
           try {
             return await middlewareLayer(context, next);
