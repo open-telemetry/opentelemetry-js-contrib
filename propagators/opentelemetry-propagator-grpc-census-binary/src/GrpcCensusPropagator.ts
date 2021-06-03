@@ -109,10 +109,10 @@ export class GrpcCensusPropagator implements TextMapPropagator {
 
       // @TODO FIX ME once this is resolved
       // https://github.com/open-telemetry/opentelemetry-specification/issues/437
-      const values = getter.get(
+      const values = (getter.get(
         carrier,
         GRPC_TRACE_KEY
-      ) as unknown as Array<Buffer>;
+      ) as unknown) as Array<Buffer>;
       // const values = getter.get(carrier, GRPC_TRACE_KEY) as Array<Buffer>;
       const metadataValue = values.length > 0 ? values[0] : null;
 
@@ -127,12 +127,15 @@ export class GrpcCensusPropagator implements TextMapPropagator {
           const spanId = decodedContext.spanId;
 
           if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
-            return trace.setSpan(context, trace.wrapSpanContext({
-              traceId,
-              spanId,
-              isRemote: true,
-              traceFlags: decodedContext.traceFlags,
-            }));
+            return trace.setSpan(
+              context,
+              trace.wrapSpanContext({
+                traceId,
+                spanId,
+                isRemote: true,
+                traceFlags: decodedContext.traceFlags,
+              })
+            );
           }
           return context;
         } else {

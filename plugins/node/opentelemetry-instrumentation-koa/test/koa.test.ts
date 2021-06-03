@@ -133,31 +133,34 @@ describe('Koa Instrumentation', () => {
 
       app.use(router.routes());
 
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/post/0`);
-        rootSpan.end();
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/post/0`);
+          rootSpan.end();
 
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('router - /post/:id'));
-        assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('router - /post/:id'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
 
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
-          KoaLayerType.ROUTER
-        );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.ROUTER
+          );
 
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
-          '/post/:id'
-        );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/post/:id'
+          );
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'GET /post/:id');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'GET /post/:id');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('should correctly instrument nested routers', async () => {
@@ -175,31 +178,34 @@ describe('Koa Instrumentation', () => {
       router.use('/:first', nestedRouter.routes());
       app.use(router.routes());
 
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/test/post/0`);
-        rootSpan.end();
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/test/post/0`);
+          rootSpan.end();
 
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('router - /:first/post/:id'));
-        assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('router - /:first/post/:id'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
 
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
-          KoaLayerType.ROUTER
-        );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.ROUTER
+          );
 
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
-          '/:first/post/:id'
-        );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/:first/post/:id'
+          );
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'GET /:first/post/:id');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'GET /:first/post/:id');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('should correctly instrument prefixed routers', async () => {
@@ -215,31 +221,34 @@ describe('Koa Instrumentation', () => {
       router.prefix('/:first');
       app.use(router.routes());
 
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/test/post/0`);
-        rootSpan.end();
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/test/post/0`);
+          rootSpan.end();
 
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('router - /:first/post/:id'));
-        assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('router - /:first/post/:id'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
 
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
-          KoaLayerType.ROUTER
-        );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.ROUTER
+          );
 
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
-          '/:first/post/:id'
-        );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/:first/post/:id'
+          );
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'GET /:first/post/:id');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'GET /:first/post/:id');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
   });
 
@@ -253,49 +262,52 @@ describe('Koa Instrumentation', () => {
       app.use(simpleResponse);
       app.use(spanCreateMiddleware);
 
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}`);
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 5);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}`);
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 5);
 
-        assert.notStrictEqual(
-          memoryExporter
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('customMiddleware')),
+            undefined
+          );
+
+          const fooParentSpan = memoryExporter
             .getFinishedSpans()
-            .find(span => span.name.includes('customMiddleware')),
-          undefined
-        );
+            .find(span => span.name.includes('spanCreateMiddleware'));
+          assert.notStrictEqual(fooParentSpan, undefined);
 
-        const fooParentSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('spanCreateMiddleware'));
-        assert.notStrictEqual(fooParentSpan, undefined);
+          const fooSpan = memoryExporter.getFinishedSpans().find(span => 'foo');
+          assert.notStrictEqual(fooSpan, undefined);
+          assert.strictEqual(
+            fooSpan!.parentSpanId,
+            fooParentSpan!.spanContext().spanId
+          );
 
-        const fooSpan = memoryExporter.getFinishedSpans().find(span => 'foo');
-        assert.notStrictEqual(fooSpan, undefined);
-        assert.strictEqual(
-          fooSpan!.parentSpanId,
-          fooParentSpan!.spanContext().spanId
-        );
+          const simpleResponseSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('simpleResponse'));
+          assert.notStrictEqual(simpleResponseSpan, undefined);
 
-        const simpleResponseSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('simpleResponse'));
-        assert.notStrictEqual(simpleResponseSpan, undefined);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('middleware'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
 
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('middleware'));
-        assert.notStrictEqual(requestHandlerSpan, undefined);
-
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
-          KoaLayerType.MIDDLEWARE
-        );
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.MIDDLEWARE
+          );
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('should not create span if there is no parent span', async () => {
@@ -314,25 +326,28 @@ describe('Koa Instrumentation', () => {
       );
       app.use(asyncMiddleware);
 
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}`);
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}`);
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('asyncMiddleware'));
-        assert.notStrictEqual(requestHandlerSpan, undefined);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('asyncMiddleware'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
 
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
-          KoaLayerType.MIDDLEWARE
-        );
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.MIDDLEWARE
+          );
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('should propagate exceptions in the middleware while marking the span with an exception', async () => {
@@ -378,12 +393,18 @@ describe('Koa Instrumentation', () => {
       const rootSpan = tracer.startSpan('rootSpan');
       app.use(customMiddleware);
 
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}`);
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 1);
-        assert.notStrictEqual(memoryExporter.getFinishedSpans()[0], undefined);
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}`);
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 1);
+          assert.notStrictEqual(
+            memoryExporter.getFinishedSpans()[0],
+            undefined
+          );
+        }
+      );
     });
   });
 });

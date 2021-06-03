@@ -140,43 +140,46 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        const response = await httpRequest.get(
-          `http://localhost:${port}/toto/tata`
-        );
-        assert.strictEqual(response, 'tata');
-        rootSpan.end();
-        assert.strictEqual(rootSpan.name, 'GET /toto/:id');
-        assert.strictEqual(finishListenerCount, 2);
-        assert.notStrictEqual(
-          memoryExporter
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'tata');
+          rootSpan.end();
+          assert.strictEqual(rootSpan.name, 'GET /toto/:id');
+          assert.strictEqual(finishListenerCount, 2);
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('customMiddleware')),
+            undefined
+          );
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('jsonParser')),
+            undefined
+          );
+          const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
-            .find(span => span.name.includes('customMiddleware')),
-          undefined
-        );
-        assert.notStrictEqual(
-          memoryExporter
+            .find(span => span.name.includes('request handler'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/toto/:id'
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
+            'request_handler'
+          );
+          const exportedRootSpan = memoryExporter
             .getFinishedSpans()
-            .find(span => span.name.includes('jsonParser')),
-          undefined
-        );
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('request handler'));
-        assert.notStrictEqual(requestHandlerSpan, undefined);
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
-          '/toto/:id'
-        );
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
-          'request_handler'
-        );
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'GET /toto/:id');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+            .find(span => span.name === 'GET /toto/:id');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
       server.close();
     });
 
@@ -202,21 +205,24 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        const response = await httpRequest.get(
-          `http://localhost:${port}/toto/tata`
-        );
-        assert.strictEqual(response, 'middleware');
-        rootSpan.end();
-        assert.strictEqual(finishListenerCount, 3);
-        assert.notStrictEqual(
-          memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name.includes('syncMiddleware')),
-          undefined,
-          'no syncMiddleware span'
-        );
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'middleware');
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 3);
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('syncMiddleware')),
+            undefined,
+            'no syncMiddleware span'
+          );
+        }
+      );
       server.close();
     });
 
@@ -241,21 +247,24 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        const response = await httpRequest.get(
-          `http://localhost:${port}/toto/tata`
-        );
-        assert.strictEqual(response, 'tata');
-        rootSpan.end();
-        assert.strictEqual(finishListenerCount, 2);
-        assert.notStrictEqual(
-          memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name.includes('asyncMiddleware')),
-          undefined,
-          'no asyncMiddleware span'
-        );
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'tata');
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 2);
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('asyncMiddleware')),
+            undefined,
+            'no asyncMiddleware span'
+          );
+        }
+      );
       server.close();
     });
 
@@ -280,21 +289,24 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        const response = await httpRequest.get(
-          `http://localhost:${port}/toto/tata`
-        );
-        assert.strictEqual(response, 'middleware');
-        rootSpan.end();
-        assert.strictEqual(finishListenerCount, 3);
-        assert.notStrictEqual(
-          memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name.includes('asyncMiddleware')),
-          undefined,
-          'no asyncMiddleware span'
-        );
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'middleware');
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 3);
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('asyncMiddleware')),
+            undefined,
+            'no asyncMiddleware span'
+          );
+        }
+      );
       server.close();
     });
 
@@ -336,12 +348,18 @@ describe('ExpressInstrumentation', () => {
       await new Promise<void>(resolve => server.listen(0, resolve));
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/toto/tata`);
-        rootSpan.end();
-        assert.deepEqual(memoryExporter.getFinishedSpans().length, 1);
-        assert.notStrictEqual(memoryExporter.getFinishedSpans()[0], undefined);
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.deepEqual(memoryExporter.getFinishedSpans().length, 1);
+          assert.notStrictEqual(
+            memoryExporter.getFinishedSpans()[0],
+            undefined
+          );
+        }
+      );
       server.close();
     });
   });

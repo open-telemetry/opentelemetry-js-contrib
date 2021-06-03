@@ -139,7 +139,10 @@ describe('OTTracePropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
 
-      let context = trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext));
+      let context = trace.setSpan(
+        ROOT_CONTEXT,
+        trace.wrapSpanContext(spanContext)
+      );
 
       const baggage: Baggage = propagation.createBaggage({
         foo: { value: 'bar' },
@@ -161,7 +164,10 @@ describe('OTTracePropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
 
-      let context = trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext));
+      let context = trace.setSpan(
+        ROOT_CONTEXT,
+        trace.wrapSpanContext(spanContext)
+      );
 
       const baggage: Baggage = propagation.createBaggage({
         fθθ: { value: 'bar' },
@@ -182,7 +188,10 @@ describe('OTTracePropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
 
-      let context = trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext));
+      let context = trace.setSpan(
+        ROOT_CONTEXT,
+        trace.wrapSpanContext(spanContext)
+      );
 
       const baggage: Baggage = propagation.createBaggage({
         foo: { value: 'bαr' },

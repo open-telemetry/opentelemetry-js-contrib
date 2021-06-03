@@ -18,12 +18,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import {
-  context,
-  trace,
-  NoopTracerProvider,
-  Span,
-} from '@opentelemetry/api';
+import { context, trace, NoopTracerProvider, Span } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { Writable } from 'stream';
@@ -190,7 +185,7 @@ describe('PinoInstrumentation', () => {
 
     describe('binary arguments', () => {
       it('is possible to construct logger with undefined options', () => {
-        logger = pino(undefined as unknown as Pino.LoggerOptions, stream);
+        logger = pino((undefined as unknown) as Pino.LoggerOptions, stream);
         const span = tracer.startSpan('abc');
         context.with(trace.setSpan(context.active(), span), () => {
           testInjection(span);

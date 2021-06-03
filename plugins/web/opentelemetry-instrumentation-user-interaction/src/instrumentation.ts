@@ -53,7 +53,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     Map<string, Map<HTMLElement, Function>>
   >();
   // for event bubbling
-  private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<Event, api.Span>();
+  private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<
+    Event,
+    api.Span
+  >();
 
   constructor(config?: InstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
@@ -122,7 +125,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             [AttributeNames.HTTP_USER_AGENT]: navigator.userAgent,
           },
         },
-        parentSpan ? api.trace.setSpan(api.context.active(), parentSpan) : undefined
+        parentSpan
+          ? api.trace.setSpan(api.context.active(), parentSpan)
+          : undefined
       );
 
       this._spansData.set(span, {
@@ -621,7 +626,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * returns Zone
    */
   getZoneWithPrototype(): ZoneTypeWithPrototype | undefined {
-    const _window: WindowWithZone = window as unknown as WindowWithZone;
+    const _window: WindowWithZone = (window as unknown) as WindowWithZone;
     return _window.Zone;
   }
 }

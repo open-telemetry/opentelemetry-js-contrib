@@ -159,9 +159,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = trace.getSpan(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      )?.spanContext();
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: '75e8ed491aec7eca',
@@ -179,9 +179,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = trace.getSpan(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      )?.spanContext();
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: '75e8ed491aec7eca',
@@ -192,9 +192,9 @@ describe('GrpcCensusPropagator', () => {
     });
 
     it('should return undefined when header is not set', () => {
-      const extractedSpanContext = trace.getSpan(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      )?.spanContext();
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
       assert.deepStrictEqual(extractedSpanContext, undefined);
     });
 
@@ -206,9 +206,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = trace.getSpan(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      )?.spanContext();
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, undefined);
     });
@@ -226,17 +226,17 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = trace.getSpan(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      )?.spanContext();
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, undefined);
     });
 
     it('should return undefined when carrier is null', () => {
-      const extractedSpanContext = trace.getSpan(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      )?.spanContext();
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
       assert.deepStrictEqual(extractedSpanContext, undefined);
     });
   });
@@ -250,8 +250,35 @@ describe('GrpcCensusPropagator', () => {
 
 function getUnsampledSpanEncodedArray() {
   return new Uint8Array([
-    0, 0, 212, 205, 169, 91, 101, 47, 74, 11, 146, 180, 73, 213, 146, 159, 218,
-    27, 1, 117, 232, 237, 73, 26, 236, 126, 202, 2, 0,
+    0,
+    0,
+    212,
+    205,
+    169,
+    91,
+    101,
+    47,
+    74,
+    11,
+    146,
+    180,
+    73,
+    213,
+    146,
+    159,
+    218,
+    27,
+    1,
+    117,
+    232,
+    237,
+    73,
+    26,
+    236,
+    126,
+    202,
+    2,
+    0,
   ]);
 }
 

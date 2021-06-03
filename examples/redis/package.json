@@ -38,7 +38,7 @@
     "@opentelemetry/instrumentation-redis": "^0.15.0",
     "@opentelemetry/node": "^0.20.0",
     "@opentelemetry/tracing": "^0.20.0",
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "express": "^4.17.1",
     "redis": "^2.8.0"
   },

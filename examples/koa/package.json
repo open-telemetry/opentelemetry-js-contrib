@@ -40,7 +40,7 @@
     "@opentelemetry/instrumentation-koa": "^0.15.0",
     "@opentelemetry/node": "^0.20.0",
     "@opentelemetry/tracing": "^0.20.0",
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "koa": "^2.13.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",

@@ -92,14 +92,18 @@ export class OTTracePropagator implements TextMapPropagator {
       sampled === 'true' ? TraceFlags.SAMPLED : TraceFlags.NONE;
 
     if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
-      context = trace.setSpan(context, trace.wrapSpanContext({
-        traceId,
-        spanId,
-        isRemote: true,
-        traceFlags,
-      }));
+      context = trace.setSpan(
+        context,
+        trace.wrapSpanContext({
+          traceId,
+          spanId,
+          isRemote: true,
+          traceFlags,
+        })
+      );
 
-      let baggage: Baggage = propagation.getBaggage(context) || propagation.createBaggage();
+      let baggage: Baggage =
+        propagation.getBaggage(context) || propagation.createBaggage();
 
       getter.keys(carrier).forEach(k => {
         if (!k.startsWith(OT_BAGGAGE_PREFIX)) return;

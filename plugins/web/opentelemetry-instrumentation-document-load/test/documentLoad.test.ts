@@ -20,7 +20,10 @@ import {
   propagation,
   SpanAttributes,
 } from '@opentelemetry/api';
-import { HttpTraceContextPropagator, TRACE_PARENT_HEADER } from '@opentelemetry/core';
+import {
+  HttpTraceContextPropagator,
+  TRACE_PARENT_HEADER,
+} from '@opentelemetry/core';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,

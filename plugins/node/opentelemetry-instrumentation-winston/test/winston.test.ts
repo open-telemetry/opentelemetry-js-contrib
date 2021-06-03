@@ -18,12 +18,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import {
-  context,
-  trace,
-  NoopTracerProvider,
-  Span,
-} from '@opentelemetry/api';
+import { context, trace, NoopTracerProvider, Span } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';

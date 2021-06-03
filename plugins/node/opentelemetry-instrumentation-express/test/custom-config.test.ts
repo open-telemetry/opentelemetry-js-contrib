@@ -105,24 +105,27 @@ describe('ExpressInstrumentation', () => {
       });
 
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/toto/tata`);
-        rootSpan.end();
-        assert.deepEqual(
-          memoryExporter
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.deepEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .filter(
+                span =>
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                  ExpressLayerType.MIDDLEWARE
+              ).length,
+            0
+          );
+          const exportedRootSpan = memoryExporter
             .getFinishedSpans()
-            .filter(
-              span =>
-                span.attributes[AttributeNames.EXPRESS_TYPE] ===
-                ExpressLayerType.MIDDLEWARE
-            ).length,
-          0
-        );
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('should not repeat middleware paths in the span name', async () => {
@@ -143,31 +146,34 @@ describe('ExpressInstrumentation', () => {
       ) as ExpressInstrumentationSpan;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await context.with(trace.setSpan(context.active(), rootSpan), async () => {
-        const response = await httpRequest.get(`http://localhost:${port}/mw`);
-        assert.strictEqual(response, 'ok');
-        rootSpan.end();
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(`http://localhost:${port}/mw`);
+          assert.strictEqual(response, 'ok');
+          rootSpan.end();
 
-        assert.strictEqual(rootSpan.name, 'GET /mw');
+          assert.strictEqual(rootSpan.name, 'GET /mw');
 
-        const spans = memoryExporter.getFinishedSpans();
+          const spans = memoryExporter.getFinishedSpans();
 
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('request handler'));
-        assert.notStrictEqual(requestHandlerSpan, undefined);
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
-          '/mw'
-        );
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('request handler'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/mw'
+          );
 
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
-          'request_handler'
-        );
-        const exportedRootSpan = spans.find(span => span.name === 'GET /mw');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
+            'request_handler'
+          );
+          const exportedRootSpan = spans.find(span => span.name === 'GET /mw');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
   });
 });
