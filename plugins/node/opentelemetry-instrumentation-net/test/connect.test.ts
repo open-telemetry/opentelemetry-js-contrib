@@ -184,7 +184,7 @@ describe('NetInstrumentation', () => {
         assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
         done();
       });
-      socket.connect((undefined as unknown) as string);
+      socket.connect(undefined as unknown as string);
     });
   });
 
