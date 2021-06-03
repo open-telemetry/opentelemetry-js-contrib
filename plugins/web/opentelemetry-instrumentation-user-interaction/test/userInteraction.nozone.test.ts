@@ -349,7 +349,7 @@ describe('UserInteractionInstrumentation', () => {
       );
       assert.strictEqual(
         exportSpy.args[0][0][0].spanId,
-        exportSpy.args[1][0][0].context.parentSpanId
+        exportSpy.args[1][0][0].spanContext().parentSpanId
       );
     });
 
