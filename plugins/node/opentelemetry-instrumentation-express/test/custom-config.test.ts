@@ -179,7 +179,7 @@ describe('ExpressInstrumentation', () => {
       );
     });
 
-    it('should correctly set the http path', async () => {
+    it('should correctly name http root path when its /', async () => {
       instrumentation.setConfig({
         ignoreLayerTypes: [
           ExpressLayerType.MIDDLEWARE,
