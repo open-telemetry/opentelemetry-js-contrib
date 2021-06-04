@@ -30,12 +30,12 @@ import * as types from './types';
 import type * as knex from 'knex';
 
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
-const DEFAULT_CONFIG: types.Config = {
+const DEFAULT_CONFIG: types.KnexInstrumentationConfig = {
   maxQueryLength: 1022,
 };
 
 export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
-  constructor(config: types.Config = {}) {
+  constructor(config: types.KnexInstrumentationConfig = {}) {
     super(
       `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
       VERSION,
@@ -132,7 +132,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
 
-        const maxLen = (instrumentation._config as types.Config).maxQueryLength!;
+        const maxLen = (instrumentation._config as types.KnexInstrumentationConfig).maxQueryLength!;
         const attributes: api.SpanAttributes = {
           'knex.version': moduleVersion,
           [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),

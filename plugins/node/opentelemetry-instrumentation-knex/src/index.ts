@@ -18,3 +18,5 @@ import { KnexInstrumentation } from './instrumentation';
 
 export * from './instrumentation';
 export default KnexInstrumentation;
+
+export { KnexInstrumentationConfig } from './types';
