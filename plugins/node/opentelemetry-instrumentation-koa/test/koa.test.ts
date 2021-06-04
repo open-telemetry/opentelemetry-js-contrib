@@ -33,6 +33,7 @@ import * as http from 'http';
 import { AddressInfo } from 'net';
 import { KoaLayerType } from '../src/types';
 import { AttributeNames } from '../src/enums/AttributeNames';
+import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
@@ -122,8 +123,15 @@ describe('Koa Instrumentation', () => {
   describe('Instrumenting @koa/router calls', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
-        context.with(trace.setSpan(context.active(), rootSpan), next)
+        context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        )
       );
 
       const router = new KoaRouter();
@@ -165,8 +173,15 @@ describe('Koa Instrumentation', () => {
 
     it('should correctly instrument nested routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
-        context.with(trace.setSpan(context.active(), rootSpan), next)
+        context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        )
       );
 
       const router = new KoaRouter();
@@ -210,8 +225,15 @@ describe('Koa Instrumentation', () => {
 
     it('should correctly instrument prefixed routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
-        context.with(trace.setSpan(context.active(), rootSpan), next)
+        context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        )
       );
 
       const router = new KoaRouter();

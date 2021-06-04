@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { hrTime } from '@opentelemetry/core';
+import {
+  hrTime,
+  setRPCMetadata,
+  getRPCMetadata,
+  RPCType,
+} from '@opentelemetry/core';
 import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
 import * as express from 'express';
 import {
@@ -23,7 +28,6 @@ import {
   PatchedRequest,
   _LAYERS_STORE_PROPERTY,
   ExpressInstrumentationConfig,
-  ExpressInstrumentationSpan,
 } from './types';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 import { AttributeNames } from './enums/AttributeNames';
@@ -183,7 +187,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
           .filter(path => path !== '/' && path !== '/*')
           .join('');
         const attributes: SpanAttributes = {
-          [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : undefined,
+          [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
         };
         const metadata = getLayerMetadata(layer, layerPath);
         const type = metadata.attributes[
@@ -192,19 +196,15 @@ export class ExpressInstrumentation extends InstrumentationBase<
 
         // Rename the root http span in case we haven't done it already
         // once we reach the request handler
+        const rpcMetadata = getRPCMetadata(context.active());
         if (
           metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
-          ExpressLayerType.REQUEST_HANDLER
+            ExpressLayerType.REQUEST_HANDLER &&
+          rpcMetadata?.type === RPCType.HTTP
         ) {
-          const parent = trace.getSpan(
-            context.active()
-          ) as ExpressInstrumentationSpan;
-          if (parent?.name) {
-            const parentRoute = parent.name.split(' ')[1];
-            if (!route.includes(parentRoute)) {
-              parent.updateName(`${req.method} ${route}`);
-            }
-          }
+          rpcMetadata.span.updateName(
+            `${req.method} ${route.length > 0 ? route : '/'}`
+          );
         }
 
         // verify against the config if the layer should be ignored
@@ -242,6 +242,13 @@ export class ExpressInstrumentation extends InstrumentationBase<
         // verify we have a callback
         const args = Array.from(arguments);
         const callbackIdx = args.findIndex(arg => typeof arg === 'function');
+        const newContext =
+          rpcMetadata?.type === RPCType.HTTP
+            ? setRPCMetadata(
+                context.active(),
+                Object.assign(rpcMetadata, { route: route })
+              )
+            : context.active();
         if (callbackIdx >= 0) {
           arguments[callbackIdx] = function () {
             if (spanHasEnded === false) {
@@ -253,7 +260,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
-            return context.bind(callback).apply(this, arguments);
+            return context.bind(callback, newContext).apply(this, arguments);
           };
         }
         const result = original.apply(this, arguments);
