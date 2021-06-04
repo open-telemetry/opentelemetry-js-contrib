@@ -133,7 +133,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
         const config = this.client.config;
 
         const maxLen = (instrumentation._config as types.Config).maxQueryLength!;
-        const attributes: any = {
+        const attributes: api.SpanAttributes = {
           'knex.version': moduleVersion,
           [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
         };
