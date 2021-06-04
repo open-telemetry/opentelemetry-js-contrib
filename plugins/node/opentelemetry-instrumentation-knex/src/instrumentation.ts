@@ -43,24 +43,10 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
     );
   }
 
-  private _moduleVersion?: string;
-
   init() {
     const module = new InstrumentationNodeModuleDefinition<typeof knex>(
       constants.MODULE_NAME,
-      constants.SUPPORTED_VERSIONS,
-      (moduleExports, moduleVersion) => {
-        api.diag.debug(
-          `Applying patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
-        this._moduleVersion = moduleVersion;
-        return moduleExports;
-      },
-      (moduleExports, moduleVersion) => {
-        api.diag.debug(
-          `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
-      }
+      constants.SUPPORTED_VERSIONS
     );
 
     module.files.push(
@@ -86,7 +72,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
           moduleVersion,
           Runner.prototype,
           'query',
-          this.wrapQuery.bind(this)
+          this.createQueryWrapper(moduleVersion)
         );
         return Runner;
       },
@@ -140,68 +126,70 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
     );
   }
 
-  private wrapQuery(original: Function) {
+  private createQueryWrapper(moduleVersion?: string) {
     const instrumentation = this;
-    return function wrapped_logging_method(this: any, query: any) {
-      const config = this.client.config;
+    return function wrapQuery(original: Function) {
+      return function wrapped_logging_method(this: any, query: any) {
+        const config = this.client.config;
 
-      const maxLen = (instrumentation._config as types.Config).maxQueryLength!;
-      const attributes: any = {
-        'knex.version': instrumentation._moduleVersion,
-        [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
-      };
-      if (maxLen !== 0) {
-        attributes[SemanticAttributes.DB_STATEMENT] = utils.limitLength(
-          query?.sql,
-          maxLen
+        const maxLen = (instrumentation._config as types.Config).maxQueryLength!;
+        const attributes: any = {
+          'knex.version': moduleVersion,
+          [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
+        };
+        if (maxLen !== 0) {
+          attributes[SemanticAttributes.DB_STATEMENT] = utils.limitLength(
+            query?.sql,
+            maxLen
+          );
+        }
+        const table = this.builder?._single?.table;
+        if (table) {
+          attributes[SemanticAttributes.DB_SQL_TABLE] = table;
+        }
+        // `method` actually refers to the knex API method - Not exactly "operation"
+        // in the spec sense, but matches most of the time.
+        const operation = query?.method;
+        if (operation) {
+          attributes[SemanticAttributes.DB_OPERATION] = operation;
+        }
+        const user = config?.connection?.user;
+        if (user) {
+          attributes[SemanticAttributes.DB_USER] = config.connection.user;
+        }
+        const name = config?.connection?.filename || config?.connection?.database;
+        if (name) {
+          attributes[SemanticAttributes.DB_NAME] = name;
+        }
+
+        const parent = this.builder[contextSymbol];
+        const span = instrumentation.tracer.startSpan(
+          utils.getName(name, operation, table),
+          {
+            attributes,
+          },
+          parent
         );
-      }
-      const table = this.builder?._single?.table;
-      if (table) {
-        attributes[SemanticAttributes.DB_SQL_TABLE] = table;
-      }
-      // `method` actually refers to the knex API method - Not exactly "operation"
-      // in the spec sense, but matches most of the time.
-      const operation = query?.method;
-      if (operation) {
-        attributes[SemanticAttributes.DB_OPERATION] = operation;
-      }
-      const user = config?.connection?.user;
-      if (user) {
-        attributes[SemanticAttributes.DB_USER] = config.connection.user;
-      }
-      const name = config?.connection?.filename || config?.connection?.database;
-      if (name) {
-        attributes[SemanticAttributes.DB_NAME] = name;
-      }
 
-      const parent = this.builder[contextSymbol];
-      const span = instrumentation.tracer.startSpan(
-        utils.getName(name, operation, table),
-        {
-          attributes,
-        },
-        parent
-      );
-
-      return original
-        .apply(this, arguments)
-        .then((result: unknown) => {
-          span.end();
-          return result;
-        })
-        .catch((err: any) => {
-          // knex adds full query with all the binding values to the message,
-          // we want to undo that without changing the original error
-          const formatter = utils.getFormatter(this);
-          const fullQuery = formatter(query.sql, query.bindings || []);
-          const message = err.message.replace(fullQuery + ' - ', '');
-          const clonedError = utils.cloneErrorWithNewMessage(err, message);
-          span.recordException(clonedError);
-          span.end();
-          throw err;
-        });
-    };
+        return original
+          .apply(this, arguments)
+          .then((result: unknown) => {
+            span.end();
+            return result;
+          })
+          .catch((err: any) => {
+            // knex adds full query with all the binding values to the message,
+            // we want to undo that without changing the original error
+            const formatter = utils.getFormatter(this);
+            const fullQuery = formatter(query.sql, query.bindings || []);
+            const message = err.message.replace(fullQuery + ' - ', '');
+            const clonedError = utils.cloneErrorWithNewMessage(err, message);
+            span.recordException(clonedError);
+            span.end();
+            throw err;
+          });
+      };
+    }
   }
 
   private storeContext(original: Function) {
