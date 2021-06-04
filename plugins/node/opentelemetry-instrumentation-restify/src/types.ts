@@ -15,7 +15,6 @@
  */
 import { Span } from '@opentelemetry/api';
 import * as restify from 'restify';
-import { REQ_SPAN } from './constants';
 
 export enum LayerType {
   MIDDLEWARE = 'middleware',
@@ -23,8 +22,6 @@ export enum LayerType {
 }
 
 declare interface RequestWithRoute extends restify.Request {
-  // undefined /* uninitialized */ | false /* renamed */ | InstrumentationSpan /* not yet renamed */
-  [REQ_SPAN]?: any;
   route: { path: string };
   getRoute: () => { path: string };
 }

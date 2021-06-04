@@ -16,6 +16,7 @@
 
 import * as restify from 'restify';
 import { context, trace } from '@opentelemetry/api';
+import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -259,9 +260,19 @@ describe('Restify Instrumentation', () => {
       const httpSpan: types.InstrumentationSpan = tracer.startSpan('HTTP GET');
 
       const testLocalServer = await createServer((server: restify.Server) => {
+        const rpcMetadata = {
+          type: RPCType.HTTP,
+          span: httpSpan,
+        };
         server.pre((req, res, next) => {
           // to simulate HTTP instrumentation
-          context.with(trace.setSpan(context.active(), httpSpan), next);
+          context.with(
+            setRPCMetadata(
+              trace.setSpan(context.active(), httpSpan),
+              rpcMetadata
+            ),
+            next
+          );
         });
         server.get('/route/:param', getHandler);
       });

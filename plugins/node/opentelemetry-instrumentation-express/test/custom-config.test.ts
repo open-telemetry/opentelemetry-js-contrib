@@ -23,10 +23,10 @@ import {
 } from '@opentelemetry/tracing';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
-import { ExpressInstrumentationSpan } from '../src/types';
+import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { ExpressInstrumentation } from '../src';
+import { ExpressInstrumentation, ExpressInstrumentationConfig } from '../src';
 
 const instrumentation = new ExpressInstrumentation({
   ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
@@ -129,9 +129,16 @@ describe('ExpressInstrumentation', () => {
     });
 
     it('should not repeat middleware paths in the span name', async () => {
-      app.use((req, res, next) =>
-        context.with(trace.setSpan(context.active(), rootSpan), next)
-      );
+      app.use((req, res, next) => {
+        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
 
       app.use('/mw', (req, res, next) => {
         next();
@@ -141,9 +148,7 @@ describe('ExpressInstrumentation', () => {
         res.send('ok');
       });
 
-      const rootSpan = tracer.startSpan(
-        'rootSpan'
-      ) as ExpressInstrumentationSpan;
+      const rootSpan = tracer.startSpan('rootSpan');
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await context.with(
@@ -152,8 +157,6 @@ describe('ExpressInstrumentation', () => {
           const response = await httpRequest.get(`http://localhost:${port}/mw`);
           assert.strictEqual(response, 'ok');
           rootSpan.end();
-
-          assert.strictEqual(rootSpan.name, 'GET /mw');
 
           const spans = memoryExporter.getFinishedSpans();
 
@@ -171,6 +174,59 @@ describe('ExpressInstrumentation', () => {
             'request_handler'
           );
           const exportedRootSpan = spans.find(span => span.name === 'GET /mw');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
+    it('should correctly name http root path when its /', async () => {
+      instrumentation.setConfig({
+        ignoreLayerTypes: [
+          ExpressLayerType.MIDDLEWARE,
+          ExpressLayerType.REQUEST_HANDLER,
+        ],
+      } as ExpressInstrumentationConfig);
+      app.use((req, res, next) => {
+        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
+
+      app.get('/', (req, res) => {
+        res.send('ok');
+      });
+
+      const rootSpan = tracer.startSpan('rootSpan');
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(`http://localhost:${port}/`);
+          assert.strictEqual(response, 'ok');
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('request handler'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/'
+          );
+
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
+            'request_handler'
+          );
+          const exportedRootSpan = spans.find(span => span.name === 'GET /');
           assert.notStrictEqual(exportedRootSpan, undefined);
         }
       );
