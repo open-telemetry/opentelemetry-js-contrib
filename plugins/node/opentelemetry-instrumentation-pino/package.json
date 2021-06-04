@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pino",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "OpenTelemetry instrumentation for pino",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -63,7 +63,7 @@
   "dependencies": {
     "@opentelemetry/api": "^0.20.0",
     "@opentelemetry/instrumentation": "^0.20.0",
-    "semver": "^7.3.5",
-    "@types/pino": "6.3.8"
+    "@types/pino": "6.3.8",
+    "semver": "^7.3.5"
   }
 }
