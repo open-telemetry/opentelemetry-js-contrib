@@ -16,8 +16,7 @@
 
 import {
   Context,
-  getSpanContext,
-  setSpanContext,
+  trace,
   TextMapGetter,
   TextMapSetter,
   TextMapPropagator,
@@ -67,7 +66,7 @@ export class GrpcCensusPropagator implements TextMapPropagator {
    *     the carrier
    */
   inject(context: Context, carrier: unknown, setter: TextMapSetter) {
-    const spanContext = getSpanContext(context);
+    const spanContext = trace.getSpan(context)?.spanContext();
     if (!spanContext) return;
 
     if (
@@ -128,12 +127,15 @@ export class GrpcCensusPropagator implements TextMapPropagator {
           const spanId = decodedContext.spanId;
 
           if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
-            return setSpanContext(context, {
-              traceId,
-              spanId,
-              isRemote: true,
-              traceFlags: decodedContext.traceFlags,
-            });
+            return trace.setSpan(
+              context,
+              trace.wrapSpanContext({
+                traceId,
+                spanId,
+                isRemote: true,
+                traceFlags: decodedContext.traceFlags,
+              })
+            );
           }
           return context;
         } else {

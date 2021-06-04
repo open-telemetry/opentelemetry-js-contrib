@@ -163,7 +163,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
         // span has to be stored and fixed in later handler.
         // https://github.com/open-telemetry/opentelemetry-specification/blob/a44d863edcdef63b0adce7b47df001933b7a158a/specification/trace/semantic_conventions/http.md#name
         if (req[constants.REQ_SPAN] === undefined) {
-          req[constants.REQ_SPAN] = api.getSpan(
+          req[constants.REQ_SPAN] = api.trace.getSpan(
             api.context.active()
           ) as types.InstrumentationSpan;
         }
@@ -217,7 +217,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
         };
 
         return api.context.with(
-          api.setSpan(api.context.active(), span),
+          api.trace.setSpan(api.context.active(), span),
           (req: types.Request, res: restify.Response, next: restify.Next) => {
             if (isAsyncFunction(handler)) {
               return wrapPromise(handler(req, res, next));

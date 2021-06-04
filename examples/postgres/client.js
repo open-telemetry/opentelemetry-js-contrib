@@ -8,8 +8,8 @@ const http = require('http');
 function makeRequest() {
   const span = tracer.startSpan('makeRequest');
   const randomId = Math.floor(Math.random() * 10);
-  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
-    console.log('Client traceId ', span.context().traceId);
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+    console.log('Client traceId ', span.spanContext().traceId);
     http.get({
       host: 'localhost',
       port: 3000,

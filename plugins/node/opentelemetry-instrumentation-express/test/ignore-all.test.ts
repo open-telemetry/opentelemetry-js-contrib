@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -87,7 +87,7 @@ describe('ExpressInstrumentation', () => {
       rootSpan = tracer.startSpan('rootSpan') as ExpressInstrumentationSpan;
       const app = express();
       app.use((req, res, next) =>
-        context.with(setSpan(context.active(), rootSpan), next)
+        context.with(trace.setSpan(context.active(), rootSpan), next)
       );
       app.use(express.json());
       app.use((req, res, next) => {
@@ -113,38 +113,44 @@ describe('ExpressInstrumentation', () => {
     it('should ignore all ExpressLayerType based on config', async () => {
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/toto/tata`);
-        rootSpan.end();
-        assert.deepStrictEqual(
-          memoryExporter
-            .getFinishedSpans()
-            .filter(
-              span =>
-                span.attributes[AttributeNames.EXPRESS_TYPE] ===
-                  ExpressLayerType.MIDDLEWARE ||
-                span.attributes[AttributeNames.EXPRESS_TYPE] ===
-                  ExpressLayerType.ROUTER ||
-                span.attributes[AttributeNames.EXPRESS_TYPE] ===
-                  ExpressLayerType.REQUEST_HANDLER
-            ).length,
-          0
-        );
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.deepStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .filter(
+                span =>
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                    ExpressLayerType.MIDDLEWARE ||
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                    ExpressLayerType.ROUTER ||
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                    ExpressLayerType.REQUEST_HANDLER
+              ).length,
+            0
+          );
+        }
+      );
     });
 
     it('root span name should be modified to GET /todo/:id', async () => {
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/toto/tata`);
-        rootSpan.end();
-        assert.strictEqual(rootSpan.name, 'GET /toto/:id');
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'GET /toto/:id');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.strictEqual(rootSpan.name, 'GET /toto/:id');
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'GET /toto/:id');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
   });
 });

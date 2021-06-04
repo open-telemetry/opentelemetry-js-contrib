@@ -15,19 +15,16 @@
  */
 
 import {
+  trace,
+  propagation,
   defaultTextMapGetter,
   defaultTextMapSetter,
   INVALID_SPANID,
   INVALID_TRACEID,
-  getSpanContext,
-  setSpanContext,
   SpanContext,
   TraceFlags,
   Baggage,
-  setBaggage,
-  getBaggage,
   ROOT_CONTEXT,
-  createBaggage,
 } from '@opentelemetry/api';
 import * as assert from 'assert';
 import {
@@ -55,7 +52,7 @@ describe('OTTracePropagator', () => {
       };
 
       propagator.inject(
-        setSpanContext(ROOT_CONTEXT, spanContext),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)),
         carrier,
         defaultTextMapSetter
       );
@@ -71,7 +68,7 @@ describe('OTTracePropagator', () => {
       };
 
       propagator.inject(
-        setSpanContext(ROOT_CONTEXT, spanContext),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)),
         carrier,
         defaultTextMapSetter
       );
@@ -89,7 +86,7 @@ describe('OTTracePropagator', () => {
       };
 
       propagator.inject(
-        setSpanContext(ROOT_CONTEXT, spanContext),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)),
         carrier,
         defaultTextMapSetter
       );
@@ -107,7 +104,7 @@ describe('OTTracePropagator', () => {
       };
 
       propagator.inject(
-        setSpanContext(ROOT_CONTEXT, spanContext),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)),
         carrier,
         defaultTextMapSetter
       );
@@ -125,7 +122,7 @@ describe('OTTracePropagator', () => {
       };
 
       propagator.inject(
-        setSpanContext(ROOT_CONTEXT, spanContext),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)),
         carrier,
         defaultTextMapSetter
       );
@@ -142,14 +139,17 @@ describe('OTTracePropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
 
-      let context = setSpanContext(ROOT_CONTEXT, spanContext);
+      let context = trace.setSpan(
+        ROOT_CONTEXT,
+        trace.wrapSpanContext(spanContext)
+      );
 
-      const baggage: Baggage = createBaggage({
+      const baggage: Baggage = propagation.createBaggage({
         foo: { value: 'bar' },
         bar: { value: 'baz' },
       });
 
-      context = setBaggage(context, baggage);
+      context = propagation.setBaggage(context, baggage);
 
       propagator.inject(context, carrier, defaultTextMapSetter);
 
@@ -164,14 +164,17 @@ describe('OTTracePropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
 
-      let context = setSpanContext(ROOT_CONTEXT, spanContext);
+      let context = trace.setSpan(
+        ROOT_CONTEXT,
+        trace.wrapSpanContext(spanContext)
+      );
 
-      const baggage: Baggage = createBaggage({
+      const baggage: Baggage = propagation.createBaggage({
         fθθ: { value: 'bar' },
         bar: { value: 'baz' },
       });
 
-      context = setBaggage(context, baggage);
+      context = propagation.setBaggage(context, baggage);
 
       propagator.inject(context, carrier, defaultTextMapSetter);
       assert.ok(!(`${OT_BAGGAGE_PREFIX}fθθ` in carrier));
@@ -185,14 +188,17 @@ describe('OTTracePropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
 
-      let context = setSpanContext(ROOT_CONTEXT, spanContext);
+      let context = trace.setSpan(
+        ROOT_CONTEXT,
+        trace.wrapSpanContext(spanContext)
+      );
 
-      const baggage: Baggage = createBaggage({
+      const baggage: Baggage = propagation.createBaggage({
         foo: { value: 'bαr' },
         bar: { value: 'baz' },
       });
 
-      context = setBaggage(context, baggage);
+      context = propagation.setBaggage(context, baggage);
 
       propagator.inject(context, carrier, defaultTextMapSetter);
       assert.ok(!(`${OT_BAGGAGE_PREFIX}foo` in carrier));
@@ -214,7 +220,7 @@ describe('OTTracePropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getSpanContext(context);
+      const extractedSpanContext = trace.getSpan(context)?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: 'e457b5a2e4d86bd1',
@@ -237,7 +243,7 @@ describe('OTTracePropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getSpanContext(context);
+      const extractedSpanContext = trace.getSpan(context)?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: 'e457b5a2e4d86bd1',
@@ -260,7 +266,7 @@ describe('OTTracePropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getSpanContext(context);
+      const extractedSpanContext = trace.getSpan(context)?.spanContext();
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: 'e457b5a2e4d86bd1',
         traceId: '00000000000000004aaba1a52cf8ee09',
@@ -282,7 +288,7 @@ describe('OTTracePropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getSpanContext(context);
+      const extractedSpanContext = trace.getSpan(context)?.spanContext();
       assert.deepStrictEqual(undefined, extractedSpanContext);
     });
 
@@ -299,7 +305,7 @@ describe('OTTracePropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getSpanContext(context);
+      const extractedSpanContext = trace.getSpan(context)?.spanContext();
       assert.deepStrictEqual(undefined, extractedSpanContext);
     });
 
@@ -316,7 +322,7 @@ describe('OTTracePropagator', () => {
         defaultTextMapGetter
       );
 
-      const extractedSpanContext = getSpanContext(context);
+      const extractedSpanContext = trace.getSpan(context)?.spanContext();
       assert.deepStrictEqual(undefined, extractedSpanContext);
     });
 
@@ -335,7 +341,7 @@ describe('OTTracePropagator', () => {
         defaultTextMapGetter
       );
 
-      const baggage = getBaggage(context);
+      const baggage = propagation.getBaggage(context);
 
       assert.ok(baggage);
       assert.deepStrictEqual(baggage.getAllEntries(), [

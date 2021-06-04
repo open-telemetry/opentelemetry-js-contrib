@@ -303,12 +303,12 @@ describe('ReactLoad Instrumentation', () => {
           );
           assert.equal(
             renderSpan.parentSpanId,
-            mountingSpan.spanContext.spanId,
+            mountingSpan.spanContext().spanId,
             'render span is not a child of the mounting span'
           );
           assert.equal(
             componentDidMountSpan.parentSpanId,
-            mountingSpan.spanContext.spanId,
+            mountingSpan.spanContext().spanId,
             'componentDidMount span is not a child of the mounting span'
           );
 
@@ -380,27 +380,27 @@ describe('ReactLoad Instrumentation', () => {
           );
           assert.equal(
             setStateSpan.parentSpanId,
-            updatingSpan.spanContext.spanId,
+            updatingSpan.spanContext().spanId,
             'setState span is not a child of the updating span'
           );
           assert.equal(
             shouldComponentUpdateSpan.parentSpanId,
-            updatingSpan.spanContext.spanId,
+            updatingSpan.spanContext().spanId,
             'shouldComponentUpdate span is not a child of the updating span'
           );
           assert.equal(
             renderSpan.parentSpanId,
-            updatingSpan.spanContext.spanId,
+            updatingSpan.spanContext().spanId,
             'render span is not a child of the updating span'
           );
           assert.equal(
             getSnapshotBeforeUpdateSpan.parentSpanId,
-            updatingSpan.spanContext.spanId,
+            updatingSpan.spanContext().spanId,
             'getSnapshotBeforeUpdate span is not a child of the updating span'
           );
           assert.equal(
             componentDidUpdateSpan.parentSpanId,
-            updatingSpan.spanContext.spanId,
+            updatingSpan.spanContext().spanId,
             'componentDidUpdate span is not a child of the updating span'
           );
 
@@ -490,22 +490,22 @@ describe('ReactLoad Instrumentation', () => {
           );
           assert.equal(
             forceUpdateSpan.parentSpanId,
-            updatingSpan.spanContext.spanId,
+            updatingSpan.spanContext().spanId,
             'forceUpdate span is not a child of the updating span'
           );
           assert.equal(
             renderSpan.parentSpanId,
-            updatingSpan.spanContext.spanId,
+            updatingSpan.spanContext().spanId,
             'render span is not a child of the updating span'
           );
           assert.equal(
             getSnapshotBeforeUpdateSpan.parentSpanId,
-            updatingSpan.spanContext.spanId,
+            updatingSpan.spanContext().spanId,
             'getSnapshotBeforeUpdate span is not a child of the updating span'
           );
           assert.equal(
             componentDidUpdateSpan.parentSpanId,
-            updatingSpan.spanContext.spanId,
+            updatingSpan.spanContext().spanId,
             'componentDidUpdate span is not a child of the updating span'
           );
 
@@ -585,7 +585,7 @@ describe('ReactLoad Instrumentation', () => {
           );
           assert.equal(
             componentWillUnmountSpan.parentSpanId,
-            unmountingSpan.spanContext.spanId,
+            unmountingSpan.spanContext().spanId,
             'componentWillUnmount span is not a child of the unmounting span'
           );
 
@@ -657,12 +657,12 @@ describe('ReactLoad Instrumentation', () => {
       );
       assert.equal(
         setStateSpan.parentSpanId,
-        updatingSpan.spanContext.spanId,
+        updatingSpan.spanContext().spanId,
         'setState span is not a child of the updating span'
       );
       assert.equal(
         shouldComponentUpdateSpan.parentSpanId,
-        updatingSpan.spanContext.spanId,
+        updatingSpan.spanContext().spanId,
         'shouldComponentUpdate span is not a child of the updating span'
       );
 
