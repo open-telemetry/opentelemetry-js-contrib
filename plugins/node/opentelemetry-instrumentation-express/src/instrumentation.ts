@@ -187,7 +187,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
           .filter(path => path !== '/' && path !== '/*')
           .join('');
         const attributes: SpanAttributes = {
-          [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : undefined,
+          [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
         };
         const metadata = getLayerMetadata(layer, layerPath);
         const type = metadata.attributes[
@@ -202,7 +202,9 @@ export class ExpressInstrumentation extends InstrumentationBase<
             ExpressLayerType.REQUEST_HANDLER &&
           rpcMetadata?.type === RPCType.HTTP
         ) {
-          rpcMetadata.span.updateName(`${req.method} ${route}`);
+          rpcMetadata.span.updateName(
+            `${req.method} ${route.length > 0 ? route : '/'}`
+          );
         }
 
         // verify against the config if the layer should be ignored
