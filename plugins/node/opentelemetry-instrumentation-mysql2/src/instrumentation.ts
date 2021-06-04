@@ -33,12 +33,12 @@ import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
-export class MySQLInstrumentation extends InstrumentationBase<
+export class MySQL2Instrumentation extends InstrumentationBase<
   typeof mysqlTypes
 > {
   static readonly COMPONENT = 'mysql';
   static readonly COMMON_ATTRIBUTES = {
-    [SemanticAttributes.DB_SYSTEM]: MySQLInstrumentation.COMPONENT,
+    [SemanticAttributes.DB_SYSTEM]: MySQL2Instrumentation.COMPONENT,
   };
 
   constructor(protected _config: MySQL2InstrumentationConfig = {}) {
@@ -80,7 +80,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
   private _patchQuery(format: formatType) {
     return (originalQuery: Function): Function => {
       const thisPlugin = this;
-      api.diag.debug('MySQLInstrumentation: patched mysql query');
+      api.diag.debug('MySQL2Instrumentation: patched mysql query');
 
       return function query(
         this: mysqlTypes.Connection,
@@ -98,7 +98,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
         const span = thisPlugin.tracer.startSpan(getSpanName(query), {
           kind: api.SpanKind.CLIENT,
           attributes: {
-            ...MySQLInstrumentation.COMMON_ATTRIBUTES,
+            ...MySQL2Instrumentation.COMMON_ATTRIBUTES,
             ...getConnectionAttributes(this.config),
             [SemanticAttributes.DB_STATEMENT]: getDbStatement(
               query,

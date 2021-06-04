@@ -25,7 +25,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { MySQLInstrumentation } from '../src';
+import { MySQL2Instrumentation } from '../src';
 
 const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
@@ -33,7 +33,7 @@ const host = process.env.MYSQL_HOST || '127.0.0.1';
 const user = process.env.MYSQL_USER || 'otel';
 const password = process.env.MYSQL_PASSWORD || 'secret';
 
-const instrumentation = new MySQLInstrumentation();
+const instrumentation = new MySQL2Instrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
