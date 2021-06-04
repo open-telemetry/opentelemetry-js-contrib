@@ -132,7 +132,9 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
 
-        const maxLen = (instrumentation._config as types.KnexInstrumentationConfig).maxQueryLength!;
+        const maxLen = (
+          instrumentation._config as types.KnexInstrumentationConfig
+        ).maxQueryLength!;
         const attributes: api.SpanAttributes = {
           'knex.version': moduleVersion,
           [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
@@ -157,7 +159,8 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
         if (user) {
           attributes[SemanticAttributes.DB_USER] = config.connection.user;
         }
-        const name = config?.connection?.filename || config?.connection?.database;
+        const name =
+          config?.connection?.filename || config?.connection?.database;
         if (name) {
           attributes[SemanticAttributes.DB_NAME] = name;
         }
@@ -189,7 +192,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
             throw err;
           });
       };
-    }
+    };
   }
 
   private storeContext(original: Function) {

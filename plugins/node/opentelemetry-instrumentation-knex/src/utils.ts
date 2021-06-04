@@ -68,7 +68,12 @@ export const getName = (db: string, operation?: string, table?: string) => {
 };
 
 export const limitLength = (str: string, maxLength: number) => {
-  if (typeof str === 'string' && typeof maxLength === 'number' && 0 < maxLength && maxLength < str.length) {
+  if (
+    typeof str === 'string' &&
+    typeof maxLength === 'number' &&
+    0 < maxLength &&
+    maxLength < str.length
+  ) {
     return str.substr(0, maxLength) + '..';
   }
   return str;
