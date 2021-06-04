@@ -16,27 +16,21 @@
 
 import { SpanAttributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import type {
-  Query,
-  QueryOptions,
-} from 'mysql2';
-
+import type { Query, QueryOptions } from 'mysql2';
 
 interface Config {
-  host?: string,
-  port?: number,
-  database?: string,
-  user?: string,
-  connectionConfig?: Config,
+  host?: string;
+  port?: number;
+  database?: string;
+  user?: string;
+  connectionConfig?: Config;
 }
 /**
  * Get an SpanAttributes map from a mysql connection config object
  *
  * @param config ConnectionConfig
  */
-export function getConnectionAttributes(
-  config: Config
-): SpanAttributes {
+export function getConnectionAttributes(config: Config): SpanAttributes {
   const { host, port, database, user } = getConfig(config);
 
   return {
@@ -115,6 +109,7 @@ export const once = (fn: Function) => {
   let called = false;
   return (...args: unknown[]) => {
     if (called) return;
+    called = true;
     return fn(...args);
   };
 };

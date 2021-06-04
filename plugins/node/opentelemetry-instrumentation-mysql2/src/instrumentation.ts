@@ -23,7 +23,12 @@ import {
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
-import { getConnectionAttributes, getDbStatement, getSpanName, once } from './utils';
+import {
+  getConnectionAttributes,
+  getDbStatement,
+  getSpanName,
+  once,
+} from './utils';
 import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
@@ -48,7 +53,8 @@ export class MySQLInstrumentation extends InstrumentationBase<
         (moduleExports: any, moduleVersion) => {
           api.diag.debug(`Patching mysql@${moduleVersion}`);
 
-          const ConnectionPrototype: mysqlTypes.Connection = moduleExports.Connection.prototype;
+          const ConnectionPrototype: mysqlTypes.Connection =
+            moduleExports.Connection.prototype;
           api.diag.debug('Patching Connection.prototype.query');
           if (isWrapped(ConnectionPrototype.query)) {
             this._unwrap(ConnectionPrototype, 'query');
@@ -63,16 +69,15 @@ export class MySQLInstrumentation extends InstrumentationBase<
         },
         (moduleExports: any) => {
           if (moduleExports === undefined) return;
-          const ConnectionPrototype: mysqlTypes.Connection = moduleExports.Connection.prototype;
+          const ConnectionPrototype: mysqlTypes.Connection =
+            moduleExports.Connection.prototype;
           this._unwrap(ConnectionPrototype, 'query');
         }
       ),
     ];
   }
 
-  private _patchQuery(
-    format: formatType
-  ) {
+  private _patchQuery(format: formatType) {
     return (originalQuery: Function): Function => {
       const thisPlugin = this;
       api.diag.debug('MySQLInstrumentation: patched mysql query');
@@ -95,7 +100,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
           attributes: {
             ...MySQLInstrumentation.COMMON_ATTRIBUTES,
             ...getConnectionAttributes(this.config),
-            [SemanticAttributes.DB_STATEMENT]: getDbStatement(query, format, values),
+            [SemanticAttributes.DB_STATEMENT]: getDbStatement(
+              query,
+              format,
+              values
+            ),
           },
         });
         const endSpan = once((err?: any) => {
@@ -110,7 +119,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
         if (arguments.length === 1) {
           if (typeof (query as any).onResult === 'function') {
-            thisPlugin._wrap((query as any), 'onResult', thisPlugin._patchCallbackQuery(endSpan));
+            thisPlugin._wrap(
+              query as any,
+              'onResult',
+              thisPlugin._patchCallbackQuery(endSpan)
+            );
           }
 
           const streamableQuery: mysqlTypes.Query = originalQuery.apply(
@@ -131,9 +144,17 @@ export class MySQLInstrumentation extends InstrumentationBase<
         }
 
         if (typeof arguments[1] === 'function') {
-          thisPlugin._wrap(arguments, 1, thisPlugin._patchCallbackQuery(endSpan));
+          thisPlugin._wrap(
+            arguments,
+            1,
+            thisPlugin._patchCallbackQuery(endSpan)
+          );
         } else if (typeof arguments[2] === 'function') {
-          thisPlugin._wrap(arguments, 2, thisPlugin._patchCallbackQuery(endSpan));
+          thisPlugin._wrap(
+            arguments,
+            2,
+            thisPlugin._patchCallbackQuery(endSpan)
+          );
         }
 
         return originalQuery.apply(this, arguments);
