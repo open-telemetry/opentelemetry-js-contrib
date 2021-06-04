@@ -1,7 +1,7 @@
 {
   "name": "instrumentations-node-example",
   "private": true,
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Example of using meta package for default auto instrumentations in node",
   "main": "index.js",
   "scripts": {

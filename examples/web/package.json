@@ -1,7 +1,7 @@
 {
   "name": "web-examples",
   "private": true,
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Example of using web plugins in browser",
   "main": "index.js",
   "scripts": {

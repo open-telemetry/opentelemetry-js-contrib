@@ -1,7 +1,7 @@
 {
   "name": "restify-example",
   "private": true,
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Example of restify integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
