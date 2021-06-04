@@ -29,7 +29,7 @@ import * as types from './types';
 
 import type * as knex from 'knex';
 
-const contextSymbol = Symbol('knexContextSymbol');
+const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: types.Config = {
   maxQueryLength: 1022,
 };
