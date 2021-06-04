@@ -22,7 +22,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { ExpressInstrumentationSpan } from '../src/types';
+import { setRPCMetadata, RPCType } from '@opentelemetry/core';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -61,9 +61,13 @@ const serverWithMiddleware = async (
 ): Promise<http.Server> => {
   const app = express();
   if (tracer) {
-    app.use((req, res, next) =>
-      context.with(trace.setSpan(context.active(), rootSpan), next)
-    );
+    app.use((req, res, next) => {
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      return context.with(
+        setRPCMetadata(trace.setSpan(context.active(), rootSpan), rpcMetadata),
+        next
+      );
+    });
   }
 
   app.use(express.json());
@@ -109,9 +113,7 @@ describe('ExpressInstrumentation', () => {
 
   describe('Instrumenting normal get operations', () => {
     it('should create a child span for middlewares', async () => {
-      const rootSpan = tracer.startSpan(
-        'rootSpan'
-      ) as ExpressInstrumentationSpan;
+      const rootSpan = tracer.startSpan('rootSpan');
       const app = express();
       app.use((req, res, next) =>
         context.with(trace.setSpan(context.active(), rootSpan), next)
@@ -148,7 +150,6 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(rootSpan.name, 'GET /toto/:id');
           assert.strictEqual(finishListenerCount, 2);
           assert.notStrictEqual(
             memoryExporter

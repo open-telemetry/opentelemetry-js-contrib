@@ -23,7 +23,7 @@ import {
 } from '@opentelemetry/tracing';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
-import { ExpressInstrumentationSpan } from '../src/types';
+import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
@@ -129,9 +129,16 @@ describe('ExpressInstrumentation', () => {
     });
 
     it('should not repeat middleware paths in the span name', async () => {
-      app.use((req, res, next) =>
-        context.with(trace.setSpan(context.active(), rootSpan), next)
-      );
+      app.use((req, res, next) => {
+        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
 
       app.use('/mw', (req, res, next) => {
         next();
@@ -141,9 +148,7 @@ describe('ExpressInstrumentation', () => {
         res.send('ok');
       });
 
-      const rootSpan = tracer.startSpan(
-        'rootSpan'
-      ) as ExpressInstrumentationSpan;
+      const rootSpan = tracer.startSpan('rootSpan');
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await context.with(
@@ -152,8 +157,6 @@ describe('ExpressInstrumentation', () => {
           const response = await httpRequest.get(`http://localhost:${port}/mw`);
           assert.strictEqual(response, 'ok');
           rootSpan.end();
-
-          assert.strictEqual(rootSpan.name, 'GET /mw');
 
           const spans = memoryExporter.getFinishedSpans();
 
