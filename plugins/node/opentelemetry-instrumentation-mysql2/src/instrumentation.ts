@@ -22,7 +22,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql2';
-import { MySQLInstrumentationConfig } from './types';
+import { MySQL2InstrumentationConfig } from './types';
 import { getConnectionAttributes, getDbStatement, getSpanName, once } from './utils';
 import { VERSION } from './version';
 
@@ -36,7 +36,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     [SemanticAttributes.DB_SYSTEM]: MySQLInstrumentation.COMPONENT,
   };
 
-  constructor(protected _config: MySQLInstrumentationConfig = {}) {
+  constructor(protected _config: MySQL2InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mysql2', VERSION, _config);
   }
 

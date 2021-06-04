@@ -15,4 +15,4 @@
  */
 
 export * from './instrumentation';
-export { MySQLInstrumentationConfig } from './types';
+export { MySQL2InstrumentationConfig } from './types';
