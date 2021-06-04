@@ -20,8 +20,8 @@ import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 // Read the environment variables, and check for the existence of the "MV" variable
 // This can be used to only build the one or the other target.
 module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
-  // Build the extension for "Manifest Version 3" (Google Chrome only)
-  const targetMV3 = {
+  // Build the extension for "Manifest Version 2" (Chromium, Firefox & others.)
+  const targetMV2 = {
     devtool: env.WEBPACK_BUILD ? false : 'inline-source-map',
     entry: {
       background: './src/background/index.ts',
@@ -41,7 +41,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
             {
               loader: path.resolve('src/utils/manifest-loader.ts'),
               options: {
-                manifestVersion: 3,
+                manifestVersion: 2,
               },
             },
           ],
@@ -81,7 +81,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
     },
     output: {
       filename: '[name].js',
-      path: path.resolve(__dirname, 'build/mv3'),
+      path: path.resolve(__dirname, 'build/mv2'),
     },
     plugins: [
       new HtmlWebpackPlugin({
@@ -102,22 +102,22 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
     },
   };
 
-  // Build the extension for "Manifest Version 2" (Chromium, Firefox & others.)
-  const targetMV2 = Object.assign({}, targetMV3, {
+  // Build the extension for "Manifest Version 3" (Google Chrome only)
+  const targetMV3 = Object.assign({}, targetMV2, {
     output: {
       filename: '[name].js',
-      path: path.resolve(__dirname, 'build/mv2'),
+      path: path.resolve(__dirname, 'build/mv3'),
     },
   });
 
   targetMV2.module.rules[0].use[1].options = {
-    manifestVersion: 2,
+    manifestVersion: 3,
   };
 
   const exports = [];
 
   if (env.MV) {
-    exports.push(Number(env.MV) === 2 ? targetMV2 : targetMV3);
+    exports.push(Number(env.MV) === 3 ? targetMV3 : targetMV2);
   } else {
     exports.push(targetMV3);
     exports.push(targetMV2);
