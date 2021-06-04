@@ -17,7 +17,7 @@
 import {
   context,
   diag,
-  getSpan,
+  trace,
   Span,
   SpanKind,
   SpanStatusCode,
@@ -131,7 +131,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         options: unknown | Function,
         callback?: Function
       ) {
-        const currentSpan = getSpan(context.active());
+        const currentSpan = trace.getSpan(context.active());
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (
@@ -181,7 +181,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         options: unknown | Function,
         callback?: Function
       ) {
-        const currentSpan = getSpan(context.active());
+        const currentSpan = trace.getSpan(context.active());
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (
@@ -226,7 +226,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         options: unknown | Function,
         callback?: Function
       ) {
-        const currentSpan = getSpan(context.active());
+        const currentSpan = trace.getSpan(context.active());
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (
@@ -291,7 +291,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         options: unknown | Function,
         callback?: Function
       ) {
-        const currentSpan = getSpan(context.active());
+        const currentSpan = trace.getSpan(context.active());
         const resultHandler =
           typeof options === 'function' ? options : callback;
         if (!currentSpan || typeof resultHandler !== 'function') {

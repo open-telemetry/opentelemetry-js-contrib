@@ -28,12 +28,12 @@ app.get('/:cmd', (req, res) => {
       values: [req.query.id, req.query.text],
     };
   }
-  const currentSpan = api.getSpan(api.context.active());
-  console.log(`traceid: ${currentSpan.context().traceId}`);
+  const currentSpan = api.trace.getSpan(api.context.active());
+  console.log(`traceid: ${currentSpan.spanContext().traceId}`);
   const span = tracer.startSpan(cmd, {
     kind: SpanKind.SERVER,
   });
-  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
     try {
       pool.query(queryText, (err, ret) => {
         if (err) throw err;

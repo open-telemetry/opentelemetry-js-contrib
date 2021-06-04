@@ -87,8 +87,8 @@ export const assertSpan = (
   events: TimedEvent[],
   status: SpanStatus
 ) => {
-  assert.strictEqual(span.spanContext.traceId.length, 32);
-  assert.strictEqual(span.spanContext.spanId.length, 16);
+  assert.strictEqual(span.spanContext().traceId.length, 32);
+  assert.strictEqual(span.spanContext().spanId.length, 16);
   assert.strictEqual(span.kind, kind);
 
   assert.ok(span.endTime);
@@ -116,8 +116,8 @@ export const assertPropagation = (
   childSpan: ReadableSpan,
   parentSpan: Span
 ) => {
-  const targetSpanContext = childSpan.spanContext;
-  const sourceSpanContext = parentSpan.context();
+  const targetSpanContext = childSpan.spanContext();
+  const sourceSpanContext = parentSpan.spanContext();
   assert.strictEqual(targetSpanContext.traceId, sourceSpanContext.traceId);
   assert.strictEqual(childSpan.parentSpanId, sourceSpanContext.spanId);
   assert.strictEqual(

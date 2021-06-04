@@ -121,7 +121,7 @@ export default class Instrumentation extends InstrumentationBase<
         parent
       );
 
-      return api.context.with(api.setSpan(parent, span), () => {
+      return api.context.with(api.trace.setSpan(parent, span), () => {
         return original.call(this, ...args).then(
           value => {
             span.end();
@@ -168,7 +168,7 @@ export default class Instrumentation extends InstrumentationBase<
         parent
       );
 
-      return api.context.with(api.setSpan(parent, span), () => {
+      return api.context.with(api.trace.setSpan(parent, span), () => {
         original.call(
           this,
           (err: unknown, client: unknown) => {

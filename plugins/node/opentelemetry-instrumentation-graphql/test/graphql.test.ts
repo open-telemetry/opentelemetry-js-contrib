@@ -170,9 +170,9 @@ describe('graphql', () => {
           'books',
           '[Book]',
           'books {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -270,9 +270,9 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: *) {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -360,9 +360,9 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: $id) {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -599,9 +599,9 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: 0) {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -696,9 +696,9 @@ describe('graphql', () => {
             '    ) {\n' +
             '      id\n' +
             '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(span1, 'id', 'addBook.id', 'Int', 'id', parentId);
       });
     });
@@ -781,9 +781,9 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: $id) {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -880,9 +880,9 @@ describe('graphql', () => {
           '    ) {\n' +
           '      id\n' +
           '    }',
-        executeSpan.spanContext.spanId
+        executeSpan.spanContext().spanId
       );
-      const parentId = resolveParentSpan.spanContext.spanId;
+      const parentId = resolveParentSpan.spanContext().spanId;
       assertResolveSpan(span1, 'id', 'addBook.id', 'Int', 'id', parentId);
     });
   });

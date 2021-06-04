@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.14.3",
-    "@opentelemetry/propagator-b3": "0.19.0",
+    "@opentelemetry/propagator-b3": "0.20.0",
     "@types/mocha": "7.0.2",
     "@types/node": "12.20.13",
     "@types/react": "17.0.6",
@@ -84,12 +84,12 @@
     "react": "^16.13.1 || ^17.0.0"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.0.0-rc.0",
-    "@opentelemetry/context-zone": "^0.19.0",
-    "@opentelemetry/core": "^0.19.0",
-    "@opentelemetry/semantic-conventions": "^0.19.0",
-    "@opentelemetry/tracing": "^0.19.0",
-    "@opentelemetry/web": "^0.19.0",
+    "@opentelemetry/api": "^0.20.0",
+    "@opentelemetry/context-zone": "^0.20.0",
+    "@opentelemetry/core": "^0.20.0",
+    "@opentelemetry/semantic-conventions": "^0.20.0",
+    "@opentelemetry/tracing": "^0.20.0",
+    "@opentelemetry/web": "^0.20.0",
     "shimmer": "^1.2.1"
   }
 }

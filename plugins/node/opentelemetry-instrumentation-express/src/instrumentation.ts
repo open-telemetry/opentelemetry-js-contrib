@@ -15,7 +15,7 @@
  */
 
 import { hrTime } from '@opentelemetry/core';
-import { getSpan, context, diag, SpanAttributes } from '@opentelemetry/api';
+import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
 import * as express from 'express';
 import {
   ExpressLayer,
@@ -196,7 +196,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
           metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
           ExpressLayerType.REQUEST_HANDLER
         ) {
-          const parent = getSpan(
+          const parent = trace.getSpan(
             context.active()
           ) as ExpressInstrumentationSpan;
           if (parent?.name) {
@@ -214,7 +214,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
           }
           return original.apply(this, arguments);
         }
-        if (getSpan(context.active()) === undefined) {
+        if (trace.getSpan(context.active()) === undefined) {
           return original.apply(this, arguments);
         }
 

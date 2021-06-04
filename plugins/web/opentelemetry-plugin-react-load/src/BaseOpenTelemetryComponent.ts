@@ -88,7 +88,9 @@ export class BaseOpenTelemetryComponent extends React.Component {
       {
         attributes: this._getAttributes(react),
       },
-      parentSpan ? api.setSpan(api.context.active(), parentSpan) : undefined
+      parentSpan
+        ? api.trace.setSpan(api.context.active(), parentSpan)
+        : undefined
     );
   }
 
@@ -119,9 +121,12 @@ export class BaseOpenTelemetryComponent extends React.Component {
     const span = this._createSpanWithParent(react, spanName, parent);
     let wasError = false;
     try {
-      return api.context.with(api.setSpan(api.context.active(), span), () => {
-        return original();
-      });
+      return api.context.with(
+        api.trace.setSpan(api.context.active(), span),
+        () => {
+          return original();
+        }
+      );
     } catch (err) {
       span.setAttribute(AttributeNames.REACT_ERROR, err.stack);
       wasError = true;

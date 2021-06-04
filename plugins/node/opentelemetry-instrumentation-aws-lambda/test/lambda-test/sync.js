@@ -36,5 +36,5 @@ exports.callbackstringerror = function (event, context, callback) {
 }
 
 exports.context = function (event, context, callback) {
-  callback(null, api.getSpanContext(api.context.active()).traceId);
+  callback(null, api.trace.getSpan(api.context.active()).spanContext().traceId);
 };

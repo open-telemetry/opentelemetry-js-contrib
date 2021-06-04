@@ -23,7 +23,7 @@ import {
 import {
   context,
   diag,
-  getSpan,
+  trace,
   Span,
   SpanKind,
   SpanStatusCode,
@@ -160,7 +160,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
         // Bind callback to parent span
         if (args.length > 0) {
-          const parentSpan = getSpan(context.active());
+          const parentSpan = trace.getSpan(context.active());
           if (typeof args[args.length - 1] === 'function') {
             // Patch ParameterQuery callback
             args[args.length - 1] = utils.patchCallback(
@@ -243,7 +243,7 @@ export class PgInstrumentation extends InstrumentationBase {
         });
 
         if (callback) {
-          const parentSpan = getSpan(context.active());
+          const parentSpan = trace.getSpan(context.active());
           callback = utils.patchCallbackPGPool(
             span,
             callback

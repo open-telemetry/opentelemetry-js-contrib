@@ -328,7 +328,7 @@ export class HapiInstrumentation extends InstrumentationBase {
       const newHandler: PatchableExtMethod = async function (
         ...params: Parameters<Hapi.Lifecycle.Method>
       ) {
-        if (api.getSpan(api.context.active()) === undefined) {
+        if (api.trace.getSpan(api.context.active()) === undefined) {
           return await method(...params);
         }
         const metadata = getExtMetadata(extPoint, pluginName);
@@ -337,7 +337,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         });
         let res;
         await api.context.with(
-          api.setSpan(api.context.active(), span),
+          api.trace.setSpan(api.context.active(), span),
           async () => {
             res = await method(...params);
           }
@@ -371,7 +371,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         h: Hapi.ResponseToolkit,
         err?: Error
       ) {
-        if (api.getSpan(api.context.active()) === undefined) {
+        if (api.trace.getSpan(api.context.active()) === undefined) {
           return await oldHandler(request, h, err);
         }
         const metadata = getRouteMetadata(route, pluginName);
