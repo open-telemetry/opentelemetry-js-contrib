@@ -27,7 +27,7 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
 import * as types from './types';
 
-import * as knex from 'knex';
+import type * as knex from 'knex';
 
 const contextSymbol = Symbol('knexContextSymbol');
 const DEFAULT_CONFIG: types.Config = {
