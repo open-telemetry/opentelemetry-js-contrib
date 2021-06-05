@@ -37,7 +37,7 @@ import { VERSION } from './version';
  * Dns instrumentation for Opentelemetry
  */
 export class DnsInstrumentation extends InstrumentationBase<Dns> {
-  constructor(protected _config: DnsInstrumentationConfig = {}) {
+  constructor(protected override _config: DnsInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-dns', VERSION, _config);
   }
 

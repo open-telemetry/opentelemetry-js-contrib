@@ -48,7 +48,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   readonly component: string = 'document-load';
   readonly version: string = '1';
   moduleName = this.component;
-  protected _config!: InstrumentationConfig;
 
   /**
    *
@@ -235,7 +234,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   /**
    * implements enable function
    */
-  enable() {
+  override enable() {
     // remove previously attached load to avoid adding the same event twice
     // in case of multiple enable calling.
     window.removeEventListener('load', this._onDocumentLoaded);
@@ -245,7 +244,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   /**
    * implements disable function
    */
-  disable() {
+  override disable() {
     window.removeEventListener('load', this._onDocumentLoaded);
   }
 }

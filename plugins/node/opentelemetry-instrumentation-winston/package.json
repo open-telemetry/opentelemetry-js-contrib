@@ -59,7 +59,7 @@
     "rimraf": "3.0.2",
     "sinon": "9.2.4",
     "ts-mocha": "8.0.0",
-    "typescript": "4.3.2",
+    "typescript": "4.3.4",
     "winston": "3.3.3",
     "winston2": "npm:winston@2.4.5"
   },

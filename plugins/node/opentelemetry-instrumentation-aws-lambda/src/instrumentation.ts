@@ -71,11 +71,11 @@ export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _tracerProvider: TracerProvider | undefined;
 
-  constructor(protected _config: AwsLambdaInstrumentationConfig = {}) {
+  constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
   }
 
-  setConfig(config: AwsLambdaInstrumentationConfig = {}) {
+  override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
     this._config = config;
   }
 
@@ -218,7 +218,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     };
   }
 
-  setTracerProvider(tracerProvider: TracerProvider) {
+  override setTracerProvider(tracerProvider: TracerProvider) {
     super.setTracerProvider(tracerProvider);
     this._tracerProvider = tracerProvider;
   }
