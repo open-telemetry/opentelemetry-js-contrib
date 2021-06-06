@@ -15,6 +15,11 @@
  */
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { Span } from '@opentelemetry/api';
+
+export interface MongoDBInstrumentationExecutionResponseHook {
+  (span: Span, result: CommandResult): void;
+}
 
 export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
   /**
@@ -25,6 +30,14 @@ export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   enhancedDatabaseReporting?: boolean;
+
+  /**
+   * Hook that allows adding custom span attributes based on the data
+   * returned from MongoDB actions.
+   *
+   * @default undefined
+   */
+  responseHook?: MongoDBInstrumentationExecutionResponseHook;
 }
 
 export type Func<T> = (...args: unknown[]) => T;
@@ -44,6 +57,13 @@ export type CursorState = { cmd: MongoInternalCommand } & Record<
   string,
   unknown
 >;
+
+// https://github.com/mongodb/node-mongodb-native/blob/3.6/lib/core/connection/command_result.js
+export type CommandResult = {
+  result?: string;
+  connection?: string;
+  message?: string;
+}
 
 // https://github.com/mongodb/node-mongodb-native/blob/3.6/lib/core/wireprotocol/index.js
 export type WireProtocolInternal = {
