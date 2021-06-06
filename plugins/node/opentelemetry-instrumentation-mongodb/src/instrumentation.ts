@@ -42,12 +42,24 @@ import { VERSION } from './version';
 
 const supportedVersions = ['>=3.3 <4'];
 
+const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
+  enhancedDatabaseReporting: false,
+};
+
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<
   typeof mongodb
 > {
-  constructor(protected _config: MongoDBInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
+  constructor(config: MongoDBInstrumentationConfig = {}) {
+    super("@opentelemetry/instrumentation-mongodb", VERSION, Object.assign({}, DEFAULT_CONFIG, config));
+  }
+
+  private _getConfig(): MongoDBInstrumentationConfig {
+    return this._config as MongoDBInstrumentationConfig;
+  }
+
+  setConfig(config: MongoDBInstrumentationConfig) {
+    this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
   init() {
@@ -406,8 +418,9 @@ export class MongoDBInstrumentation extends InstrumentationBase<
 
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     const commandObj = command.query ?? command.q ?? command;
+    const config = this._getConfig();
     const query =
-      this._config?.enhancedDatabaseReporting === true
+      config?.enhancedDatabaseReporting === true
         ? commandObj
         : Object.keys(commandObj).reduce((obj, key) => {
             obj[key] = '?';
