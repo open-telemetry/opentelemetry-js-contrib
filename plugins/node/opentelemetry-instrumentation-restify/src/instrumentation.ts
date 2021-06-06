@@ -29,6 +29,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { isPromise, isAsyncFunction } from './utils';
+import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 
 const { diag } = api;
 
@@ -159,23 +160,9 @@ export class RestifyInstrumentation extends InstrumentationBase<
             : req.route?.path;
 
         // replace HTTP instrumentations name with one that contains a route
-        // in first handlers, we might not now the route yet, in which case the HTTP
-        // span has to be stored and fixed in later handler.
-        // https://github.com/open-telemetry/opentelemetry-specification/blob/a44d863edcdef63b0adce7b47df001933b7a158a/specification/trace/semantic_conventions/http.md#name
-        if (req[constants.REQ_SPAN] === undefined) {
-          req[constants.REQ_SPAN] = api.getSpan(
-            api.context.active()
-          ) as types.InstrumentationSpan;
-        }
-        if (
-          route &&
-          req[constants.REQ_SPAN] &&
-          req[constants.REQ_SPAN]?.name?.startsWith('HTTP ')
-        ) {
-          (req[constants.REQ_SPAN] as types.InstrumentationSpan).updateName(
-            `${req.method} ${route}`
-          );
-          req[constants.REQ_SPAN] = false;
+        const httpMetadata = getRPCMetadata(api.context.active());
+        if (httpMetadata?.type === RPCType.HTTP) {
+          httpMetadata.span.updateName(`${req.method} ${route}`);
         }
 
         const fnName = handler.name || undefined;
@@ -216,8 +203,15 @@ export class RestifyInstrumentation extends InstrumentationBase<
             });
         };
 
+        let newContext = api.trace.setSpan(api.context.active(), span);
+        if (httpMetadata) {
+          newContext = setRPCMetadata(
+            newContext,
+            Object.assign(httpMetadata, { route })
+          );
+        }
         return api.context.with(
-          api.setSpan(api.context.active(), span),
+          newContext,
           (req: types.Request, res: restify.Response, next: restify.Next) => {
             if (isAsyncFunction(handler)) {
               return wrapPromise(handler(req, res, next));

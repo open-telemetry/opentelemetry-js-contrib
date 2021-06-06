@@ -17,7 +17,7 @@
 import {
   context,
   diag,
-  getSpan,
+  trace,
   isSpanContextValid,
   Span,
 } from '@opentelemetry/api';
@@ -79,13 +79,13 @@ export class BunyanInstrumentation extends InstrumentationBase<
     return (original: (...args: unknown[]) => void) => {
       const instrumentation = this;
       return function patchedEmit(this: BunyanLogger, ...args: unknown[]) {
-        const span = getSpan(context.active());
+        const span = trace.getSpan(context.active());
 
         if (!span) {
           return original.apply(this, args);
         }
 
-        const spanContext = span.context();
+        const spanContext = span.spanContext();
 
         if (!isSpanContextValid(spanContext)) {
           return original.apply(this, args);

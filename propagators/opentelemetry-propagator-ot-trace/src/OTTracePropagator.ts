@@ -17,14 +17,11 @@
 import {
   Baggage,
   Context,
-  createBaggage,
-  getBaggage,
-  getSpanContext,
+  trace,
+  propagation,
   isSpanContextValid,
   isValidSpanId,
   isValidTraceId,
-  setBaggage,
-  setSpanContext,
   TextMapGetter,
   TextMapPropagator,
   TextMapSetter,
@@ -67,7 +64,7 @@ function isValidHeaderValue(value: string): boolean {
  */
 export class OTTracePropagator implements TextMapPropagator {
   inject(context: Context, carrier: unknown, setter: TextMapSetter) {
-    const spanContext = getSpanContext(context);
+    const spanContext = trace.getSpan(context)?.spanContext();
     if (!spanContext || !isSpanContextValid(spanContext)) return;
 
     setter.set(carrier, OT_TRACE_ID_HEADER, spanContext.traceId.substr(16));
@@ -78,7 +75,7 @@ export class OTTracePropagator implements TextMapPropagator {
       spanContext.traceFlags === TraceFlags.SAMPLED ? 'true' : 'false'
     );
 
-    const baggage = getBaggage(context);
+    const baggage = propagation.getBaggage(context);
     if (!baggage) return;
     baggage.getAllEntries().forEach(([k, v]) => {
       if (!isValidHeaderName(k) || !isValidHeaderValue(v.value)) return;
@@ -95,14 +92,18 @@ export class OTTracePropagator implements TextMapPropagator {
       sampled === 'true' ? TraceFlags.SAMPLED : TraceFlags.NONE;
 
     if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
-      context = setSpanContext(context, {
-        traceId,
-        spanId,
-        isRemote: true,
-        traceFlags,
-      });
+      context = trace.setSpan(
+        context,
+        trace.wrapSpanContext({
+          traceId,
+          spanId,
+          isRemote: true,
+          traceFlags,
+        })
+      );
 
-      let baggage: Baggage = getBaggage(context) || createBaggage();
+      let baggage: Baggage =
+        propagation.getBaggage(context) || propagation.createBaggage();
 
       getter.keys(carrier).forEach(k => {
         if (!k.startsWith(OT_BAGGAGE_PREFIX)) return;
@@ -113,7 +114,7 @@ export class OTTracePropagator implements TextMapPropagator {
       });
 
       if (baggage.getAllEntries().length > 0) {
-        context = setBaggage(context, baggage);
+        context = propagation.setBaggage(context, baggage);
       }
     }
 

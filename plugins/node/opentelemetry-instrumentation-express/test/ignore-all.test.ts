@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace, Span } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -22,7 +22,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { ExpressInstrumentationSpan } from '../src/types';
+import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation, ExpressLayerType } from '../src';
 
@@ -81,14 +81,22 @@ describe('ExpressInstrumentation', () => {
 
   describe('when route exists', () => {
     let server: http.Server;
-    let rootSpan: ExpressInstrumentationSpan;
+    let rootSpan: Span;
 
     beforeEach(async () => {
-      rootSpan = tracer.startSpan('rootSpan') as ExpressInstrumentationSpan;
+      rootSpan = tracer.startSpan('rootSpan');
       const app = express();
-      app.use((req, res, next) =>
-        context.with(setSpan(context.active(), rootSpan), next)
-      );
+
+      app.use((req, res, next) => {
+        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
       app.use(express.json());
       app.use((req, res, next) => {
         for (let i = 0; i < 1000; i++) {}
@@ -113,38 +121,43 @@ describe('ExpressInstrumentation', () => {
     it('should ignore all ExpressLayerType based on config', async () => {
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/toto/tata`);
-        rootSpan.end();
-        assert.deepStrictEqual(
-          memoryExporter
-            .getFinishedSpans()
-            .filter(
-              span =>
-                span.attributes[AttributeNames.EXPRESS_TYPE] ===
-                  ExpressLayerType.MIDDLEWARE ||
-                span.attributes[AttributeNames.EXPRESS_TYPE] ===
-                  ExpressLayerType.ROUTER ||
-                span.attributes[AttributeNames.EXPRESS_TYPE] ===
-                  ExpressLayerType.REQUEST_HANDLER
-            ).length,
-          0
-        );
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.deepStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .filter(
+                span =>
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                    ExpressLayerType.MIDDLEWARE ||
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                    ExpressLayerType.ROUTER ||
+                  span.attributes[AttributeNames.EXPRESS_TYPE] ===
+                    ExpressLayerType.REQUEST_HANDLER
+              ).length,
+            0
+          );
+        }
+      );
     });
 
     it('root span name should be modified to GET /todo/:id', async () => {
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/toto/tata`);
-        rootSpan.end();
-        assert.strictEqual(rootSpan.name, 'GET /toto/:id');
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'GET /toto/:id');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'GET /toto/:id');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
   });
 });

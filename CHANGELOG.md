@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.20.0
+
+#### :bug: Bug Fix
+* [#488](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/488) fix: dns plugin remove hostname attribute ([@svrnm](https://github.com/svrnm))
+* [#468](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/468) moving dev dependency for types to main dependency ([@obecny](https://github.com/obecny))
+
+#### :rocket: Enhancement
+* Other
+  * [#517](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/517) feat: use rpcMetadata to update http span name #464 ([@vmarchaud](https://github.com/vmarchaud))
+  * [#441](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/441) feat(instrumentation-document-load): documentLoad attributes enhancement ([@kkruk-sumo](https://github.com/kkruk-sumo))
+* `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#513](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/513) chore: update core to 0.20.0 ([@dyladan](https://github.com/dyladan))
+* `opentelemetry-test-utils`
+  * [#470](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/470) chore: removing usage of timed event from api ([@obecny](https://github.com/obecny))
+
+#### :house: Internal
+* Other
+  * [#479](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/479) chore: generalize the instrumentation file name ([@Rauno56](https://github.com/Rauno56))
+  * [#481](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/481) fix: move faas_id and cloud_account_id to semantic conventions ([@svrnm](https://github.com/svrnm))
+  * [#471](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/471) Fix repository for pg ([@pauldraper](https://github.com/pauldraper))
+* `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#455](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/455) Update gts, eslint, typescript and hapi dependencies ([@Flarna](https://github.com/Flarna))
+
+#### :memo: Documentation
+* [#472](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/472) docs: Explicitly state that express instrumentation does not export spans without http instrumentation ([@svrnm](https://github.com/svrnm))
+* [#450](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/450) chore: prefer use of global TracerProvider/MeterProvider ([@Flarna](https://github.com/Flarna))
+
+#### Committers: 16
+- Amir Blum ([@blumamir](https://github.com/blumamir))
+- Anuraag Agrawal ([@anuraaga](https://github.com/anuraaga))
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Krystian Kruk ([@kkruk-sumo](https://github.com/kkruk-sumo))
+- Min Xia ([@mxiamxia](https://github.com/mxiamxia))
+- Nir Hadassi ([@nirsky](https://github.com/nirsky))
+- Paul Draper ([@pauldraper](https://github.com/pauldraper))
+- Ran Nozik ([@nozik](https://github.com/nozik))
+- Rauno Viskus ([@Rauno56](https://github.com/Rauno56))
+- Severin Neumann ([@svrnm](https://github.com/svrnm))
+- Siim Kallas ([@seemk](https://github.com/seemk))
+- Valentin Marchaud ([@vmarchaud](https://github.com/vmarchaud))
+- William Armiros ([@willarmiros](https://github.com/willarmiros))
+- t2t2 ([@t2t2](https://github.com/t2t2))
+
 ## 0.16.0
 
 #### :boom: Breaking Change

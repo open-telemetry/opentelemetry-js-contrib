@@ -278,7 +278,7 @@ describe('UserInteractionInstrumentation', () => {
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
             assert.equal(
               spanXhr.parentSpanId,
-              spanClick.spanContext.spanId,
+              spanClick.spanContext().spanId,
               'xhr span has wrong parent'
             );
             assert.equal(
@@ -310,7 +310,7 @@ describe('UserInteractionInstrumentation', () => {
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
             assert.equal(
               spanXhr.parentSpanId,
-              spanClick.spanContext.spanId,
+              spanClick.spanContext().spanId,
               'xhr span has wrong parent'
             );
             assertClickSpan(spanClick);
@@ -349,7 +349,7 @@ describe('UserInteractionInstrumentation', () => {
       );
       assert.strictEqual(
         exportSpy.args[0][0][0].spanId,
-        exportSpy.args[1][0][0].context.parentSpanId
+        exportSpy.args[1][0][0].spanContext().parentSpanId
       );
     });
 
@@ -391,17 +391,17 @@ describe('UserInteractionInstrumentation', () => {
         assertClickSpan(span3, 'btn3');
 
         assert.strictEqual(
-          span1.spanContext.spanId,
+          span1.spanContext().spanId,
           span4.parentSpanId,
           'span4 has wrong parent'
         );
         assert.strictEqual(
-          span2.spanContext.spanId,
+          span2.spanContext().spanId,
           span5.parentSpanId,
           'span5 has wrong parent'
         );
         assert.strictEqual(
-          span3.spanContext.spanId,
+          span3.spanContext().spanId,
           span6.parentSpanId,
           'span6 has wrong parent'
         );

@@ -18,12 +18,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import {
-  context,
-  getSpan,
-  setSpan,
-  NoopTracerProvider,
-} from '@opentelemetry/api';
+import { context, trace, NoopTracerProvider } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -62,8 +57,8 @@ describe('BunyanInstrumentation', () => {
 
     it('injects span context to records', () => {
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
-        const { traceId, spanId, traceFlags } = span.context();
+      context.with(trace.setSpan(context.active(), span), () => {
+        const { traceId, spanId, traceFlags } = span.spanContext();
         logger.info('foo');
         sinon.assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
@@ -86,7 +81,7 @@ describe('BunyanInstrumentation', () => {
           record['resource.service.name'] = 'test-service';
         },
       });
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         logger.info('foo');
         sinon.assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
@@ -96,7 +91,7 @@ describe('BunyanInstrumentation', () => {
 
     it('does not inject span context if no span is active', () => {
       logger.info('foo');
-      assert.strictEqual(getSpan(context.active()), undefined);
+      assert.strictEqual(trace.getSpan(context.active()), undefined);
       sinon.assert.calledOnce(writeSpy);
       const record = JSON.parse(writeSpy.firstCall.args[0].toString());
       assert.strictEqual(record['trace_id'], undefined);
@@ -108,7 +103,7 @@ describe('BunyanInstrumentation', () => {
     it('does not inject span context if span context is invalid', () => {
       const noopTracer = new NoopTracerProvider().getTracer('noop');
       const span = noopTracer.startSpan('noop');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         logger.info('foo');
         sinon.assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
@@ -127,8 +122,8 @@ describe('BunyanInstrumentation', () => {
           throw new Error('Oops');
         },
       });
-      context.with(setSpan(context.active(), span), () => {
-        const { traceId, spanId } = span.context();
+      context.with(trace.setSpan(context.active(), span), () => {
+        const { traceId, spanId } = span.spanContext();
         logger.info('foo');
         sinon.assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
@@ -157,7 +152,7 @@ describe('BunyanInstrumentation', () => {
 
     it('does not inject span context', () => {
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         logger.info('foo');
         sinon.assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
@@ -177,7 +172,7 @@ describe('BunyanInstrumentation', () => {
           record['resource.service.name'] = 'test-service';
         },
       });
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         logger.info('foo');
         sinon.assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());

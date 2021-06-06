@@ -29,7 +29,7 @@ const posts = ['post 0', 'post 1', 'post 2'];
 
 function addPost(ctx) {
   posts.push(`post ${posts.length}`);
-  const currentSpan = api.getSpan(api.context.active());
+  const currentSpan = api.trace.getSpan(api.context.active());
   currentSpan.addEvent('Added post');
   currentSpan.setAttribute('Date', new Date());
   ctx.body = `Added post: ${posts[posts.length - 1]}`;
@@ -48,8 +48,8 @@ async function showNewPost(ctx) {
 
 function runTest(ctx) {
   console.log('runTest');
-  const currentSpan = api.getSpan(api.context.active());
-  const { traceId } = currentSpan.context();
+  const currentSpan = api.trace.getSpan(api.context.active());
+  const { traceId } = currentSpan.spanContext();
   console.log(`traceid: ${traceId}`);
   console.log(`Jaeger URL: http://localhost:16686/trace/${traceId}`);
   console.log(`Zipkin URL: http://localhost:9411/zipkin/traces/${traceId}`);
