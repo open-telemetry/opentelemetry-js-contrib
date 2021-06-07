@@ -128,7 +128,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
 
   private createQueryWrapper(moduleVersion?: string) {
     const instrumentation = this;
-    return function wrapQuery(original: Function) {
+    return function wrapQuery(original: () => any) {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
 
@@ -173,9 +173,9 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
           },
           parent
         );
+        const spanContext = api.trace.setSpan(api.context.active(), span);
 
-        return original
-          .apply(this, arguments)
+        return api.context.with(spanContext, original, this, ...arguments)
           .then((result: unknown) => {
             span.end();
             return result;
