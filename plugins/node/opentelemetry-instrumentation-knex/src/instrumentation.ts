@@ -138,6 +138,9 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
         const attributes: api.SpanAttributes = {
           'knex.version': moduleVersion,
           [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
+          [SemanticAttributes.NET_PEER_NAME]: config?.connection?.host,
+          [SemanticAttributes.NET_PEER_PORT]: config?.connection?.port,
+          [SemanticAttributes.NET_TRANSPORT]: config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
         };
         if (maxLen !== 0) {
           attributes[SemanticAttributes.DB_STATEMENT] = utils.limitLength(
@@ -155,10 +158,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
         if (operation) {
           attributes[SemanticAttributes.DB_OPERATION] = operation;
         }
-        const user = config?.connection?.user;
-        if (user) {
-          attributes[SemanticAttributes.DB_USER] = config.connection.user;
-        }
+        attributes[SemanticAttributes.DB_USER] = config?.connection?.user;
         const name =
           config?.connection?.filename || config?.connection?.database;
         if (name) {
