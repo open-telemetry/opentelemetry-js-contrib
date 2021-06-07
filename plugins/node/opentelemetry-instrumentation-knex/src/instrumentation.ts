@@ -188,6 +188,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
             const message = err.message.replace(fullQuery + ' - ', '');
             const clonedError = utils.cloneErrorWithNewMessage(err, message);
             span.recordException(clonedError);
+            span.setStatus({ code: api.SpanStatusCode.ERROR, message })
             span.end();
             throw err;
           });
