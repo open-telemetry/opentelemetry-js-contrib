@@ -17,7 +17,7 @@
 import {
   context,
   diag,
-  getSpan,
+  trace,
   isSpanContextValid,
   Span,
 } from '@opentelemetry/api';
@@ -125,13 +125,13 @@ export class PinoInstrumentation extends InstrumentationBase {
         return {};
       }
 
-      const span = getSpan(context.active());
+      const span = trace.getSpan(context.active());
 
       if (!span) {
         return {};
       }
 
-      const spanContext = span.context();
+      const spanContext = span.spanContext();
 
       if (!isSpanContextValid(spanContext)) {
         return {};

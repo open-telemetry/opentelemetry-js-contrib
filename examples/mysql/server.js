@@ -46,7 +46,7 @@ function startServer(port) {
 function handleRequest(request, response) {
   const currentSpan = tracer.getCurrentSpan();
   // display traceid in the terminal
-  const { traceId } = currentSpan.context();
+  const { traceId } = currentSpan.spanContext();
   console.log(`traceid: ${traceId}`);
   console.log(`Jaeger URL: http://localhost:16686/trace/${traceId}`);
   console.log(`Zipkin URL: http://localhost:9411/zipkin/traces/${traceId}`);
@@ -103,7 +103,7 @@ function handleClusterQuery(response) {
   const query = 'SELECT 1 + 1 as cluster_solution';
   cluster.getConnection((connErr, conn) => {
     conn.query(query, (err, results, _fields) => {
-      api.getSpan(api.context.active()).addEvent('results');
+      api.trace.getSpan(api.context.active()).addEvent('results');
       if (err) {
         console.log('Error code:', err.code);
         response.end(err.message);

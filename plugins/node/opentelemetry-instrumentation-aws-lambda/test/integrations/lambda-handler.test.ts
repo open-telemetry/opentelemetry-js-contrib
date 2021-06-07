@@ -38,14 +38,14 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   context,
-  setSpanContext,
+  trace,
   SpanContext,
   SpanKind,
   SpanStatusCode,
   TextMapPropagator,
 } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
-import { HttpTraceContext } from '@opentelemetry/core';
+import { HttpTraceContextPropagator } from '@opentelemetry/core';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -87,7 +87,7 @@ const serializeSpanContext = (
 ): string => {
   let serialized = '';
   propagator.inject(
-    setSpanContext(context.active(), spanContext),
+    trace.setSpan(context.active(), trace.wrapSpanContext(spanContext)),
     {},
     {
       set(carrier: any, key: string, value: string) {
@@ -141,7 +141,7 @@ describe('lambda handler', () => {
   };
   const sampledHttpHeader = serializeSpanContext(
     sampledHttpSpanContext,
-    new HttpTraceContext()
+    new HttpTraceContextPropagator()
   );
 
   const unsampledAwsSpanContext: SpanContext = {
@@ -163,7 +163,7 @@ describe('lambda handler', () => {
   };
   const unsampledHttpHeader = serializeSpanContext(
     unsampledHttpSpanContext,
-    new HttpTraceContext()
+    new HttpTraceContextPropagator()
   );
 
   beforeEach(() => {
@@ -236,7 +236,7 @@ describe('lambda handler', () => {
       );
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.spanContext.traceId, result);
+      assert.strictEqual(span.spanContext().traceId, result);
     });
 
     it('context should have parent trace', async () => {
@@ -248,7 +248,7 @@ describe('lambda handler', () => {
       );
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.spanContext.traceId, result);
+      assert.strictEqual(span.spanContext().traceId, result);
     });
   });
 
@@ -366,7 +366,7 @@ describe('lambda handler', () => {
       });
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.spanContext.traceId, result);
+      assert.strictEqual(span.spanContext().traceId, result);
     });
 
     it('context should have parent trace', async () => {
@@ -387,7 +387,7 @@ describe('lambda handler', () => {
       });
       const spans = memoryExporter.getFinishedSpans();
       const [span] = spans;
-      assert.strictEqual(span.spanContext.traceId, result);
+      assert.strictEqual(span.spanContext().traceId, result);
     });
   });
 
@@ -435,7 +435,7 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(
-        span.spanContext.traceId,
+        span.spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
       assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
@@ -475,7 +475,7 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(
-        span.spanContext.traceId,
+        span.spanContext().traceId,
         sampledAwsSpanContext.traceId
       );
       assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
@@ -501,7 +501,7 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 1);
       assertSpanSuccess(span);
       assert.strictEqual(
-        span.spanContext.traceId,
+        span.spanContext().traceId,
         sampledHttpSpanContext.traceId
       );
       assert.strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);

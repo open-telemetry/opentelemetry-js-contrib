@@ -21,7 +21,6 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
-import { getSpan, Span } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import { getElementXPath } from '@opentelemetry/web';
 import { AttributeNames } from './enums/AttributeNames';
@@ -54,7 +53,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     Map<string, Map<HTMLElement, Function>>
   >();
   // for event bubbling
-  private _eventsSpanMap: WeakMap<Event, Span> = new WeakMap<Event, Span>();
+  private _eventsSpanMap: WeakMap<Event, api.Span> = new WeakMap<
+    Event,
+    api.Span
+  >();
 
   constructor(config?: InstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
@@ -98,7 +100,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   private _createSpan(
     element: HTMLElement,
     eventName: string,
-    parentSpan?: Span | undefined
+    parentSpan?: api.Span | undefined
   ): api.Span | undefined {
     if (!element.getAttribute) {
       return undefined;
@@ -123,7 +125,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             [AttributeNames.HTTP_USER_AGENT]: navigator.userAgent,
           },
         },
-        parentSpan ? api.setSpan(api.context.active(), parentSpan) : undefined
+        parentSpan
+          ? api.trace.setSpan(api.context.active(), parentSpan)
+          : undefined
       );
 
       this._spansData.set(span, {
@@ -160,7 +164,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   private _getCurrentSpan(zone: Zone): api.Span | undefined {
     const context: api.Context | undefined = zone.get(ZONE_CONTEXT_KEY);
     if (context) {
-      return getSpan(context);
+      return api.trace.getSpan(context);
     }
     return context;
   }
@@ -262,7 +266,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         const once = useCapture && useCapture.once;
         const patchedListener = (...args: any[]) => {
           const target = this;
-          let parentSpan: Span | undefined;
+          let parentSpan: api.Span | undefined;
           const event: Event | undefined = args[0];
           if (event) {
             parentSpan = plugin._eventsSpanMap.get(event);
@@ -276,7 +280,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
               plugin._eventsSpanMap.set(event, span);
             }
             return api.context.with(
-              api.setSpan(api.context.active(), span),
+              api.trace.setSpan(api.context.active(), span),
               () => {
                 const result = plugin._invokeListener(listener, target, args);
                 // no zone so end span immediately
@@ -370,7 +374,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * @param url
    */
   _updateInteractionName(url: string) {
-    const span: api.Span | undefined = api.getSpan(api.context.active());
+    const span: api.Span | undefined = api.trace.getSpan(api.context.active());
     if (span && typeof span.updateName === 'function') {
       span.updateName(`${EVENT_NAVIGATION_NAME} ${url}`);
     }
@@ -445,7 +449,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             return activeZone.run(() => {
               try {
                 return api.context.with(
-                  api.setSpan(api.context.active(), span!),
+                  api.trace.setSpan(api.context.active(), span!),
                   () => {
                     const currentZone = Zone.current;
                     task._zone = currentZone;

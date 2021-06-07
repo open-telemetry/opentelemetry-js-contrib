@@ -183,7 +183,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
     };
 
     const parent = api.context.active();
-    const parentSpan = api.getSpan(parent) as types.InstrumentationSpan;
+    const parentSpan = api.trace.getSpan(parent) as types.InstrumentationSpan;
     const span = this.tracer.startSpan(
       spanName,
       {
@@ -209,7 +209,7 @@ export default class RouterInstrumentation extends InstrumentationBase<
     };
 
     return {
-      context: api.setSpan(parent, span),
+      context: api.trace.setSpan(parent, span),
       wrappedNext,
     };
   }

@@ -3,7 +3,7 @@
 const opentelemetry = require('@opentelemetry/api');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/tracing');
-const { HttpTraceContext } = require('@opentelemetry/core');
+const { HttpTraceContextPropagator } = require('@opentelemetry/core');
 const { GrpcCensusPropagator } = require('@opentelemetry/propagator-grpc-census-binary');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { GrpcInstrumentation } = require('@opentelemetry/instrumentation-grpc');
@@ -26,7 +26,7 @@ module.exports = (serviceName, binaryPropagator) => {
     });
   } else {
     provider.register({
-      propagator: new HttpTraceContext(),
+      propagator: new HttpTraceContextPropagator(),
     });
   }
 

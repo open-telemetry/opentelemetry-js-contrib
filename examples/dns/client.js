@@ -11,7 +11,7 @@ function makeLookup() {
   // the span, which is created to track work that happens outside of the
   // dns lookup query.
   const span = tracer.startSpan('dnsLookup');
-  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), async () => {
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), async () => {
     try {
       await dns.lookup('montreal.ca');
     } catch (error) {
@@ -20,7 +20,7 @@ function makeLookup() {
         'error.message': error.message,
       });
     } finally {
-      console.log(`traceid: ${span.context().traceId}`);
+      console.log(`traceid: ${span.spanContext().traceId}`);
       span.end();
     }
   });
