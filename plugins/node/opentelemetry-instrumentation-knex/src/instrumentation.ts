@@ -151,7 +151,8 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
           [SemanticAttributes.DB_NAME]: name,
           [SemanticAttributes.NET_PEER_NAME]: config?.connection?.host,
           [SemanticAttributes.NET_PEER_PORT]: config?.connection?.port,
-          [SemanticAttributes.NET_TRANSPORT]: config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
+          [SemanticAttributes.NET_TRANSPORT]:
+            config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
         };
         if (maxLen !== 0) {
           attributes[SemanticAttributes.DB_STATEMENT] = utils.limitLength(
@@ -170,7 +171,8 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
         );
         const spanContext = api.trace.setSpan(api.context.active(), span);
 
-        return api.context.with(spanContext, original, this, ...arguments)
+        return api.context
+          .with(spanContext, original, this, ...arguments)
           .then((result: unknown) => {
             span.end();
             return result;
@@ -183,7 +185,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
             const message = err.message.replace(fullQuery + ' - ', '');
             const clonedError = utils.cloneErrorWithNewMessage(err, message);
             span.recordException(clonedError);
-            span.setStatus({ code: api.SpanStatusCode.ERROR, message })
+            span.setStatus({ code: api.SpanStatusCode.ERROR, message });
             span.end();
             throw err;
           });

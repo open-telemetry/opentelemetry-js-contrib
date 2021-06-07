@@ -75,61 +75,67 @@ describe('Knex instrumentation', () => {
   describe('Instrumenting', () => {
     it('should record spans from query builder', async () => {
       const parentSpan = tracer.startSpan('parentSpan');
-      await context.with(trace.setSpan(context.active(), parentSpan), async () => {
-        await client.schema.createTable('testTable1', (table: any) => {
-          table.string('title');
-        });
-        await client.insert({ title: 'test1' }).into('testTable1');
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.schema.createTable('testTable1', (table: any) => {
+            table.string('title');
+          });
+          await client.insert({ title: 'test1' }).into('testTable1');
 
-        assert.deepEqual(await client('testTable1').select('*'), [
-          { title: 'test1' },
-        ]);
+          assert.deepEqual(await client('testTable1').select('*'), [
+            { title: 'test1' },
+          ]);
 
-        parentSpan.end();
+          parentSpan.end();
 
-        const instrumentationSpans = memoryExporter.getFinishedSpans();
-        const last = instrumentationSpans.pop() as any;
-        assertSpans(instrumentationSpans, [
-          {
-            statement: 'create table `testTable1` (`title` varchar(255))',
-            parentSpan,
-          },
-          {
-            op: 'insert',
-            table: 'testTable1',
-            statement: 'insert into `testTable1` (`title`) values (?)',
-            parentSpan,
-          },
-          {
-            op: 'select',
-            table: 'testTable1',
-            statement: 'select * from `testTable1`',
-            parentSpan,
-          },
-        ]);
-        assert.strictEqual(instrumentationSpans[0].name, ':memory:');
-        assert.strictEqual(
-          instrumentationSpans[1].name,
-          'insert :memory:.testTable1'
-        );
+          const instrumentationSpans = memoryExporter.getFinishedSpans();
+          const last = instrumentationSpans.pop() as any;
+          assertSpans(instrumentationSpans, [
+            {
+              statement: 'create table `testTable1` (`title` varchar(255))',
+              parentSpan,
+            },
+            {
+              op: 'insert',
+              table: 'testTable1',
+              statement: 'insert into `testTable1` (`title`) values (?)',
+              parentSpan,
+            },
+            {
+              op: 'select',
+              table: 'testTable1',
+              statement: 'select * from `testTable1`',
+              parentSpan,
+            },
+          ]);
+          assert.strictEqual(instrumentationSpans[0].name, ':memory:');
+          assert.strictEqual(
+            instrumentationSpans[1].name,
+            'insert :memory:.testTable1'
+          );
 
-        assert(last.name, 'parentSpan');
-      });
+          assert(last.name, 'parentSpan');
+        }
+      );
     });
 
     it('should collect spans from raw', async () => {
       const parentSpan = tracer.startSpan('parentSpan');
       const statement = "select date('now')";
 
-      await context.with(trace.setSpan(context.active(), parentSpan), async () => {
-        await client.raw(statement);
-        parentSpan.end();
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.raw(statement);
+          parentSpan.end();
 
-        assertSpans(memoryExporter.getFinishedSpans(), [
-          { statement, op: 'raw', parentSpan },
-          null,
-        ]);
-      });
+          assertSpans(memoryExporter.getFinishedSpans(), [
+            { statement, op: 'raw', parentSpan },
+            null,
+          ]);
+        }
+      );
     });
 
     it('should truncate the query', async () => {
@@ -148,38 +154,41 @@ describe('Knex instrumentation', () => {
       const MESSAGE = 'SQLITE_ERROR: no such table: testTable1';
       const CODE = 'SQLITE_ERROR';
 
-      await context.with(trace.setSpan(context.active(), parentSpan), async () => {
-        await client
-          .insert({ title: 'test1' })
-          .into('testTable1')
-          .then(() => {
-            throw neverError;
-          })
-          .catch((err: any) => {
-            assertMatch(err.message, /SQLITE_ERROR/, err);
-          });
-        parentSpan.end();
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client
+            .insert({ title: 'test1' })
+            .into('testTable1')
+            .then(() => {
+              throw neverError;
+            })
+            .catch((err: any) => {
+              assertMatch(err.message, /SQLITE_ERROR/, err);
+            });
+          parentSpan.end();
 
-        const events = memoryExporter.getFinishedSpans()[0].events!;
+          const events = memoryExporter.getFinishedSpans()[0].events!;
 
-        assert.strictEqual(events.length, 1);
-        assert.strictEqual(events[0].name, 'exception');
-        assert.strictEqual(
-          events[0].attributes?.['exception.message'],
-          MESSAGE
-        );
-        assert.strictEqual(events[0].attributes?.['exception.type'], CODE);
+          assert.strictEqual(events.length, 1);
+          assert.strictEqual(events[0].name, 'exception');
+          assert.strictEqual(
+            events[0].attributes?.['exception.message'],
+            MESSAGE
+          );
+          assert.strictEqual(events[0].attributes?.['exception.type'], CODE);
 
-        assertSpans(memoryExporter.getFinishedSpans(), [
-          {
-            op: 'insert',
-            table: 'testTable1',
-            statement: 'insert into `testTable1` (`title`) values (?)',
-            parentSpan,
-          },
-          null,
-        ]);
-      });
+          assertSpans(memoryExporter.getFinishedSpans(), [
+            {
+              op: 'insert',
+              table: 'testTable1',
+              statement: 'insert into `testTable1` (`title`) values (?)',
+              parentSpan,
+            },
+            null,
+          ]);
+        }
+      );
     });
   });
 
@@ -188,12 +197,18 @@ describe('Knex instrumentation', () => {
       plugin.disable();
       const parentSpan = tracer.startSpan('parentSpan');
 
-      await context.with(trace.setSpan(context.active(), parentSpan), async () => {
-        await client.raw("select date('now')");
-        parentSpan.end();
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-        assert.notStrictEqual(memoryExporter.getFinishedSpans()[0], undefined);
-      });
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.raw("select date('now')");
+          parentSpan.end();
+          assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+          assert.notStrictEqual(
+            memoryExporter.getFinishedSpans()[0],
+            undefined
+          );
+        }
+      );
     });
   });
 });
