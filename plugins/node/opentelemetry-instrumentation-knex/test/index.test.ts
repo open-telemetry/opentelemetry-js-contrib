@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -75,7 +75,7 @@ describe('Knex instrumentation', () => {
   describe('Instrumenting', () => {
     it('should record spans from query builder', async () => {
       const parentSpan = tracer.startSpan('parentSpan');
-      await context.with(setSpan(context.active(), parentSpan), async () => {
+      await context.with(trace.setSpan(context.active(), parentSpan), async () => {
         await client.schema.createTable('testTable1', (table: any) => {
           table.string('title');
         });
@@ -121,7 +121,7 @@ describe('Knex instrumentation', () => {
       const parentSpan = tracer.startSpan('parentSpan');
       const statement = "select date('now')";
 
-      await context.with(setSpan(context.active(), parentSpan), async () => {
+      await context.with(trace.setSpan(context.active(), parentSpan), async () => {
         await client.raw(statement);
         parentSpan.end();
 
@@ -148,7 +148,7 @@ describe('Knex instrumentation', () => {
       const MESSAGE = 'SQLITE_ERROR: no such table: testTable1';
       const CODE = 'SQLITE_ERROR';
 
-      await context.with(setSpan(context.active(), parentSpan), async () => {
+      await context.with(trace.setSpan(context.active(), parentSpan), async () => {
         await client
           .insert({ title: 'test1' })
           .into('testTable1')
@@ -188,7 +188,7 @@ describe('Knex instrumentation', () => {
       plugin.disable();
       const parentSpan = tracer.startSpan('parentSpan');
 
-      await context.with(setSpan(context.active(), parentSpan), async () => {
+      await context.with(trace.setSpan(context.active(), parentSpan), async () => {
         await client.raw("select date('now')");
         parentSpan.end();
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
@@ -229,7 +229,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.strictEqual(span.attributes['db.operation'], expected.op);
       assert.strictEqual(
         span.parentSpanId,
-        expected.parentSpan?.spanContext.spanId
+        expected.parentSpan?.spanContext().spanId
       );
     } catch (e) {
       e.message = `At span[${idx}]: ${e.message}`;
