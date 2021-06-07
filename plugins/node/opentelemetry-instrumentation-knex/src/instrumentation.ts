@@ -132,12 +132,23 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
 
+        const table = this.builder?._single?.table;
+        // `method` actually refers to the knex API method - Not exactly "operation"
+        // in the spec sense, but matches most of the time.
+        const operation = query?.method;
+        const name =
+          config?.connection?.filename || config?.connection?.database;
         const maxLen = (
           instrumentation._config as types.KnexInstrumentationConfig
         ).maxQueryLength!;
+
         const attributes: api.SpanAttributes = {
           'knex.version': moduleVersion,
           [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
+          [SemanticAttributes.DB_SQL_TABLE]: table,
+          [SemanticAttributes.DB_OPERATION]: operation,
+          [SemanticAttributes.DB_USER]: config?.connection?.user,
+          [SemanticAttributes.DB_NAME]: name,
           [SemanticAttributes.NET_PEER_NAME]: config?.connection?.host,
           [SemanticAttributes.NET_PEER_PORT]: config?.connection?.port,
           [SemanticAttributes.NET_TRANSPORT]: config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
@@ -147,22 +158,6 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
             query?.sql,
             maxLen
           );
-        }
-        const table = this.builder?._single?.table;
-        if (table) {
-          attributes[SemanticAttributes.DB_SQL_TABLE] = table;
-        }
-        // `method` actually refers to the knex API method - Not exactly "operation"
-        // in the spec sense, but matches most of the time.
-        const operation = query?.method;
-        if (operation) {
-          attributes[SemanticAttributes.DB_OPERATION] = operation;
-        }
-        attributes[SemanticAttributes.DB_USER] = config?.connection?.user;
-        const name =
-          config?.connection?.filename || config?.connection?.database;
-        if (name) {
-          attributes[SemanticAttributes.DB_NAME] = name;
         }
 
         const parent = this.builder[contextSymbol];
