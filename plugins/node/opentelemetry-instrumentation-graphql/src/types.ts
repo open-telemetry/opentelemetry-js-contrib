@@ -60,7 +60,7 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
 
   /**
    * Hook that allows adding custom span attributes based on the data
-   * returned from "execute" GraphQL actions.
+   * returned from "execute" GraphQL action.
    *
    * @default undefined
    */

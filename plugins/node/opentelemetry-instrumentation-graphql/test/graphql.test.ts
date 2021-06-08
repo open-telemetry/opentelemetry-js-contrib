@@ -973,7 +973,7 @@ describe('graphql', () => {
     });
   });
 
-  describe('when specifying a responseHook configuration', () => {
+  describe('responseHook', () => {
     let spans: ReadableSpan[];
     let graphqlResult: graphqlTypes.ExecutionResult;
     const dataAttributeName = 'graphql_data';
@@ -984,7 +984,7 @@ describe('graphql', () => {
       spans = [];
     });
 
-    describe('AND valid responseHook', () => {
+    describe('when responseHook is valid', () => {
       beforeEach(async () => {
         create({
           responseHook: (span: Span, data: graphqlTypes.ExecutionResult) => {
@@ -1007,7 +1007,7 @@ describe('graphql', () => {
       });
     });
 
-    describe('AND invalid responseHook', () => {
+    describe('when responseHook throws an error', () => {
       beforeEach(async () => {
         create({
           responseHook: (_span: Span, _data: graphqlTypes.ExecutionResult) => {
@@ -1018,7 +1018,7 @@ describe('graphql', () => {
         spans = exporter.getFinishedSpans();
       });
 
-      it('should not do any harm when throwing an exception', () => {
+      it('should not do any harm', () => {
         assert.deepStrictEqual(graphqlResult.data?.books?.length, 13);
       });
     });

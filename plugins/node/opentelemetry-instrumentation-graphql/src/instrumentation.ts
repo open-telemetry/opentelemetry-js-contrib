@@ -230,7 +230,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
               ]);
             },
             (err, result) => {
-              instrumentation.handleExecutionResult(span, err, result);
+              instrumentation._handleExecutionResult(span, err, result);
             }
           );
         });
@@ -238,13 +238,13 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     };
   }
 
-  private handleExecutionResult(
+  private _handleExecutionResult(
     span: api.Span,
-    err: Error | undefined,
-    result: PromiseOrValue<graphqlTypes.ExecutionResult> | undefined
+    err?: Error,
+    result?: PromiseOrValue<graphqlTypes.ExecutionResult>
   ) {
     const config = this._getConfig();
-    if (config.responseHook === undefined || result === undefined || err) {
+    if (typeof config.responseHook !== 'function' || result === undefined || err) {
       endSpan(span, err);
       return;
     }
@@ -258,7 +258,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     }
   }
 
-  private executeResponseHook(
+  private _executeResponseHook(
     span: api.Span,
     result: graphqlTypes.ExecutionResult
   ) {
