@@ -66,7 +66,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
       constants.SUPPORTED_VERSIONS,
       (Runner: any, moduleVersion) => {
         api.diag.debug(
-          `Applying runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
+          `Applying ${basePath}/runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
         );
         this.ensureWrapped(
           moduleVersion,
@@ -78,7 +78,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
       },
       (Runner: any, moduleVersion) => {
         api.diag.debug(
-          `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
+          `Removing ${basePath}/runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
         );
         this._unwrap(Runner.prototype, 'query');
         return Runner;
@@ -92,7 +92,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
       constants.SUPPORTED_VERSIONS,
       (Client: any, moduleVersion) => {
         api.diag.debug(
-          `Applying client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
+          `Applying ${basePath}/client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
         );
         this.ensureWrapped(
           moduleVersion,
@@ -116,7 +116,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
       },
       (Client: any, moduleVersion) => {
         api.diag.debug(
-          `Removing client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
+          `Removing ${basePath}/client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
         );
         this._unwrap(Client.prototype, 'queryBuilder');
         this._unwrap(Client.prototype, 'schemaBuilder');
