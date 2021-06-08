@@ -187,15 +187,18 @@ describe('NetInstrumentation', () => {
         } catch (e) {
           done(e);
         }
-      }
+      };
       try {
         // socket.connect() will not throw before node@16 only closes
         socket.once(SocketEvent.CLOSE, assertSpan);
-        socket.connect(undefined as unknown as string);
+        socket.connect((undefined as unknown) as string);
       } catch (e) {
         // socket.connect() will throw in node@16
         socket.removeListener(SocketEvent.CLOSE, assertSpan);
-        assert.strictEqual(e.message, 'The "options" or "port" or "path" argument must be specified');
+        assert.strictEqual(
+          e.message,
+          'The "options" or "port" or "path" argument must be specified'
+        );
         assertSpan();
       }
     });
