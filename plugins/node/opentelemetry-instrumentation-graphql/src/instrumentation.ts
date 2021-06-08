@@ -244,7 +244,11 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     result?: PromiseOrValue<graphqlTypes.ExecutionResult>
   ) {
     const config = this._getConfig();
-    if (typeof config.responseHook !== 'function' || result === undefined || err) {
+    if (
+      typeof config.responseHook !== 'function' ||
+      result === undefined ||
+      err
+    ) {
       endSpan(span, err);
       return;
     }
