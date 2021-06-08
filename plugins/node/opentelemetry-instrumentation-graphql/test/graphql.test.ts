@@ -26,7 +26,7 @@ import type * as graphqlTypes from 'graphql';
 import { GraphQLInstrumentation } from '../src';
 import { SpanNames } from '../src/enum';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { GraphQLInstrumentationConfig } from '../src/types';
+import { GraphQLInstrumentationConfig, GraphQLInstrumentationExecutionResponseHook } from '../src/types';
 import { assertResolveSpan } from './helper';
 
 const defaultConfig: GraphQLInstrumentationConfig = {};
@@ -1022,6 +1022,22 @@ describe('graphql', () => {
         assert.deepStrictEqual(graphqlResult.data?.books?.length, 13);
       });
     });
+
+    describe('when responseHook is not a function', () => {
+      beforeEach(async () => {
+        // Cast to unknown so that it's possible to cast to GraphQLInstrumentationExecutionResponseHook later
+        const invalidTypeHook = 1234 as unknown; 
+        create({
+          responseHook: invalidTypeHook as GraphQLInstrumentationExecutionResponseHook
+        });
+        graphqlResult = await graphql(schema, sourceList1);
+        spans = exporter.getFinishedSpans();
+      });
+
+      it('should not do any harm', () => {
+        assert.deepStrictEqual(graphqlResult.data?.books?.length, 13);
+      });
+    })
   });
 
   describe('when query operation is not supported', () => {

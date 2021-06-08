@@ -251,10 +251,10 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
     if (result.constructor.name === 'Promise') {
       (result as Promise<graphqlTypes.ExecutionResult>).then(resultData => {
-        this.executeResponseHook(span, resultData);
+        this._executeResponseHook(span, resultData);
       });
     } else {
-      this.executeResponseHook(span, result as graphqlTypes.ExecutionResult);
+      this._executeResponseHook(span, result as graphqlTypes.ExecutionResult);
     }
   }
 
