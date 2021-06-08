@@ -15,7 +15,7 @@ function makeRequest() {
   let queries = 0;
   let responses = 0;
 
-  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
     queries += 1;
     http.get({
       host: 'localhost',
@@ -31,7 +31,7 @@ function makeRequest() {
       });
     });
   });
-  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
     queries += 1;
     http.get({
       host: 'localhost',
@@ -47,7 +47,7 @@ function makeRequest() {
       });
     });
   });
-  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), () => {
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
     queries += 1;
     http.get({
       host: 'localhost',

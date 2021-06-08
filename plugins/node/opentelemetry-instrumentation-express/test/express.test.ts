@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan, Span, Tracer } from '@opentelemetry/api';
+import { context, trace, Span, Tracer } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -22,7 +22,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { ExpressInstrumentationSpan } from '../src/types';
+import { setRPCMetadata, RPCType } from '@opentelemetry/core';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -61,9 +61,13 @@ const serverWithMiddleware = async (
 ): Promise<http.Server> => {
   const app = express();
   if (tracer) {
-    app.use((req, res, next) =>
-      context.with(setSpan(context.active(), rootSpan), next)
-    );
+    app.use((req, res, next) => {
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      return context.with(
+        setRPCMetadata(trace.setSpan(context.active(), rootSpan), rpcMetadata),
+        next
+      );
+    });
   }
 
   app.use(express.json());
@@ -109,12 +113,10 @@ describe('ExpressInstrumentation', () => {
 
   describe('Instrumenting normal get operations', () => {
     it('should create a child span for middlewares', async () => {
-      const rootSpan = tracer.startSpan(
-        'rootSpan'
-      ) as ExpressInstrumentationSpan;
+      const rootSpan = tracer.startSpan('rootSpan');
       const app = express();
       app.use((req, res, next) =>
-        context.with(setSpan(context.active(), rootSpan), next)
+        context.with(trace.setSpan(context.active(), rootSpan), next)
       );
       app.use(express.json());
       const customMiddleware: express.RequestHandler = (req, res, next) => {
@@ -140,43 +142,45 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        const response = await httpRequest.get(
-          `http://localhost:${port}/toto/tata`
-        );
-        assert.strictEqual(response, 'tata');
-        rootSpan.end();
-        assert.strictEqual(rootSpan.name, 'GET /toto/:id');
-        assert.strictEqual(finishListenerCount, 2);
-        assert.notStrictEqual(
-          memoryExporter
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'tata');
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 2);
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('customMiddleware')),
+            undefined
+          );
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('jsonParser')),
+            undefined
+          );
+          const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
-            .find(span => span.name.includes('customMiddleware')),
-          undefined
-        );
-        assert.notStrictEqual(
-          memoryExporter
+            .find(span => span.name.includes('request handler'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/toto/:id'
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
+            'request_handler'
+          );
+          const exportedRootSpan = memoryExporter
             .getFinishedSpans()
-            .find(span => span.name.includes('jsonParser')),
-          undefined
-        );
-        const requestHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name.includes('request handler'));
-        assert.notStrictEqual(requestHandlerSpan, undefined);
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
-          '/toto/:id'
-        );
-        assert.strictEqual(
-          requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
-          'request_handler'
-        );
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'GET /toto/:id');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+            .find(span => span.name === 'GET /toto/:id');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
       server.close();
     });
 
@@ -202,21 +206,24 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        const response = await httpRequest.get(
-          `http://localhost:${port}/toto/tata`
-        );
-        assert.strictEqual(response, 'middleware');
-        rootSpan.end();
-        assert.strictEqual(finishListenerCount, 3);
-        assert.notStrictEqual(
-          memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name.includes('syncMiddleware')),
-          undefined,
-          'no syncMiddleware span'
-        );
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'middleware');
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 3);
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('syncMiddleware')),
+            undefined,
+            'no syncMiddleware span'
+          );
+        }
+      );
       server.close();
     });
 
@@ -241,21 +248,24 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        const response = await httpRequest.get(
-          `http://localhost:${port}/toto/tata`
-        );
-        assert.strictEqual(response, 'tata');
-        rootSpan.end();
-        assert.strictEqual(finishListenerCount, 2);
-        assert.notStrictEqual(
-          memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name.includes('asyncMiddleware')),
-          undefined,
-          'no asyncMiddleware span'
-        );
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'tata');
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 2);
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('asyncMiddleware')),
+            undefined,
+            'no asyncMiddleware span'
+          );
+        }
+      );
       server.close();
     });
 
@@ -280,21 +290,24 @@ describe('ExpressInstrumentation', () => {
       });
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        const response = await httpRequest.get(
-          `http://localhost:${port}/toto/tata`
-        );
-        assert.strictEqual(response, 'middleware');
-        rootSpan.end();
-        assert.strictEqual(finishListenerCount, 3);
-        assert.notStrictEqual(
-          memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name.includes('asyncMiddleware')),
-          undefined,
-          'no asyncMiddleware span'
-        );
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'middleware');
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 3);
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('asyncMiddleware')),
+            undefined,
+            'no asyncMiddleware span'
+          );
+        }
+      );
       server.close();
     });
 
@@ -336,12 +349,18 @@ describe('ExpressInstrumentation', () => {
       await new Promise<void>(resolve => server.listen(0, resolve));
       const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/toto/tata`);
-        rootSpan.end();
-        assert.deepEqual(memoryExporter.getFinishedSpans().length, 1);
-        assert.notStrictEqual(memoryExporter.getFinishedSpans()[0], undefined);
-      });
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.deepEqual(memoryExporter.getFinishedSpans().length, 1);
+          assert.notStrictEqual(
+            memoryExporter.getFinishedSpans()[0],
+            undefined
+          );
+        }
+      );
       server.close();
     });
   });

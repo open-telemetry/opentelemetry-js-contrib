@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
@@ -220,7 +220,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
           fields: {},
         };
 
-        return context.with(setSpan(context.active(), span), () => {
+        return context.with(trace.setSpan(context.active(), span), () => {
           return safeExecuteInTheMiddle<
             PromiseOrValue<graphqlTypes.ExecutionResult>
           >(
@@ -284,7 +284,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     const config = this._getConfig();
     const span = this.tracer.startSpan(SpanNames.PARSE);
 
-    return context.with(setSpan(context.active(), span), () => {
+    return context.with(trace.setSpan(context.active(), span), () => {
       return safeExecuteInTheMiddle<
         graphqlTypes.DocumentNode & ObjectWithGraphQLData
       >(
@@ -317,7 +317,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   ): ReadonlyArray<graphqlTypes.GraphQLError> {
     const span = this.tracer.startSpan(SpanNames.VALIDATE, {});
 
-    return context.with(setSpan(context.active(), span), () => {
+    return context.with(trace.setSpan(context.active(), span), () => {
       return safeExecuteInTheMiddle<ReadonlyArray<graphqlTypes.GraphQLError>>(
         () => {
           return original.call(

@@ -28,5 +28,5 @@ exports.stringerror = async function (event, context) {
 }
 
 exports.context = async function (event, context) {
-  return api.getSpanContext(api.context.active()).traceId;
+  return api.trace.getSpan(api.context.active()).spanContext().traceId;
 };

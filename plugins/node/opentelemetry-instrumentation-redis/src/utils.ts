@@ -21,11 +21,19 @@ import {
   SpanKind,
   Span,
   SpanStatusCode,
+  trace,
+  diag,
 } from '@opentelemetry/api';
-import { RedisCommand, RedisPluginClientTypes } from './types';
+import {
+  DbStatementSerializer,
+  RedisCommand,
+  RedisInstrumentationConfig,
+  RedisPluginClientTypes,
+} from './types';
 import { EventEmitter } from 'events';
 import { RedisInstrumentation } from './';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
 const endSpan = (span: Span, err?: Error | null) => {
   if (err) {
@@ -64,9 +72,12 @@ export const getTracedCreateStreamTrace = (
   };
 };
 
+const defaultDbStatementSerializer: DbStatementSerializer = cmdName => cmdName;
+
 export const getTracedInternalSendCommand = (
   tracer: Tracer,
-  original: Function
+  original: Function,
+  config?: RedisInstrumentationConfig
 ) => {
   return function internal_send_command_trace(
     this: RedisPluginClientTypes,
@@ -74,53 +85,76 @@ export const getTracedInternalSendCommand = (
   ) {
     // New versions of redis (2.4+) use a single options object
     // instead of named arguments
-    if (arguments.length === 1 && typeof cmd === 'object') {
-      const span = tracer.startSpan(
-        `${RedisInstrumentation.COMPONENT}-${cmd.command}`,
-        {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            [SemanticAttributes.DB_SYSTEM]: RedisInstrumentation.COMPONENT,
-            [SemanticAttributes.DB_STATEMENT]: cmd.command,
-          },
-        }
-      );
-
-      // Set attributes for not explicitly typed RedisPluginClientTypes
-      if (this.options) {
-        span.setAttributes({
-          [SemanticAttributes.NET_PEER_NAME]: this.options.host,
-          [SemanticAttributes.NET_PEER_PORT]: this.options.port,
-        });
-      }
-      if (this.address) {
-        span.setAttribute(
-          SemanticAttributes.NET_PEER_IP,
-          `redis://${this.address}`
-        );
-      }
-
-      const originalCallback = arguments[0].callback;
-      if (originalCallback) {
-        (arguments[0] as RedisCommand).callback = function callback<T>(
-          this: unknown,
-          err: Error | null,
-          _reply: T
-        ) {
-          endSpan(span, err);
-          return originalCallback.apply(this, arguments);
-        };
-      }
-      try {
-        // Span will be ended in callback
-        return original.apply(this, arguments);
-      } catch (rethrow) {
-        endSpan(span, rethrow);
-        throw rethrow; // rethrow after ending span
-      }
+    if (arguments.length !== 1 || typeof cmd !== 'object') {
+      // We don't know how to trace this call, so don't start/stop a span
+      return original.apply(this, arguments);
     }
 
-    // We don't know how to trace this call, so don't start/stop a span
-    return original.apply(this, arguments);
+    const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
+    if (config?.requireParentSpan === true && hasNoParentSpan) {
+      return original.apply(this, arguments);
+    }
+
+    const dbStatementSerializer =
+      config?.dbStatementSerializer || defaultDbStatementSerializer;
+    const span = tracer.startSpan(
+      `${RedisInstrumentation.COMPONENT}-${cmd.command}`,
+      {
+        kind: SpanKind.CLIENT,
+        attributes: {
+          [SemanticAttributes.DB_SYSTEM]: RedisInstrumentation.COMPONENT,
+          [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
+            cmd.command,
+            cmd.args
+          ),
+        },
+      }
+    );
+
+    // Set attributes for not explicitly typed RedisPluginClientTypes
+    if (this.options) {
+      span.setAttributes({
+        [SemanticAttributes.NET_PEER_NAME]: this.options.host,
+        [SemanticAttributes.NET_PEER_PORT]: this.options.port,
+      });
+    }
+    if (this.address) {
+      span.setAttribute(
+        SemanticAttributes.NET_PEER_IP,
+        `redis://${this.address}`
+      );
+    }
+
+    const originalCallback = arguments[0].callback;
+    if (originalCallback) {
+      (arguments[0] as RedisCommand).callback = function callback<T>(
+        this: unknown,
+        err: Error | null,
+        reply: T
+      ) {
+        if (config?.responseHook) {
+          const responseHook = config.responseHook;
+          safeExecuteInTheMiddle(
+            () => {
+              responseHook(span, cmd.command, cmd.args, reply);
+            },
+            err => {
+              diag.error('Error executing responseHook', err);
+            },
+            true
+          );
+        }
+
+        endSpan(span, err);
+        return originalCallback.apply(this, arguments);
+      };
+    }
+    try {
+      // Span will be ended in callback
+      return original.apply(this, arguments);
+    } catch (rethrow) {
+      endSpan(span, rethrow);
+      throw rethrow; // rethrow after ending span
+    }
   };
 };

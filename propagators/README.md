@@ -6,7 +6,7 @@
 
 ### Built-in Propagators
 
-OpenTelemetry core package provides many Built-in Propagators such as HttpTraceContext Propagator, B3 Propagator, Composite Propagator etc.
+OpenTelemetry core package provides many Built-in Propagators such as HttpTraceContextPropagator Propagator, B3 Propagator, Composite Propagator etc.
 
 [Click here](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core#built-in-propagators) to see Built-in Propagators.
 

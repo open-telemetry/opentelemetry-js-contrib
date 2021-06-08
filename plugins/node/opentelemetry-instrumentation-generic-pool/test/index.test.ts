@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -100,7 +100,7 @@ describe('GenericPool instrumentation', () => {
   it('should attach it to the parent span', async () => {
     const rootSpan: any = tracer.startSpan('clientSpan');
 
-    await context.with(setSpan(context.active(), rootSpan), async () => {
+    await context.with(trace.setSpan(context.active(), rootSpan), async () => {
       assert.strictEqual(await acquire(), CLIENT);
       rootSpan.end();
 
@@ -108,7 +108,7 @@ describe('GenericPool instrumentation', () => {
 
       const [span] = memoryExporter.getFinishedSpans();
       assert.strictEqual(span.name, 'generic-pool.aquire');
-      assert.strictEqual(span.parentSpanId, rootSpan.spanContext.spanId);
+      assert.strictEqual(span.parentSpanId, rootSpan.spanContext().spanId);
     });
   });
 

@@ -17,7 +17,7 @@
 import {
   context,
   propagation,
-  setSpan,
+  trace,
   Span,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
@@ -104,14 +104,14 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       if (!rootSpan) {
         return;
       }
-      context.with(setSpan(context.active(), rootSpan), () => {
+      context.with(trace.setSpan(context.active(), rootSpan), () => {
         const fetchSpan = this._startSpan(
           AttributeNames.DOCUMENT_FETCH,
           PTN.FETCH_START,
           entries
         );
         if (fetchSpan) {
-          context.with(setSpan(context.active(), fetchSpan), () => {
+          context.with(trace.setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(fetchSpan, entries);
             this._endSpan(fetchSpan, PTN.RESPONSE_END, entries);
           });
@@ -212,7 +212,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
         {
           startTime: entries[performanceName],
         },
-        parentSpan ? setSpan(context.active(), parentSpan) : undefined
+        parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
       );
       span.setAttribute(AttributeNames.COMPONENT, this.component);
       return span;

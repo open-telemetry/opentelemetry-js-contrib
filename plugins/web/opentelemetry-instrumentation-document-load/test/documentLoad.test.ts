@@ -20,7 +20,10 @@ import {
   propagation,
   SpanAttributes,
 } from '@opentelemetry/api';
-import { HttpTraceContext, TRACE_PARENT_HEADER } from '@opentelemetry/core';
+import {
+  HttpTraceContextPropagator,
+  TRACE_PARENT_HEADER,
+} from '@opentelemetry/core';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
@@ -245,7 +248,7 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   before(() => {
-    propagation.setGlobalPropagator(new HttpTraceContext());
+    propagation.setGlobalPropagator(new HttpTraceContextPropagator());
   });
 
   describe('constructor', () => {
@@ -406,11 +409,11 @@ describe('DocumentLoad Instrumentation', () => {
           assert.strictEqual(fetchSpan.name, 'documentLoad');
 
           assert.strictEqual(
-            rootSpan.spanContext.traceId,
+            rootSpan.spanContext().traceId,
             'ab42124a3c573678d4d8b21ba52df3bf'
           );
           assert.strictEqual(
-            fetchSpan.spanContext.traceId,
+            fetchSpan.spanContext().traceId,
             'ab42124a3c573678d4d8b21ba52df3bf'
           );
 
