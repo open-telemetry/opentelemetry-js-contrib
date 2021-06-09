@@ -2,10 +2,12 @@
 
 const https = require('https');
 const graphql = require('graphql');
+const otel = require('@opentelemetry/api');
 
 const url1 = 'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
 function getData(url) {
+  console.log('getData attached baggage', otel.propagation.getBaggage(otel.context.active()));
   return new Promise((resolve, reject) => {
     https.get(url, (response) => {
       let data = '';
@@ -60,13 +62,14 @@ function getAuthor(id) {
 }
 
 function prepareData() {
+  console.log('prepareData attached baggage', otel.propagation.getBaggage(otel.context.active()));
   addAuthor('John', 'Poland', 'Szczecin');
-  addAuthor('Alice', 'Poland', 'Warsaw');
-  addAuthor('Bob', 'England', 'London');
-  addAuthor('Christine', 'France', 'Paris');
-  addBook('First Book', [0, 1]);
-  addBook('Second Book', [2]);
-  addBook('Third Book', [3]);
+  // addAuthor('Alice', 'Poland', 'Warsaw');
+  // addAuthor('Bob', 'England', 'London');
+  // addAuthor('Christine', 'France', 'Paris');
+  // addBook('First Book', [0, 1]);
+  // addBook('Second Book', [2]);
+  // addBook('Third Book', [3]);
 }
 
 prepareData();
