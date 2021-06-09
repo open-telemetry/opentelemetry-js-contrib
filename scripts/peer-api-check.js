@@ -20,23 +20,23 @@ const packageJsonUrl = path.resolve(`${appRoot}/package.json`);
 const pjson = require(packageJsonUrl);
 
 if (pjson.dependencies && pjson.dependencies['@opentelemetry/api']) {
-	throw new Error(`Package ${pjson.name} depends on API but it should be a peer dependency`);
+  throw new Error(`Package ${pjson.name} depends on API but it should be a peer dependency`);
 }
 
 const peerVersion = pjson.peerDependencies && pjson.peerDependencies['@opentelemetry/api'];
 const devVersion = pjson.devDependencies && pjson.devDependencies['@opentelemetry/api'];
 if (peerVersion) {
-	// error if not pinned
-	if (!/^[0-9]/.test(devVersion)) {
-		throw new Error(
-			`Package ${pjson.name} does't have API version pinned in dev dependencies: ${devVersion}`
-		);
-	}
-	if (peerVersion !== `^${devVersion}`) {
-		throw new Error(
-			`Package ${pjson.name} depends on peer API version ${peerVersion} ` +
-			`but version ${devVersion} in development`
-		);
-	}
-	console.log(`${pjson.name} OK`);
+  // error if not pinned
+  if (!/^[0-9]/.test(devVersion)) {
+    throw new Error(
+      `Package ${pjson.name} does't have API version pinned in dev dependencies: ${devVersion}`
+    );
+  }
+  if (peerVersion !== `^${devVersion}`) {
+    throw new Error(
+      `Package ${pjson.name} depends on peer API version ${peerVersion} ` +
+      `but version ${devVersion} in development`
+    );
+  }
+  console.log(`${pjson.name} OK`);
 }
