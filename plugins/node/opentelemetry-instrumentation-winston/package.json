@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-winston",
-  "version": "0.16.0",
+  "version": "0.20.0",
   "description": "OpenTelemetry instrumentation for winston",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -41,7 +41,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "peerDependencies": {
+    "@opentelemetry/api": "^0.20.0"
+  },
   "devDependencies": {
+    "@opentelemetry/api": "0.20.0",
     "@opentelemetry/context-async-hooks": "0.20.0",
     "@opentelemetry/node": "0.20.0",
     "@opentelemetry/tracing": "0.20.0",
@@ -60,7 +64,6 @@
     "winston2": "npm:winston@2.4.5"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.20.0",
     "@opentelemetry/instrumentation": "^0.20.0"
   }
 }

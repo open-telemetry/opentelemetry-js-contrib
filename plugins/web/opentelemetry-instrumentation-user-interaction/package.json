@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-user-interaction",
-  "version": "0.16.0",
+  "version": "0.20.0",
   "description": "OpenTelemetry UserInteraction automatic instrumentation package.",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.14.3",
+    "@opentelemetry/api": "0.20.0",
     "@opentelemetry/context-zone-peer-dep": "0.20.0",
     "@opentelemetry/instrumentation-xml-http-request": "0.20.0",
     "@opentelemetry/tracing": "0.20.0",
@@ -80,12 +81,12 @@
     "zone.js": "0.11.4"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.20.0",
     "@opentelemetry/core": "^0.20.0",
     "@opentelemetry/instrumentation": "^0.20.0",
     "@opentelemetry/web": "^0.20.0"
   },
   "peerDependencies": {
+    "@opentelemetry/api": "^0.20.0",
     "zone.js": "0.11.4"
   },
   "sideEffects": false
