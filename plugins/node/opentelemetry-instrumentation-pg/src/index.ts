@@ -15,3 +15,7 @@
  */
 
 export * from './instrumentation';
+export {
+  PgInstrumentationConfig,
+  PgInstrumentationExecutionResponseHook,
+} from './types';

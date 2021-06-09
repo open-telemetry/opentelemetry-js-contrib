@@ -24,7 +24,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
-import { PgInstrumentation } from '../src';
+import { PgInstrumentation, PgInstrumentationConfig } from '../src';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/test-utils';
 import {
@@ -95,6 +95,11 @@ const runCallbackTest = (
 };
 
 describe('pg-pool@2.x', () => {
+  function create(config: PgInstrumentationConfig = {}) {
+    instrumentation.setConfig(config);
+    instrumentation.enable();
+  }
+
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncHooksContextManager;
   let instrumentation: PgInstrumentation;
@@ -130,6 +135,7 @@ describe('pg-pool@2.x', () => {
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }
+
     pool.end(() => {
       done();
     });
@@ -286,6 +292,155 @@ describe('pg-pool@2.x', () => {
           done();
         });
         assert.strictEqual(resNoPromise, undefined, 'No promise is returned');
+      });
+    });
+
+    describe('when specifying a responseHook configuration', () => {
+      const dataAttributeName = 'pg_data';
+      const query = 'SELECT 0::text';
+      const events: TimedEvent[] = [];
+
+      describe('AND valid responseHook', () => {
+        const pgPoolattributes = {
+          ...DEFAULT_PGPOOL_ATTRIBUTES,
+        };
+        const pgAttributes = {
+          ...DEFAULT_PG_ATTRIBUTES,
+          [SemanticAttributes.DB_STATEMENT]: query,
+          [dataAttributeName]: '{"rowCount":1}',
+        };
+
+        beforeEach(async () => {
+          const config: PgInstrumentationConfig = {
+            enhancedDatabaseReporting: true,
+            responseHook: (
+              span: Span,
+              data: pg.QueryResult | pg.QueryArrayResult
+            ) =>
+              span.setAttribute(
+                dataAttributeName,
+                JSON.stringify({ rowCount: data.rowCount })
+              ),
+          };
+
+          create(config);
+        });
+
+        it('should attach response hook data to resulting spans for query with callback ', done => {
+          const parentSpan = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+          context.with(trace.setSpan(context.active(), parentSpan), () => {
+            const resNoPromise = pool.query(query, (err, result) => {
+              if (err) {
+                return done(err);
+              }
+              runCallbackTest(
+                parentSpan,
+                pgPoolattributes,
+                events,
+                unsetStatus,
+                2,
+                0
+              );
+              runCallbackTest(
+                parentSpan,
+                pgAttributes,
+                events,
+                unsetStatus,
+                2,
+                1
+              );
+              done();
+            });
+            assert.strictEqual(
+              resNoPromise,
+              undefined,
+              'No promise is returned'
+            );
+          });
+        });
+
+        it('should attach response hook data to resulting spans for query returning a Promise', async () => {
+          const span = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async () => {
+              const result = await pool.query(query);
+              runCallbackTest(
+                span,
+                pgPoolattributes,
+                events,
+                unsetStatus,
+                2,
+                0
+              );
+              runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
+              assert.ok(result, 'pool.query() returns a promise');
+            }
+          );
+        });
+      });
+
+      describe('AND invalid responseHook', () => {
+        const pgPoolattributes = {
+          ...DEFAULT_PGPOOL_ATTRIBUTES,
+        };
+        const pgAttributes = {
+          ...DEFAULT_PG_ATTRIBUTES,
+          [SemanticAttributes.DB_STATEMENT]: query,
+        };
+
+        beforeEach(async () => {
+          create({
+            enhancedDatabaseReporting: true,
+            responseHook: (
+              span: Span,
+              data: pg.QueryResult | pg.QueryArrayResult
+            ) => {
+              throw 'some kind of failure!';
+            },
+          });
+        });
+
+        it('should not do any harm when throwing an exception', done => {
+          const parentSpan = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+          context.with(trace.setSpan(context.active(), parentSpan), () => {
+            const resNoPromise = pool.query(query, (err, result) => {
+              if (err) {
+                return done(err);
+              }
+              assert.ok(result);
+
+              runCallbackTest(
+                parentSpan,
+                pgPoolattributes,
+                events,
+                unsetStatus,
+                2,
+                0
+              );
+              runCallbackTest(
+                parentSpan,
+                pgAttributes,
+                events,
+                unsetStatus,
+                2,
+                1
+              );
+              done();
+            });
+            assert.strictEqual(
+              resNoPromise,
+              undefined,
+              'No promise is returned'
+            );
+          });
+        });
       });
     });
   });

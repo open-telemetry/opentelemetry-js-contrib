@@ -16,6 +16,30 @@
 
 import * as pgTypes from 'pg';
 import * as pgPoolTypes from 'pg-pool';
+import type * as api from '@opentelemetry/api';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+
+export interface PgInstrumentationExecutionResponseHook {
+  (span: api.Span, data: pgTypes.QueryResult | pgTypes.QueryArrayResult): void;
+}
+
+export interface PgInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * If true, additional information about query parameters and
+   * results will be attached (as `attributes`) to spans representing
+   * database operations.
+   */
+  enhancedDatabaseReporting?: boolean;
+
+  /**
+   * Hook that allows adding custom span attributes based on the data
+   * returned from "query" Pg actions.
+   * Using this requires that the `enhancedDatabaseReporting` flag be set to true.
+   *
+   * @default undefined
+   */
+  responseHook?: PgInstrumentationExecutionResponseHook;
+}
 
 export type PostgresCallback = (err: Error, res: object) => unknown;
 
