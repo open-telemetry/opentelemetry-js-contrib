@@ -30,14 +30,14 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.20.0",
-    "@opentelemetry/exporter-jaeger": "^0.20.0",
-    "@opentelemetry/exporter-zipkin": "^0.20.0",
-    "@opentelemetry/instrumentation": "^0.20.0",
-    "@opentelemetry/instrumentation-http": "^0.20.0",
+    "@opentelemetry/api": "^0.21.0",
+    "@opentelemetry/exporter-jaeger": "^0.21.0",
+    "@opentelemetry/exporter-zipkin": "^0.21.0",
+    "@opentelemetry/instrumentation": "^0.21.0",
+    "@opentelemetry/instrumentation-http": "^0.21.0",
     "@opentelemetry/instrumentation-redis": "^0.15.0",
-    "@opentelemetry/node": "^0.20.0",
-    "@opentelemetry/tracing": "^0.20.0",
+    "@opentelemetry/node": "^0.21.0",
+    "@opentelemetry/tracing": "^0.21.0",
     "axios": "^0.21.1",
     "express": "^4.17.1",
     "redis": "^2.8.0"
