@@ -229,13 +229,57 @@ export class GraphQLInstrumentation extends InstrumentationBase {
                 processedArgs,
               ]);
             },
-            err => {
-              endSpan(span, err);
+            (err, result) => {
+              instrumentation._handleExecutionResult(span, err, result);
             }
           );
         });
       };
     };
+  }
+
+  private _handleExecutionResult(
+    span: api.Span,
+    err?: Error,
+    result?: PromiseOrValue<graphqlTypes.ExecutionResult>
+  ) {
+    const config = this._getConfig();
+    if (
+      typeof config.responseHook !== 'function' ||
+      result === undefined ||
+      err
+    ) {
+      endSpan(span, err);
+      return;
+    }
+
+    if (result.constructor.name === 'Promise') {
+      (result as Promise<graphqlTypes.ExecutionResult>).then(resultData => {
+        this._executeResponseHook(span, resultData);
+      });
+    } else {
+      this._executeResponseHook(span, result as graphqlTypes.ExecutionResult);
+    }
+  }
+
+  private _executeResponseHook(
+    span: api.Span,
+    result: graphqlTypes.ExecutionResult
+  ) {
+    const config = this._getConfig();
+    safeExecuteInTheMiddle(
+      () => {
+        config.responseHook(span, result);
+      },
+      err => {
+        if (err) {
+          api.diag.error('Error running response hook', err);
+        }
+
+        endSpan(span, undefined);
+      },
+      true
+    );
   }
 
   private _patchParse(): (original: parseType) => parseType {
