@@ -169,7 +169,10 @@ export class PgInstrumentation extends InstrumentationBase {
             );
             // If a parent span exists, bind the callback
             if (parentSpan) {
-              args[args.length - 1] = context.bind(context.active(), args[args.length - 1]);
+              args[args.length - 1] = context.bind(
+                context.active(),
+                args[args.length - 1]
+              );
             }
           } else if (
             typeof (args[0] as NormalizedQueryConfig).callback === 'function'
