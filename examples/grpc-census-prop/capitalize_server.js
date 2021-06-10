@@ -72,7 +72,7 @@ function capitalizeWithCensusTracing(call) {
 function capitalizeWithOTelTracing(call) {
   const currentSpan = tracer.getCurrentSpan();
   // display traceid in the terminal
-  console.log(`traceid: ${currentSpan.context().traceId}`);
+  console.log(`traceid: ${currentSpan.spanContext().traceId}`);
 
   const span = tracer.startSpan('tutorials.FetchImpl.capitalize', {
     kind: SpanKind.SERVER,

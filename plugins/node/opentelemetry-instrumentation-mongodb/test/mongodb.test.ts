@@ -16,7 +16,7 @@
 
 // for testing locally "npm run docker:start"
 
-import { context, setSpan, SpanKind } from '@opentelemetry/api';
+import { context, trace, SpanKind } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -119,7 +119,7 @@ describe('MongoDBInstrumentation', () => {
     it('should create a child span for insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = provider.getTracer('default').startSpan('insertRootSpan');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         collection.insertMany(insertData, (err, result) => {
           span.end();
           assert.ifError(err);
@@ -135,7 +135,7 @@ describe('MongoDBInstrumentation', () => {
 
     it('should create a child span for update', done => {
       const span = provider.getTracer('default').startSpan('updateRootSpan');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         collection.updateOne({ a: 2 }, { $set: { b: 1 } }, (err, result) => {
           span.end();
           assert.ifError(err);
@@ -151,7 +151,7 @@ describe('MongoDBInstrumentation', () => {
 
     it('should create a child span for remove', done => {
       const span = provider.getTracer('default').startSpan('removeRootSpan');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         collection.deleteOne({ a: 3 }, (err, result) => {
           span.end();
           assert.ifError(err);
@@ -174,7 +174,7 @@ describe('MongoDBInstrumentation', () => {
 
     it('should create a child span for find', done => {
       const span = provider.getTracer('default').startSpan('findRootSpan');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         collection.find({ a: 1 }).toArray((err, result) => {
           span.end();
           assert.ifError(err);
@@ -189,7 +189,7 @@ describe('MongoDBInstrumentation', () => {
     });
     it('should create a child span for cursor operations', done => {
       const span = provider.getTracer('default').startSpan('findRootSpan');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         const cursor = collection.find().batchSize(1);
         cursor.next().then(firstElement => {
           assert(firstElement !== null);
@@ -229,7 +229,7 @@ describe('MongoDBInstrumentation', () => {
 
     it('should create a child span for create index', done => {
       const span = provider.getTracer('default').startSpan('indexRootSpan');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         collection.createIndex({ a: 1 }, (err, result) => {
           span.end();
           assert.ifError(err);
@@ -252,7 +252,7 @@ describe('MongoDBInstrumentation', () => {
     it('should create a span for find after callback insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = provider.getTracer('default').startSpan('insertRootSpan');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         collection.insertMany(insertData, (err, result) => {
           span.end();
           assert.ifError(err);
@@ -268,7 +268,7 @@ describe('MongoDBInstrumentation', () => {
             assert.ifError(err);
             assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT);
             assert.strictEqual(
-              mainSpan.spanContext.spanId,
+              mainSpan.spanContext().spanId,
               spans2[0].parentSpanId
             );
             memoryExporter.reset();

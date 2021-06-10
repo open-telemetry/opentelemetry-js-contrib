@@ -17,7 +17,7 @@
 import {
   context,
   propagation,
-  setSpan,
+  trace,
   Span,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
@@ -27,7 +27,6 @@ import {
   addSpanNetworkEvents,
   hasKey,
   PerformanceEntries,
-  PerformanceLegacy,
   PerformanceTimingNames as PTN,
 } from '@opentelemetry/web';
 import {
@@ -37,6 +36,10 @@ import {
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  addSpanPerformancePaintEvents,
+  getPerformanceNavigationEntries,
+} from './utils';
 
 /**
  * This class represents a document load plugin
@@ -90,7 +93,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
     const metaElement = [...document.getElementsByTagName('meta')].find(
       e => e.getAttribute('name') === TRACE_PARENT_HEADER
     );
-    const entries = this._getEntries();
+    const entries = getPerformanceNavigationEntries();
     const traceparent = (metaElement && metaElement.content) || '';
     context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
       const rootSpan = this._startSpan(
@@ -101,14 +104,14 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       if (!rootSpan) {
         return;
       }
-      context.with(setSpan(context.active(), rootSpan), () => {
+      context.with(trace.setSpan(context.active(), rootSpan), () => {
         const fetchSpan = this._startSpan(
           AttributeNames.DOCUMENT_FETCH,
           PTN.FETCH_START,
           entries
         );
         if (fetchSpan) {
-          context.with(setSpan(context.active(), fetchSpan), () => {
+          context.with(trace.setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(fetchSpan, entries);
             this._endSpan(fetchSpan, PTN.RESPONSE_END, entries);
           });
@@ -137,6 +140,8 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_START, entries);
       addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_END, entries);
 
+      addSpanPerformancePaintEvents(rootSpan);
+
       this._endSpan(rootSpan, PTN.LOAD_EVENT_END, entries);
     });
   }
@@ -161,44 +166,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
         span.end();
       }
     }
-  }
-
-  /**
-   * gets performance entries of navigation
-   */
-  private _getEntries() {
-    const entries: PerformanceEntries = {};
-    const performanceNavigationTiming = (
-      otperformance as unknown as Performance
-    ).getEntriesByType?.('navigation')[0] as PerformanceEntries;
-
-    if (performanceNavigationTiming) {
-      const keys = Object.values(PTN);
-      keys.forEach((key: string) => {
-        if (hasKey(performanceNavigationTiming, key)) {
-          const value = performanceNavigationTiming[key];
-          if (typeof value === 'number') {
-            entries[key] = value;
-          }
-        }
-      });
-    } else {
-      // // fallback to previous version
-      const perf: typeof otperformance & PerformanceLegacy = otperformance;
-      const performanceTiming = perf.timing;
-      if (performanceTiming) {
-        const keys = Object.values(PTN);
-        keys.forEach((key: string) => {
-          if (hasKey(performanceTiming, key)) {
-            const value = performanceTiming[key];
-            if (typeof value === 'number') {
-              entries[key] = value;
-            }
-          }
-        });
-      }
-    }
-    return entries;
   }
 
   /**
@@ -245,7 +212,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
         {
           startTime: entries[performanceName],
         },
-        parentSpan ? setSpan(context.active(), parentSpan) : undefined
+        parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
       );
       span.setAttribute(AttributeNames.COMPONENT, this.component);
       return span;

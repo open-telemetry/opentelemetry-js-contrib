@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
@@ -220,7 +220,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
           fields: {},
         };
 
-        return context.with(setSpan(context.active(), span), () => {
+        return context.with(trace.setSpan(context.active(), span), () => {
           return safeExecuteInTheMiddle<
             PromiseOrValue<graphqlTypes.ExecutionResult>
           >(
@@ -229,13 +229,57 @@ export class GraphQLInstrumentation extends InstrumentationBase {
                 processedArgs,
               ]);
             },
-            err => {
-              endSpan(span, err);
+            (err, result) => {
+              instrumentation._handleExecutionResult(span, err, result);
             }
           );
         });
       };
     };
+  }
+
+  private _handleExecutionResult(
+    span: api.Span,
+    err?: Error,
+    result?: PromiseOrValue<graphqlTypes.ExecutionResult>
+  ) {
+    const config = this._getConfig();
+    if (
+      typeof config.responseHook !== 'function' ||
+      result === undefined ||
+      err
+    ) {
+      endSpan(span, err);
+      return;
+    }
+
+    if (result.constructor.name === 'Promise') {
+      (result as Promise<graphqlTypes.ExecutionResult>).then(resultData => {
+        this._executeResponseHook(span, resultData);
+      });
+    } else {
+      this._executeResponseHook(span, result as graphqlTypes.ExecutionResult);
+    }
+  }
+
+  private _executeResponseHook(
+    span: api.Span,
+    result: graphqlTypes.ExecutionResult
+  ) {
+    const config = this._getConfig();
+    safeExecuteInTheMiddle(
+      () => {
+        config.responseHook(span, result);
+      },
+      err => {
+        if (err) {
+          api.diag.error('Error running response hook', err);
+        }
+
+        endSpan(span, undefined);
+      },
+      true
+    );
   }
 
   private _patchParse(): (original: parseType) => parseType {
@@ -284,7 +328,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     const config = this._getConfig();
     const span = this.tracer.startSpan(SpanNames.PARSE);
 
-    return context.with(setSpan(context.active(), span), () => {
+    return context.with(trace.setSpan(context.active(), span), () => {
       return safeExecuteInTheMiddle<
         graphqlTypes.DocumentNode & ObjectWithGraphQLData
       >(
@@ -317,7 +361,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   ): ReadonlyArray<graphqlTypes.GraphQLError> {
     const span = this.tracer.startSpan(SpanNames.VALIDATE, {});
 
-    return context.with(setSpan(context.active(), span), () => {
+    return context.with(trace.setSpan(context.active(), span), () => {
       return safeExecuteInTheMiddle<ReadonlyArray<graphqlTypes.GraphQLError>>(
         () => {
           return original.call(

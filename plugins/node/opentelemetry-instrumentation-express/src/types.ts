@@ -16,7 +16,7 @@
 
 import { kLayerPatched } from './';
 import { Request } from 'express';
-import { SpanAttributes, Span } from '@opentelemetry/api';
+import { SpanAttributes } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 
@@ -86,11 +86,4 @@ export interface ExpressInstrumentationConfig extends InstrumentationConfig {
   /** Ignore specific layers based on their type */
   ignoreLayersType?: ExpressLayerType[];
   spanNameHook?: SpanNameHook;
-}
-
-/**
- * extends opentelemetry/api Span object to instrument the root span name of http instrumentation
- */
-export interface ExpressInstrumentationSpan extends Span {
-  name?: string;
 }

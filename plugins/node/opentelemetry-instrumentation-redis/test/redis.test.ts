@@ -19,8 +19,7 @@ import {
   context,
   SpanKind,
   SpanStatus,
-  getSpan,
-  setSpan,
+  trace,
   Span,
 } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
@@ -108,7 +107,7 @@ describe('redis@2.x', () => {
       const span = tracer.startSpan('test span');
       let client: redisTypes.RedisClient;
       const readyHandler = () => {
-        assert.strictEqual(getSpan(context.active()), span);
+        assert.strictEqual(trace.getSpan(context.active()), span);
         client.quit(done);
       };
       const errorHandler = (err: Error) => {
@@ -116,7 +115,7 @@ describe('redis@2.x', () => {
         client.quit(done);
       };
 
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         client = redis.createClient(URL);
         client.on('ready', readyHandler);
         client.on('error', errorHandler);
@@ -189,7 +188,7 @@ describe('redis@2.x', () => {
             [SemanticAttributes.DB_STATEMENT]: operation.command,
           };
           const span = tracer.startSpan('test span');
-          context.with(setSpan(context.active(), span), () => {
+          context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _result) => {
               assert.ifError(err);
               assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
@@ -223,7 +222,7 @@ describe('redis@2.x', () => {
       REDIS_OPERATIONS.forEach(operation => {
         it(`should not create a child span for ${operation.description}`, done => {
           const span = tracer.startSpan('test span');
-          context.with(setSpan(context.active(), span), () => {
+          context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _) => {
               assert.ifError(err);
               assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
@@ -254,7 +253,7 @@ describe('redis@2.x', () => {
       REDIS_OPERATIONS.forEach(operation => {
         it(`should properly execute the db statement serializer for operation ${operation.description}`, done => {
           const span = tracer.startSpan('test span');
-          context.with(setSpan(context.active(), span), () => {
+          context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _) => {
               assert.ifError(err);
               span.end();
@@ -357,7 +356,7 @@ describe('redis@2.x', () => {
 
         it(`should create span when a parent span exists for operation ${operation.description}`, done => {
           const span = tracer.startSpan('test span');
-          context.with(setSpan(context.active(), span), () => {
+          context.with(trace.setSpan(context.active(), span), () => {
             operation.method((err, _) => {
               assert.ifError(err);
               const endedSpans = memoryExporter.getFinishedSpans();

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/plugin-react-load",
-  "version": "0.16.0",
+  "version": "0.20.0",
   "description": "OpenTelemetry React loading automatic instrumentation package.",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -48,14 +48,15 @@
   },
   "devDependencies": {
     "@babel/core": "7.14.3",
-    "@opentelemetry/propagator-b3": "0.19.0",
+    "@opentelemetry/api": "0.20.0",
+    "@opentelemetry/propagator-b3": "0.20.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "12.20.13",
-    "@types/react": "17.0.6",
+    "@types/node": "14.17.3",
+    "@types/react": "17.0.9",
     "@types/react-addons-test-utils": "0.14.25",
-    "@types/react-dom": "17.0.5",
+    "@types/react-dom": "17.0.6",
     "@types/shimmer": "1.0.1",
-    "@types/sinon": "9.0.11",
+    "@types/sinon": "10.0.2",
     "@types/webpack-env": "1.16.0",
     "babel-loader": "8.2.2",
     "codecov": "3.8.2",
@@ -75,21 +76,21 @@
     "sinon": "10.0.0",
     "ts-loader": "8.3.0",
     "ts-mocha": "8.0.0",
-    "typescript": "4.2.4",
+    "typescript": "4.3.2",
     "webpack": "4.46.0",
     "webpack-cli": "4.7.0",
     "webpack-merge": "5.7.3"
   },
   "peerDependencies": {
+    "@opentelemetry/api": "^0.20.0",
     "react": "^16.13.1 || ^17.0.0"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.0.0-rc.0",
-    "@opentelemetry/context-zone": "^0.19.0",
-    "@opentelemetry/core": "^0.19.0",
-    "@opentelemetry/semantic-conventions": "^0.19.0",
-    "@opentelemetry/tracing": "^0.19.0",
-    "@opentelemetry/web": "^0.19.0",
+    "@opentelemetry/context-zone": "^0.20.0",
+    "@opentelemetry/core": "^0.20.0",
+    "@opentelemetry/semantic-conventions": "^0.20.0",
+    "@opentelemetry/tracing": "^0.20.0",
+    "@opentelemetry/web": "^0.20.0",
     "shimmer": "^1.2.1"
   }
 }

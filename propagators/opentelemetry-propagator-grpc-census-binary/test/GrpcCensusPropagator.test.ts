@@ -15,13 +15,12 @@
  */
 
 import {
-  getSpanContext,
   ROOT_CONTEXT,
-  setSpanContext,
   SpanContext,
   TextMapGetter,
   TextMapSetter,
   TraceFlags,
+  trace,
 } from '@opentelemetry/api';
 import * as assert from 'assert';
 import { Metadata, MetadataValue } from 'grpc';
@@ -46,7 +45,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
       censusPropagator.inject(
-        setSpanContext(ROOT_CONTEXT, spanContext),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)),
         metadata,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -69,7 +68,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.NONE,
       };
       censusPropagator.inject(
-        setSpanContext(ROOT_CONTEXT, spanContext),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)),
         metadata,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -92,7 +91,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.NONE,
       };
       censusPropagator.inject(
-        setSpanContext(ROOT_CONTEXT, emptySpanContext),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(emptySpanContext)),
         metadata,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -124,7 +123,7 @@ describe('GrpcCensusPropagator', () => {
       };
       censusPropagator.inject(
         // cast to any so that undefined traceFlags can be used for coverage
-        setSpanContext(ROOT_CONTEXT, spanContext as any),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext as any)),
         metadata,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -142,7 +141,7 @@ describe('GrpcCensusPropagator', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
       censusPropagator.inject(
-        setSpanContext(ROOT_CONTEXT, emptySpanContext),
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(emptySpanContext)),
         null,
         makeSetter((metadata: any, k: any, v: any) =>
           metadata.set(k, v as MetadataValue)
@@ -160,9 +159,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getSpanContext(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      );
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: '75e8ed491aec7eca',
@@ -180,9 +179,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getSpanContext(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      );
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, {
         spanId: '75e8ed491aec7eca',
@@ -193,9 +192,9 @@ describe('GrpcCensusPropagator', () => {
     });
 
     it('should return undefined when header is not set', () => {
-      const extractedSpanContext = getSpanContext(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      );
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
       assert.deepStrictEqual(extractedSpanContext, undefined);
     });
 
@@ -207,9 +206,9 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getSpanContext(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      );
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, undefined);
     });
@@ -227,17 +226,17 @@ describe('GrpcCensusPropagator', () => {
       const encoded = Buffer.from(encodedArray.buffer);
       metadata.set(GRPC_TRACE_KEY, encoded);
 
-      const extractedSpanContext = getSpanContext(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      );
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
 
       assert.deepStrictEqual(extractedSpanContext, undefined);
     });
 
     it('should return undefined when carrier is null', () => {
-      const extractedSpanContext = getSpanContext(
-        censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter())
-      );
+      const extractedSpanContext = trace
+        .getSpan(censusPropagator.extract(ROOT_CONTEXT, metadata, makeGetter()))
+        ?.spanContext();
       assert.deepStrictEqual(extractedSpanContext, undefined);
     });
   });

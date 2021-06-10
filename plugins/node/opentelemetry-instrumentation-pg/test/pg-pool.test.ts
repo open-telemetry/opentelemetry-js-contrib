@@ -21,7 +21,7 @@ import {
   Span,
   SpanKind,
   SpanStatus,
-  setSpan,
+  trace,
 } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { PgInstrumentation } from '../src';
@@ -168,7 +168,7 @@ describe('pg-pool@2.x', () => {
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
-      await context.with(setSpan(context.active(), span), async () => {
+      await context.with(trace.setSpan(context.active(), span), async () => {
         const client = await pool.connect();
         runCallbackTest(span, pgPoolattributes, events, unsetStatus, 1, 0);
         assert.ok(client, 'pool.connect() returns a promise');
@@ -194,7 +194,7 @@ describe('pg-pool@2.x', () => {
       const parentSpan = provider
         .getTracer('test-pg-pool')
         .startSpan('test span');
-      context.with(setSpan(context.active(), parentSpan), () => {
+      context.with(trace.setSpan(context.active(), parentSpan), () => {
         const resNoPromise = pool.connect((err, client, release) => {
           if (err) {
             return done(err);
@@ -248,7 +248,7 @@ describe('pg-pool@2.x', () => {
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
-      await context.with(setSpan(context.active(), span), async () => {
+      await context.with(trace.setSpan(context.active(), span), async () => {
         const result = await pool.query('SELECT NOW()');
         runCallbackTest(span, pgPoolattributes, events, unsetStatus, 2, 0);
         runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
@@ -269,7 +269,7 @@ describe('pg-pool@2.x', () => {
       const parentSpan = provider
         .getTracer('test-pg-pool')
         .startSpan('test span');
-      context.with(setSpan(context.active(), parentSpan), () => {
+      context.with(trace.setSpan(context.active(), parentSpan), () => {
         const resNoPromise = pool.query('SELECT NOW()', (err, result) => {
           if (err) {
             return done(err);

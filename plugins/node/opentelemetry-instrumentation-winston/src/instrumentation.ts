@@ -17,7 +17,7 @@
 import {
   context,
   diag,
-  getSpan,
+  trace,
   isSpanContextValid,
   Span,
   SpanContext,
@@ -135,13 +135,13 @@ export class WinstonInstrumentation extends InstrumentationBase {
         this: never,
         ...args: Parameters<typeof original>
       ) {
-        const span = getSpan(context.active());
+        const span = trace.getSpan(context.active());
 
         if (!span) {
           return original.apply(this, args);
         }
 
-        const spanContext = span.context();
+        const spanContext = span.spanContext();
 
         if (!isSpanContextValid(spanContext)) {
           return original.apply(this, args);
@@ -163,13 +163,13 @@ export class WinstonInstrumentation extends InstrumentationBase {
         this: unknown,
         ...args: Parameters<typeof original>
       ) {
-        const span = getSpan(context.active());
+        const span = trace.getSpan(context.active());
 
         if (!span) {
           return original.apply(this, args);
         }
 
-        const spanContext = span.context();
+        const spanContext = span.spanContext();
 
         if (!isSpanContextValid(spanContext)) {
           return original.apply(this, args);
