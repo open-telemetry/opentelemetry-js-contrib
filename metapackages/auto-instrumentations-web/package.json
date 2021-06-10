@@ -60,9 +60,9 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.21.0",
-    "@opentelemetry/instrumentation-document-load": "^0.21.0",
+    "@opentelemetry/instrumentation-document-load": "^0.20.0",
     "@opentelemetry/instrumentation-fetch": "^0.21.0",
-    "@opentelemetry/instrumentation-user-interaction": "^0.21.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.20.0",
     "@opentelemetry/instrumentation-xml-http-request": "^0.21.0"
   }
 }
