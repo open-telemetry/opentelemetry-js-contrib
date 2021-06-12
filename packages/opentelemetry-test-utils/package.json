@@ -33,7 +33,7 @@
     "typescript": "4.3.2"
   },
   "dependencies": {
-    "@opentelemetry/core": "^0.21.0",
-    "@opentelemetry/tracing": "^0.21.0"
+    "@opentelemetry/core": "0.21.0",
+    "@opentelemetry/tracing": "0.21.0"
   }
 }
