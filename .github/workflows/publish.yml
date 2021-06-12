@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
     types: [closed]
-    
+
 jobs:
   publish_to_npm:
     name: Publish to NPM and GitHub
