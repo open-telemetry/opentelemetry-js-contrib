@@ -52,7 +52,7 @@
     "@opentelemetry/test-utils": "^0.20.0",
     "@opentelemetry/tracing": "0.21.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.2",
+    "@types/node": "14.17.3",
     "codecov": "3.8.2",
     "cross-env": "7.0.3",
     "gts": "3.1.0",
