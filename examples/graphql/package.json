@@ -31,13 +31,13 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
   },
   "dependencies": {
-    "@opentelemetry/exporter-collector": "^0.20.0",
-    "@opentelemetry/instrumentation": "^0.20.0",
+    "@opentelemetry/exporter-collector": "^0.21.0",
+    "@opentelemetry/instrumentation": "^0.21.0",
     "@opentelemetry/instrumentation-graphql": "^0.15.0",
-    "@opentelemetry/node": "^0.20.0",
+    "@opentelemetry/node": "^0.21.0",
     "@opentelemetry/instrumentation-express": "^0.15.0",
-    "@opentelemetry/instrumentation-http": "^0.20.0",
-    "@opentelemetry/tracing": "^0.20.0",
+    "@opentelemetry/instrumentation-http": "^0.21.0",
+    "@opentelemetry/tracing": "^0.21.0",
     "apollo-server": "^2.18.1",
     "express": "^4.17.1",
     "express-graphql": "^0.11.0",
