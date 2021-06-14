@@ -16,7 +16,7 @@
 
 // for testing locally "npm run docker:start"
 
-import { context, trace, SpanKind } from '@opentelemetry/api';
+import { context, trace, SpanKind, Span } from '@opentelemetry/api';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -24,7 +24,8 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import { MongoDBInstrumentation } from '../src';
+import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
+import { MongoResponseHookInformation } from '../src/types';
 
 const instrumentation = new MongoDBInstrumentation();
 instrumentation.enable();
@@ -34,6 +35,10 @@ import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection } from './utils';
 
 describe('MongoDBInstrumentation', () => {
+  function create(config: MongoDBInstrumentationConfig = {}) {
+    instrumentation.setConfig(config);
+    instrumentation.enable();
+  }
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
   // these tests.
   const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
@@ -239,6 +244,93 @@ describe('MongoDBInstrumentation', () => {
             SpanKind.CLIENT
           );
           done();
+        });
+      });
+    });
+  });
+
+  describe('when specifying a responseHook configuration', () => {
+    const dataAttributeName = 'mongodb_data';
+    beforeEach(() => {
+      memoryExporter.reset();
+    });
+
+    describe('with a valid function', () => {
+      beforeEach(() => {
+        create({
+          responseHook: (span: Span, result: MongoResponseHookInformation) => {
+            span.setAttribute(
+              dataAttributeName,
+              JSON.stringify(result.data.result)
+            );
+          },
+        });
+      });
+
+      it('should attach response hook data to the resulting span for insert function', done => {
+        const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+        const span = provider.getTracer('default').startSpan('insertRootSpan');
+        context.with(trace.setSpan(context.active(), span), () => {
+          collection.insertMany(insertData, (err, result) => {
+            span.end();
+            assert.ifError(err);
+            const spans = memoryExporter.getFinishedSpans();
+            const insertSpan = spans[0];
+
+            assert.deepStrictEqual(
+              JSON.parse(insertSpan.attributes[dataAttributeName] as string),
+              result.result
+            );
+
+            done();
+          });
+        });
+      });
+
+      it('should attach response hook data to the resulting span for find function', done => {
+        const span = provider.getTracer('default').startSpan('findRootSpan');
+        context.with(trace.setSpan(context.active(), span), () => {
+          collection.find({ a: 1 }).toArray((err, results) => {
+            span.end();
+            assert.ifError(err);
+            const spans = memoryExporter.getFinishedSpans();
+            const findSpan = spans[0];
+            const hookAttributeValue = JSON.parse(
+              findSpan.attributes[dataAttributeName] as string
+            );
+
+            assert.strictEqual(
+              hookAttributeValue?.cursor?.firstBatch[0]._id,
+              results[0]._id.toString()
+            );
+
+            done();
+          });
+        });
+      });
+    });
+
+    describe('with an invalid function', () => {
+      beforeEach(() => {
+        create({
+          responseHook: (span: Span, result: MongoResponseHookInformation) => {
+            throw 'some error';
+          },
+        });
+      });
+
+      it('should not do any harm when throwing an exception', done => {
+        const span = provider.getTracer('default').startSpan('findRootSpan');
+        context.with(trace.setSpan(context.active(), span), () => {
+          collection.find({ a: 1 }).toArray((err, results) => {
+            span.end();
+            const spans = memoryExporter.getFinishedSpans();
+
+            assert.ifError(err);
+            assertSpans(spans, 'mongodb.find', SpanKind.CLIENT);
+
+            done();
+          });
         });
       });
     });
