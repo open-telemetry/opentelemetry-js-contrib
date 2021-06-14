@@ -254,7 +254,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * auto instrument the click events
    * This is done when zone is not available
    */
-  private _patchElement() {
+  private _patchAddEventListener() {
     const plugin = this;
     return (original: Function) => {
       return function addEventListenerPatched(
@@ -265,16 +265,19 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       ) {
         const once = useCapture && useCapture.once;
         const patchedListener = (...args: any[]) => {
-          const target = this;
           let parentSpan: api.Span | undefined;
           const event: Event | undefined = args[0];
+          const target = event?.target;
           if (event) {
             parentSpan = plugin._eventsSpanMap.get(event);
           }
           if (once) {
             plugin.removePatchedListener(this, type, listener);
           }
-          const span = plugin._createSpan(target, type, parentSpan);
+          const span =
+            target instanceof HTMLElement
+              ? plugin._createSpan(target, type, parentSpan)
+              : undefined;
           if (span) {
             if (event) {
               plugin._eventsSpanMap.set(event, span);
@@ -439,10 +442,14 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         applyThis?: any,
         applyArgs?: any
       ): Zone {
-        const target: HTMLElement | undefined = task.target;
+        const event =
+          Array.isArray(applyArgs) && applyArgs[0] instanceof Event
+            ? applyArgs[0]
+            : undefined;
+        const target = event?.target;
         let span: api.Span | undefined;
         const activeZone = this;
-        if (target) {
+        if (target instanceof HTMLElement) {
           span = plugin._createSpan(target, task.eventName);
           if (span) {
             plugin._incrementTask(span);
@@ -564,23 +571,23 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       );
     } else {
       this._zonePatched = false;
-      if (isWrapped(HTMLElement.prototype.addEventListener)) {
-        this._unwrap(HTMLElement.prototype, 'addEventListener');
+      if (isWrapped(EventTarget.prototype.addEventListener)) {
+        this._unwrap(EventTarget.prototype, 'addEventListener');
         api.diag.debug('removing previous patch from method addEventListener');
       }
-      if (isWrapped(HTMLElement.prototype.removeEventListener)) {
-        this._unwrap(HTMLElement.prototype, 'removeEventListener');
+      if (isWrapped(EventTarget.prototype.removeEventListener)) {
+        this._unwrap(EventTarget.prototype, 'removeEventListener');
         api.diag.debug(
           'removing previous patch from method removeEventListener'
         );
       }
       this._wrap(
-        HTMLElement.prototype,
+        EventTarget.prototype,
         'addEventListener',
-        this._patchElement()
+        this._patchAddEventListener()
       );
       this._wrap(
-        HTMLElement.prototype,
+        EventTarget.prototype,
         'removeEventListener',
         this._patchRemoveEventListener()
       );
