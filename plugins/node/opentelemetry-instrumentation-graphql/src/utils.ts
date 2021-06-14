@@ -99,7 +99,7 @@ function createResolverSpan(
     {
       attributes,
     },
-    parentSpan ? api.setSpan(api.context.active(), parentSpan) : undefined
+    parentSpan ? api.trace.setSpan(api.context.active(), parentSpan) : undefined
   );
 
   const document = contextValue[OTEL_GRAPHQL_DATA_SYMBOL].source;
@@ -351,7 +351,7 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
     }
 
     return api.context.with(
-      api.setSpan(api.context.active(), field.span),
+      api.trace.setSpan(api.context.active(), field.span),
       () => {
         return safeExecuteInTheMiddleAsync<
           | Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>

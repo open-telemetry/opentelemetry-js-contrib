@@ -15,7 +15,7 @@ function getMiddlewareTracer(tracer) {
       originalSend.apply(res, args);
     };
 
-    api.context.with(api.setSpan(api.ROOT_CONTEXT, span), next);
+    api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), next);
   };
 }
 

@@ -21,7 +21,7 @@ import {
   SpanKind,
   Span,
   SpanStatusCode,
-  getSpan,
+  trace,
   diag,
 } from '@opentelemetry/api';
 import {
@@ -48,7 +48,7 @@ const endSpan = (span: Span, err?: Error | null) => {
 export const getTracedCreateClient = (tracer: Tracer, original: Function) => {
   return function createClientTrace(this: redisTypes.RedisClient) {
     const client: redisTypes.RedisClient = original.apply(this, arguments);
-    return context.bind(client);
+    return context.bind(context.active(), client);
   };
 };
 
@@ -63,7 +63,7 @@ export const getTracedCreateStreamTrace = (
           return this._patched_redis_stream;
         },
         set(val: EventEmitter) {
-          context.bind(val);
+          context.bind(context.active(), val);
           this._patched_redis_stream = val;
         },
       });
@@ -90,7 +90,7 @@ export const getTracedInternalSendCommand = (
       return original.apply(this, arguments);
     }
 
-    const hasNoParentSpan = getSpan(context.active()) === undefined;
+    const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
     if (config?.requireParentSpan === true && hasNoParentSpan) {
       return original.apply(this, arguments);
     }

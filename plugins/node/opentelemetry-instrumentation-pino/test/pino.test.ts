@@ -18,13 +18,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import {
-  context,
-  getSpan,
-  setSpan,
-  NoopTracerProvider,
-  Span,
-} from '@opentelemetry/api';
+import { context, trace, Span, INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { Writable } from 'stream';
@@ -50,7 +44,7 @@ describe('PinoInstrumentation', () => {
   let logger: Pino.Logger;
 
   function assertRecord(record: any, span: Span) {
-    const { traceId, spanId, traceFlags } = span.context();
+    const { traceId, spanId, traceFlags } = span.spanContext();
     assert.strictEqual(record['trace_id'], traceId);
     assert.strictEqual(record['span_id'], spanId);
     assert.strictEqual(record['trace_flags'], `0${traceFlags.toString(16)}`);
@@ -100,14 +94,14 @@ describe('PinoInstrumentation', () => {
 
     it('injects span context to records', () => {
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         testInjection(span);
       });
     });
 
     it('injects span context to child logger records', () => {
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         const child = logger.child({ foo: 42 });
         child.info(kMessage);
         assertInjection(span);
@@ -122,21 +116,20 @@ describe('PinoInstrumentation', () => {
           record['resource.service.name'] = 'test-service';
         },
       });
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         const record = testInjection(span);
         assert.strictEqual(record['resource.service.name'], 'test-service');
       });
     });
 
     it('does not inject span context if no span is active', () => {
-      assert.strictEqual(getSpan(context.active()), undefined);
+      assert.strictEqual(trace.getSpan(context.active()), undefined);
       testNoInjection();
     });
 
     it('does not inject span context if span context is invalid', () => {
-      const noopTracer = new NoopTracerProvider().getTracer('noop');
-      const span = noopTracer.startSpan('noop');
-      context.with(setSpan(context.active(), span), () => {
+      const span = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
+      context.with(trace.setSpan(context.active(), span), () => {
         testNoInjection();
       });
     });
@@ -149,7 +142,7 @@ describe('PinoInstrumentation', () => {
           throw new Error('Oops');
         },
       });
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         testInjection(span);
       });
     });
@@ -172,7 +165,7 @@ describe('PinoInstrumentation', () => {
     it('does not fail when constructing logger without arguments', () => {
       logger = pino();
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         logger.info(kMessage);
       });
       const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
@@ -183,7 +176,7 @@ describe('PinoInstrumentation', () => {
       logger = pino({ name: 'LogLog' }, stream);
 
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         const record = testInjection(span);
         assert.strictEqual(record['name'], 'LogLog');
       });
@@ -193,7 +186,7 @@ describe('PinoInstrumentation', () => {
       it('is possible to construct logger with undefined options', () => {
         logger = pino(undefined as unknown as Pino.LoggerOptions, stream);
         const span = tracer.startSpan('abc');
-        context.with(setSpan(context.active(), span), () => {
+        context.with(trace.setSpan(context.active(), span), () => {
           testInjection(span);
         });
       });
@@ -208,7 +201,7 @@ describe('PinoInstrumentation', () => {
         );
 
         const span = tracer.startSpan('abc');
-        context.with(setSpan(context.active(), span), () => {
+        context.with(trace.setSpan(context.active(), span), () => {
           const record = testInjection(span);
           assert.strictEqual(record['a'], 2);
           assert.strictEqual(record['b'], 'bar');
@@ -227,7 +220,7 @@ describe('PinoInstrumentation', () => {
         );
 
         const span = tracer.startSpan('abc');
-        context.with(setSpan(context.active(), span), () => {
+        context.with(trace.setSpan(context.active(), span), () => {
           logger.info(kMessage);
         });
 
@@ -250,7 +243,7 @@ describe('PinoInstrumentation', () => {
 
     it('does not inject span context', () => {
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         testNoInjection();
       });
     });
@@ -263,7 +256,7 @@ describe('PinoInstrumentation', () => {
           record['resource.service.name'] = 'test-service';
         },
       });
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         const record = testNoInjection();
         assert.strictEqual(record['resource.service.name'], undefined);
       });
@@ -272,7 +265,7 @@ describe('PinoInstrumentation', () => {
     it('injects span context once re-enabled', () => {
       instrumentation.enable();
       const span = tracer.startSpan('abc');
-      context.with(setSpan(context.active(), span), () => {
+      context.with(trace.setSpan(context.active(), span), () => {
         testInjection(span);
       });
     });

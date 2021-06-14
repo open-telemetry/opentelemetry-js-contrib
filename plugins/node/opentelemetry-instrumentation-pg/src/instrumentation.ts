@@ -23,7 +23,7 @@ import {
 import {
   context,
   diag,
-  getSpan,
+  trace,
   Span,
   SpanKind,
   SpanStatusCode,
@@ -160,7 +160,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
         // Bind callback to parent span
         if (args.length > 0) {
-          const parentSpan = getSpan(context.active());
+          const parentSpan = trace.getSpan(context.active());
           if (typeof args[args.length - 1] === 'function') {
             // Patch ParameterQuery callback
             args[args.length - 1] = utils.patchCallback(
@@ -169,7 +169,10 @@ export class PgInstrumentation extends InstrumentationBase {
             );
             // If a parent span exists, bind the callback
             if (parentSpan) {
-              args[args.length - 1] = context.bind(args[args.length - 1]);
+              args[args.length - 1] = context.bind(
+                context.active(),
+                args[args.length - 1]
+              );
             }
           } else if (
             typeof (args[0] as NormalizedQueryConfig).callback === 'function'
@@ -181,7 +184,7 @@ export class PgInstrumentation extends InstrumentationBase {
             );
             // If a parent span existed, bind the callback
             if (parentSpan) {
-              callback = context.bind(callback);
+              callback = context.bind(context.active(), callback);
             }
 
             // Copy the callback instead of writing to args.callback so that we don't modify user's
@@ -243,14 +246,14 @@ export class PgInstrumentation extends InstrumentationBase {
         });
 
         if (callback) {
-          const parentSpan = getSpan(context.active());
+          const parentSpan = trace.getSpan(context.active());
           callback = utils.patchCallbackPGPool(
             span,
             callback
           ) as PgPoolCallback;
           // If a parent span exists, bind the callback
           if (parentSpan) {
-            callback = context.bind(callback);
+            callback = context.bind(context.active(), callback);
           }
         }
 
@@ -263,6 +266,7 @@ export class PgInstrumentation extends InstrumentationBase {
         if (connectResult instanceof Promise) {
           const connectResultPromise = connectResult as Promise<unknown>;
           return context.bind(
+            context.active(),
             connectResultPromise
               .then(result => {
                 // Return a pass-along promise which ends the span and then goes to user's orig resolvers

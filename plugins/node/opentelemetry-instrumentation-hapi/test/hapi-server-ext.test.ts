@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -74,33 +74,36 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        const res = await server.inject({
-          method: 'GET',
-          url: '/test',
-        });
-        assert.strictEqual(res.statusCode, 200);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/test',
+          });
+          assert.strictEqual(res.statusCode, 200);
 
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
-        const extHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'ext - onRequest');
-        assert.notStrictEqual(extHandlerSpan, undefined);
-        assert.strictEqual(
-          extHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.EXT
-        );
-        assert.strictEqual(
-          extHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
-          'onRequest'
-        );
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+          const extHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'ext - onRequest');
+          assert.notStrictEqual(extHandlerSpan, undefined);
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.EXT
+          );
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
+            'onRequest'
+          );
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('instruments single ServerExtEventsRequestObject', async () => {
@@ -115,33 +118,36 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        const res = await server.inject({
-          method: 'GET',
-          url: '/test',
-        });
-        assert.strictEqual(res.statusCode, 200);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/test',
+          });
+          assert.strictEqual(res.statusCode, 200);
 
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
-        const extHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'ext - onRequest');
-        assert.notStrictEqual(extHandlerSpan, undefined);
-        assert.strictEqual(
-          extHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.EXT
-        );
-        assert.strictEqual(
-          extHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
-          'onRequest'
-        );
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+          const extHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'ext - onRequest');
+          assert.notStrictEqual(extHandlerSpan, undefined);
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.EXT
+          );
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
+            'onRequest'
+          );
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('instruments single ServerExtEventsRequestObject with multiple handlers', async () => {
@@ -161,44 +167,47 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        const res = await server.inject({
-          method: 'GET',
-          url: '/test',
-        });
-        assert.strictEqual(res.statusCode, 200);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/test',
+          });
+          assert.strictEqual(res.statusCode, 200);
 
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 4);
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 4);
 
-        const extHandlerSpans = memoryExporter
-          .getFinishedSpans()
-          .filter(span => span.name === 'ext - onRequest');
-        assert.notStrictEqual(extHandlerSpans, undefined);
-        assert.strictEqual(extHandlerSpans.length, 2);
+          const extHandlerSpans = memoryExporter
+            .getFinishedSpans()
+            .filter(span => span.name === 'ext - onRequest');
+          assert.notStrictEqual(extHandlerSpans, undefined);
+          assert.strictEqual(extHandlerSpans.length, 2);
 
-        assert.strictEqual(
-          extHandlerSpans[0]?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.EXT
-        );
-        assert.strictEqual(
-          extHandlerSpans[0]?.attributes[AttributeNames.EXT_TYPE],
-          'onRequest'
-        );
-        assert.strictEqual(
-          extHandlerSpans[1]?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.EXT
-        );
-        assert.strictEqual(
-          extHandlerSpans[1]?.attributes[AttributeNames.EXT_TYPE],
-          'onRequest'
-        );
+          assert.strictEqual(
+            extHandlerSpans[0]?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.EXT
+          );
+          assert.strictEqual(
+            extHandlerSpans[0]?.attributes[AttributeNames.EXT_TYPE],
+            'onRequest'
+          );
+          assert.strictEqual(
+            extHandlerSpans[1]?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.EXT
+          );
+          assert.strictEqual(
+            extHandlerSpans[1]?.attributes[AttributeNames.EXT_TYPE],
+            'onRequest'
+          );
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('instruments array of ServerExtEventsRequestObject', async () => {
@@ -221,46 +230,49 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        const res = await server.inject({
-          method: 'GET',
-          url: '/test',
-        });
-        assert.strictEqual(res.statusCode, 200);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/test',
+          });
+          assert.strictEqual(res.statusCode, 200);
 
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 4);
-        const firstExtHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'ext - onRequest');
-        assert.notStrictEqual(firstExtHandlerSpan, undefined);
-        assert.strictEqual(
-          firstExtHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.EXT
-        );
-        assert.strictEqual(
-          firstExtHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
-          'onRequest'
-        );
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 4);
+          const firstExtHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'ext - onRequest');
+          assert.notStrictEqual(firstExtHandlerSpan, undefined);
+          assert.strictEqual(
+            firstExtHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.EXT
+          );
+          assert.strictEqual(
+            firstExtHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
+            'onRequest'
+          );
 
-        const secondExtHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'ext - onPostAuth');
-        assert.notStrictEqual(secondExtHandlerSpan, undefined);
-        assert.strictEqual(
-          secondExtHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.EXT
-        );
-        assert.strictEqual(
-          secondExtHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
-          'onPostAuth'
-        );
+          const secondExtHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'ext - onPostAuth');
+          assert.notStrictEqual(secondExtHandlerSpan, undefined);
+          assert.strictEqual(
+            secondExtHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.EXT
+          );
+          assert.strictEqual(
+            secondExtHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
+            'onPostAuth'
+          );
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('instruments server extensions added within plugin', async () => {
@@ -284,59 +296,65 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        const res = await server.inject({
-          method: 'GET',
-          url: '/test',
-        });
-        assert.strictEqual(res.statusCode, 200);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/test',
+          });
+          assert.strictEqual(res.statusCode, 200);
 
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
-        const extHandlerSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'simplePlugin: ext - onRequest');
-        assert.notStrictEqual(extHandlerSpan, undefined);
-        assert.strictEqual(
-          extHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
-          HapiLayerType.EXT
-        );
-        assert.strictEqual(
-          extHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
-          'onRequest'
-        );
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+          const extHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'simplePlugin: ext - onRequest');
+          assert.notStrictEqual(extHandlerSpan, undefined);
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.EXT
+          );
+          assert.strictEqual(
+            extHandlerSpan?.attributes[AttributeNames.EXT_TYPE],
+            'onRequest'
+          );
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('does not instrument Hapi.ServerExtPointFunction handlers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        server.ext('onPreStart', async (server: hapi.Server) => {
-          return;
-        });
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          server.ext('onPreStart', async (server: hapi.Server) => {
+            return;
+          });
+          assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
-        await server.start();
+          await server.start();
 
-        const res = await server.inject({
-          method: 'GET',
-          url: '/test',
-        });
-        assert.strictEqual(res.statusCode, 200);
+          const res = await server.inject({
+            method: 'GET',
+            url: '/test',
+          });
+          assert.strictEqual(res.statusCode, 200);
 
-        rootSpan.end();
-        assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
-        const exportedRootSpan = memoryExporter
-          .getFinishedSpans()
-          .find(span => span.name === 'rootSpan');
-        assert.notStrictEqual(exportedRootSpan, undefined);
-      });
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
     });
 
     it('should not create span if there is no parent span', async () => {

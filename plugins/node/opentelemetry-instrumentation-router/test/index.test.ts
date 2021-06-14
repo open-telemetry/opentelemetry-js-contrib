@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, setSpan } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -98,7 +98,7 @@ const createServer = async ({
     });
   };
   const handler = parentSpan
-    ? context.bind(defaultHandler, setSpan(context.active(), parentSpan))
+    ? context.bind(trace.setSpan(context.active(), parentSpan), defaultHandler)
     : defaultHandler;
   const server = http.createServer(handler);
 
@@ -249,7 +249,7 @@ describe('Router instrumentation', () => {
         memoryExporter.getFinishedSpans().forEach((span, idx) => {
           assert.strictEqual(
             span.parentSpanId,
-            parentSpan.context().spanId,
+            parentSpan.spanContext().spanId,
             `span[${idx}] has invalid parent`
           );
         });

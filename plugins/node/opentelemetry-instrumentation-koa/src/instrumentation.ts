@@ -33,6 +33,7 @@ import {
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import { getMiddlewareMetadata } from './utils';
+import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
@@ -129,7 +130,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
     middlewareLayer[kLayerPatched] = true;
     api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
-      const parent = api.getSpan(api.context.active());
+      const parent = api.trace.getSpan(api.context.active());
       if (parent === undefined) {
         return middlewareLayer(context, next);
       }
@@ -143,41 +144,34 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         attributes: metadata.attributes,
       });
 
-      if (!context.request.ctx.parentSpan) {
-        context.request.ctx.parentSpan = parent;
-      }
+      const rpcMetadata = getRPCMetadata(api.context.active());
 
       if (
-        metadata.attributes[AttributeNames.KOA_TYPE] === KoaLayerType.ROUTER
+        metadata.attributes[AttributeNames.KOA_TYPE] === KoaLayerType.ROUTER &&
+        rpcMetadata?.type === RPCType.HTTP
       ) {
-        if (context.request.ctx.parentSpan.name) {
-          const parentRoute = context.request.ctx.parentSpan.name.split(' ')[1];
-          if (
-            context._matchedRoute &&
-            !context._matchedRoute.toString().includes(parentRoute)
-          ) {
-            context.request.ctx.parentSpan.updateName(
-              `${context.method} ${context._matchedRoute}`
-            );
-
-            delete context.request.ctx.parentSpan;
-          }
-        }
+        rpcMetadata.span.updateName(
+          `${context.method} ${context._matchedRoute}`
+        );
       }
 
-      return api.context.with(
-        api.setSpan(api.context.active(), span),
-        async () => {
-          try {
-            return await middlewareLayer(context, next);
-          } catch (err) {
-            span.recordException(err);
-            throw err;
-          } finally {
-            span.end();
-          }
+      let newContext = api.trace.setSpan(api.context.active(), span);
+      if (rpcMetadata?.type === RPCType.HTTP) {
+        newContext = setRPCMetadata(
+          newContext,
+          Object.assign(rpcMetadata, { route: context._matchedRoute })
+        );
+      }
+      return api.context.with(newContext, async () => {
+        try {
+          return await middlewareLayer(context, next);
+        } catch (err) {
+          span.recordException(err);
+          throw err;
+        } finally {
+          span.end();
         }
-      );
+      });
     };
   }
 }

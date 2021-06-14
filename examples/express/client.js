@@ -10,7 +10,7 @@ function makeRequest() {
     kind: api.SpanKind.CLIENT,
   });
 
-  api.context.with(api.setSpan(api.ROOT_CONTEXT, span), async () => {
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), async () => {
     try {
       const res = await axios.get('http://localhost:8080/run_test');
       console.log('status:', res.statusText);

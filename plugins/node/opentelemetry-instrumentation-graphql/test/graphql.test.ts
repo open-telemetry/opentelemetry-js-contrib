@@ -20,11 +20,16 @@ import {
   ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
+import { Span } from '@opentelemetry/api';
 import * as assert from 'assert';
+import type * as graphqlTypes from 'graphql';
 import { GraphQLInstrumentation } from '../src';
 import { SpanNames } from '../src/enum';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { GraphQLInstrumentationConfig } from '../src/types';
+import {
+  GraphQLInstrumentationConfig,
+  GraphQLInstrumentationExecutionResponseHook,
+} from '../src/types';
 import { assertResolveSpan } from './helper';
 
 const defaultConfig: GraphQLInstrumentationConfig = {};
@@ -170,9 +175,9 @@ describe('graphql', () => {
           'books',
           '[Book]',
           'books {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -270,9 +275,9 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: *) {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -360,9 +365,9 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: $id) {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -599,9 +604,9 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: 0) {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -696,9 +701,9 @@ describe('graphql', () => {
             '    ) {\n' +
             '      id\n' +
             '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(span1, 'id', 'addBook.id', 'Int', 'id', parentId);
       });
     });
@@ -781,9 +786,9 @@ describe('graphql', () => {
           'book',
           'Book',
           'book(id: $id) {\n' + '      name\n' + '    }',
-          executeSpan.spanContext.spanId
+          executeSpan.spanContext().spanId
         );
-        const parentId = resolveParentSpan.spanContext.spanId;
+        const parentId = resolveParentSpan.spanContext().spanId;
         assertResolveSpan(
           span1,
           'name',
@@ -880,9 +885,9 @@ describe('graphql', () => {
           '    ) {\n' +
           '      id\n' +
           '    }',
-        executeSpan.spanContext.spanId
+        executeSpan.spanContext().spanId
       );
-      const parentId = resolveParentSpan.spanContext.spanId;
+      const parentId = resolveParentSpan.spanContext().spanId;
       assertResolveSpan(span1, 'id', 'addBook.id', 'Int', 'id', parentId);
     });
   });
@@ -968,6 +973,74 @@ describe('graphql', () => {
         AttributeNames.ERROR_VALIDATION_NAME
       );
       assert.ok(event.attributes!['exception.message']);
+    });
+  });
+
+  describe('responseHook', () => {
+    let spans: ReadableSpan[];
+    let graphqlResult: graphqlTypes.ExecutionResult;
+    const dataAttributeName = 'graphql_data';
+
+    afterEach(() => {
+      exporter.reset();
+      graphQLInstrumentation.disable();
+      spans = [];
+    });
+
+    describe('when responseHook is valid', () => {
+      beforeEach(async () => {
+        create({
+          responseHook: (span: Span, data: graphqlTypes.ExecutionResult) => {
+            span.setAttribute(dataAttributeName, JSON.stringify(data));
+          },
+        });
+        graphqlResult = await graphql(schema, sourceList1);
+        spans = exporter.getFinishedSpans();
+      });
+
+      it('should attach response hook data to the resulting spans', () => {
+        const querySpan = spans.find(
+          span => span.attributes['graphql.operation.name'] == 'query'
+        );
+        const instrumentationResult = querySpan?.attributes[dataAttributeName];
+        assert.deepStrictEqual(
+          instrumentationResult,
+          JSON.stringify(graphqlResult)
+        );
+      });
+    });
+
+    describe('when responseHook throws an error', () => {
+      beforeEach(async () => {
+        create({
+          responseHook: (_span: Span, _data: graphqlTypes.ExecutionResult) => {
+            throw 'some kind of failure!';
+          },
+        });
+        graphqlResult = await graphql(schema, sourceList1);
+        spans = exporter.getFinishedSpans();
+      });
+
+      it('should not do any harm', () => {
+        assert.deepStrictEqual(graphqlResult.data?.books?.length, 13);
+      });
+    });
+
+    describe('when responseHook is not a function', () => {
+      beforeEach(async () => {
+        // Cast to unknown so that it's possible to cast to GraphQLInstrumentationExecutionResponseHook later
+        const invalidTypeHook = 1234 as unknown;
+        create({
+          responseHook:
+            invalidTypeHook as GraphQLInstrumentationExecutionResponseHook,
+        });
+        graphqlResult = await graphql(schema, sourceList1);
+        spans = exporter.getFinishedSpans();
+      });
+
+      it('should not do any harm', () => {
+        assert.deepStrictEqual(graphqlResult.data?.books?.length, 13);
+      });
     });
   });
 

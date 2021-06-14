@@ -27,8 +27,7 @@ import {
   Context as OtelContext,
   context as otelContext,
   diag,
-  getSpanContext,
-  setSpan,
+  trace,
   propagation,
   Span,
   SpanKind,
@@ -182,7 +181,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         );
       }
 
-      return otelContext.with(setSpan(otelContext.active(), span), () => {
+      return otelContext.with(trace.setSpan(otelContext.active(), span), () => {
         // Lambda seems to pass a callback even if handler is of Promise form, so we wrap all the time before calling
         // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
         // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
@@ -311,7 +310,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       );
     }
     if (parent) {
-      const spanContext = getSpanContext(parent);
+      const spanContext = trace.getSpan(parent)?.spanContext();
       if (
         spanContext &&
         (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
@@ -328,7 +327,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       httpHeaders,
       headerGetter
     );
-    if (getSpanContext(httpContext)) {
+    if (trace.getSpan(httpContext)?.spanContext()) {
       return httpContext;
     }
     if (!parent) {
