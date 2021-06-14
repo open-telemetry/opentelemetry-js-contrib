@@ -32,6 +32,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
     module: {
       rules: [
         {
+          include: [path.resolve(__dirname, 'src/manifest.json5')],
           test: /manifest.json5$/,
           use: [
             {
@@ -47,7 +48,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
           ],
         },
         {
-          exclude: /node_modules/,
+          include: [path.resolve(__dirname, 'src')],
           test: /\.tsx?$/,
           use: [
             {
@@ -60,6 +61,7 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
           ],
         },
         {
+          include: [path.resolve(__dirname, 'src/icons')],
           test: /\.(jpe?g|png|webp)$/i,
           use: [
             // We are not going to use any of the images for real, throw away all output

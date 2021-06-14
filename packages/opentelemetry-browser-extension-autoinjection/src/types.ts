@@ -36,11 +36,26 @@ export interface Settings {
 
 export class Storage {
   settings: Settings;
+  isPermissionAlertDismissed: boolean;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(storage: { [key: string]: any }) {
     this.settings = storage.settings;
+    this.isPermissionAlertDismissed = storage.isPermissionAlertDismissed;
   }
+}
+
+export interface PermissionManagerProps {
+  permissions: chrome.permissions.Permissions;
+  onTogglePermissions: (currentValue: boolean) => void;
+  removingPermissionsFailed: boolean;
+}
+
+export interface PermissionAlertProps {
+  permissions: chrome.permissions.Permissions;
+  dismissed: boolean;
+  onDismiss: () => void;
+  onGrantPermission: () => void;
 }
 
 export interface ExporterOptionProps {
@@ -61,14 +76,19 @@ export interface SaveButtonProps {
   onClick: () => void;
 }
 
-export interface PopupProps extends WithStyles<typeof styles> {
+export interface AppProps extends WithStyles<typeof styles> {
+  permissions: chrome.permissions.Permissions;
   settings: Settings;
+  isPermissionAlertDismissed: boolean;
   app: AppType;
   activeTab: chrome.tabs.Tab | undefined;
 }
 
-export interface PopupState {
+export interface AppState {
   settings: Settings;
+  permissions: chrome.permissions.Permissions;
+  isPermissionAlertDismissed: boolean;
+  removingPermissionsFailed: boolean;
 }
 
 export enum AppType {

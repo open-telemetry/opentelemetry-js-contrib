@@ -20,6 +20,7 @@ export function loadFromStorage(): Promise<Storage> {
   return new Promise<Storage>(resolve => {
     chrome.storage.local.get(
       {
+        isPermissionAlertDismissed: false,
         settings: {
           urlFilter: '',
           exporters: {

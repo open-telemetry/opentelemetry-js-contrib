@@ -68,6 +68,12 @@ export default function (this: WebpackLoaderContext, source: string): string {
     );
     manifest5.browser_action = Object.assign({}, manifest5.action);
     delete manifest5.action;
+
+    manifest5.optional_permissions = Object.assign(
+      {},
+      manifest5.host_permissions
+    );
+    delete manifest5.host_permissions;
   }
 
   const result = JSON.stringify(

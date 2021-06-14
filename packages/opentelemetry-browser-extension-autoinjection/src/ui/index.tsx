@@ -19,8 +19,8 @@ import {
   AppType,
   ExporterType,
   Labels,
-  PopupProps,
-  PopupState,
+  AppProps as AppProps,
+  AppState as AppState,
   PlaceholderValues,
 } from '../types';
 import { styles } from './styles';
@@ -39,21 +39,42 @@ import { capitalCase } from 'change-case';
 import { loadFromStorage } from '../utils/storage';
 import { SaveButton } from './SaveButton';
 import { OpenOptionsPage } from './OpenOptionsPage';
+import { PermissionManager } from './PermissionManager';
+import { PermissionAlert } from './PermissionAlert';
 
 const packageJson = require('../../package.json');
 
-class App extends React.Component<PopupProps, PopupState> {
-  constructor(props: PopupProps) {
+class App extends React.Component<AppProps, AppState> {
+  permissionsUpdated: () => void;
+  constructor(props: AppProps) {
     super(props);
 
     this.state = {
       settings: props.settings,
+      permissions: props.permissions,
+      isPermissionAlertDismissed: props.isPermissionAlertDismissed,
+      removingPermissionsFailed: false,
     };
 
     this.handleFilterChange = this.handleFilterChange.bind(this);
     this.handleSaveSettings = this.handleSaveSettings.bind(this);
     this.handleUrlChange = this.handleUrlChange.bind(this);
     this.toggleExporter = this.toggleExporter.bind(this);
+    this.onTogglePermissions = this.onTogglePermissions.bind(this);
+    this.dismissPermissionAlert = this.dismissPermissionAlert.bind(this);
+
+    this.permissionsUpdated = () => {
+      chrome.permissions.getAll(permissions => {
+        this.setState({ permissions });
+      });
+    };
+  }
+
+  componentDidMount() {
+    if (chrome.permissions.onAdded) {
+      chrome.permissions.onAdded.addListener(this.permissionsUpdated);
+      chrome.permissions.onRemoved.addListener(this.permissionsUpdated);
+    }
   }
 
   handleFilterChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -108,6 +129,40 @@ class App extends React.Component<PopupProps, PopupState> {
     );
   }
 
+  onTogglePermissions(currentValue: boolean) {
+    if (currentValue) {
+      chrome.permissions.remove(
+        {
+          origins: ['http://*/*', 'https://*/*'],
+        },
+        () => {
+          if (chrome.runtime.lastError) {
+            this.setState({
+              removingPermissionsFailed: true,
+            });
+          }
+        }
+      );
+    } else {
+      chrome.permissions.request({
+        origins: ['http://*/*', 'https://*/*'],
+      });
+    }
+  }
+
+  dismissPermissionAlert() {
+    this.setState(
+      {
+        isPermissionAlertDismissed: true,
+      },
+      () => {
+        chrome.storage.local.set({
+          isPermissionAlertDismissed: this.state.isPermissionAlertDismissed,
+        });
+      }
+    );
+  }
+
   render() {
     const { urlFilter, exporters } = this.state.settings;
 
@@ -138,6 +193,12 @@ class App extends React.Component<PopupProps, PopupState> {
           </Toolbar>
         </AppBar>
         <main className={classes.layout}>
+          <PermissionAlert
+            permissions={this.state.permissions}
+            dismissed={this.state.isPermissionAlertDismissed}
+            onDismiss={this.dismissPermissionAlert}
+            onGrantPermission={() => this.onTogglePermissions(false)}
+          />
           <Paper className={classes.paper}>
             <Typography
               component="h1"
@@ -199,6 +260,21 @@ class App extends React.Component<PopupProps, PopupState> {
             </Grid>
           </Paper>
           <Paper className={classes.paper}>
+            <Typography
+              component="h1"
+              variant="h6"
+              color="primary"
+              gutterBottom
+            >
+              Manage Permissions
+            </Typography>
+            <PermissionManager
+              permissions={this.state.permissions}
+              onTogglePermissions={this.onTogglePermissions}
+              removingPermissionsFailed={this.state.removingPermissionsFailed}
+            />
+          </Paper>
+          <Paper className={classes.paper}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <SaveButton
@@ -237,10 +313,22 @@ loadFromStorage()
       activeTab = tabs[0];
     }
 
+    const permissions = await new Promise<chrome.permissions.Permissions>(
+      resolve => {
+        chrome.permissions.getAll(permissions => resolve(permissions));
+      }
+    );
+
     const StyledApp = withStyles(styles)(App);
 
     ReactDOM.render(
-      <StyledApp settings={storage.settings} app={app} activeTab={activeTab} />,
+      <StyledApp
+        settings={storage.settings}
+        isPermissionAlertDismissed={storage.isPermissionAlertDismissed}
+        app={app}
+        activeTab={activeTab}
+        permissions={permissions}
+      />,
       document.getElementById('root')
     );
   })

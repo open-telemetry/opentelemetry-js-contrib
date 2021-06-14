@@ -16,5 +16,8 @@
    },
    "web_accessible_resources": [
       "instrumentation.js"
+   ],
+   "host_permissions": [
+      '<all_urls>'
    ]
 }
