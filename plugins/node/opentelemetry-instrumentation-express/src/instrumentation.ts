@@ -260,7 +260,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
-            return context.bind(callback, newContext).apply(this, arguments);
+            return context.bind(newContext, callback).apply(this, arguments);
           };
         }
         const result = original.apply(this, arguments);

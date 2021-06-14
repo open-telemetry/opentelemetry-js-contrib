@@ -18,7 +18,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
-import { context, trace, NoopTracerProvider, Span } from '@opentelemetry/api';
+import { context, trace, Span, INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { Writable } from 'stream';
@@ -128,8 +128,7 @@ describe('PinoInstrumentation', () => {
     });
 
     it('does not inject span context if span context is invalid', () => {
-      const noopTracer = new NoopTracerProvider().getTracer('noop');
-      const span = noopTracer.startSpan('noop');
+      const span = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
       context.with(trace.setSpan(context.active(), span), () => {
         testNoInjection();
       });

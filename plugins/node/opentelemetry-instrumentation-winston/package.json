@@ -42,15 +42,15 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^0.20.0"
+    "@opentelemetry/api": "^0.21.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "0.20.0",
-    "@opentelemetry/context-async-hooks": "0.20.0",
-    "@opentelemetry/node": "0.20.0",
-    "@opentelemetry/tracing": "0.20.0",
+    "@opentelemetry/api": "0.21.0",
+    "@opentelemetry/context-async-hooks": "0.21.0",
+    "@opentelemetry/node": "0.21.0",
+    "@opentelemetry/tracing": "0.21.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.2",
+    "@types/node": "14.17.3",
     "@types/sinon": "10.0.2",
     "codecov": "3.8.2",
     "gts": "3.1.0",
@@ -64,6 +64,6 @@
     "winston2": "npm:winston@2.4.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.20.0"
+    "@opentelemetry/instrumentation": "^0.21.0"
   }
 }
