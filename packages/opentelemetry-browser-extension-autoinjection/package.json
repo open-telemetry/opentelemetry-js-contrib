@@ -11,9 +11,6 @@
     "compile:mv3": "npx webpack --mode=development --env MV=3",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "prepare": "",
-    "tdd": "karma start",
-    "test:browser": "nyc karma start --single-run",
     "watch": "npx webpack --mode=development --watch",
     "watch:mv2": "npx webpack --mode=development --watch --env MV=2",
     "watch:mv3": "npx webpack --mode=development --watch --env MV=3"
