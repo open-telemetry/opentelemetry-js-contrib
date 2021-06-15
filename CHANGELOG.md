@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file. Do not remo
   * [#506](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/506) feat: knex instrumentation ([@Rauno56](https://github.com/Rauno56))
   * [#508](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/508) feat: graphql responseHook support ([@nozik](https://github.com/nozik))
   * [#484](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/484) feat(instrumentation-document-load): performance paint timing events ([@kkruk-sumo](https://github.com/kkruk-sumo))
+  * [#510](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/510) chore: add node:16 to the test matrix ([@Rauno56](https://github.com/Rauno56))
+  * [#521](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/521) feat: mysql2 instrumentation ([@Rauno56](https://github.com/Rauno56))
 
 #### Committers: 6
 - Daniel Dyla ([@dyladan](https://github.com/dyladan))
