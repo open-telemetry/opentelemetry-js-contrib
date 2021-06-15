@@ -98,7 +98,7 @@ const createServer = async ({
     });
   };
   const handler = parentSpan
-    ? context.bind(defaultHandler, trace.setSpan(context.active(), parentSpan))
+    ? context.bind(trace.setSpan(context.active(), parentSpan), defaultHandler)
     : defaultHandler;
   const server = http.createServer(handler);
 
