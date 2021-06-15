@@ -62,7 +62,9 @@ export function startDocker(db: 'redis' | 'mysql' | 'postgres' | 'cassandra') {
   return true;
 }
 
-export function cleanUpDocker(db: 'redis' | 'mysql' | 'postgres' | 'cassandra') {
+export function cleanUpDocker(
+  db: 'redis' | 'mysql' | 'postgres' | 'cassandra'
+) {
   run(`docker stop ot${db}`);
   run(`docker rm ot${db}`);
 }

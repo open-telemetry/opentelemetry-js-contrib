@@ -138,7 +138,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
         });
         const wrappedPromise = wrapPromise(span, execPromise);
 
-        return context.bind(wrappedPromise, execContext);
+        return context.bind(execContext, wrappedPromise);
       };
     };
   }
@@ -219,7 +219,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
         ) as Promise<CassandraDriver.types.ResultSet>;
         const wrappedPromise = wrapPromise(span, batchPromise);
 
-        return context.bind(wrappedPromise, batchContext);
+        return context.bind(batchContext, wrappedPromise);
       };
     };
   }
