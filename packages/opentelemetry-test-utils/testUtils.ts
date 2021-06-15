@@ -29,7 +29,7 @@ import {
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
 
-export function startDocker(db: 'redis' | 'mysql' | 'postgres') {
+export function startDocker(db: 'redis' | 'mysql' | 'postgres' | 'cassandra') {
   let dockerRunCmd;
   switch (db) {
     case 'redis':
@@ -42,6 +42,10 @@ export function startDocker(db: 'redis' | 'mysql' | 'postgres') {
 
     case 'postgres':
       dockerRunCmd = `docker run -d -p 54320:5432 -e POSTGRES_PASSWORD=postgres --name ot${db} ${db}:alpine`;
+      break;
+
+    case 'cassandra':
+      dockerRunCmd = `docker run -d -p 9042:9042 --name ot${db} bitnami/cassandra:3`;
       break;
   }
 
@@ -58,7 +62,7 @@ export function startDocker(db: 'redis' | 'mysql' | 'postgres') {
   return true;
 }
 
-export function cleanUpDocker(db: 'redis' | 'mysql' | 'postgres') {
+export function cleanUpDocker(db: 'redis' | 'mysql' | 'postgres' | 'cassandra') {
   run(`docker stop ot${db}`);
   run(`docker rm ot${db}`);
 }
