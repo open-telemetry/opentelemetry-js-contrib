@@ -4,7 +4,6 @@
   "description": "A browser extension that injects opentelemetry tracers into any website",
   "scripts": {
     "clean": "rimraf build/*",
-    "codecov:browser": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "compile": "npx webpack --mode=production",
     "compile:dev": "npx webpack --mode=development",
     "compile:mv2": "npx webpack --mode=development --env MV=2",
