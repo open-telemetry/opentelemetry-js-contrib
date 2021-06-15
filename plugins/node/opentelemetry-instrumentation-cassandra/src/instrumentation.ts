@@ -27,6 +27,7 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { CassandraDriverInstrumentationConfig } from './types';
 import {
@@ -133,9 +134,19 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
         );
 
         const execContext = trace.setSpan(context.active(), span);
-        const execPromise = context.with(execContext, () => {
-          return original.apply(this, args);
-        });
+        const execPromise = safeExecuteInTheMiddle(
+          () => {
+            return context.with(execContext, () => {
+              return original.apply(this, args);
+            });
+          },
+          error => {
+            if (error) {
+              failSpan(span, error);
+            }
+          }
+        );
+
         const wrappedPromise = wrapPromise(span, execPromise);
 
         return context.bind(execContext, wrappedPromise);
@@ -207,16 +218,25 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
 
           args[args.length - 1] = patchedCallback;
 
-          // safeexec
           return context.with(batchContext, () => {
             return original.apply(this, args);
           });
         }
 
-        const batchPromise = original.apply(
-          this,
-          args
-        ) as Promise<CassandraDriver.types.ResultSet>;
+        const batchPromise = safeExecuteInTheMiddle(
+          () => {
+            return original.apply(
+              this,
+              args
+            ) as Promise<CassandraDriver.types.ResultSet>;
+          },
+          error => {
+            if (error) {
+              failSpan(span, error);
+            }
+          }
+        );
+
         const wrappedPromise = wrapPromise(span, batchPromise);
 
         return context.bind(batchContext, wrappedPromise);
@@ -262,7 +282,16 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
           args[3] = wrappedCallback;
         }
 
-        return original.apply(this, args);
+        return safeExecuteInTheMiddle(
+          () => {
+            return original.apply(this, args);
+          },
+          error => {
+            if (error) {
+              failSpan(span, error);
+            }
+          }
+        );
       };
     };
   }
@@ -294,6 +323,15 @@ function startSpan(
     kind: SpanKind.CLIENT,
     attributes,
   });
+}
+
+function failSpan(span: Span, error: Error) {
+  span.setStatus({
+    code: SpanStatusCode.ERROR,
+    message: error.message,
+  });
+  span.recordException(error);
+  span.end();
 }
 
 function combineQueries(queries: Array<string | { query: string }>) {
