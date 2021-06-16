@@ -26,10 +26,6 @@ import * as utils from './utils';
 import { InstrumentationConfig } from './types';
 import { VERSION } from './version';
 
-const DEFAULT_CONFIG: InstrumentationConfig = {
-  includeFullStatement: false,
-};
-
 export class Instrumentation extends InstrumentationBase<
   typeof memcachedTypes
 > {
@@ -37,13 +33,20 @@ export class Instrumentation extends InstrumentationBase<
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: Instrumentation.COMPONENT,
   };
+  static readonly DEFAULT_CONFIG: InstrumentationConfig = {
+    includeFullStatement: false,
+  };
 
-  constructor(config: InstrumentationConfig = DEFAULT_CONFIG) {
+  constructor(config: InstrumentationConfig = Instrumentation.DEFAULT_CONFIG) {
     super(
       '@opentelemetry/instrumentation-memcached',
       VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
+      Object.assign({}, Instrumentation.DEFAULT_CONFIG, config)
     );
+  }
+
+  setConfig(config: InstrumentationConfig = Instrumentation.DEFAULT_CONFIG) {
+    this._config = Object.assign({}, Instrumentation.DEFAULT_CONFIG, config);
   }
 
   init() {

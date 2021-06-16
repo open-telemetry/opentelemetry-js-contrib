@@ -39,7 +39,7 @@ const instrumentation = new Instrumentation();
 
 const memoryExporter = new InMemorySpanExporter();
 
-process.env.RUN_REDIS_TESTS = '1';
+process.env.RUN_MEMCACHED_TESTS = '1';
 
 const CONFIG = {
   host: process.env.OPENTELEMETRY_MEMCACHED_HOST || 'localhost',
@@ -54,11 +54,7 @@ const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
 };
 
-// const unsetStatus: SpanStatus = {
-//   code: SpanStatusCode.UNSET,
-// };
-
-const getClient = (...args) => {
+const getClient = (...args: any[]) => {
   const Memcached = require('memcached');
   const client = new Memcached(...args);
   client.getPromise = util.promisify(client.get.bind(client));
@@ -70,19 +66,20 @@ const getClient = (...args) => {
 };
 const KEY = 'foo';
 const VALUE = '_test_value_';
+const shouldTestLocal = process.env.RUN_MEMCACHED_TESTS_LOCAL;
+const shouldTest = process.env.RUN_MEMCACHED_TESTS || shouldTestLocal;
 
 describe('memcached@2.x', () => {
   const provider = new NodeTracerProvider();
   const tracer = provider.getTracer('default');
   provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
   instrumentation.setTracerProvider(provider);
-  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
-  const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
-
   let contextManager: AsyncHooksContextManager;
+
   beforeEach(() => {
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
+    instrumentation.setConfig({});
     instrumentation.enable();
   });
 
@@ -206,9 +203,26 @@ describe('memcached@2.x', () => {
         }
       }, 100);
     });
+
+    it('should collect be able to collect statements', async () => {
+      instrumentation.setConfig({
+        includeFullStatement: true,
+      });
+      const value = await client.getPromise(KEY);
+
+      assert.strictEqual(value, VALUE);
+      const instrumentationSpans = memoryExporter.getFinishedSpans();
+      assertSpans(instrumentationSpans, [
+        {
+          op: 'get',
+          key: KEY,
+          statement: 'get foo',
+        },
+      ]);
+    });
   });
 
-  describe('alternate configurations', () => {
+  describe('alternate memcached configurations', () => {
     it('should support multiple server configuration', async () => {
       const client = getClient(
         {
