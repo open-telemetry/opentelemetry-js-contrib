@@ -41,6 +41,7 @@ const FILE_URL =
 
 describe('UserInteractionInstrumentation', () => {
   afterEach(() => {
+    // clear body from elements created by some tests to make sure they are independent
     while (document.body.lastChild) {
       document.body.removeChild(document.body.lastChild);
     }

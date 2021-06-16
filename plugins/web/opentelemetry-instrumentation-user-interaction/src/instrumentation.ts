@@ -98,10 +98,13 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * @param eventName
    */
   private _createSpan(
-    element: HTMLElement,
+    element: EventTarget | null | undefined,
     eventName: string,
     parentSpan?: api.Span | undefined
   ): api.Span | undefined {
+    if (!(element instanceof HTMLElement)) {
+      return undefined;
+    }
     if (!element.getAttribute) {
       return undefined;
     }
@@ -274,10 +277,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
           if (once) {
             plugin.removePatchedListener(this, type, listener);
           }
-          const span =
-            target instanceof HTMLElement
-              ? plugin._createSpan(target, type, parentSpan)
-              : undefined;
+          const span = plugin._createSpan(target, type, parentSpan);
           if (span) {
             if (event) {
               plugin._eventsSpanMap.set(event, span);
@@ -449,7 +449,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         const target = event?.target;
         let span: api.Span | undefined;
         const activeZone = this;
-        if (target instanceof HTMLElement) {
+        if (target) {
           span = plugin._createSpan(target, task.eventName);
           if (span) {
             plugin._incrementTask(span);
