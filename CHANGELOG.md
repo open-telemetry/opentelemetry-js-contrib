@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.21.0
+
+#### :bug: Bug Fix
+* [#524](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/524) [Hapi example] Fix undefined api.statusCode ([@GradedJestRisk](https://github.com/GradedJestRisk))
+
+#### :rocket: Enhancement
+* `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#529](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/529) chore: update core and api to 0.21.0 ([@dyladan](https://github.com/dyladan))
+  * [#522](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/522) chore: move api into peer dependency ([@Flarna](https://github.com/Flarna))
+* Other
+  * [#506](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/506) feat: knex instrumentation ([@Rauno56](https://github.com/Rauno56))
+  * [#508](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/508) feat: graphql responseHook support ([@nozik](https://github.com/nozik))
+  * [#484](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/484) feat(instrumentation-document-load): performance paint timing events ([@kkruk-sumo](https://github.com/kkruk-sumo))
+  * [#510](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/510) chore: add node:16 to the test matrix ([@Rauno56](https://github.com/Rauno56))
+  * [#521](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/521) feat: mysql2 instrumentation ([@Rauno56](https://github.com/Rauno56))
+
+#### Committers: 6
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Krystian Kruk ([@kkruk-sumo](https://github.com/kkruk-sumo))
+- Ran Nozik ([@nozik](https://github.com/nozik))
+- Rauno Viskus ([@Rauno56](https://github.com/Rauno56))
+- [@GradedJestRisk](https://github.com/GradedJestRisk)
+
 ## 0.20.0
 
 #### :bug: Bug Fix
