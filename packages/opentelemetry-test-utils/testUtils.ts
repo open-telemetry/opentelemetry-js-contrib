@@ -29,23 +29,15 @@ import {
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
 
-export function startDocker(db: 'redis' | 'mysql' | 'postgres') {
-  let dockerRunCmd;
-  switch (db) {
-    case 'redis':
-      dockerRunCmd = `docker run -d -p 63790:6379 --name ot${db} ${db}:alpine`;
-      break;
+const dockerRunCmds = {
+  'redis': `docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine`,
+  'mysql': `docker run --rm -d --name otel-mysql -p 33306:3306 -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=test_db -e MYSQL_USER=otel -e MYSQL_PASSWORD=secret circleci/mysql:5.7`,
+  'postgres': `docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres postgres:alpine`,
+  'memcached': `docker run --rm -d --name otel-memcached -p 11211:11211 memcached:1.6.9-alpine`,
+};
 
-    case 'mysql':
-      dockerRunCmd = `docker run --rm -d -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=test_db -e MYSQL_USER=otel -e MYSQL_PASSWORD=secret -p 33306:3306 --name ot${db} circleci/${db}:5.7`;
-      break;
-
-    case 'postgres':
-      dockerRunCmd = `docker run -d -p 54320:5432 -e POSTGRES_PASSWORD=postgres --name ot${db} ${db}:alpine`;
-      break;
-  }
-
-  const tasks = [run(dockerRunCmd)];
+export function startDocker(db: keyof typeof dockerRunCmds) {
+  const tasks = [run(dockerRunCmds[db])];
 
   for (let i = 0; i < tasks.length; i++) {
     const task = tasks[i];
@@ -58,9 +50,9 @@ export function startDocker(db: 'redis' | 'mysql' | 'postgres') {
   return true;
 }
 
-export function cleanUpDocker(db: 'redis' | 'mysql' | 'postgres') {
-  run(`docker stop ot${db}`);
-  run(`docker rm ot${db}`);
+export function cleanUpDocker(db: keyof typeof dockerRunCmds) {
+  run(`docker stop otel-${db}`);
+  run(`docker rm otel-${db}`);
 }
 
 function run(cmd: string) {
