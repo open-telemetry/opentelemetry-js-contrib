@@ -93,7 +93,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
         return original.apply(this, arguments as any);
       }
       // The name will be overwritten later
-      const span = instrumentation.tracer.startSpan('<type> <key>', {
+      const span = instrumentation.tracer.startSpan('unknown memcached command', {
         kind: api.SpanKind.CLIENT,
         attributes: {
           'memcached.version': moduleVersion,
