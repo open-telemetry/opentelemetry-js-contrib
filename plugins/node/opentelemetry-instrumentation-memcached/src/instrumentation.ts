@@ -143,25 +143,24 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
         ...utils.getPeerAttributes(client, server, query),
       });
 
-      query.callback = api.context.bind(function (
-        this: Memcached.CommandData,
-        err: any
-      ) {
-        if (err) {
-          span.recordException(err);
-          span.setStatus({
-            code: api.SpanStatusCode.ERROR,
-            message: err.message,
-          });
-        }
+      query.callback = api.context.bind(
+        context,
+        function (this: Memcached.CommandData, err: any) {
+          if (err) {
+            span.recordException(err);
+            span.setStatus({
+              code: api.SpanStatusCode.ERROR,
+              message: err.message,
+            });
+          }
 
-        span.end();
+          span.end();
 
-        if (typeof callback === 'function') {
-          return callback.apply(this, arguments as any);
+          if (typeof callback === 'function') {
+            return callback.apply(this, arguments as any);
+          }
         }
-      },
-      context);
+      );
 
       return query;
     };
