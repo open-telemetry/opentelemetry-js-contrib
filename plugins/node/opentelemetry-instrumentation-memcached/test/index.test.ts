@@ -103,7 +103,7 @@ describe('memcached@2.x', () => {
   describe('default config', () => {
     let client: ExtendedMemcached;
     beforeEach(() => {
-      client = getClient('localhost:11211', { retries: 0 });
+      client = getClient(`${CONFIG.host}:${CONFIG.port}`, { retries: 0 });
     });
 
     afterEach(() => {
@@ -223,8 +223,8 @@ describe('memcached@2.x', () => {
     it('should support multiple server configuration', async () => {
       const client = getClient(
         {
-          'localhost:11211': 1,
-          '127.0.0.1:11211': 1,
+          [`${CONFIG.host}:${CONFIG.port}`]: 1,
+          'other:11211': 1,
         },
         { retries: 0 }
       );
