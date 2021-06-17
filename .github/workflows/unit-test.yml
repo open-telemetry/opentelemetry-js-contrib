@@ -63,6 +63,8 @@ jobs:
       RUN_MYSQL_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
+      OPENTELEMETRY_MEMCACHED_HOST: memcached
+      OPENTELEMETRY_MEMCACHED_PORT: 11211
       POSTGRES_USER: postgres
       POSTGRES_DB: circle_database
       POSTGRES_HOST: postgres
