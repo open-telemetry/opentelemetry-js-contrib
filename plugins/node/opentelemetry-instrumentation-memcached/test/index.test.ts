@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  context,
-  SpanKind,
-  SpanStatusCode,
-  trace,
-  // Span,
-} from '@opentelemetry/api';
+import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/test-utils';
@@ -28,25 +22,19 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
+import type * as Memcached from 'memcached';
 import * as assert from 'assert';
 import Instrumentation from '../src';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as util from 'util';
 
 const instrumentation = new Instrumentation();
-
-// import { RedisResponseCustomAttributeFunction } from '../src/types';
-
 const memoryExporter = new InMemorySpanExporter();
-
-process.env.RUN_MEMCACHED_TESTS = '1';
 
 const CONFIG = {
   host: process.env.OPENTELEMETRY_MEMCACHED_HOST || 'localhost',
   port: process.env.OPENTELEMETRY_MEMCACHED_PORT || '11211',
 };
-
-// const URL = `localhost:11211`;
 
 const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: Instrumentation.COMPONENT,
@@ -54,13 +42,16 @@ const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
 };
 
-const getClient = (...args: any[]) => {
+interface ExtendedMemcached extends Memcached {
+  getPromise: (key: string) => Promise<unknown>;
+  setPromise: (key: string, value: any, lifetime: number) => Promise<unknown>;
+  appendPromise: (key: string, value: any) => Promise<unknown>;
+}
+const getClient = (...args: any[]): ExtendedMemcached => {
   const Memcached = require('memcached');
   const client = new Memcached(...args);
   client.getPromise = util.promisify(client.get.bind(client));
   client.setPromise = util.promisify(client.set.bind(client));
-  client.touchPromise = util.promisify(client.touch.bind(client));
-  client.delPromise = util.promisify(client.del.bind(client));
   client.appendPromise = util.promisify(client.append.bind(client));
   return client;
 };
@@ -110,14 +101,13 @@ describe('memcached@2.x', () => {
   });
 
   describe('default config', () => {
-    let client: Memcached;
+    let client: ExtendedMemcached;
     beforeEach(() => {
       client = getClient('localhost:11211', { retries: 0 });
     });
 
     afterEach(() => {
       client.end();
-      client = null;
     });
 
     it('should collect basic info', async () => {
@@ -185,8 +175,9 @@ describe('memcached@2.x', () => {
       );
     });
 
-    it('should not require callback to be present', (done) => {
-      client.get(KEY);
+    it('should not require callback to be present', done => {
+      // want to force an signature without the callback
+      (client.get as any)(KEY);
 
       setTimeout(() => {
         try {
@@ -201,12 +192,12 @@ describe('memcached@2.x', () => {
         } catch (e) {
           done(e);
         }
-      }, 100);
+      }, 25);
     });
 
     it('should collect be able to collect statements', async () => {
       instrumentation.setConfig({
-        includeFullStatement: true,
+        collectCommand: true,
       });
       const value = await client.getPromise(KEY);
 
@@ -219,6 +210,12 @@ describe('memcached@2.x', () => {
           statement: 'get foo',
         },
       ]);
+    });
+
+    it('should not create new spans when disabled', async () => {
+      instrumentation.disable();
+      await client.getPromise(KEY);
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
     });
   });
 

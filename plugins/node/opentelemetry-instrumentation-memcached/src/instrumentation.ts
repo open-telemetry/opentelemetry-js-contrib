@@ -20,21 +20,19 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import type * as memcachedTypes from 'memcached';
+import type * as Memcached from 'memcached';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
 import { InstrumentationConfig } from './types';
 import { VERSION } from './version';
 
-export class Instrumentation extends InstrumentationBase<
-  typeof memcachedTypes
-> {
+export class Instrumentation extends InstrumentationBase<typeof Memcached> {
   static readonly COMPONENT = 'memcached';
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: Instrumentation.COMPONENT,
   };
   static readonly DEFAULT_CONFIG: InstrumentationConfig = {
-    includeFullStatement: false,
+    collectCommand: false,
   };
 
   constructor(config: InstrumentationConfig = Instrumentation.DEFAULT_CONFIG) {
@@ -51,60 +49,118 @@ export class Instrumentation extends InstrumentationBase<
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof memcachedTypes>(
+      new InstrumentationNodeModuleDefinition<typeof Memcached>(
         'memcached',
         ['>=2.2'],
         (moduleExports, moduleVersion) => {
-          api.diag.debug(`Patching memcached@${moduleVersion}`);
-          const instrumentation = this;
+          api.diag.debug(`Patching ${Instrumentation.COMPONENT}@${moduleVersion}`);
           this.ensureWrapped(
             moduleVersion,
             moduleExports.prototype,
             'command',
-            original => {
-              return function (queryCompiler, server) {
-                if (typeof queryCompiler !== 'function') {
-                  return original.apply(this, arguments);
-                }
-                // The name will be overwritten later
-                const span = instrumentation.tracer.startSpan(
-                  '<command> <key>',
-                  {
-                    kind: api.SpanKind.CLIENT,
-                    attributes: {
-                      'memcached.version': moduleVersion,
-                      ...Instrumentation.COMMON_ATTRIBUTES,
-                    },
-                  }
-                );
-                const context = api.trace.setSpan(api.context.active(), span);
-
-                return api.context.with(
-                  context,
-                  original,
-                  this,
-                  wrapQueryCompiler.call(
-                    instrumentation,
-                    queryCompiler,
-                    this,
-                    server,
-                    context,
-                    span
-                  ),
-                  server
-                );
-              };
-            }
+            this.wrapCommand.bind(this, moduleVersion)
           );
           return moduleExports;
         },
         (moduleExports, moduleVersion) => {
-          api.diag.debug(`Unpatching memcached@${moduleVersion}`);
+          api.diag.debug(`Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`);
           if (moduleExports === undefined) return;
-          this._unwrap(moduleExports.prototype, 'command');
+          // `command` is documented API missing from the types
+          this._unwrap(moduleExports.prototype, 'command' as keyof Memcached);
         }
       ),
     ];
+  }
+
+  wrapCommand(
+    moduleVersion: undefined | string,
+    original: (
+      queryCompiler: () => Memcached.CommandData,
+      server?: string
+    ) => any
+  ) {
+    const instrumentation = this;
+    return function (
+      this: Memcached,
+      queryCompiler: () => Memcached.CommandData,
+      server?: string
+    ) {
+      if (typeof queryCompiler !== 'function') {
+        return original.apply(this, arguments as any);
+      }
+      // The name will be overwritten later
+      const span = instrumentation.tracer.startSpan('<type> <key>', {
+        kind: api.SpanKind.CLIENT,
+        attributes: {
+          'memcached.version': moduleVersion,
+          ...Instrumentation.COMMON_ATTRIBUTES,
+        },
+      });
+      const context = api.trace.setSpan(api.context.active(), span);
+
+      return api.context.with(
+        context,
+        original,
+        this,
+        instrumentation.wrapQueryCompiler.call(
+          instrumentation,
+          queryCompiler,
+          this,
+          server,
+          context,
+          span
+        ),
+        server
+      );
+    };
+  }
+
+  wrapQueryCompiler(
+    original: () => Memcached.CommandData,
+    client: Memcached,
+    server: undefined | string,
+    context: api.Context,
+    span: api.Span
+  ) {
+    const instrumentation = this;
+    return function (this: Memcached) {
+      const query = original.apply(this, arguments as any);
+      const callback = query.callback;
+
+      span.updateName(`${query.type} ${query.key}`);
+      span.setAttributes({
+        'db.memcached.key': query.key,
+        'db.memcached.lifetime': query.lifetime,
+        [SemanticAttributes.DB_OPERATION]: query.type,
+        'db.statement': (instrumentation._config as InstrumentationConfig)
+          .collectCommand
+          ? query.command
+          : undefined,
+        ...utils.getPeerAttributes(client, server, query),
+      });
+
+      query.callback = api.context.bind(function (
+        this: Memcached.CommandData,
+        err: any
+      ) {
+        if (err) {
+          span.recordException(err);
+          span.setStatus({
+            code: api.SpanStatusCode.ERROR,
+            message: err.message,
+          });
+        }
+
+        span.end();
+
+        if (typeof callback === 'function') {
+          return callback.apply(this, arguments as any);
+        }
+      },
+      context);
+
+      return query;
+    };
   }
 
   private ensureWrapped(
@@ -121,41 +177,4 @@ export class Instrumentation extends InstrumentationBase<
     }
     this._wrap(obj, methodName, wrapper);
   }
-}
-
-function wrapQueryCompiler(original, client, server, context, span) {
-  const instrumentation = this;
-  return function () {
-    const query = original.apply(this, arguments);
-    const callback = query.callback;
-
-    span.updateName(`${query.type} ${query.key}`);
-    span.setAttributes({
-      'db.memcached.key': query.key,
-      'db.memcached.lifetime': query.lifetime,
-      [SemanticAttributes.DB_OPERATION]: query.type,
-      'db.statement': instrumentation._config.includeFullStatement
-        ? query.command
-        : undefined,
-      ...utils.getPeerAttributes(client, server, query),
-    });
-
-    query.callback = api.context.bind(function (err) {
-      if (err) {
-        span.recordException(err);
-        span.setStatus({
-          code: api.SpanStatusCode.ERROR,
-          message: err.message,
-        });
-      }
-
-      span.end();
-
-      if (typeof callback === 'function') {
-        return callback.apply(this, arguments);
-      }
-    }, context);
-
-    return query;
-  };
 }

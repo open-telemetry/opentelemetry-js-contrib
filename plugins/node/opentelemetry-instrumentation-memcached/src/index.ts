@@ -19,3 +19,4 @@ export { InstrumentationConfig } from './types';
 
 export * from './instrumentation';
 export default Instrumentation;
+export { Instrumentation as MemcachedInstrumentation };

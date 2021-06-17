@@ -14,34 +14,14 @@
  * limitations under the License.
  */
 
-import {
-  // context,
-  // Tracer,
-  // SpanKind,
-  Span,
-  SpanStatusCode,
-  // trace,
-  // diag,
-} from '@opentelemetry/api';
-import // DbStatementSerializer,
-// RedisCommand,
-// RedisInstrumentationConfig,
-// RedisPluginClientTypes,
-'./types';
-// import Instrumentation from './';
+import type * as Memcached from 'memcached';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
-export const endSpan = (span: Span, err?: Error | null) => {
-  if (err) {
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: err.message,
-    });
-  }
-  span.end();
-};
-
-export const getPeerAttributes = (client, server, query) => {
+export const getPeerAttributes = (
+  client: any /* Memcached, but the type definitions are lacking */,
+  server: string | undefined,
+  query: Memcached.CommandData
+) => {
   if (!server) {
     if (client.servers.length === 1) {
       server = client.servers[0];
