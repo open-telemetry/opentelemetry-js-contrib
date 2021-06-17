@@ -14,6 +14,10 @@ jobs:
     container:
       image: ${{ matrix.container }}
     services:
+      memcached:
+        image: memcached:1.6.9-alpine
+        ports:
+        - 11211:11211
       mongo:
         image: mongo
         ports:
@@ -54,6 +58,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
+      RUN_MEMCACHED_TESTS: 1
       RUN_MONGODB_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_POSTGRES_TESTS: 1
