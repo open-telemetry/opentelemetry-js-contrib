@@ -53,7 +53,9 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
         'memcached',
         ['>=2.2'],
         (moduleExports, moduleVersion) => {
-          api.diag.debug(`Patching ${Instrumentation.COMPONENT}@${moduleVersion}`);
+          api.diag.debug(
+            `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
+          );
           this.ensureWrapped(
             moduleVersion,
             moduleExports.prototype,
@@ -63,7 +65,9 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
           return moduleExports;
         },
         (moduleExports, moduleVersion) => {
-          api.diag.debug(`Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`);
+          api.diag.debug(
+            `Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`
+          );
           if (moduleExports === undefined) return;
           // `command` is documented API missing from the types
           this._unwrap(moduleExports.prototype, 'command' as keyof Memcached);
