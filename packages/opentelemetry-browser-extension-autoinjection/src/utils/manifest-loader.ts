@@ -16,13 +16,15 @@
 
 /* eslint-disable node/no-extraneous-import */
 
-import { getOptions } from 'loader-utils';
 import { capitalCase } from 'change-case';
 import * as json5 from 'json5';
 
 // From https://github.com/TypeStrong/ts-loader/blob/main/src/interfaces.ts
 interface WebpackLoaderContext {
   emitFile(name: string, content: string): void;
+  getOptions(): {
+    manifestVersion: number;
+  };
 }
 
 interface IconSet {
@@ -31,7 +33,7 @@ interface IconSet {
 
 export default function (this: WebpackLoaderContext, source: string): string {
   const p = require('../../package.json');
-  const options = getOptions(this);
+  const options = this.getOptions();
 
   const manifest5 = json5.parse(source);
 
@@ -69,10 +71,7 @@ export default function (this: WebpackLoaderContext, source: string): string {
     manifest5.browser_action = Object.assign({}, manifest5.action);
     delete manifest5.action;
 
-    manifest5.optional_permissions = Object.assign(
-      {},
-      manifest5.host_permissions
-    );
+    manifest5.optional_permissions = Object.values(manifest5.host_permissions);
     delete manifest5.host_permissions;
   }
 

@@ -13,63 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
+
 import { WebTracerProvider } from '@opentelemetry/web';
-import { ZoneContextManager } from '@opentelemetry/context-zone';
-import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
-import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
 import {
-  BatchSpanProcessor,
-  ConsoleSpanExporter,
-  SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
-import { DomAttributes, DomElements, ExporterType, Settings } from '../types';
+  DomAttributes,
+  DomElements,
+  InstrumentationType,
+  Settings,
+} from '../types';
+import { WebInstrumentation } from './WebInstrumentation';
+import { Resource } from '@opentelemetry/resources';
+import { ResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 const configTag = document.getElementById(DomElements['CONFIG_TAG']);
 const { exporters }: Settings = configTag
   ? JSON.parse(String(configTag.dataset[DomAttributes['CONFIG']]))
   : {};
 
-const provider = new WebTracerProvider();
-
-if (exporters[ExporterType.CONSOLE].enabled) {
-  provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
-}
-
-if (exporters[ExporterType.ZIPKIN].enabled) {
-  provider.addSpanProcessor(
-    new BatchSpanProcessor(
-      new ZipkinExporter({
-        url: exporters[ExporterType.ZIPKIN].url,
-        serviceName: window.location.href,
-      })
-    )
-  );
-}
-
-if (exporters[ExporterType.COLLECTOR_TRACE].enabled) {
-  provider.addSpanProcessor(
-    new BatchSpanProcessor(
-      new CollectorTraceExporter({
-        url: exporters[ExporterType.COLLECTOR_TRACE].url,
-        serviceName: window.location.href,
-      })
-    )
-  );
-}
-
-provider.register({
-  contextManager: new ZoneContextManager(),
-});
-
-registerInstrumentations({
-  instrumentations: [
-    new DocumentLoadInstrumentation(),
-    new FetchInstrumentation(),
-    new XMLHttpRequestInstrumentation(),
-  ],
-  tracerProvider: provider,
-});
+new WebInstrumentation(
+  {
+    exporters,
+    instrumentations: {
+      [InstrumentationType.DOCUMENT_LOAD]: {
+        enabled: true,
+      },
+      [InstrumentationType.FETCH]: {
+        enabled: true,
+      },
+      [InstrumentationType.XML_HTTP_REQUEST]: {
+        enabled: true,
+      },
+    },
+    withZoneContextManager: true,
+  },
+  new WebTracerProvider({
+    resource: new Resource({
+      [ResourceAttributes.SERVICE_NAME]: window.location.hostname,
+    }),
+  })
+).register();

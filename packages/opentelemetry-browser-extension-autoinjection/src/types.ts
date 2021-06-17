@@ -17,21 +17,39 @@
 import { styles } from './ui/styles';
 import { WithStyles } from '@material-ui/core';
 
-export interface Settings {
-  urlFilter: string;
-  exporters: {
-    [ExporterType.CONSOLE]: {
+export interface Exporters {
+  [ExporterType.CONSOLE]: {
+    enabled: boolean;
+  };
+  [ExporterType.ZIPKIN]: {
+    enabled: boolean;
+    url: string;
+  };
+  [ExporterType.COLLECTOR_TRACE]: {
+    enabled: boolean;
+    url: string;
+  };
+}
+
+export interface InstrumentationConfiguration {
+  exporters: Exporters;
+  instrumentations: {
+    [InstrumentationType.DOCUMENT_LOAD]: {
       enabled: boolean;
     };
-    [ExporterType.ZIPKIN]: {
+    [InstrumentationType.FETCH]: {
       enabled: boolean;
-      url: string;
     };
-    [ExporterType.COLLECTOR_TRACE]: {
+    [InstrumentationType.XML_HTTP_REQUEST]: {
       enabled: boolean;
-      url: string;
     };
   };
+  withZoneContextManager: boolean;
+}
+
+export interface Settings {
+  urlFilter: string;
+  exporters: Exporters;
 }
 
 export class Storage {
@@ -102,6 +120,12 @@ export enum ExporterType {
   COLLECTOR_TRACE = 'CollectorTrace',
 }
 
+export enum InstrumentationType {
+  DOCUMENT_LOAD = 'DocumentLoad',
+  FETCH = 'Fetch',
+  XML_HTTP_REQUEST = 'XMLHttpRequest',
+}
+
 export enum DomElements {
   CONFIG_TAG = 'open-telemetry-instrumentation',
 }
@@ -119,3 +143,12 @@ export enum Labels {
   SAVE = 'Save',
   SAVE_AND_RELOAD = 'Save & Reload',
 }
+
+export enum TabStatus {
+  UNLOADED = 'unloaded',
+  LOADING = 'loading',
+  COMPLETE = 'complete',
+}
+
+export const CONTENT_SCRIPT_NAME = 'contentScript.js';
+export const INSTRUMENTATION_SCRIPT_NAME = 'instrumentation.js';

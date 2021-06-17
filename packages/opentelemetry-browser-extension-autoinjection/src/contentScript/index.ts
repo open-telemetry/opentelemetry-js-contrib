@@ -14,35 +14,6 @@
  * limitations under the License.
  */
 
-import { DomAttributes } from '../types';
+import { InstrumentationInjector } from './InstrumentationInjector';
 
-/* eslint-disable no-console */
-
-chrome.storage.local.get('settings', ({ settings }) => {
-  // Define label of badge.
-  const urlFilter = settings.urlFilter;
-  if (
-    urlFilter !== '' &&
-    (urlFilter === '*' || document.location.href.includes(urlFilter))
-  ) {
-    console.log(
-      `[otel-extension] ${document.location.href} includes ${urlFilter}`
-    );
-    const script = chrome.runtime.getURL('instrumentation.js');
-    console.log('[otel-extension] injecting instrumentation.js');
-    const tag = document.createElement('script');
-    tag.setAttribute('src', script);
-    tag.setAttribute('id', 'open-telemetry-instrumentation');
-    // Config is based via this data attribute, since CSP might not allow inline script tags, so this is more robust.
-    tag.setAttribute(
-      `data-${DomAttributes['CONFIG']}`,
-      JSON.stringify(settings)
-    );
-    document.head.appendChild(tag);
-    console.log('[otel-extension] instrumentation.js injected');
-  } else {
-    console.log(
-      `[otel-extension] ${document.location.href} does not include ${urlFilter}`
-    );
-  }
-});
+new InstrumentationInjector(chrome, document, console).execute();

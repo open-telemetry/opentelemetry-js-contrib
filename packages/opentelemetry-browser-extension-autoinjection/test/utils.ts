@@ -14,15 +14,5 @@
  * limitations under the License.
  */
 
-// the following two 'require' are here for webpack.
-require('../manifest.json5');
-require('../icons/otel-logo.png');
-
-import { ProgrammaticContentScriptInjector } from './ProgrammaticContentScriptInjector';
-
-// An error thrown in the background service worker will not be reported in the logs, it's caught here and printed. (MV3 only)
-try {
-  new ProgrammaticContentScriptInjector(chrome).register();
-} catch (e) {
-  console.error(e);
-}
+export const TAB_ID = 13;
+export const TEST_URL = 'http://www.example.com';

@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/* eslint-disable node/no-unpublished-import */
+
 import * as path from 'path';
-// eslint-disable-next-line node/no-unpublished-import
+import { mergeWithRules } from 'webpack-merge';
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 
 // Read the environment variables, and check for the existence of the "MV" variable
 // This can be used to only build the one or the other target.
 module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
   // Build the extension for "Manifest Version 2" (Chromium, Firefox & others.)
-  const targetMV2 = {
-    devtool: env.WEBPACK_BUILD ? false : 'inline-source-map',
+  const baseConfig = {
     entry: {
       background: './src/background/index.ts',
       contentScript: './src/contentScript/index.ts',
@@ -81,10 +83,6 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
         },
       ],
     },
-    output: {
-      filename: '[name].js',
-      path: path.resolve(__dirname, 'build/mv2'),
-    },
     plugins: [
       new HtmlWebpackPlugin({
         chunks: ['ui'],
@@ -104,17 +102,47 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
     },
   };
 
-  // Build the extension for "Manifest Version 3" (Google Chrome only)
-  const targetMV3 = Object.assign({}, targetMV2, {
+  const merge = mergeWithRules({
+    module: {
+      rules: {
+        test: 'match',
+        include: 'match',
+        use: {
+          loader: 'match',
+          options: 'replace',
+        },
+      },
+    },
+  });
+
+  const targetMV2 = merge(baseConfig, {
+    output: {
+      filename: '[name].js',
+      path: path.resolve(__dirname, 'build/mv2'),
+    },
+  });
+  const targetMV3 = merge(baseConfig, {
+    module: {
+      rules: [
+        {
+          include: [path.resolve(__dirname, 'src/manifest.json5')],
+          test: /manifest.json5$/,
+          use: [
+            {
+              loader: path.resolve('src/utils/manifest-loader.ts'),
+              options: {
+                manifestVersion: 3,
+              },
+            },
+          ],
+        },
+      ],
+    },
     output: {
       filename: '[name].js',
       path: path.resolve(__dirname, 'build/mv3'),
     },
   });
-
-  targetMV2.module.rules[0].use[1].options = {
-    manifestVersion: 3,
-  };
 
   const exports = [];
 
@@ -124,5 +152,8 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
     exports.push(targetMV3);
     exports.push(targetMV2);
   }
+
+  console.log(JSON.stringify(exports, null, 2));
+
   return exports;
 };
