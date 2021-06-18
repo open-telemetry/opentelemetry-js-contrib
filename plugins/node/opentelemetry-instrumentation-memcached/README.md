@@ -47,7 +47,7 @@ registerInstrumentations({
 
 | Option | Type | Example | Description |
 | ------- | ---- | ------- | ----------- |
-| `collectCommand` | `boolean` | `false` | Include full command statement in the span. Defaults to `false`. |
+| `collectCommand` | `boolean` | `false` | Include full command statement in the span - **leaks potentially sensitive information to your spans**. Defaults to `false`. |
 
 ## Useful links
 
