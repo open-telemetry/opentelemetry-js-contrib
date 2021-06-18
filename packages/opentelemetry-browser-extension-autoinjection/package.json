@@ -43,12 +43,13 @@
     "gts": "^3.1.0",
     "html-webpack-plugin": "^5.3.1",
     "jimp": "^0.16.1",
-    "jsdom": "^16.6.0",
+    "jsdom": "^15.2.1",
+    "mocha": "^7.2.0",
     "null-loader": "^4.0.1",
     "nyc": "^15.1.0",
     "responsive-loader": "^2.3.0",
     "rimraf": "^3.0.2",
-    "sinon": "^11.1.1",
+    "sinon": "^10.0.0",
     "sinon-chrome": "^3.0.1",
     "ts-loader": "^9.2.3",
     "ts-mocha": "^8.0.0",
@@ -76,7 +77,6 @@
     "@opentelemetry/web": "^0.21.0",
     "change-case": "^4.1.2",
     "json5": "^2.2.0",
-    "mocha": "^8.4.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   }
