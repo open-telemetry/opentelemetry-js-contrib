@@ -153,7 +153,5 @@ module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
     exports.push(targetMV2);
   }
 
-  console.log(JSON.stringify(exports, null, 2));
-
   return exports;
 };
