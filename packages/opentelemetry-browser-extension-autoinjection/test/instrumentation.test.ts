@@ -18,7 +18,7 @@
 
 import * as chromeMock from 'sinon-chrome';
 import * as assert from 'assert';
-import sinon = require('sinon');
+import * as sinon from 'sinon';
 import { WebInstrumentation } from '../src/instrumentation/WebInstrumentation';
 import {
   ExporterType,
@@ -30,11 +30,12 @@ import { JSDOM } from 'jsdom';
 import { TEST_URL } from './utils';
 
 describe('WebInstrumentation', () => {
-  const sandbox = sinon.createSandbox();
+  let sandbox: sinon.SinonSandbox;
   let instrumentation: WebInstrumentation;
   let provider: WebTracerProvider;
 
   beforeEach(() => {
+    sandbox = sinon.createSandbox();
     provider = new WebTracerProvider();
     const { window } = new JSDOM('<!doctype html><html><body></body></html>', {
       url: TEST_URL,

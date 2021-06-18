@@ -18,7 +18,7 @@
 
 import * as chromeMock from 'sinon-chrome';
 import * as assert from 'assert';
-import sinon = require('sinon');
+import * as sinon from 'sinon';
 
 import { InstrumentationInjector } from '../src/contentScript/InstrumentationInjector';
 import { JSDOM } from 'jsdom';
@@ -31,11 +31,12 @@ import {
 import { TEST_URL } from './utils';
 
 describe('InstrumentationInjector', () => {
-  const sandbox = sinon.createSandbox();
+  let sandbox: sinon.SinonSandbox;
   let injector: InstrumentationInjector;
   let jsdom: JSDOM;
 
   beforeEach(() => {
+    sandbox = sinon.createSandbox();
     jsdom = new JSDOM('<!doctype html><html><body></body></html>', {
       url: TEST_URL,
     });

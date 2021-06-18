@@ -26,9 +26,10 @@ import { CONTENT_SCRIPT_NAME, TabStatus } from '../src/types';
 
 describe('ProgrammaticContentScriptInjector', () => {
   let listener: ProgrammaticContentScriptInjector;
-  const sandbox = sinon.createSandbox();
+  let sandbox: sinon.SinonSandbox;
 
   before(() => {
+    sandbox = sinon.createSandbox();
     listener = new ProgrammaticContentScriptInjector(
       chromeMock as unknown as typeof chrome
     );
