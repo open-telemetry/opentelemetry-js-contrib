@@ -36,10 +36,8 @@ export function createButton(disabled?: boolean): HTMLElement {
 
 export function fakeInteraction(
   callback: Function = function () {},
-  elem?: HTMLElement
+  element: HTMLElement = createButton()
 ) {
-  const element: HTMLElement = elem || createButton();
-
   element.addEventListener('click', () => {
     callback();
   });
