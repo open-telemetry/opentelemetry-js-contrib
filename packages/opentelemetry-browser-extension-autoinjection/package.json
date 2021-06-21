@@ -22,10 +22,10 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.0"
+    "@opentelemetry/api": "^0.21.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.0",
+    "@opentelemetry/api": "0.21.0",
     "@types/chrome": "0.0.145",
     "@types/jsdom": "^16.2.11",
     "@types/mocha": "^8.2.2",
