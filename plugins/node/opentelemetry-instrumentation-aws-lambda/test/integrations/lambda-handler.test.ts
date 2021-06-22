@@ -526,6 +526,57 @@ describe('lambda handler', () => {
       // Parent unsampled so no spans exported.
       assert.strictEqual(spans.length, 0);
     });
+
+    it('ignores sampled lambda context if "disableAwsPropagation" config option is true', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsPropagation: true,
+      });
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.notDeepStrictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('takes sampled http context over sampled lambda context if "disableAwsPropagation" config option is true', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsPropagation: true,
+      });
+
+      const proxyEvent = {
+        headers: {
+          traceparent: sampledHttpHeader,
+        },
+      };
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        proxyEvent,
+        ctx
+      );
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(
+        span.spanContext().traceId,
+        sampledHttpSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
+    });
   });
 
   describe('hooks', () => {
