@@ -21,7 +21,7 @@ import * as types from '@opentelemetry/api';
  */
 export type AsyncTask = Task & {
   eventName: string;
-  target: HTMLElement;
+  target: EventTarget;
   // Allows access to the private `_zone` property of a Zone.js Task.
   _zone: Zone;
 };
