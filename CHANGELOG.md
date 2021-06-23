@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.22.0
+
+#### :bug: Bug Fix
+* [#537](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/537) fix(instrumentation-user-interaction): support clicks in React apps ([@kkruk-sumo](https://github.com/kkruk-sumo))
+
+#### Committers: 2
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Krystian Kruk ([@kkruk-sumo](https://github.com/kkruk-sumo))
+
 ## 0.21.0
 
 #### :bug: Bug Fix
