@@ -16,7 +16,6 @@
 import {
   isWrapped,
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
@@ -125,8 +124,7 @@ export class PgInstrumentation extends InstrumentationBase {
             span = utils.handleParameterizedQuery.call(
               this,
               plugin.tracer,
-              plugin.getConfig() as PgInstrumentationConfig &
-                InstrumentationConfig,
+              plugin.getConfig() as PgInstrumentationConfig,
               query,
               params
             );
@@ -138,8 +136,7 @@ export class PgInstrumentation extends InstrumentationBase {
           span = utils.handleConfigQuery.call(
             this,
             plugin.tracer,
-            plugin.getConfig() as PgInstrumentationConfig &
-              InstrumentationConfig,
+            plugin.getConfig() as PgInstrumentationConfig,
             queryConfig
           );
         } else {
@@ -157,8 +154,7 @@ export class PgInstrumentation extends InstrumentationBase {
           if (typeof args[args.length - 1] === 'function') {
             // Patch ParameterQuery callback
             args[args.length - 1] = utils.patchCallback(
-              plugin.getConfig() as PgInstrumentationConfig &
-                InstrumentationConfig,
+              plugin.getConfig() as PgInstrumentationConfig,
               span,
               args[args.length - 1] as PostgresCallback
             );
@@ -174,8 +170,7 @@ export class PgInstrumentation extends InstrumentationBase {
           ) {
             // Patch ConfigQuery callback
             let callback = utils.patchCallback(
-              plugin.getConfig() as PgInstrumentationConfig &
-                InstrumentationConfig,
+              plugin.getConfig() as PgInstrumentationConfig,
               span,
               (args[0] as NormalizedQueryConfig).callback!
             );
@@ -200,8 +195,7 @@ export class PgInstrumentation extends InstrumentationBase {
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
                 utils.handleExecutionResult(
-                  plugin.getConfig() as PgInstrumentationConfig &
-                    InstrumentationConfig,
+                  plugin.getConfig() as PgInstrumentationConfig,
                   span,
                   result
                 );
