@@ -40,6 +40,13 @@ const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
 describe('UserInteractionInstrumentation', () => {
+  afterEach(() => {
+    // clear body from elements created by some tests to make sure they are independent
+    while (document.body.lastChild) {
+      document.body.removeChild(document.body.lastChild);
+    }
+  });
+
   describe('when zone.js is available', () => {
     let contextManager: ZoneContextManager;
     let userInteractionInstrumentation: UserInteractionInstrumentation;
@@ -307,6 +314,122 @@ describe('UserInteractionInstrumentation', () => {
           span3.spanContext().spanId,
           span6.parentSpanId,
           'span6 has wrong parent'
+        );
+
+        done();
+      });
+    });
+
+    it('should handle interactions listened on document - react < 17', done => {
+      const btn1 = document.createElement('button');
+      btn1.setAttribute('id', 'btn1');
+      document.body.appendChild(btn1);
+      const btn2 = document.createElement('button');
+      btn2.setAttribute('id', 'btn2');
+      document.body.appendChild(btn2);
+
+      const listener = (event: MouseEvent) => {
+        switch (event.target) {
+          case btn1:
+            getData(FILE_URL, () => {
+              sandbox.clock.tick(10);
+            }).then(() => {});
+            break;
+          case btn2:
+            getData(FILE_URL, () => {
+              sandbox.clock.tick(10);
+            }).then(() => {});
+            break;
+        }
+      };
+
+      document.addEventListener('click', listener);
+
+      try {
+        btn1.click();
+        btn2.click();
+      } finally {
+        // remove added listener so we don't pollute other tests
+        document.removeEventListener('click', listener);
+      }
+
+      sandbox.clock.tick(1000);
+      originalSetTimeout(() => {
+        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+
+        const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
+        const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
+        const span3: tracing.ReadableSpan = exportSpy.args[2][0][0];
+        const span4: tracing.ReadableSpan = exportSpy.args[3][0][0];
+
+        assertClickSpan(span1, 'btn1');
+        assertClickSpan(span2, 'btn2');
+
+        assert.strictEqual(
+          span1.spanContext().spanId,
+          span3.parentSpanId,
+          'span3 has wrong parent'
+        );
+        assert.strictEqual(
+          span2.spanContext().spanId,
+          span4.parentSpanId,
+          'span4 has wrong parent'
+        );
+
+        done();
+      });
+    });
+
+    it('should handle interactions listened on a parent element (bubbled events) - react >= 17', done => {
+      const root = document.createElement('div');
+      document.body.appendChild(root);
+
+      const btn1 = document.createElement('button');
+      btn1.setAttribute('id', 'btn1');
+      root.appendChild(btn1);
+      const btn2 = document.createElement('button');
+      btn2.setAttribute('id', 'btn2');
+      root.appendChild(btn2);
+
+      root.addEventListener('click', event => {
+        switch (event.target) {
+          case btn1:
+            getData(FILE_URL, () => {
+              sandbox.clock.tick(10);
+            }).then(() => {});
+            break;
+          case btn2:
+            getData(FILE_URL, () => {
+              sandbox.clock.tick(10);
+            }).then(() => {});
+            break;
+        }
+      });
+
+      btn1.click();
+      btn2.click();
+
+      sandbox.clock.tick(1000);
+      originalSetTimeout(() => {
+        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+
+        const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
+        const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
+        const span3: tracing.ReadableSpan = exportSpy.args[2][0][0];
+        const span4: tracing.ReadableSpan = exportSpy.args[3][0][0];
+
+        assertClickSpan(span1, 'btn1');
+        assertClickSpan(span2, 'btn2');
+
+        assert.strictEqual(
+          span1.spanContext().spanId,
+          span3.parentSpanId,
+          'span3 has wrong parent'
+        );
+        assert.strictEqual(
+          span2.spanContext().spanId,
+          span4.parentSpanId,
+          'span4 has wrong parent'
         );
 
         done();
