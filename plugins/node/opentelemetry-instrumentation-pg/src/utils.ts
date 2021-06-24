@@ -174,7 +174,7 @@ export function handleExecutionResult(
   span: Span,
   pgResult: pgTypes.QueryResult | pgTypes.QueryArrayResult | unknown
 ) {
-  if (config.responseHook !== undefined && pgResult !== undefined) {
+  if (typeof config.responseHook === 'function') {
     safeExecuteInTheMiddle(
       () => {
         config.responseHook!(span, {
