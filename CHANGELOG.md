@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.22.0
+
+#### :bug: Bug Fix
+* [#537](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/537) fix(instrumentation-user-interaction): support clicks in React apps ([@kkruk-sumo](https://github.com/kkruk-sumo))
+
+#### :rocket: Enhancement
+* `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#540](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/540) chore: update core and API ([@dyladan](https://github.com/dyladan))
+
+#### Committers: 2
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Krystian Kruk ([@kkruk-sumo](https://github.com/kkruk-sumo))
+
 ## 0.21.0
 
 #### :bug: Bug Fix
