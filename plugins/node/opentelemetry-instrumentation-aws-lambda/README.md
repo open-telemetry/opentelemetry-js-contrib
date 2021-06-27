@@ -46,7 +46,7 @@ In your Lambda function configuration, add or update the `NODE_OPTIONS` environm
 | --- | --- | --- |
 | `requestHook` | `RequestHook` (function) | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, { event, context }` |
 | `responseHook` | `ResponseHook` (function) | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? } ` |
-| `disableAwsPropagation` | `boolean` | By default, this instrumentation will try to get the context using `propagator-aws-xray`, set this to `true` to disable this behavior |
+| `disableAwsContextPropagation` | `boolean` |  default, this instrumentation will try to read the context from the `_X_AMZN_TRACE_ID` environment variable set by Lambda, set this to `true` to disable this behavior |
 
 ### Hooks Usage Example
 

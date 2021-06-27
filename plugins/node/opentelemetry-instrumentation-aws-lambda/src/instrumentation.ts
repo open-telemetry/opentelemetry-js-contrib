@@ -153,7 +153,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         typeof event.headers === 'object' ? event.headers : {};
       const parent = AwsLambdaInstrumentation._determineParent(
         httpHeaders,
-        Boolean(plugin._config.disableAwsPropagation)
+        plugin._config.disableAwsContextPropagation === true
       );
 
       const name = context.functionName;

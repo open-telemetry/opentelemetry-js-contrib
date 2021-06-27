@@ -36,5 +36,5 @@ export type ResponseHook = (
 export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   requestHook?: RequestHook;
   responseHook?: ResponseHook;
-  disableAwsPropagation?: boolean;
+  disableAwsContextPropagation?: boolean;
 }
