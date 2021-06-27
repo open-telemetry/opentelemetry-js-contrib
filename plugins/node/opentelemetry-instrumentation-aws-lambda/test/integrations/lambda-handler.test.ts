@@ -527,10 +527,10 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 0);
     });
 
-    it('ignores sampled lambda context if "disableAwsPropagation" config option is true', async () => {
+    it('ignores sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
       process.env[traceContextEnvironmentKey] = sampledAwsHeader;
       initializeHandler('lambda-test/async.handler', {
-        disableAwsPropagation: true,
+        disableAwsContextPropagation: true,
       });
 
       const result = await lambdaRequire('lambda-test/async').handler(
@@ -549,10 +549,10 @@ describe('lambda handler', () => {
       assert.strictEqual(span.parentSpanId, undefined);
     });
 
-    it('takes sampled http context over sampled lambda context if "disableAwsPropagation" config option is true', async () => {
+    it('takes sampled http context over sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
       process.env[traceContextEnvironmentKey] = sampledAwsHeader;
       initializeHandler('lambda-test/async.handler', {
-        disableAwsPropagation: true,
+        disableAwsContextPropagation: true,
       });
 
       const proxyEvent = {
