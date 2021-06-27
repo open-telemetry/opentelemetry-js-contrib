@@ -302,11 +302,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   private static _determineParent(
     httpHeaders: APIGatewayProxyEventHeaders,
-    disableAwsPropagation: boolean
+    disableAwsContextPropagation: boolean
   ): OtelContext {
     let parent: OtelContext | undefined = undefined;
 
-    if (!disableAwsPropagation) {
+    if (!disableAwsContextPropagation) {
       const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
       if (lambdaTraceHeader) {
         parent = awsPropagator.extract(
