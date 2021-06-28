@@ -1,0 +1,37 @@
+'use strict';
+
+const opentelemetry = require('@opentelemetry/api');
+
+const { diag, DiagConsoleLogger, DiagLogLevel } = opentelemetry;
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.VERBOSE);
+
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { NodeTracerProvider } = require('@opentelemetry/node');
+const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/tracing');
+const { Resource } = require('@opentelemetry/resources');
+const { ResourceAttributes } = require('@opentelemetry/semantic-conventions');
+
+const { MemcachedInstrumentation } = require('@opentelemetry/instrumentation-memcached');
+
+module.exports = (serviceName) => {
+  const provider = new NodeTracerProvider({
+    resource: new Resource({
+      [ResourceAttributes.SERVICE_NAME]: 'memcached-example-service',
+    }),
+  });
+  registerInstrumentations({
+    tracerProvider: provider,
+    instrumentations: [
+      new MemcachedInstrumentation(),
+    ],
+  });
+
+  const exporter = new ConsoleSpanExporter();
+
+  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+
+  // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
+  provider.register();
+
+  return opentelemetry.trace.getTracer('memcached-example');
+};
