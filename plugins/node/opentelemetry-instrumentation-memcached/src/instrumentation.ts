@@ -53,7 +53,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
         'memcached',
         ['>=2.2'],
         (moduleExports, moduleVersion) => {
-          api.diag.debug(
+          this._diag.debug(
             `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
           );
           this.ensureWrapped(
@@ -65,7 +65,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
           return moduleExports;
         },
         (moduleExports, moduleVersion) => {
-          api.diag.debug(
+          this._diag.debug(
             `Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`
           );
           if (moduleExports === undefined) return;
@@ -175,7 +175,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
     methodName: string,
     wrapper: (original: any) => any
   ) {
-    api.diag.debug(
+    this._diag.debug(
       `Applying ${methodName} patch for ${Instrumentation.COMPONENT}@${moduleVersion}`
     );
     if (isWrapped(obj[methodName])) {
