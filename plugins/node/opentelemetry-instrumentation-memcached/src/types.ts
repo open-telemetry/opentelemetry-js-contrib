@@ -17,5 +17,5 @@
 import { InstrumentationConfig as BaseInstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface InstrumentationConfig extends BaseInstrumentationConfig {
-  collectCommand?: boolean;
+  enhancedDatabaseReporting?: boolean;
 }

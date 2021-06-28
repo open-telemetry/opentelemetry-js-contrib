@@ -37,7 +37,7 @@ provider.register();
 registerInstrumentations({
   instrumentations: [
     new MemcachedInstrumentation({
-      collectCommand: false,
+      enhancedDatabaseReporting: false,
     }),
   ],
 });
@@ -47,7 +47,7 @@ registerInstrumentations({
 
 | Option | Type | Example | Description |
 | ------- | ---- | ------- | ----------- |
-| `collectCommand` | `boolean` | `false` | Include full command statement in the span - **leaks potentially sensitive information to your spans**. Defaults to `false`. |
+| `enhancedDatabaseReporting` | `boolean` | `false` | Include full command statement in the span - **leaks potentially sensitive information to your spans**. Defaults to `false`. |
 
 ## Useful links
 

@@ -197,7 +197,7 @@ describe('memcached@2.x', () => {
 
     it('should collect be able to collect statements', async () => {
       instrumentation.setConfig({
-        collectCommand: true,
+        enhancedDatabaseReporting: true,
       });
       const value = await client.getPromise(KEY);
 

@@ -32,7 +32,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
     [SemanticAttributes.DB_SYSTEM]: Instrumentation.COMPONENT,
   };
   static readonly DEFAULT_CONFIG: InstrumentationConfig = {
-    collectCommand: false,
+    enhancedDatabaseReporting: false,
   };
 
   constructor(config: InstrumentationConfig = {}) {
@@ -140,7 +140,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
         'db.memcached.lifetime': query.lifetime,
         [SemanticAttributes.DB_OPERATION]: query.type,
         'db.statement': (instrumentation._config as InstrumentationConfig)
-          .collectCommand
+          .enhancedDatabaseReporting
           ? query.command
           : undefined,
         ...utils.getPeerAttributes(client, server, query),
