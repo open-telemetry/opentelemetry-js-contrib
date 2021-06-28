@@ -103,7 +103,8 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
           },
         }
       );
-      const context = api.trace.setSpan(api.context.active(), span);
+      const parentContext = api.context.active();
+      const context = api.trace.setSpan(parentContext, span);
 
       return api.context.with(
         context,
@@ -114,7 +115,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
           queryCompiler,
           this,
           server,
-          context,
+          parentContext,
           span
         ),
         server
@@ -126,7 +127,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
     original: () => Memcached.CommandData,
     client: Memcached,
     server: undefined | string,
-    context: api.Context,
+    callbackContext: api.Context,
     span: api.Span
   ) {
     const instrumentation = this;
@@ -139,15 +140,16 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,
         [SemanticAttributes.DB_OPERATION]: query.type,
-        [SemanticAttributes.DB_STATEMENT]: (instrumentation._config as InstrumentationConfig)
-          .enhancedDatabaseReporting
+        [SemanticAttributes.DB_STATEMENT]: (
+          instrumentation._config as InstrumentationConfig
+        ).enhancedDatabaseReporting
           ? query.command
           : undefined,
         ...utils.getPeerAttributes(client, server, query),
       });
 
       query.callback = api.context.bind(
-        context,
+        callbackContext,
         function (this: Memcached.CommandData, err: any) {
           if (err) {
             span.recordException(err);
