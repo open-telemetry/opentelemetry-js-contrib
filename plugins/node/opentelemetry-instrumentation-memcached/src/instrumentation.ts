@@ -35,7 +35,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
     collectCommand: false,
   };
 
-  constructor(config: InstrumentationConfig = Instrumentation.DEFAULT_CONFIG) {
+  constructor(config: InstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-memcached',
       VERSION,
@@ -43,7 +43,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
     );
   }
 
-  setConfig(config: InstrumentationConfig = Instrumentation.DEFAULT_CONFIG) {
+  setConfig(config: InstrumentationConfig = {}) {
     this._config = Object.assign({}, Instrumentation.DEFAULT_CONFIG, config);
   }
 
