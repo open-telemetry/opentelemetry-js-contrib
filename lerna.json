@@ -9,7 +9,7 @@
     "propagators/*",
     "detectors/node/*"
   ],
-  "version": "0.20.0",
+  "version": "0.22.0",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",
     "labels": {
