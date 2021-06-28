@@ -46,6 +46,7 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 | Options | Type | Description |
 | ------- | ---- | ----------- |
 | [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-pg/src/pg.ts#L48) | `boolean` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
+| `responseHook` | `PgInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
 
 ## Supported Versions
 
