@@ -195,6 +195,23 @@ describe('memcached@2.x', () => {
       }, 25);
     });
 
+    it('should return to parent context in callback', done => {
+      const parentSpan = tracer.startSpan('parentSpan');
+      const parentContext = trace.setSpan(context.active(), parentSpan);
+
+      context.with(parentContext, () => {
+        client.get(KEY, () => {
+          try {
+            const cbContext = context.active();
+            assert.strictEqual(cbContext, parentContext);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
+
     it('should collect be able to collect statements', async () => {
       instrumentation.setConfig({
         enhancedDatabaseReporting: true,
