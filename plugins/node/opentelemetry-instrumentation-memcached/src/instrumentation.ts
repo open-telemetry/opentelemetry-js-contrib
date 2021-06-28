@@ -139,7 +139,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,
         [SemanticAttributes.DB_OPERATION]: query.type,
-        'db.statement': (instrumentation._config as InstrumentationConfig)
+        [SemanticAttributes.DB_STATEMENT]: (instrumentation._config as InstrumentationConfig)
           .enhancedDatabaseReporting
           ? query.command
           : undefined,
