@@ -16,7 +16,7 @@ const { MemcachedInstrumentation } = require('@opentelemetry/instrumentation-mem
 module.exports = (serviceName) => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
-      [ResourceAttributes.SERVICE_NAME]: 'memcached-example-service',
+      [ResourceAttributes.SERVICE_NAME]: serviceName,
     }),
   });
   registerInstrumentations({
