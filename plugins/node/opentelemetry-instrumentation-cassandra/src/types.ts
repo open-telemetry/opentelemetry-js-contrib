@@ -19,6 +19,11 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 export interface CassandraDriverInstrumentationConfig
   extends InstrumentationConfig {
   /**
+   * Include database statements with spans.
+   * @default false
+   */
+  enhancedDatabaseReporting?: boolean;
+  /**
    * Max recorded query length.
    * @default 65536
    */

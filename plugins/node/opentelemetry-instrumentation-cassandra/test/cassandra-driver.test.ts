@@ -52,20 +52,24 @@ const cassandraTimeoutMs = 60000;
 function assertSpan(
   span: ReadableSpan,
   name: string,
-  query: string,
+  query?: string,
   status?: SpanStatus
 ) {
   const attributes = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
-    [SemanticAttributes.DB_STATEMENT]: query,
     [SemanticAttributes.DB_USER]: 'cassandra',
   };
+
+  if (query !== undefined) {
+    attributes[SemanticAttributes.DB_STATEMENT] = query;
+  }
+
   const spanStatus =
     status === undefined ? { code: SpanStatusCode.UNSET } : status;
   testUtils.assertSpan(span, SpanKind.CLIENT, attributes, [], spanStatus);
 }
 
-function assertSingleSpan(name: string, query: string, status?: SpanStatus) {
+function assertSingleSpan(name: string, query?: string, status?: SpanStatus) {
   const spans = memoryExporter.getFinishedSpans();
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
@@ -74,8 +78,8 @@ function assertSingleSpan(name: string, query: string, status?: SpanStatus) {
 
 function assertErrorSpan(
   name: string,
-  query: string,
-  error: Error & { code?: number }
+  error: Error & { code?: number },
+  query?: string
 ) {
   const spans = memoryExporter.getFinishedSpans();
   assert.strictEqual(spans.length, 1);
@@ -83,9 +87,12 @@ function assertErrorSpan(
 
   const attributes = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
-    [SemanticAttributes.DB_STATEMENT]: query,
     [SemanticAttributes.DB_USER]: 'cassandra',
   };
+
+  if (query !== undefined) {
+    attributes[SemanticAttributes.DB_STATEMENT] = query;
+  }
 
   const events = [
     {
@@ -167,35 +174,33 @@ describe('CassandraDriverInstrumentation', () => {
     });
 
     it('creates a span for promise based execute', async () => {
-      const query = 'select * from ot.test';
-      await client.execute(query);
-      assertSingleSpan('cassandra-driver.execute', query);
+      await client.execute('select * from ot.test');
+      assertSingleSpan('cassandra-driver.execute');
     });
 
     it('creates a span for callback based execute', done => {
-      const query = 'select * from ot.test';
-      client.execute(query, () => {
-        assertSingleSpan('cassandra-driver.execute', query);
+      client.execute('select * from ot.test', () => {
+        assertSingleSpan('cassandra-driver.execute');
         done();
       });
     });
 
     it('creates an error span', async () => {
-      const query = 'selec * from';
       try {
-        await client.execute(query);
+        await client.execute('selec * from');
       } catch (e) {
-        assertErrorSpan('cassandra-driver.execute', query, e);
+        assertErrorSpan('cassandra-driver.execute', e);
         return;
       }
 
       assert.fail();
     });
 
-    describe('long queries', () => {
+    describe('statements', () => {
       before(() => {
         const config: CassandraDriverInstrumentationConfig = {
-          maxQueryLength: 8,
+          maxQueryLength: 25,
+          enhancedDatabaseReporting: true,
         };
         instrumentation.setConfig(config);
       });
@@ -203,14 +208,21 @@ describe('CassandraDriverInstrumentation', () => {
       after(() => {
         const config: CassandraDriverInstrumentationConfig = {
           maxQueryLength: 65536,
+          enhancedDatabaseReporting: false,
         };
         instrumentation.setConfig(config);
       });
 
-      it('truncates long queries', async () => {
+      it('retains statements', async () => {
         const query = 'select * from ot.test';
         await client.execute(query);
-        assertSingleSpan('cassandra-driver.execute', query.substr(0, 8));
+        assertSingleSpan('cassandra-driver.execute', query);
+      });
+
+      it('truncates long queries', async () => {
+        const query = 'select userid, count from ot.test';
+        await client.execute(query);
+        assertSingleSpan('cassandra-driver.execute', query.substr(0, 25));
       });
     });
   });
@@ -226,12 +238,12 @@ describe('CassandraDriverInstrumentation', () => {
 
     it('creates a span for promise based batch', async () => {
       await client.batch([q1, q2]);
-      assertSingleSpan('cassandra-driver.batch', combined);
+      assertSingleSpan('cassandra-driver.batch');
     });
 
     it('creates a span for callback based batch', done => {
       client.batch([q1, q2], () => {
-        assertSingleSpan('cassandra-driver.batch', combined);
+        assertSingleSpan('cassandra-driver.batch');
         done();
       });
     });
@@ -241,11 +253,32 @@ describe('CassandraDriverInstrumentation', () => {
       try {
         await client.batch([query]);
       } catch (e) {
-        assertErrorSpan('cassandra-driver.batch', query, e);
+        assertErrorSpan('cassandra-driver.batch', e);
         return;
       }
 
       assert.fail();
+    });
+
+    describe('statements', () => {
+      before(() => {
+        const config: CassandraDriverInstrumentationConfig = {
+          enhancedDatabaseReporting: true,
+        };
+        instrumentation.setConfig(config);
+      });
+
+      after(() => {
+        const config: CassandraDriverInstrumentationConfig = {
+          enhancedDatabaseReporting: false,
+        };
+        instrumentation.setConfig(config);
+      });
+
+      it('attaches combined statement', async () => {
+        await client.batch([q1, q2]);
+        assertSingleSpan('cassandra-driver.batch', combined);
+      });
     });
   });
 
@@ -260,14 +293,8 @@ describe('CassandraDriverInstrumentation', () => {
       const spans = memoryExporter.getFinishedSpans();
       // stream internally uses execute
       assert.strictEqual(spans.length, 2);
-      const streamSpan = spans[1];
-      const attributes = {
-        [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
-      };
-      testUtils.assertSpan(streamSpan, SpanKind.CLIENT, attributes, [], {
-        code: SpanStatusCode.UNSET,
-      });
-      assertSpan(spans[0], 'cassandra-driver.execute', query);
+      assertSpan(spans[0], 'cassandra-driver.execute');
+      assertSpan(spans[1], 'cassandra-driver.stream');
     }
 
     it('creates a span for a stream call', done => {

@@ -17,8 +17,8 @@
 import {
   context,
   trace,
-  Tracer,
   Span,
+  SpanAttributes,
   SpanKind,
   SpanStatusCode,
 } from '@opentelemetry/api';
@@ -112,9 +112,14 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
     );
   }
 
-  public getMaxQueryLength(): number {
+  private _getMaxQueryLength(): number {
     const config = this.getConfig() as CassandraDriverInstrumentationConfig;
     return config.maxQueryLength ?? 65536;
+  }
+
+  private _shouldIncludeDbStatement(): boolean {
+    const config = this.getConfig() as CassandraDriverInstrumentationConfig;
+    return config.enhancedDatabaseReporting ?? false;
   }
 
   private _getPatchedExecute() {
@@ -126,12 +131,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
         this: CassandraDriver.Client,
         ...args: unknown[]
       ) {
-        const span = startSpan(
-          plugin.tracer,
-          'execute',
-          truncateQuery(args[0], plugin.getMaxQueryLength()),
-          this
-        );
+        const span = plugin.startSpan({ op: 'execute', query: args[0] }, this);
 
         const execContext = trace.setSpan(context.active(), span);
         const execPromise = safeExecuteInTheMiddle(
@@ -184,11 +184,10 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
         ...args: unknown[]
       ) {
         const queries = Array.isArray(args[0]) ? args[0] : [];
-        const combined = truncateQuery(
-          combineQueries(queries),
-          plugin.getMaxQueryLength()
+        const span = plugin.startSpan(
+          { op: 'batch', query: combineQueries(queries) },
+          this
         );
-        const span = startSpan(plugin.tracer, 'batch', combined, this);
 
         const batchContext = trace.setSpan(context.active(), span);
 
@@ -252,12 +251,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
         ...args: unknown[]
       ) {
         // Since stream internally uses execute, there is no need to add DB_STATEMENT twice
-        const span = plugin.tracer.startSpan('cassandra-driver.stream', {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
-          },
-        });
+        const span = plugin.startSpan({ op: 'stream' }, this);
 
         const callback = args[3];
 
@@ -295,34 +289,36 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
       };
     };
   }
-}
 
-function startSpan(
-  tracer: Tracer,
-  op: string,
-  statement: string,
-  client: CassandraDriver.Client
-) {
-  const attributes = {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
-    [SemanticAttributes.DB_STATEMENT]: statement,
-  };
+  public startSpan(
+    { op, query }: { op: string; query?: unknown },
+    client: CassandraDriver.Client
+  ): Span {
+    const attributes: SpanAttributes = {
+      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
+    };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = (client as any).options?.credentials?.username;
+    if (this._shouldIncludeDbStatement() && query !== undefined) {
+      const statement = truncateQuery(query, this._getMaxQueryLength());
+      attributes[SemanticAttributes.DB_STATEMENT] = statement;
+    }
 
-  if (user) {
-    attributes[SemanticAttributes.DB_USER] = user;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (client as any).options?.credentials?.username;
+
+    if (user) {
+      attributes[SemanticAttributes.DB_USER] = user;
+    }
+
+    if (client.keyspace) {
+      attributes[SemanticAttributes.DB_NAME] = client.keyspace;
+    }
+
+    return this.tracer.startSpan(`cassandra-driver.${op}`, {
+      kind: SpanKind.CLIENT,
+      attributes,
+    });
   }
-
-  if (client.keyspace) {
-    attributes[SemanticAttributes.DB_NAME] = client.keyspace;
-  }
-
-  return tracer.startSpan(`cassandra-driver.${op}`, {
-    kind: SpanKind.CLIENT,
-    attributes,
-  });
 }
 
 function failSpan(span: Span, error: Error) {
