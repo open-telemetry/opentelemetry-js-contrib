@@ -35,6 +35,14 @@ const client = new cassandra.Client({ ... });
 await client.execute('select * from foo');
 ```
 
+### Instrumentation options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `enhancedDatabaseReporting` | `boolean` | `false` | Whether to include database queries with spans. |
+| `maxQueryLength` | `number` | `65536` | If `enhancedDatabaseReporting` is enabled, limits the attached query strings
+to this length. |
+
 ### Supported versions
 
 `>=4.4 <5.0`
