@@ -14,10 +14,28 @@ jobs:
     container:
       image: ${{ matrix.container }}
     services:
+      memcached:
+        image: memcached:1.6.9-alpine
+        ports:
+        - 11211:11211
       mongo:
         image: mongo
         ports:
         - 27017:27017
+      mysql:
+        image: circleci/mysql:5.7
+        env:
+          MYSQL_USER: otel
+          MYSQL_PASSWORD: secret
+          MYSQL_DATABASE: circle_database
+          MYSQL_ROOT_PASSWORD: rootpw
+        ports:
+        - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       postgres:
         image: circleci/postgres:9.6-alpine
         env:
@@ -39,25 +57,14 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      mysql:
-        image: circleci/mysql:5.7
-        env:
-          MYSQL_USER: otel
-          MYSQL_PASSWORD: secret
-          MYSQL_DATABASE: circle_database
-          MYSQL_ROOT_PASSWORD: rootpw
-        ports:
-        - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
-      RUN_POSTGRES_TESTS: 1
-      RUN_MYSQL_TESTS: 1
+      RUN_MEMCACHED_TESTS: 1
       RUN_MONGODB_TESTS: 1
+      RUN_MYSQL_TESTS: 1
+      RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
+      OPENTELEMETRY_MEMCACHED_HOST: memcached
+      OPENTELEMETRY_MEMCACHED_PORT: 11211
       POSTGRES_USER: postgres
       POSTGRES_DB: circle_database
       POSTGRES_HOST: postgres
