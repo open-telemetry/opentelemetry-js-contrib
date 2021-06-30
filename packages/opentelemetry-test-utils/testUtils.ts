@@ -30,7 +30,8 @@ import {
 } from '@opentelemetry/core';
 
 const dockerRunCmds = {
-  cassandra: 'docker run -d -p 9042:9042 --name otel-cassandra bitnami/cassandra:3',
+  cassandra:
+    'docker run -d -p 9042:9042 --name otel-cassandra bitnami/cassandra:3',
   redis: 'docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine',
   mysql:
     'docker run --rm -d --name otel-mysql -p 33306:3306 -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=test_db -e MYSQL_USER=otel -e MYSQL_PASSWORD=secret circleci/mysql:5.7',
