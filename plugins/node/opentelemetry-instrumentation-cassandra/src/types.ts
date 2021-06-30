@@ -20,6 +20,7 @@ export interface CassandraDriverInstrumentationConfig
   extends InstrumentationConfig {
   /**
    * Include database statements with spans.
+   * These can contain sensitive information when using unescaped queries.
    * @default false
    */
   enhancedDatabaseReporting?: boolean;
