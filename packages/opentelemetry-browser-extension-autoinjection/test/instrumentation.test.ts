@@ -31,7 +31,6 @@ import { TEST_URL } from './utils';
 
 describe('WebInstrumentation', () => {
   let sandbox: sinon.SinonSandbox;
-  let instrumentation: WebInstrumentation;
   let provider: WebTracerProvider;
 
   beforeEach(() => {
@@ -44,8 +43,16 @@ describe('WebInstrumentation', () => {
     global.window = window as any;
     global.XMLHttpRequest = window.XMLHttpRequest;
     global.document = window.document;
+  });
 
-    instrumentation = new WebInstrumentation(
+  afterEach(async () => {
+    sandbox.restore();
+    chromeMock.reset();
+  });
+
+  it('adds exporters to the trace provider', () => {
+    const addSpanProcessorSpy = sinon.spy(provider, 'addSpanProcessor');
+    const instrumentation = new WebInstrumentation(
       {
         exporters: {
           [ExporterType.CONSOLE]: {
@@ -62,28 +69,19 @@ describe('WebInstrumentation', () => {
         },
         instrumentations: {
           [InstrumentationType.DOCUMENT_LOAD]: {
-            enabled: false,
+            enabled: true,
           },
           [InstrumentationType.FETCH]: {
             enabled: false,
           },
           [InstrumentationType.XML_HTTP_REQUEST]: {
-            enabled: false,
+            enabled: true,
           },
         },
-        withZoneContextManager: false,
+        withZoneContextManager: true,
       },
       provider
     );
-  });
-
-  afterEach(async () => {
-    sandbox.restore();
-    chromeMock.reset();
-  });
-
-  it('adds exporters to the trace provider', () => {
-    const addSpanProcessorSpy = sinon.spy(provider, 'addSpanProcessor');
     instrumentation.register();
     assert.ok(addSpanProcessorSpy.callCount === 3);
   });
