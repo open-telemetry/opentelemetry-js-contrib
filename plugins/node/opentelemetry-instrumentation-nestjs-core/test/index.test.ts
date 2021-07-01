@@ -39,9 +39,7 @@ const CONFIG = {
 };
 
 const DEFAULT_ATTRIBUTES = {
-  [SemanticAttributes.DB_SYSTEM]: Instrumentation.COMPONENT,
-  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+  'component': Instrumentation.COMPONENT,
 };
 
 describe('nestjs-core', () => {
@@ -77,7 +75,12 @@ describe('nestjs-core', () => {
     console.log(await request('/users'));
 
     assert.ok(memoryExporter.getFinishedSpans().length > 0);
-    assertSpans(memoryExporter.getFinishedSpans(), [{}]);
+    assertSpans(memoryExporter.getFinishedSpans(), [
+      { service: 'test', name: 'nest.factory.create', module: 'AppModule' },
+      {},
+      {},
+      {},
+    ]);
   })
 });
 
@@ -134,23 +137,23 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
     'Expected span count different from actual'
   );
   actualSpans.forEach((span, idx) => {
+    console.log('span', span);
     const expected = expectedSpans[idx];
     if (expected === null) return;
     try {
       assert.notStrictEqual(span, undefined);
       assert.notStrictEqual(expected, undefined);
-      assertMatch(span.name, new RegExp(expected.op));
-      assertMatch(span.name, new RegExp(expected.key));
-      assert.strictEqual(span.kind, SpanKind.CLIENT);
-      assert.strictEqual(span.attributes['db.statement'], expected.statement);
+
+      assert.strictEqual(span.attributes.component, '@nestjs/core');
+      assert.strictEqual(span.attributes['nest.module'], expected.module);
+
       for (const attr in DEFAULT_ATTRIBUTES) {
         assert.strictEqual(span.attributes[attr], DEFAULT_ATTRIBUTES[attr]);
       }
-      assert.strictEqual(span.attributes['db.memcached.key'], expected.key);
       assert.strictEqual(
-        typeof span.attributes['memcached.version'],
+        typeof span.attributes['nestjs.version'],
         'string',
-        'memcached.version not specified'
+        'nestjs.version not specified'
       );
       assert.deepEqual(
         span.status,
