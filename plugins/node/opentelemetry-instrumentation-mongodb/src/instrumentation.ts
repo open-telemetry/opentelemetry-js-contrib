@@ -27,6 +27,7 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import type * as mongodb from 'mongodb';
@@ -37,6 +38,7 @@ import {
   MongoInternalCommand,
   MongoInternalTopology,
   WireProtocolInternal,
+  CommandResult,
 } from './types';
 import { VERSION } from './version';
 
@@ -418,6 +420,29 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   }
 
   /**
+   * Triggers the response hook in case it is defined.
+   * @param span The span to add the results to.
+   * @param config The MongoDB instrumentation config object
+   * @param result The command result
+   */
+  private _handleExecutionResult(span: Span, result: CommandResult) {
+    const config: MongoDBInstrumentationConfig = this.getConfig();
+    if (typeof config.responseHook === 'function') {
+      safeExecuteInTheMiddle(
+        () => {
+          config.responseHook!(span, { data: result });
+        },
+        err => {
+          if (err) {
+            this._diag.error('Error running response hook', err);
+          }
+        },
+        true
+      );
+    }
+  }
+
+  /**
    * Ends a created span.
    * @param span The created span to end.
    * @param resultHandler A callback function.
@@ -426,6 +451,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     // mongodb is using "tick" when calling a callback, this way the context
     // in final callback (resultHandler) is lost
     const activeContext = context.active();
+    const instrumentation = this;
     return function patchedEnd(this: {}, ...args: unknown[]) {
       const error = args[0];
       if (error instanceof Error) {
@@ -433,6 +459,9 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           code: SpanStatusCode.ERROR,
           message: error.message,
         });
+      } else {
+        const result = args[1] as CommandResult;
+        instrumentation._handleExecutionResult(span, result);
       }
       span.end();
 
