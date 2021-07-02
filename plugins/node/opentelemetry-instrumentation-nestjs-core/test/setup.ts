@@ -28,7 +28,7 @@ export const setup = async (version) => {
 
   UsersController = __decorate([common.Controller('users')], UsersController)
   UsersController.prototype.getUsers = function getUsers () {
-    return '\nHello, world!\n\n'
+    return 'Hello, world!\n';
   }
   Object.defineProperty(UsersController.prototype, 'getUsers',
     __decorate([common.Get()], UsersController.prototype, 'getUsers',

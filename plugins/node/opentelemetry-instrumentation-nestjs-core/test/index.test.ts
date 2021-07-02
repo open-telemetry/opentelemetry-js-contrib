@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import * as semver from 'semver';
+
 import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -29,6 +31,9 @@ import { getRequester, setup } from './setup';
 
 import * as http from 'http';
 import { AddressInfo } from 'net';
+
+
+const LIB_VERSION = require('@nestjs/core/package.json').version;
 
 const instrumentation = new Instrumentation();
 const memoryExporter = new InMemorySpanExporter();
@@ -48,15 +53,22 @@ describe('nestjs-core', () => {
   provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
   instrumentation.setTracerProvider(provider);
   let contextManager: AsyncHooksContextManager;
+  let app;
+  let request = async (path: string): Promise<unknown> => { throw new Error('Not yet initialized.'); };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
     instrumentation.setConfig({});
     instrumentation.enable();
+
+    app = await setup(LIB_VERSION);
+    request = getRequester(app);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await app.close();
+
     memoryExporter.reset();
     context.disable();
     instrumentation.disable();
@@ -68,12 +80,10 @@ describe('nestjs-core', () => {
   after(() => {});
 
   it('happy paths', async () => {
-    const app = await setup('6');
-    const request = getRequester(app);
-    const path = '/users'; // v<5 expected path is /
+    const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/users';
     const url = '/users';
 
-    console.log(await request('/users'));
+    assert.strictEqual(await request('/users'), 'Hello, world!\n');
 
     assertSpans(memoryExporter.getFinishedSpans(), [
       { service: 'test', name: 'nest.factory.create', module: 'AppModule' },
@@ -85,12 +95,10 @@ describe('nestjs-core', () => {
   });
 
   it('should properly capture errors', async () => {
-    const app = await setup('6');
-    const request = getRequester(app);
-    const path = '/errors'; // v<5 expected path is /
-    const url = '/errors'; // v<5 expected path is /
+    const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/errors';
+    const url = '/errors';
 
-    console.log(await request('/errors'));
+    assert.strictEqual(await request('/errors'), '{"statusCode":500,"message":"Internal server error"}');
 
     assertSpans(memoryExporter.getFinishedSpans(), [
       { service: 'test', name: 'nest.factory.create', module: 'AppModule' },

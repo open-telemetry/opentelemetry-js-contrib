@@ -59,7 +59,7 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
   init() {
     const module = new InstrumentationNodeModuleDefinition<any>(
       Instrumentation.COMPONENT,
-      ['>=2.2'],
+      ['>=2.2'], // TODO update this
       (moduleExports, moduleVersion) => {
         console.debug(
           `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
@@ -83,9 +83,10 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
     );
 
     module.files.push(
-      this.getNestFactoryFileInstrumentation(['>=6.0.0 <7.0.0']),
-      this.getInterceptorsFileInstrumentation(['>=6.0.0 <7.0.0']),
-      this.getRouterExecutionContextFileInstrumentation(['>=6.0.0 <7.0.0']),
+      this.getGuardsConsumerFileInstrumentation(['>=4.0.0 <=4.5.1']),
+      this.getNestFactoryFileInstrumentation(['>=4.0.0']),
+      this.getInterceptorsFileInstrumentation(['>=4.0.0']),
+      this.getRouterExecutionContextFileInstrumentation(['>=4.0.0']),
     );
 
     return module;
