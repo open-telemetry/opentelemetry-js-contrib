@@ -19,7 +19,7 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
-  isWrapped
+  isWrapped,
 } from '@opentelemetry/instrumentation';
 import type * as NestJS from '@nestjs/core';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -38,7 +38,7 @@ const ATTR = {
 export class Instrumentation extends InstrumentationBase<typeof NestJS> {
   static readonly COMPONENT = '@nestjs/core';
   static readonly COMMON_ATTRIBUTES = {
-    'component': Instrumentation.COMPONENT,
+    component: Instrumentation.COMPONENT,
   };
   static readonly DEFAULT_CONFIG: InstrumentationConfig = {
     collectCommand: false,
@@ -61,9 +61,7 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
       Instrumentation.COMPONENT,
       ['>=2.2'], // TODO update this
       (moduleExports, moduleVersion) => {
-        console.debug(
-          `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
-        );
+        console.debug(`Patching ${Instrumentation.COMPONENT}@${moduleVersion}`);
         // this.ensureWrapped(
         //   moduleVersion,
         //   moduleExports.prototype,
@@ -79,14 +77,14 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
         if (moduleExports === undefined) return;
         // `command` is documented API missing from the types
         // this._unwrap(moduleExports.prototype, 'command' as keyof Memcached);
-      },
+      }
     );
 
     module.files.push(
       this.getGuardsConsumerFileInstrumentation(['>=4.0.0 <=4.5.1']),
       this.getNestFactoryFileInstrumentation(['>=4.0.0']),
       this.getInterceptorsFileInstrumentation(['>=4.0.0']),
-      this.getRouterExecutionContextFileInstrumentation(['>=4.0.0']),
+      this.getRouterExecutionContextFileInstrumentation(['>=4.0.0'])
     );
 
     return module;
@@ -98,14 +96,17 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
       versions,
       (NestFactoryStatic: any) => {
         console.log('wrapping getNestFactoryFileInstrumentation');
-        this._wrap(NestFactoryStatic.NestFactoryStatic.prototype,
+        this._wrap(
+          NestFactoryStatic.NestFactoryStatic.prototype,
           'create',
-          createWrapNestFactoryCreate(this.tracer, this._config));
+          createWrapNestFactoryCreate(this.tracer, this._config)
+        );
         return NestFactoryStatic;
       },
       (NestFactoryStatic: any) => {
         this._unwrap(NestFactoryStatic.NestFactoryStatic.prototype, 'create');
-      });
+      }
+    );
   }
 
   private getRouterExecutionContextFileInstrumentation(versions: string[]) {
@@ -114,22 +115,38 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
       versions,
       (RouterExecutionContext: any) => {
         console.log('wrapping getRouterExecutionContextFileInstrumentation');
-        this._wrap(RouterExecutionContext.RouterExecutionContext.prototype,
+        this._wrap(
+          RouterExecutionContext.RouterExecutionContext.prototype,
           'create',
-          createWrapCreateHandler(this.tracer, this._config));
-        this._wrap(RouterExecutionContext.RouterExecutionContext.prototype,
+          createWrapCreateHandler(this.tracer, this._config)
+        );
+        this._wrap(
+          RouterExecutionContext.RouterExecutionContext.prototype,
           'createGuardsFn',
-          createWrapCreateGuardsFn(this.tracer, this._config));
-        this._wrap(RouterExecutionContext.RouterExecutionContext.prototype,
+          createWrapCreateGuardsFn(this.tracer, this._config)
+        );
+        this._wrap(
+          RouterExecutionContext.RouterExecutionContext.prototype,
           'createPipesFn',
-          createWrapCreatePipesFn(this.tracer, this._config));
+          createWrapCreatePipesFn(this.tracer, this._config)
+        );
         return RouterExecutionContext;
       },
       (RouterExecutionContext: any) => {
-        this._unwrap(RouterExecutionContext.RouterExecutionContext.prototype, 'create');
-        this._unwrap(RouterExecutionContext.RouterExecutionContext.prototype, 'createGuardsFn');
-        this._unwrap(RouterExecutionContext.RouterExecutionContext.prototype, 'createPipesFn');
-      });
+        this._unwrap(
+          RouterExecutionContext.RouterExecutionContext.prototype,
+          'create'
+        );
+        this._unwrap(
+          RouterExecutionContext.RouterExecutionContext.prototype,
+          'createGuardsFn'
+        );
+        this._unwrap(
+          RouterExecutionContext.RouterExecutionContext.prototype,
+          'createPipesFn'
+        );
+      }
+    );
   }
 
   private getGuardsConsumerFileInstrumentation(versions: string[]) {
@@ -138,14 +155,17 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
       versions,
       (GuardsConsumer: any) => {
         console.log('wrapping getGuardsConsumerFileInstrumentation');
-        this._wrap(GuardsConsumer.GuardsConsumer.prototype,
+        this._wrap(
+          GuardsConsumer.GuardsConsumer.prototype,
           'tryActivate',
-          createWrapTryActivate(this.tracer, this._config));
+          createWrapTryActivate(this.tracer, this._config)
+        );
         return GuardsConsumer;
       },
       (GuardsConsumer: any) => {
         this._unwrap(GuardsConsumer.GuardsConsumer.prototype, 'tryActivate');
-      });
+      }
+    );
   }
 
   private getInterceptorsFileInstrumentation(versions: string[]) {
@@ -154,14 +174,20 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
       versions,
       (InterceptorsConsumer: any) => {
         console.log('wrapping getInterceptorsFileInstrumentation');
-        this._wrap(InterceptorsConsumer.InterceptorsConsumer.prototype,
+        this._wrap(
+          InterceptorsConsumer.InterceptorsConsumer.prototype,
           'intercept',
-          createWrapIntercept(this.tracer, this._config));
+          createWrapIntercept(this.tracer, this._config)
+        );
         return InterceptorsConsumer;
       },
       (InterceptorsConsumer: any) => {
-        this._unwrap(InterceptorsConsumer.InterceptorsConsumer.prototype, 'intercept');
-      });
+        this._unwrap(
+          InterceptorsConsumer.InterceptorsConsumer.prototype,
+          'intercept'
+        );
+      }
+    );
   }
 
   private ensureWrapped(
@@ -180,40 +206,45 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
   }
 }
 
-function createWrapNestFactoryCreate (tracer, config) {
-  return function wrapCreate (original) {
-    return function createWithTrace (this: any, nestModule, serverOrOptions, options) {
+function createWrapNestFactoryCreate(tracer, config) {
+  return function wrapCreate(original) {
+    return function createWithTrace(
+      this: any,
+      nestModule,
+      serverOrOptions,
+      options
+    ) {
       const span = tracer.startSpan('nest.factory.create', {
         attributes: {
           ...Instrumentation.COMMON_ATTRIBUTES,
-          [ATTR.MODULE]: nestModule.name
-        }
+          [ATTR.MODULE]: nestModule.name,
+        },
       });
       const spanContext = api.trace.setSpan(api.context.active(), span);
 
       return api.context.with(spanContext, () => {
         try {
           // TODO: this is a Promise
-          return original.apply(this, arguments)
+          return original.apply(this, arguments);
         } catch (e) {
-          throw addError(span, e)
+          throw addError(span, e);
         } finally {
-          span.end()
+          span.end();
         }
       });
-    }
-  }
+    };
+  };
 }
 
 function createWrapCreateHandler(tracer, config) {
-  return function wrapCreateHandler (create) {
-    return function createHandlerWithTrace (instance, callback) {
-      arguments[1] = createWrapHandler(tracer, callback)
+  return function wrapCreateHandler(create) {
+    return function createHandlerWithTrace(instance, callback) {
+      arguments[1] = createWrapHandler(tracer, callback);
       const handler = create.apply(this, arguments);
       return function (req, res, next) {
-        let opName = 'nest.request'
+        let opName = 'nest.request';
         if (instance.constructor && instance.constructor.name) {
-          opName = instance.constructor.name
+          opName = instance.constructor.name;
         }
         const span = tracer.startSpan(opName, {
           attributes: {
@@ -221,224 +252,239 @@ function createWrapCreateHandler(tracer, config) {
             [ATTR.METHOD]: req.method,
             [ATTR.URL]: req.originalUrl,
             [ATTR.PATH]: req.route.path,
-          }
+          },
         });
         const spanContext = api.trace.setSpan(api.context.active(), span);
 
         if (callback.name) {
-          opName = `${opName}(${callback.name})`
-          span.updateName(opName)
-          span.setAttribute(ATTR.CALLBACK, callback.name)
+          opName = `${opName}(${callback.name})`;
+          span.updateName(opName);
+          span.setAttribute(ATTR.CALLBACK, callback.name);
         }
 
         return api.context.with(spanContext, () => {
           try {
-            return handler.apply(this, arguments)
+            return handler.apply(this, arguments);
           } catch (e) {
-            throw addError(span, e)
+            throw addError(span, e);
           } finally {
             span.end();
           }
         });
-      }
-    }
-  }
+      };
+    };
+  };
 }
 
 function createWrapHandler(tracer, handler) {
-  let name = 'nestHandler'
+  let name = 'nestHandler';
   if (handler.name) {
-    name = handler.name
+    name = handler.name;
   }
   const wrappedHandler = function () {
-    const attributes = { ...Instrumentation.COMMON_ATTRIBUTES }
+    const attributes = { ...Instrumentation.COMMON_ATTRIBUTES };
     if (name) {
-      attributes[ATTR.CALLBACK] = name
+      attributes[ATTR.CALLBACK] = name;
     }
-    const span = tracer.startSpan(name, { attributes })
+    const span = tracer.startSpan(name, { attributes });
     const spanContext = api.trace.setSpan(api.context.active(), span);
 
     return api.context.with(spanContext, () => {
       try {
-        return handler.apply(this, arguments)
+        return handler.apply(this, arguments);
       } catch (e) {
-        throw addError(span, e)
+        throw addError(span, e);
       } finally {
         span.end();
       }
-    })
-  }
+    });
+  };
 
   if (name) {
-    Object.defineProperty(wrappedHandler, 'name', { value: name })
+    Object.defineProperty(wrappedHandler, 'name', { value: name });
   }
-  return wrappedHandler
+  return wrappedHandler;
 }
 
 function createWrapCreateGuardsFn(tracer, config) {
-  return function wrapCreateGuardsFn (createGuardsFn) {
-    return function createGuardsFn (guards, instance, callback, contextType) {
-      function wrappedCanActivateFn (canActivateFn) {
-        return (args) => {
+  return function wrapCreateGuardsFn(createGuardsFn) {
+    return function createGuardsFn(guards, instance, callback, contextType) {
+      function wrappedCanActivateFn(canActivateFn) {
+        return args => {
           if (typeof canActivateFn !== 'function') {
-            return canActivateFn
+            return canActivateFn;
           }
-          createGuardsTrace(tracer, args, guards, instance, callback, canActivateFn)
-        }
+          createGuardsTrace(
+            tracer,
+            args,
+            guards,
+            instance,
+            callback,
+            canActivateFn
+          );
+        };
       }
-      return wrappedCanActivateFn(createGuardsFn)
-    }
-  }
+      return wrappedCanActivateFn(createGuardsFn);
+    };
+  };
 }
 
 function createWrapTryActivate(tracer, config) {
-  return function wrapTryActivate (tryActivate) {
-    return function tryActivateWithTrace (guards, args, instance, callback) {
-      createGuardsTrace(tracer, args, guards, instance, callback, tryActivate)
-    }
-  }
+  return function wrapTryActivate(tryActivate) {
+    return function tryActivateWithTrace(guards, args, instance, callback) {
+      createGuardsTrace(tracer, args, guards, instance, callback, tryActivate);
+    };
+  };
 }
 
 function createWrapIntercept(tracer, config) {
-  return function wrapIntercept (original) {
-    return function interceptWithTrace (interceptors, args, instance, callback, next, type) {
-      const opName = 'nest.interceptor.intercept'
+  return function wrapIntercept(original) {
+    return function interceptWithTrace(
+      interceptors,
+      args,
+      instance,
+      callback,
+      next,
+      type
+    ) {
+      const opName = 'nest.interceptor.intercept';
       const span = tracer.startSpan(opName, {
         attributes: {
-          ...Instrumentation.COMMON_ATTRIBUTES
-        }
+          ...Instrumentation.COMMON_ATTRIBUTES,
+        },
       });
       const spanContext = api.trace.setSpan(api.context.active(), span);
       if (callback.name) {
-        span.setAttribute(ATTR.CALLBACK, callback.name)
+        span.setAttribute(ATTR.CALLBACK, callback.name);
       }
 
-      const request = args.length > 1 ? args[0] : args
-      span.setAttribute(ATTR.METHOD, request.method)
-      span.setAttribute(ATTR.URL, request.originalUrl)
-      span.setAttribute(ATTR.PATH, request.route.path)
+      const request = args.length > 1 ? args[0] : args;
+      span.setAttribute(ATTR.METHOD, request.method);
+      span.setAttribute(ATTR.URL, request.originalUrl);
+      span.setAttribute(ATTR.PATH, request.route.path);
 
       if (interceptors.length > 0) {
-        const interceptorNames = []
+        const interceptorNames = [];
         interceptors.forEach(interceptor => {
-          interceptorNames.push(interceptor.constructor.name)
-        })
-        span.setAttribute('nest.interceptors', interceptorNames)
+          interceptorNames.push(interceptor.constructor.name);
+        });
+        span.setAttribute('nest.interceptors', interceptorNames);
       }
 
       if (instance.constructor && instance.constructor.name) {
-        span.setAttribute('nest.controller.instance', instance.constructor.name)
+        span.setAttribute(
+          'nest.controller.instance',
+          instance.constructor.name
+        );
       }
 
       return api.context.with(spanContext, () => {
         try {
-          return original.apply(this, arguments)
+          return original.apply(this, arguments);
         } catch (e) {
-          throw addError(span, e)
+          throw addError(span, e);
         } finally {
           span.end();
         }
-      })
-    }
-  }
+      });
+    };
+  };
 }
 
 function createWrapCreatePipesFn(tracer, config) {
-  return function wrapCreatePipesFn (original) {
-    return function createPipesFnWithTrace (pipes, paramsOptions) {
-      function wrappedPipesFn (pipesFn) {
+  return function wrapCreatePipesFn(original) {
+    return function createPipesFnWithTrace(pipes, paramsOptions) {
+      function wrappedPipesFn(pipesFn) {
         return (args, req, res, next) => {
           if (typeof pipesFn !== 'function') {
-            return pipesFn
+            return pipesFn;
           }
 
-          let opName = 'nest.pipe.pipesFn'
+          let opName = 'nest.pipe.pipesFn';
           if (pipes.length > 0) {
             if (pipes[0].constructor && pipes[0].constructor.name) {
-              opName = `${pipes[0].constructor.name}.pipeFn`
+              opName = `${pipes[0].constructor.name}.pipeFn`;
             }
           }
           const span = tracer.startSpan(opName, {
             attributes: {
-              ...Instrumentation.COMMON_ATTRIBUTES
-            }
+              ...Instrumentation.COMMON_ATTRIBUTES,
+            },
           });
           const spanContext = api.trace.setSpan(api.context.active(), span);
           if (paramsOptions && paramsOptions[0]) {
-            const pipes = []
-            const pipeOptions = paramsOptions[0].pipes
-            pipeOptions.forEach((param) => {
+            const pipes = [];
+            const pipeOptions = paramsOptions[0].pipes;
+            pipeOptions.forEach(param => {
               if (param.constructor && param.constructor.name) {
-                pipes.push(param.constructor.name)
+                pipes.push(param.constructor.name);
               }
-            })
+            });
             if (pipes.length > 0) {
-              span.setAttribute('nest.pipes', pipes)
+              span.setAttribute('nest.pipes', pipes);
             }
           }
 
           return api.context.with(spanContext, () => {
             try {
-              return pipesFn.apply(this, [args, req, res, next])
+              return pipesFn.apply(this, [args, req, res, next]);
             } catch (e) {
-              throw addError(span, e)
+              throw addError(span, e);
             } finally {
               span.end();
             }
-          })
-        }
+          });
+        };
       }
-      return wrappedPipesFn(original.apply(this, arguments))
-    }
-  }
+      return wrappedPipesFn(original.apply(this, arguments));
+    };
+  };
 }
 
 function createGuardsTrace(tracer, args, guards, instance, callback, fn) {
-  let opName = 'nest.guard.canActivate'
-  const request = args.length > 1 ? args[0] : args
+  let opName = 'nest.guard.canActivate';
+  const request = args.length > 1 ? args[0] : args;
   const span = tracer.startSpan(opName, {
     attributes: {
       ...Instrumentation.COMMON_ATTRIBUTES,
       [ATTR.METHOD]: request.method,
       [ATTR.URL]: request.originalUrl,
       [ATTR.PATH]: request.route.path,
-    }
-  })
+    },
+  });
   const spanContext = api.trace.setSpan(api.context.active(), span);
 
   const guardNames = guards.map(guardName => guardName.constructor.name);
   if (guardNames.length > 0) {
     if (guardNames[0].constructor && guardNames[0].constructor.name) {
-      opName = `${guardNames[0]}.tryActivate`
+      opName = `${guardNames[0]}.tryActivate`;
     }
-    span.setAttribute('nest.guards', guardNames)
+    span.setAttribute('nest.guards', guardNames);
   }
   if (instance.constructor && instance.constructor.name) {
-    opName = `${opName}.${instance.constructor.name}`
-    span.setAttribute('nest.controller.instance', instance.constructor.name)
+    opName = `${opName}.${instance.constructor.name}`;
+    span.setAttribute('nest.controller.instance', instance.constructor.name);
   }
   if (callback.name) {
-    opName = `${opName}(${callback.name})`
-    span.setAttribute(ATTR.CALLBACK, callback.name)
+    opName = `${opName}(${callback.name})`;
+    span.setAttribute(ATTR.CALLBACK, callback.name);
   }
 
-  span.updateName(opName)
+  span.updateName(opName);
 
   return api.context.with(spanContext, () => {
     try {
-      return fn.apply(this, args)
+      return fn.apply(this, args);
     } catch (e) {
-      throw addError(span, e)
+      throw addError(span, e);
     } finally {
       span.end();
     }
-  })
+  });
 }
 
-function addError (span, error) {
+function addError(span, error) {
   span.recordException(error);
   span.setStatus({ code: api.SpanStatusCode.ERROR, message: error.message });
-  return error
+  return error;
 }
-
-

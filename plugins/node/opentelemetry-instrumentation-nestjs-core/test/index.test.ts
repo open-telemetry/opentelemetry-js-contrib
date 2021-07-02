@@ -32,7 +32,6 @@ import { getRequester, setup } from './setup';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 
-
 const LIB_VERSION = require('@nestjs/core/package.json').version;
 
 const instrumentation = new Instrumentation();
@@ -44,7 +43,7 @@ const CONFIG = {
 };
 
 const DEFAULT_ATTRIBUTES = {
-  'component': Instrumentation.COMPONENT,
+  component: Instrumentation.COMPONENT,
 };
 
 describe('nestjs-core', () => {
@@ -54,7 +53,9 @@ describe('nestjs-core', () => {
   instrumentation.setTracerProvider(provider);
   let contextManager: AsyncHooksContextManager;
   let app;
-  let request = async (path: string): Promise<unknown> => { throw new Error('Not yet initialized.'); };
+  let request = async (path: string): Promise<unknown> => {
+    throw new Error('Not yet initialized.');
+  };
 
   beforeEach(async () => {
     contextManager = new AsyncHooksContextManager();
@@ -74,8 +75,7 @@ describe('nestjs-core', () => {
     instrumentation.disable();
   });
 
-  before(function () {
-  });
+  before(() => {});
 
   after(() => {});
 
@@ -87,10 +87,40 @@ describe('nestjs-core', () => {
 
     assertSpans(memoryExporter.getFinishedSpans(), [
       { service: 'test', name: 'nest.factory.create', module: 'AppModule' },
-      { service: 'test', name: 'nest.guard.canActivate.UsersController(getUsers)', method: 'GET', url, path, instance: 'UsersController', callback: 'getUsers', parentSpanIdx: 2 },
-      { service: 'test', name: 'UsersController(getUsers)', method: 'GET', url, path, callback: 'getUsers' },
-      { service: 'test', name: 'nest.interceptor.intercept', method: 'GET', url, path, instance: 'UsersController', callback: 'getUsers', parentSpanIdx: 2 },
-      { service: 'test', name: 'getUsers', callback: 'getUsers', parentSpanIdx: 3 },
+      {
+        service: 'test',
+        name: 'nest.guard.canActivate.UsersController(getUsers)',
+        method: 'GET',
+        url,
+        path,
+        instance: 'UsersController',
+        callback: 'getUsers',
+        parentSpanIdx: 2,
+      },
+      {
+        service: 'test',
+        name: 'UsersController(getUsers)',
+        method: 'GET',
+        url,
+        path,
+        callback: 'getUsers',
+      },
+      {
+        service: 'test',
+        name: 'nest.interceptor.intercept',
+        method: 'GET',
+        url,
+        path,
+        instance: 'UsersController',
+        callback: 'getUsers',
+        parentSpanIdx: 2,
+      },
+      {
+        service: 'test',
+        name: 'getUsers',
+        callback: 'getUsers',
+        parentSpanIdx: 3,
+      },
     ]);
   });
 
@@ -98,29 +128,61 @@ describe('nestjs-core', () => {
     const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/errors';
     const url = '/errors';
 
-    assert.strictEqual(await request('/errors'), '{"statusCode":500,"message":"Internal server error"}');
+    assert.strictEqual(
+      await request('/errors'),
+      '{"statusCode":500,"message":"Internal server error"}'
+    );
 
     assertSpans(memoryExporter.getFinishedSpans(), [
       { service: 'test', name: 'nest.factory.create', module: 'AppModule' },
-      { service: 'test', name: 'nest.guard.canActivate.ErrorController(getErrors)', method: 'GET', url, path, instance: 'ErrorController', callback: 'getErrors', parentSpanIdx: 2 },
-      { service: 'test', name: 'ErrorController(getErrors)', method: 'GET', url, path, callback: 'getErrors' },
-      { service: 'test', name: 'nest.interceptor.intercept', method: 'GET', url, path, instance: 'ErrorController', callback: 'getErrors', parentSpanIdx: 2 },
-      { service: 'test', name: 'getErrors', callback: 'getErrors', 
-              status: {
-                code: SpanStatusCode.ERROR,
-                message: 'custom error',
-              }, parentSpanIdx: 3 },
+      {
+        service: 'test',
+        name: 'nest.guard.canActivate.ErrorController(getErrors)',
+        method: 'GET',
+        url,
+        path,
+        instance: 'ErrorController',
+        callback: 'getErrors',
+        parentSpanIdx: 2,
+      },
+      {
+        service: 'test',
+        name: 'ErrorController(getErrors)',
+        method: 'GET',
+        url,
+        path,
+        callback: 'getErrors',
+      },
+      {
+        service: 'test',
+        name: 'nest.interceptor.intercept',
+        method: 'GET',
+        url,
+        path,
+        instance: 'ErrorController',
+        callback: 'getErrors',
+        parentSpanIdx: 2,
+      },
+      {
+        service: 'test',
+        name: 'getErrors',
+        callback: 'getErrors',
+        status: {
+          code: SpanStatusCode.ERROR,
+          message: 'custom error',
+        },
+        parentSpanIdx: 3,
+      },
     ]);
   });
 });
-
 
 const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
   assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
 
   console.log(
     'spans',
-    actualSpans.map((s) => {
+    actualSpans.map(s => {
       return `${s.spanContext().spanId} ${s.name} < ${s.parentSpanId}`;
     })
   );
@@ -152,7 +214,10 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.strictEqual(span.attributes['http.url'], expected.url);
       assert.strictEqual(span.attributes['nest.route.path'], expected.path);
       assert.strictEqual(span.attributes['nest.callback'], expected.callback);
-      assert.strictEqual(span.attributes['nest.controller.instance'], expected.instance);
+      assert.strictEqual(
+        span.attributes['nest.controller.instance'],
+        expected.instance
+      );
 
       for (const attr in DEFAULT_ATTRIBUTES) {
         assert.strictEqual(span.attributes[attr], DEFAULT_ATTRIBUTES[attr]);
