@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.23.0
+
+#### :bug: Bug Fix
+* [#557](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/557) chore: aligning target for esm build with core repo ([@obecny](https://github.com/obecny))
+
+#### :rocket: Enhancement
+* `opentelemetry-browser-extension-autoinjection`
+  * [#498](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/498) feat: add browser extension ([@svrnm](https://github.com/svrnm))
+* `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#556](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/556) chore: update core and API ([@dyladan](https://github.com/dyladan))
+* Other
+  * [#533](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/533) feat(mongo instrumentation): added response hook option ([@prsnca](https://github.com/prsnca))
+  * [#546](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/546) feat(aws-lambda): disableAwsContextPropagation config option ([@nirsky](https://github.com/nirsky))
+  * [#528](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/528) feat: postgresql responseHook support ([@nata7che](https://github.com/nata7che))
+* `opentelemetry-test-utils`
+  * [#538](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/538) feat: add cassandra-driver instrumentation ([@seemk](https://github.com/seemk))
+  * [#539](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/539) feat: memcached instrumentation ([@Rauno56](https://github.com/Rauno56))
+
+#### :house: Internal
+* [#554](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/554) chore: remove unneeded ts-node dev-dependency ([@Flarna](https://github.com/Flarna))
+
+#### Committers: 9
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Nir Hadassi ([@nirsky](https://github.com/nirsky))
+- Rauno Viskus ([@Rauno56](https://github.com/Rauno56))
+- Severin Neumann ([@svrnm](https://github.com/svrnm))
+- Siim Kallas ([@seemk](https://github.com/seemk))
+- Yaron ([@prsnca](https://github.com/prsnca))
+- natashz ([@nata7che](https://github.com/nata7che))
+
 ## 0.22.0
 
 #### :bug: Bug Fix
