@@ -70,63 +70,53 @@ describe('nestjs-core', () => {
   it('happy paths', async () => {
     const app = await setup('6');
     const request = getRequester(app);
-    const path = '/users' // v<5 expected path is /
+    const path = '/users'; // v<5 expected path is /
+    const url = '/users';
 
     console.log(await request('/users'));
 
-    assert.ok(memoryExporter.getFinishedSpans().length > 0);
     assertSpans(memoryExporter.getFinishedSpans(), [
       { service: 'test', name: 'nest.factory.create', module: 'AppModule' },
-      {},
-      {},
-      {},
+      { service: 'test', name: 'nest.guard.canActivate.UsersController(getUsers)', method: 'GET', url, path, instance: 'UsersController', callback: 'getUsers', parentSpanIdx: 2 },
+      { service: 'test', name: 'UsersController(getUsers)', method: 'GET', url, path, callback: 'getUsers' },
+      { service: 'test', name: 'nest.interceptor.intercept', method: 'GET', url, path, instance: 'UsersController', callback: 'getUsers', parentSpanIdx: 2 },
+      { service: 'test', name: 'getUsers', callback: 'getUsers', parentSpanIdx: 3 },
     ]);
-  })
+  });
+
+  it('should properly capture errors', async () => {
+    const app = await setup('6');
+    const request = getRequester(app);
+    const path = '/errors'; // v<5 expected path is /
+    const url = '/errors'; // v<5 expected path is /
+
+    console.log(await request('/errors'));
+
+    assertSpans(memoryExporter.getFinishedSpans(), [
+      { service: 'test', name: 'nest.factory.create', module: 'AppModule' },
+      { service: 'test', name: 'nest.guard.canActivate.ErrorController(getErrors)', method: 'GET', url, path, instance: 'ErrorController', callback: 'getErrors', parentSpanIdx: 2 },
+      { service: 'test', name: 'ErrorController(getErrors)', method: 'GET', url, path, callback: 'getErrors' },
+      { service: 'test', name: 'nest.interceptor.intercept', method: 'GET', url, path, instance: 'ErrorController', callback: 'getErrors', parentSpanIdx: 2 },
+      { service: 'test', name: 'getErrors', callback: 'getErrors', 
+              status: {
+                code: SpanStatusCode.ERROR,
+                message: 'custom error',
+              }, parentSpanIdx: 3 },
+    ]);
+  });
 });
-
-
-            // expect(spans[0]).to.have.property('service', 'test')
-            // expect(spans[0]).to.have.property('name', 'nest.factory.create')
-            // expect(spans[0].meta).to.have.property('component', 'nest')
-            // expect(spans[0].meta).to.have.property('nest.module', 'AppModule')
-
-            // expect(spans[1]).to.have.property('service', 'test')
-            // expect(spans[1]).to.have.property('name', 'UsersController(getUsers)')
-            // expect(spans[1].meta).to.have.property('component', 'nest')
-            // expect(spans[1].meta).to.have.property('http.method', 'GET')
-            // expect(spans[1].meta).to.have.property('http.url', '/users')
-            // expect(spans[1].meta).to.have.property('nest.route.path', routePath)
-            // expect(spans[1].meta).to.have.property('nest.callback', 'getUsers')
-
-            // expect(spans[2]).to.have.property('service', 'test')
-            // expect(spans[2]).to.have.property('name', 'nest.guard.canActivate.UsersController(getUsers)')
-            // expect(spans[2].meta).to.have.property('component', 'nest')
-            // expect(spans[2].meta).to.have.property('http.url', '/users')
-            // expect(spans[2].meta).to.have.property('nest.controller.instance', 'UsersController')
-            // expect(spans[2].meta).to.have.property('nest.route.path', routePath)
-            // expect(spans[2].meta).to.have.property('nest.callback', 'getUsers')
-            // expect(spans[2].parent_id.toString()).to.equal(spans[1].span_id.toString())
-
-            // expect(spans[3]).to.have.property('service', 'test')
-            // expect(spans[3]).to.have.property('name', 'nest.interceptor.intercept')
-            // expect(spans[3].meta).to.have.property('component', 'nest')
-            // expect(spans[3].meta).to.have.property('http.method', 'GET')
-            // expect(spans[3].meta).to.have.property('http.url', '/users')
-            // expect(spans[3].meta).to.have.property('nest.callback', 'getUsers')
-            // expect(spans[3].meta).to.have.property('nest.route.path', routePath)
-            // expect(spans[3].meta).to.have.property('nest.controller.instance', 'UsersController')
-            // expect(spans[3].parent_id.toString()).to.equal(spans[1].span_id.toString())
-
-            // expect(spans[4]).to.have.property('service', 'test')
-            // expect(spans[4]).to.have.property('name', 'getUsers')
-            // expect(spans[4].meta).to.not.have.property('error')
-            // expect(spans[4].meta).to.have.property('component', 'nest')
-            // expect(spans[4].meta).to.have.property('nest.callback', 'getUsers')
-            // expect(spans[4].parent_id.toString()).to.equal(spans[3].span_id.toString())
 
 
 const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
   assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
+
+  console.log(
+    'spans',
+    actualSpans.map((s) => {
+      return `${s.spanContext().spanId} ${s.name} < ${s.parentSpanId}`;
+    })
+  );
+
   assert(
     Array.isArray(expectedSpans),
     'Expected `expectedSpans` to be an array'
@@ -136,8 +126,9 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
     expectedSpans.length,
     'Expected span count different from actual'
   );
+
   actualSpans.forEach((span, idx) => {
-    console.log('span', span);
+    // console.log('span', span);
     const expected = expectedSpans[idx];
     if (expected === null) return;
     try {
@@ -147,23 +138,37 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.strictEqual(span.attributes.component, '@nestjs/core');
       assert.strictEqual(span.attributes['nest.module'], expected.module);
 
+      assert.strictEqual(span.name, expected.name);
+
+      assert.strictEqual(span.attributes['http.method'], expected.method);
+      assert.strictEqual(span.attributes['http.url'], expected.url);
+      assert.strictEqual(span.attributes['nest.route.path'], expected.path);
+      assert.strictEqual(span.attributes['nest.callback'], expected.callback);
+      assert.strictEqual(span.attributes['nest.controller.instance'], expected.instance);
+
       for (const attr in DEFAULT_ATTRIBUTES) {
         assert.strictEqual(span.attributes[attr], DEFAULT_ATTRIBUTES[attr]);
       }
-      assert.strictEqual(
-        typeof span.attributes['nestjs.version'],
-        'string',
-        'nestjs.version not specified'
-      );
+      // assert.strictEqual(
+      //   typeof span.attributes['nestjs.version'],
+      //   'string',
+      //   'nestjs.version not specified'
+      // );
       assert.deepEqual(
         span.status,
         expected.status || { code: SpanStatusCode.UNSET }
       );
-      assert.strictEqual(span.attributes['db.operation'], expected.op);
-      assert.strictEqual(
-        span.parentSpanId,
-        expected.parentSpan?.spanContext().spanId
-      );
+      if (typeof expected.parentSpanIdx === 'number') {
+        assert.strictEqual(
+          span.parentSpanId,
+          actualSpans[expected.parentSpanIdx].spanContext().spanId
+        );
+      } else {
+        assert.strictEqual(
+          span.parentSpanId,
+          expected.parentSpan?.spanContext().spanId
+        );
+      }
     } catch (e) {
       e.message = `At span[${idx}]: ${e.message}`;
       throw e;

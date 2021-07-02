@@ -27,6 +27,14 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { InstrumentationConfig } from './types';
 import { VERSION } from './version';
 
+const ATTR = {
+  METHOD: 'http.method',
+  URL: 'http.url',
+  PATH: 'nest.route.path',
+  MODULE: 'nest.module',
+  CALLBACK: 'nest.callback',
+};
+
 export class Instrumentation extends InstrumentationBase<typeof NestJS> {
   static readonly COMPONENT = '@nestjs/core';
   static readonly COMMON_ATTRIBUTES = {
@@ -76,13 +84,10 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
 
     module.files.push(
       this.getNestFactoryFileInstrumentation(['>=6.0.0 <7.0.0']),
-      this.getRouterExecutionContextFileInstrumentation(['>=6.0.0 <7.0.0']),
       this.getInterceptorsFileInstrumentation(['>=6.0.0 <7.0.0']),
-      this.getRouterExecutionContextGuardFileInstrumentation(['>=6.0.0 <7.0.0']),
-      this.getRouterExecutionContextPipesFileInstrumentation(['>=6.0.0 <7.0.0']),
+      this.getRouterExecutionContextFileInstrumentation(['>=6.0.0 <7.0.0']),
     );
 
-    console.log('module.files', module.files);
     return module;
   }
 
@@ -111,10 +116,18 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
         this._wrap(RouterExecutionContext.RouterExecutionContext.prototype,
           'create',
           createWrapCreateHandler(this.tracer, this._config));
+        this._wrap(RouterExecutionContext.RouterExecutionContext.prototype,
+          'createGuardsFn',
+          createWrapCreateGuardsFn(this.tracer, this._config));
+        this._wrap(RouterExecutionContext.RouterExecutionContext.prototype,
+          'createPipesFn',
+          createWrapCreatePipesFn(this.tracer, this._config));
         return RouterExecutionContext;
       },
       (RouterExecutionContext: any) => {
         this._unwrap(RouterExecutionContext.RouterExecutionContext.prototype, 'create');
+        this._unwrap(RouterExecutionContext.RouterExecutionContext.prototype, 'createGuardsFn');
+        this._unwrap(RouterExecutionContext.RouterExecutionContext.prototype, 'createPipesFn');
       });
   }
 
@@ -134,22 +147,6 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
       });
   }
 
-  private getRouterExecutionContextGuardFileInstrumentation(versions: string[]) {
-    return new InstrumentationNodeModuleFile<any>(
-      '@nestjs/core/router/router-execution-context.js',
-      versions,
-      (RouterExecutionContext: any) => {
-        console.log('wrapping getRouterExecutionContextGuardFileInstrumentation');
-        this._wrap(RouterExecutionContext.RouterExecutionContext.prototype,
-          'createGuardsFn',
-          createWrapCreateGuardsFn(this.tracer, this._config));
-        return RouterExecutionContext;
-      },
-      (RouterExecutionContext: any) => {
-        this._unwrap(RouterExecutionContext.RouterExecutionContext.prototype, 'createGuardsFn');
-      });
-  }
-
   private getInterceptorsFileInstrumentation(versions: string[]) {
     return new InstrumentationNodeModuleFile<any>(
       '@nestjs/core/interceptors/interceptors-consumer.js',
@@ -163,22 +160,6 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
       },
       (InterceptorsConsumer: any) => {
         this._unwrap(InterceptorsConsumer.InterceptorsConsumer.prototype, 'intercept');
-      });
-  }
-
-  private getRouterExecutionContextPipesFileInstrumentation(versions: string[]) {
-    return new InstrumentationNodeModuleFile<any>(
-      '@nestjs/core/router/router-execution-context.js',
-      versions,
-      (RouterExecutionContext: any) => {
-        console.log('wrapping getRouterExecutionContextPipesFileInstrumentation');
-        this._wrap(RouterExecutionContext.RouterExecutionContext.prototype,
-          'createPipesFn',
-          createWrapCreatePipesFn(this.tracer, this._config));
-        return RouterExecutionContext;
-      },
-      (RouterExecutionContext: any) => {
-        this._unwrap(RouterExecutionContext.RouterExecutionContext.prototype, 'createPipesFn');
       });
   }
 
@@ -201,11 +182,10 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
 function createWrapNestFactoryCreate (tracer, config) {
   return function wrapCreate (original) {
     return function createWithTrace (this: any, nestModule, serverOrOptions, options) {
-      console.log('called!!');
       const span = tracer.startSpan('nest.factory.create', {
         attributes: {
           ...Instrumentation.COMMON_ATTRIBUTES,
-          'nest.module': nestModule.name
+          [ATTR.MODULE]: nestModule.name
         }
       });
       const spanContext = api.trace.setSpan(api.context.active(), span);
@@ -237,9 +217,9 @@ function createWrapCreateHandler(tracer, config) {
         const span = tracer.startSpan(opName, {
           attributes: {
             ...Instrumentation.COMMON_ATTRIBUTES,
-            'http.method': req.method,
-            'http.url': req.originalUrl,
-            'nest.route.path': req.route.path
+            [ATTR.METHOD]: req.method,
+            [ATTR.URL]: req.originalUrl,
+            [ATTR.PATH]: req.route.path,
           }
         });
         const spanContext = api.trace.setSpan(api.context.active(), span);
@@ -247,7 +227,7 @@ function createWrapCreateHandler(tracer, config) {
         if (callback.name) {
           opName = `${opName}(${callback.name})`
           span.updateName(opName)
-          span.setAttribute('nest.callback', callback.name)
+          span.setAttribute(ATTR.CALLBACK, callback.name)
         }
 
         return api.context.with(spanContext, () => {
@@ -272,7 +252,7 @@ function createWrapHandler(tracer, handler) {
   const wrappedHandler = function () {
     const attributes = { ...Instrumentation.COMMON_ATTRIBUTES }
     if (name) {
-      attributes['nest.callback'] = name
+      attributes[ATTR.CALLBACK] = name
     }
     const span = tracer.startSpan(name, { attributes })
     const spanContext = api.trace.setSpan(api.context.active(), span);
@@ -297,7 +277,6 @@ function createWrapHandler(tracer, handler) {
 function createWrapCreateGuardsFn(tracer, config) {
   return function wrapCreateGuardsFn (createGuardsFn) {
     return function createGuardsFn (guards, instance, callback, contextType) {
-      console.log('TESTME');
       function wrappedCanActivateFn (canActivateFn) {
         return (args) => {
           if (typeof canActivateFn !== 'function') {
@@ -330,13 +309,13 @@ function createWrapIntercept(tracer, config) {
       });
       const spanContext = api.trace.setSpan(api.context.active(), span);
       if (callback.name) {
-        span.setAttribute('nest.callback', callback.name)
+        span.setAttribute(ATTR.CALLBACK, callback.name)
       }
 
       const request = args.length > 1 ? args[0] : args
-      span.setAttribute('http.method', request.method)
-      span.setAttribute('http.url', request.originalUrl)
-      span.setAttribute('nest.route.path', request.route.path)
+      span.setAttribute(ATTR.METHOD, request.method)
+      span.setAttribute(ATTR.URL, request.originalUrl)
+      span.setAttribute(ATTR.PATH, request.route.path)
 
       if (interceptors.length > 0) {
         const interceptorNames = []
@@ -419,9 +398,9 @@ function createGuardsTrace(tracer, args, guards, instance, callback, fn) {
   const span = tracer.startSpan(opName, {
     attributes: {
       ...Instrumentation.COMMON_ATTRIBUTES,
-      'http.method': request.method,
-      'http.url': request.originalUrl,
-      'nest.route.path': request.route.path
+      [ATTR.METHOD]: request.method,
+      [ATTR.URL]: request.originalUrl,
+      [ATTR.PATH]: request.route.path,
     }
   })
   const spanContext = api.trace.setSpan(api.context.active(), span);
@@ -439,7 +418,7 @@ function createGuardsTrace(tracer, args, guards, instance, callback, fn) {
   }
   if (callback.name) {
     opName = `${opName}(${callback.name})`
-    span.setAttribute('nest.callback', callback.name)
+    span.setAttribute(ATTR.CALLBACK, callback.name)
   }
 
   span.updateName(opName)
