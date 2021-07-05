@@ -5,6 +5,8 @@
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-url]
 
+This module provides a simple way to initialize multiple Node instrumentations.
+
 ## Installation
 
 ```bash
@@ -12,19 +14,25 @@ npm install --save @opentelemetry/auto-instrumentations-node
 ```
 
 ## Usage
+OpenTelemetry Meta Packages for Node automatically loads instrumentations for Node builtin modules and common packages.
+
+Custom configuration for each of the instrumentations can be passed to the function, by providing an object with the name of the instrumentation as a key, and its configuration as the value.
 
 ```javascript
-const { NodeTracerProvider } = require('@opentelemetry/node');
-const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
-const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
-const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { NodeTracerProvider } = require("@opentelemetry/node");
+const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
+const { CollectorTraceExporter } = require("@opentelemetry/exporter-collector");
+const { Resource } = require("@opentelemetry/resources");
+const { ResourceAttributes } = require("@opentelemetry/semantic-conventions");
+const { SimpleSpanProcessor } = require("@opentelemetry/tracing");
+const { registerInstrumentations } = require("@opentelemetry/instrumentation");
 
-const exporter = new CollectorTraceExporter({
-  serviceName: 'auto-instrumentations-node',
+const exporter = new CollectorTraceExporter();
+const provider = new NodeTracerProvider({
+  resource: new Resource({
+    [ResourceAttributes.SERVICE_NAME]: "basic-service",
+  }),
 });
-
-const provider = new NodeTracerProvider();
 provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 provider.register();
 
@@ -33,8 +41,8 @@ registerInstrumentations({
     getNodeAutoInstrumentations({
       // load custom configuration for http instrumentation
       "@opentelemetry/instrumentation-http": {
-        applyCustomAttributesOnSpan: (span)=> {
-          span.setAttribute('foo2', 'bar2');
+        applyCustomAttributesOnSpan: (span) => {
+          span.setAttribute("foo2", "bar2");
         },
       },
     }),
@@ -42,6 +50,19 @@ registerInstrumentations({
 });
 
 ```
+## Supported instrumentations
+
+- [@opentelemetry/instrumentation-dns](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns)
+- [@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-http)
+- [@opentelemetry/instrumentation-grpc](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-grpc)
+- [@opentelemetry/instrumentation-express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express)
+- [@opentelemetry/instrumentation-koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa)
+- [@opentelemetry/instrumentation-graphql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-graphql)
+- [@opentelemetry/instrumentation-ioredis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis)
+- [@opentelemetry/instrumentation-redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis)
+- [@opentelemetry/instrumentation-pg](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pg)
+- [@opentelemetry/instrumentation-mongodb](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb)
+- [@opentelemetry/instrumentation-mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql)
 
 ## Useful links
 
