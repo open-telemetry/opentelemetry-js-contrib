@@ -16,6 +16,7 @@
 import * as http from 'http';
 import * as semver from 'semver';
 import { AddressInfo } from 'net';
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 
 // mimics the support for @decorators
 const __decorate = function (
@@ -44,21 +45,60 @@ const __decorate = function (
 };
 
 export const setup = async version => {
-  let UsersController = class UsersController {};
+  let UsersController = class UsersController {
+    getUsers() {
+      return 'Hello, world!\n';
+    }
+  };
+  let GuardedController = class GuardedController {
+    getEndpoint() {
+      return 'Hello, guarded!\n';
+    }
+  };
+  let GuardedModule = class GuardedModule {};
   let UsersModule = class UsersModule {};
-  let ErrorController = class ErrorController {};
+  let ErrorController = class ErrorController {
+    getErrors() {
+      throw new Error('custom error');
+    }
+  };
   let ErrorModule = class ErrorModule {};
   let AppModule = class AppModule {};
+  let MyGuard = class MyGuard implements CanActivate {
+    canActivate(context: ExecutionContext): boolean {
+      return true;
+    }
+  }
 
   // const core = require(`../../versions/@nestjs/core@${version}`).get()
   // const common = require(`../../versions/@nestjs/core@${version}/node_modules/@nestjs/common`)
   const core = require('@nestjs/core');
   const common = require('@nestjs/common');
 
+  MyGuard = __decorate([common.Injectable()], MyGuard);
+
+  GuardedController = __decorate([common.Controller('guarded'), common.UseGuards(MyGuard)], GuardedController);
+  Object.defineProperty(
+    GuardedController.prototype,
+    'getEndpoint',
+    __decorate(
+      [common.Get()],
+      GuardedController.prototype,
+      'getEndpoint',
+      Object.getOwnPropertyDescriptor(GuardedController.prototype, 'getEndpoint')
+    )
+  );
+
+  GuardedModule = __decorate(
+    [
+      common.Module({
+        controllers: [GuardedController],
+      }),
+    ],
+    GuardedModule
+  );
+
   UsersController = __decorate([common.Controller('users')], UsersController);
-  UsersController.prototype.getUsers = function getUsers() {
-    return 'Hello, world!\n';
-  };
   Object.defineProperty(
     UsersController.prototype,
     'getUsers',
@@ -80,9 +120,6 @@ export const setup = async version => {
   );
 
   ErrorController = __decorate([common.Controller('errors')], ErrorController);
-  ErrorController.prototype.getErrors = function getErrors() {
-    throw new Error('custom error');
-  };
   Object.defineProperty(
     ErrorController.prototype,
     'getErrors',
@@ -107,8 +144,8 @@ export const setup = async version => {
     AppModule = __decorate(
       [
         common.Module({
-          imports: [UsersModule, ErrorModule],
-          controllers: [UsersController, ErrorController],
+          imports: [UsersModule, ErrorModule, GuardedModule],
+          controllers: [UsersController, ErrorController, GuardedController],
         }),
       ],
       AppModule
@@ -117,8 +154,8 @@ export const setup = async version => {
     AppModule = __decorate(
       [
         common.Module({
-          modules: [UsersModule, ErrorModule],
-          controllers: [UsersController, ErrorController],
+          modules: [UsersModule, ErrorModule, GuardedModule],
+          controllers: [UsersController, ErrorController, GuardedController],
         }),
       ],
       AppModule

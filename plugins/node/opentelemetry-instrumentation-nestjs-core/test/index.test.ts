@@ -79,9 +79,11 @@ describe('nestjs-core', () => {
 
   after(() => {});
 
-  it('happy paths', async () => {
+  it('should capture requests', async () => {
     const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/users';
     const url = '/users';
+    const instance = 'UsersController';
+    const callback = 'getUsers';
 
     assert.strictEqual(await request('/users'), 'Hello, world!\n');
 
@@ -89,21 +91,21 @@ describe('nestjs-core', () => {
       { service: 'test', name: 'nest.factory.create', module: 'AppModule' },
       {
         service: 'test',
-        name: 'nest.guard.canActivate.UsersController(getUsers)',
+        name: `nest.guard.canActivate.${instance}(${callback})`,
         method: 'GET',
         url,
         path,
-        instance: 'UsersController',
-        callback: 'getUsers',
+        instance,
+        callback,
         parentSpanIdx: 2,
       },
       {
         service: 'test',
-        name: 'UsersController(getUsers)',
+        name: `${instance}(${callback})`,
         method: 'GET',
         url,
         path,
-        callback: 'getUsers',
+        callback,
       },
       {
         service: 'test',
@@ -111,22 +113,24 @@ describe('nestjs-core', () => {
         method: 'GET',
         url,
         path,
-        instance: 'UsersController',
-        callback: 'getUsers',
+        instance,
+        callback,
         parentSpanIdx: 2,
       },
       {
         service: 'test',
-        name: 'getUsers',
-        callback: 'getUsers',
+        name: callback,
+        callback,
         parentSpanIdx: 3,
       },
     ]);
   });
 
-  it('should properly capture errors', async () => {
+  it('should capture errors', async () => {
     const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/errors';
     const url = '/errors';
+    const instance = 'ErrorController';
+    const callback = 'getErrors';
 
     assert.strictEqual(
       await request('/errors'),
@@ -137,21 +141,21 @@ describe('nestjs-core', () => {
       { service: 'test', name: 'nest.factory.create', module: 'AppModule' },
       {
         service: 'test',
-        name: 'nest.guard.canActivate.ErrorController(getErrors)',
+        name: `nest.guard.canActivate.${instance}(${callback})`,
         method: 'GET',
         url,
         path,
-        instance: 'ErrorController',
-        callback: 'getErrors',
+        instance,
+        callback,
         parentSpanIdx: 2,
       },
       {
         service: 'test',
-        name: 'ErrorController(getErrors)',
+        name: `${instance}(${callback})`,
         method: 'GET',
         url,
         path,
-        callback: 'getErrors',
+        callback,
       },
       {
         service: 'test',
@@ -159,18 +163,65 @@ describe('nestjs-core', () => {
         method: 'GET',
         url,
         path,
-        instance: 'ErrorController',
-        callback: 'getErrors',
+        instance,
+        callback,
         parentSpanIdx: 2,
       },
       {
         service: 'test',
-        name: 'getErrors',
-        callback: 'getErrors',
+        name: callback,
+        callback,
         status: {
           code: SpanStatusCode.ERROR,
           message: 'custom error',
         },
+        parentSpanIdx: 3,
+      },
+    ]);
+  });
+
+  it('should capture guards', async () => {
+    const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/guarded';
+    const url = '/guarded';
+    const instance = 'GuardedController';
+    const callback = 'getEndpoint';
+
+    assert.strictEqual(await request('/guarded'), 'Hello, guarded!\n');
+
+    assertSpans(memoryExporter.getFinishedSpans(), [
+      { service: 'test', name: 'nest.factory.create', module: 'AppModule' },
+      {
+        service: 'test',
+        name: `MyGuard.tryActivate.${instance}(${callback})`,
+        method: 'GET',
+        url,
+        path,
+        instance,
+        callback,
+        parentSpanIdx: 2,
+      },
+      {
+        service: 'test',
+        name: `${instance}(${callback})`,
+        method: 'GET',
+        url,
+        path,
+        callback,
+      },
+      {
+        service: 'test',
+        name: 'nest.interceptor.intercept',
+        method: 'GET',
+        url,
+        path,
+        instance,
+        callback,
+        parentSpanIdx: 2,
+      },
+      {
+        service: 'test',
+        name: callback,
+        callback,
         parentSpanIdx: 3,
       },
     ]);
