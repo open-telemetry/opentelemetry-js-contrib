@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { diag, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  Span,
+  SpanKind,
+  SpanStatusCode,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -203,6 +209,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
   private _getConnectionCallbackPatchFn(cb: Function, format: formatType) {
     const thisPlugin = this;
+    const activeContext = context.active();
     return function () {
       if (arguments[1]) {
         // this is the callback passed into a query
@@ -216,7 +223,9 @@ export class MySQLInstrumentation extends InstrumentationBase<
         }
       }
       if (typeof cb === 'function') {
-        cb(...arguments);
+        context.with(activeContext, () => {
+          cb(...arguments);
+        });
       }
     };
   }
