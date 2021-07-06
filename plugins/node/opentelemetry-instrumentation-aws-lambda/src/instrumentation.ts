@@ -151,7 +151,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     ) {
       const httpHeaders =
         typeof event.headers === 'object' ? event.headers : {};
-      const parent = AwsLambdaInstrumentation._determineParent(httpHeaders);
+      const parent = AwsLambdaInstrumentation._determineParent(
+        httpHeaders,
+        plugin._config.disableAwsContextPropagation === true
+      );
 
       const name = context.functionName;
       const span = plugin.tracer.startSpan(
@@ -298,29 +301,34 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   }
 
   private static _determineParent(
-    httpHeaders: APIGatewayProxyEventHeaders
+    httpHeaders: APIGatewayProxyEventHeaders,
+    disableAwsContextPropagation: boolean
   ): OtelContext {
     let parent: OtelContext | undefined = undefined;
-    const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
-    if (lambdaTraceHeader) {
-      parent = awsPropagator.extract(
-        otelContext.active(),
-        { [AWSXRAY_TRACE_ID_HEADER]: lambdaTraceHeader },
-        headerGetter
-      );
-    }
-    if (parent) {
-      const spanContext = trace.getSpan(parent)?.spanContext();
-      if (
-        spanContext &&
-        (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
-      ) {
-        // Trace header provided by Lambda only sampled if a sampled context was propagated from
-        // an upstream cloud service such as S3, or the user is using X-Ray. In these cases, we
-        // need to use it as the parent.
-        return parent;
+
+    if (!disableAwsContextPropagation) {
+      const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
+      if (lambdaTraceHeader) {
+        parent = awsPropagator.extract(
+          otelContext.active(),
+          { [AWSXRAY_TRACE_ID_HEADER]: lambdaTraceHeader },
+          headerGetter
+        );
+      }
+      if (parent) {
+        const spanContext = trace.getSpan(parent)?.spanContext();
+        if (
+          spanContext &&
+          (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
+        ) {
+          // Trace header provided by Lambda only sampled if a sampled context was propagated from
+          // an upstream cloud service such as S3, or the user is using X-Ray. In these cases, we
+          // need to use it as the parent.
+          return parent;
+        }
       }
     }
+
     // There was not a sampled trace header from Lambda so try from HTTP headers.
     const httpContext = propagation.extract(
       otelContext.active(),

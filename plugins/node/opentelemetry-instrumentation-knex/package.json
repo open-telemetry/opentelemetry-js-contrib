@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-knex",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "description": "OpenTelemetry Knex automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -41,15 +41,15 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.0"
+    "@opentelemetry/api": "^1.0.1"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.0",
-    "@opentelemetry/context-async-hooks": "0.22.0",
-    "@opentelemetry/node": "0.22.0",
-    "@opentelemetry/tracing": "0.22.0",
+    "@opentelemetry/api": "1.0.1",
+    "@opentelemetry/context-async-hooks": "0.23.0",
+    "@opentelemetry/node": "0.23.0",
+    "@opentelemetry/tracing": "0.23.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.3",
+    "@types/node": "14.17.4",
     "codecov": "3.8.2",
     "gts": "3.1.0",
     "knex": "0.95.6",
@@ -58,10 +58,10 @@
     "rimraf": "3.0.2",
     "sqlite3": "5.0.2",
     "ts-mocha": "8.0.0",
-    "typescript": "4.3.2"
+    "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.22.0",
-    "@opentelemetry/semantic-conventions": "^0.22.0"
+    "@opentelemetry/instrumentation": "^0.23.0",
+    "@opentelemetry/semantic-conventions": "^0.23.0"
   }
 }

@@ -90,7 +90,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    * Collects information about performance and creates appropriate spans
    */
   private _collectPerformance() {
-    const metaElement = [...document.getElementsByTagName('meta')].find(
+    const metaElement = Array.from(document.getElementsByTagName('meta')).find(
       e => e.getAttribute('name') === TRACE_PARENT_HEADER
     );
     const entries = getPerformanceNavigationEntries();
