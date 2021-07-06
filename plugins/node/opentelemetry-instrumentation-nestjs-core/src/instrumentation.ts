@@ -22,6 +22,10 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import type * as NestJS from '@nestjs/core';
+import type { NestFactory } from '@nestjs/core/nest-factory.js';
+import type { NestRouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
+import type { CanActivate } from '@nestjs/common';
+import type { Controller } from '@nestjs/common/interfaces';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 // import * as utils from './utils';
 import { InstrumentationConfig } from './types';
@@ -202,13 +206,12 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
   }
 }
 
-function createWrapNestFactoryCreate(tracer) {
-  return function wrapCreate(original) {
+function createWrapNestFactoryCreate(tracer: api.Tracer) {
+  return function wrapCreate(original: typeof NestFactory.create) {
     return function createWithTrace(
-      this: any,
-      nestModule,
-      serverOrOptions,
-      options
+      this: typeof NestFactory,
+      nestModule: any,
+      /* serverOrOptions */
     ) {
       const span = tracer.startSpan('nest.factory.create', {
         attributes: {
@@ -220,7 +223,7 @@ function createWrapNestFactoryCreate(tracer) {
 
       return api.context.with(spanContext, () => {
         try {
-          return original.apply(this, arguments);
+          return original.apply(this, arguments as any);
         } catch (e) {
           throw addError(span, e);
         } finally {
@@ -231,12 +234,12 @@ function createWrapNestFactoryCreate(tracer) {
   };
 }
 
-function createWrapCreateHandler(tracer) {
-  return function wrapCreateHandler(create) {
-    return function createHandlerWithTrace(instance, callback) {
+function createWrapCreateHandler(tracer: api.Tracer) {
+  return function wrapCreateHandler(original: typeof NestRouterExecutionContext.create) {
+    return function createHandlerWithTrace(this: typeof NestRouterExecutionContext, instance: Controller, callback: (...args: any[]) => unknown) {
       arguments[1] = createWrapHandler(tracer, callback);
-      const handler = create.apply(this, arguments);
-      return function (req, res, next) {
+      const handler = original.apply(this, arguments);
+      return function (this: any, req: any, res: any, next: (...args: any[]) => unknown) {
         const opName = instance.constructor && instance.constructor.name ? instance.constructor.name : 'nest.request';
 
         const span = tracer.startSpan(opName, {
@@ -268,13 +271,13 @@ function createWrapCreateHandler(tracer) {
   };
 }
 
-function createWrapHandler(tracer, handler) {
+function createWrapHandler(tracer: api.Tracer, handler: (...args: any[]) => unknown) {
   let name = 'nestHandler';
   if (handler.name) {
     name = handler.name;
   }
-  const wrappedHandler = function () {
-    const attributes = { ...Instrumentation.COMMON_ATTRIBUTES };
+  const wrappedHandler = function (this: typeof NestRouterExecutionContext) {
+    const attributes: api.SpanAttributes = { ...Instrumentation.COMMON_ATTRIBUTES };
     if (name) {
       attributes[ATTR.CALLBACK] = name;
     }
@@ -283,7 +286,7 @@ function createWrapHandler(tracer, handler) {
 
     return api.context.with(spanContext, () => {
       try {
-        return handler.apply(this, arguments);
+        return handler.apply(this, arguments as any);
       } catch (e) {
         throw addError(span, e);
       } finally {
@@ -298,15 +301,15 @@ function createWrapHandler(tracer, handler) {
   return wrappedHandler;
 }
 
-function createWrapCreateGuardsFn(tracer) {
-  return function wrapCreateGuardsFn(createGuardsFn) {
-    return function createGuardsFn(guards, instance, callback, contextType) {
-      function wrappedCanActivateFn(canActivateFn) {
+function createWrapCreateGuardsFn(tracer: api.Tracer) {
+  return function wrapCreateGuardsFn(original: typeof NestRouterExecutionContext.createGuardsFn) {
+    return function original(guards: CanActivate[], instance: Controller, callback: (...args: any[]) => any) {
+      function wrappedCanActivateFn(canActivateFn: CanActivate[]) {
         return args => {
           if (typeof canActivateFn !== 'function') {
             return canActivateFn;
           }
-          createGuardsTrace(
+          return createGuardsTrace(
             tracer,
             args,
             guards,
@@ -316,12 +319,12 @@ function createWrapCreateGuardsFn(tracer) {
           );
         };
       }
-      return wrappedCanActivateFn(createGuardsFn);
+      return wrappedCanActivateFn(original);
     };
   };
 }
 
-function createWrapTryActivate(tracer) {
+function createWrapTryActivate(tracer: api.Tracer) {
   return function wrapTryActivate(tryActivate) {
     return function tryActivateWithTrace(guards, args, instance, callback) {
       createGuardsTrace(tracer, args, guards, instance, callback, tryActivate);
@@ -329,7 +332,7 @@ function createWrapTryActivate(tracer) {
   };
 }
 
-function createWrapIntercept(tracer) {
+function createWrapIntercept(tracer: api.Tracer) {
   return function wrapIntercept(original) {
     return function interceptWithTrace(
       interceptors,
@@ -381,7 +384,7 @@ function createWrapIntercept(tracer) {
   };
 }
 
-function createWrapCreatePipesFn(tracer) {
+function createWrapCreatePipesFn(tracer: api.Tracer) {
   return function wrapCreatePipesFn(original) {
     return function createPipesFnWithTrace(pipes, paramsOptions) {
       function wrappedPipesFn(pipesFn) {
