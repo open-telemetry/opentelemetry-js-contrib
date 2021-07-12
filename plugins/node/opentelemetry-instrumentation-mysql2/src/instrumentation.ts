@@ -41,8 +41,8 @@ export class MySQL2Instrumentation extends InstrumentationBase<
     [SemanticAttributes.DB_SYSTEM]: MySQL2Instrumentation.COMPONENT,
   };
 
-  constructor(protected _config: MySQL2InstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mysql2', VERSION, _config);
+  constructor(config?: MySQL2InstrumentationConfig) {
+    super('@opentelemetry/instrumentation-mysql2', VERSION, config);
   }
 
   protected init() {

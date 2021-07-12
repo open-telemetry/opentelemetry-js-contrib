@@ -4,6 +4,7 @@
 # JavaScript, TypeScript, c, and h source files
 *.js                    text eol=lf
 *.ts                    text eol=lf
+*.tsx                   text eol=lf
 *.h                     text eol=lf diff=cpp
 *.c                     text eol=lf diff=cpp
 

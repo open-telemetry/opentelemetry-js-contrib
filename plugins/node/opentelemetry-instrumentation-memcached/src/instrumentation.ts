@@ -43,7 +43,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
     );
   }
 
-  setConfig(config: InstrumentationConfig = {}) {
+  override setConfig(config: InstrumentationConfig = {}) {
     this._config = Object.assign({}, Instrumentation.DEFAULT_CONFIG, config);
   }
 

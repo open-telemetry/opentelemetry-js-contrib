@@ -530,7 +530,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   /**
    * implements enable function
    */
-  enable() {
+  override enable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
     api.diag.debug(
       'applying patch to',
@@ -599,7 +599,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   /**
    * implements unpatch function
    */
-  disable() {
+  override disable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
     api.diag.debug(
       'removing patch from',

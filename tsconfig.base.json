@@ -8,6 +8,7 @@
     "module": "commonjs",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "pretty": true,

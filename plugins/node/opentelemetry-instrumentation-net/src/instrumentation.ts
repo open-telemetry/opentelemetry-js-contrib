@@ -33,7 +33,7 @@ import { Socket } from 'net';
 import { TLSSocket } from 'tls';
 
 export class NetInstrumentation extends InstrumentationBase<Net> {
-  constructor(protected _config: InstrumentationConfig = {}) {
+  constructor(_config?: InstrumentationConfig) {
     super('@opentelemetry/instrumentation-net', VERSION, _config);
   }
 

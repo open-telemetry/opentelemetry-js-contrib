@@ -67,11 +67,11 @@ export class BunyanInstrumentation extends InstrumentationBase<
     ];
   }
 
-  getConfig(): BunyanInstrumentationConfig {
+  override getConfig(): BunyanInstrumentationConfig {
     return this._config;
   }
 
-  setConfig(config: BunyanInstrumentationConfig) {
+  override setConfig(config: BunyanInstrumentationConfig) {
     this._config = config;
   }
 

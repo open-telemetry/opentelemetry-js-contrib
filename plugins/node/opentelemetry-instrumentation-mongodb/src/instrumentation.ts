@@ -48,7 +48,7 @@ const supportedVersions = ['>=3.3 <4'];
 export class MongoDBInstrumentation extends InstrumentationBase<
   typeof mongodb
 > {
-  constructor(protected _config: MongoDBInstrumentationConfig = {}) {
+  constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
   }
 
