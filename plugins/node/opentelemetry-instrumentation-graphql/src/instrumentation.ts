@@ -77,7 +77,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     return this._config as GraphQLInstrumentationParsedConfig;
   }
 
-  setConfig(config: GraphQLInstrumentationConfig & InstrumentationConfig = {}) {
+  override setConfig(config: GraphQLInstrumentationConfig = {}) {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 

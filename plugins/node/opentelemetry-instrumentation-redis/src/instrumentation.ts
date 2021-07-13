@@ -38,11 +38,11 @@ export class RedisInstrumentation extends InstrumentationBase<
 > {
   static readonly COMPONENT = 'redis';
 
-  constructor(protected _config: RedisInstrumentationConfig = {}) {
+  constructor(protected override _config: RedisInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-redis', VERSION, _config);
   }
 
-  setConfig(config: RedisInstrumentationConfig = {}) {
+  override setConfig(config: RedisInstrumentationConfig = {}) {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
