@@ -53,7 +53,11 @@ import {
   Handler,
 } from 'aws-lambda';
 
-import { LambdaModule, AwsLambdaInstrumentationConfig } from './types';
+import {
+  LambdaModule,
+  AwsLambdaInstrumentationConfig,
+  EventContextExtractor,
+} from './types';
 import { VERSION } from './version';
 
 const awsPropagator = new AWSXRayPropagator();
@@ -149,11 +153,12 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       context: Context,
       callback: Callback
     ) {
-      const httpHeaders =
-        typeof event.headers === 'object' ? event.headers : {};
+      const config = plugin._config;
       const parent = AwsLambdaInstrumentation._determineParent(
-        httpHeaders,
-        plugin._config.disableAwsContextPropagation === true
+        event,
+        config.disableAwsContextPropagation === true,
+        config.eventContextExtractor ||
+          AwsLambdaInstrumentation._defaultEventContextExtractor
       );
 
       const name = context.functionName;
@@ -173,9 +178,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         parent
       );
 
-      if (plugin._config.requestHook) {
+      if (config.requestHook) {
         safeExecuteInTheMiddle(
-          () => plugin._config.requestHook!(span, { event, context }),
+          () => config.requestHook!(span, { event, context }),
           e => {
             if (e)
               diag.error('aws-lambda instrumentation: requestHook error', e);
@@ -300,12 +305,18 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     return undefined;
   }
 
+  private static _defaultEventContextExtractor(event: any): OtelContext {
+    // The default extractor tries to get sampled trace header from HTTP headers.
+    const httpHeaders = event.headers || {};
+    return propagation.extract(otelContext.active(), httpHeaders, headerGetter);
+  }
+
   private static _determineParent(
-    httpHeaders: APIGatewayProxyEventHeaders,
-    disableAwsContextPropagation: boolean
+    event: any,
+    disableAwsContextPropagation: boolean,
+    eventContextExtractor: EventContextExtractor
   ): OtelContext {
     let parent: OtelContext | undefined = undefined;
-
     if (!disableAwsContextPropagation) {
       const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
       if (lambdaTraceHeader) {
@@ -328,15 +339,19 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         }
       }
     }
-
-    // There was not a sampled trace header from Lambda so try from HTTP headers.
-    const httpContext = propagation.extract(
-      otelContext.active(),
-      httpHeaders,
-      headerGetter
+    const extractedContext = safeExecuteInTheMiddle(
+      () => eventContextExtractor(event),
+      e => {
+        if (e)
+          diag.error(
+            'aws-lambda instrumentation: eventContextExtractor error',
+            e
+          );
+      },
+      true
     );
-    if (trace.getSpan(httpContext)?.spanContext()) {
-      return httpContext;
+    if (trace.getSpan(extractedContext)?.spanContext()) {
+      return extractedContext;
     }
     if (!parent) {
       // No context in Lambda environment or HTTP headers.
