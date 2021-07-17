@@ -15,6 +15,8 @@
  */
 
 import { context, trace } from '@opentelemetry/api';
+import { RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { NodeTracerProvider } from '@opentelemetry/node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -324,6 +326,43 @@ describe('Hapi Instrumentation - Core Tests', () => {
       });
       assert.strictEqual(res.statusCode, 200);
       assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+
+    it('should rename root span with route information', async () => {
+      const rootSpan = tracer.startSpan('rootSpan', {});
+      server.route({
+        method: 'GET',
+        path: '/users/{userId}',
+        handler: (request, h) => {
+          return `Hello ${request.params.userId}`;
+        },
+      });
+
+      await server.start();
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      await context.with(
+        setRPCMetadata(trace.setSpan(context.active(), rootSpan), rpcMetadata),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/users/1',
+          });
+          assert.strictEqual(res.statusCode, 200);
+
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'GET /users/{userId}');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(
+            exportedRootSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/users/{userId}'
+          );
+        }
+      );
     });
   });
 

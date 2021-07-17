@@ -15,6 +15,7 @@
  */
 
 import * as api from '@opentelemetry/api';
+import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -43,6 +44,7 @@ import {
   getExtMetadata,
   isDirectExtInput,
   isPatchableExtMethod,
+  getRootSpanMetadata,
 } from './utils';
 
 /** Hapi instrumentation for OpenTelemetry */
@@ -373,6 +375,12 @@ export class HapiInstrumentation extends InstrumentationBase {
       ) {
         if (api.trace.getSpan(api.context.active()) === undefined) {
           return await oldHandler(request, h, err);
+        }
+        const rpcMetadata = getRPCMetadata(api.context.active());
+        if (rpcMetadata?.type === RPCType.HTTP) {
+          const rootSpanMetadata = getRootSpanMetadata(route);
+          rpcMetadata.span.updateName(rootSpanMetadata.name);
+          rpcMetadata.span.setAttributes(rootSpanMetadata.attributes);
         }
         const metadata = getRouteMetadata(route, pluginName);
         const span = instrumentation.tracer.startSpan(metadata.name, {

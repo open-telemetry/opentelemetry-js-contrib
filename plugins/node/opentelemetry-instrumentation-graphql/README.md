@@ -7,6 +7,10 @@
 
 This module provides *automated instrumentation and tracing* for GraphQL in Node.js applications.
 
+*Note*: graphql plugin instruments graphql directly. it should work with any package that wraps the graphql package (e.g apollo).
+
+Minimum required graphql version is `v14`
+
 ## Installation
 
 ```shell script
@@ -38,12 +42,23 @@ registerInstrumentations({
 
 ```
 
+## Optional Parameters
+
+|    Param    |   type  | Default Value |                                                                        Description                                                                        |   |
+|:-----------:|:-------:|:-------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-:|
+|  mergeItems | boolean |     false     |                    Whether to merge list items into a single element. example: `users.*.name` instead of `users.0.name`, `users.1.name`                   |   |
+|    depth    |  number |       -1      |                       The maximum depth of fields/resolvers to instrument. When set to 0 it will not instrument fields and resolvers. When set to -1 it will instrument all fields and resolvers.                      |   |
+| allowValues | boolean |     false     | When set to true it will not remove attributes values from schema source.   By default all values that can be sensitive are removed and replaced with "*" |   |
+| responseHook | GraphQLInstrumentationExecutionResponseHook |     undefined     | Hook that allows adding custom span attributes based on the data returned from "execute" GraphQL action. |   |
+
+## Examples
+Can be found [here](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/graphql)
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
-
 ## License
 
 Apache 2.0 - See [LICENSE][license-url] for more information.

@@ -37,7 +37,9 @@ import {
   ResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
 import {
+  Context as OtelContext,
   context,
+  propagation,
   trace,
   SpanContext,
   SpanKind,
@@ -163,6 +165,17 @@ describe('lambda handler', () => {
   };
   const unsampledHttpHeader = serializeSpanContext(
     unsampledHttpSpanContext,
+    new HttpTraceContextPropagator()
+  );
+
+  const sampledGenericSpanContext: SpanContext = {
+    traceId: '8a3c60f7d188f8fa79d48a391a778faa',
+    spanId: '0000000000000460',
+    traceFlags: 1,
+    isRemote: true,
+  };
+  const sampledGenericSpan = serializeSpanContext(
+    sampledGenericSpanContext,
     new HttpTraceContextPropagator()
   );
 
@@ -576,6 +589,40 @@ describe('lambda handler', () => {
         sampledHttpSpanContext.traceId
       );
       assert.strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
+    });
+
+    it('takes sampled custom context over sampled lambda context if "eventContextExtractor" is defined', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      const customExtractor = (event: any): OtelContext => {
+        return propagation.extract(context.active(), event.contextCarrier);
+      };
+
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsContextPropagation: true,
+        eventContextExtractor: customExtractor,
+      });
+
+      const otherEvent = {
+        contextCarrier: {
+          traceparent: sampledGenericSpan,
+        },
+      };
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        otherEvent,
+        ctx
+      );
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(
+        span.spanContext().traceId,
+        sampledGenericSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
     });
   });
 
