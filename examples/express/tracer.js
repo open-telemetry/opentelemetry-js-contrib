@@ -11,6 +11,8 @@ const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
+const { Resource } = require('@opentelemetry/resources');
+const { ResourceAttributes: ResourceAttributesSC } = require('@opentelemetry/semantic-conventions');
 
 const Exporter = (process.env.EXPORTER || '')
   .toLowerCase().startsWith('z') ? ZipkinExporter : JaegerExporter;
@@ -18,7 +20,11 @@ const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-expre
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
 module.exports = (serviceName) => {
-  const provider = new NodeTracerProvider();
+  const provider = new NodeTracerProvider({
+    resource: new Resource({
+      [ResourceAttributesSC.SERVICE_NAME]: serviceName,
+    }),
+  });
   registerInstrumentations({
     tracerProvider: provider,
     instrumentations: [
