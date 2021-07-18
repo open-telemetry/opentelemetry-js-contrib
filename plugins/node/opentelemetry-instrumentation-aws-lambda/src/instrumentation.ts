@@ -42,7 +42,7 @@ import {
 } from '@opentelemetry/propagator-aws-xray';
 import {
   SemanticAttributes,
-  ResourceAttributes,
+  SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
 import { BasicTracerProvider } from '@opentelemetry/tracing';
 
@@ -168,8 +168,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           kind: SpanKind.SERVER,
           attributes: {
             [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
-            [ResourceAttributes.FAAS_ID]: context.invokedFunctionArn,
-            [ResourceAttributes.CLOUD_ACCOUNT_ID]:
+            [SemanticResourceAttributes.FAAS_ID]: context.invokedFunctionArn,
+            [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]:
               AwsLambdaInstrumentation._extractAccountId(
                 context.invokedFunctionArn
               ),
