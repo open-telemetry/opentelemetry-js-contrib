@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+# npm link @opentelemetry/test-utils
+# npm install
+
+echo ">=4.0.0 <5.0.0"
+npm install -D \
+ reflect-metadata@0.1.13 \
+ @nestjs/common@^4.4.0 \
+ @nestjs/core@^4.4.0 \
+ @nestjs/microservices@^4.4.0 \
+ @nestjs/websockets@^4.4.0 \
+ rxjs@^5.4.2 \
+ rxjs-compat@^6.0.0
+npm run test
+
+echo ">=5.0.0 <6.0.0"
+npm install -D \
+ reflect-metadata@0.1.13 \
+ @nestjs/common@^5.0.0 \
+ @nestjs/core@^5.0.0 \
+ @nestjs/microservices@^5.0.0 \
+ @nestjs/websockets@^5.0.0 \
+ rxjs@^6.0.0 \
+ rxjs-compat@^6.0.0
+npm run test
+
+echo ">=6.0.0 <7.0.0"
+npm install -D \
+ reflect-metadata@0.1.13 \
+ @nestjs/common@^6.0.0 \
+ @nestjs/core@^6.0.0 \
+ @nestjs/microservices@^6.0.0 \
+ @nestjs/websockets@^6.0.0 \
+ @nestjs/platform-express@^6.0.0 \
+ rxjs@^6.0.0 \
+ rxjs-compat@^6.0.0
+npm run test
+
+echo ">7.0.0"
+npm install -D \
+ reflect-metadata@0.1.13 \
+ @nestjs/common@^7.0.0 \
+ @nestjs/core@^7.0.0 \
+ @nestjs/microservices@^7.0.0 \
+ @nestjs/websockets@^7.0.0 \
+ @nestjs/platform-express@^7.0.0 \
+ rxjs@^7.0.0 \
+ rxjs-compat@latest
+npm run test
