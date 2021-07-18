@@ -426,6 +426,30 @@ describe('mysql@2.x', () => {
         });
       });
     });
+
+    it('should propagate active context to callback', done => {
+      const parentSpan = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), parentSpan), () => {
+        pool.getConnection((err, connection) => {
+          assert.ifError(err);
+          assert.ok(connection);
+          const sql = 'SELECT ? as solution';
+          connection.query(sql, 1, (err, res) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 1);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            const querySpan = spans[0];
+            assert.strictEqual(
+              querySpan.parentSpanId,
+              parentSpan.spanContext().spanId
+            );
+            done();
+          });
+        });
+      });
+    });
   });
 
   describe('#PoolCluster', () => {
@@ -599,6 +623,30 @@ describe('mysql@2.x', () => {
           });
         }
       );
+    });
+
+    it('should propagate active context to callback', done => {
+      const parentSpan = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), parentSpan), () => {
+        poolCluster.getConnection((err, connection) => {
+          assert.ifError(err);
+          assert.ok(connection);
+          const sql = 'SELECT ? as solution';
+          connection.query(sql, 1, (err, res) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 1);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            const querySpan = spans[0];
+            assert.strictEqual(
+              querySpan.parentSpanId,
+              parentSpan.spanContext().spanId
+            );
+            done();
+          });
+        });
+      });
     });
   });
 });
