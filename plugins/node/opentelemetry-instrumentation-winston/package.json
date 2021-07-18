@@ -62,7 +62,7 @@
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5",
     "winston": "3.3.3",
-    "winston2": "npm:winston@2.4.5"
+    "winston2": "npm:winston@3.3.3"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.23.0"
