@@ -51,7 +51,7 @@
     "@opentelemetry/node": "0.23.0",
     "@opentelemetry/tracing": "0.23.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.4",
+    "@types/node": "14.17.5",
     "@types/sinon": "10.0.2",
     "bunyan": "1.8.15",
     "codecov": "3.8.2",
@@ -65,6 +65,6 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.23.0",
-    "@types/bunyan": "1.8.6"
+    "@types/bunyan": "1.8.7"
   }
 }
