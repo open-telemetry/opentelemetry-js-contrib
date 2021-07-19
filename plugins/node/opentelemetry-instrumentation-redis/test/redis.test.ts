@@ -212,9 +212,7 @@ describe('redis@2.x', () => {
           });
         });
       });
-    });
 
-    describe('Instrumenting redis when using callbacks', () => {
       it('should invoke callback with original command context', () => {
         const rootSpan = tracer.startSpan('test span');
         context.with(trace.setSpan(context.active(), rootSpan), () => {
