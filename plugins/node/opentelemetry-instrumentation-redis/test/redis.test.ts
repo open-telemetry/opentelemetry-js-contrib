@@ -215,7 +215,7 @@ describe('redis@2.x', () => {
     });
 
     describe('Instrumenting redis when using callbacks', () => {
-      it('should contain the root span when inside callback', () => {
+      it('should invoke callback with original command context', () => {
         const rootSpan = tracer.startSpan('test span');
         context.with(trace.setSpan(context.active(), rootSpan), () => {
           client.set('callbacksTestKey', 'value', () => {
