@@ -214,6 +214,18 @@ describe('redis@2.x', () => {
       });
     });
 
+    describe('Instrumenting redis when using callbacks', () => {
+      it('should contain the root span when inside callback', () => {
+        const rootSpan = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), rootSpan), () => {
+          client.set('callbacksTestKey', 'value', () => {
+            const activeSpan = trace.getSpan(context.active());
+            assert.strictEqual(activeSpan, rootSpan);
+          });
+        });
+      });
+    });
+
     describe('Removing instrumentation', () => {
       before(() => {
         instrumentation.disable();
