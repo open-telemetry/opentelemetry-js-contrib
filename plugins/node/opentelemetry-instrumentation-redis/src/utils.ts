@@ -147,11 +147,10 @@ export const getTracedInternalSendCommand = (
         }
 
         endSpan(span, err);
-        const callbackThis = this;
         return context.with(
           originalContext,
           originalCallback,
-          callbackThis,
+          this,
           ...arguments
         );
       };
