@@ -148,9 +148,12 @@ export const getTracedInternalSendCommand = (
 
         endSpan(span, err);
         const callbackThis = this;
-        return context.with(originalContext, () => {
-          return originalCallback.apply(callbackThis, arguments);
-        });
+        return context.with(
+          originalContext,
+          originalCallback,
+          callbackThis,
+          ...arguments
+        );
       };
     }
     try {
