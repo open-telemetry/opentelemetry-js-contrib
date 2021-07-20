@@ -37,7 +37,7 @@ registerInstrumentations({
   instrumentations: [
     getWebAutoInstrumentations({
       // load custom configuration for xml-http-request instrumentation
-      "@opentelemetry/instrumentation-xml-http-request": {
+      '@opentelemetry/instrumentation-xml-http-request': {
         clearTimingResources: true,
       },
     }),
