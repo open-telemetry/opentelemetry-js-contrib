@@ -212,6 +212,16 @@ describe('redis@2.x', () => {
           });
         });
       });
+
+      it('should invoke callback with original command context', () => {
+        const rootSpan = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), rootSpan), () => {
+          client.set('callbacksTestKey', 'value', () => {
+            const activeSpan = trace.getSpan(context.active());
+            assert.strictEqual(activeSpan, rootSpan);
+          });
+        });
+      });
     });
 
     describe('Removing instrumentation', () => {

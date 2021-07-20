@@ -127,6 +127,7 @@ export const getTracedInternalSendCommand = (
 
     const originalCallback = arguments[0].callback;
     if (originalCallback) {
+      const originalContext = context.active();
       (arguments[0] as RedisCommand).callback = function callback<T>(
         this: unknown,
         err: Error | null,
@@ -146,7 +147,12 @@ export const getTracedInternalSendCommand = (
         }
 
         endSpan(span, err);
-        return originalCallback.apply(this, arguments);
+        return context.with(
+          originalContext,
+          originalCallback,
+          this,
+          ...arguments
+        );
       };
     }
     try {
