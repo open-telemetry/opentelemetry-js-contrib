@@ -129,7 +129,12 @@ export class PgInstrumentation extends InstrumentationBase {
               params
             );
           } else {
-            span = utils.handleTextQuery.call(this, plugin.tracer, query);
+            span = utils.handleTextQuery.call(
+              this,
+              plugin.tracer,
+              plugin.getConfig() as PgInstrumentationConfig,
+              query
+            );
           }
         } else if (typeof args[0] === 'object') {
           const queryConfig = args[0] as NormalizedQueryConfig;
