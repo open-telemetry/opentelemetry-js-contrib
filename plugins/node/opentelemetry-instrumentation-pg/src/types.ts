@@ -40,6 +40,13 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * @default undefined
    */
   responseHook?: PgInstrumentationExecutionResponseHook;
+
+  /**
+   * Hook that allows overriding the extracted operation tag, for span operation generation.
+   *
+   * @default implementation takes the first "word" from the query (e.g. "SELECT")
+   */
+  getCommandFromText?: (text?: string) => string;
 }
 
 export type PostgresCallback = (err: Error, res: object) => unknown;

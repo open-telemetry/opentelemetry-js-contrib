@@ -44,7 +44,11 @@ function arrayStringifyHelper(arr: Array<unknown>): string {
 }
 
 // Helper function to get a low cardinality command name from the full text query
-function getCommandFromText(text?: string): string {
+function getCommandFromText(
+  config: Pick<PgInstrumentationConfig, 'getCommandFromText'>,
+  text?: string
+): string {
+  if (config.getCommandFromText) return config.getCommandFromText(text);
   if (!text) return 'unknown';
   const words = text.split(' ');
   return words[0].length > 0 ? words[0] : 'unknown';
@@ -81,7 +85,10 @@ export function handleConfigQuery(
   queryConfig: NormalizedQueryConfig
 ) {
   // Set child span name
-  const queryCommand = getCommandFromText(queryConfig.name || queryConfig.text);
+  const queryCommand = getCommandFromText(
+    instrumentationConfig,
+    queryConfig.name || queryConfig.text
+  );
   const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
@@ -115,7 +122,7 @@ export function handleParameterizedQuery(
   values: unknown[]
 ) {
   // Set child span name
-  const queryCommand = getCommandFromText(query);
+  const queryCommand = getCommandFromText(instrumentationConfig, query);
   const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 
@@ -132,10 +139,11 @@ export function handleParameterizedQuery(
 export function handleTextQuery(
   this: PgClientExtended,
   tracer: Tracer,
+  instrumentationConfig: PgInstrumentationConfig,
   query: string
 ) {
   // Set child span name
-  const queryCommand = getCommandFromText(query);
+  const queryCommand = getCommandFromText(instrumentationConfig, query);
   const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
   const span = pgStartSpan(tracer, this, name);
 

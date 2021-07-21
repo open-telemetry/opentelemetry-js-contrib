@@ -109,6 +109,35 @@ describe('utils.ts', () => {
     });
   });
 
+  describe('.getCommandFromText()', () => {
+    it('pulls command by default', async () => {
+      utils.handleTextQuery
+        .call(client, tracer, instrumentationConfig, 'SELECT $1::text')
+        .end();
+      const readableSpan = getLatestSpan();
+      assert.strictEqual(readableSpan.name, 'pg.query:SELECT');
+    });
+
+    it('can be overridden', async () => {
+      utils.handleTextQuery
+        .call(
+          client,
+          tracer,
+          {
+            ...instrumentationConfig,
+            getCommandFromText: text =>
+              (
+                text?.replace(/^\s*\/\*.*?\*\/\s*(\w+).*/, '$1') ?? 'unknown'
+              ).toLocaleLowerCase(),
+          },
+          '/* convertToString */ select $1::text'
+        )
+        .end();
+      const readableSpan = getLatestSpan();
+      assert.strictEqual(readableSpan.name, 'pg.query:select');
+    });
+  });
+
   describe('.handleParameterizedQuery()', () => {
     const query = 'SELECT $1::text';
     const values = ['0'];
