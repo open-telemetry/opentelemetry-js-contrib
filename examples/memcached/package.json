@@ -1,7 +1,7 @@
 {
   "name": "memcached-example",
   "private": true,
-  "version": "0.22.0",
+  "version": "0.23.0",
   "description": "Example of Memcached client with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -30,7 +30,7 @@
   "dependencies": {
     "@opentelemetry/api": "^1.0.1",
     "@opentelemetry/instrumentation": "^0.23.0",
-    "@opentelemetry/instrumentation-memcached": "^0.22.0",
+    "@opentelemetry/instrumentation-memcached": "^0.23.0",
     "@opentelemetry/node": "^0.23.0",
     "@opentelemetry/tracing": "^0.23.0",
     "memcached": "^2.2.2"

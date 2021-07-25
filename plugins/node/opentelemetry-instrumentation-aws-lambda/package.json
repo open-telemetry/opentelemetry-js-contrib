@@ -32,6 +32,7 @@
   },
   "files": [
     "build/src/**/*.js",
+    "build/src/**/*.js.map",
     "build/src/**/*.d.ts",
     "doc",
     "LICENSE",
@@ -48,8 +49,8 @@
     "@opentelemetry/core": "0.23.0",
     "@opentelemetry/node": "0.23.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.4",
-    "codecov": "3.8.2",
+    "@types/node": "14.17.5",
+    "codecov": "3.8.3",
     "gts": "3.1.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
@@ -63,6 +64,6 @@
     "@opentelemetry/resources": "^0.23.0",
     "@opentelemetry/semantic-conventions": "^0.23.0",
     "@opentelemetry/tracing": "^0.23.0",
-    "@types/aws-lambda": "8.10.77"
+    "@types/aws-lambda": "8.10.80"
   }
 }
