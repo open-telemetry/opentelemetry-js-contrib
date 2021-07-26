@@ -43,6 +43,6 @@ const content = `/*
 export const VERSION = '${pjson.version}';
 `;
 
-const fileUrl = path.join(appRoot, "src", "version.ts")
+const fileUrl = path.join(appRoot, 'src', 'version.ts')
 
 fs.writeFileSync(fileUrl, content);
