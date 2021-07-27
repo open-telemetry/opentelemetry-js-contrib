@@ -39,7 +39,7 @@ provider.register();
 
 registerInstrumentations({
   instrumentations: [
-    // Connnect instrumentation expects HTTP layer to be instrumented
+    // Connect instrumentation expects HTTP layer to be instrumented
     new HttpInstrumentation(),
     new ConnectInstrumentation(),
   ],
