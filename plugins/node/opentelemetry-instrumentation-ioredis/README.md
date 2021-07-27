@@ -25,11 +25,11 @@ npm install --save @opentelemetry/instrumentation-ioredis
 To load a specific instrumentation (**ioredis** in this case), specify it in the registerInstrumentations's configuration
 
 ```javascript
-const { NodeTracerProvider } = require("@opentelemetry/node");
+const { NodeTracerProvider } = require('@opentelemetry/node');
 const {
   IORedisInstrumentation,
-} = require("@opentelemetry/instrumentation-ioredis");
-const { registerInstrumentations } = require("@opentelemetry/instrumentation");
+} = require('@opentelemetry/instrumentation-ioredis');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
 provider.register();
