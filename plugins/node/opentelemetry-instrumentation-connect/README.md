@@ -12,7 +12,7 @@ For automatic instrumentation see the
 
 ## Installation
 
-This instrumentation relies on HTTP calls to also be instrumented. Make sure you install and enable both, otherwise you will not see any spans being exported from the instrumentation.
+This instrumentation relies on HTTP calls to also be instrumented. Make sure you install and enable both, otherwise you will have spans that are not connected to each other.
 
 ```bash
 npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrumentation-connect

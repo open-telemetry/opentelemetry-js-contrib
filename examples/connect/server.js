@@ -7,7 +7,7 @@ const tracing = require('./tracing')('example-connect-server');
 const connect = require('connect');
 const axios = require('axios');
 
-// Setup express
+// Setup connect
 const app = connect();
 const PORT = 8080;
 
@@ -23,6 +23,8 @@ app.use('/run_test', async (req, res) => {
   const result = await axios.get('https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json');
   tracing.log('sending response');
   res.end(`OK ${result.data.version}`);
+
+  // toggle enabling disabling for easier observing whether the spans are exported or not
   if (tracing.connectInstrumentation.isEnabled()) {
     tracing.log('disabling connect');
     tracing.connectInstrumentation.disable();
@@ -30,6 +32,7 @@ app.use('/run_test', async (req, res) => {
     tracing.log('enabling connect');
     tracing.connectInstrumentation.enable();
   }
+
 });
 
 app.listen(PORT);
