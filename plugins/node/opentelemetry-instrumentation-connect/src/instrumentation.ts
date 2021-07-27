@@ -147,10 +147,10 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
             `span ${(span as any).name} - already finished`
           );
         }
-        res.off('close', finishSpan);
+        res.removeListener('close', finishSpan);
       }
 
-      res.once('close', finishSpan);
+      res.addListener('close', finishSpan);
       arguments[2] = instrumentation._patchNext(next, finishSpan);
 
       return (middleWare as any).apply(this, arguments);
