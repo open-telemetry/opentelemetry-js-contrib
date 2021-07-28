@@ -338,14 +338,10 @@ export class HapiInstrumentation extends InstrumentationBase {
           attributes: metadata.attributes,
         });
         try {
-          let res;
-          await api.context.with(
+          return await api.context.with(
             api.trace.setSpan(api.context.active(), span),
-            async () => {
-              res = await method(...params);
-            }
+            () => method(...params)
           );
-          return res;
         } catch (err) {
           span.recordException(err);
           span.setStatus({
@@ -398,7 +394,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         });
         try {
           return await oldHandler(request, h, err);
-        } catch (err) {          
+        } catch (err) {
           span.recordException(err);
           span.setStatus({
             code: api.SpanStatusCode.ERROR,
