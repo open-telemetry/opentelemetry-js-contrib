@@ -20,9 +20,9 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.1"
   },
