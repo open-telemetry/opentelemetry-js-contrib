@@ -40,11 +40,11 @@ registerInstrumentations({
 
 ## Emitted Spans
 
-| Name | Description | Included attributes
-| ---- | ---- | ----
-`Create Nest App` | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module`
-`<ControllerName>.<memberName>` | Traces the whole request context. | `http.*`, `nestjs.callback`
-`<memberName>` | Traces the work of a specific controller member function. | `nestjs.callback`
+| Name | `nestjs.type` | Description | Included attributes
+| ---- | ---- | ---- | ----
+`Create Nest App` | `app_creation` | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module`
+`<ControllerName>.<memberName>` | `request_context` | Traces the whole request context. | `http.*`, `nestjs.callback`
+`<memberName>` | `handler` | Traces the work of a specific controller member function. | `nestjs.callback`
 
 #### Attributes
 
@@ -54,8 +54,8 @@ registerInstrumentations({
 | `nestjs.version`* | Version of instrumented `@nestjs/core` package
 | `nestjs.type`* | See [NestType](./src/enums/NestType.ts)
 | `nestjs.module` | Nest module class name
-| `nestjs.controller` | Nest Controller class name
-| `nestjs.callback` | The function name of the member in the Controller
+| `nestjs.controller` | Nest controller class name
+| `nestjs.callback` | The function name of the member in the controller
 | `http.method` | HTTP method
 | `http.url` | Full request URL
 | `http.route` | Route assigned to handler. Ex: `/users/:id`
