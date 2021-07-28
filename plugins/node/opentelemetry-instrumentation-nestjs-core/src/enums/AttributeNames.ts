@@ -18,7 +18,7 @@ export enum AttributeNames {
   VERSION = 'nestjs.version',
   TYPE = 'nestjs.type',
   MODULE = 'nestjs.module',
-  CONTROLLER_INSTANCE = 'nestjs.controller.instance',
+  CONTROLLER = 'nestjs.controller',
   CALLBACK = 'nestjs.callback',
   PIPES = 'nestjs.pipes',
   INTERCEPTORS = 'nestjs.interceptors',

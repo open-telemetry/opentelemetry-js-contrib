@@ -192,6 +192,7 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
             [SemanticAttributes.HTTP_METHOD]: req.method,
             [SemanticAttributes.HTTP_URL]: req.originalUrl,
             [SemanticAttributes.HTTP_ROUTE]: req.route.path,
+            [AttributeNames.CONTROLLER]: instanceName,
             [AttributeNames.CALLBACK]: callbackName,
           },
         });
