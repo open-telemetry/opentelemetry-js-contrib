@@ -38,6 +38,30 @@ registerInstrumentations({
 });
 ```
 
+## Emitted Spans
+
+| Name | Description | Included attributes
+| ---- | ---- | ----
+`Create Nest App` | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module`
+`<ControllerName>.<memberName>` | Traces the whole request context. | `http.*`, `nestjs.callback`
+`<memberName>` | Traces the work of a specific controller member function. | `nestjs.callback`
+
+#### Attributes
+
+| Name | Description
+| ---- | ----
+| `component`* | "@nestjs/core"
+| `nestjs.version`* | Version of instrumented `@nestjs/core` package
+| `nestjs.type`* | See [NestType](./src/enums/NestType.ts)
+| `nestjs.module` | Nest module class name
+| `nestjs.controller` | Nest Controller class name
+| `nestjs.callback` | The function name of the member in the Controller
+| `http.method` | HTTP method
+| `http.url` | Full request URL
+| `http.route` | Route assigned to handler. Ex: `/users/:id`
+
+\* included in all of the spans.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
