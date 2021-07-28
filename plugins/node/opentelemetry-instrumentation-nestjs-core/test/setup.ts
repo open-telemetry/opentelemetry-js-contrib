@@ -187,7 +187,11 @@ export const setup = async (version: string): Promise<App> => {
   }
 
   const app = await core.NestFactory.create(AppModule);
-  await app.listenAsync(0, 'localhost');
+  if (app.listenAsync) {
+    await app.listenAsync(0, 'localhost');
+  } else {
+    await app.listen(0, 'localhost');
+  }
 
   return app as App;
 };
