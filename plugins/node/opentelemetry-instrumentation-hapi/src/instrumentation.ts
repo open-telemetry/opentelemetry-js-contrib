@@ -397,9 +397,8 @@ export class HapiInstrumentation extends InstrumentationBase {
           attributes: metadata.attributes,
         });
         try {
-          const res = await oldHandler(request, h, err);
-          return res;
-        } catch (err) {
+          return await oldHandler(request, h, err);
+        } catch (err) {          
           span.recordException(err);
           span.setStatus({
             code: api.SpanStatusCode.ERROR,
