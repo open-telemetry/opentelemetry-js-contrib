@@ -139,14 +139,20 @@ export const setup = async (version: string): Promise<App> => {
     YellInterceptor
   );
 
-  const [UsersController, UsersModule] = makeModule('Users', () => 'Hello, world!\n', [
-    common.Controller('users'),
-  ]);
-  const [GuardedController, GuardedModule] = makeModule('Guarded', () => 'Hello, guarded!\n', [
-    common.Controller('guarded'),
-    common.UseGuards(MyGuard),
-    common.UseGuards(MyGuard),
-  ]);
+  const [UsersController, UsersModule] = makeModule(
+    'Users',
+    () => 'Hello, world!\n',
+    [common.Controller('users')]
+  );
+  const [GuardedController, GuardedModule] = makeModule(
+    'Guarded',
+    () => 'Hello, guarded!\n',
+    [
+      common.Controller('guarded'),
+      common.UseGuards(MyGuard),
+      common.UseGuards(MyGuard),
+    ]
+  );
   const [InterceptedController, InterceptedModule] = makeModule(
     'Intercepted',
     () => 'Hello, Intercepted!\n',
@@ -169,7 +175,12 @@ export const setup = async (version: string): Promise<App> => {
       [
         common.Module({
           imports: [UsersModule, ErrorModule, GuardedModule, InterceptedModule],
-          controllers: [UsersController, ErrorController, GuardedController, InterceptedController],
+          controllers: [
+            UsersController,
+            ErrorController,
+            GuardedController,
+            InterceptedController,
+          ],
         }),
       ],
       AppModule
@@ -179,7 +190,12 @@ export const setup = async (version: string): Promise<App> => {
       [
         common.Module({
           modules: [UsersModule, ErrorModule, GuardedModule, InterceptedModule],
-          controllers: [UsersController, ErrorController, GuardedController, InterceptedController],
+          controllers: [
+            UsersController,
+            ErrorController,
+            GuardedController,
+            InterceptedController,
+          ],
         }),
       ],
       AppModule

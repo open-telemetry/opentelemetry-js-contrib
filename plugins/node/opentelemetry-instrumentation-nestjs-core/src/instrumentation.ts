@@ -36,10 +36,7 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
   };
 
   constructor() {
-    super(
-      '@opentelemetry/instrumentation-nestjs-core',
-      VERSION
-    );
+    super('@opentelemetry/instrumentation-nestjs-core', VERSION);
   }
 
   init() {
