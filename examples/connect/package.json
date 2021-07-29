@@ -1,5 +1,5 @@
 {
-  "name": "express-connect",
+  "name": "connect-example",
   "private": true,
   "version": "0.24.0",
   "description": "Example of Connect integration with OpenTelemetry",
