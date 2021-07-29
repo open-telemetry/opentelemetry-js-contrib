@@ -25,7 +25,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as http from 'http';
-import { createServer } from 'net';
+import { AddressInfo, createServer } from 'net';
 import { ANONYMOUS_NAME, ConnectInstrumentation } from '../src';
 
 const server = createServer();
@@ -48,31 +48,18 @@ const httpRequest = {
   },
 };
 
-const getNextPort = (port: number, count = 0) => {
-  if (count > 10) {
-    return Promise.reject('too many retries');
-  }
+const getPort = () => {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      getNextPort(++port, ++count).then(resolve, reject);
-    }, 30);
-
     server.once('error', (err: any) => {
-      clearTimeout(timer);
-      if (err.code === 'EADDRINUSE') {
-        // port is currently in use
-        getNextPort(++port, ++count).then(resolve, reject);
-      } else {
-        reject(err);
-      }
+      reject(err);
     });
 
     server.once('listening', () => {
-      clearTimeout(timer);
+      const port = (server.address() as AddressInfo).port;
       server.close();
       resolve(port);
     });
-    server.listen(port);
+    server.listen();
   });
 };
 
@@ -97,7 +84,7 @@ describe('connect', () => {
   let server: http.Server;
 
   before(async () => {
-    PORT = (await getNextPort(9000)) as number;
+    PORT = (await getPort()) as number;
   });
 
   beforeEach(() => {
