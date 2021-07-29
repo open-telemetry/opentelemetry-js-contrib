@@ -9,14 +9,14 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/tracing');
 const { Resource } = require('@opentelemetry/resources');
-const { ResourceAttributes } = require('@opentelemetry/semantic-conventions');
+const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 
 const { MemcachedInstrumentation } = require('@opentelemetry/instrumentation-memcached');
 
 module.exports = (serviceName) => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
-      [ResourceAttributes.SERVICE_NAME]: serviceName,
+      [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
     }),
   });
   registerInstrumentations({
