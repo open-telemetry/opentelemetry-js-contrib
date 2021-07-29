@@ -23,7 +23,7 @@ import {
 import {
   CloudProviderValues,
   CloudPlatformValues,
-  ResourceAttributes as SemanticResourceAttributes,
+  SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
 import * as util from 'util';
 import * as fs from 'fs';

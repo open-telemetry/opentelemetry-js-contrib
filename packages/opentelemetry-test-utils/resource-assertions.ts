@@ -17,7 +17,7 @@
 import { SDK_INFO } from '@opentelemetry/core';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
-import { ResourceAttributes as SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 /**
  * Test utility method to validate a cloud resource
