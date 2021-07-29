@@ -34,7 +34,7 @@ import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
   SemanticAttributes,
-  ResourceAttributes,
+  SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
 import {
   Context as OtelContext,
@@ -632,7 +632,7 @@ describe('lambda handler', () => {
         initializeHandler('lambda-test/async.handler', {
           requestHook: (span, { context }) => {
             span.setAttribute(
-              ResourceAttributes.FAAS_NAME,
+              SemanticResourceAttributes.FAAS_NAME,
               context.functionName
             );
           },
@@ -643,7 +643,7 @@ describe('lambda handler', () => {
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
         assert.strictEqual(
-          span.attributes[ResourceAttributes.FAAS_NAME],
+          span.attributes[SemanticResourceAttributes.FAAS_NAME],
           ctx.functionName
         );
         assertSpanSuccess(span);
