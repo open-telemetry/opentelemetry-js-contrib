@@ -12,7 +12,7 @@ const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 const { Resource } = require('@opentelemetry/resources');
-const { ResourceAttributes: ResourceAttributesSC } = require('@opentelemetry/semantic-conventions');
+const { SemanticResourceAttributes: ResourceAttributesSC } = require('@opentelemetry/semantic-conventions');
 
 const Exporter = (process.env.EXPORTER || '')
   .toLowerCase().startsWith('z') ? ZipkinExporter : JaegerExporter;
