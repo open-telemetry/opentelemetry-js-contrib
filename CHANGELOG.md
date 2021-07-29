@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.24.0
+
+#### :bug: Bug Fix
+* [#573](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/573) chore: fixing express example ([@obecny](https://github.com/obecny))
+
+#### :rocket: Enhancement
+* `opentelemetry-browser-extension-autoinjection`, `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#594](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/594) chore: update core deps to 0.24.0 ([@dyladan](https://github.com/dyladan))
+* `opentelemetry-host-metrics`
+  * [#570](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/570) fix(package.json): publish source maps ([@blumamir](https://github.com/blumamir))
+* Other
+  * [#571](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/571) fix(instrumentation-hapi): change root span name to route name ([@CptSchnitz](https://github.com/CptSchnitz))
+  * [#566](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/566) feat(aws-lambda): added eventContextExtractor config option ([@prsnca](https://github.com/prsnca))
+
+#### :house: Internal
+* [#592](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/592) chore(deps): upgrade @types/pino to be compatible with latest sonic-stream types ([@legendecas](https://github.com/legendecas))
+* [#583](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/583) style: use single quotes everywhere and add a rule to eslint ([@CptSchnitz](https://github.com/CptSchnitz))
+* [#549](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/549) chore: enable typescript 4.3 option noImplicitOverride ([@Flarna](https://github.com/Flarna))
+
+#### Committers: 8
+- Amir Blum ([@blumamir](https://github.com/blumamir))
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Daniel Hermon ([@syncush](https://github.com/syncush))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Ofer Adelstein ([@CptSchnitz](https://github.com/CptSchnitz))
+- Yaron ([@prsnca](https://github.com/prsnca))
+- legendecas ([@legendecas](https://github.com/legendecas))
+
 ## 0.23.0
 
 #### :bug: Bug Fix
