@@ -65,13 +65,14 @@ describe('nestjs-core', () => {
     instrumentation.disable();
   });
 
-  before(() => {});
-
-  after(() => {});
-
   it('should capture setup', async () => {
     assertSpans(memoryExporter.getFinishedSpans(), [
-      { service: 'test', name: 'Create Nest App', module: 'AppModule' },
+      {
+        type: 'app_creation',
+        service: 'test',
+        name: 'Create Nest App',
+        module: 'AppModule',
+      },
     ]);
   });
 
@@ -84,14 +85,21 @@ describe('nestjs-core', () => {
     assert.strictEqual(await request('/users'), 'Hello, world!\n');
 
     assertSpans(memoryExporter.getFinishedSpans(), [
-      { service: 'test', name: 'Create Nest App', module: 'AppModule' },
       {
+        type: 'app_creation',
+        service: 'test',
+        name: 'Create Nest App',
+        module: 'AppModule',
+      },
+      {
+        type: 'handler',
         service: 'test',
         name: callback,
         callback,
         parentSpanName: `${instance}.${callback}`,
       },
       {
+        type: 'request_context',
         service: 'test',
         name: `${instance}.${callback}`,
         method: 'GET',
@@ -114,8 +122,14 @@ describe('nestjs-core', () => {
     );
 
     assertSpans(memoryExporter.getFinishedSpans(), [
-      { service: 'test', name: 'Create Nest App', module: 'AppModule' },
       {
+        type: 'app_creation',
+        service: 'test',
+        name: 'Create Nest App',
+        module: 'AppModule',
+      },
+      {
+        type: 'handler',
         service: 'test',
         name: callback,
         callback,
@@ -126,6 +140,7 @@ describe('nestjs-core', () => {
         parentSpanName: `${instance}.${callback}`,
       },
       {
+        type: 'request_context',
         service: 'test',
         name: `${instance}.${callback}`,
         method: 'GET',
@@ -168,6 +183,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.strictEqual(span.attributes['http.method'], expected.method);
       assert.strictEqual(span.attributes['http.url'], expected.url);
       assert.strictEqual(span.attributes['http.route'], expected.path);
+      assert.strictEqual(span.attributes['nestjs.type'], expected.type);
       assert.strictEqual(span.attributes['nestjs.callback'], expected.callback);
       assert.strictEqual(
         span.attributes['nest.controller.instance'],
