@@ -14,13 +14,28 @@
  * limitations under the License.
  */
 
+/**
+ * Update all dependencies from the core repo to the @next tag versions
+ * 
+ * To use the script, run it from the root of the contrib repository like this:
+ *  `node scripts/update-core-deps.js`
+ * 
+ * If your core repository is checked out in the same directory as your contrib
+ * repository with the default name, it will be found automatically. If not,
+ * you can point to the core repository with the environment variable
+ * CORE_REPOSITORY like this:
+ *  `CORE_REPOSITORY=../../otel-core node scripts/update-core-deps.js
+ * 
+ * Note that this only updates the versions in the package.json for each package
+ * and you will still need to run `lerna bootstrap` and make any necessary
+ * code changes.
+ */
+
+"use strict";
+
 const path = require('path');
 const fs = require('fs');
 const child_process = require('child_process')
-
-/**
- * Update all dependencies from the core repo to the @next tag versions
- */
 
 // Use process.env.CORE_REPOSITORY to point to core repository directory
 // Defaults to ../opentelemetry-js
