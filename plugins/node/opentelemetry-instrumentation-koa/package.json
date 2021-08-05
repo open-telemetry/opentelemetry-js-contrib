@@ -44,16 +44,16 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.1"
+    "@opentelemetry/api": "^1.0.2"
   },
   "devDependencies": {
     "@koa/router": "9.4.0",
-    "@opentelemetry/api": "1.0.1",
+    "@opentelemetry/api": "1.0.2",
     "@opentelemetry/context-async-hooks": "0.24.0",
     "@opentelemetry/node": "0.24.0",
     "@opentelemetry/tracing": "0.24.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.5",
+    "@types/node": "14.17.9",
     "codecov": "3.8.3",
     "gts": "3.1.0",
     "koa": "2.13.1",
