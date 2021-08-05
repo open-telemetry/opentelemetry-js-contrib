@@ -18,8 +18,8 @@
 // these values are released.
 export enum CloudProviderValues {
   ALIBABA_CLOUD = 'alibaba_cloud',
-};
+}
 
 export enum CloudPlatformValues {
   ALIBABA_CLOUD_ECS = 'alibaba_cloud_ecs',
-};
+}

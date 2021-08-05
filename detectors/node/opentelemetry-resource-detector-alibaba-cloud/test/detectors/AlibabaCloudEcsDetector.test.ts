@@ -23,18 +23,18 @@ import {
   assertHostResource,
 } from '@opentelemetry/test-utils';
 
-const ALIYUN_HOST = 'http://' + alibabaCloudEcsDetector
-  .ALIBABA_CLOUD_IDMS_ENDPOINT;
-const ALIYUN_IDENTITY_PATH = alibabaCloudEcsDetector
-  .ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH;
-const ALIYUN_HOST_PATH = alibabaCloudEcsDetector
-  .ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH;
+const ALIYUN_HOST =
+  'http://' + alibabaCloudEcsDetector.ALIBABA_CLOUD_IDMS_ENDPOINT;
+const ALIYUN_IDENTITY_PATH =
+  alibabaCloudEcsDetector.ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH;
+const ALIYUN_HOST_PATH =
+  alibabaCloudEcsDetector.ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH;
 
 const mockedIdentityResponse = {
   'image-id': 'my-image-id',
   'instance-id': 'my-instance-id',
   'instance-type': 'my-instance-type',
-  'mac': 'my-mac',
+  mac: 'my-mac',
   'owner-account-id': 'my-owner-account-id',
   'private-ipv4': 'my-private-ipv4',
   'region-id': 'my-region-id',
