@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// TODO(legendecas): migrate to @opentelemetry/semantic-conventions when
+// these values are released.
 export enum CloudProviderValues {
   ALIBABA_CLOUD = 'alibaba_cloud',
 };

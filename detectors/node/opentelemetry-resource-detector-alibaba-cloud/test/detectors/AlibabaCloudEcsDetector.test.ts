@@ -18,7 +18,10 @@ import * as nock from 'nock';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
 import { alibabaCloudEcsDetector } from '../../src';
-import { ResourceAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  assertCloudResource,
+  assertHostResource,
+} from '@opentelemetry/test-utils';
 
 const ALIYUN_HOST = 'http://' + alibabaCloudEcsDetector
   .ALIBABA_CLOUD_IDMS_ENDPOINT;
@@ -65,18 +68,16 @@ describe('alibabaCloudEcsDetector', () => {
 
       assert.ok(resource);
 
-      assert.deepStrictEqual(resource.attributes, {
-        // cloud resources
-        [ResourceAttributes.CLOUD_PROVIDER]: 'alibaba_cloud',
-        [ResourceAttributes.CLOUD_PLATFORM]: 'alibaba_cloud_ecs',
-        [ResourceAttributes.CLOUD_ACCOUNT_ID]: 'my-owner-account-id',
-        [ResourceAttributes.CLOUD_REGION]: 'my-region-id',
-        [ResourceAttributes.CLOUD_AVAILABILITY_ZONE]: 'my-zone-id',
-
-        // host resources
-        [ResourceAttributes.HOST_ID]: 'my-instance-id',
-        [ResourceAttributes.HOST_TYPE]: 'my-instance-type',
-        [ResourceAttributes.HOST_NAME]: 'my-hostname',
+      assertCloudResource(resource, {
+        provider: 'alibaba_cloud',
+        accountId: 'my-owner-account-id',
+        region: 'my-region-id',
+        zone: 'my-zone-id',
+      });
+      assertHostResource(resource, {
+        id: 'my-instance-id',
+        hostType: 'my-instance-type',
+        name: 'my-hostname',
       });
     });
   });

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-alibaba-cloud",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "description": "OpenTelemetry SDK resource detector for Alibaba Cloud",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -43,11 +43,13 @@
     "access": "public"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.0.1",
+    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/test-utils": "^0.24.0",
     "@types/mocha": "8.2.3",
-    "@types/node": "14.17.5",
+    "@types/node": "14.17.9",
     "@types/sinon": "10.0.2",
     "codecov": "3.8.3",
+    "gts": "3.1.0",
     "mocha": "7.2.0",
     "nock": "12.0.3",
     "nyc": "15.1.0",
@@ -57,11 +59,11 @@
     "typescript": "4.3.5"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.1"
+    "@opentelemetry/api": "^1.0.2"
   },
   "dependencies": {
-    "@opentelemetry/core": "0.23.0",
-    "@opentelemetry/resources": "0.23.0",
-    "@opentelemetry/semantic-conventions": "0.23.0"
+    "@opentelemetry/core": "^0.24.0",
+    "@opentelemetry/resources": "^0.24.0",
+    "@opentelemetry/semantic-conventions": "^0.24.0"
   }
 }
