@@ -1,0 +1,6 @@
+# Test configuration
+
+components:
+  propagators/opentelemetry-propagator-aws-xray:
+    - willarmiros
+    - NathanielRN
