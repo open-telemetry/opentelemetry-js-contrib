@@ -112,7 +112,11 @@ class AlibabaCloudEcsDetector implements Detector {
       const req = http.request(options, res => {
         clearTimeout(timeoutId);
         const { statusCode } = res;
-        if (statusCode && statusCode >= 200 && statusCode < 300) {
+        if (
+          typeof statusCode !== 'number' ||
+          !(statusCode >= 200 && statusCode < 300)
+        ) {
+          res.destroy();
           return reject(
             new Error('Failed to load page, status code: ' + statusCode)
           );
