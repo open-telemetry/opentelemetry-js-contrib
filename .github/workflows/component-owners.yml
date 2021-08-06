@@ -10,4 +10,4 @@ jobs:
       - uses: dyladan/component-owners@main
         with:
           config-file: .github/component_owners.yml
-          repo-token: ${{ github.token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
