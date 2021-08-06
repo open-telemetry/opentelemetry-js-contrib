@@ -46,9 +46,7 @@ class AlibabaCloudEcsDetector implements Detector {
   /**
    * Attempts to connect and obtain an AlibabaCloud instance Identity document.
    * If the connection is successful it returns a promise containing a
-   * {@link Resource} populated with instance metadata. Returns a promise
-   * containing an empty {@link Resource} if the connection or parsing of the
-   * identity document fails.
+   * {@link Resource} populated with instance metadata.
    *
    * @param config (unused) The resource detection config
    */
