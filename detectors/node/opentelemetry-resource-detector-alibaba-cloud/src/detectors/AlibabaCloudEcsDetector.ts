@@ -106,28 +106,26 @@ class AlibabaCloudEcsDetector implements Detector {
   private async _fetchString(options: http.RequestOptions): Promise<string> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
-        req.abort();
-        reject(new Error('ECS metadata api request timed out.'));
+        req.destroy(new Error('ECS metadata api request timed out.'));
       }, 1000);
 
       const req = http.request(options, res => {
         clearTimeout(timeoutId);
         const { statusCode } = res;
+        if (statusCode && statusCode >= 200 && statusCode < 300) {
+          return reject(
+            new Error('Failed to load page, status code: ' + statusCode)
+          );
+        }
+
         res.setEncoding('utf8');
         let rawData = '';
         res.on('data', chunk => (rawData += chunk));
+        res.on('error', err => {
+          reject(err);
+        });
         res.on('end', () => {
-          if (statusCode && statusCode >= 200 && statusCode < 300) {
-            try {
-              resolve(rawData);
-            } catch (e) {
-              reject(e);
-            }
-          } else {
-            reject(
-              new Error('Failed to load page, status code: ' + statusCode)
-            );
-          }
+          resolve(rawData);
         });
       });
       req.on('error', err => {
