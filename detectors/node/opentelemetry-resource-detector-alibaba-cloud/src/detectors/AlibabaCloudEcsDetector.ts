@@ -116,7 +116,7 @@ class AlibabaCloudEcsDetector implements Detector {
         ) {
           res.destroy();
           return reject(
-            new Error('Failed to load page, status code: ' + statusCode)
+            new Error(`Failed to load page, status code: ${statusCode}`)
           );
         }
 
