@@ -1,0 +1,12 @@
+# Test configuration
+
+components:
+  packages/opentelemetry-id-generator-aws-xray:
+    - NathanielRN
+    - willarmiros
+  plugins/node/opentelemetry-instrumentation-aws-lambda:
+    - NathanielRN
+    - willarmiros
+  propagators/opentelemetry-propagator-aws-xray:
+    - NathanielRN
+    - willarmiros
