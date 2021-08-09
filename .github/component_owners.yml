@@ -11,3 +11,5 @@ components:
   detectors/node/opentelemetry-resource-detector-aws:
     - NathanielRN
     - willarmiros
+  detectors/node/opentelemetry-resource-detector-alibaba-cloud:
+    - legendecas
