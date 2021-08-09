@@ -1,5 +1,3 @@
-# Test configuration
-
 components:
   packages/opentelemetry-id-generator-aws-xray:
     - NathanielRN
