@@ -41,7 +41,7 @@ class AlibabaCloudEcsDetector implements Detector {
     '/latest/dynamic/instance-identity/document';
   readonly ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH =
     '/latest/meta-data/hostname';
-  readonly MILLISECOND_TIME_OUT = 1000;
+  readonly MILLISECONDS_TIME_OUT = 1000;
 
   /**
    * Attempts to connect and obtain an AlibabaCloud instance Identity document.
@@ -85,7 +85,7 @@ class AlibabaCloudEcsDetector implements Detector {
       host: this.ALIBABA_CLOUD_IDMS_ENDPOINT,
       path: this.ALIBABA_CLOUD_INSTANCE_IDENTITY_DOCUMENT_PATH,
       method: 'GET',
-      timeout: this.MILLISECOND_TIME_OUT,
+      timeout: this.MILLISECONDS_TIME_OUT,
     };
     const identity = await this._fetchString(options);
     return JSON.parse(identity);
@@ -96,7 +96,7 @@ class AlibabaCloudEcsDetector implements Detector {
       host: this.ALIBABA_CLOUD_IDMS_ENDPOINT,
       path: this.ALIBABA_CLOUD_INSTANCE_HOST_DOCUMENT_PATH,
       method: 'GET',
-      timeout: this.MILLISECOND_TIME_OUT,
+      timeout: this.MILLISECONDS_TIME_OUT,
     };
     return await this._fetchString(options);
   }
@@ -105,7 +105,7 @@ class AlibabaCloudEcsDetector implements Detector {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         req.destroy(new Error('ECS metadata api request timed out.'));
-      }, 1000);
+      }, this.MILLISECONDS_TIME_OUT);
 
       const req = http.request(options, res => {
         clearTimeout(timeoutId);
