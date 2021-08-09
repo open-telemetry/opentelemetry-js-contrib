@@ -338,9 +338,11 @@ export class HapiInstrumentation extends InstrumentationBase {
           attributes: metadata.attributes,
         });
         try {
-          return await api.context.with(
+          return await api.context.with<Parameters<Hapi.Lifecycle.Method>, Hapi.Lifecycle.Method>(
             api.trace.setSpan(api.context.active(), span),
-            () => method(...params)
+            method,
+            undefined,
+            ...params
           );
         } catch (err) {
           span.recordException(err);
