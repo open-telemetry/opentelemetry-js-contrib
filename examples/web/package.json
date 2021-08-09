@@ -35,17 +35,17 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.0.1",
-    "@opentelemetry/auto-instrumentations-web": "^0.23.0",
-    "@opentelemetry/context-zone": "^0.23.0",
-    "@opentelemetry/core": "^0.23.0",
-    "@opentelemetry/exporter-collector": "^0.23.0",
-    "@opentelemetry/instrumentation": "^0.23.0",
+    "@opentelemetry/auto-instrumentations-web": "^0.24.0",
+    "@opentelemetry/context-zone": "^0.24.0",
+    "@opentelemetry/core": "^0.24.0",
+    "@opentelemetry/exporter-collector": "^0.24.0",
+    "@opentelemetry/instrumentation": "^0.24.0",
     "@opentelemetry/instrumentation-document-load": "^0.23.0",
     "@opentelemetry/instrumentation-user-interaction": "^0.23.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.23.0",
-    "@opentelemetry/propagator-b3": "^0.23.0",
-    "@opentelemetry/tracing": "^0.23.0",
-    "@opentelemetry/web": "^0.23.0"
+    "@opentelemetry/instrumentation-xml-http-request": "^0.24.0",
+    "@opentelemetry/propagator-b3": "^0.24.0",
+    "@opentelemetry/tracing": "^0.24.0",
+    "@opentelemetry/web": "^0.24.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"
 }
