@@ -36,11 +36,11 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.0.1",
-    "@opentelemetry/auto-instrumentations-node": "^0.23.0",
-    "@opentelemetry/exporter-collector": "^0.23.0",
-    "@opentelemetry/instrumentation": "^0.23.0",
-    "@opentelemetry/node": "^0.23.0",
-    "@opentelemetry/tracing": "^0.23.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.24.0",
+    "@opentelemetry/exporter-collector": "^0.24.0",
+    "@opentelemetry/instrumentation": "^0.24.0",
+    "@opentelemetry/node": "^0.24.0",
+    "@opentelemetry/tracing": "^0.24.0",
     "axios": "^0.21.1",
     "express": "^4.17.1"
   }
