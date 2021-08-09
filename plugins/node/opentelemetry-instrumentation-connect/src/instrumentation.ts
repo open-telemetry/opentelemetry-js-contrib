@@ -37,7 +37,6 @@ export const ANONYMOUS_NAME = 'anonymous';
 
 /** Connect instrumentation for OpenTelemetry */
 export class ConnectInstrumentation extends InstrumentationBase<Server> {
-  ENABLED: boolean = false;
   constructor(config: InstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-connect',

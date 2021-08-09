@@ -25,10 +25,9 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as http from 'http';
-import { AddressInfo, createServer } from 'net';
+import type { AddressInfo } from 'net';
 import { ANONYMOUS_NAME, ConnectInstrumentation } from '../src';
 
-const server = createServer();
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
     return new Promise((resolve, reject) => {
@@ -46,21 +45,6 @@ const httpRequest = {
       });
     });
   },
-};
-
-const getPort = () => {
-  return new Promise((resolve, reject) => {
-    server.once('error', (err: any) => {
-      reject(err);
-    });
-
-    server.once('listening', () => {
-      const port = (server.address() as AddressInfo).port;
-      server.close();
-      resolve(port);
-    });
-    server.listen();
-  });
 };
 
 const instrumentation = new ConnectInstrumentation();
@@ -83,19 +67,20 @@ describe('connect', () => {
   let app: connect.Server;
   let server: http.Server;
 
-  before(async () => {
-    PORT = (await getPort()) as number;
-  });
-
-  beforeEach(() => {
+  beforeEach(async () => {
     instrumentation.enable();
     app = connect();
-    server = app.listen(PORT);
+    await new Promise<void>(resolve => (server = app.listen(0, resolve)));
+    PORT = (server.address() as AddressInfo).port;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     app.removeAllListeners();
-    server.close();
+    await new Promise<void>(resolve =>
+      server.close(() => {
+        resolve();
+      })
+    );
     contextManager.disable();
     contextManager.enable();
     memoryExporter.reset();
