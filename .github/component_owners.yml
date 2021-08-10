@@ -13,3 +13,5 @@ components:
     - willarmiros
   detectors/node/opentelemetry-resource-detector-alibaba-cloud:
     - legendecas
+  plugins/node/opentelemetry-instrumentation-nestjs-core:
+    - Rauno56
