@@ -24,14 +24,14 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/tracing';
 import * as assert from 'assert';
-import Instrumentation from '../src';
+import { NestInstrumentation } from '../src';
 import { getRequester, setup, App } from './setup';
 
 import * as util from 'util';
 
 const LIB_VERSION = require('@nestjs/core/package.json').version;
 
-const instrumentation = new Instrumentation();
+const instrumentation = new NestInstrumentation();
 const memoryExporter = new InMemorySpanExporter();
 
 util.inspect.defaultOptions.depth = 3;
@@ -190,7 +190,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
         expected.instance
       );
 
-      assert.strictEqual(span.attributes.component, Instrumentation.COMPONENT);
+      assert.strictEqual(span.attributes.component, NestInstrumentation.COMPONENT);
       assert.strictEqual(
         typeof span.attributes['nestjs.version'],
         'string',
