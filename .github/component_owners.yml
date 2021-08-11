@@ -1,5 +1,3 @@
-# Test configuration
-
 components:
   packages/opentelemetry-id-generator-aws-xray:
     - NathanielRN
@@ -10,3 +8,8 @@ components:
   propagators/opentelemetry-propagator-aws-xray:
     - NathanielRN
     - willarmiros
+  detectors/node/opentelemetry-resource-detector-aws:
+    - NathanielRN
+    - willarmiros
+  detectors/node/opentelemetry-resource-detector-alibaba-cloud:
+    - legendecas

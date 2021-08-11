@@ -337,15 +337,26 @@ export class HapiInstrumentation extends InstrumentationBase {
         const span = instrumentation.tracer.startSpan(metadata.name, {
           attributes: metadata.attributes,
         });
-        let res;
-        await api.context.with(
-          api.trace.setSpan(api.context.active(), span),
-          async () => {
-            res = await method(...params);
-          }
-        );
-        span.end();
-        return res;
+        try {
+          return await api.context.with<
+            Parameters<Hapi.Lifecycle.Method>,
+            Hapi.Lifecycle.Method
+          >(
+            api.trace.setSpan(api.context.active(), span),
+            method,
+            undefined,
+            ...params
+          );
+        } catch (err) {
+          span.recordException(err);
+          span.setStatus({
+            code: api.SpanStatusCode.ERROR,
+            message: err.message,
+          });
+          throw err;
+        } finally {
+          span.end();
+        }
       };
       return newHandler as T;
     }
@@ -386,10 +397,18 @@ export class HapiInstrumentation extends InstrumentationBase {
         const span = instrumentation.tracer.startSpan(metadata.name, {
           attributes: metadata.attributes,
         });
-        const res = await oldHandler(request, h, err);
-        span.end();
-
-        return res;
+        try {
+          return await oldHandler(request, h, err);
+        } catch (err) {
+          span.recordException(err);
+          span.setStatus({
+            code: api.SpanStatusCode.ERROR,
+            message: err.message,
+          });
+          throw err;
+        } finally {
+          span.end();
+        }
       };
       if (route.options?.handler) {
         route.options.handler = newHandler;
