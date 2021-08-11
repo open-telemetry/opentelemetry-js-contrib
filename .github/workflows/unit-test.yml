@@ -110,10 +110,10 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci
       - name: Unit tests
-        run: npm run test:changed
+        run: npm run test:ci:changed
       - name: Report Coverage
         if: matrix.container == 'node:14'
-        run: npm run codecov
+        run: npm run codecov:ci:changed
   browser-tests:
     runs-on: ubuntu-latest
     container:
