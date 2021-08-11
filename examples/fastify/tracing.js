@@ -6,16 +6,17 @@ const { diag, DiagConsoleLogger, DiagLogLevel } = opentelemetry;
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 const { Resource } = require('@opentelemetry/resources');
-const { ResourceAttributes: SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
+const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
 
-const { ConnectInstrumentation } = require('@opentelemetry/instrumentation-connect');
+const { FastifyInstrumentation } = require('@opentelemetry/instrumentation-fastify');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
 function log() {
+  // eslint-disable-next-line prefer-rest-params
   const args = Array.from(arguments) || [];
   args.unshift(new Date());
   console.log.apply(this, args);
@@ -27,26 +28,25 @@ module.exports = (serviceName) => {
       [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
     }),
   });
-  const connectInstrumentation = new ConnectInstrumentation();
+  const fastifyInstrumentation = new FastifyInstrumentation();
   registerInstrumentations({
     tracerProvider: provider,
     instrumentations: [
-      // Connect instrumentation expects HTTP layer to be instrumented
+      // Fastify instrumentation expects HTTP layer to be instrumented
       HttpInstrumentation,
-      connectInstrumentation,
+      fastifyInstrumentation,
     ],
   });
 
   const exporter = new CollectorTraceExporter();
-
   provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register({});
   return {
     log,
-    connectInstrumentation,
+    fastifyInstrumentation,
     provider,
-    tracer: opentelemetry.trace.getTracer('connect-example'),
+    tracer: opentelemetry.trace.getTracer('fastify-example'),
   };
 };

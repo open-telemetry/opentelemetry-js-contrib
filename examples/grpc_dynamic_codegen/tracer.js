@@ -8,7 +8,6 @@ const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { GrpcInstrumentation } = require('@opentelemetry/instrumentation-grpc');
 
-
 const EXPORTER = process.env.EXPORTER || '';
 
 module.exports = (serviceName) => {
