@@ -438,13 +438,8 @@ describe('mysql@2.x', () => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 1);
-            const spans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(spans.length, 1);
-            const querySpan = spans[0];
-            assert.strictEqual(
-              querySpan.parentSpanId,
-              parentSpan.spanContext().spanId
-            );
+            const actualSpan = trace.getSpan(context.active());
+            assert.strictEqual(actualSpan, parentSpan);
             done();
           });
         });
@@ -636,13 +631,8 @@ describe('mysql@2.x', () => {
             assert.ifError(err);
             assert.ok(res);
             assert.strictEqual(res[0].solution, 1);
-            const spans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(spans.length, 1);
-            const querySpan = spans[0];
-            assert.strictEqual(
-              querySpan.parentSpanId,
-              parentSpan.spanContext().spanId
-            );
+            const actualSpan = trace.getSpan(context.active());
+            assert.strictEqual(actualSpan, parentSpan);
             done();
           });
         });
