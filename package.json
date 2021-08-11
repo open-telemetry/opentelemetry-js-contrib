@@ -18,6 +18,7 @@
     "version:update": "lerna run version:update",
     "compile": "lerna run compile",
     "test": "lerna run test",
+    "test:changed": "lerna run test --since origin/main --parallel",
     "test:browser": "lerna run test:browser",
     "bootstrap": "lerna bootstrap --no-ci",
     "bump": "lerna publish",
