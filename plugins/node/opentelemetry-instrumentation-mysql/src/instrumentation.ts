@@ -34,7 +34,10 @@ import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
-type getConnectionCallbackType = (err: mysqlTypes.MysqlError, connection: mysqlTypes.PoolConnection) => void;
+type getConnectionCallbackType = (
+  err: mysqlTypes.MysqlError,
+  connection: mysqlTypes.PoolConnection
+) => void;
 
 export class MySQLInstrumentation extends InstrumentationBase<
   typeof mysqlTypes
@@ -209,10 +212,17 @@ export class MySQLInstrumentation extends InstrumentationBase<
     };
   }
 
-  private _getConnectionCallbackPatchFn(cb: getConnectionCallbackType, format: formatType) {
+  private _getConnectionCallbackPatchFn(
+    cb: getConnectionCallbackType,
+    format: formatType
+  ) {
     const thisPlugin = this;
     const activeContext = context.active();
-    return function (this: any, err: mysqlTypes.MysqlError, connection: mysqlTypes.PoolConnection) {
+    return function (
+      this: any,
+      err: mysqlTypes.MysqlError,
+      connection: mysqlTypes.PoolConnection
+    ) {
       if (connection) {
         // this is the callback passed into a query
         // no need to unwrap
