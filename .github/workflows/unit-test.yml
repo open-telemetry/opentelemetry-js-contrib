@@ -108,7 +108,7 @@ jobs:
       - name: Fix npm cache permissions
         run: chown -R 1001:121 "/github/home/.npm"
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci
+        run: npx lerna bootstrap --no-ci --since origin/main
       - name: Unit tests
         run: npm run test:ci:changed
       - name: Report Coverage
