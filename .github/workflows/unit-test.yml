@@ -103,6 +103,9 @@ jobs:
             plugins/web/*/node_modules
             propagators/*/node_modules
           key: ${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
+      - name: Legacy Peer Dependencies for npm 7
+        if: matrix.container == 'node:16'
+        run: npm config set legacy-peer-deps=true
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Fix npm cache permissions
