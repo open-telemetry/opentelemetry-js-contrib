@@ -190,7 +190,10 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
         expected.instance
       );
 
-      assert.strictEqual(span.attributes.component, NestInstrumentation.COMPONENT);
+      assert.strictEqual(
+        span.attributes.component,
+        NestInstrumentation.COMPONENT
+      );
       assert.strictEqual(
         typeof span.attributes['nestjs.version'],
         'string',
