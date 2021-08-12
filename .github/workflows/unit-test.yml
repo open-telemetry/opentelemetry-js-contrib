@@ -108,7 +108,7 @@ jobs:
       - name: Fix npm cache permissions
         run: chown -R 1001:121 "/github/home/.npm"
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci --hoist --nohoist='@opentelemetry/instrumentation-user-interaction'
+        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js'
       - name: Unit tests
         run: npm run test:ci:changed
       - name: Report Coverage
