@@ -102,7 +102,7 @@ jobs:
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules
-          key: ${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}-invalidate
+          key: ${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
       - name: Legacy Peer Dependencies for npm 7
         if: matrix.container == 'node:16'
         run: npm config set legacy-peer-deps=true
