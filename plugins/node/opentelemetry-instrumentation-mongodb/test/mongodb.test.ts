@@ -33,6 +33,7 @@ instrumentation.disable();
 
 import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection } from './utils';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -243,6 +244,37 @@ describe('MongoDBInstrumentation', () => {
             'mongodb.createIndexes',
             SpanKind.CLIENT
           );
+          done();
+        });
+      });
+    });
+  });
+
+  describe('when collecting insert data', () => {
+    beforeEach(() => {
+      memoryExporter.reset();
+      create({
+        collectInsertPayload: true,
+        enhancedDatabaseReporting: true,
+      });
+    });
+
+    it('should collect insert data when configured to do so', done => {
+      const key = 'key';
+      const value = 'value';
+      const object = { [key]: value };
+      const span = provider.getTracer('default').startSpan('insertRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection.insertOne(object).then(() => {
+          span.end();
+          const spans = memoryExporter.getFinishedSpans();
+          const operationName = 'mongodb.insert';
+          assertSpans(spans, operationName, SpanKind.CLIENT, false, true);
+          const mongoSpan = spans.find(s => s.name === operationName);
+          const dbStatement = JSON.parse(
+            mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+          );
+          assert.strictEqual(dbStatement[key], value);
           done();
         });
       });

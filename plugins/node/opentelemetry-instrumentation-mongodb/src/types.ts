@@ -36,6 +36,13 @@ export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
    * @default undefined
    */
   responseHook?: MongoDBInstrumentationExecutionResponseHook;
+
+  /**
+   * If true, the payloads that are inserted to the DB will be collected.
+   *
+   * @default false
+   */
+  collectInsertPayload?: boolean;
 }
 
 export type Func<T> = (...args: unknown[]) => T;

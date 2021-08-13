@@ -153,12 +153,15 @@ export class MongoDBInstrumentation extends InstrumentationBase<
             kind: SpanKind.CLIENT,
           }
         );
+        const collectCommandPayload =
+          operationName !== 'insert' ||
+          !!instrumentation._config.collectInsertPayload;
         instrumentation._populateAttributes(
           span,
           ns,
           server,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          operationName !== 'insert' ? (ops[0] as any) : undefined
+          collectCommandPayload ? (ops[0] as any) : undefined
         );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
