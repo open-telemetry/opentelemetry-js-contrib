@@ -1031,7 +1031,8 @@ describe('graphql', () => {
         // Cast to unknown so that it's possible to cast to GraphQLInstrumentationExecutionResponseHook later
         const invalidTypeHook = 1234 as unknown;
         create({
-          responseHook: invalidTypeHook as GraphQLInstrumentationExecutionResponseHook,
+          responseHook:
+            invalidTypeHook as GraphQLInstrumentationExecutionResponseHook,
         });
         graphqlResult = await graphql(schema, sourceList1);
         spans = exporter.getFinishedSpans();
