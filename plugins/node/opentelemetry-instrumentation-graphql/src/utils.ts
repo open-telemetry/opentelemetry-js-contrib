@@ -34,7 +34,7 @@ const OPERATION_VALUES = Object.values(AllowedOperationTypes);
 
 export function addSpanSource(
   span: api.Span,
-  loc: graphqlTypes.Location,
+  loc?: graphqlTypes.Location,
   allowValues?: boolean,
   start?: number,
   end?: number
@@ -151,8 +151,9 @@ export function getOperation(
 }
 
 function addField(contextValue: any, path: string[], field: GraphQLField) {
-  return (contextValue[OTEL_GRAPHQL_DATA_SYMBOL].fields[path.join('.')] =
-    field);
+  return (contextValue[OTEL_GRAPHQL_DATA_SYMBOL].fields[
+    path.join('.')
+  ] = field);
 }
 
 function getField(contextValue: any, path: string[]) {
@@ -212,14 +213,17 @@ const KindsToBeRemoved: string[] = [
 ];
 
 export function getSourceFromLocation(
-  loc: graphqlTypes.Location,
+  loc?: graphqlTypes.Location,
   allowValues = false,
-  start: number = loc.start,
-  end: number = loc.end
+  inputStart?: number,
+  inputEnd?: number
 ): string {
   let source = '';
 
-  if (loc.startToken) {
+  if (loc?.startToken) {
+    const start = typeof inputStart === 'number' ? inputStart : loc.start;
+    const end = typeof inputEnd === 'number' ? inputEnd : loc.end;
+
     let next: graphqlTypes.Token | null = loc.startToken.next;
     let previousLine: number | undefined = 1;
     while (next) {
