@@ -23,3 +23,6 @@ components:
     - willarmiros
   detectors/node/opentelemetry-resource-detector-alibaba-cloud:
     - legendecas
+
+ignored-authors:
+  - renovate-bot
