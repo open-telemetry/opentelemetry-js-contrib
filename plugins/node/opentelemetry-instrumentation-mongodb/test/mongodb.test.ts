@@ -20,7 +20,11 @@ import { context, trace, SpanKind, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
 import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
 import { MongoResponseHookInformation } from '../src/types';
-import { registerInstrumentation, getTestSpans, resetMemoryExporter } from '@opentelemetry/test-utils';
+import {
+  registerInstrumentation,
+  getTestSpans,
+  resetMemoryExporter,
+} from '@opentelemetry/test-utils';
 
 const instrumentation = registerInstrumentation(new MongoDBInstrumentation());
 
@@ -104,11 +108,7 @@ describe('MongoDBInstrumentation', () => {
         collection.insertMany(insertData, (err, result) => {
           span.end();
           assert.ifError(err);
-          assertSpans(
-            getTestSpans(),
-            'mongodb.insert',
-            SpanKind.CLIENT
-          );
+          assertSpans(getTestSpans(), 'mongodb.insert', SpanKind.CLIENT);
           done();
         });
       });
@@ -121,11 +121,7 @@ describe('MongoDBInstrumentation', () => {
           span.end();
           console.log(getTestSpans());
           assert.ifError(err);
-          assertSpans(
-            getTestSpans(),
-            'mongodb.update',
-            SpanKind.CLIENT
-          );
+          assertSpans(getTestSpans(), 'mongodb.update', SpanKind.CLIENT);
           done();
         });
       });
@@ -137,11 +133,7 @@ describe('MongoDBInstrumentation', () => {
         collection.deleteOne({ a: 3 }, (err, result) => {
           span.end();
           assert.ifError(err);
-          assertSpans(
-            getTestSpans(),
-            'mongodb.remove',
-            SpanKind.CLIENT
-          );
+          assertSpans(getTestSpans(), 'mongodb.remove', SpanKind.CLIENT);
           done();
         });
       });
@@ -156,11 +148,7 @@ describe('MongoDBInstrumentation', () => {
         collection.find({ a: 1 }).toArray((err, result) => {
           span.end();
           assert.ifError(err);
-          assertSpans(
-            getTestSpans(),
-            'mongodb.find',
-            SpanKind.CLIENT
-          );
+          assertSpans(getTestSpans(), 'mongodb.find', SpanKind.CLIENT);
           done();
         });
       });
@@ -176,17 +164,17 @@ describe('MongoDBInstrumentation', () => {
             assert(secondElement !== null);
             // assert that we correctly got the first as a find
             assertSpans(
-              getTestSpans()
-                .filter(
-                  span => span.name.includes('mongodb.getMore') === false
-                ),
+              getTestSpans().filter(
+                span => span.name.includes('mongodb.getMore') === false
+              ),
               'mongodb.find',
               SpanKind.CLIENT
             );
             // assert that we correctly got the first as a find
             assertSpans(
-              getTestSpans()
-                .filter(span => span.name.includes('mongodb.find') === false),
+              getTestSpans().filter(
+                span => span.name.includes('mongodb.find') === false
+              ),
               'mongodb.getMore',
               SpanKind.CLIENT
             );
@@ -205,11 +193,7 @@ describe('MongoDBInstrumentation', () => {
         collection.createIndex({ a: 1 }, (err, result) => {
           span.end();
           assert.ifError(err);
-          assertSpans(
-            getTestSpans(),
-            'mongodb.createIndexes',
-            SpanKind.CLIENT
-          );
+          assertSpans(getTestSpans(), 'mongodb.createIndexes', SpanKind.CLIENT);
           done();
         });
       });
@@ -301,7 +285,6 @@ describe('MongoDBInstrumentation', () => {
   });
 
   describe('Mixed operations with callback', () => {
-
     it('should create a span for find after callback insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = trace.getTracer('default').startSpan('insertRootSpan');
@@ -333,7 +316,6 @@ describe('MongoDBInstrumentation', () => {
 
   /** Should intercept command */
   describe('Removing Instrumentation', () => {
-
     it('should unpatch plugin', () => {
       assert.doesNotThrow(() => {
         instrumentation.disable();
