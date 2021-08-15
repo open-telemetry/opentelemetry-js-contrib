@@ -38,11 +38,12 @@ export const mochaHooks = {
         // could not determine serviceName, continue regardless of this
       }
     }
-    registerInstrumentationTestingProvider({
+    const provider = registerInstrumentationTestingProvider({
       resource: new Resource({
         [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
       }),
     });
+    getInstrumentation()?.setTracerProvider(provider);
     done();
   },
 
