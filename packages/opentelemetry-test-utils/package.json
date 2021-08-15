@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.24.0",
   "description": "Test utilities.",
-  "main": "build/index.js",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
   "scripts": {
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
