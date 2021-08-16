@@ -46,6 +46,8 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
   readonly component: string = 'document-load';
   readonly version: string = '1';
   moduleName = this.component;
+  protected _config!: InstrumentationConfig;
+  private _enabled = false;
 
   constructor(config: DocumentLoadInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -246,7 +248,8 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
    * executes callback {_onDocumentLoaded} when the page is loaded
    */
   private _waitForPageLoad() {
-    if (window.document.readyState === 'complete') {
+    if (window.document.readyState === 'complete' && !this._enabled) {
+      this._enabled = true;
       this._onDocumentLoaded();
     } else {
       this._onDocumentLoaded = this._onDocumentLoaded.bind(this);
