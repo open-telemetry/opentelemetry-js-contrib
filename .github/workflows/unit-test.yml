@@ -111,7 +111,7 @@ jobs:
       - name: Fix npm cache permissions
         run: |
           chown -R 1001:121 "/github/home/.npm"
-          [ -e /__w/opentelemetry-js-contrib/opentelemetry-js-contrib/package-lock.json ] && chmod 777 /__w/opentelemetry-js-contrib/opentelemetry-js-contrib/package-lock.json
+          [ -e /__w/opentelemetry-js-contrib/opentelemetry-js-contrib/package-lock.json ] && chown 1001:121 /__w/opentelemetry-js-contrib/opentelemetry-js-contrib/package-lock.json
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js'
       - name: Unit tests
