@@ -8,3 +8,6 @@ jobs:
     name: Auto Assign Owners
     steps:
       - uses: dyladan/component-owners@main
+        with:
+          config-file: .github/component_owners.yml
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

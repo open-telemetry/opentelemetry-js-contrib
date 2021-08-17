@@ -24,13 +24,13 @@ This browser extension allows you to inject [OpenTelemetry](https://opentelemetr
 Run the following in your shell to download and build the extension from source:
 
 ```shell
-git clone https://github.com/svrnm/opentelemetry-browser-extension
-cd opentelemetry-browser-extension
+git clone https://github.com/open-telemetry/opentelemetry-js-contrib.git
+cd opentelemetry-js-contrib/packages/opentelemetry-browser-extension-autoinjection
 npm install
-npm run compile
+npm run build
 ```
 
-This will create a so called unpacked extension into the `build/` folder you now can load into your browser: 
+This will create a so-called unpacked extension into the `build/` folder you now can load into your browser: 
 
 * Open a new browser window and go to chrome://extensions
 * Turn on "Developer Mode"

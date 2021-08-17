@@ -1,5 +1,3 @@
-# Test configuration
-
 components:
   packages/opentelemetry-id-generator-aws-xray:
     - NathanielRN
@@ -7,9 +5,24 @@ components:
   plugins/node/opentelemetry-instrumentation-aws-lambda:
     - NathanielRN
     - willarmiros
+  plugins/node/opentelemetry-instrumentation-restify:
+    - rauno56
+  plugins/node/opentelemetry-instrumentation-router:
+    - rauno56
+  plugins/node/opentelemetry-instrumentation-memcached:
+    - rauno56
+  plugins/node/opentelemetry-instrumentation-knex:
+    - rauno56
+  plugins/node/opentelemetry-instrumentation-generic-pool:
+    - rauno56
   propagators/opentelemetry-propagator-aws-xray:
     - NathanielRN
     - willarmiros
   detectors/node/opentelemetry-resource-detector-aws:
     - NathanielRN
     - willarmiros
+  detectors/node/opentelemetry-resource-detector-alibaba-cloud:
+    - legendecas
+
+ignored-authors:
+  - renovate-bot
