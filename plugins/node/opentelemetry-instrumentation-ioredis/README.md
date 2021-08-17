@@ -115,5 +115,3 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=plugins%2Fnode%2Fopentelemetry-instrumentation-ioredis&type=dev
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-ioredis
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-ioredis.svg
-
-Add a comment so package has change to test ci works
