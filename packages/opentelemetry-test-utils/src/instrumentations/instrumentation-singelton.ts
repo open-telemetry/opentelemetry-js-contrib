@@ -30,7 +30,7 @@ export const getInstrumentation = <T extends InstrumentationBase>():
   return _global[OTEL_TESTING_INSTRUMENTATION_SINGLETON] as T;
 };
 
-export const registerInstrumentation = <T extends InstrumentationBase>(
+export const registerInstrumentationTesting = <T extends InstrumentationBase>(
   instrumentation: T
 ): T => {
   const existing = getInstrumentation<T>();

@@ -21,12 +21,12 @@ import * as assert from 'assert';
 import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
 import { MongoResponseHookInformation } from '../src/types';
 import {
-  registerInstrumentation,
+  registerInstrumentationTesting,
   getTestSpans,
   resetMemoryExporter,
 } from '@opentelemetry/test-utils';
 
-const instrumentation = registerInstrumentation(new MongoDBInstrumentation());
+const instrumentation = registerInstrumentationTesting(new MongoDBInstrumentation());
 
 import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection } from './utils';

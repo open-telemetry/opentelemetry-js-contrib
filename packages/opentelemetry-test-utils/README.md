@@ -40,12 +40,12 @@ Or by using config file / package.json config:
     }
 ```
 
-3. In your `.spec` file, import `registerInstrumentation` and `getTestSpans` functions and use them to create instrumentation class instance and make assertions in the test:
+3. In your `.spec` file, import `registerInstrumentationTesting` and `getTestSpans` functions and use them to create instrumentation class instance and make assertions in the test:
 
 ```js
-import { getTestSpans, registerInstrumentation } from '@opentelemetry/test-utils';
+import { getTestSpans, registerInstrumentationTesting } from '@opentelemetry/test-utils';
 
-const instrumentation = registerInstrumentation(new MyAwesomeInstrumentation());
+const instrumentation = registerInstrumentationTesting(new MyAwesomeInstrumentation());
 
 it('some test', () => {
     // your code that generate spans for this test
