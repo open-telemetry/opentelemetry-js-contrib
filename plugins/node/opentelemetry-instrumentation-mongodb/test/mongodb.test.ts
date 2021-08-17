@@ -26,7 +26,9 @@ import {
   resetMemoryExporter,
 } from '@opentelemetry/test-utils';
 
-const instrumentation = registerInstrumentationTesting(new MongoDBInstrumentation());
+const instrumentation = registerInstrumentationTesting(
+  new MongoDBInstrumentation()
+);
 
 import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection } from './utils';
