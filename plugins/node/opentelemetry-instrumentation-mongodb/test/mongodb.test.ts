@@ -250,34 +250,61 @@ describe('MongoDBInstrumentation', () => {
     });
   });
 
-  describe('when collecting insert data', () => {
-    beforeEach(() => {
-      memoryExporter.reset();
-      create({
-        enhancedDatabaseReporting: true,
-        dbStatementSerializer: (commandObj: Record<string, unknown>) => {
-          return JSON.stringify(commandObj);
-        },
+  describe('when specifying a dbStatementSerializer configuration', () => {
+    const key = 'key';
+    const value = 'value';
+    const object = { [key]: value };
+
+    describe('with a valid function', () => {
+      beforeEach(() => {
+        memoryExporter.reset();
+        create({
+          enhancedDatabaseReporting: true,
+          dbStatementSerializer: (commandObj: Record<string, unknown>) => {
+            return JSON.stringify(commandObj);
+          },
+        });
+      });
+
+      it('should properly collect db statement', done => {
+        const span = provider.getTracer('default').startSpan('insertRootSpan');
+        context.with(trace.setSpan(context.active(), span), () => {
+          collection.insertOne(object).then(() => {
+            span.end();
+            const spans = memoryExporter.getFinishedSpans();
+            const operationName = 'mongodb.insert';
+            assertSpans(spans, operationName, SpanKind.CLIENT, false, true);
+            const mongoSpan = spans.find(s => s.name === operationName);
+            const dbStatement = JSON.parse(
+              mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+            );
+            assert.strictEqual(dbStatement[key], value);
+            done();
+          });
+        });
       });
     });
 
-    it('should collect insert data when configured to do so', done => {
-      const key = 'key';
-      const value = 'value';
-      const object = { [key]: value };
-      const span = provider.getTracer('default').startSpan('insertRootSpan');
-      context.with(trace.setSpan(context.active(), span), () => {
-        collection.insertOne(object).then(() => {
-          span.end();
-          const spans = memoryExporter.getFinishedSpans();
-          const operationName = 'mongodb.insert';
-          assertSpans(spans, operationName, SpanKind.CLIENT, false, true);
-          const mongoSpan = spans.find(s => s.name === operationName);
-          const dbStatement = JSON.parse(
-            mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
-          );
-          assert.strictEqual(dbStatement[key], value);
-          done();
+    describe('with an invalid function', () => {
+      beforeEach(() => {
+        memoryExporter.reset();
+        create({
+          enhancedDatabaseReporting: true,
+          dbStatementSerializer: (_commandObj: Record<string, unknown>) => {
+            throw new Error('something went wrong!');
+          },
+        });
+      });
+
+      it('should not do any harm when throwing an exception', done => {
+        const span = provider.getTracer('default').startSpan('insertRootSpan');
+        context.with(trace.setSpan(context.active(), span), () => {
+          collection.insertOne(object).then(() => {
+            span.end();
+            const spans = memoryExporter.getFinishedSpans();
+            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
+            done();
+          });
         });
       });
     });
