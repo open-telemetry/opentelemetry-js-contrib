@@ -5,6 +5,12 @@ components:
   detectors/node/opentelemetry-resource-detector-aws:
     - NathanielRN
     - willarmiros
+  metapackages/auto-instrumentations-node:
+    - obecny
+  metapackages/auto-instrumentations-web:
+    - obecny
+  packages/opentelemetry-host-metrics:
+    - obecny
   packages/opentelemetry-id-generator-aws-xray:
     - NathanielRN
     - willarmiros
@@ -13,6 +19,8 @@ components:
     - willarmiros
   plugins/node/opentelemetry-instrumentation-generic-pool:
     - rauno56
+  plugins/node/opentelemetry-instrumentation-graphql:
+    - obecny
   plugins/node/opentelemetry-instrumentation-ioredis:
     - blumamir
     - naseemkullah
@@ -28,6 +36,10 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-router:
     - rauno56
+  plugins/web/opentelemetry-instrumentation-document-load:
+    - obecny
+  plugins/web/opentelemetry-instrumentation-user-interaction:
+    - obecny
   propagators/opentelemetry-propagator-aws-xray:
     - NathanielRN
     - willarmiros
