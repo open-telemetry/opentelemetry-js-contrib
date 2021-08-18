@@ -48,7 +48,8 @@ const EVENT_NAVIGATION_NAME = 'Navigation:';
  * Document -> Node * -> EventTarget **! -> Object
  * Window * -> WindowProperties ! -> EventTarget **! -> Object
  */
-const EVENT_TARGETS = window.EventTarget ? [EventTarget.prototype] : [Node.prototype, Window.prototype];
+const EVENT_TARGETS = window.EventTarget
+  ? [EventTarget.prototype] : [Node.prototype, Window.prototype];
 
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
@@ -588,7 +589,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       EVENT_TARGETS.forEach(target => {
         if (isWrapped(target.addEventListener)) {
           this._unwrap(target, 'addEventListener');
-          api.diag.debug('removing previous patch from method addEventListener');
+          api.diag.debug(
+            'removing previous patch from method addEventListener'
+          );
         }
         if (isWrapped(target.removeEventListener)) {
           this._unwrap(target, 'removeEventListener');
@@ -596,17 +599,13 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             'removing previous patch from method removeEventListener'
           );
         }
-        this._wrap(
-          target,
-          'addEventListener',
-          this._patchAddEventListener()
-        );
+        this._wrap(target, 'addEventListener', this._patchAddEventListener());
         this._wrap(
           target,
           'removeEventListener',
           this._patchRemoveEventListener()
         );
-      })
+      });
     }
 
     this._patchHistoryApi();
