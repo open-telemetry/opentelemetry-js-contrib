@@ -160,7 +160,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           ns,
           server,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (ops[0] as any)
+          ops[0] as any
         );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
@@ -412,20 +412,25 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     const commandObj = command.query ?? command.q ?? command;
     const dbStatementSerializer: DbStatementSerializer =
       this._config.dbStatementSerializer ||
-      this.defaultDbStatementSerializer.bind(this);
+      this._defaultDbStatementSerializer.bind(this);
 
-    safeExecuteInTheMiddle(() => {
-      const query = dbStatementSerializer(commandObj);
-      span.setAttribute(SemanticAttributes.DB_STATEMENT, JSON.stringify(query));
-    }, err => {
-      if (err) {
-        diag.error('Error running dbStatementSerializer hook', err);
-      }
-    },
-    true)
+    if (typeof dbStatementSerializer === 'function') {
+      safeExecuteInTheMiddle(
+        () => {
+          const query = dbStatementSerializer(commandObj);
+          span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
+        },
+        err => {
+          if (err) {
+            this._diag.error('Error running dbStatementSerializer hook', err);
+          }
+        },
+        true
+      );
+    }
   }
 
-  private defaultDbStatementSerializer (commandObj: Record<string, unknown>) {
+  private _defaultDbStatementSerializer(commandObj: Record<string, unknown>) {
     const enhancedDbReporting = !!this._config?.enhancedDatabaseReporting;
     const resultObj = enhancedDbReporting
       ? commandObj
