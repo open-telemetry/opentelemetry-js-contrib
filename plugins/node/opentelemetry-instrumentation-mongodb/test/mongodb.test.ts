@@ -254,7 +254,6 @@ describe('MongoDBInstrumentation', () => {
     beforeEach(() => {
       memoryExporter.reset();
       create({
-        collectInsertPayload: true,
         enhancedDatabaseReporting: true,
       });
     });

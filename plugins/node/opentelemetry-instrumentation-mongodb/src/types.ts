@@ -21,6 +21,17 @@ export interface MongoDBInstrumentationExecutionResponseHook {
   (span: Span, responseInfo: MongoResponseHookInformation): void;
 }
 
+/**
+ * Function that can be used to serialize db.statement tag
+ * @param cmdName - The name of the command (eg. set, get, mset)
+ * @param cmdArgs - Array of arguments passed to the command
+ *
+ * @returns serialized string that will be used as the db.statement attribute.
+ */
+ export type DbStatementSerializer = (
+   cmd: Record<string, unknown>
+) => string;
+
 export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, additional information about query parameters and
@@ -38,11 +49,9 @@ export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
   responseHook?: MongoDBInstrumentationExecutionResponseHook;
 
   /**
-   * If true, the payloads that are inserted to the DB will be collected.
-   *
-   * @default false
+   * Custom serializer function for the db.statement tag
    */
-  collectInsertPayload?: boolean;
+  dbStatementSerializer?: DbStatementSerializer;
 }
 
 export type Func<T> = (...args: unknown[]) => T;
