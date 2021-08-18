@@ -103,17 +103,22 @@ jobs:
             plugins/web/*/node_modules
             propagators/*/node_modules
           key: ${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
+      - name: Legacy Peer Dependencies for npm 7
+        if: matrix.container == 'node:16'
+        run: npm config set legacy-peer-deps=true
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Fix npm cache permissions
-        run: chown -R 1001:121 "/github/home/.npm"
+        run: |
+          chown -R 1001:121 "/github/home/.npm"
+          [ -e /__w/opentelemetry-js-contrib/opentelemetry-js-contrib/package-lock.json ] && chown 1001:121 /__w/opentelemetry-js-contrib/opentelemetry-js-contrib/package-lock.json
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci
+        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js'
       - name: Unit tests
-        run: npm run test
+        run: npm run test:ci:changed
       - name: Report Coverage
         if: matrix.container == 'node:14'
-        run: npm run codecov
+        run: npm run codecov:ci:changed
   browser-tests:
     runs-on: ubuntu-latest
     container:

@@ -15,6 +15,11 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-generic-pool:
     - rauno56
+  plugins/node/opentelemetry-instrumentation-ioredis:
+    - blumamir
+    - naseemkullah
+  plugins/node/opentelemetry-instrumentation-redis:
+    - blumamir
   propagators/opentelemetry-propagator-aws-xray:
     - NathanielRN
     - willarmiros
