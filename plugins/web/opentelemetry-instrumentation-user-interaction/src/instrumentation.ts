@@ -49,7 +49,8 @@ const EVENT_NAVIGATION_NAME = 'Navigation:';
  * Window * -> WindowProperties ! -> EventTarget **! -> Object
  */
 const EVENT_TARGETS = window.EventTarget
-  ? [EventTarget.prototype] : [Node.prototype, Window.prototype];
+  ? [EventTarget.prototype]
+  : [Node.prototype, Window.prototype];
 
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
