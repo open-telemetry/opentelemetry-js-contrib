@@ -8,6 +8,7 @@
   "scripts": {
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "test-all-versions": "tav",
+    "test-all-versions:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test-all-versions",
     "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -62,7 +63,7 @@
     "nyc": "15.1.0",
     "redis": "3.1.2",
     "rimraf": "3.0.2",
-    "test-all-versions": "^5.0.1",
+    "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"
   },
