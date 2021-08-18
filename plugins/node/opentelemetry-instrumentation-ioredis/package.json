@@ -7,6 +7,8 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
+    "test-all-versions:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test-all-versions",
     "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -66,6 +68,7 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
+    "test-all-versions": "5.0.1",
     "@opentelemetry/instrumentation": "^0.24.0",
     "@opentelemetry/semantic-conventions": "^0.24.0",
     "@types/ioredis": "4.26.6"
