@@ -405,7 +405,10 @@ describe('ioredis', () => {
             ];
 
             const actualSpanNames = endedSpans.map(s => s.name);
-            assert.deepStrictEqual(actualSpanNames.sort(), expectedSpanNames.sort());
+            assert.deepStrictEqual(
+              actualSpanNames.sort(),
+              expectedSpanNames.sort()
+            );
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
