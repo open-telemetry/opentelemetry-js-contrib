@@ -227,7 +227,10 @@ describe('ioredis', () => {
     describe('Instrumenting query operations', () => {
       before(() => {
         instrumentation.disable();
-        instrumentation = new IORedisInstrumentation();
+        instrumentation = new IORedisInstrumentation({
+          // iosredis v2 & v3 use BlueBird which breaks the trace context in some tests
+          requireParentSpan: false,
+        });
         instrumentation.setTracerProvider(provider);
         require('ioredis');
       });
@@ -387,7 +390,7 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans.length, 10);
             span.end();
             assert.strictEqual(endedSpans.length, 11);
-            const spanNames = [
+            const expectedSpanNames = [
               'connect',
               'info',
               'connect',
@@ -400,11 +403,9 @@ describe('ioredis', () => {
               'quit',
               'test span',
             ];
-            let i = 0;
-            while (i < 11) {
-              assert.strictEqual(endedSpans[i].name, spanNames[i]);
-              i++;
-            }
+
+            const actualSpanNames = endedSpans.map(s => s.name);
+            assert.deepStrictEqual(actualSpanNames.sort(), expectedSpanNames.sort());
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
@@ -624,6 +625,11 @@ describe('ioredis', () => {
     describe('Instrumenting without parent span', () => {
       before(() => {
         instrumentation.disable();
+        instrumentation = new IORedisInstrumentation({
+          requireParentSpan: true,
+        });
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
         instrumentation.enable();
       });
       it('should not create child span', async () => {
