@@ -259,7 +259,6 @@ describe('MongoDBInstrumentation', () => {
       beforeEach(() => {
         memoryExporter.reset();
         create({
-          enhancedDatabaseReporting: true,
           dbStatementSerializer: (commandObj: Record<string, unknown>) => {
             return JSON.stringify(commandObj);
           },
