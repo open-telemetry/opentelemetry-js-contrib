@@ -107,6 +107,15 @@ We'd love your help!. Use tags [up-for-grabs][up-for-grabs-issues] and
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+      
+## Stargazers
+
+[![Stargazers repo roster for @open-telemetry/opentelemetry-js-contrib](https://reporoster.com/stars/open-telemetry/opentelemetry-js-contrib)](https://github.com/open-telemetry/opentelemetry-js-contrib/stargazers)
+
+## Forkers
+
+[![Forkers repo roster for @open-telemetry/opentelemetry-js-contrib](https://reporoster.com/forks/open-telemetry/opentelemetry-js-contrib)](https://github.com/open-telemetry/opentelemetry-js-contrib/network/members)
+
 
 ## License
 
@@ -135,6 +144,9 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-contrib-instrumentation-redis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis
 [otel-contrib-instrumentation-user-interaction]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-user-interaction
 [otel-contrib-plugin-react-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-react-load
+      
+      
 
 [otel-contrib-auto-instr-node]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-node
 [otel-contrib-auto-instr-web]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-web
+      
