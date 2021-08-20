@@ -336,16 +336,12 @@ describe('ioredis', () => {
         context.with(trace.setSpan(context.active(), span), () => {
           const stream = client.scanStream();
           stream
-            .on('data', resultKeys => {
-              // `resultKeys` is an array of strings representing key names.
+            .on('data', _resultKeys => {
+              // `_resultKeys` is an array of strings representing key names.
               // Note that resultKeys may contain 0 keys, and that it will sometimes
               // contain duplicates due to SCAN's implementation in Redis.
-              for (let i = 0; i < resultKeys.length; i++) {
-                console.log(resultKeys[i]);
-              }
             })
             .on('end', () => {
-              console.log('all keys have been visited');
               assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
@@ -846,17 +842,13 @@ describe('ioredis', () => {
             _cmdArgs: Array<string | Buffer | number>,
             response: unknown
           ) => {
-            try {
-              assert.strictEqual(cmdName, 'incr');
-              // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
-              assert.strictEqual(response, 1);
-              span.setAttribute(
-                'attribute key from hook',
-                'custom value from hook'
-              );
-            } catch (err) {
-              console.log(err);
-            }
+            assert.strictEqual(cmdName, 'incr');
+            // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
+            assert.strictEqual(response, 1);
+            span.setAttribute(
+              'attribute key from hook',
+              'custom value from hook'
+            );
           },
         };
         instrumentation = new IORedisInstrumentation(config);
