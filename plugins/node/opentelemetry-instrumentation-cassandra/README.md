@@ -16,7 +16,7 @@ npm install --save @opentelemetry/instrumentation-cassandra-driver
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { CassandraDriverInstrumentation } = require('@opentelemetry/instrumentation-cassandra-driver');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

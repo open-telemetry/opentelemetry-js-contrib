@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ReadableSpan } from '@opentelemetry/tracing';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { SpanNames } from '../src/enum';
 import { AttributeNames } from '../src/enums/AttributeNames';

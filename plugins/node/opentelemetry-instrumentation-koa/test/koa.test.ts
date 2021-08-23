@@ -16,12 +16,12 @@
 
 import * as KoaRouter from '@koa/router';
 import { context, trace } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 import { KoaInstrumentation } from '../src';

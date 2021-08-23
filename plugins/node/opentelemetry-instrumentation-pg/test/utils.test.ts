@@ -21,7 +21,7 @@ import {
   BasicTracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as pg from 'pg';
 import { PgInstrumentationConfig } from '../src';

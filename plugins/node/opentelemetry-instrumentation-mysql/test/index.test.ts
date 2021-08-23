@@ -23,7 +23,7 @@ import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { MySQLInstrumentation } from '../src';
 

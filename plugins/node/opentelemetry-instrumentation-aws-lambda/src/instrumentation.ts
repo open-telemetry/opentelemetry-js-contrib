@@ -44,7 +44,7 @@ import {
   SemanticAttributes,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
-import { BasicTracerProvider } from '@opentelemetry/tracing';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
 
 import {
   APIGatewayProxyEventHeaders,
