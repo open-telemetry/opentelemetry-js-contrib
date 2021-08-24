@@ -66,6 +66,7 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 ### Web Instrumentations
 
 - [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
+- [@opentelemetry/instrumentation-fetch][otel-instrumentation-fetch]
 - [@opentelemetry/instrumentation-document-load][otel-contrib-instrumentation-document-load]
 - [@opentelemetry/instrumentation-user-interaction][otel-contrib-instrumentation-user-interaction]
 - [@opentelemetry/plugin-react-load][otel-contrib-plugin-react-load]
@@ -116,6 +117,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [up-for-grabs-issues]: https://github.com/open-telemetry/opentelemetry-js-contrib/issues?q=is%3Aissue+is%3Aopen+label%3Aup-for-grabs
 [good-first-issues]: https://github.com/open-telemetry/openTelemetry-js-contrib/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
 
+[otel-instrumentation-fetch]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-fetch
 [otel-instrumentation-grpc]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-grpc
 [otel-instrumentation-http]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-http
 [otel-instrumentation-xml-http-request]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-xml-http-request
