@@ -18,7 +18,7 @@
     "version:update": "lerna run version:update",
     "compile": "lerna run compile",
     "test": "lerna run test",
-    "test:ci:changed": "lerna run test --since origin/main --concurrency 4",
+    "test:ci:changed": "lerna run test --since origin/main",
     "test:browser": "lerna run test:browser",
     "bootstrap": "lerna bootstrap --no-ci",
     "bump": "lerna publish",
