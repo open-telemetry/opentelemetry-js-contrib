@@ -356,8 +356,8 @@ describe('ioredis', () => {
               done(err);
             });
 
-            // Put stream into flowing mode so it will invoke 'end' listener
-            stream.resume();
+          // Put stream into flowing mode so it will invoke 'end' listener
+          stream.resume();
         });
       });
 
