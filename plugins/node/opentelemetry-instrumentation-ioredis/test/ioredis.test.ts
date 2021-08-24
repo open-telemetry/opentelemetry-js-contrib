@@ -336,11 +336,6 @@ describe('ioredis', () => {
         context.with(trace.setSpan(context.active(), span), () => {
           const stream = client.scanStream();
           stream
-            .on('data', _resultKeys => {
-              // `_resultKeys` is an array of strings representing key names.
-              // Note that resultKeys may contain 0 keys, and that it will sometimes
-              // contain duplicates due to SCAN's implementation in Redis.
-            })
             .on('end', () => {
               assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
               span.end();
@@ -360,6 +355,9 @@ describe('ioredis', () => {
             .on('error', err => {
               done(err);
             });
+
+            // Put stream into flowing mode so it will invoke 'end' listener
+            stream.resume();
         });
       });
 
