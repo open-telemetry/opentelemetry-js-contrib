@@ -40,7 +40,7 @@ import MissingComponentDidUpdate from './test-react-components/MissingComponentD
 import ShouldComponentUpdateFalse from './test-react-components/ShouldComponentUpdateFalse';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { act } from 'react-dom/test-utils';
+import { act } from 'react-dom/contrib-test-utils';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { BaseOpenTelemetryComponent } from '../src';
 

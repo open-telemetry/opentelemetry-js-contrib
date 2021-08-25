@@ -32,7 +32,7 @@ import {
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import type * as CassandraDriver from 'cassandra-driver';
 import {
   CassandraDriverInstrumentation,

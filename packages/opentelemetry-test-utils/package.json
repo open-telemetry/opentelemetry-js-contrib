@@ -1,5 +1,5 @@
 {
-  "name": "@opentelemetry/test-utils",
+  "name": "@opentelemetry/contrib-test-utils",
   "version": "0.24.0",
   "description": "Test utilities for opentelemetry components",
   "main": "build/index.js",
@@ -14,7 +14,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "keywords": [
     "opentelemetry",
-    "test-utils"
+    "contrib-test-utils"
   ],
   "files": [
     "build/**/*.js",
