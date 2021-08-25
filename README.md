@@ -50,8 +50,6 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 
 ### Node Instrumentations
 
-- [@opentelemetry/instrumentation-grpc][otel-instrumentation-grpc]
-- [@opentelemetry/instrumentation-http][otel-instrumentation-http]
 - [@opentelemetry/instrumentation-aws-lambda][otel-contrib-instrumentation-aws-lambda]
 - [@opentelemetry/instrumentation-bunyan][otel-contrib-instrumentation-bunyan]
 - [@opentelemetry/instrumentation-cassandra-driver][otel-contrib-instrumentation-cassandra]
@@ -60,7 +58,9 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 - [@opentelemetry/instrumentation-express][otel-contrib-instrumentation-express]
 - [@opentelemetry/instrumentation-generic-pool][otel-contrib-instrumentation-generic-pool]
 - [@opentelemetry/instrumentation-graphql][otel-contrib-instrumentation-graphql]
+- [@opentelemetry/instrumentation-grpc][otel-instrumentation-grpc]
 - [@opentelemetry/instrumentation-hapi][otel-contrib-instrumentation-hapi]
+- [@opentelemetry/instrumentation-http][otel-instrumentation-http]
 - [@opentelemetry/instrumentation-ioredis][otel-contrib-instrumentation-ioredis]
 - [@opentelemetry/instrumentation-knex][otel-contrib-instrumentation-knex]
 - [@opentelemetry/instrumentation-koa][otel-contrib-instrumentation-koa]
