@@ -15,4 +15,4 @@
  */
 
 export * from './resource-assertions';
-export * from './contrib-test-utils';
+export * from './test-utils';
