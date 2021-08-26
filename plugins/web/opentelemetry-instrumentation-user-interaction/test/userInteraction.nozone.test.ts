@@ -618,13 +618,13 @@ describe('UserInteractionInstrumentation', () => {
       after(() => {
         Object.defineProperty(window, 'EventTarget', EventTargetDesc);
         // Undo unwrap putting originals back on it's targets
-        // @ts-expect-error
+        // @ts-expect-error event listener API not optional
         delete Node.prototype.addEventListener;
-        // @ts-expect-error
+        // @ts-expect-error copy
         delete Node.prototype.removeEventListener;
-        // @ts-expect-error
+        // @ts-expect-error copy
         delete Window.prototype.addEventListener;
-        // @ts-expect-error
+        // @ts-expect-error copy
         delete Window.prototype.removeEventListener;
       });
 
