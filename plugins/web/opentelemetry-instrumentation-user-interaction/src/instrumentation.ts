@@ -330,7 +330,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     };
   }
 
-    /**
+  /**
    * Most browser provide event listener api via EventTarget in prototype chain.
    * Exception to this is IE 11 which has it on the prototypes closest to EventTarget:
    *
