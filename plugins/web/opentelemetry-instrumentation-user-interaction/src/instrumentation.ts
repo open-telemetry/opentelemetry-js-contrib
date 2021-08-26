@@ -37,22 +37,6 @@ const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
 
 /**
- * Most browser provide event listener api via EventTarget in prototype chain.
- * Exception to this is IE 11 which has it on the prototypes closest to EventTarget:
- *
- * * - has addEventListener in IE
- * ** - has addEventListener in all other browsers
- * ! - missing in IE
- *
- * HTMLElement -> Element -> Node * -> EventTarget **! -> Object
- * Document -> Node * -> EventTarget **! -> Object
- * Window * -> WindowProperties ! -> EventTarget **! -> Object
- */
-const EVENT_TARGETS = window.EventTarget
-  ? [EventTarget.prototype]
-  : [Node.prototype, Window.prototype];
-
-/**
  * This class represents a UserInteraction plugin for auto instrumentation.
  * If zone.js is available then it patches the zone otherwise it patches
  * addEventListener of HTMLElement
@@ -63,6 +47,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   moduleName = this.component;
   private _spansData = new WeakMap<api.Span, SpanData>();
   private _zonePatched = false;
+  private _eventTargets: EventTarget[];
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
     Function | EventListenerObject,
@@ -76,6 +61,22 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
 
   constructor(config?: InstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
+
+    /**
+     * Most browser provide event listener api via EventTarget in prototype chain.
+     * Exception to this is IE 11 which has it on the prototypes closest to EventTarget:
+     *
+     * * - has addEventListener in IE
+     * ** - has addEventListener in all other browsers
+     * ! - missing in IE
+     *
+     * HTMLElement -> Element -> Node * -> EventTarget **! -> Object
+     * Document -> Node * -> EventTarget **! -> Object
+     * Window * -> WindowProperties ! -> EventTarget **! -> Object
+     */
+    this._eventTargets = window.EventTarget
+      ? [EventTarget.prototype]
+      : [Node.prototype, Window.prototype];
   }
 
   init() {}
@@ -587,7 +588,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       );
     } else {
       this._zonePatched = false;
-      EVENT_TARGETS.forEach(target => {
+      this._eventTargets.forEach(target => {
         if (isWrapped(target.addEventListener)) {
           this._unwrap(target, 'addEventListener');
           api.diag.debug(
@@ -635,7 +636,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
       }
     } else {
-      EVENT_TARGETS.forEach(target => {
+      this._eventTargets.forEach(target => {
         if (isWrapped(target.addEventListener)) {
           this._unwrap(target, 'addEventListener');
         }

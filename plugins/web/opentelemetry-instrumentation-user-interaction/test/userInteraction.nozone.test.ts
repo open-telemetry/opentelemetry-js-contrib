@@ -604,5 +604,42 @@ describe('UserInteractionInstrumentation', () => {
         'go should be unwrapped'
       );
     });
+
+    describe('simulate IE', () => {
+      // Save window.EventTarget reference (including enumerable state)
+      const EventTargetDesc = Object.getOwnPropertyDescriptor(
+        window,
+        'EventTarget'
+      )!;
+      before(() => {
+        // @ts-expect-error window.EventTarget not optional
+        delete window.EventTarget;
+      });
+      after(() => {
+        Object.defineProperty(window, 'EventTarget', EventTargetDesc);
+        // Undo unwrap putting originals back on it's targets
+        // @ts-expect-error
+        delete Node.prototype.addEventListener;
+        // @ts-expect-error
+        delete Node.prototype.removeEventListener;
+        // @ts-expect-error
+        delete Window.prototype.addEventListener;
+        // @ts-expect-error
+        delete Window.prototype.removeEventListener;
+      });
+
+      it('works with missing EventTarget', () => {
+        /*
+         * Would already error out with:
+         * "before each" hook for "works with missing EventTarget"
+         *   ReferenceError: EventTarget is not defined
+         */
+
+        fakeInteraction();
+        assert.equal(exportSpy.args.length, 1, 'should export one span');
+        const spanClick = exportSpy.args[0][0][0];
+        assertClickSpan(spanClick);
+      });
+    });
   });
 });
