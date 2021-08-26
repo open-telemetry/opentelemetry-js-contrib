@@ -22,7 +22,7 @@ import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-docu
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
-import { CompositePropagator, HttpTraceContextPropagator } from '@opentelemetry/core';
+import { CompositePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
 
 const provider = new WebTracerProvider();
 
@@ -32,7 +32,7 @@ provider.register({
   propagator: new CompositePropagator({
     propagators: [
       new B3Propagator(),
-      new HttpTraceContextPropagator(),
+      new W3CTraceContextPropagator(),
     ],
   }),
 });

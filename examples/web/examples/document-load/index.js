@@ -6,7 +6,7 @@ import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xm
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
-import { CompositePropagator, HttpTraceContextPropagator } from '@opentelemetry/core';
+import { CompositePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 const provider = new WebTracerProvider();
@@ -18,7 +18,7 @@ provider.register({
   propagator: new CompositePropagator({
     propagators: [
       new B3Propagator(),
-      new HttpTraceContextPropagator(),
+      new W3CTraceContextPropagator(),
     ],
   }),
 });
