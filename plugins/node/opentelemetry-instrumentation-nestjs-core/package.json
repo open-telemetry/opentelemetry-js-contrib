@@ -46,11 +46,11 @@
     "@opentelemetry/api": "^1.0.2"
   },
   "devDependencies": {
-    "@nestjs/common": "^8.0.5",
-    "@nestjs/core": "^8.0.5",
-    "@nestjs/microservices": "^8.0.5",
-    "@nestjs/platform-express": "^8.0.5",
-    "@nestjs/websockets": "^8.0.5",
+    "@nestjs/common": "8.0.6",
+    "@nestjs/core": "8.0.6",
+    "@nestjs/microservices": "8.0.6",
+    "@nestjs/platform-express": "8.0.6",
+    "@nestjs/websockets": "8.0.6",
     "@opentelemetry/api": "1.0.2",
     "@opentelemetry/context-async-hooks": "0.25.0",
     "@opentelemetry/sdk-trace-node": "0.25.0",
