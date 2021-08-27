@@ -6,8 +6,8 @@ const { diag, DiagConsoleLogger, DiagLogLevel } = opentelemetry;
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.VERBOSE);
 
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const { NodeTracerProvider } = require('@opentelemetry/node');
-const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/tracing');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/sdk-trace-base');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 

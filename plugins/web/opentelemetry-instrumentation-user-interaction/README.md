@@ -20,8 +20,8 @@ npm install --save @opentelemetry/instrumentation-user-interaction
 ## Usage
 
 ```js
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
-import { WebTracerProvider } from '@opentelemetry/web';
+import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';

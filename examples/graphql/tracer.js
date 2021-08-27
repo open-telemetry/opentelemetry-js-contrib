@@ -2,8 +2,8 @@
 
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { GraphQLInstrumentation } = require('@opentelemetry/instrumentation-graphql');
-const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing');
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');

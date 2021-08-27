@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`mysql`](https://www.npmjs.com/package/mysql).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -27,7 +27,7 @@ OpenTelemetry MySQL Instrumentation allows the user to automatically collect tra
 To load a specific plugin (**MySQL** in this case), specify it in the registerInstrumentations's configuration
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { MySQLInstrumentation } = require('@opentelemetry/instrumentation-mysql');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

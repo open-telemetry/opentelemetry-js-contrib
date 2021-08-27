@@ -16,7 +16,7 @@
 
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { ReadableSpan } from '@opentelemetry/tracing';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as mongodb from 'mongodb';
 
