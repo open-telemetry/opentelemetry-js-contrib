@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`memcached@>=2.2.0`][repo-url].
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -27,7 +27,7 @@ OpenTelemetry Memcached Instrumentation allows the user to automatically collect
 To load a specific instrumentation (**memcached** in this case), specify it in the registerInstrumentations' configuration
 
 ```javascript
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { MemcachedInstrumentation } = require('@opentelemetry/instrumentation-memcached');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

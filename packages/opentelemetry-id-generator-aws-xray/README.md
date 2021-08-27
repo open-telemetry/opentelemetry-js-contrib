@@ -24,7 +24,7 @@ In the [global tracer configuration file](https://github.com/open-telemetry/open
 configure the following:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { AWSXRayIdGenerator } = require('@opentelemetry/id-generator-aws-xray');
 
 const tracerConfig = {

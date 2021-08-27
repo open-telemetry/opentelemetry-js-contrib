@@ -19,7 +19,7 @@ import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import { Span } from '@opentelemetry/api';
 import * as assert from 'assert';
 import type * as graphqlTypes from 'graphql';

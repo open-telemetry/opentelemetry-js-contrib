@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`ioredis`](https://github.com/luin/ioredis).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -25,7 +25,7 @@ npm install --save @opentelemetry/instrumentation-ioredis
 To load a specific instrumentation (**ioredis** in this case), specify it in the registerInstrumentations's configuration
 
 ```javascript
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const {
   IORedisInstrumentation,
 } = require('@opentelemetry/instrumentation-ioredis');

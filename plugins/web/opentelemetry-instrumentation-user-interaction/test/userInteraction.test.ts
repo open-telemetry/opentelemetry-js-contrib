@@ -21,8 +21,8 @@ import {
   registerInstrumentations,
 } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import * as tracing from '@opentelemetry/tracing';
-import { WebTracerProvider } from '@opentelemetry/web';
+import * as tracing from '@opentelemetry/sdk-trace-base';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import 'zone.js';

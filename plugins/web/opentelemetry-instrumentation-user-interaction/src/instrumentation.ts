@@ -22,7 +22,7 @@ import {
 
 import * as api from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import { getElementXPath } from '@opentelemetry/web';
+import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
 import {
   AsyncTask,

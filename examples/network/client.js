@@ -1,12 +1,12 @@
 'use strict';
 
 const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { NetInstrumentation } = require('@opentelemetry/instrumentation-net');
 const { DnsInstrumentation } = require('@opentelemetry/instrumentation-dns');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/tracing');
+const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/sdk-trace-base');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 
 const provider = new NodeTracerProvider();

@@ -60,7 +60,7 @@ Since the example adds in a delay to the request, we can see that reflected in t
 
 # Useful links
 - For more information on OpenTelemetry, visit: [opentelemetry.io][otel]
-- For more information on OpenTelemetry for Node.js, visit: [@opentelemetry/node][otel-node]
+- For more information on OpenTelemetry for Node.js, visit: [@opentelemetry/sdk-trace-node][otel-node]
 
 # LICENSE
 
