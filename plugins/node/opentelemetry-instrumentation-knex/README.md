@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`knex`](https://github.com/knex/node-knex) and allows the user to automatically collect trace data and export them to their backend of choice.
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -24,8 +24,8 @@ npm install --save @opentelemetry/instrumentation-knex
 
 ```js
 const { KnexInstrumentation, KnexInstrumentationConfig } = require('@opentelemetry/instrumentation-knex');
-const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing');
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();

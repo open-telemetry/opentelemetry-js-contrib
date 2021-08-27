@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`dns`](http://nodejs.org/dist/latest/docs/api/dns.html).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -19,7 +19,7 @@ npm install --save @opentelemetry/instrumentation-dns
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { DnsInstrumentation } = require('@opentelemetry/instrumentation-dns');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

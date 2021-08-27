@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-net
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { NetInstrumentation } = require('@opentelemetry/instrumentation-net');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

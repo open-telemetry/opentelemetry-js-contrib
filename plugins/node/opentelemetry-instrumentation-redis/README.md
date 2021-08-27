@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`redis@^2.6.0`](https://github.com/NodeRedis/node_redis).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -27,7 +27,7 @@ OpenTelemetry Redis Instrumentation allows the user to automatically collect tra
 To load a specific instrumentation (**redis** in this case), specify it in the registerInstrumentations' configuration
 
 ```javascript
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

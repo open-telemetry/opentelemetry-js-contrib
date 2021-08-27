@@ -18,8 +18,8 @@ import { SpanStatusCode } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
-import { NodeTracerProvider } from '@opentelemetry/node';
+} from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as assert from 'assert';
 import * as tls from 'tls';
 import { NetInstrumentation } from '../src';

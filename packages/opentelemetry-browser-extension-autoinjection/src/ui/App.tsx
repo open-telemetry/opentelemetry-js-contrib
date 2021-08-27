@@ -65,7 +65,7 @@ export class App extends React.Component<AppProps, AppState> {
     };
   }
 
-  componentDidMount() {
+  override componentDidMount() {
     if (chrome.permissions.onAdded) {
       chrome.permissions.onAdded.addListener(this.permissionsUpdated);
       chrome.permissions.onRemoved.addListener(this.permissionsUpdated);
@@ -110,7 +110,7 @@ export class App extends React.Component<AppProps, AppState> {
               target: {
                 tabId,
               },
-              function: () => {
+              func: () => {
                 window.location.reload();
               },
             });
@@ -158,7 +158,7 @@ export class App extends React.Component<AppProps, AppState> {
     );
   }
 
-  render() {
+  override render() {
     const { urlFilter, exporters } = this.state.settings;
 
     const classes = this.props.classes;
@@ -232,7 +232,7 @@ export class App extends React.Component<AppProps, AppState> {
                 for={ExporterType.CONSOLE}
                 isEnabled={exporters[ExporterType.CONSOLE].enabled}
                 onToggle={this.toggleExporter}
-                exporterPackageUrl="https://www.npmjs.com/package/@opentelemetry/tracing"
+                exporterPackageUrl="https://www.npmjs.com/package/@opentelemetry/sdk-trace-base"
               />
               <ExporterOption
                 for={ExporterType.ZIPKIN}
