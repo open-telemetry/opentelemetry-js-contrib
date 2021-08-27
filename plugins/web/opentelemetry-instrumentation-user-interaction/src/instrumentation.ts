@@ -292,7 +292,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
               }
             );
           } else {
-            return plugin._invokeListener(listener, target, args);
+            return plugin._invokeListener(listener, this, args);
           }
         };
         if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
