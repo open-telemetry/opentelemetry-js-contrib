@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`mongodb`](https://github.com/mongodb/node-mongodb-native).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -27,7 +27,7 @@ To load a specific instrumentation (**mongodb** in this case), specify it in the
 
 ```javascript
 const { MongoDBInstrumentation } = require('@opentelemetry/instrumentation-mongodb');
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
