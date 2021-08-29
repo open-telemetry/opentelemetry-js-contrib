@@ -15,7 +15,7 @@
  */
 
 import { diag, ROOT_CONTEXT, SpanKind, TraceFlags } from '@opentelemetry/api';
-import { BasicTracerProvider, Span } from '@opentelemetry/tracing';
+import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { AttributeNames } from '../../src/enums/AttributeNames';

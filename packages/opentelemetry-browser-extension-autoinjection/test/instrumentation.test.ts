@@ -25,7 +25,7 @@ import {
   InstrumentationType,
   PlaceholderValues,
 } from '../src/types';
-import { WebTracerProvider } from '@opentelemetry/web';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { JSDOM } from 'jsdom';
 import { TEST_URL } from './utils';
 

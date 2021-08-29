@@ -27,7 +27,7 @@ import { PermissionManagerProps } from '../types';
 import { Alert } from '@material-ui/lab';
 
 export class PermissionManager extends React.Component<PermissionManagerProps> {
-  render() {
+  override render() {
     const origins = this.props.permissions.origins ?? [];
 
     const accessToAllUrlsGranted =

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { WebTracerProvider } from '@opentelemetry/web';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import {
   DomAttributes,
   DomElements,

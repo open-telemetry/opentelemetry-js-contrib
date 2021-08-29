@@ -54,7 +54,7 @@ After a few seconds (when the request is fulfilled):
 
 # Useful links
 - For more information on OpenTelemetry, visit: [opentelemetry.io][otel]
-- For more information on OpenTelemetry for Node.js, visit: [@opentelemetry/node][otel-node]
+- For more information on OpenTelemetry for Node.js, visit: [@opentelemetry/sdk-trace-node][otel-node]
 
 # LICENSE
 

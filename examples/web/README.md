@@ -1,6 +1,6 @@
 # Overview
 
-This example shows how to use [@opentelemetry/web](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-web) with different instrumentations from contrib repo in a browser.
+This example shows how to use [@opentelemetry/sdk-trace-web](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-web) with different instrumentations from contrib repo in a browser.
 
 ## Installation
 

@@ -15,12 +15,12 @@
  */
 
 import { context, trace, Span } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { AttributeNames } from '../src/enums/AttributeNames';
