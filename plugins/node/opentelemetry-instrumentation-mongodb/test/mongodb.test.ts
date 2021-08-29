@@ -17,12 +17,12 @@
 // for testing locally "npm run docker:start"
 
 import { context, trace, SpanKind, Span } from '@opentelemetry/api';
-import { BasicTracerProvider } from '@opentelemetry/tracing';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
 import { MongoResponseHookInformation } from '../src/types';

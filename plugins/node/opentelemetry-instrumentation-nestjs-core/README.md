@@ -24,7 +24,7 @@ OpenTelemetry Nest Instrumentation allows the user to automatically collect trac
 To load a specific instrumentation (**Nest** in this case), specify it in the registerInstrumentations' configuration.
 
 ```javascript
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { NestInstrumentation } = require('@opentelemetry/instrumentation-nestjs-core');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
