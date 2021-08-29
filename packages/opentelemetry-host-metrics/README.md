@@ -19,7 +19,7 @@ npm install --save @opentelemetry/host-metrics
 ## Usage
 
 ```javascript
-const { MeterProvider } = require('@opentelemetry/metrics');
+const { MeterProvider } = require('@opentelemetry/sdk-metrics-base');
 const { HostMetrics } = require('@opentelemetry/host-metrics');
 const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
 

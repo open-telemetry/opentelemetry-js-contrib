@@ -56,16 +56,17 @@ async function main() {
 
     for (const packageLocation of contribPackageLocations) {
         let changed = false;
-        const package = require(packageLocation);
-        console.log('Processing', package.name);
+        const packageJson = require(packageLocation);
+        console.log('Processing', packageJson.name);
 
         for (const type of ["dependencies", "devDependencies", "peerDependencies"]) {
-            changed = changed || updateDeps(package, type, corePackageList);
+            const changedForType = updateDeps(packageJson, type, corePackageList);
+            changed = changed || changedForType;
         }
 
         if (changed) {
             console.log('Package changed. Writing new version.');
-            fs.writeFileSync(packageLocation, JSON.stringify(package, null, 2) + '\n');
+            fs.writeFileSync(packageLocation, JSON.stringify(packageJson, null, 2) + '\n');
         } else {
             console.log('No change detected');
         }
@@ -74,20 +75,20 @@ async function main() {
     }
 }
 
-function updateDeps(package, type, corePackageList) {
-    if (!package[type]) {
+function updateDeps(packageJson, type, corePackageList) {
+    if (!packageJson[type]) {
         return false;
     }
 
     console.log("\t", type)
     let changed = false;
     for (const corePackage of corePackageList) {
-        const oldCoreVersion = package[type][corePackage.name];
+        const oldCoreVersion = packageJson[type][corePackage.name];
         if (oldCoreVersion) {
             const newVersion = `${getVersionLeader(oldCoreVersion)}${corePackage.nextVersion}`;
             console.log('\t\t', corePackage.name);
             console.log('\t\t\t', oldCoreVersion, '=>', newVersion)
-            package[type][corePackage.name] = newVersion;
+            packageJson[type][corePackage.name] = newVersion;
             changed = true;
         }
     }

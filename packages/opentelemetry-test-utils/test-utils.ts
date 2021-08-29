@@ -23,7 +23,7 @@ import {
   SpanStatus,
 } from '@opentelemetry/api';
 import * as assert from 'assert';
-import { ReadableSpan } from '@opentelemetry/tracing';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
   hrTimeToMilliseconds,
   hrTimeToMicroseconds,

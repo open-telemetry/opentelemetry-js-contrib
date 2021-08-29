@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as tracing from '@opentelemetry/tracing';
+import * as tracing from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 
 export class DummySpanExporter implements tracing.SpanExporter {

@@ -18,14 +18,14 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
   ReadableSpan,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import {
   context,
   SpanKind,
   SpanStatus,
   SpanStatusCode,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   SemanticAttributes,
