@@ -19,7 +19,7 @@ import * as React from 'react';
 import { SaveButtonProps } from '../types';
 
 export class SaveButton extends React.Component<SaveButtonProps> {
-  render() {
+  override render() {
     return (
       <Button
         variant="contained"

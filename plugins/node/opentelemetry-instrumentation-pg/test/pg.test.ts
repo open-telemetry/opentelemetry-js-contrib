@@ -24,12 +24,12 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import type * as pg from 'pg';
 import {

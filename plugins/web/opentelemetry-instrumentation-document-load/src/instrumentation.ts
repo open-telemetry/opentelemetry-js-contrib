@@ -28,7 +28,7 @@ import {
   hasKey,
   PerformanceEntries,
   PerformanceTimingNames as PTN,
-} from '@opentelemetry/web';
+} from '@opentelemetry/sdk-trace-web';
 import {
   InstrumentationBase,
   InstrumentationConfig,
