@@ -23,7 +23,7 @@ npm install @opentelemetry/instrumentation-graphql
 'use strict';
 
 const { GraphQLInstrumentation } = require('@opentelemetry/instrumentation-graphql');
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();

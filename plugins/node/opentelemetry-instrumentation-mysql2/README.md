@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`mysql2`](https://github.com/sidorares/node-mysql2).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -27,7 +27,7 @@ OpenTelemetry MySQL2 Instrumentation allows the user to automatically collect tr
 To load a specific plugin (**MySQL2** in this case), specify it in the registerInstrumentations's configuration
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { MySQL2Instrumentation } = require('@opentelemetry/instrumentation-mysql2');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
