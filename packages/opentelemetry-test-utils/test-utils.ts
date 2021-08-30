@@ -141,4 +141,4 @@ export const getPackageVersion = (packageName: string) => {
   const packagePath = require.resolve(packageName);
   const packageJsonPath = path.join(path.dirname(packagePath), 'package.json');
   return require(packageJsonPath).version;
-}
+};
