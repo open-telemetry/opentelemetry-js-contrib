@@ -92,6 +92,17 @@ Multiple instrumentations may be leveraged via metapackages.
 - [@opentelemetry/auto-instrumentations-node][otel-contrib-auto-instr-node] - Metapackage which bundles opentelemetry node core and contrib instrumentations
 - [@opentelemetry/auto-instrumentations-web][otel-contrib-auto-instr-web] - Metapackage which bundles opentelemetry web core and contrib instrumentations
 
+## Resource Detectors
+
+OpenTelemetry can collect resource attributes of the entity that producing telemetry. For example, a process producing telemetry that is running in a container on Kubernetes has a Pod name, it is in a namespace and possibly is part of a Deployment which also has a name. All three of these attributes can be included in the `Resource`.
+
+Currently, OpenTelemetry supports automatic collection for following environments:
+
+- [@opentelemetry/resource-detector-alibaba-cloud][otel-contrib-resource-detector-alibaba-cloud]
+- [@opentelemetry/resource-detector-aws][otel-contrib-resource-detector-aws]
+- [@opentelemetry/resource-detector-gcp][otel-contrib-resource-detector-gcp]
+- [@opentelemetry/resource-detector-github][otel-contrib-resource-detector-github]
+
 ## Supported Runtimes
 
 Platform Version | Supported
@@ -166,3 +177,8 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [otel-contrib-auto-instr-node]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-node
 [otel-contrib-auto-instr-web]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-web
+
+[otel-contrib-resource-detector-alibaba-cloud]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-alibaba-cloud
+[otel-contrib-resource-detector-aws]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-aws
+[otel-contrib-resource-detector-gcp]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-gcp
+[otel-contrib-resource-detector-github]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-github
