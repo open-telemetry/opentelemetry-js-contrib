@@ -41,7 +41,6 @@ import {
   CommandResult,
 } from './types';
 import { VERSION } from './version';
-import { DbStatementSerializer } from './types';
 
 const supportedVersions = ['>=3.3 <4'];
 
@@ -410,24 +409,23 @@ export class MongoDBInstrumentation extends InstrumentationBase<
 
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     const commandObj = command.query ?? command.q ?? command;
-    const dbStatementSerializer: DbStatementSerializer =
-      this._config.dbStatementSerializer ||
-      this._defaultDbStatementSerializer.bind(this);
+    const dbStatementSerializer =
+      typeof this._config.dbStatementSerializer === 'function'
+        ? this._config.dbStatementSerializer
+        : this._defaultDbStatementSerializer.bind(this);
 
-    if (typeof dbStatementSerializer === 'function') {
-      safeExecuteInTheMiddle(
-        () => {
-          const query = dbStatementSerializer(commandObj);
-          span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
-        },
-        err => {
-          if (err) {
-            this._diag.error('Error running dbStatementSerializer hook', err);
-          }
-        },
-        true
-      );
-    }
+    safeExecuteInTheMiddle(
+      () => {
+        const query = dbStatementSerializer(commandObj);
+        span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
+      },
+      err => {
+        if (err) {
+          this._diag.error('Error running dbStatementSerializer hook', err);
+        }
+      },
+      true
+    );
   }
 
   private _defaultDbStatementSerializer(commandObj: Record<string, unknown>) {
