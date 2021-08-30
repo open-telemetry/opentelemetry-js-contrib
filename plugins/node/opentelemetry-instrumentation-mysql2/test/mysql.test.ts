@@ -27,6 +27,7 @@ import {
 import * as assert from 'assert';
 import { MySQL2Instrumentation } from '../src';
 
+const LIB_VERSION = testUtils.getPackageVersion('mysql2');
 const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
@@ -122,6 +123,10 @@ describe('mysql@2.x', () => {
         (poolCluster as any).end(() => {
           done();
         });
+
+        if (shouldIgnorePoolClusterEndCallback()) {
+          done();
+        }
       });
     });
   });
@@ -658,4 +663,10 @@ function assertSpan(
     assert.strictEqual(span.status.message, errorMessage);
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
   }
+}
+
+function shouldIgnorePoolClusterEndCallback() {
+  // Since v2.2.0 `end` function respect callback
+  // https://github.com/sidorares/node-mysql2/commit/1481015626e506754adc4308e5508356a3a03aa0
+  return ['2.0.0', '2.0.1', '2.0.2', '2.1.0'].includes(LIB_VERSION);
 }
