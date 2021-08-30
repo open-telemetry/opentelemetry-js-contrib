@@ -17,7 +17,7 @@
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,

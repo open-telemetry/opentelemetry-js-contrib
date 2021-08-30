@@ -23,7 +23,7 @@ import {
 import {
   assertEmptyResource,
   assertContainerResource,
-} from '@opentelemetry/test-utils';
+} from '@opentelemetry/contrib-test-utils';
 import * as os from 'os';
 
 describe('BeanstalkResourceDetector', () => {

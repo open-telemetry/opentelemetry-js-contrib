@@ -21,7 +21,7 @@ import { awsEc2Detector } from '../../src';
 import {
   assertCloudResource,
   assertHostResource,
-} from '@opentelemetry/test-utils';
+} from '@opentelemetry/contrib-test-utils';
 
 const AWS_HOST = 'http://' + awsEc2Detector.AWS_IDMS_ENDPOINT;
 const AWS_TOKEN_PATH = awsEc2Detector.AWS_INSTANCE_TOKEN_DOCUMENT_PATH;
