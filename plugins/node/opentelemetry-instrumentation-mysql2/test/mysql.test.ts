@@ -118,14 +118,15 @@ describe('mysql@2.x', () => {
     instrumentation.disable();
     connection.end(() => {
       pool.end(() => {
-        // PoolCluster.end types in the package are invalid
-        // https://github.com/sidorares/node-mysql2/pull/1332
-        (poolCluster as any).end(() => {
+        if (isPoolClusterEndIgnoreCallback()) {
+          poolCluster.end();
           done();
-        });
-
-        if (shouldIgnorePoolClusterEndCallback()) {
-          done();
+        } else {
+          // PoolCluster.end types in the package are invalid
+          // https://github.com/sidorares/node-mysql2/pull/1332
+          (poolCluster as any).end(() => {
+            done();
+          });
         }
       });
     });
@@ -665,7 +666,7 @@ function assertSpan(
   }
 }
 
-function shouldIgnorePoolClusterEndCallback() {
+function isPoolClusterEndIgnoreCallback() {
   // Since v2.2.0 `end` function respect callback
   // https://github.com/sidorares/node-mysql2/commit/1481015626e506754adc4308e5508356a3a03aa0
   return ['2.0.0', '2.0.1', '2.0.2', '2.1.0'].includes(LIB_VERSION);
