@@ -18,7 +18,7 @@ import * as assert from 'assert';
 import {
   assertCloudResource,
   assertEmptyResource,
-} from '@opentelemetry/test-utils';
+} from '@opentelemetry/contrib-test-utils';
 
 import { awsLambdaDetector } from '../../src';
 

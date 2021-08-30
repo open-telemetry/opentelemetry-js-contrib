@@ -24,7 +24,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
