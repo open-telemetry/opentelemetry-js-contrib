@@ -3,5 +3,5 @@ ioredis:
   versions: ">1 < 4.19.0 || > 4.19.0 < 5"
   commands: npm run test
 
-  # Fix missing `test-utils` package
+  # Fix missing `contrib-test-utils` package
   pretest: npm run --prefix ../../../ lerna:link 
