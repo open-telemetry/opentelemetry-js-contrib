@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`connect`](https://github.com/senchalabs/connect).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -29,7 +29,7 @@ OpenTelemetry Connect Instrumentation allows the user to automatically collect t
 To load the instrumentation, specify it in the Node Tracer's configuration:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { ConnectInstrumentation } = require('@opentelemetry/instrumentation-connnect');

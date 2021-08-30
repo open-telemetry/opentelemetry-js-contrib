@@ -60,6 +60,6 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/resources": "^0.24.0"
+    "@opentelemetry/resources": "^0.25.0"
   }
 }

@@ -29,11 +29,11 @@ import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import {
   PerformanceTimingNames as PTN,
   StackContextManager,
-} from '@opentelemetry/web';
+} from '@opentelemetry/sdk-trace-web';
 
 import * as assert from 'assert';
 import * as sinon from 'sinon';

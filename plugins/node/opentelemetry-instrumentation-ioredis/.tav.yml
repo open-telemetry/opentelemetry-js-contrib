@@ -1,0 +1,7 @@
+ioredis:
+  # Ignoring v4.19.0. Tests never ends. Caused by https://github.com/luin/ioredis/pull/1219
+  versions: ">1 < 4.19.0 || > 4.19.0 < 5"
+  commands: npm run test
+
+  # Fix missing `contrib-test-utils` package
+  pretest: npm run --prefix ../../../ lerna:link 

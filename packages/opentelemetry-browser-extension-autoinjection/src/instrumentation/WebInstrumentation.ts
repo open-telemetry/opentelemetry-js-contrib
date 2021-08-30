@@ -17,7 +17,7 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import { WebTracerProvider } from '@opentelemetry/web';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
@@ -25,7 +25,7 @@ import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import {
   Exporters,
   ExporterType,

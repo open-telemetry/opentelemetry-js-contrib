@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`pg and pg-pool`](https://github.com/brianc/node-postgres)
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -22,7 +22,7 @@ It will install Instrumentation for PG and PG-POOL
 
 ```js
 const { PgInstrumentation } = require('@opentelemetry/instrumentation-pg');
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();

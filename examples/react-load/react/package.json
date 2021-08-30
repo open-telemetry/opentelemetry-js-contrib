@@ -36,12 +36,12 @@
     "ts-loader": "^6.0.4"
   },
   "dependencies": {
-    "@opentelemetry/context-zone": "^0.24.0",
-    "@opentelemetry/core": "^0.24.0",
-    "@opentelemetry/exporter-collector": "^0.24.0",
+    "@opentelemetry/context-zone": "^0.25.0",
+    "@opentelemetry/core": "^0.25.0",
+    "@opentelemetry/exporter-collector": "^0.25.0",
     "@opentelemetry/plugin-react-load": "^0.23.0",
-    "@opentelemetry/tracing": "^0.24.0",
-    "@opentelemetry/web": "^0.24.0",
+    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@opentelemetry/sdk-trace-web": "^0.25.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.2.0",

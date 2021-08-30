@@ -47,9 +47,9 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "1.0.2",
-    "@opentelemetry/context-async-hooks": "0.24.0",
-    "@opentelemetry/node": "0.24.0",
-    "@opentelemetry/tracing": "0.24.0",
+    "@opentelemetry/context-async-hooks": "0.25.0",
+    "@opentelemetry/sdk-trace-node": "0.25.0",
+    "@opentelemetry/sdk-trace-base": "0.25.0",
     "@types/mocha": "7.0.2",
     "@types/node": "14.17.9",
     "@types/sinon": "10.0.2",
@@ -65,6 +65,6 @@
     "winston2": "npm:winston@2.4.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.24.0"
+    "@opentelemetry/instrumentation": "^0.25.0"
   }
 }

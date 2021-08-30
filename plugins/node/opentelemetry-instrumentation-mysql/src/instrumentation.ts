@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { diag, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  Span,
+  SpanKind,
+  SpanStatusCode,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -27,6 +33,11 @@ import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
 import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
+
+type getConnectionCallbackType = (
+  err: mysqlTypes.MysqlError,
+  connection: mysqlTypes.PoolConnection
+) => void;
 
 export class MySQLInstrumentation extends InstrumentationBase<
   typeof mysqlTypes
@@ -176,21 +187,21 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
         if (arguments.length === 1 && typeof arg1 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg1,
+            arg1 as getConnectionCallbackType,
             format
           );
           return originalGetConnection.call(pool, patchFn);
         }
         if (arguments.length === 2 && typeof arg2 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg2,
+            arg2 as getConnectionCallbackType,
             format
           );
           return originalGetConnection.call(pool, arg1, patchFn);
         }
         if (arguments.length === 3 && typeof arg3 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg3,
+            arg3 as getConnectionCallbackType,
             format
           );
           return originalGetConnection.call(pool, arg1, arg2, patchFn);
@@ -201,22 +212,30 @@ export class MySQLInstrumentation extends InstrumentationBase<
     };
   }
 
-  private _getConnectionCallbackPatchFn(cb: Function, format: formatType) {
+  private _getConnectionCallbackPatchFn(
+    cb: getConnectionCallbackType,
+    format: formatType
+  ) {
     const thisPlugin = this;
-    return function () {
-      if (arguments[1]) {
+    const activeContext = context.active();
+    return function (
+      this: any,
+      err: mysqlTypes.MysqlError,
+      connection: mysqlTypes.PoolConnection
+    ) {
+      if (connection) {
         // this is the callback passed into a query
         // no need to unwrap
-        if (!isWrapped(arguments[1].query)) {
+        if (!isWrapped(connection.query)) {
           thisPlugin._wrap(
-            arguments[1],
+            connection,
             'query',
-            thisPlugin._patchQuery(arguments[1], format)
+            thisPlugin._patchQuery(connection, format)
           );
         }
       }
       if (typeof cb === 'function') {
-        cb(...arguments);
+        context.with(activeContext, cb, this, err, connection);
       }
     };
   }
