@@ -69,9 +69,11 @@ export const addSpanPerformancePaintEvents = (span: Span) => {
   if (typeof PerformanceObserver === 'function') {
     const observer = new PerformanceObserver(() => {});
     observer.observe({ type: 'largest-contentful-paint', buffered: true });
-    const [lcpRecord] = observer.takeRecords();
-    if (lcpRecord) {
-      span.addEvent(EventNames.LARGEST_CONTENTFUL_PAINT, lcpRecord.startTime);
+    if (typeof observer.takeRecords === 'function') {
+      const [lcpRecord] = observer.takeRecords();
+      if (lcpRecord) {
+        span.addEvent(EventNames.LARGEST_CONTENTFUL_PAINT, lcpRecord.startTime);
+      }
     }
   }
 };
