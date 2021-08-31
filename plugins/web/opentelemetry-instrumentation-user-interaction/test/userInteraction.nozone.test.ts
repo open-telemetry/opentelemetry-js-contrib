@@ -486,7 +486,11 @@ describe('UserInteractionInstrumentation', () => {
       btn2.setAttribute('id', 'btn2');
       root.appendChild(btn2);
 
-      root.addEventListener('click', event => {
+      const listenerThis: EventTarget[] = [];
+      root.addEventListener('click', function (event) {
+        // Assert here with failure would also affect other tests due to setTimeout bellow
+        listenerThis.push(this);
+
         switch (event.target) {
           case btn1:
             getData(FILE_URL, () => {
@@ -506,6 +510,17 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
+        assert.strictEqual(
+          listenerThis[0],
+          root,
+          'this inside event listener matches listened target (0)'
+        );
+        assert.strictEqual(
+          listenerThis[1],
+          root,
+          'this inside event listener matches listened target (1)'
+        );
+
         assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];

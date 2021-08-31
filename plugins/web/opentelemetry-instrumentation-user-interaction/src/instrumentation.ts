@@ -267,7 +267,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         useCapture: any
       ) {
         const once = useCapture && useCapture.once;
-        const patchedListener = (...args: any[]) => {
+        const patchedListener = function (this: HTMLElement, ...args: any[]) {
           let parentSpan: api.Span | undefined;
           const event: Event | undefined = args[0];
           const target = event?.target;
@@ -285,14 +285,14 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             return api.context.with(
               api.trace.setSpan(api.context.active(), span),
               () => {
-                const result = plugin._invokeListener(listener, target, args);
+                const result = plugin._invokeListener(listener, this, args);
                 // no zone so end span immediately
                 span.end();
                 return result;
               }
             );
           } else {
-            return plugin._invokeListener(listener, target, args);
+            return plugin._invokeListener(listener, this, args);
           }
         };
         if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
