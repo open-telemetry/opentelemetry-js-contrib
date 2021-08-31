@@ -21,7 +21,7 @@ import { alibabaCloudEcsDetector } from '../../src';
 import {
   assertCloudResource,
   assertHostResource,
-} from '@opentelemetry/test-utils';
+} from '@opentelemetry/contrib-test-utils';
 
 const ALIYUN_HOST =
   'http://' + alibabaCloudEcsDetector.ALIBABA_CLOUD_IDMS_ENDPOINT;

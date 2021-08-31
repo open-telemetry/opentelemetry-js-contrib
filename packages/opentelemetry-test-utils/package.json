@@ -1,8 +1,7 @@
 {
-  "name": "@opentelemetry/test-utils",
-  "private": true,
+  "name": "@opentelemetry/contrib-test-utils",
   "version": "0.24.0",
-  "description": "Test utilities.",
+  "description": "Test utilities for opentelemetry components",
   "main": "build/index.js",
   "scripts": {
     "lint": "eslint . --ext .ts",
@@ -15,7 +14,14 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "keywords": [
     "opentelemetry",
-    "test-utils"
+    "contrib-test-utils"
+  ],
+  "files": [
+    "build/**/*.js",
+    "build/**/*.js.map",
+    "build/**/*.d.ts",
+    "LICENSE",
+    "README.md"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
