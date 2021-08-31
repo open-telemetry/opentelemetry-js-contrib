@@ -6,11 +6,13 @@
   "main": "index.js",
   "scripts": {
     "client": "node ./client.js",
+    "client:federation": "node ./client-federation.js",
     "docker:start": "cd ./docker && docker-compose down && docker-compose up",
     "docker:startd": "cd ./docker && docker-compose down && docker-compose up -d",
     "docker:stop": "cd ./docker && docker-compose down",
+    "server:apollo": "node ./server-apollo.js",
     "server:express": "node ./server-express.js",
-    "server:apollo": "node ./server-apollo.js"
+    "server:federation": "node ./server-federation.js"
   },
   "repository": {
     "type": "git",
@@ -31,18 +33,22 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
   },
   "dependencies": {
+    "@apollo/gateway": "^0.19.1",
+    "@graphql-tools/wrap": "^6.0.18",
     "@opentelemetry/api": "^1.0.2",
     "@opentelemetry/exporter-collector": "^0.25.0",
     "@opentelemetry/instrumentation": "^0.25.0",
-    "@opentelemetry/instrumentation-express": "^0.23.0",
-    "@opentelemetry/instrumentation-graphql": "^0.23.0",
+    "@opentelemetry/instrumentation-express": "^0.24.0",
+    "@opentelemetry/instrumentation-graphql": "^0.24.0",
     "@opentelemetry/instrumentation-http": "^0.25.0",
-    "@opentelemetry/sdk-trace-node": "^0.25.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@opentelemetry/node": "^0.25.0",
+    "@opentelemetry/tracing": "^0.25.0",
     "apollo-server": "^2.18.1",
+    "cross-fetch": "^3.0.5",
     "express": "^4.17.1",
     "express-graphql": "^0.11.0",
-    "graphql": "^15.3.0"
+    "graphql": "^15.3.0",
+    "graphql-transform-federation": "^2.1.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
   "devDependencies": {
