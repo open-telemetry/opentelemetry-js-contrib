@@ -18,21 +18,21 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
   ReadableSpan,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import {
   context,
   SpanKind,
   SpanStatus,
   SpanStatusCode,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import type * as CassandraDriver from 'cassandra-driver';
 import {
   CassandraDriverInstrumentation,

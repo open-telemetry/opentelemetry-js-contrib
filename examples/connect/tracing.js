@@ -8,8 +8,8 @@ diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 const { Resource } = require('@opentelemetry/resources');
 const { ResourceAttributes: SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const { NodeTracerProvider } = require('@opentelemetry/node');
-const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
 
 const { ConnectInstrumentation } = require('@opentelemetry/instrumentation-connect');

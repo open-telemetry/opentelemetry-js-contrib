@@ -20,7 +20,7 @@ import { awsBeanstalkDetector, AwsBeanstalkDetector } from '../../src';
 import {
   assertEmptyResource,
   assertServiceResource,
-} from '@opentelemetry/test-utils';
+} from '@opentelemetry/contrib-test-utils';
 import { CloudPlatformValues } from '@opentelemetry/semantic-conventions';
 
 describe('BeanstalkResourceDetector', () => {
