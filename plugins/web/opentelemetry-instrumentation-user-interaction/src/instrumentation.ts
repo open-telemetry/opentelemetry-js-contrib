@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  isWrapped,
-  InstrumentationBase,
-} from '@opentelemetry/instrumentation';
+import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
