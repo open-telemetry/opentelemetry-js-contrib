@@ -17,7 +17,6 @@
 import {
   isWrapped,
   InstrumentationBase,
-  InstrumentationConfig,
 } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
@@ -28,6 +27,7 @@ import {
   AsyncTask,
   RunTaskFunction,
   SpanData,
+  UserInteractionInstrumentationConfig,
   WindowWithZone,
   ZoneTypeWithPrototype,
 } from './types';
@@ -35,6 +35,7 @@ import { VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
+const DEFAULT_EVENT_TYPES = ['click'];
 
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
@@ -57,9 +58,17 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     Event,
     api.Span
   >();
+  private _eventTypes: Set<string>;
+  private _onSpan?: (
+    eventType: string,
+    element: HTMLElement,
+    span: api.Span
+  ) => void;
 
-  constructor(config?: InstrumentationConfig) {
+  constructor(config?: UserInteractionInstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
+    this._eventTypes = new Set(config?.eventTypes ?? DEFAULT_EVENT_TYPES);
+    this._onSpan = config?.onSpan;
   }
 
   init() {}
@@ -90,8 +99,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * Controls whether or not to create a span, based on the event type.
    */
   protected _allowEventType(eventType: string): boolean {
-    return eventType === 'click';
+    return this._eventTypes.has(eventType);
   }
+
   /**
    * Creates a new span
    * @param element
@@ -132,6 +142,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
           ? api.trace.setSpan(api.context.active(), parentSpan)
           : undefined
       );
+
+      this._onSpan?.(eventName, element, span);
 
       this._spansData.set(span, {
         taskCount: 0,

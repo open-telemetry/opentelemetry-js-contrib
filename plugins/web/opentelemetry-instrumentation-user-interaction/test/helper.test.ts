@@ -34,7 +34,7 @@ export function createButton(disabled?: boolean): HTMLElement {
   return button;
 }
 
-export function fakeInteraction(
+export function fakeClickInteraction(
   callback: Function = function () {},
   element: HTMLElement = createButton()
 ) {
@@ -45,14 +45,41 @@ export function fakeInteraction(
   element.click();
 }
 
+export function fakeEventInteraction(
+  eventType: string,
+  callback: Function = function () {},
+  elem?: HTMLElement
+) {
+  const element: HTMLElement = elem || createButton();
+  const event = document.createEvent('Event');
+  event.initEvent(eventType, true, true);
+
+  element.addEventListener(eventType, () => {
+    callback();
+  });
+
+  element.dispatchEvent(event);
+}
+
 export function assertClickSpan(span: tracing.ReadableSpan, id = 'testBtn') {
-  assert.equal(span.name, 'click');
+  assertInteractionSpan(span, { name: 'click', elementId: id });
+}
+
+export function assertInteractionSpan(
+  span: tracing.ReadableSpan,
+  {
+    name,
+    eventType = name,
+    elementId = 'testBtn',
+  }: { name: string; eventType?: string; elementId?: string }
+) {
+  assert.strictEqual(span.name, name);
 
   const attributes = span.attributes;
-  assert.equal(attributes.component, 'user-interaction');
-  assert.equal(attributes.event_type, 'click');
-  assert.equal(attributes.target_element, 'BUTTON');
-  assert.equal(attributes.target_xpath, `//*[@id="${id}"]`);
+  assert.strictEqual(attributes.component, 'user-interaction');
+  assert.strictEqual(attributes.event_type, eventType);
+  assert.strictEqual(attributes.target_element, 'BUTTON');
+  assert.strictEqual(attributes.target_xpath, `//*[@id="${elementId}"]`);
   assert.ok(attributes['http.url'] !== '');
   assert.ok(attributes['user_agent'] !== '');
 }
