@@ -277,6 +277,23 @@ describe('UserInteractionInstrumentation', () => {
       assert.deepStrictEqual(onSpan.args, [['click', element, span]]);
     });
 
+    it('should not record span when onSpan returns false', () => {
+      const onSpan = () => false;
+      registerInstrumentation({
+        onSpan,
+      });
+
+      const element = createButton();
+      element.addEventListener('click', () => {});
+      element.click();
+
+      assert.strictEqual(
+        exportSpy.args.length,
+        0,
+        'should not export any spans'
+      );
+    });
+
     it('should run task from different zone - angular test', done => {
       const context = ROOT_CONTEXT;
       const rootZone = Zone.current;

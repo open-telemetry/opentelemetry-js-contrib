@@ -56,11 +56,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     api.Span
   >();
   private _eventTypes: Set<string>;
-  private _onSpan?: (
-    eventType: string,
-    element: HTMLElement,
-    span: api.Span
-  ) => void;
+  private _onSpan: UserInteractionInstrumentationConfig['onSpan'];
 
   constructor(config?: UserInteractionInstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
@@ -140,7 +136,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
           : undefined
       );
 
-      this._onSpan?.(eventName, element, span);
+      if (this._onSpan?.(eventName, element, span) === false) {
+        return undefined;
+      }
 
       this._spansData.set(span, {
         taskCount: 0,

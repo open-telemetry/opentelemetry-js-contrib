@@ -28,8 +28,13 @@ export interface UserInteractionInstrumentationConfig
   /**
    * Callback function called each time new span is being created.
    * You can use this handler to enhance created span with extra attributes.
+   * Return `false` to prevent span recording.
    */
-  onSpan?: (eventType: string, element: HTMLElement, span: Span) => void;
+  onSpan?: (
+    eventType: string,
+    element: HTMLElement,
+    span: Span
+  ) => boolean | void;
 }
 
 /**
