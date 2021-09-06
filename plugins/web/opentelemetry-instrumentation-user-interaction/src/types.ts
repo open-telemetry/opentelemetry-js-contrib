@@ -25,7 +25,7 @@ export interface UserInteractionInstrumentationConfig
    * List of events to instrument (like 'mousedown', 'touchend', 'play' etc).
    * By default only 'click' event is instrumented.
    */
-  eventTypes?: EventName[];
+  eventNames?: EventName[];
 
   /**
    * Callback function called each time new span is being created.

@@ -241,7 +241,7 @@ describe('UserInteractionInstrumentation', () => {
 
     it('should export spans for configured event types', () => {
       registerInstrumentation({
-        eventTypes: ['play'],
+        eventNames: ['play'],
       });
 
       fakeEventInteraction('play');
@@ -252,7 +252,7 @@ describe('UserInteractionInstrumentation', () => {
 
     it('should not export clicks if this event was not configured to be captured', () => {
       registerInstrumentation({
-        eventTypes: ['play'],
+        eventNames: ['play'],
       });
 
       fakeClickInteraction();

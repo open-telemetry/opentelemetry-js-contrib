@@ -33,7 +33,7 @@ import { VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
-const DEFAULT_EVENT_TYPES: EventName[] = ['click'];
+const DEFAULT_EVENT_NAMES: EventName[] = ['click'];
 
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
@@ -56,12 +56,12 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     Event,
     api.Span
   >();
-  private _eventTypes: Set<EventName>;
+  private _eventNames: Set<EventName>;
   private _onSpan: UserInteractionInstrumentationConfig['onSpan'];
 
   constructor(config?: UserInteractionInstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
-    this._eventTypes = new Set(config?.eventTypes ?? DEFAULT_EVENT_TYPES);
+    this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES);
     this._onSpan = config?.onSpan;
   }
 
@@ -92,8 +92,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   /**
    * Controls whether or not to create a span, based on the event type.
    */
-  protected _allowEventType(eventType: EventName): boolean {
-    return this._eventTypes.has(eventType);
+  protected _allowEventName(eventName: EventName): boolean {
+    return this._eventNames.has(eventName);
   }
 
   /**
@@ -115,7 +115,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     if (element.hasAttribute('disabled')) {
       return undefined;
     }
-    if (!this._allowEventType(eventName)) {
+    if (!this._allowEventName(eventName)) {
       return undefined;
     }
     const xpath = getElementXPath(element, true);
