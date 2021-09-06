@@ -22,6 +22,7 @@ import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
 import {
   AsyncTask,
+  EventName,
   RunTaskFunction,
   SpanData,
   UserInteractionInstrumentationConfig,
@@ -32,7 +33,7 @@ import { VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
-const DEFAULT_EVENT_TYPES = ['click'];
+const DEFAULT_EVENT_TYPES: EventName[] = ['click'];
 
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
@@ -55,7 +56,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     Event,
     api.Span
   >();
-  private _eventTypes: Set<string>;
+  private _eventTypes: Set<EventName>;
   private _onSpan: UserInteractionInstrumentationConfig['onSpan'];
 
   constructor(config?: UserInteractionInstrumentationConfig) {
@@ -91,7 +92,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   /**
    * Controls whether or not to create a span, based on the event type.
    */
-  protected _allowEventType(eventType: string): boolean {
+  protected _allowEventType(eventType: EventName): boolean {
     return this._eventTypes.has(eventType);
   }
 
@@ -102,7 +103,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    */
   private _createSpan(
     element: EventTarget | null | undefined,
-    eventName: string,
+    eventName: EventName,
     parentSpan?: api.Span | undefined
   ): api.Span | undefined {
     if (!(element instanceof HTMLElement)) {

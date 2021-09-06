@@ -17,13 +17,15 @@
 import { HrTime, Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
+export type EventName = keyof HTMLElementEventMap;
+
 export interface UserInteractionInstrumentationConfig
   extends InstrumentationConfig {
   /**
    * List of events to instrument (like 'mousedown', 'touchend', 'play' etc).
    * By default only 'click' event is instrumented.
    */
-  eventTypes?: string[];
+  eventTypes?: EventName[];
 
   /**
    * Callback function called each time new span is being created.
@@ -31,7 +33,7 @@ export interface UserInteractionInstrumentationConfig
    * Return `false` to prevent span recording.
    */
   onSpan?: (
-    eventType: string,
+    eventType: EventName,
     element: HTMLElement,
     span: Span
   ) => boolean | void;
@@ -41,7 +43,7 @@ export interface UserInteractionInstrumentationConfig
  * Async Zone task
  */
 export type AsyncTask = Task & {
-  eventName: string;
+  eventName: EventName;
   target: EventTarget;
   // Allows access to the private `_zone` property of a Zone.js Task.
   _zone: Zone;
