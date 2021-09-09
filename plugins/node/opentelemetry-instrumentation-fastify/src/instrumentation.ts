@@ -16,10 +16,8 @@
 
 import {
   context,
-  diag,
   Span,
   SpanAttributes,
-  SpanOptions,
   SpanStatusCode,
   trace,
 } from '@opentelemetry/api';
@@ -62,11 +60,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
         'fastify',
         ['^3.0.0'],
         (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for fastify@${moduleVersion}`);
+          this._diag.debug(`Applying patch for fastify@${moduleVersion}`);
           return this._patchConstructor(moduleExports);
-        },
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Removing patch for fastify@${moduleVersion}`);
         }
       ),
     ];
@@ -138,10 +133,6 @@ export class FastifyInstrumentation extends InstrumentationBase {
       original: FastifyInstance['addHook']
     ): () => FastifyInstance {
       return function wrappedAddHook(this: any, ...args: any) {
-        if (!instrumentation.isEnabled()) {
-          return original.apply(this, args);
-        }
-
         const name = args[0] as string;
         const handler = args[1] as HandlerOriginal;
         const pluginName = this.pluginName;
@@ -160,7 +151,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
     original: () => FastifyInstance
   ): () => FastifyInstance {
     const instrumentation = this;
-    return function (this: FastifyInstance, ...args) {
+    return function fastify(this: FastifyInstance, ...args) {
       const app: FastifyInstance = original.apply(this, args);
       app.addHook('onRequest', instrumentation._hookOnRequest());
       app.addHook('preHandler', instrumentation._hookPreHandler());
@@ -237,12 +228,6 @@ export class FastifyInstrumentation extends InstrumentationBase {
     spanName: string,
     spanAttributes: SpanAttributes = {}
   ): Span {
-    const options: SpanOptions = {
-      attributes: {
-        ...spanAttributes,
-      },
-    };
-
-    return this.tracer.startSpan(spanName, options);
+    return this.tracer.startSpan(spanName, { attributes: spanAttributes });
   }
 }

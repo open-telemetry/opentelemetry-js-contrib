@@ -39,26 +39,24 @@ export function safeExecuteInTheMiddleMaybePromise<T>(
     executeResult = execute();
     const promiseResult = executeResult as Promise<T>;
 
-    isPromise =
-      promiseResult &&
-      typeof promiseResult.then === 'function' &&
-      typeof promiseResult.catch === 'function';
+    isPromise = promiseResult && typeof promiseResult.then === 'function';
 
     if (isPromise) {
-      promiseResult
-        .then(res => {
+      promiseResult.then(
+        res => {
           onFinish(undefined, res);
-        })
-        .catch((err: Error) => {
+        },
+        (err: Error) => {
           onFinish(err);
-        });
+        }
+      );
     } else {
       result = executeResult as T | undefined;
     }
   } catch (e) {
     error = e;
   } finally {
-    if (!isPromise || error) {
+    if (!isPromise) {
       onFinish(error, result);
       if (error && !preventThrowingError) {
         // eslint-disable-next-line no-unsafe-finally

@@ -12,7 +12,7 @@ For automatic instrumentation see the
 
 ## Installation
 
-This instrumentation relies on HTTP calls to also be instrumented. Make sure you install and enable both, otherwise you will have spans that are not fastifyed to each other.
+This instrumentation relies on HTTP calls to also be instrumented. Make sure you install and enable both, otherwise you will have spans that are not connected with each other.
 
 ```bash
 npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrumentation-fastify
@@ -32,7 +32,7 @@ To load the instrumentation, specify it in the Node Tracer's configuration:
 const { NodeTracerProvider } = require('@opentelemetry/node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-const { FastifyInstrumentation } = require('@opentelemetry/instrumentation-connnect');
+const { FastifyInstrumentation } = require('@opentelemetry/instrumentation-fastify');
 
 const provider = new NodeTracerProvider();
 provider.register();
