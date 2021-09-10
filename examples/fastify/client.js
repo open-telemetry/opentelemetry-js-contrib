@@ -15,9 +15,9 @@ function makeRequest() {
 
   api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), async () => {
     try {
-      const res = await axios.post('http://localhost:8080/run_test', {
+      const res = await axios.post('http://localhost:8080/run_test/1', {
       // testing
-      // const res = await axios.post('http://localhost:8080/run_test2', {
+      // const res = await axios.post('http://localhost:8080/run_test2/1', {
         headers: {
           'Content-Type': 'application/json',
         },

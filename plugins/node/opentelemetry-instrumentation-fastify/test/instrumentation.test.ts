@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import { context } from '@opentelemetry/api';
+import { context, SpanStatusCode } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/node';
@@ -148,7 +148,7 @@ describe('fastify', () => {
         [SemanticAttributes.HTTP_ROUTE]: '/test',
       });
       assert.strictEqual(span.name, `request handler - ${ANONYMOUS_NAME}`);
-      const baseSpan = spans[0];
+      const baseSpan = spans[2];
       assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
     });
 
@@ -173,7 +173,7 @@ describe('fastify', () => {
       });
       assert.strictEqual(span.name, 'request handler - namedHandler');
 
-      const baseSpan = spans[0];
+      const baseSpan = spans[2];
       assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
     });
 
@@ -196,8 +196,11 @@ describe('fastify', () => {
             next();
           });
           // eslint-disable-next-line prefer-arrow-callback
-          fastify.get('/test', function foo(req, res) {
+          fastify.get('/test/:id', function foo(req, res) {
             res.send('OK');
+          });
+          fastify.get('/test-error', () => {
+            throw Error('foo');
           });
         }
 
@@ -205,7 +208,7 @@ describe('fastify', () => {
 
         await startServer();
 
-        await httpRequest.get(`http://localhost:${PORT}/test`);
+        await httpRequest.get(`http://localhost:${PORT}/test/1`);
         assert.strictEqual(getSpans().length, 4);
       });
 
@@ -215,19 +218,16 @@ describe('fastify', () => {
         assert.strictEqual(spans.length, 6);
         const changedRootSpan = spans[2];
         const span = spans[3];
-        assert.strictEqual(changedRootSpan.name, 'GET /test');
+        assert.strictEqual(changedRootSpan.name, 'GET /test/:id');
         assert.strictEqual(span.name, 'request handler - foo');
-        assert.strictEqual(
-          span.parentSpanId,
-          changedRootSpan.spanContext().spanId
-        );
+        assert.strictEqual(span.parentSpanId, spans[4].spanContext().spanId);
       });
 
       it('should create span for fastify express runConnect', async () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const baseSpan = spans[2];
+        const baseSpan = spans[1];
         const span = spans[0];
         assert.strictEqual(span.name, 'middleware - runConnect');
         assert.deepStrictEqual(span.attributes, {
@@ -259,24 +259,32 @@ describe('fastify', () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const baseSpan = spans[2];
+        const baseSpan = spans[4];
         const span = spans[3];
         assert.strictEqual(span.name, 'request handler - foo');
         assert.deepStrictEqual(span.attributes, {
           'plugin.name': 'subsystem',
           'fastify.type': 'request_handler',
           'fastify.name': 'foo',
-          'http.route': '/test',
+          'http.route': '/test/:id',
         });
 
         assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+      });
+
+      it('should update http.route for http span', async () => {
+        const spans = memoryExporter.getFinishedSpans();
+
+        assert.strictEqual(spans.length, 6);
+        const span = spans[2];
+        assert.strictEqual(span.attributes['http.route'], '/test/:id');
       });
 
       it('should create span for subsystem anonymous middleware', async () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const baseSpan = spans[2];
+        const baseSpan = spans[0];
         const span = spans[4];
         assert.strictEqual(span.name, `middleware - ${ANONYMOUS_NAME}`);
         assert.deepStrictEqual(span.attributes, {
@@ -286,6 +294,25 @@ describe('fastify', () => {
         });
 
         assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+      });
+
+      it('should update span with error that was raised', async () => {
+        memoryExporter.reset();
+        await httpRequest.get(`http://localhost:${PORT}/test-error`);
+        const spans = memoryExporter.getFinishedSpans();
+
+        assert.strictEqual(spans.length, 6);
+        const span = spans[3];
+        assert.strictEqual(span.name, 'request handler - anonymous');
+        assert.deepStrictEqual(span.status, {
+          code: SpanStatusCode.ERROR,
+          message: 'foo',
+        });
+        assert.deepStrictEqual(span.attributes, {
+          'fastify.type': 'request_handler',
+          'plugin.name': 'subsystem',
+          'http.route': '/test-error',
+        });
       });
     });
   });

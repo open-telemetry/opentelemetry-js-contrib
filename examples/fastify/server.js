@@ -17,27 +17,39 @@ app
 async function subsystem(fastify) {
   fastify.addHook('onRequest', async () => {
     const span = trace.getSpan(context.active());
-    console.log('first', span);
+    span.setAttribute('order', 2);
   });
+
   // eslint-disable-next-line prefer-arrow-callback
   fastify.addHook('onRequest', async function onRequestHook() {
     const span = trace.getSpan(context.active());
-    console.log('second', span);
+    span.setAttribute('order', 3);
+
+    const newSpan = tracing.tracer.startSpan('foo');
+    newSpan.setAttribute('foo', 'bar');
+    newSpan.end();
   });
+
   fastify.use((req, res, next) => {
     const span = trace.getSpan(context.active());
-    console.log('third', span);
+    span.setAttribute('order', 1);
     next();
   });
-  fastify.post('/run_test2', async (req, res) => {
+
+  fastify.post('/run_test2/:id', async (req, res) => {
+    const span = trace.getSpan(context.active());
+    span.setAttribute('order', 4);
+
     const result = await axios.get('https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json');
     const result2 = await axios.get('https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json');
+
     tracing.log('sending response');
+    // throw Error('boom  lala');
     res.send(`OK ${result.data.version} ${result2.data.version}`);
   });
 }
 
-app.post('/run_test', async (req, res) => {
+app.post('/run_test/:id', async (req, res) => {
   const result = await axios.get('https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json');
   tracing.log('sending response');
   res.send(`OK ${result.data.version}`);

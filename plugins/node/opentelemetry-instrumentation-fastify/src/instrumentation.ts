@@ -80,6 +80,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
       const rpcMetadata = getRPCMetadata(context.active());
       const routeName = request.routerPath;
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
+        rpcMetadata.span.setAttribute(SemanticAttributes.HTTP_ROUTE, routeName);
         rpcMetadata.span.updateName(`${request.method} ${routeName || '/'}`);
       }
       done();
@@ -107,21 +108,23 @@ export class FastifyInstrumentation extends InstrumentationBase {
         [AttributeNames.HOOK_NAME]: hookName,
       });
 
-      return safeExecuteInTheMiddleMaybePromise(
-        () => {
-          return original.apply(this, args);
-        },
-        err => {
-          if (err) {
-            span.setStatus({
-              code: SpanStatusCode.ERROR,
-              message: err.message,
-            });
-            span.recordException(err);
+      return context.with(trace.setSpan(context.active(), span), () => {
+        return safeExecuteInTheMiddleMaybePromise(
+          () => {
+            return original.apply(this, args);
+          },
+          err => {
+            if (err) {
+              span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: err.message,
+              });
+              span.recordException(err);
+            }
+            span.end();
           }
-          span.end();
-        }
-      );
+        );
+      });
     };
   }
 
@@ -151,7 +154,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
     original: () => FastifyInstance
   ): () => FastifyInstance {
     const instrumentation = this;
-    return function fastify(this: FastifyInstance, ...args) {
+
+    function fastify(this: FastifyInstance, ...args: any) {
       const app: FastifyInstance = original.apply(this, args);
       app.addHook('onRequest', instrumentation._hookOnRequest());
       app.addHook('preHandler', instrumentation._hookPreHandler());
@@ -159,7 +163,11 @@ export class FastifyInstrumentation extends InstrumentationBase {
       instrumentation._wrap(app, 'addHook', instrumentation._wrapAddHook());
 
       return app;
-    };
+    }
+
+    fastify.fastify = fastify;
+    fastify.default = fastify;
+    return fastify;
   }
 
   public _patchSend(span: Span) {
@@ -167,7 +175,9 @@ export class FastifyInstrumentation extends InstrumentationBase {
     return function patchSend(
       original: () => FastifyReply
     ): () => FastifyReply {
-      return function send(this: FastifyReply, ...args) {
+      return function send(this: FastifyReply, ...args: any) {
+        const maybeError: any = args[0];
+
         if (!instrumentation.isEnabled()) {
           return original.apply(this, args);
         }
@@ -177,6 +187,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
             return original.apply(this, args);
           },
           err => {
+            if (!err && maybeError instanceof Error) {
+              err = maybeError;
+            }
+
             if (err) {
               span.setStatus({
                 code: SpanStatusCode.ERROR,
