@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-graphql",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "OpenTelemetry @opentelemetry/instrumentation-graphql automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

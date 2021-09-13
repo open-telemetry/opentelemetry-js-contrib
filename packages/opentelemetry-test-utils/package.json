@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/contrib-test-utils",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "Test utilities for opentelemetry components",
   "main": "build/index.js",
   "scripts": {
@@ -42,7 +42,7 @@
   "dependencies": {
     "@opentelemetry/core": "0.25.0",
     "@opentelemetry/resources": "0.25.0",
-    "@opentelemetry/semantic-conventions": "0.25.0",
-    "@opentelemetry/sdk-trace-base": "0.25.0"
+    "@opentelemetry/sdk-trace-base": "0.25.0",
+    "@opentelemetry/semantic-conventions": "0.25.0"
   }
 }
