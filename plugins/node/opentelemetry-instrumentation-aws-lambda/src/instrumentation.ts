@@ -35,7 +35,6 @@ import {
   TextMapGetter,
   TraceFlags,
   TracerProvider,
-  ProxyTracerProvider,
 } from '@opentelemetry/api';
 import {
   AWSXRAY_TRACE_ID_HEADER,
@@ -45,7 +44,6 @@ import {
   SemanticAttributes,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
-import { BasicTracerProvider } from '@opentelemetry/tracing';
 
 import {
   APIGatewayProxyEventHeaders,
@@ -232,19 +230,26 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     this._tracerProvider = tracerProvider;
   }
 
-  private _getBasicTracerProvider() {
-    if(!this._tracerProvider) {
-      diag.error('Spans are not exported for the lambda function as the tracerProvider is undefined.');
+  private _getForceFlushFn() {
+    if (!this._tracerProvider) {
+      diag.error(
+        'Spans are not exported for the lambda function as the tracerProvider is undefined.'
+      );
       return undefined;
     }
 
-    let realTracerProvider = this._tracerProvider;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let currentProvider: any = this._tracerProvider;
 
-    if (this._tracerProvider instanceof ProxyTracerProvider) {
-      realTracerProvider = this._tracerProvider.getDelegate();
+    if (typeof currentProvider.getDelegate === 'function') {
+      currentProvider = currentProvider.getDelegate();
     }
 
-    if(realTracerProvider instanceof BasicTracerProvider) return realTracerProvider;
+    if (typeof currentProvider.getActiveSpanProcessor === 'function') {
+      const activeSpanProcessor = currentProvider.getActiveSpanProcessor();
+      if (typeof activeSpanProcessor.forceFlush === 'function')
+        return activeSpanProcessor.forceFlush;
+    }
 
     return undefined;
   }
@@ -286,15 +291,12 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     span.end();
 
-    const basicTracerProvider = this._getBasicTracerProvider();
-    if (basicTracerProvider) {
-      basicTracerProvider
-        .getActiveSpanProcessor()
-        .forceFlush()
-        .then(
-          () => callback(),
-          () => callback()
-        );
+    const forceFlush = this._getForceFlushFn();
+    if (forceFlush) {
+      forceFlush().then(
+        () => callback(),
+        () => callback()
+      );
     } else {
       diag.error(
         'Spans may not be exported for the lambda function because we are not force flushing before callback.'
