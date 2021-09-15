@@ -27,8 +27,8 @@ import {
   SimpleSpanProcessor,
   SpanExporter,
   ReadableSpan,
-} from '@opentelemetry/tracing';
-import { StackContextManager } from '@opentelemetry/web';
+} from '@opentelemetry/sdk-trace-base';
+import { StackContextManager } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import AllLifecycles from './test-react-components/AllLifecycles';

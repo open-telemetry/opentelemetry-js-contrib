@@ -22,14 +22,14 @@ import {
   trace,
   Span,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as ioredisTypes from 'ioredis';
 import { IORedisInstrumentation } from '../src';
@@ -336,16 +336,7 @@ describe('ioredis', () => {
         context.with(trace.setSpan(context.active(), span), () => {
           const stream = client.scanStream();
           stream
-            .on('data', resultKeys => {
-              // `resultKeys` is an array of strings representing key names.
-              // Note that resultKeys may contain 0 keys, and that it will sometimes
-              // contain duplicates due to SCAN's implementation in Redis.
-              for (let i = 0; i < resultKeys.length; i++) {
-                console.log(resultKeys[i]);
-              }
-            })
             .on('end', () => {
-              console.log('all keys have been visited');
               assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
@@ -364,6 +355,9 @@ describe('ioredis', () => {
             .on('error', err => {
               done(err);
             });
+
+          // Put stream into flowing mode so it will invoke 'end' listener
+          stream.resume();
         });
       });
 
@@ -387,7 +381,7 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans.length, 10);
             span.end();
             assert.strictEqual(endedSpans.length, 11);
-            const spanNames = [
+            const expectedSpanNames = [
               'connect',
               'info',
               'connect',
@@ -400,11 +394,12 @@ describe('ioredis', () => {
               'quit',
               'test span',
             ];
-            let i = 0;
-            while (i < 11) {
-              assert.strictEqual(endedSpans[i].name, spanNames[i]);
-              i++;
-            }
+
+            const actualSpanNames = endedSpans.map(s => s.name);
+            assert.deepStrictEqual(
+              actualSpanNames.sort(),
+              expectedSpanNames.sort()
+            );
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
@@ -421,74 +416,6 @@ describe('ioredis', () => {
           } catch (error) {
             assert.ifError(error);
           }
-        });
-      });
-
-      it('should create a child span for lua', done => {
-        const attributes = {
-          ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
-        };
-
-        const span = provider.getTracer('ioredis-test').startSpan('test span');
-        context.with(trace.setSpan(context.active(), span), () => {
-          // This will define a command echo:
-          client.defineCommand('echo', {
-            numberOfKeys: 1,
-            lua: 'return {KEYS[1],ARGV[1]}',
-          });
-          // Now `echo` can be used just like any other ordinary command,
-          // and ioredis will try to use `EVALSHA` internally when possible for better performance.
-          client.echo(testKeyName, (err, result) => {
-            assert.ifError(err);
-
-            span.end();
-            const endedSpans = memoryExporter.getFinishedSpans();
-            const evalshaSpan = endedSpans[0];
-            // the script may be already cached on server therefore we get either 2 or 3 spans
-            if (endedSpans.length === 3) {
-              assert.strictEqual(endedSpans[2].name, 'test span');
-              assert.strictEqual(endedSpans[1].name, 'eval');
-              assert.strictEqual(endedSpans[0].name, 'evalsha');
-              // in this case, server returns NOSCRIPT error for evalsha,
-              // telling the client to use EVAL instead
-              sanitizeEventForAssertion(evalshaSpan);
-              testUtils.assertSpan(
-                evalshaSpan,
-                SpanKind.CLIENT,
-                attributes,
-                [
-                  {
-                    attributes: {
-                      [SemanticAttributes.EXCEPTION_MESSAGE]:
-                        'NOSCRIPT No matching script. Please use EVAL.',
-                      [SemanticAttributes.EXCEPTION_STACKTRACE]:
-                        predictableStackTrace,
-                      [SemanticAttributes.EXCEPTION_TYPE]: 'ReplyError',
-                    },
-                    name: 'exception',
-                    time: [0, 0],
-                  },
-                ],
-                {
-                  code: SpanStatusCode.ERROR,
-                }
-              );
-            } else {
-              assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[1].name, 'test span');
-              assert.strictEqual(endedSpans[0].name, 'evalsha');
-              testUtils.assertSpan(
-                evalshaSpan,
-                SpanKind.CLIENT,
-                attributes,
-                [],
-                unsetStatus
-              );
-            }
-            testUtils.assertPropagation(evalshaSpan, span);
-            done();
-          });
         });
       });
 
@@ -619,11 +546,90 @@ describe('ioredis', () => {
           }
         });
       });
+
+      it('should create a child span for lua', done => {
+        instrumentation = new IORedisInstrumentation({
+          requireParentSpan: false,
+        });
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
+        };
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          // This will define a command echo:
+          client.defineCommand('echo', {
+            numberOfKeys: 1,
+            lua: 'return {KEYS[1],ARGV[1]}',
+          });
+          // Now `echo` can be used just like any other ordinary command,
+          // and ioredis will try to use `EVALSHA` internally when possible for better performance.
+          client.echo(testKeyName, (err, result) => {
+            assert.ifError(err);
+
+            span.end();
+            const endedSpans = memoryExporter.getFinishedSpans();
+            const evalshaSpan = endedSpans[0];
+            // the script may be already cached on server therefore we get either 2 or 3 spans
+            if (endedSpans.length === 3) {
+              assert.strictEqual(endedSpans[2].name, 'test span');
+              assert.strictEqual(endedSpans[1].name, 'eval');
+              assert.strictEqual(endedSpans[0].name, 'evalsha');
+              // in this case, server returns NOSCRIPT error for evalsha,
+              // telling the client to use EVAL instead
+              sanitizeEventForAssertion(evalshaSpan);
+              testUtils.assertSpan(
+                evalshaSpan,
+                SpanKind.CLIENT,
+                attributes,
+                [
+                  {
+                    attributes: {
+                      [SemanticAttributes.EXCEPTION_MESSAGE]:
+                        'NOSCRIPT No matching script. Please use EVAL.',
+                      [SemanticAttributes.EXCEPTION_STACKTRACE]:
+                        predictableStackTrace,
+                      [SemanticAttributes.EXCEPTION_TYPE]: 'ReplyError',
+                    },
+                    name: 'exception',
+                    time: [0, 0],
+                  },
+                ],
+                {
+                  code: SpanStatusCode.ERROR,
+                }
+              );
+            } else {
+              assert.strictEqual(endedSpans.length, 2);
+              assert.strictEqual(endedSpans[1].name, 'test span');
+              assert.strictEqual(endedSpans[0].name, 'evalsha');
+              testUtils.assertSpan(
+                evalshaSpan,
+                SpanKind.CLIENT,
+                attributes,
+                [],
+                unsetStatus
+              );
+            }
+            testUtils.assertPropagation(evalshaSpan, span);
+            done();
+          });
+        });
+      });
     });
 
     describe('Instrumenting without parent span', () => {
       before(() => {
         instrumentation.disable();
+        instrumentation = new IORedisInstrumentation({
+          requireParentSpan: true,
+        });
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
         instrumentation.enable();
       });
       it('should not create child span', async () => {
@@ -846,17 +852,13 @@ describe('ioredis', () => {
             _cmdArgs: Array<string | Buffer | number>,
             response: unknown
           ) => {
-            try {
-              assert.strictEqual(cmdName, 'incr');
-              // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
-              assert.strictEqual(response, 1);
-              span.setAttribute(
-                'attribute key from hook',
-                'custom value from hook'
-              );
-            } catch (err) {
-              console.log(err);
-            }
+            assert.strictEqual(cmdName, 'incr');
+            // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
+            assert.strictEqual(response, 1);
+            span.setAttribute(
+              'attribute key from hook',
+              'custom value from hook'
+            );
           },
         };
         instrumentation = new IORedisInstrumentation(config);

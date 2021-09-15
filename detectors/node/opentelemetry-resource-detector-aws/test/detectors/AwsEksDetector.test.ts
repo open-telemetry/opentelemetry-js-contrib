@@ -23,7 +23,7 @@ import {
   assertK8sResource,
   assertContainerResource,
   assertEmptyResource,
-} from '@opentelemetry/test-utils';
+} from '@opentelemetry/contrib-test-utils';
 
 const K8S_SVC_URL = awsEksDetector.K8S_SVC_URL;
 const AUTH_CONFIGMAP_PATH = awsEksDetector.AUTH_CONFIGMAP_PATH;

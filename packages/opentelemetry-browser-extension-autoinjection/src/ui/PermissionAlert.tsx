@@ -20,7 +20,7 @@ import { Alert } from '@material-ui/lab';
 import { Link } from '@material-ui/core';
 
 export class PermissionAlert extends React.Component<PermissionAlertProps> {
-  render() {
+  override render() {
     const origins = this.props.permissions.origins ?? [];
 
     const accessToAllUrlsGranted =

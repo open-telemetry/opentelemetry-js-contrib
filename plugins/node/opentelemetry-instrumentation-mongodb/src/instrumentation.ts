@@ -153,12 +153,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<
             kind: SpanKind.CLIENT,
           }
         );
+
         instrumentation._populateAttributes(
           span,
           ns,
           server,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          operationName !== 'insert' ? (ops[0] as any) : undefined
+          ops[0] as any
         );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
@@ -408,15 +409,34 @@ export class MongoDBInstrumentation extends InstrumentationBase<
 
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     const commandObj = command.query ?? command.q ?? command;
-    const query =
-      this._config?.enhancedDatabaseReporting === true
-        ? commandObj
-        : Object.keys(commandObj).reduce((obj, key) => {
-            obj[key] = '?';
-            return obj;
-          }, {} as { [key: string]: unknown });
+    const dbStatementSerializer =
+      typeof this._config.dbStatementSerializer === 'function'
+        ? this._config.dbStatementSerializer
+        : this._defaultDbStatementSerializer.bind(this);
 
-    span.setAttribute(SemanticAttributes.DB_STATEMENT, JSON.stringify(query));
+    safeExecuteInTheMiddle(
+      () => {
+        const query = dbStatementSerializer(commandObj);
+        span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
+      },
+      err => {
+        if (err) {
+          this._diag.error('Error running dbStatementSerializer hook', err);
+        }
+      },
+      true
+    );
+  }
+
+  private _defaultDbStatementSerializer(commandObj: Record<string, unknown>) {
+    const enhancedDbReporting = !!this._config?.enhancedDatabaseReporting;
+    const resultObj = enhancedDbReporting
+      ? commandObj
+      : Object.keys(commandObj).reduce((obj, key) => {
+          obj[key] = '?';
+          return obj;
+        }, {} as { [key: string]: unknown });
+    return JSON.stringify(resultObj);
   }
 
   /**

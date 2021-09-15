@@ -21,7 +21,7 @@ import {
   MeterProvider,
   MetricExporter,
   MetricRecord,
-} from '@opentelemetry/metrics';
+} from '@opentelemetry/sdk-metrics-base';
 import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';

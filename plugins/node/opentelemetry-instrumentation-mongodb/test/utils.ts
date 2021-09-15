@@ -16,7 +16,7 @@
 
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { ReadableSpan } from '@opentelemetry/tracing';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as mongodb from 'mongodb';
 
@@ -86,9 +86,9 @@ export function assertSpans(
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
 
   if (isEnhancedDatabaseReportingEnabled) {
-    const dbStatement = mongoSpan.attributes[
-      SemanticAttributes.DB_STATEMENT
-    ] as any;
+    const dbStatement = JSON.parse(
+      mongoSpan.attributes[SemanticAttributes.DB_STATEMENT] as string
+    );
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');
     }

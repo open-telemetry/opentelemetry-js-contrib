@@ -23,11 +23,12 @@ import {
   SpanStatus,
 } from '@opentelemetry/api';
 import * as assert from 'assert';
-import { ReadableSpan } from '@opentelemetry/tracing';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
   hrTimeToMilliseconds,
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
+import * as path from 'path';
 
 const dockerRunCmds = {
   cassandra:
@@ -135,3 +136,9 @@ export interface TimedEvent {
   /** The attributes of the event. */
   attributes?: SpanAttributes;
 }
+
+export const getPackageVersion = (packageName: string) => {
+  const packagePath = require.resolve(packageName);
+  const packageJsonPath = path.join(path.dirname(packagePath), 'package.json');
+  return require(packageJsonPath).version;
+};

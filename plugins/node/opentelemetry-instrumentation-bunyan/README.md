@@ -16,7 +16,7 @@ npm install --save @opentelemetry/instrumentation-bunyan
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { BunyanInstrumentation } = require('@opentelemetry/instrumentation-bunyan');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

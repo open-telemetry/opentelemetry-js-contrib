@@ -32,6 +32,7 @@ const instrumentation = registerInstrumentationTesting(
 
 import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection } from './utils';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -197,6 +198,93 @@ describe('MongoDBInstrumentation', () => {
           assert.ifError(err);
           assertSpans(getTestSpans(), 'mongodb.createIndexes', SpanKind.CLIENT);
           done();
+        });
+      });
+    });
+  });
+
+  describe('when using enhanced database reporting without db statementSerializer', () => {
+    const key = 'key';
+    const value = 'value';
+    const object = { [key]: value };
+
+    beforeEach(() => {
+      create({
+        enhancedDatabaseReporting: false,
+      });
+    });
+
+    it('should properly collect db statement (hide attribute values)', done => {
+      const span = trace.getTracer('default').startSpan('insertRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection.insertOne(object).then(() => {
+          span.end();
+          const spans = getTestSpans();
+          const operationName = 'mongodb.insert';
+          assertSpans(spans, operationName, SpanKind.CLIENT, false, false);
+          const mongoSpan = spans.find(s => s.name === operationName);
+          const dbStatement = JSON.parse(
+            mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+          );
+          assert.strictEqual(dbStatement[key], '?');
+          done();
+        });
+      });
+    });
+  });
+
+  describe('when specifying a dbStatementSerializer configuration', () => {
+    const key = 'key';
+    const value = 'value';
+    const object = { [key]: value };
+
+    describe('with a valid function', () => {
+      beforeEach(() => {
+        create({
+          dbStatementSerializer: (commandObj: Record<string, unknown>) => {
+            return JSON.stringify(commandObj);
+          },
+        });
+      });
+
+      it('should properly collect db statement', done => {
+        const span = trace.getTracer('default').startSpan('insertRootSpan');
+        context.with(trace.setSpan(context.active(), span), () => {
+          collection.insertOne(object).then(() => {
+            span.end();
+            const spans = getTestSpans();
+            const operationName = 'mongodb.insert';
+            assertSpans(spans, operationName, SpanKind.CLIENT, false, true);
+            const mongoSpan = spans.find(s => s.name === operationName);
+            const dbStatement = JSON.parse(
+              mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+            );
+            assert.strictEqual(dbStatement[key], value);
+            done();
+          });
+        });
+      });
+    });
+
+    describe('with an invalid function', () => {
+      beforeEach(() => {
+        create({
+          enhancedDatabaseReporting: true,
+          dbStatementSerializer: (_commandObj: Record<string, unknown>) => {
+            throw new Error('something went wrong!');
+          },
+        });
+      });
+
+      it('should not do any harm when throwing an exception', done => {
+        const span = trace.getTracer('default').startSpan('insertRootSpan');
+        context.with(trace.setSpan(context.active(), span), () => {
+          collection.insertOne(object).then(() => {
+            span.end();
+            const spans = getTestSpans();
+            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
+            done();
+          });
         });
       });
     });

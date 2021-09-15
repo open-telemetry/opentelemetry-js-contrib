@@ -2,7 +2,7 @@
 
 const { HostMetrics } = require('@opentelemetry/host-metrics');
 // const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
-const { MeterProvider } = require('@opentelemetry/metrics');
+const { MeterProvider } = require('@opentelemetry/sdk-metrics-base');
 const { CollectorMetricExporter } = require('@opentelemetry/exporter-collector');
 
 const exporter = new CollectorMetricExporter({
