@@ -35,6 +35,7 @@ import {
   TextMapGetter,
   TraceFlags,
   TracerProvider,
+  ProxyTracerProvider,
 } from '@opentelemetry/api';
 import {
   AWSXRAY_TRACE_ID_HEADER,
@@ -231,6 +232,23 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     this._tracerProvider = tracerProvider;
   }
 
+  private _getBasicTracerProvider() {
+    if(!this._tracerProvider) {
+      diag.error('Spans are not exported for the lambda function as the tracerProvider is undefined.');
+      return undefined;
+    }
+
+    let realTracerProvider = this._tracerProvider;
+
+    if (this._tracerProvider instanceof ProxyTracerProvider) {
+      realTracerProvider = this._tracerProvider.getDelegate();
+    }
+
+    if(realTracerProvider instanceof BasicTracerProvider) return realTracerProvider;
+
+    return undefined;
+  }
+
   private _wrapCallback(original: Callback, span: Span): Callback {
     const plugin = this;
     return function wrappedCallback(this: never, err, res) {
@@ -267,8 +285,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
 
     span.end();
-    if (this._tracerProvider instanceof BasicTracerProvider) {
-      this._tracerProvider
+
+    const basicTracerProvider = this._getBasicTracerProvider();
+    if (basicTracerProvider) {
+      basicTracerProvider
         .getActiveSpanProcessor()
         .forceFlush()
         .then(
@@ -276,6 +296,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           () => callback()
         );
     } else {
+      diag.error(
+        'Spans may not be exported for the lambda function because we are not force flushing before callback.'
+      );
       callback();
     }
   }
