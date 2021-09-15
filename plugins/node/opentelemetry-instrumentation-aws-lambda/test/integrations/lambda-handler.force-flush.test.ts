@@ -24,7 +24,7 @@ import {
   BatchSpanProcessor,
   InMemorySpanExporter,
 } from '@opentelemetry/tracing';
-import { NodeTracerProvider, NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import { ProxyTracerProvider, TracerProvider } from '@opentelemetry/api';
