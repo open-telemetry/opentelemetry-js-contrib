@@ -24,7 +24,7 @@ import {
   registerInstrumentationTesting,
   getTestSpans,
   resetMemoryExporter,
-} from '@opentelemetry/test-utils';
+} from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = registerInstrumentationTesting(
   new MongoDBInstrumentation()
