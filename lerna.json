@@ -2,7 +2,12 @@
   "lerna": "3.13.4",
   "npmClient": "npm",
   "packages": [
-    "plugins/node/opentelemetry-instrumentation-aws-lambda"
+    "packages/*",
+    "metapackages/*",
+    "plugins/node/*",
+    "plugins/web/*",
+    "propagators/*",
+    "detectors/node/*"
   ],
   "version": "0.25.0",
   "changelog": {
