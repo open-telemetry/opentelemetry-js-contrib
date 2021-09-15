@@ -3,6 +3,9 @@
   "version": "0.25.0",
   "description": "Test utilities for opentelemetry components",
   "main": "build/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
