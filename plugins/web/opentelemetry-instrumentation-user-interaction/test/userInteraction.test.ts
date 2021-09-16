@@ -121,6 +121,7 @@ describe('UserInteractionInstrumentation', () => {
       exportSpy.restore();
       context.disable();
       trace.disable();
+      userInteractionInstrumentation.disable();
     });
 
     it('should handle task without async operation', () => {

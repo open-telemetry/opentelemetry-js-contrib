@@ -109,6 +109,7 @@ describe('UserInteractionInstrumentation', () => {
       sandbox.restore();
       exportSpy.restore();
       trace.disable();
+      userInteractionInstrumentation.disable();
     });
 
     it('should not break removeEventListener', () => {
