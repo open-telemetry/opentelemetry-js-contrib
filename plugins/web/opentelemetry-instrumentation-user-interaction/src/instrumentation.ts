@@ -24,6 +24,7 @@ import {
   AsyncTask,
   EventName,
   RunTaskFunction,
+  ShouldPreventSpanCreation,
   SpanData,
   UserInteractionInstrumentationConfig,
   WindowWithZone,
@@ -34,6 +35,10 @@ import { VERSION } from './version';
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
 const DEFAULT_EVENT_NAMES: EventName[] = ['click'];
+
+function defaultShouldPreventSpanCreation() {
+  return false;
+}
 
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
@@ -57,12 +62,15 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     api.Span
   >();
   private _eventNames: Set<EventName>;
-  private _onSpan: UserInteractionInstrumentationConfig['onSpan'];
+  private _shouldPreventSpanCreation: ShouldPreventSpanCreation;
 
   constructor(config?: UserInteractionInstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
     this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES);
-    this._onSpan = config?.onSpan;
+    this._shouldPreventSpanCreation =
+      typeof config?.shouldPreventSpanCreation === 'function'
+        ? config.shouldPreventSpanCreation
+        : defaultShouldPreventSpanCreation;
   }
 
   init() {}
@@ -137,7 +145,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
           : undefined
       );
 
-      if (this._onSpan?.(eventName, element, span) === false) {
+      if (this._shouldPreventSpanCreation(eventName, element, span) === true) {
         return undefined;
       }
 

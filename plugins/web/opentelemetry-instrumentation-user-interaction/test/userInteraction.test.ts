@@ -250,7 +250,7 @@ describe('UserInteractionInstrumentation', () => {
       assertInteractionSpan(span, { name: 'play' });
     });
 
-    it('should not export clicks if this event was not configured to be captured', () => {
+    it('not configured spans should not be exported', () => {
       registerInstrumentation({
         eventNames: ['play'],
       });
@@ -263,10 +263,10 @@ describe('UserInteractionInstrumentation', () => {
       );
     });
 
-    it('should call onSpan when creating new span', () => {
-      const onSpan = sinon.stub();
+    it('should call shouldPreventSpanCreation with proper arguments', () => {
+      const shouldPreventSpanCreation = sinon.stub();
       registerInstrumentation({
-        onSpan,
+        shouldPreventSpanCreation,
       });
 
       const element = createButton();
@@ -274,24 +274,41 @@ describe('UserInteractionInstrumentation', () => {
       element.click();
 
       const span = exportSpy.args[0][0][0];
-      assert.deepStrictEqual(onSpan.args, [['click', element, span]]);
+      assert.deepStrictEqual(shouldPreventSpanCreation.args, [
+        ['click', element, span],
+      ]);
     });
 
-    it('should not record span when onSpan returns false', () => {
-      const onSpan = () => false;
-      registerInstrumentation({
-        onSpan,
+    describe('when shouldPreventSpanCreation returns', () => {
+      it('true should not record span', () => {
+        const shouldPreventSpanCreation = () => true;
+        registerInstrumentation({
+          shouldPreventSpanCreation,
+        });
+
+        const element = createButton();
+        element.addEventListener('click', () => {});
+        element.click();
+
+        assert.strictEqual(
+          exportSpy.args.length,
+          0,
+          'should not export any spans'
+        );
       });
 
-      const element = createButton();
-      element.addEventListener('click', () => {});
-      element.click();
+      it('false should record span', () => {
+        const shouldPreventSpanCreation = () => false;
+        registerInstrumentation({
+          shouldPreventSpanCreation,
+        });
 
-      assert.strictEqual(
-        exportSpy.args.length,
-        0,
-        'should not export any spans'
-      );
+        const element = createButton();
+        element.addEventListener('click', () => {});
+        element.click();
+
+        assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      });
     });
 
     it('should run task from different zone - angular test', done => {
