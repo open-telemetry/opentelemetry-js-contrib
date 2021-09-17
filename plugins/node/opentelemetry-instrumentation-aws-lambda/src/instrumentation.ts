@@ -230,7 +230,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     this._tracerProvider = tracerProvider;
   }
 
-  private _getForceFlushFn() {
+  private _getActiveSpanProcessor() {
     if (!this._tracerProvider) {
       diag.error(
         'Spans are not exported for the lambda function as the tracerProvider is undefined.'
@@ -246,9 +246,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
 
     if (typeof currentProvider.getActiveSpanProcessor === 'function') {
-      const activeSpanProcessor = currentProvider.getActiveSpanProcessor();
-      if (typeof activeSpanProcessor.forceFlush === 'function')
-        return activeSpanProcessor.forceFlush;
+      return currentProvider.getActiveSpanProcessor();
     }
 
     return undefined;
@@ -291,9 +289,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     span.end();
 
-    const forceFlush = this._getForceFlushFn();
-    if (forceFlush) {
-      forceFlush().then(
+    const activeSpanProcessor = this._getActiveSpanProcessor();
+    if (activeSpanProcessor && typeof activeSpanProcessor.forceFlush === 'function') {
+      activeSpanProcessor.forceFlush().then(
         () => callback(),
         () => callback()
       );
