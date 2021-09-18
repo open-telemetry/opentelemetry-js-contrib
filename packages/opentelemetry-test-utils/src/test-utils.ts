@@ -40,6 +40,7 @@ const dockerRunCmds = {
     'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres postgres:alpine',
   memcached:
     'docker run --rm -d --name otel-memcached -p 11211:11211 memcached:1.6.9-alpine',
+  nats: 'docker run --rm -d --name otel-nats -p 4222:4222 nats:alpine',
 };
 
 export function startDocker(db: keyof typeof dockerRunCmds) {
