@@ -44,7 +44,6 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@opentelemetry/contrib-test-utils": "^0.25.0",
     "@commitlint/cli": "13.1.0",
     "@commitlint/config-conventional": "13.1.0",
     "@typescript-eslint/eslint-plugin": "4.29.0",
