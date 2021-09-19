@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
-import { NodeTracerProvider, NodeTracerConfig } from '@opentelemetry/sdk-trace-node';
+import {
+  NodeTracerProvider,
+  NodeTracerConfig,
+} from '@opentelemetry/sdk-trace-node';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
