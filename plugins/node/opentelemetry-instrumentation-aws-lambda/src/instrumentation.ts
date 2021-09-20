@@ -231,12 +231,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   }
 
   private _getForceFlush(tracerProvider: TracerProvider) {
-    if (!tracerProvider) {
-      diag.error(
-        'Spans are not exported for the lambda function as the tracerProvider is undefined.'
-      );
-      return undefined;
-    }
+    if (!tracerProvider) return undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let currentProvider: any = tracerProvider;
