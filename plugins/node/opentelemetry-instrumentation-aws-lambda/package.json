@@ -48,6 +48,7 @@
     "@opentelemetry/api": "1.0.2",
     "@opentelemetry/core": "0.24.0",
     "@opentelemetry/node": "0.24.0",
+    "@opentelemetry/tracing": "^0.24.0",
     "@types/mocha": "7.0.2",
     "@types/node": "14.17.9",
     "codecov": "3.8.3",
@@ -63,7 +64,6 @@
     "@opentelemetry/propagator-aws-xray": "^0.25.0",
     "@opentelemetry/resources": "^0.24.0",
     "@opentelemetry/semantic-conventions": "^0.24.0",
-    "@opentelemetry/tracing": "^0.24.0",
     "@types/aws-lambda": "8.10.81"
   }
 }
