@@ -72,7 +72,7 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
-  private _tracerProvider: TracerProvider | undefined;
+  private _forceFlush?: () => Promise<void>;
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
@@ -227,11 +227,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   override setTracerProvider(tracerProvider: TracerProvider) {
     super.setTracerProvider(tracerProvider);
-    this._tracerProvider = tracerProvider;
+    this._forceFlush = this._getForceFlush(tracerProvider);
   }
 
-  private _getActiveSpanProcessor() {
-    if (!this._tracerProvider) {
+  private _getForceFlush(tracerProvider: TracerProvider) {
+    if (!tracerProvider) {
       diag.error(
         'Spans are not exported for the lambda function as the tracerProvider is undefined.'
       );
@@ -239,14 +239,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let currentProvider: any = this._tracerProvider;
+    let currentProvider: any = tracerProvider;
 
     if (typeof currentProvider.getDelegate === 'function') {
       currentProvider = currentProvider.getDelegate();
     }
 
     if (typeof currentProvider.getActiveSpanProcessor === 'function') {
-      return currentProvider.getActiveSpanProcessor();
+      const activeSpanProcessor = currentProvider.getActiveSpanProcessor();
+      if (typeof activeSpanProcessor.forceFlush === 'function') {
+        return activeSpanProcessor.forceFlush.bind(activeSpanProcessor);
+      }
     }
 
     return undefined;
@@ -289,12 +292,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     span.end();
 
-    const activeSpanProcessor = this._getActiveSpanProcessor();
-    if (
-      activeSpanProcessor &&
-      typeof activeSpanProcessor.forceFlush === 'function'
-    ) {
-      activeSpanProcessor.forceFlush().then(
+    if (this._forceFlush) {
+      this._forceFlush().then(
         () => callback(),
         () => callback()
       );
