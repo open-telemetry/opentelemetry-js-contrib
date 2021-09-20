@@ -290,7 +290,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     span.end();
 
     const activeSpanProcessor = this._getActiveSpanProcessor();
-    if (activeSpanProcessor && typeof activeSpanProcessor.forceFlush === 'function') {
+    if (
+      activeSpanProcessor &&
+      typeof activeSpanProcessor.forceFlush === 'function'
+    ) {
       activeSpanProcessor.forceFlush().then(
         () => callback(),
         () => callback()
