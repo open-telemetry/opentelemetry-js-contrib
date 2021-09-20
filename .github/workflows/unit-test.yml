@@ -113,7 +113,7 @@ jobs:
           chown -R 1001:121 "/github/home/.npm"
           [ -e /__w/opentelemetry-js-contrib/opentelemetry-js-contrib/package-lock.json ] && chown 1001:121 /__w/opentelemetry-js-contrib/opentelemetry-js-contrib/package-lock.json
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js'
+        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit tests
         run: npm run test:ci:changed
       - name: Report Coverage
