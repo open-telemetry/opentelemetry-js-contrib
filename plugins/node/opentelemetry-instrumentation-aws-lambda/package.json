@@ -62,6 +62,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.25.0",
     "@opentelemetry/propagator-aws-xray": "^0.24.0",
+    "@opentelemetry/sdk-trace-base": "^0.25.0",
     "@opentelemetry/resources": "^0.25.0",
     "@opentelemetry/semantic-conventions": "^0.24.0",
     "@types/aws-lambda": "8.10.81"
