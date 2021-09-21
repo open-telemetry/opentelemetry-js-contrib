@@ -12,7 +12,8 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
-    "precompile": "tsc --version",
+    "precompile": "tsc --version && lerna run version --scope $(npm pkg get name) --include-filtered-dependencies",
+    "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p ."
@@ -63,7 +64,6 @@
     "@opentelemetry/propagator-aws-xray": "^0.24.0",
     "@opentelemetry/resources": "^0.25.0",
     "@opentelemetry/semantic-conventions": "^0.24.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0",
     "@types/aws-lambda": "8.10.81"
   }
 }
