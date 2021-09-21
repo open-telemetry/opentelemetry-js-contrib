@@ -81,3 +81,6 @@ package.json.lerna_backup
 
 *.iml
 .idea
+
+# version.ts file is automatically generated at compile time
+version.ts
