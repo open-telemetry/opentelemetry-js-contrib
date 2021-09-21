@@ -51,6 +51,5 @@
     "@opentelemetry/resources": "0.25.0",
     "@opentelemetry/sdk-trace-base": "0.25.0",
     "@opentelemetry/semantic-conventions": "0.25.0"
-  },
-  "dummy": "change this file so that a feat commit can trigger release-please"
+  }
 }
