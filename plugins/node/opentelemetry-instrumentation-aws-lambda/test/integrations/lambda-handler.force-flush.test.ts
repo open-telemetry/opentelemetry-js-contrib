@@ -23,8 +23,8 @@ import { AwsLambdaInstrumentation } from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
-} from '@opentelemetry/tracing';
-import { NodeTracerProvider } from '@opentelemetry/node';
+} from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import { ProxyTracerProvider, TracerProvider } from '@opentelemetry/api';
