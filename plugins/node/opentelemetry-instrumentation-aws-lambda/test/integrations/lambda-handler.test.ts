@@ -45,6 +45,7 @@ import {
   SpanKind,
   SpanStatusCode,
   TextMapPropagator,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { HttpTraceContextPropagator } from '@opentelemetry/core';
@@ -623,6 +624,37 @@ describe('lambda handler', () => {
         sampledGenericSpanContext.traceId
       );
       assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
+    });
+
+    it('creates trace from ROOT_CONTEXT when "disableAwsContextPropagation" is true, eventContextExtractor is provided, and no custom context is found', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      const customExtractor = (event: any): OtelContext => {
+        if (!event.contextCarrier) {
+          return ROOT_CONTEXT;
+        }
+
+        return propagation.extract(context.active(), event.contextCarrier);
+      };
+
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsContextPropagation: true,
+        eventContextExtractor: customExtractor,
+      });
+
+      const testSpan = provider.getTracer('test').startSpan('random_span');
+      await context.with(
+        trace.setSpan(context.active(), testSpan),
+        async () => {
+          await lambdaRequire('lambda-test/async').handler(
+            { message: 'event with no context' },
+            ctx
+          );
+        }
+      );
+
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.parentSpanId, undefined);
     });
   });
 
