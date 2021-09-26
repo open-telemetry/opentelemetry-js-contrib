@@ -1,0 +1,80 @@
+{
+    "name": "@opentelemetry/instrumentation-aws-sdk",
+    "version": "0.25.0",
+    "description": "open telemetry automatic instrumentation for the `aws-sdk` package",
+    "keywords": [
+        "aws",
+        "opentelemetry",
+        "aws-sdk"
+    ],
+    "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+    "license": "Apache-2.0",
+    "author": "OpenTelemetry Authors",
+    "bugs": {
+        "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+    },
+    "main": "build/src/index.js",
+    "types": "build/src/index.d.ts",
+    "files": [
+        "build/src/**/*.js",
+        "build/src/**/*.js.map",
+        "build/src/**/*.d.ts",
+        "doc",
+        "LICENSE",
+        "README.md"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "repository": "open-telemetry/opentelemetry-js-contrib",
+    "scripts": {
+        "clean": "rimraf build/*",
+        "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
+        "compile": "npm run version:update && tsc -p .",
+        "lint": "eslint . --ext .ts",
+        "lint:fix": "eslint . --ext .ts --fix",
+        "precompile": "tsc --version && lerna run version --scope $(npm pkg get name) --include-filtered-dependencies",
+        "prewatch": "npm run precompile",
+        "prepare": "npm run compile",
+        "tdd": "npm run test -- --watch-extensions ts --watch",
+        "test": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+        "test-all-versions": "tav",
+        "version:update": "node ../../../scripts/version-update.js",
+        "watch": "tsc -w"
+    },
+    "peerDependencies": {
+        "@opentelemetry/api": "^1.0.1"
+    },
+    "dependencies": {
+        "@opentelemetry/core": "^0.25.0",
+        "@opentelemetry/instrumentation": "^0.25.0",
+        "@opentelemetry/semantic-conventions": "^0.25.0",
+        "opentelemetry-propagation-utils": "^0.24.0"
+    },
+    "devDependencies": {
+        "@aws-sdk/client-dynamodb": "3.33.0",
+        "@aws-sdk/client-s3": "3.33.0",
+        "@aws-sdk/client-sqs": "3.33.0",
+        "@aws-sdk/types": "3.32.0",
+        "@opentelemetry/api": "^1.0.3",
+        "@opentelemetry/sdk-trace-base": "^0.25.0",
+        "@types/mocha": "^8.2.2",
+        "@types/node": "^14.0.0",
+        "aws-sdk": "^2.780.0",
+        "expect": "^26.6.2",
+        "mocha": "^8.4.0",
+        "ts-mocha": "8.0.0",
+        "nock": "^13.0.11",
+        "gts": "3.1.0",
+        "@opentelemetry/contrib-test-utils": "^0.25.0",
+        "test-all-versions": "^5.0.1",
+        "ts-node": "^9.1.1",
+        "typescript": "4.3.4",
+        "eslint": "^7.32.0",
+        "nyc": "^15.1.0",
+        "rimraf": "^3.0.2"
+    },
+    "engines": {
+        "node": ">=8.5.0"
+    }
+}
