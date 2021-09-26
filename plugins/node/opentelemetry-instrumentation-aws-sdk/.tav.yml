@@ -1,16 +1,22 @@
 'aws-sdk':
   # there are so many version to test, it can take forever.
   # we will just sample few of them
-  versions: ">=2.910.0 | 2.880.0 || 2.706.0 || 2.608.0 || 2.518.0 || 2.422.0 || 2.315.0 || 2.224.1 || 2.122.0 || 2.59.0"
+  versions: ">=2.989.0 || 2.950.0 || 2.903.0 || 2.880.0 || 2.706.0 || 2.608.0 || 2.518.0 || 2.422.0 || 2.315.0 || 2.224.1 || 2.122.0 || 2.59.0"
   commands:
-    - yarn test
+    - npm run test
+  # Fix missing `contrib-test-utils` package
+  pretest: npm run --prefix ../../../ lerna:link 
 
 '@aws-sdk/client-s3':
   versions: ">=3.1.0"
   commands:
-    - yarn test
+    - npm run test
+  # Fix missing `contrib-test-utils` package
+  pretest: npm run --prefix ../../../ lerna:link 
 
 '@aws-sdk/client-sqs':
   versions: ">=3.1.0"
   commands:
-    - yarn test
+    - npm run test
+  # Fix missing `contrib-test-utils` package
+  pretest: npm run --prefix ../../../ lerna:link 
