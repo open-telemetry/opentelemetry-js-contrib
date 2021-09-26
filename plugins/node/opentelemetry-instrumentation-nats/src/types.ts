@@ -19,9 +19,3 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface NatsInstrumentationConfig extends InstrumentationConfig {
 }
-
-export interface NatsProtocalHandler {
-  publish: NatsConnection["publish"],
-  info: NatsConnection["info"],
-}
-

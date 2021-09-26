@@ -21,37 +21,44 @@ import {
   SpanKind,
   trace,
   propagation,
-} from "@opentelemetry/api";
-import { HttpTraceContextPropagator } from "@opentelemetry/core";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { AsyncHooksContextManager } from "@opentelemetry/context-async-hooks";
-import * as testUtils from "@opentelemetry/contrib-test-utils";
+} from '@opentelemetry/api';
+import { HttpTraceContextPropagator } from '@opentelemetry/core';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
+  ReadableSpan,
   SimpleSpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
-import * as assert from "assert";
-import * as natsTypes from "nats";
-import { NatsInstrumentation } from "../src";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+} from '@opentelemetry/sdk-trace-base';
+import * as assert from 'assert';
+import * as natsTypes from 'nats';
+import { NatsInstrumentation } from '../src';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
 const CONFIG = {
-  host: process.env.OPENTELEMETRY_NATS_HOST || "0.0.0.0",
-  port: parseInt(process.env.OPENTELEMETRY_NATS_PORT || "4222", 10),
+  host: process.env.OPENTELEMETRY_NATS_HOST || '0.0.0.0',
+  port: parseInt(process.env.OPENTELEMETRY_NATS_PORT || '4222', 10),
 };
 
 const DEFAULT_ATTRIBUTES = {
-  [SemanticAttributes.MESSAGING_SYSTEM]: "nats",
-  [SemanticAttributes.MESSAGING_PROTOCOL]: "nats",
+  [SemanticAttributes.MESSAGING_SYSTEM]: 'nats',
+  [SemanticAttributes.MESSAGING_PROTOCOL]: 'nats',
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
   [SemanticAttributes.NET_PEER_PORT]: `${CONFIG.port}`,
 };
 
+const sortByStartTime = (a: ReadableSpan, b: ReadableSpan) => {
+  const aInMs = a.startTime[0] * 1000000 + a.startTime[1] / 1000;
+  const bInMs = b.startTime[0] * 1000000 + b.startTime[1] / 1000;
+  return aInMs - bInMs;
+};
+
 const URL = `${CONFIG.host}:${CONFIG.port}`;
 
-describe("nats@2.x", () => {
+describe('nats@2.x', () => {
   const provider = new NodeTracerProvider();
   const shouldTestLocal = process.env.RUN_NATS_TESTS_LOCAL;
   const shouldTest = process.env.RUN_NATS_TESTS || shouldTestLocal;
@@ -73,19 +80,19 @@ describe("nats@2.x", () => {
     }
 
     if (shouldTestLocal) {
-      testUtils.startDocker("nats");
+      testUtils.startDocker('nats');
     }
 
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     instrumentation = new NatsInstrumentation();
     instrumentation.setTracerProvider(provider);
     // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
-    nats = require("nats");
+    nats = require('nats');
   });
 
   after(() => {
     if (shouldTestLocal) {
-      testUtils.cleanUpDocker("nats");
+      testUtils.cleanUpDocker('nats');
     }
   });
 
@@ -99,7 +106,7 @@ describe("nats@2.x", () => {
     nc = await nats.connect({ servers: URL });
   });
 
-  afterEach((done) => {
+  afterEach(done => {
     context.disable();
     memoryExporter.reset();
     instrumentation.disable();
@@ -107,23 +114,23 @@ describe("nats@2.x", () => {
     nc.drain().then(done, done);
   });
 
-  it("should have correct module name", () => {
+  it('should have correct module name', () => {
     assert.strictEqual(
       instrumentation.instrumentationName,
-      "@opentelemetry/instrumentation-nats"
+      '@opentelemetry/instrumentation-nats'
     );
   });
 
-  describe("#publish", () => {
-    it("should create a span", () => {
-      const parentSpan = provider.getTracer("default").startSpan("test span");
+  describe('#publish', () => {
+    it('should create a span', () => {
+      const parentSpan = provider.getTracer('default').startSpan('test span');
       context.with(trace.setSpan(context.active(), parentSpan), () => {
-        nc.publish("test");
+        nc.publish('test');
         const spans = memoryExporter.getFinishedSpans();
         assertSpans(spans, [
           {
-            subject: "test",
-            op: "send",
+            subject: 'test',
+            op: 'send',
             kind: SpanKind.PRODUCER,
             status: { code: SpanStatusCode.OK },
             parentSpan,
@@ -133,36 +140,36 @@ describe("nats@2.x", () => {
     });
   });
 
-  describe("#subscribe (callbacks)", () => {
-    it("should create a consumer span", async () => {
-      const parentSpan = provider.getTracer("default").startSpan("test span");
+  describe('#subscribe (callbacks)', () => {
+    it('should create a consumer span', async () => {
+      const parentSpan = provider.getTracer('default').startSpan('test span');
       let resolve: (v?: unknown) => void;
-      const p = new Promise((r) => {
+      const p = new Promise(r => {
         resolve = r;
       });
       context.with(trace.setSpan(context.active(), parentSpan), () => {
-        nc.subscribe("test", {
+        nc.subscribe('test', {
           max: 1,
           callback: (err, _msg) => {
             assert.strictEqual(err, null);
             resolve();
           },
         });
-        nc.publish("test");
+        nc.publish('test');
       });
 
       await p;
       const spans = memoryExporter.getFinishedSpans();
       assertSpans(spans, [
         {
-          subject: "test",
-          op: "send",
+          subject: 'test',
+          op: 'send',
           kind: SpanKind.PRODUCER,
           parentSpan,
         },
         {
-          subject: "test",
-          op: "process",
+          subject: 'test',
+          op: 'process',
           kind: SpanKind.CONSUMER,
           parentSpan: spans[0],
         },
@@ -170,16 +177,16 @@ describe("nats@2.x", () => {
     });
   });
 
-  describe("#subscribe (async interator)", () => {
-    it("should create a consumer span", async () => {
-      const parentSpan = provider.getTracer("default").startSpan("test span");
+  describe('#subscribe (async interator)', () => {
+    it('should create a consumer span', async () => {
+      const parentSpan = provider.getTracer('default').startSpan('test span');
       await context.with(
         trace.setSpan(context.active(), parentSpan),
         async () => {
-          const sub = nc.subscribe("test", {
+          const sub = nc.subscribe('test', {
             max: 1,
           });
-          nc.publish("test");
+          nc.publish('test');
           for await (const _m of sub) {
           }
         }
@@ -187,14 +194,14 @@ describe("nats@2.x", () => {
       const spans = memoryExporter.getFinishedSpans();
       assertSpans(spans, [
         {
-          subject: "test",
-          op: "send",
+          subject: 'test',
+          op: 'send',
           kind: SpanKind.PRODUCER,
           parentSpan,
         },
         {
-          subject: "test",
-          op: "process",
+          subject: 'test',
+          op: 'process',
           kind: SpanKind.CONSUMER,
           parentSpan: spans[0],
         },
@@ -202,71 +209,71 @@ describe("nats@2.x", () => {
     });
   });
 
-  describe("#request and #respond", () => {
-    it("creats connected spans for the request/response flow", async () => {
-      const parentSpan = provider.getTracer("default").startSpan("test span");
+  describe('#request and #respond', () => {
+    it('creats connected spans for the request/response flow', async () => {
+      const parentSpan = provider.getTracer('default').startSpan('test span');
       const res = await context.with(
         trace.setSpan(context.active(), parentSpan),
         async () => {
-          const sub = nc.subscribe("test", {
+          const sub = nc.subscribe('test', {
             max: 1,
           });
-          const resP = nc.request("test");
+          const resP = nc.request('test');
           for await (const m of sub) {
-            m.respond(encoder.encode("ack"));
+            m.respond(encoder.encode('ack'));
           }
           return resP;
         }
       );
-      assert.ok(res, "received response");
+      assert.ok(res, 'received response');
       assert.strictEqual(
         decoder.decode(res.data),
-        "ack",
-        "got correct response"
+        'ack',
+        'got correct response'
       );
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = [...memoryExporter.getFinishedSpans()].sort(
+        sortByStartTime
+      );
       assertSpans(spans, [
         {
-          subject: "test",
-          op: "send",
-          kind: SpanKind.PRODUCER,
-          parentSpan: spans[3],
+          subject: 'test',
+          op: 'request',
+          kind: SpanKind.CLIENT,
+          parentSpan,
         },
-        // The response span ends before the process span does
         {
-          subject: "(temporary)",
-          op: "send",
+          subject: 'test',
+          op: 'send',
+          kind: SpanKind.PRODUCER,
+          parentSpan: spans[0],
+        },
+        {
+          subject: 'test',
+          op: 'process',
+          kind: SpanKind.SERVER,
+          parentSpan: spans[1],
+        },
+        {
+          subject: '(temporary)',
+          op: 'send',
           kind: SpanKind.PRODUCER,
           parentSpan: spans[2],
         },
-        {
-          subject: "test",
-          op: "process",
-          kind: SpanKind.SERVER,
-          parentSpan: spans[0],
-        },
-        // request span ends last
-        {
-          subject: "test",
-          op: "request",
-          kind: SpanKind.CLIENT,
-          parentSpan,
-        }
       ]);
     });
   });
 });
 
 const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
-  assert(Array.isArray(actualSpans), "Expected `actualSpans` to be an array");
+  assert(Array.isArray(actualSpans), 'Expected `actualSpans` to be an array');
   assert(
     Array.isArray(expectedSpans),
-    "Expected `expectedSpans` to be an array"
+    'Expected `expectedSpans` to be an array'
   );
   assert.strictEqual(
     actualSpans.length,
     expectedSpans.length,
-    "Expected span count different from actual"
+    'Expected span count different from actual'
   );
   actualSpans.forEach((span, idx) => {
     const expected = expectedSpans[idx];
@@ -274,14 +281,14 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
     try {
       assert.notStrictEqual(span, undefined);
       assert.notStrictEqual(expected, undefined);
-      const [spanSubject, spanOp] = span.name.split(" ", 2);
-      assert.strictEqual(spanOp, expected.op, "span name ends with op");
+      const [spanSubject, spanOp] = span.name.split(' ', 2);
+      assert.strictEqual(spanOp, expected.op, 'span name ends with op');
       assert.strictEqual(
         spanSubject,
         expected.subject,
-        "span name starts with subject"
+        'span name starts with subject'
       );
-      assert.strictEqual(span.kind, expected.kind, "SpanKind matches");
+      assert.strictEqual(span.kind, expected.kind, 'SpanKind matches');
       for (const attr in DEFAULT_ATTRIBUTES) {
         assert.strictEqual(
           span.attributes[attr],
@@ -292,12 +299,12 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.deepEqual(
         span.status,
         expected.status || { code: SpanStatusCode.OK },
-        "span status match"
+        'span status match'
       );
       assert.strictEqual(
         span.parentSpanId,
         expected.parentSpan?.spanContext().spanId,
-        "span parent id matches"
+        'span parent id matches'
       );
     } catch (e) {
       e.message = `At span[${idx}]: ${e.message}`;

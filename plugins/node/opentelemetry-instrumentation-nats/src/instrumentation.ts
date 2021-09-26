@@ -24,18 +24,17 @@ import {
   Context,
   Span,
   ROOT_CONTEXT,
-} from "@opentelemetry/api";
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
-  InstrumentationNodeModuleFile,
   isWrapped,
-} from "@opentelemetry/instrumentation";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
-import type * as Nats from "nats";
-import { NatsProtocalHandler, NatsInstrumentationConfig } from "./types";
-import * as utils from "./utils";
-import { VERSION } from "./version";
+} from '@opentelemetry/instrumentation';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import type * as Nats from 'nats';
+import { NatsInstrumentationConfig } from './types';
+import * as utils from './utils';
+import { VERSION } from './version';
 
 interface NatsHelpers {
   /** Tracks which subjects are reply addresses */
@@ -48,7 +47,7 @@ interface NatsHelpers {
  */
 export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
   constructor(protected override _config: NatsInstrumentationConfig = {}) {
-    super("@opentelemetry/instrumentation-nats", VERSION, _config);
+    super('@opentelemetry/instrumentation-nats', VERSION, _config);
     this._natsHelpers = {
       replySubjects: new Set(),
     };
@@ -58,91 +57,54 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
 
   init(): InstrumentationNodeModuleDefinition<typeof Nats> {
     return new InstrumentationNodeModuleDefinition<typeof Nats>(
-      "nats",
-      ["2.*"],
+      'nats',
+      ['2.*'],
       (moduleExports, moduleVersion) => {
         diag.debug(`Applying nats patch for nats@${moduleVersion}`);
         const { headers } = moduleExports;
         // Grab helpers from nats moduleExports for wrappings in the future
         this._natsHelpers.headers = headers;
+        this.ensureWrapped(
+          moduleVersion,
+          moduleExports,
+          'connect',
+          this.wrapConnect.bind(this)
+        );
         return moduleExports;
       },
-      (moduleExports: any, moduleVersion) => {
+      (moduleExports, moduleVersion) => {
         if (moduleExports === undefined) return;
+        this._unwrap(moduleExports, 'connect');
         diag.debug(`Removing nats patch for nats@${moduleVersion}`);
-      },
-      [
-        // Nats currently puts the source code in the nats.deno repo instead
-        // https://github.com/nats-io/nats.deno/blob/main/nats-base-client/nats.ts
-        // It is copied over to the nats-js repo at build time
-        new InstrumentationNodeModuleFile<typeof Nats>(
-          "nats/lib/nats-base-client/nats.js",
-          ["2.*"],
-          (moduleExports: any, moduleVersion) => {
-            diag.debug(
-              `Applying nats/lib/nats-base-client/nats.js patch for nats@${moduleVersion}`
-            );
-            const { NatsConnectionImpl } = moduleExports;
-            this.ensureWrapped(
-              moduleVersion,
-              NatsConnectionImpl.prototype,
-              "subscribe",
-              this.wrapSubscribe.bind(this)
-            );
-            this.ensureWrapped(
-              moduleVersion,
-              NatsConnectionImpl.prototype,
-              "request",
-              this.wrapRequest.bind(this)
-            );
-            return moduleExports;
-          },
-          (moduleExports: any, moduleVersion) => {
-            if (moduleExports === undefined) return;
-            diag.debug(
-              `Removing nats/lib/nasts-base-client/nats.js patch for nats@${moduleVersion}`
-            );
-            const { NatsConnectionImpl } = moduleExports;
-            this._unwrap(NatsConnectionImpl.prototype, "subscribe");
-            this._unwrap(NatsConnectionImpl.prototype, "request");
-          }
-        ),
-        // Nats currently puts the source code in the nats.deno repo instead. It
-        // is copied over to the nats-js repo at build time
-        // https://github.com/nats-io/nats.deno/blob/main/nats-base-client/protocol.ts
-        // We wrap this lower-level protocol handler so that we intercept
-        // Nats.Msg#respond calls as well as top level
-        // Nats.NatsConnection#publish calls
-        new InstrumentationNodeModuleFile<typeof Nats>(
-          "nats/lib/nats-base-client/protocol.js",
-          ["2.*"],
-          (moduleExports: any, moduleVersion) => {
-            diag.debug(
-              `Applying nats/lib/nats-base-client/protocol.js patch for nats@${moduleVersion}`
-            );
-            const { ProtocolHandler } = moduleExports;
-            this.ensureWrapped(
-              moduleVersion,
-              ProtocolHandler.prototype,
-              "publish",
-              this.wrapPublish.bind(this)
-            );
-            return moduleExports;
-          },
-          (moduleExports: any, moduleVersion) => {
-            if (moduleExports === undefined) return;
-            diag.debug(
-              `Removing nats/lib/nasts-base-client/protocol.js patch for nats@${moduleVersion}`
-            );
-            const { ProtocolHandler } = moduleExports;
-            this._unwrap(ProtocolHandler.prototype, "publish");
-          }
-        ),
-      ]
+      }
     );
   }
 
-  private wrapSubscribe(originalFunc: Nats.NatsConnection["subscribe"]) {
+  private wrapConnect(originalFunc: typeof import('nats').connect) {
+    const instrumentation = this;
+    const traps = {
+      get: function get(target: Nats.NatsConnection, prop: string) {
+        switch (prop) {
+          case 'subscribe':
+            return instrumentation.wrapSubscribe(target.subscribe);
+          case 'publish':
+            return instrumentation.wrapPublish(target.publish);
+          case 'request':
+            return instrumentation.wrapRequest(target.request);
+          default:
+            return (target as any)[prop];
+        }
+      },
+    };
+    return async function connect(
+      opts?: Nats.ConnectionOptions | undefined
+    ): Promise<Nats.NatsConnection> {
+      const nc = await originalFunc(opts);
+      return new Proxy(nc, traps);
+    };
+  }
+
+  private wrapSubscribe(originalFunc: Nats.NatsConnection['subscribe']) {
     const instrumentation = this;
     return function subscribe(
       this: Nats.NatsConnection,
@@ -162,8 +124,8 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
           {
             attributes: {
               ...utils.traceAttrs(nc.info, m),
-              [SemanticAttributes.MESSAGING_OPERATION]: "process",
-              [SemanticAttributes.MESSAGING_DESTINATION_KIND]: "topic",
+              [SemanticAttributes.MESSAGING_OPERATION]: 'process',
+              [SemanticAttributes.MESSAGING_DESTINATION_KIND]: 'topic',
             },
             // If the message has a reply address, assume it's seeking
             // a response from us
@@ -187,7 +149,7 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
             return;
           }
 
-          instrumentation.setupMessage(msg);
+          msg = instrumentation.setupMessage(msg, nc);
           const [ctx, span] = genSpanAndContextFromMessage(msg);
           try {
             context.with(ctx, originalCallback, undefined, err, msg);
@@ -216,8 +178,8 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
       }
 
       const wrappedInterator = (async function* wrappedInterator() {
-        for await (const m of sub) {
-          instrumentation.setupMessage(m);
+        for await (let m of sub) {
+          m = instrumentation.setupMessage(m, nc);
           // FixMe: What should we do with this ctx when we're in a generator?
           const [_ctx, span] = genSpanAndContextFromMessage(m);
 
@@ -245,7 +207,7 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
     };
   }
 
-  private wrapRequest(originalFunc: Nats.NatsConnection["request"]) {
+  private wrapRequest(originalFunc: Nats.NatsConnection['request']) {
     const instrumentation = this;
 
     return async function request(
@@ -254,14 +216,18 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
       data?: Uint8Array,
       opts?: Nats.RequestOptions
     ): Promise<Nats.Msg> {
+      const nc = this;
       // FixMe: "request" is a non-standard operation. Should we use a diffrent
       // name/format for this span?
       const span = instrumentation.tracer.startSpan(`${subject} request`, {
+        attributes: {
+          ...utils.baseTraceAttrs(nc.info),
+        },
         kind: SpanKind.CLIENT,
       });
 
       try {
-        return await context.with(
+        const res = await context.with(
           trace.setSpan(context.active(), span),
           originalFunc,
           this,
@@ -269,6 +235,8 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
           data,
           opts
         );
+        span.setStatus({ code: SpanStatusCode.OK });
+        return res;
       } catch (err) {
         span.recordException(err);
         span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
@@ -279,10 +247,10 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
     };
   }
 
-  private wrapPublish(originalFunc: NatsProtocalHandler["publish"]) {
+  private wrapPublish(originalFunc: Nats.NatsConnection['publish']) {
     const instrumentation = this;
     return function publish(
-      this: NatsProtocalHandler,
+      this: Nats.NatsConnection,
       subject: string,
       data: Uint8Array,
       options?: Nats.PublishOptions
@@ -290,16 +258,17 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
       const nc = this;
       const isTemporaryDestination =
         instrumentation.isTemporaryDestination(subject);
-      const destination = isTemporaryDestination ? "(temporary)" : subject;
+      const destination = isTemporaryDestination ? '(temporary)' : subject;
       const span = instrumentation.tracer.startSpan(`${destination} send`, {
         attributes: {
           ...utils.baseTraceAttrs(nc.info),
-          [SemanticAttributes.MESSAGING_DESTINATION_KIND]: "topic",
+          [SemanticAttributes.MESSAGING_DESTINATION_KIND]: 'topic',
           [SemanticAttributes.MESSAGING_DESTINATION]: destination,
           [SemanticAttributes.MESSAGING_TEMP_DESTINATION]:
             isTemporaryDestination,
-          [SemanticAttributes.MESSAGING_MESSAGE_PAYLOAD_SIZE_BYTES]:
-            data.length,
+          [SemanticAttributes.MESSAGING_MESSAGE_PAYLOAD_SIZE_BYTES]: data
+            ? data.length
+            : 0,
         },
         kind: SpanKind.PRODUCER,
       });
@@ -336,20 +305,78 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
     };
   }
 
-  isTemporaryDestination(subject: string) {
+  private wrapRespond(
+    originalFunc: Nats.Msg['respond'],
+    nc: Nats.NatsConnection
+  ) {
+    const instrumentation = this;
+    return function respond(
+      this: Nats.Msg,
+      data?: Uint8Array | undefined,
+      options?: Nats.PublishOptions | undefined
+    ) {
+      const msg = this;
+      const destination = '(temporary)';
+      const span = instrumentation.tracer.startSpan(`${destination} send`, {
+        attributes: {
+          ...utils.baseTraceAttrs(nc.info),
+          [SemanticAttributes.MESSAGING_DESTINATION_KIND]: 'topic',
+          [SemanticAttributes.MESSAGING_DESTINATION]: destination,
+          [SemanticAttributes.MESSAGING_TEMP_DESTINATION]: true,
+          [SemanticAttributes.MESSAGING_MESSAGE_PAYLOAD_SIZE_BYTES]: data
+            ? data.length
+            : 0,
+          [SemanticAttributes.MESSAGING_CONVERSATION_ID]: msg.reply,
+        },
+        kind: SpanKind.PRODUCER,
+      });
+      const ctx = trace.setSpan(context.active(), span);
+      const h = msg.headers
+        ? msg.headers
+        : instrumentation._natsHelpers.headers!();
+      propagation.inject(ctx, h, utils.natsContextSetter);
+
+      try {
+        context.with(ctx, originalFunc, this, data, {
+          ...options,
+          headers: h,
+        });
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (err) {
+        span.recordException(err);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+        throw err;
+      } finally {
+        span.end();
+      }
+    };
+  }
+
+  private isTemporaryDestination(subject: string) {
     return this._natsHelpers.replySubjects.has(subject);
   }
 
-  setupMessage(msg: Nats.Msg) {
+  private setupMessage(msg: Nats.Msg, nc: Nats.NatsConnection): Nats.Msg {
+    const instrumentation = this;
     if (msg.reply) {
       // Add this reply subject to tracked list. When/if we then respond
       // to this reply we will know this is a response rather than
       // publishing to a presisted subject
       this._natsHelpers.replySubjects.add(msg.reply);
     }
+    const traps = {
+      get: function get(target: Nats.Msg, prop: string) {
+        if (prop === 'respond') {
+          return instrumentation.wrapRespond(target.respond, nc);
+        }
+        return (target as any)[prop];
+      },
+    };
+
+    return new Proxy(msg, traps);
   }
 
-  cleanupMessage(msg: Nats.Msg) {
+  private cleanupMessage(msg: Nats.Msg) {
     if (msg.reply) {
       // Remove temp reply addresses from memory
       this._natsHelpers.replySubjects.delete(msg.reply);
