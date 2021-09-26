@@ -1,69 +1,88 @@
-import { AwsInstrumentation } from "../src";
-import { getTestSpans, registerInstrumentationTesting } from "@opentelemetry/contrib-test-utils";
-const instrumentation = registerInstrumentationTesting(new AwsInstrumentation());
-import * as AWS from "aws-sdk";
-import { AWSError } from "aws-sdk";
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import { AwsInstrumentation } from '../src';
+import {
+  getTestSpans,
+  registerInstrumentationTesting,
+} from '@opentelemetry/contrib-test-utils';
+const instrumentation = registerInstrumentationTesting(
+  new AwsInstrumentation()
+);
+import * as AWS from 'aws-sdk';
+import { AWSError } from 'aws-sdk';
 
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import {
   context,
   SpanKind,
   SpanStatusCode,
   trace,
   Span,
-} from "@opentelemetry/api";
-import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
-import { mockV2AwsSend } from "./testing-utils";
-import { Message } from "aws-sdk/clients/sqs";
-import * as expect from "expect";
+} from '@opentelemetry/api';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { mockV2AwsSend } from './testing-utils';
+import { Message } from 'aws-sdk/clients/sqs';
+import * as expect from 'expect';
 
 const responseMockSuccess = {
-  requestId: "0000000000000",
+  requestId: '0000000000000',
   error: null,
 };
 
-describe("SQS", () => {
+describe('SQS', () => {
   before(() => {
     AWS.config.credentials = {
-      accessKeyId: "test key id",
+      accessKeyId: 'test key id',
       expired: false,
       expireTime: new Date(),
-      secretAccessKey: "test acc key",
-      sessionToken: "test token",
+      secretAccessKey: 'test acc key',
+      sessionToken: 'test token',
     };
   });
 
   beforeEach(() => {
     mockV2AwsSend(responseMockSuccess, {
-      Messages: [{ Body: "msg 1 payload" }, { Body: "msg 2 payload" }],
+      Messages: [{ Body: 'msg 1 payload' }, { Body: 'msg 2 payload' }],
     } as AWS.SQS.Types.ReceiveMessageResult);
   });
 
-  describe("receive context", () => {
-
+  describe('receive context', () => {
     const createReceiveChildSpan = () => {
       const childSpan = trace
         .getTracerProvider()
-        .getTracer("default")
-        .startSpan("child span of SQS.ReceiveMessage");
+        .getTracer('default')
+        .startSpan('child span of SQS.ReceiveMessage');
       childSpan.end();
     };
 
     const expectReceiverWithChildSpan = (spans: ReadableSpan[]) => {
-      const awsReceiveSpan = spans.filter((s) => s.kind === SpanKind.CONSUMER);
+      const awsReceiveSpan = spans.filter(s => s.kind === SpanKind.CONSUMER);
       expect(awsReceiveSpan.length).toBe(1);
-      const internalSpan = spans.filter((s) => s.kind === SpanKind.INTERNAL);
+      const internalSpan = spans.filter(s => s.kind === SpanKind.INTERNAL);
       expect(internalSpan.length).toBe(1);
       expect(internalSpan[0].parentSpanId).toStrictEqual(
         awsReceiveSpan[0].spanContext().spanId
       );
     };
 
-    it("should set parent context in sqs receive callback", (done) => {
+    it('should set parent context in sqs receive callback', done => {
       const sqs = new AWS.SQS();
       sqs.receiveMessage(
         {
-          QueueUrl: "queue/url/for/unittests",
+          QueueUrl: 'queue/url/for/unittests',
         },
         (err: AWSError, data: AWS.SQS.Types.ReceiveMessageResult) => {
           expect(err).toBeFalsy();
@@ -74,11 +93,11 @@ describe("SQS", () => {
       );
     });
 
-    it("should set parent context in sqs receive 'send' callback", (done) => {
+    it("should set parent context in sqs receive 'send' callback", done => {
       const sqs = new AWS.SQS();
       sqs
         .receiveMessage({
-          QueueUrl: "queue/url/for/unittests",
+          QueueUrl: 'queue/url/for/unittests',
         })
         .send((err: AWSError, data: AWS.SQS.Types.ReceiveMessageResult) => {
           expect(err).toBeFalsy();
@@ -88,11 +107,11 @@ describe("SQS", () => {
         });
     });
 
-    it("should set parent context in sqs receive promise then", async () => {
+    it('should set parent context in sqs receive promise then', async () => {
       const sqs = new AWS.SQS();
       await sqs
         .receiveMessage({
-          QueueUrl: "queue/url/for/unittests",
+          QueueUrl: 'queue/url/for/unittests',
         })
         .promise()
         .then(() => {
@@ -101,11 +120,11 @@ describe("SQS", () => {
         });
     });
 
-    it.skip("should set parent context in sqs receive after await", async () => {
+    it.skip('should set parent context in sqs receive after await', async () => {
       const sqs = new AWS.SQS();
       await sqs
         .receiveMessage({
-          QueueUrl: "queue/url/for/unittests",
+          QueueUrl: 'queue/url/for/unittests',
         })
         .promise();
 
@@ -113,12 +132,12 @@ describe("SQS", () => {
       expectReceiverWithChildSpan(getTestSpans());
     });
 
-    it.skip("should set parent context in sqs receive from async function", async () => {
+    it.skip('should set parent context in sqs receive from async function', async () => {
       const asycnReceive = async () => {
         const sqs = new AWS.SQS();
         return await sqs
           .receiveMessage({
-            QueueUrl: "queue/url/for/unittests",
+            QueueUrl: 'queue/url/for/unittests',
           })
           .promise();
       };
@@ -129,14 +148,13 @@ describe("SQS", () => {
     });
   });
 
-  describe("process spans", () => {
-
+  describe('process spans', () => {
     let receivedMessages: Message[];
 
     const createProcessChildSpan = (msgContext: any) => {
       const processChildSpan = trace
         .getTracerProvider()
-        .getTracer("default")
+        .getTracer('default')
         .startSpan(`child span of sqs processing span of msg ${msgContext}`);
       processChildSpan.end();
     };
@@ -146,14 +164,12 @@ describe("SQS", () => {
       numChildPerProcessSpan: number
     ) => {
       const awsReceiveSpan = spans.filter(
-        (s) =>
-          s.attributes[SemanticAttributes.MESSAGING_OPERATION] === "receive"
+        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'receive'
       );
       expect(awsReceiveSpan.length).toBe(1);
 
       const processSpans = spans.filter(
-        (s) =>
-          s.attributes[SemanticAttributes.MESSAGING_OPERATION] === "process"
+        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
       );
       expect(processSpans.length).toBe(2);
       expect(processSpans[0].parentSpanId).toStrictEqual(
@@ -163,9 +179,7 @@ describe("SQS", () => {
         awsReceiveSpan[0].spanContext().spanId
       );
 
-      const processChildSpans = spans.filter(
-        (s) => s.kind === SpanKind.INTERNAL
-      );
+      const processChildSpans = spans.filter(s => s.kind === SpanKind.INTERNAL);
       expect(processChildSpans.length).toBe(2 * numChildPerProcessSpan);
       for (let i = 0; i < numChildPerProcessSpan; i++) {
         expect(processChildSpans[2 * i + 0].parentSpanId).toStrictEqual(
@@ -185,8 +199,8 @@ describe("SQS", () => {
       expectReceiver2ProcessWithNChildrenEach(spans, 2);
     };
 
-    const contextKeyFromTest = Symbol("context key from test");
-    const contextValueFromTest = "context value from test";
+    const contextKeyFromTest = Symbol('context key from test');
+    const contextValueFromTest = 'context value from test';
 
     beforeEach(async () => {
       const sqs = new AWS.SQS();
@@ -195,7 +209,7 @@ describe("SQS", () => {
         async () => {
           const res = await sqs
             .receiveMessage({
-              QueueUrl: "queue/url/for/unittests",
+              QueueUrl: 'queue/url/for/unittests',
             })
             .promise();
           receivedMessages = res.Messages!;
@@ -203,55 +217,55 @@ describe("SQS", () => {
       );
     });
 
-    it("should create processing child with forEach", async () => {
-      receivedMessages.forEach((msg) => {
+    it('should create processing child with forEach', async () => {
+      receivedMessages.forEach(msg => {
         createProcessChildSpan(msg.Body);
       });
       expectReceiver2ProcessWith1ChildEach(getTestSpans());
     });
 
-    it("should create processing child with map", async () => {
-      receivedMessages.map((msg) => {
+    it('should create processing child with map', async () => {
+      receivedMessages.map(msg => {
         createProcessChildSpan(msg.Body);
       });
       expectReceiver2ProcessWith1ChildEach(getTestSpans());
     });
 
-    it("should not fail when mapping to non-object type", async () => {
+    it('should not fail when mapping to non-object type', async () => {
       receivedMessages
-        .map((msg) => "map result is string")
-        .map((s) => "some other string");
+        .map(msg => 'map result is string')
+        .map(s => 'some other string');
     });
 
-    it("should not fail when mapping to undefined type", async () => {
-      receivedMessages.map((msg) => undefined).map((s) => "some other string");
+    it('should not fail when mapping to undefined type', async () => {
+      receivedMessages.map(msg => undefined).map(s => 'some other string');
     });
 
-    it("should create one processing child when throws in map", async () => {
+    it('should create one processing child when throws in map', async () => {
       try {
-        receivedMessages.map((msg) => {
+        receivedMessages.map(msg => {
           createProcessChildSpan(msg.Body);
-          throw Error("error from array.map");
+          throw Error('error from array.map');
         });
       } catch (err) {}
 
       const processChildSpans = getTestSpans().filter(
-        (s) => s.kind === SpanKind.INTERNAL
+        s => s.kind === SpanKind.INTERNAL
       );
       expect(processChildSpans.length).toBe(1);
     });
 
-    it("should create processing child with two forEach", async () => {
-      receivedMessages.forEach((msg) => {
+    it('should create processing child with two forEach', async () => {
+      receivedMessages.forEach(msg => {
         createProcessChildSpan(msg.Body);
       });
-      receivedMessages.forEach((msg) => {
+      receivedMessages.forEach(msg => {
         createProcessChildSpan(msg.Body);
       });
       expectReceiver2ProcessWith2ChildEach(getTestSpans());
     });
 
-    it("should forward all parameters to forEach callback", async () => {
+    it('should forward all parameters to forEach callback', async () => {
       const objectForThis = {};
       receivedMessages.forEach(function (this: any, msg, index, array) {
         expect(msg).not.toBeUndefined();
@@ -262,20 +276,20 @@ describe("SQS", () => {
       }, objectForThis);
     });
 
-    it("should create one processing child with forEach that throws", async () => {
+    it('should create one processing child with forEach that throws', async () => {
       try {
-        receivedMessages.forEach((msg) => {
+        receivedMessages.forEach(msg => {
           createProcessChildSpan(msg.Body);
-          throw Error("error from forEach");
+          throw Error('error from forEach');
         });
       } catch (err) {}
       const processChildSpans = getTestSpans().filter(
-        (s) => s.kind === SpanKind.INTERNAL
+        s => s.kind === SpanKind.INTERNAL
       );
       expect(processChildSpans.length).toBe(1);
     });
 
-    it.skip("should create processing child with array index access", async () => {
+    it.skip('should create processing child with array index access', async () => {
       for (let i = 0; i < receivedMessages.length; i++) {
         const msg = receivedMessages[i];
         createProcessChildSpan(msg.Body);
@@ -283,47 +297,47 @@ describe("SQS", () => {
       expectReceiver2ProcessWith1ChildEach(getTestSpans());
     });
 
-    it("should create processing child with map and forEach calls", async () => {
+    it('should create processing child with map and forEach calls', async () => {
       receivedMessages
-        .map((msg) => ({ payload: msg.Body }))
-        .forEach((msgBody) => {
+        .map(msg => ({ payload: msg.Body }))
+        .forEach(msgBody => {
           createProcessChildSpan(msgBody);
         });
       expectReceiver2ProcessWith1ChildEach(getTestSpans());
     });
 
-    it("should create processing child with filter and forEach", async () => {
+    it('should create processing child with filter and forEach', async () => {
       receivedMessages
-        .filter((msg) => msg)
-        .forEach((msgBody) => {
+        .filter(msg => msg)
+        .forEach(msgBody => {
           createProcessChildSpan(msgBody);
         });
       expectReceiver2ProcessWith1ChildEach(getTestSpans());
     });
 
-    it.skip("should create processing child with for(msg of messages)", () => {
+    it.skip('should create processing child with for(msg of messages)', () => {
       for (const msg of receivedMessages) {
         createProcessChildSpan(msg.Body);
       }
       expectReceiver2ProcessWith1ChildEach(getTestSpans());
     });
 
-    it.skip("should create processing child with array.values() for loop", () => {
+    it.skip('should create processing child with array.values() for loop', () => {
       for (const msg of receivedMessages.values()) {
         createProcessChildSpan(msg.Body);
       }
       expectReceiver2ProcessWith1ChildEach(getTestSpans());
     });
 
-    it.skip("should create processing child with array.values() for loop and awaits in process", async () => {
+    it.skip('should create processing child with array.values() for loop and awaits in process', async () => {
       for (const msg of receivedMessages.values()) {
-        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
         createProcessChildSpan(msg.Body);
       }
       expectReceiver2ProcessWith1ChildEach(getTestSpans());
     });
 
-    it("should propagate the context of the receive call in process spans loop", async () => {
+    it('should propagate the context of the receive call in process spans loop', async () => {
       receivedMessages.forEach(() => {
         expect(context.active().getValue(contextKeyFromTest)).toStrictEqual(
           contextValueFromTest
@@ -332,11 +346,11 @@ describe("SQS", () => {
     });
   });
 
-  describe("hooks", () => {
-    it("sqsProcessHook called and add message attribute to span", async () => {
+  describe('hooks', () => {
+    it('sqsProcessHook called and add message attribute to span', async () => {
       const config = {
         sqsProcessHook: (span: Span, message: AWS.SQS.Message) => {
-          span.setAttribute("attribute from sqs process hook", message.Body!);
+          span.setAttribute('attribute from sqs process hook', message.Body!);
         },
       };
 
@@ -345,47 +359,45 @@ describe("SQS", () => {
       const sqs = new AWS.SQS();
       const res = await sqs
         .receiveMessage({
-          QueueUrl: "queue/url/for/unittests",
+          QueueUrl: 'queue/url/for/unittests',
         })
         .promise();
       res.Messages?.map(
-        (message) => "some mapping to create child process spans"
+        message => 'some mapping to create child process spans'
       );
 
       const processSpans = getTestSpans().filter(
-        (s) =>
-          s.attributes[SemanticAttributes.MESSAGING_OPERATION] === "process"
+        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
       );
       expect(processSpans.length).toBe(2);
       expect(
-        processSpans[0].attributes["attribute from sqs process hook"]
-      ).toBe("msg 1 payload");
+        processSpans[0].attributes['attribute from sqs process hook']
+      ).toBe('msg 1 payload');
       expect(
-        processSpans[1].attributes["attribute from sqs process hook"]
-      ).toBe("msg 2 payload");
+        processSpans[1].attributes['attribute from sqs process hook']
+      ).toBe('msg 2 payload');
     });
 
-    it("sqsProcessHook not set in config", async () => {
+    it('sqsProcessHook not set in config', async () => {
       const sqs = new AWS.SQS();
       const res = await sqs
         .receiveMessage({
-          QueueUrl: "queue/url/for/unittests",
+          QueueUrl: 'queue/url/for/unittests',
         })
         .promise();
       res.Messages?.map(
-        (message) => "some mapping to create child process spans"
+        message => 'some mapping to create child process spans'
       );
       const processSpans = getTestSpans().filter(
-        (s) =>
-          s.attributes[SemanticAttributes.MESSAGING_OPERATION] === "process"
+        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
       );
       expect(processSpans.length).toBe(2);
     });
 
-    it("sqsProcessHook throws does not fail span", async () => {
+    it('sqsProcessHook throws does not fail span', async () => {
       const config = {
         sqsProcessHook: (span: Span, message: AWS.SQS.Message) => {
-          throw new Error("error from sqsProcessHook hook");
+          throw new Error('error from sqsProcessHook hook');
         },
       };
       instrumentation.setConfig(config);
@@ -393,16 +405,15 @@ describe("SQS", () => {
       const sqs = new AWS.SQS();
       const res = await sqs
         .receiveMessage({
-          QueueUrl: "queue/url/for/unittests",
+          QueueUrl: 'queue/url/for/unittests',
         })
         .promise();
       res.Messages?.map(
-        (message) => "some mapping to create child process spans"
+        message => 'some mapping to create child process spans'
       );
 
       const processSpans = getTestSpans().filter(
-        (s) =>
-          s.attributes[SemanticAttributes.MESSAGING_OPERATION] === "process"
+        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
       );
       expect(processSpans.length).toBe(2);
       expect(processSpans[0].status.code).toStrictEqual(SpanStatusCode.UNSET);

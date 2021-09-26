@@ -1,3 +1,18 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type * as AWS from 'aws-sdk';
@@ -8,18 +23,18 @@ import type * as AWS from 'aws-sdk';
  * uniform manner in hooks
  */
 export interface NormalizedRequest {
-    serviceName: string;
-    commandName: string;
-    commandInput: Record<string, any>;
-    region?: string;
+  serviceName: string;
+  commandName: string;
+  commandInput: Record<string, any>;
+  region?: string;
 }
 export interface NormalizedResponse {
-    data: any;
-    request: NormalizedRequest;
+  data: any;
+  request: NormalizedRequest;
 }
 
 export interface AwsSdkRequestCustomAttributeFunction {
-    (span: Span, request: NormalizedRequest): void;
+  (span: Span, request: NormalizedRequest): void;
 }
 
 /**
@@ -28,36 +43,36 @@ export interface AwsSdkRequestCustomAttributeFunction {
  * The response type and attributes on the response are client-specific.
  */
 export interface AwsSdkResponseCustomAttributeFunction {
-    (span: Span, response: NormalizedResponse): void;
+  (span: Span, response: NormalizedResponse): void;
 }
 
 export interface AwsSdkSqsProcessCustomAttributeFunction {
-    (span: Span, message: AWS.SQS.Message): void;
+  (span: Span, message: AWS.SQS.Message): void;
 }
 
 export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
-    /** hook for adding custom attributes before request is sent to aws */
-    preRequestHook?: AwsSdkRequestCustomAttributeFunction;
+  /** hook for adding custom attributes before request is sent to aws */
+  preRequestHook?: AwsSdkRequestCustomAttributeFunction;
 
-    /** hook for adding custom attributes when response is received from aws */
-    responseHook?: AwsSdkResponseCustomAttributeFunction;
+  /** hook for adding custom attributes when response is received from aws */
+  responseHook?: AwsSdkResponseCustomAttributeFunction;
 
-    /** hook for adding custom attribute when an sqs process span is started */
-    sqsProcessHook?: AwsSdkSqsProcessCustomAttributeFunction;
+  /** hook for adding custom attribute when an sqs process span is started */
+  sqsProcessHook?: AwsSdkSqsProcessCustomAttributeFunction;
 
-    /**
-     * Most aws operation use http request under the hood.
-     * if http instrumentation is enabled, each aws operation will also create
-     * an http/s child describing the communication with amazon servers.
-     * Setting the `suppressInternalInstrumentation` config value to `true` will
-     * cause the instrumentation to suppress instrumentation of underlying operations,
-     * effectively causing those http spans to be non-recordable.
-     */
-    suppressInternalInstrumentation?: boolean;
+  /**
+   * Most aws operation use http request under the hood.
+   * if http instrumentation is enabled, each aws operation will also create
+   * an http/s child describing the communication with amazon servers.
+   * Setting the `suppressInternalInstrumentation` config value to `true` will
+   * cause the instrumentation to suppress instrumentation of underlying operations,
+   * effectively causing those http spans to be non-recordable.
+   */
+  suppressInternalInstrumentation?: boolean;
 
-    /**
-     * If passed, a span attribute will be added to all spans with key of the provided "moduleVersionAttributeName"
-     * and value of the module version.
-     */
-    moduleVersionAttributeName?: string;
+  /**
+   * If passed, a span attribute will be added to all spans with key of the provided "moduleVersionAttributeName"
+   * and value of the module version.
+   */
+  moduleVersionAttributeName?: string;
 }
