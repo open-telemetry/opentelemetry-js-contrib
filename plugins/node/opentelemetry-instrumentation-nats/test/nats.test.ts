@@ -24,19 +24,22 @@ import {
 } from '@opentelemetry/api';
 import { HttpTraceContextPropagator } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
-  InMemorySpanExporter,
-  ReadableSpan,
-  SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  registerInstrumentationTesting,
+  getTestSpans,
+  resetMemoryExporter,
+  startDocker,
+  cleanUpDocker,
+} from '@opentelemetry/contrib-test-utils';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as natsTypes from 'nats';
 import { NatsInstrumentation } from '../src';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
-const memoryExporter = new InMemorySpanExporter();
+const instrumentation = registerInstrumentationTesting(
+  new NatsInstrumentation()
+);
 
 const CONFIG = {
   host: process.env.OPENTELEMETRY_NATS_HOST || '0.0.0.0',
@@ -67,8 +70,6 @@ describe('nats@2.x', () => {
 
   let nats: typeof natsTypes;
   let nc: natsTypes.NatsConnection;
-  let instrumentation: NatsInstrumentation;
-  let contextManager: AsyncHooksContextManager;
 
   before(function () {
     // needs to be "function" to have MochaContext "this" context
@@ -80,36 +81,26 @@ describe('nats@2.x', () => {
     }
 
     if (shouldTestLocal) {
-      testUtils.startDocker('nats');
+      startDocker('nats');
     }
 
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-    instrumentation = new NatsInstrumentation();
-    instrumentation.setTracerProvider(provider);
     // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
     nats = require('nats');
   });
 
   after(() => {
     if (shouldTestLocal) {
-      testUtils.cleanUpDocker('nats');
+      cleanUpDocker('nats');
     }
   });
 
   beforeEach(async () => {
-    instrumentation.disable();
-    contextManager = new AsyncHooksContextManager().enable();
-    context.setGlobalContextManager(contextManager);
     propagation.setGlobalPropagator(new HttpTraceContextPropagator());
-    instrumentation.setTracerProvider(provider);
-    instrumentation.enable();
     nc = await nats.connect({ servers: URL });
   });
 
   afterEach(done => {
-    context.disable();
-    memoryExporter.reset();
-    instrumentation.disable();
+    resetMemoryExporter();
     propagation.disable();
     nc.drain().then(done, done);
   });
@@ -126,7 +117,7 @@ describe('nats@2.x', () => {
       const parentSpan = provider.getTracer('default').startSpan('test span');
       context.with(trace.setSpan(context.active(), parentSpan), () => {
         nc.publish('test');
-        const spans = memoryExporter.getFinishedSpans();
+        const spans = getTestSpans();
         assertSpans(spans, [
           {
             subject: 'test',
@@ -159,7 +150,7 @@ describe('nats@2.x', () => {
       });
 
       await p;
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
       assertSpans(spans, [
         {
           subject: 'test',
@@ -191,7 +182,7 @@ describe('nats@2.x', () => {
           }
         }
       );
-      const spans = memoryExporter.getFinishedSpans();
+      const spans = getTestSpans();
       assertSpans(spans, [
         {
           subject: 'test',
@@ -231,9 +222,7 @@ describe('nats@2.x', () => {
         'ack',
         'got correct response'
       );
-      const spans = [...memoryExporter.getFinishedSpans()].sort(
-        sortByStartTime
-      );
+      const spans = [...getTestSpans()].sort(sortByStartTime);
       assertSpans(spans, [
         {
           subject: 'test',
