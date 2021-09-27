@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import { TextMapGetter, TextMapSetter } from "@opentelemetry/api";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
-import type { ServerInfo, Msg, MsgHdrs } from "nats";
+import { TextMapGetter, TextMapSetter } from '@opentelemetry/api';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import type { ServerInfo, Msg, MsgHdrs } from 'nats';
 
 export function baseTraceAttrs(info: ServerInfo | undefined) {
   const attributes = {
-    [SemanticAttributes.MESSAGING_SYSTEM]: "nats",
-    [SemanticAttributes.MESSAGING_PROTOCOL]: "nats",
+    [SemanticAttributes.MESSAGING_SYSTEM]: 'nats',
+    [SemanticAttributes.MESSAGING_PROTOCOL]: 'nats',
   };
   if (info) {
     attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION] = info.version;
@@ -61,13 +61,13 @@ export const natsContextGetter: TextMapGetter<MsgHdrs> = {
   get(h: MsgHdrs, key: string) {
     if (h == null) return undefined;
     const res = h.get(key);
-    return res === "" ? undefined : res;
-  }
-}
+    return res === '' ? undefined : res;
+  },
+};
 
-export const natsContextSetter:TextMapSetter<MsgHdrs> = {
+export const natsContextSetter: TextMapSetter<MsgHdrs> = {
   set(h: MsgHdrs, key: string, value: string) {
     if (h == null) return;
     h.set(key, value);
-  }
-}
+  },
+};

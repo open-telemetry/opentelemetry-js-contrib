@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// Eslint Disable Explain: Only used in tests
+// eslint-disable-next-line node/no-unsupported-features/node-builtins
 import { TextEncoder, TextDecoder } from 'util';
 import {
   SpanStatusCode,

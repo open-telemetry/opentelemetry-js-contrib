@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import type { NatsConnection } from 'nats';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export interface NatsInstrumentationConfig extends InstrumentationConfig {
-}
+export type NatsInstrumentationConfig = InstrumentationConfig;
