@@ -42,6 +42,21 @@ Nats instrumentation has currently one option. You can set the following:
 | Options | Type | Description |
 | ------- | ---- | ----------- |
 
+## Known limitations
+
+Currently, this library does not set context correctly when using nats async
+iterators API. To guarantee proper attribution of parent spans, please using the
+[callback API](https://github.com/nats-io/nats.js#async-vs-callbacks) for now.
+This should hopefully be fixed once this [addition to the context
+API](https://github.com/open-telemetry/opentelemetry-js-api/pull/123) lands.
+
+Additionally, because this wraps the original nats library and performs
+callouts outside of it, it means that it could interrupt the normal flow of the
+nats client, and create hard-to-diagnose issues such as slow-consumers, and/or
+memory growth that wouldn't appear in the standard client. That said, this is
+true for every opentelemetry instrumentation, but something one should be aware
+of regardless.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

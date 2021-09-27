@@ -180,7 +180,9 @@ export class NatsInstrumentation extends InstrumentationBase<typeof Nats> {
       const wrappedInterator = (async function* wrappedInterator() {
         for await (let m of sub) {
           m = instrumentation.setupMessage(m, nc);
-          // FixMe: What should we do with this ctx when we're in a generator?
+          // FixMe: Fix setting context once
+          // https://github.com/open-telemetry/opentelemetry-js-api/pull/123
+          // lands
           const [_ctx, span] = genSpanAndContextFromMessage(m);
 
           try {
