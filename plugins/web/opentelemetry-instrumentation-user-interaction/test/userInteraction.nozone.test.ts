@@ -583,7 +583,7 @@ describe('UserInteractionInstrumentation', () => {
       assertInteractionSpan(span, { name: 'play' });
     });
 
-    it('not configured spans should not be exported', () => {
+    it('should not be exported not configured spans', () => {
       registerTestInstrumentations({
         eventNames: ['play'],
       });
