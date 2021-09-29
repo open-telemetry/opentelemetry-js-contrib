@@ -18,7 +18,7 @@
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope $(npm pkg get name) --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/auto-instrumentations-web --include-filtered-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "test:browser": "nyc karma start --single-run",
