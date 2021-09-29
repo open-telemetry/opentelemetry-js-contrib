@@ -23,11 +23,10 @@ const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { AwsInstrumentation } = require('opentelemetry-instrumentation-aws-sdk');
 
-const traceProvider = new NodeTracerProvider();
-traceProvider.register();
+const provider = new NodeTracerProvider();
+provider.register();
 
 registerInstrumentations({
-  traceProvider,
   instrumentations: [
     new AwsInstrumentation({
       // see under for available configuration

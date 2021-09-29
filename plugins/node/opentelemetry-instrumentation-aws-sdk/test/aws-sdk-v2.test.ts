@@ -149,7 +149,7 @@ describe('instrumentation-aws-sdk-v2', () => {
 
             let reqPromise: Promise<any> | null = null;
             let numberOfCalls = 0;
-            const cbPromise = new Promise(async resolveCb => {
+            const cbPromise = new Promise(resolveCb => {
               // span 2
               const request = s3.putObject(params, (err, data) => {
                 if (err) console.log(err);
