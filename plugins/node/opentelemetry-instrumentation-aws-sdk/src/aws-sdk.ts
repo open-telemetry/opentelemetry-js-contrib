@@ -74,7 +74,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(
-      'opentelemetry-instrumentation-aws-sdk',
+      '@opentelemetry/instrumentation-aws-sdk',
       VERSION,
       Object.assign({}, config)
     );

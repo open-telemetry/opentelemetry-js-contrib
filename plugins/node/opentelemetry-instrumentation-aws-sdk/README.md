@@ -12,7 +12,7 @@ This module provides automatic instrumentation for [`aws-sdk` v2](https://docs.a
 ## Installation
 
 ```bash
-npm install --save opentelemetry-instrumentation-aws-sdk
+npm install --save @opentelemetry/instrumentation-aws-sdk
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ For further automatic instrumentation instruction see the [@opentelemetry/instru
 ```js
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const { AwsInstrumentation } = require('opentelemetry-instrumentation-aws-sdk');
+const { AwsInstrumentation } = require('@opentelemetry/instrumentation-aws-sdk');
 
 const provider = new NodeTracerProvider();
 provider.register();
