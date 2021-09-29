@@ -61,7 +61,7 @@ describe('UserInteractionInstrumentation', () => {
     let exportSpy: sinon.SinonSpy;
     let requests: sinon.SinonFakeXMLHttpRequest[] = [];
 
-    const registerInstrumentation = (
+    const registerTestInstrumentations = (
       config?: UserInteractionInstrumentationConfig
     ) => {
       userInteractionInstrumentation?.disable();
@@ -108,7 +108,7 @@ describe('UserInteractionInstrumentation', () => {
         contextManager,
       });
 
-      registerInstrumentation();
+      registerTestInstrumentations();
 
       // this is needed as window is treated as context and karma is adding
       // context which is then detected as spanContext
@@ -241,7 +241,7 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should export spans for configured event types', () => {
-      registerInstrumentation({
+      registerTestInstrumentations({
         eventNames: ['play'],
       });
 
@@ -252,7 +252,7 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('not configured spans should not be exported', () => {
-      registerInstrumentation({
+      registerTestInstrumentations({
         eventNames: ['play'],
       });
 
@@ -266,7 +266,7 @@ describe('UserInteractionInstrumentation', () => {
 
     it('should call shouldPreventSpanCreation with proper arguments', () => {
       const shouldPreventSpanCreation = sinon.stub();
-      registerInstrumentation({
+      registerTestInstrumentations({
         shouldPreventSpanCreation,
       });
 
@@ -280,10 +280,10 @@ describe('UserInteractionInstrumentation', () => {
       ]);
     });
 
-    describe('when shouldPreventSpanCreation returns', () => {
-      it('true should not record span', () => {
+    describe('when shouldPreventSpanCreation returns true', () => {
+      it('should not record span', () => {
         const shouldPreventSpanCreation = () => true;
-        registerInstrumentation({
+        registerTestInstrumentations({
           shouldPreventSpanCreation,
         });
 
@@ -297,10 +297,12 @@ describe('UserInteractionInstrumentation', () => {
           'should not export any spans'
         );
       });
+    });
 
-      it('false should record span', () => {
+    describe('when shouldPreventSpanCreation returns false', () => {
+      it('should record span', () => {
         const shouldPreventSpanCreation = () => false;
-        registerInstrumentation({
+        registerTestInstrumentations({
           shouldPreventSpanCreation,
         });
 
