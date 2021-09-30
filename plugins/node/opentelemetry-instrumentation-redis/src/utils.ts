@@ -17,12 +17,12 @@
 import type * as redisTypes from 'redis';
 import {
   context,
-  diag,
-  Span,
+  Tracer,
   SpanKind,
+  Span,
   SpanStatusCode,
   trace,
-  Tracer,
+  diag,
 } from '@opentelemetry/api';
 import {
   DbStatementSerializer,
@@ -57,7 +57,7 @@ export const getTracedCreateStreamTrace = (
   original: Function
 ) => {
   return function create_stream_trace(this: redisTypes.RedisClient) {
-    if (Object.prototype.hasOwnProperty.call(this, 'stream')) {
+    if (!this.hasOwnProperty('stream')) {
       Object.defineProperty(this, 'stream', {
         get() {
           return this._patched_redis_stream;
