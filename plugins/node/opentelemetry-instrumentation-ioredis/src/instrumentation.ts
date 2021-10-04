@@ -42,6 +42,10 @@ export class IORedisInstrumentation extends InstrumentationBase<
     );
   }
 
+  override setConfig(config: IORedisInstrumentationConfig) {
+    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+  }
+
   init(): InstrumentationNodeModuleDefinition<typeof ioredisTypes>[] {
     return [
       new InstrumentationNodeModuleDefinition<typeof ioredisTypes>(

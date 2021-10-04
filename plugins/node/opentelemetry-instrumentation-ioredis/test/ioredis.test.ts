@@ -903,5 +903,47 @@ describe('ioredis', () => {
         });
       });
     });
+
+    describe('setConfig - custom dbStatementSerializer config', () => {
+      const dbStatementSerializer = (
+        cmdName: string,
+        cmdArgs: Array<string | Buffer | number>
+      ) => {
+        return Array.isArray(cmdArgs) && cmdArgs.length
+          ? `FooBar_${cmdName} ${cmdArgs.join(',')}`
+          : cmdName;
+      };
+
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setConfig({ dbStatementSerializer });
+        instrumentation.enable();
+      });
+
+      IOREDIS_CALLBACK_OPERATIONS.forEach(operation => {
+        it(`should properly execute the db statement serializer for operation ${operation.description}`, done => {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            operation.method((err, _) => {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans.length, 2);
+              const expectedStatement = dbStatementSerializer(
+                operation.name,
+                operation.args
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[SemanticAttributes.DB_STATEMENT],
+                expectedStatement
+              );
+              done();
+            });
+          });
+        });
+      });
+    });
   });
 });
