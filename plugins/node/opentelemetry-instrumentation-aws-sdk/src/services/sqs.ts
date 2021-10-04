@@ -178,7 +178,7 @@ export class SqsServiceExtension implements ServiceExtension {
           },
         }),
         processHook: (span: Span, message: SQS.Message) =>
-          config.sqsProcessHook?.(span, message),
+          config.sqsProcessHook?.(span, { message }),
       });
 
       pubsubPropagation.patchArrayForProcessSpans(

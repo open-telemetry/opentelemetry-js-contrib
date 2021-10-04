@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AwsInstrumentation } from '../src';
+import { AwsInstrumentation, AwsSdkRequestHookInformation, AwsSdkResponseHookInformation } from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -263,10 +263,10 @@ describe('instrumentation-aws-sdk-v2', () => {
     it('preRequestHook called and add request attribute to span', done => {
       mockV2AwsSend(responseMockSuccess, 'data returned from operation');
       const config = {
-        preRequestHook: (span: Span, request: any) => {
+        preRequestHook: (span: Span, requestInfo: AwsSdkRequestHookInformation) => {
           span.setAttribute(
             'attribute from hook',
-            request.commandInput['Bucket']
+            requestInfo.request.commandInput['Bucket'],
           );
         },
       };
@@ -314,8 +314,8 @@ describe('instrumentation-aws-sdk-v2', () => {
     it('responseHook called and add response attribute to span', done => {
       mockV2AwsSend(responseMockSuccess, 'data returned from operation');
       const config = {
-        responseHook: (span: Span, response: any) => {
-          span.setAttribute('attribute from response hook', response['data']);
+        responseHook: (span: Span, responseInfo: AwsSdkResponseHookInformation) => {
+          span.setAttribute('attribute from response hook', responseInfo.response['data']);
         },
       };
 
@@ -370,28 +370,6 @@ describe('instrumentation-aws-sdk-v2', () => {
       await s3.createBucket({ Bucket: 'aws-test-bucket' }).promise();
       const awsSpans = getAwsSpans();
       expect(awsSpans.length).toBe(1);
-    });
-
-    it('setting moduleVersionAttributeName is adding module version', async () => {
-      mockV2AwsSend(responseMockSuccess, 'data returned from operation', true);
-      const config = {
-        moduleVersionAttributeName: 'module.version',
-        suppressInternalInstrumentation: true,
-      };
-
-      instrumentation.disable();
-      instrumentation.setConfig(config);
-      instrumentation.enable();
-
-      const s3 = new AWS.S3();
-
-      await s3.createBucket({ Bucket: 'aws-test-bucket' }).promise();
-      const awsSpans = getAwsSpans();
-      expect(awsSpans.length).toBe(1);
-
-      expect(awsSpans[0].attributes['module.version']).toMatch(
-        /2.\d{1,4}\.\d{1,5}.*/
-      );
     });
   });
 });

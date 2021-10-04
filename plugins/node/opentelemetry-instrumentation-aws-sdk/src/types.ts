@@ -33,21 +33,32 @@ export interface NormalizedResponse {
   request: NormalizedRequest;
 }
 
+export interface AwsSdkRequestHookInformation {
+  moduleVersion?: string;
+  request: NormalizedRequest;
+}
 export interface AwsSdkRequestCustomAttributeFunction {
-  (span: Span, request: NormalizedRequest): void;
+  (span: Span, requestInfo: AwsSdkRequestHookInformation): void;
 }
 
+export interface AwsSdkResponseHookInformation {
+  moduleVersion?: string;
+  response: NormalizedResponse;
+}
 /**
  * span can be used to add custom attributes, or for any other need.
  * response is the object that is returned to the user calling the aws-sdk operation.
  * The response type and attributes on the response are client-specific.
  */
 export interface AwsSdkResponseCustomAttributeFunction {
-  (span: Span, response: NormalizedResponse): void;
+  (span: Span, responseInfo: AwsSdkResponseHookInformation): void;
 }
 
+export interface AwsSdkSqsProcessHookInformation {
+  message: AWS.SQS.Message;
+}
 export interface AwsSdkSqsProcessCustomAttributeFunction {
-  (span: Span, message: AWS.SQS.Message): void;
+  (span: Span, sqsProcessInfo: AwsSdkSqsProcessHookInformation): void;
 }
 
 export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
@@ -69,10 +80,4 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
    * effectively causing those http spans to be non-recordable.
    */
   suppressInternalInstrumentation?: boolean;
-
-  /**
-   * If passed, a span attribute will be added to all spans with key of the provided "moduleVersionAttributeName"
-   * and value of the module version.
-   */
-  moduleVersionAttributeName?: string;
 }

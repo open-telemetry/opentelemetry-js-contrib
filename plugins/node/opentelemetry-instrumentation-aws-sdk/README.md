@@ -45,9 +45,6 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 | `responseHook` | `AwsSdkResponseCustomAttributeFunction` | Hook for adding custom attributes when response is received from aws. |
 | `sqsProcessHook` | `AwsSdkSqsProcessCustomAttributeFunction` | Hook called after starting sqs `process` span (for each sqs received message), which allow to add custom attributes to it. |
 | `suppressInternalInstrumentation` | `boolean` | Most aws operation use http requests under the hood. Set this to `true` to hide all underlying http spans. |
-| `moduleVersionAttributeName` | `string` | If passed, a span attribute will be added to all spans with key of the provided `moduleVersionAttributeName` and value of the patched module version |
-
-
 
 ## Span Attributes
 Both V2 and V3 instrumentations are collecting the following attributes:
@@ -99,6 +96,14 @@ This instrumentation is a work in progress. We implemented some of the specific 
 ## Potential Side Effects
 The instrumentation is doing best effort to support the trace specification of open telemetry. For SQS, it involves defining new attributes on the `Messages` array, as well as on the manipulated types generated from this array (to set correct trace context for a single SQS message operation). Those properties are defined as [non-enumerable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Enumerability_and_ownership_of_properties) properties, so they have minimum side effect on the app. They will, however, show when using the `Object.getOwnPropertyDescriptors` and `Reflect.ownKeys` functions on SQS `Messages` array and for each `Message` in the array.
 
+## Migration From opentelemetry-instrumentation-aws-sdk
+This instrumentation was originally published under the name `"opentelemetry-instrumentation-aws-sdk"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js). Few breaking changes were made during porting to the contrib repo to align with conventions:
+
+### Hook Info
+The instrumentation's config `preRequestHook`, `responseHook` and `sqsProcessHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
+
+### `moduleVersionAttributeName` config option
+The `moduleVersionAttributeName` config option is removed. To add the aws-sdk package version to spans, use the `moduleVersion` attribute in hook info for `preRequestHook` and `responseHook` functions.
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

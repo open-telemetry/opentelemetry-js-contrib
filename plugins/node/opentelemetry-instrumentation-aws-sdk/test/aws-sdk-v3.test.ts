@@ -15,8 +15,8 @@
  */
 import {
   AwsInstrumentation,
-  NormalizedRequest,
-  NormalizedResponse,
+  AwsSdkRequestHookInformation,
+  AwsSdkResponseHookInformation,
 } from '../src';
 import {
   getTestSpans,
@@ -179,14 +179,14 @@ describe('instrumentation-aws-sdk-v3', () => {
       it('verify request and response hooks are called with right params', async () => {
         instrumentation.disable();
         instrumentation.setConfig({
-          preRequestHook: (span: Span, request: NormalizedRequest) => {
+          preRequestHook: (span: Span, requestInfo: AwsSdkRequestHookInformation) => {
             span.setAttribute(
               'attribute.from.request.hook',
-              request.commandInput.Bucket
+              requestInfo.request.commandInput.Bucket
             );
           },
 
-          responseHook: (span: Span, response: NormalizedResponse) => {
+          responseHook: (span: Span, responseInfo: AwsSdkResponseHookInformation) => {
             span.setAttribute(
               'attribute.from.response.hook',
               'data from response hook'
@@ -222,15 +222,15 @@ describe('instrumentation-aws-sdk-v3', () => {
       it('handle throw in request and response hooks', async () => {
         instrumentation.disable();
         instrumentation.setConfig({
-          preRequestHook: (span: Span, request: NormalizedRequest) => {
+          preRequestHook: (span: Span, requestInfo: AwsSdkRequestHookInformation) => {
             span.setAttribute(
               'attribute.from.request.hook',
-              request.commandInput.Bucket
+              requestInfo.request.commandInput.Bucket
             );
             throw new Error('error from request hook in unittests');
           },
 
-          responseHook: (span: Span, response: NormalizedResponse) => {
+          responseHook: (span: Span, responseInfo: AwsSdkResponseHookInformation) => {
             throw new Error('error from response hook in unittests');
           },
 
@@ -258,35 +258,6 @@ describe('instrumentation-aws-sdk-v3', () => {
       });
     });
 
-    describe('moduleVersionAttributeName', () => {
-      it('setting moduleVersionAttributeName is adding module version', async () => {
-        instrumentation.disable();
-        instrumentation.setConfig({
-          moduleVersionAttributeName: 'module.version',
-          suppressInternalInstrumentation: true,
-        });
-        instrumentation.enable();
-
-        nock(`https://ot-demo-test.s3.${region}.amazonaws.com/`)
-          .put('/aws-ot-s3-test-object.txt?x-id=PutObject')
-          .reply(
-            200,
-            fs.readFileSync('./test/mock-responses/s3-put-object.xml', 'utf8')
-          );
-
-        const params = {
-          Bucket: 'ot-demo-test',
-          Key: 'aws-ot-s3-test-object.txt',
-        };
-        await s3Client.putObject(params);
-        expect(getTestSpans().length).toBe(1);
-        const [span] = getTestSpans();
-
-        expect(span.attributes['module.version']).toMatch(
-          /3.\d{1,4}\.\d{1,5}.*/
-        );
-      });
-    });
   });
 
   describe('custom service behavior', () => {

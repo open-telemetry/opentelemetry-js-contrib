@@ -28,6 +28,8 @@ import { AttributeNames } from './enums';
 import { ServicesExtensions } from './services';
 import {
   AwsSdkInstrumentationConfig,
+  AwsSdkRequestHookInformation,
+  AwsSdkResponseHookInformation,
   NormalizedRequest,
   NormalizedResponse,
 } from './types';
@@ -197,7 +199,6 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
   private _startAwsV3Span(
     normalizedRequest: NormalizedRequest,
     metadata: RequestMetadata,
-    moduleVersion: string | undefined
   ): Span {
     const name =
       metadata.spanName ??
@@ -210,13 +211,6 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
       },
     });
 
-    if (this._config.moduleVersionAttributeName && moduleVersion) {
-      newSpan.setAttribute(
-        this._config.moduleVersionAttributeName,
-        moduleVersion
-      );
-    }
-
     return newSpan;
   }
 
@@ -224,7 +218,6 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     request: AWS.Request<any, any>,
     metadata: RequestMetadata,
     normalizedRequest: NormalizedRequest,
-    moduleVersion: string | undefined
   ): Span {
     const operation = (request as any).operation;
     const service = (request as any).service;
@@ -247,20 +240,17 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
       },
     });
 
-    if (this._config.moduleVersionAttributeName && moduleVersion) {
-      newSpan.setAttribute(
-        this._config.moduleVersionAttributeName,
-        moduleVersion
-      );
-    }
-
     return newSpan;
   }
 
-  private _callUserPreRequestHook(span: Span, request: NormalizedRequest) {
+  private _callUserPreRequestHook(span: Span, request: NormalizedRequest, moduleVersion: string | undefined) {
     if (this._config?.preRequestHook) {
+      const requestInfo: AwsSdkRequestHookInformation = {
+        moduleVersion,
+        request,
+      }
       safeExecuteInTheMiddle(
-        () => this._config.preRequestHook!(span, request),
+        () => this._config.preRequestHook!(span, requestInfo),
         (e: Error | undefined) => {
           if (e)
             diag.error(
@@ -277,8 +267,11 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     const responseHook = this._config?.responseHook;
     if (!responseHook) return;
 
+    const responseInfo: AwsSdkResponseHookInformation = {
+      response,
+    };
     safeExecuteInTheMiddle(
-      () => responseHook(span, response),
+      () => responseHook(span, responseInfo),
       (e: Error | undefined) => {
         if (e)
           diag.error(
@@ -433,7 +426,6 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
         const span = self._startAwsV3Span(
           normalizedRequest,
           requestMetadata,
-          moduleVersion
         );
         const activeContextWithSpan = trace.setSpan(context.active(), span);
 
@@ -451,7 +443,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
             );
           }
 
-          self._callUserPreRequestHook(span, normalizedRequest);
+          self._callUserPreRequestHook(span, normalizedRequest, moduleVersion);
           const resultPromise = context.with(activeContextWithSpan, () => {
             self.servicesExtensions.requestPostSpanHook(normalizedRequest);
             return self._callOriginalFunction(() =>
@@ -549,13 +541,12 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
         this,
         requestMetadata,
         normalizedRequest,
-        moduleVersion
       );
       this[REQUEST_SPAN_KEY] = span;
       const activeContextWithSpan = trace.setSpan(context.active(), span);
       const callbackWithContext = context.bind(activeContextWithSpan, callback);
 
-      self._callUserPreRequestHook(span, normalizedRequest);
+      self._callUserPreRequestHook(span, normalizedRequest, moduleVersion);
       self._registerV2CompletedEvent(
         span,
         this,
@@ -590,12 +581,11 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
         this,
         requestMetadata,
         normalizedRequest,
-        moduleVersion
       );
       this[REQUEST_SPAN_KEY] = span;
 
       const activeContextWithSpan = trace.setSpan(context.active(), span);
-      self._callUserPreRequestHook(span, normalizedRequest);
+      self._callUserPreRequestHook(span, normalizedRequest, moduleVersion);
       self._registerV2CompletedEvent(
         span,
         this,

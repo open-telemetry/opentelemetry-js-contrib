@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AwsInstrumentation } from '../src';
+import { AwsInstrumentation, AwsSdkSqsProcessHookInformation } from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -349,8 +349,8 @@ describe('SQS', () => {
   describe('hooks', () => {
     it('sqsProcessHook called and add message attribute to span', async () => {
       const config = {
-        sqsProcessHook: (span: Span, message: AWS.SQS.Message) => {
-          span.setAttribute('attribute from sqs process hook', message.Body!);
+        sqsProcessHook: (span: Span, sqsProcessInfo: AwsSdkSqsProcessHookInformation) => {
+          span.setAttribute('attribute from sqs process hook', sqsProcessInfo.message.Body!);
         },
       };
 
@@ -396,7 +396,7 @@ describe('SQS', () => {
 
     it('sqsProcessHook throws does not fail span', async () => {
       const config = {
-        sqsProcessHook: (span: Span, message: AWS.SQS.Message) => {
+        sqsProcessHook: (span: Span, sqsProcessInfo: AwsSdkSqsProcessHookInformation) => {
           throw new Error('error from sqsProcessHook hook');
         },
       };
