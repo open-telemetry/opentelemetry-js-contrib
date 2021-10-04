@@ -11,7 +11,7 @@
     "compile": "npm run version:update && tsc -p .",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint": "eslint . --ext .ts",
-    "precompile": "tsc --version && lerna run version --scope $(npm pkg get name) --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-mysql --include-filtered-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
