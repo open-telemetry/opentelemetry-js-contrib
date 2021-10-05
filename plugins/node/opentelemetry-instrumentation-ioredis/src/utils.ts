@@ -15,16 +15,14 @@
  */
 
 import type * as ioredisTypes from 'ioredis';
-import {
-  Tracer,
-  SpanKind,
-  Span,
-  SpanStatusCode
-} from '@opentelemetry/api';
+import { Tracer, SpanKind, Span, SpanStatusCode } from '@opentelemetry/api';
 import { IORedisInstrumentation } from './';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
-export const endSpan = (span: Span, err: NodeJS.ErrnoException | null | undefined) => {
+export const endSpan = (
+  span: Span,
+  err: NodeJS.ErrnoException | null | undefined
+) => {
   if (err) {
     span.recordException(err);
     span.setStatus({

@@ -21,10 +21,14 @@ import {
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { IORedisInstrumentationConfig, IORedisCommand, DbStatementSerializer } from './types';
+import {
+  IORedisInstrumentationConfig,
+  IORedisCommand,
+  DbStatementSerializer,
+} from './types';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import { traceConnection, endSpan} from './utils';
+import { traceConnection, endSpan } from './utils';
 import { VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
@@ -88,11 +92,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
    */
   private _patchSendCommand(moduleVersion?: string) {
     return (original: Function) => {
-      return this.traceSendCommand(
-        this.tracer,
-        original,
-        moduleVersion
-      );
+      return this.traceSendCommand(this.tracer, original, moduleVersion);
     };
   }
 
@@ -120,14 +120,17 @@ export class IORedisInstrumentation extends InstrumentationBase<
       if (arguments.length < 1 || typeof cmd !== 'object') {
         return original.apply(this, arguments);
       }
-      const config = instrumentation.getConfig() as IORedisInstrumentationConfig;
-      const dbStatementSerializer = config?.dbStatementSerializer || instrumentation.defaultDbStatementSerializer;
+      const config =
+        instrumentation.getConfig() as IORedisInstrumentationConfig;
+      const dbStatementSerializer =
+        config?.dbStatementSerializer ||
+        instrumentation.defaultDbStatementSerializer;
 
       const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
       if (config?.requireParentSpan === true && hasNoParentSpan) {
         return original.apply(this, arguments);
       }
-  
+
       const span = tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
         attributes: {
@@ -138,7 +141,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
           ),
         },
       });
-  
+
       if (config?.requestHook) {
         safeExecuteInTheMiddle(
           () =>
@@ -155,18 +158,18 @@ export class IORedisInstrumentation extends InstrumentationBase<
           true
         );
       }
-  
+
       const { host, port } = this.options;
-  
+
       span.setAttributes({
         [SemanticAttributes.NET_PEER_NAME]: host,
         [SemanticAttributes.NET_PEER_PORT]: port,
         [SemanticAttributes.NET_PEER_IP]: `redis://${host}:${port}`,
       });
-  
+
       try {
         const result = original.apply(this, arguments);
-  
+
         const origResolve = cmd.resolve;
         /* eslint-disable @typescript-eslint/no-explicit-any */
         cmd.resolve = function (result: any) {
@@ -179,11 +182,11 @@ export class IORedisInstrumentation extends InstrumentationBase<
             },
             true
           );
-  
+
           endSpan(span, null);
           origResolve(result);
         };
-  
+
         const origReject = cmd.reject;
         cmd.reject = function (err: Error) {
           endSpan(span, err);
