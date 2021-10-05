@@ -915,9 +915,7 @@ describe('ioredis', () => {
       };
 
       before(() => {
-        instrumentation.disable();
         instrumentation.setConfig({ dbStatementSerializer });
-        instrumentation.enable();
       });
 
       IOREDIS_CALLBACK_OPERATIONS.forEach(operation => {

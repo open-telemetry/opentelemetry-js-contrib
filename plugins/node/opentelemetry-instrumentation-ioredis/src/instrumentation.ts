@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
+import { diag, trace, context, SpanKind, Tracer } from '@opentelemetry/api';
 import type * as ioredisTypes from 'ioredis';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { IORedisInstrumentationConfig } from './types';
-import { traceConnection, traceSendCommand } from './utils';
+import { IORedisInstrumentationConfig, IORedisCommand, DbStatementSerializer } from './types';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import { traceConnection, endSpan} from './utils';
 import { VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
@@ -86,10 +88,9 @@ export class IORedisInstrumentation extends InstrumentationBase<
    */
   private _patchSendCommand(moduleVersion?: string) {
     return (original: Function) => {
-      return traceSendCommand(
+      return this.traceSendCommand(
         this.tracer,
         original,
-        this._config,
         moduleVersion
       );
     };
@@ -100,4 +101,100 @@ export class IORedisInstrumentation extends InstrumentationBase<
       return traceConnection(this.tracer, original);
     };
   }
+
+  private defaultDbStatementSerializer: DbStatementSerializer = (
+    cmdName,
+    cmdArgs
+  ) =>
+    Array.isArray(cmdArgs) && cmdArgs.length
+      ? `${cmdName} ${cmdArgs.join(' ')}`
+      : cmdName;
+
+  private traceSendCommand = (
+    tracer: Tracer,
+    original: Function,
+    moduleVersion?: string
+  ) => {
+    const instrumentation = this;
+    return function (this: ioredisTypes.Redis, cmd?: IORedisCommand) {
+      if (arguments.length < 1 || typeof cmd !== 'object') {
+        return original.apply(this, arguments);
+      }
+      const config = instrumentation.getConfig() as IORedisInstrumentationConfig;
+      const dbStatementSerializer = config?.dbStatementSerializer || instrumentation.defaultDbStatementSerializer;
+
+      const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
+      if (config?.requireParentSpan === true && hasNoParentSpan) {
+        return original.apply(this, arguments);
+      }
+  
+      const span = tracer.startSpan(cmd.name, {
+        kind: SpanKind.CLIENT,
+        attributes: {
+          [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
+          [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
+            cmd.name,
+            cmd.args
+          ),
+        },
+      });
+  
+      if (config?.requestHook) {
+        safeExecuteInTheMiddle(
+          () =>
+            config?.requestHook!(span, {
+              moduleVersion,
+              cmdName: cmd.name,
+              cmdArgs: cmd.args,
+            }),
+          e => {
+            if (e) {
+              diag.error('ioredis instrumentation: request hook failed', e);
+            }
+          },
+          true
+        );
+      }
+  
+      const { host, port } = this.options;
+  
+      span.setAttributes({
+        [SemanticAttributes.NET_PEER_NAME]: host,
+        [SemanticAttributes.NET_PEER_PORT]: port,
+        [SemanticAttributes.NET_PEER_IP]: `redis://${host}:${port}`,
+      });
+  
+      try {
+        const result = original.apply(this, arguments);
+  
+        const origResolve = cmd.resolve;
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        cmd.resolve = function (result: any) {
+          safeExecuteInTheMiddle(
+            () => config?.responseHook?.(span, cmd.name, cmd.args, result),
+            e => {
+              if (e) {
+                diag.error('ioredis instrumentation: response hook failed', e);
+              }
+            },
+            true
+          );
+  
+          endSpan(span, null);
+          origResolve(result);
+        };
+  
+        const origReject = cmd.reject;
+        cmd.reject = function (err: Error) {
+          endSpan(span, err);
+          origReject(err);
+        };
+
+        return result;
+      } catch (error) {
+        endSpan(span, error);
+        throw error;
+      }
+    };
+  };
 }
