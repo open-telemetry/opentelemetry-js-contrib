@@ -913,9 +913,11 @@ describe('ioredis', () => {
           ? `FooBar_${cmdName} ${cmdArgs.join(',')}`
           : cmdName;
       };
-
+      const config: IORedisInstrumentationConfig = {
+        dbStatementSerializer: dbStatementSerializer,
+      };
       before(() => {
-        instrumentation.setConfig({ dbStatementSerializer });
+        instrumentation.setConfig(config);
       });
 
       IOREDIS_CALLBACK_OPERATIONS.forEach(operation => {
