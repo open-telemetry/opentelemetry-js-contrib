@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-import { diag, trace, context, SpanKind, Tracer } from '@opentelemetry/api';
+import { diag, trace, context, SpanKind } from '@opentelemetry/api';
 import type * as ioredisTypes from 'ioredis';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import {
-  IORedisInstrumentationConfig,
-  IORedisCommand,
-  DbStatementSerializer,
-} from './types';
+import { IORedisInstrumentationConfig, IORedisCommand } from './types';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import { traceConnection, endSpan } from './utils';
+import { endSpan, defaultDbStatementSerializer } from './utils';
 import { VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
@@ -88,29 +84,17 @@ export class IORedisInstrumentation extends InstrumentationBase<
    */
   private _patchSendCommand(moduleVersion?: string) {
     return (original: Function) => {
-      return this.traceSendCommand(this.tracer, original, moduleVersion);
+      return this.traceSendCommand(original, moduleVersion);
     };
   }
 
   private _patchConnection() {
     return (original: Function) => {
-      return traceConnection(this.tracer, original);
+      return this.traceConnection(original);
     };
   }
 
-  private defaultDbStatementSerializer: DbStatementSerializer = (
-    cmdName,
-    cmdArgs
-  ) =>
-    Array.isArray(cmdArgs) && cmdArgs.length
-      ? `${cmdName} ${cmdArgs.join(' ')}`
-      : cmdName;
-
-  private traceSendCommand = (
-    tracer: Tracer,
-    original: Function,
-    moduleVersion?: string
-  ) => {
+  private traceSendCommand = (original: Function, moduleVersion?: string) => {
     const instrumentation = this;
     return function (this: ioredisTypes.Redis, cmd?: IORedisCommand) {
       if (arguments.length < 1 || typeof cmd !== 'object') {
@@ -119,15 +103,14 @@ export class IORedisInstrumentation extends InstrumentationBase<
       const config =
         instrumentation.getConfig() as IORedisInstrumentationConfig;
       const dbStatementSerializer =
-        config?.dbStatementSerializer ||
-        instrumentation.defaultDbStatementSerializer;
+        config?.dbStatementSerializer || defaultDbStatementSerializer;
 
       const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
       if (config?.requireParentSpan === true && hasNoParentSpan) {
         return original.apply(this, arguments);
       }
 
-      const span = tracer.startSpan(cmd.name, {
+      const span = instrumentation.tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
         attributes: {
           [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
@@ -190,6 +173,34 @@ export class IORedisInstrumentation extends InstrumentationBase<
         };
 
         return result;
+      } catch (error) {
+        endSpan(span, error);
+        throw error;
+      }
+    };
+  };
+
+  private traceConnection = (original: Function) => {
+    const instrumentation = this;
+    return function (this: ioredisTypes.Redis) {
+      const span = instrumentation.tracer.startSpan('connect', {
+        kind: SpanKind.CLIENT,
+        attributes: {
+          [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
+          [SemanticAttributes.DB_STATEMENT]: 'connect',
+        },
+      });
+      const { host, port } = this.options;
+
+      span.setAttributes({
+        [SemanticAttributes.NET_PEER_NAME]: host,
+        [SemanticAttributes.NET_PEER_PORT]: port,
+        [SemanticAttributes.NET_PEER_IP]: `redis://${host}:${port}`,
+      });
+      try {
+        const client = original.apply(this, arguments);
+        endSpan(span, null);
+        return client;
       } catch (error) {
         endSpan(span, error);
         throw error;

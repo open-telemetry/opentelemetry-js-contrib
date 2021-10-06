@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-import type * as ioredisTypes from 'ioredis';
-import { Tracer, SpanKind, Span, SpanStatusCode } from '@opentelemetry/api';
-import { IORedisInstrumentation } from './';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { Span, SpanStatusCode } from '@opentelemetry/api';
+import { DbStatementSerializer } from './types';
 
 export const endSpan = (
   span: Span,
@@ -33,29 +31,10 @@ export const endSpan = (
   span.end();
 };
 
-export const traceConnection = (tracer: Tracer, original: Function) => {
-  return function (this: ioredisTypes.Redis) {
-    const span = tracer.startSpan('connect', {
-      kind: SpanKind.CLIENT,
-      attributes: {
-        [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
-        [SemanticAttributes.DB_STATEMENT]: 'connect',
-      },
-    });
-    const { host, port } = this.options;
-
-    span.setAttributes({
-      [SemanticAttributes.NET_PEER_NAME]: host,
-      [SemanticAttributes.NET_PEER_PORT]: port,
-      [SemanticAttributes.NET_PEER_IP]: `redis://${host}:${port}`,
-    });
-    try {
-      const client = original.apply(this, arguments);
-      endSpan(span, null);
-      return client;
-    } catch (error) {
-      endSpan(span, error);
-      throw error;
-    }
-  };
-};
+export const defaultDbStatementSerializer: DbStatementSerializer = (
+  cmdName,
+  cmdArgs
+) =>
+  Array.isArray(cmdArgs) && cmdArgs.length
+    ? `${cmdName} ${cmdArgs.join(' ')}`
+    : cmdName;
