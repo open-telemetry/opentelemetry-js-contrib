@@ -119,7 +119,7 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit tests
-        run: npm run test:ci:changed
+        run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
       - name: Report Coverage
         if: matrix.container == 'node:14'
         run: npm run codecov:ci:changed
@@ -150,7 +150,7 @@ jobs:
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci -- ${{ matrix.lerna-extra-args }}
+        run: npx lerna bootstrap --no-ci
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
