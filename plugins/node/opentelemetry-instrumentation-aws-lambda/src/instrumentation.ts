@@ -44,7 +44,6 @@ import {
   SemanticAttributes,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
-import { BasicTracerProvider } from '@opentelemetry/tracing';
 
 import {
   APIGatewayProxyEventHeaders,
@@ -73,7 +72,7 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
-  private _tracerProvider: TracerProvider | undefined;
+  private _forceFlush?: () => Promise<void>;
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
@@ -228,7 +227,27 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   override setTracerProvider(tracerProvider: TracerProvider) {
     super.setTracerProvider(tracerProvider);
-    this._tracerProvider = tracerProvider;
+    this._forceFlush = this._getForceFlush(tracerProvider);
+  }
+
+  private _getForceFlush(tracerProvider: TracerProvider) {
+    if (!tracerProvider) return undefined;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let currentProvider: any = tracerProvider;
+
+    if (typeof currentProvider.getDelegate === 'function') {
+      currentProvider = currentProvider.getDelegate();
+    }
+
+    if (typeof currentProvider.getActiveSpanProcessor === 'function') {
+      const activeSpanProcessor = currentProvider.getActiveSpanProcessor();
+      if (typeof activeSpanProcessor.forceFlush === 'function') {
+        return activeSpanProcessor.forceFlush.bind(activeSpanProcessor);
+      }
+    }
+
+    return undefined;
   }
 
   private _wrapCallback(original: Callback, span: Span): Callback {
@@ -267,15 +286,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
 
     span.end();
-    if (this._tracerProvider instanceof BasicTracerProvider) {
-      this._tracerProvider
-        .getActiveSpanProcessor()
-        .forceFlush()
-        .then(
-          () => callback(),
-          () => callback()
-        );
+
+    if (this._forceFlush) {
+      this._forceFlush().then(
+        () => callback(),
+        () => callback()
+      );
     } else {
+      diag.error(
+        'Spans may not be exported for the lambda function because we are not force flushing before callback.'
+      );
       callback();
     }
   }

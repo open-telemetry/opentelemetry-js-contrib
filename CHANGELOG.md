@@ -4,6 +4,59 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.25.0
+
+#### :bug: Bug Fix
+* [#619](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/619) fix: GraphQL throws TypeError: Cannot read property 'startToken' of undefined ([@obecny](https://github.com/obecny))
+* [#643](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/643) fix(user-interaction): event listeners have wrong this when listening for bubbled events ([@t2t2](https://github.com/t2t2))
+* [#562](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/562) fix(mysql): bind get connection callback to active context ([@sstone1](https://github.com/sstone1))
+* [#589](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/589) fix(hapi-instrumentation): close spans on errors in instrumented functions ([@CptSchnitz](https://github.com/CptSchnitz))
+* [#580](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/580) fix: redis instrumentation loses context when using callbacks ([@aspectom](https://github.com/aspectom))
+
+#### :rocket: Enhancement
+* Other
+  * [#626](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/626) feat(mongodb): add db statement serializer config ([@nozik](https://github.com/nozik))
+  * [#622](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/622) docs: add missing fetch instrumentation ([@meteorlxy](https://github.com/meteorlxy))
+  * [#553](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/553) feat: Add NestJS instrumentation ([@Rauno56](https://github.com/Rauno56))
+  * [#588](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/588) chore: adding instrumentation for connect ([@obecny](https://github.com/obecny))
+* `opentelemetry-test-utils`
+  * [#593](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/593) feat: move aws/gcp detectors from opentelemetry-js repo ([@legendecas](https://github.com/legendecas))
+
+#### :house: Internal
+* `opentelemetry-test-utils`
+  * [#641](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/641) chore(mysql2): adding TAV script ([@YanivD](https://github.com/YanivD))
+  * [#639](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/639) build(test-utils): marking test-utils as non private so it can be published ([@blumamir](https://github.com/blumamir))
+  * [#596](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/596) docs(test-utils): add README.md for @opentelemetry/test-utils ([@Rauno56](https://github.com/Rauno56))
+* Other
+  * [#648](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/648) ci: speed up lint workflow with hoisting  ([@YanivD](https://github.com/YanivD))
+  * [#614](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/614) ci: speed up PR unit-test run time ([@blumamir](https://github.com/blumamir))
+  * [#612](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/612) chore: ignore renovate-bot for component owners ([@dyladan](https://github.com/dyladan))
+  * [#597](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/597) chore: add script to update core dependencies ([@dyladan](https://github.com/dyladan))
+  * [#606](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/606) chore: add ownership for aws propagator ([@dyladan](https://github.com/dyladan))
+  * [#601](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/601) chore: configure renovate to bump API ([@Flarna](https://github.com/Flarna))
+
+#### :memo: Documentation
+* `opentelemetry-browser-extension-autoinjection`
+  * [#615](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/615) docs: correct the build instructions ([@jessitron](https://github.com/jessitron))
+
+#### Committers: 16
+- Amir Blum ([@blumamir](https://github.com/blumamir))
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Herman ([@hermanbanken](https://github.com/hermanbanken))
+- Jessica Kerr ([@jessitron](https://github.com/jessitron))
+- Ofer Adelstein ([@CptSchnitz](https://github.com/CptSchnitz))
+- Ran Nozik ([@nozik](https://github.com/nozik))
+- Rauno Viskus ([@Rauno56](https://github.com/Rauno56))
+- Simon Stone ([@sstone1](https://github.com/sstone1))
+- Tom Zach ([@aspectom](https://github.com/aspectom))
+- William Armiros ([@willarmiros](https://github.com/willarmiros))
+- Yaniv Davidi ([@YanivD](https://github.com/YanivD))
+- legendecas ([@legendecas](https://github.com/legendecas))
+- meteorlxy ([@meteorlxy](https://github.com/meteorlxy))
+- t2t2 ([@t2t2](https://github.com/t2t2))
+
 ## 0.24.0
 
 #### :bug: Bug Fix
