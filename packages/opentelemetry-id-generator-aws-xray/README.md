@@ -38,16 +38,15 @@ const tracerProvider = new NodeTracerProvider(tracerConfig);
 
 Example trace ID format: 58406520a006649127e371903a2de979
 
-A trace ID consists of two parts; the timestamp and the unique identifier.
+A trace ID consists of two parts: the timestamp and the unique identifier.
 
 #### Time Stamp
 
-* the first 8 hexadecimal digits represent the time of the original request in Unix epoch time
-* for example, 10:00AM December 1st, 2016 PST in epoch time is 1480615200 seconds, or 58406520 in hexadecimal digits.
+The first 8 hexadecimal digits represent the time of the original request in Unix epoch time. For example, 10:00AM December 1st, 2016 PST in epoch time is 1480615200 seconds, or 58406520 in hexadecimal digits.
 
 #### Unique Identifier
 
-* the last 24 hexadecimal digits is an random identifier for the trace
+The last 24 hexadecimal digits is an random identifier for the trace.
 
 ## Useful links
 
