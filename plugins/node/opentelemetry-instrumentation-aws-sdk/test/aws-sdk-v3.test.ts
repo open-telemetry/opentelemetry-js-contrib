@@ -179,14 +179,20 @@ describe('instrumentation-aws-sdk-v3', () => {
       it('verify request and response hooks are called with right params', async () => {
         instrumentation.disable();
         instrumentation.setConfig({
-          preRequestHook: (span: Span, requestInfo: AwsSdkRequestHookInformation) => {
+          preRequestHook: (
+            span: Span,
+            requestInfo: AwsSdkRequestHookInformation
+          ) => {
             span.setAttribute(
               'attribute.from.request.hook',
               requestInfo.request.commandInput.Bucket
             );
           },
 
-          responseHook: (span: Span, responseInfo: AwsSdkResponseHookInformation) => {
+          responseHook: (
+            span: Span,
+            responseInfo: AwsSdkResponseHookInformation
+          ) => {
             span.setAttribute(
               'attribute.from.response.hook',
               'data from response hook'
@@ -222,7 +228,10 @@ describe('instrumentation-aws-sdk-v3', () => {
       it('handle throw in request and response hooks', async () => {
         instrumentation.disable();
         instrumentation.setConfig({
-          preRequestHook: (span: Span, requestInfo: AwsSdkRequestHookInformation) => {
+          preRequestHook: (
+            span: Span,
+            requestInfo: AwsSdkRequestHookInformation
+          ) => {
             span.setAttribute(
               'attribute.from.request.hook',
               requestInfo.request.commandInput.Bucket
@@ -230,7 +239,10 @@ describe('instrumentation-aws-sdk-v3', () => {
             throw new Error('error from request hook in unittests');
           },
 
-          responseHook: (span: Span, responseInfo: AwsSdkResponseHookInformation) => {
+          responseHook: (
+            span: Span,
+            responseInfo: AwsSdkResponseHookInformation
+          ) => {
             throw new Error('error from response hook in unittests');
           },
 
@@ -257,7 +269,6 @@ describe('instrumentation-aws-sdk-v3', () => {
         );
       });
     });
-
   });
 
   describe('custom service behavior', () => {

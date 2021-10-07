@@ -198,7 +198,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
 
   private _startAwsV3Span(
     normalizedRequest: NormalizedRequest,
-    metadata: RequestMetadata,
+    metadata: RequestMetadata
   ): Span {
     const name =
       metadata.spanName ??
@@ -217,7 +217,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
   private _startAwsV2Span(
     request: AWS.Request<any, any>,
     metadata: RequestMetadata,
-    normalizedRequest: NormalizedRequest,
+    normalizedRequest: NormalizedRequest
   ): Span {
     const operation = (request as any).operation;
     const service = (request as any).service;
@@ -243,12 +243,16 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     return newSpan;
   }
 
-  private _callUserPreRequestHook(span: Span, request: NormalizedRequest, moduleVersion: string | undefined) {
+  private _callUserPreRequestHook(
+    span: Span,
+    request: NormalizedRequest,
+    moduleVersion: string | undefined
+  ) {
     if (this._config?.preRequestHook) {
       const requestInfo: AwsSdkRequestHookInformation = {
         moduleVersion,
         request,
-      }
+      };
       safeExecuteInTheMiddle(
         () => this._config.preRequestHook!(span, requestInfo),
         (e: Error | undefined) => {
@@ -423,10 +427,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
         );
         const requestMetadata =
           self.servicesExtensions.requestPreSpanHook(normalizedRequest);
-        const span = self._startAwsV3Span(
-          normalizedRequest,
-          requestMetadata,
-        );
+        const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
         const activeContextWithSpan = trace.setSpan(context.active(), span);
 
         const handlerPromise = new Promise(async (resolve, reject) => {
@@ -540,7 +541,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
       const span = self._startAwsV2Span(
         this,
         requestMetadata,
-        normalizedRequest,
+        normalizedRequest
       );
       this[REQUEST_SPAN_KEY] = span;
       const activeContextWithSpan = trace.setSpan(context.active(), span);
@@ -580,7 +581,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
       const span = self._startAwsV2Span(
         this,
         requestMetadata,
-        normalizedRequest,
+        normalizedRequest
       );
       this[REQUEST_SPAN_KEY] = span;
 

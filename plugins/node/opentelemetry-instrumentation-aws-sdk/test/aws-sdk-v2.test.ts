@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AwsInstrumentation, AwsSdkRequestHookInformation, AwsSdkResponseHookInformation } from '../src';
+import {
+  AwsInstrumentation,
+  AwsSdkRequestHookInformation,
+  AwsSdkResponseHookInformation,
+} from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -263,10 +267,13 @@ describe('instrumentation-aws-sdk-v2', () => {
     it('preRequestHook called and add request attribute to span', done => {
       mockV2AwsSend(responseMockSuccess, 'data returned from operation');
       const config = {
-        preRequestHook: (span: Span, requestInfo: AwsSdkRequestHookInformation) => {
+        preRequestHook: (
+          span: Span,
+          requestInfo: AwsSdkRequestHookInformation
+        ) => {
           span.setAttribute(
             'attribute from hook',
-            requestInfo.request.commandInput['Bucket'],
+            requestInfo.request.commandInput['Bucket']
           );
         },
       };
@@ -314,8 +321,14 @@ describe('instrumentation-aws-sdk-v2', () => {
     it('responseHook called and add response attribute to span', done => {
       mockV2AwsSend(responseMockSuccess, 'data returned from operation');
       const config = {
-        responseHook: (span: Span, responseInfo: AwsSdkResponseHookInformation) => {
-          span.setAttribute('attribute from response hook', responseInfo.response['data']);
+        responseHook: (
+          span: Span,
+          responseInfo: AwsSdkResponseHookInformation
+        ) => {
+          span.setAttribute(
+            'attribute from response hook',
+            responseInfo.response['data']
+          );
         },
       };
 

@@ -349,8 +349,14 @@ describe('SQS', () => {
   describe('hooks', () => {
     it('sqsProcessHook called and add message attribute to span', async () => {
       const config = {
-        sqsProcessHook: (span: Span, sqsProcessInfo: AwsSdkSqsProcessHookInformation) => {
-          span.setAttribute('attribute from sqs process hook', sqsProcessInfo.message.Body!);
+        sqsProcessHook: (
+          span: Span,
+          sqsProcessInfo: AwsSdkSqsProcessHookInformation
+        ) => {
+          span.setAttribute(
+            'attribute from sqs process hook',
+            sqsProcessInfo.message.Body!
+          );
         },
       };
 
@@ -396,7 +402,10 @@ describe('SQS', () => {
 
     it('sqsProcessHook throws does not fail span', async () => {
       const config = {
-        sqsProcessHook: (span: Span, sqsProcessInfo: AwsSdkSqsProcessHookInformation) => {
+        sqsProcessHook: (
+          span: Span,
+          sqsProcessInfo: AwsSdkSqsProcessHookInformation
+        ) => {
           throw new Error('error from sqsProcessHook hook');
         },
       };
