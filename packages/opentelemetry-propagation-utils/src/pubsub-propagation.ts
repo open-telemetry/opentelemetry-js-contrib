@@ -1,178 +1,246 @@
-import { Tracer, SpanKind, Span, Context, Link, context, trace } from '@opentelemetry/api';
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import {
+  Tracer,
+  SpanKind,
+  Span,
+  Context,
+  Link,
+  context,
+  trace,
+  diag,
+  SpanAttributes,
+} from '@opentelemetry/api';
 
-const START_SPAN_FUNCTION = Symbol('opentelemetry.pubsub-propagation.start_span');
+const START_SPAN_FUNCTION = Symbol(
+  'opentelemetry.pubsub-propagation.start_span'
+);
 const END_SPAN_FUNCTION = Symbol('opentelemetry.pubsub-propagation.end_span');
 
-const patchArrayFilter = (messages: any[], tracer: Tracer, loopContext: Context) => {
-    const origFunc = messages.filter;
-    const patchedFunc = function (this: any, ...args: Parameters<typeof origFunc>) {
-        const newArray = origFunc.apply(this, args);
-        patchArrayForProcessSpans(newArray, tracer, loopContext);
-        return newArray;
-    };
+interface OtelProcessedMessage {
+  [START_SPAN_FUNCTION]?: () => Span;
+  [END_SPAN_FUNCTION]?: () => void;
+}
 
-    Object.defineProperty(messages, 'filter', {
-        enumerable: false,
-        value: patchedFunc,
-    });
+const patchArrayFilter = (
+  messages: unknown[],
+  tracer: Tracer,
+  loopContext: Context
+) => {
+  const origFunc = messages.filter;
+  const patchedFunc = function (
+    this: unknown,
+    ...args: Parameters<typeof origFunc>
+  ) {
+    const newArray = origFunc.apply(this, args);
+    patchArrayForProcessSpans(newArray, tracer, loopContext);
+    return newArray;
+  };
+
+  Object.defineProperty(messages, 'filter', {
+    enumerable: false,
+    value: patchedFunc,
+  });
 };
 
-const patchArrayFunction = (messages: any[], functionName: 'forEach' | 'map', tracer: Tracer, loopContext: Context) => {
-    const origFunc = messages[functionName] as typeof messages.map;
-    const patchedFunc = function (this: any, callback: any, thisArg: any) {
-        const wrappedCallback = function (this: any, message: any) {
-            const messageSpan = message?.[START_SPAN_FUNCTION]?.();
-            if (!messageSpan) return callback.apply(this, arguments);
+const patchArrayFunction = (
+  messages: OtelProcessedMessage[],
+  functionName: 'forEach' | 'map',
+  tracer: Tracer,
+  loopContext: Context
+) => {
+  const origFunc = messages[functionName] as typeof messages.map;
+  const patchedFunc = function (
+    this: unknown,
+    ...arrFuncArgs: Parameters<typeof origFunc>
+  ) {
+    const callback = arrFuncArgs[0];
+    const wrappedCallback = function (
+      this: unknown,
+      ...callbackArgs: Parameters<typeof callback>
+    ) {
+      const message = callbackArgs[0];
+      const messageSpan = message?.[START_SPAN_FUNCTION]?.();
+      if (!messageSpan) return callback.apply(this, callbackArgs);
 
-            const callbackArgs = arguments;
-            const res = context.with(trace.setSpan(loopContext, messageSpan), () => {
-                try {
-                    return callback.apply(this, callbackArgs);
-                } catch (err) {
-                    throw err;
-                } finally {
-                    message[END_SPAN_FUNCTION]?.();
-                }
-            });
+      const res = context.with(trace.setSpan(loopContext, messageSpan), () => {
+        try {
+          return callback.apply(this, callbackArgs);
+        } finally {
+          message[END_SPAN_FUNCTION]?.();
+        }
+      });
 
-            if (typeof res === 'object') {
+      if (typeof res === 'object') {
+        const startSpanFunction = Object.getOwnPropertyDescriptor(
+          message,
+          START_SPAN_FUNCTION
+        );
+        startSpanFunction &&
+          Object.defineProperty(res, START_SPAN_FUNCTION, startSpanFunction);
 
-                const startSpanFunction = Object.getOwnPropertyDescriptor(message, START_SPAN_FUNCTION);
-                startSpanFunction && Object.defineProperty(
-                    res,
-                    START_SPAN_FUNCTION,
-                    startSpanFunction
-                );
-
-                const endSpanFunction = Object.getOwnPropertyDescriptor(message, END_SPAN_FUNCTION);
-                endSpanFunction && Object.defineProperty(
-                    res,
-                    END_SPAN_FUNCTION,
-                    endSpanFunction
-                );
-            }
-            return res;
-        };
-        const funcResult = origFunc.call(this, wrappedCallback, thisArg);
-        if (Array.isArray(funcResult)) patchArrayForProcessSpans(funcResult, tracer, loopContext);
-        return funcResult;
+        const endSpanFunction = Object.getOwnPropertyDescriptor(
+          message,
+          END_SPAN_FUNCTION
+        );
+        endSpanFunction &&
+          Object.defineProperty(res, END_SPAN_FUNCTION, endSpanFunction);
+      }
+      return res;
     };
+    arrFuncArgs[0] = wrappedCallback;
+    const funcResult = origFunc.apply(this, arrFuncArgs);
+    if (Array.isArray(funcResult))
+      patchArrayForProcessSpans(funcResult, tracer, loopContext);
+    return funcResult;
+  };
 
-    Object.defineProperty(messages, functionName, {
-        enumerable: false,
-        value: patchedFunc,
-    });
+  Object.defineProperty(messages, functionName, {
+    enumerable: false,
+    value: patchedFunc,
+  });
 };
 
-const patchArrayForProcessSpans = (messages: any[], tracer: Tracer, loopContext: Context = context.active()) => {
-    patchArrayFunction(messages, 'forEach', tracer, loopContext);
-    patchArrayFunction(messages, 'map', tracer, loopContext);
-    patchArrayFilter(messages, tracer, loopContext);
+const patchArrayForProcessSpans = (
+  messages: unknown[],
+  tracer: Tracer,
+  loopContext: Context = context.active()
+) => {
+  patchArrayFunction(
+    messages as OtelProcessedMessage[],
+    'forEach',
+    tracer,
+    loopContext
+  );
+  patchArrayFunction(
+    messages as OtelProcessedMessage[],
+    'map',
+    tracer,
+    loopContext
+  );
+  patchArrayFilter(messages, tracer, loopContext);
 };
 
 const startMessagingProcessSpan = <T>(
-    message: any,
-    name: string,
-    attributes: Record<string, string>,
-    parentContext: Context,
-    propagatedContext: Context,
-    tracer: Tracer,
-    processHook?: ProcessHook<T>
+  message: T,
+  name: string,
+  attributes: SpanAttributes,
+  parentContext: Context,
+  propagatedContext: Context,
+  tracer: Tracer,
+  processHook?: ProcessHook<T>
 ): Span => {
-    const links: Link[] = [];
-    const spanContext = trace.getSpanContext(propagatedContext);
-    if (spanContext) {
-        links.push({
-            context: spanContext,
-        } as Link);
-    }
+  const links: Link[] = [];
+  const spanContext = trace.getSpanContext(propagatedContext);
+  if (spanContext) {
+    links.push({
+      context: spanContext,
+    } as Link);
+  }
 
-    const spanName = `${name} process`;
-    const processSpan = tracer.startSpan(
-        spanName,
-        {
-            kind: SpanKind.CONSUMER,
-            attributes: {
-                ...attributes,
-                ['messaging.operation']: 'process',
-            },
-            links,
-        },
-        parentContext
-    );
+  const spanName = `${name} process`;
+  const processSpan = tracer.startSpan(
+    spanName,
+    {
+      kind: SpanKind.CONSUMER,
+      attributes: {
+        ...attributes,
+        ['messaging.operation']: 'process',
+      },
+      links,
+    },
+    parentContext
+  );
 
-    Object.defineProperty(message, START_SPAN_FUNCTION, {
+  Object.defineProperty(message, START_SPAN_FUNCTION, {
+    enumerable: false,
+    writable: true,
+    value: () => processSpan,
+  });
+
+  Object.defineProperty(message, END_SPAN_FUNCTION, {
+    enumerable: false,
+    writable: true,
+    value: () => {
+      processSpan.end();
+      Object.defineProperty(message, END_SPAN_FUNCTION, {
         enumerable: false,
         writable: true,
-        value: () => processSpan,
-    });
+        value: () => {},
+      });
+    },
+  });
 
-    Object.defineProperty(message, END_SPAN_FUNCTION, {
-        enumerable: false,
-        writable: true,
-        value: () => {
-            processSpan.end();
-            Object.defineProperty(message, END_SPAN_FUNCTION, {
-                enumerable: false,
-                writable: true,
-                value: () => {},
-            });
-        },
-    });
+  try {
+    processHook?.(processSpan, message);
+  } catch (err) {
+    diag.error('opentelemetry-pubsub-propagation: process hook error', err);
+  }
 
-    if (processHook) {
-        try {
-            processHook(processSpan, message);
-        } catch {}
-    }
-
-    return processSpan;
+  return processSpan;
 };
 
 interface SpanDetails {
-    attributes: Record<string, any>;
-    parentContext: Context;
-    name: string;
+  attributes: SpanAttributes;
+  parentContext: Context;
+  name: string;
 }
 
 type ProcessHook<T> = (processSpan: Span, message: T) => void;
 
 interface PatchForProcessingPayload<T> {
-    messages: T[];
-    tracer: Tracer;
-    parentContext: Context;
-    messageToSpanDetails: (message: T) => SpanDetails;
-    processHook?: ProcessHook<T>;
+  messages: T[];
+  tracer: Tracer;
+  parentContext: Context;
+  messageToSpanDetails: (message: T) => SpanDetails;
+  processHook?: ProcessHook<T>;
 }
 
 const patchMessagesArrayToStartProcessSpans = <T>({
-    messages,
-    tracer,
-    parentContext,
-    messageToSpanDetails,
-    processHook,
+  messages,
+  tracer,
+  parentContext,
+  messageToSpanDetails,
+  processHook,
 }: PatchForProcessingPayload<T>) => {
-    messages.forEach((message) => {
-        const { attributes, name, parentContext: propagatedContext } = messageToSpanDetails(message);
+  messages.forEach(message => {
+    const {
+      attributes,
+      name,
+      parentContext: propagatedContext,
+    } = messageToSpanDetails(message);
 
-        Object.defineProperty(message, START_SPAN_FUNCTION, {
-            enumerable: false,
-            writable: true,
-            value: () =>
-                startMessagingProcessSpan<T>(
-                    message,
-                    name,
-                    attributes,
-                    parentContext,
-                    propagatedContext,
-                    tracer,
-                    processHook
-                ),
-        });
+    Object.defineProperty(message, START_SPAN_FUNCTION, {
+      enumerable: false,
+      writable: true,
+      value: () =>
+        startMessagingProcessSpan<T>(
+          message,
+          name,
+          attributes,
+          parentContext,
+          propagatedContext,
+          tracer,
+          processHook
+        ),
     });
+  });
 };
 
 export default {
-    patchMessagesArrayToStartProcessSpans,
-    patchArrayForProcessSpans,
+  patchMessagesArrayToStartProcessSpans,
+  patchArrayForProcessSpans,
 };
