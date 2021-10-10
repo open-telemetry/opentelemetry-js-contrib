@@ -47,6 +47,7 @@ import type {
   HandlerExecutionContext,
   Command as AwsV3Command,
   Handler as AwsV3MiddlewareHandler,
+  InitializeHandlerArguments,
 } from '@aws-sdk/types';
 import {
   bindPromise,
@@ -407,7 +408,9 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
       const origHandler = original.call(this, _handler, awsExecutionContext);
       const patchedHandler = function (
         this: any,
-        command: V3PluginCommand
+        command: InitializeHandlerArguments<any> & {
+          [V3_CLIENT_CONFIG_KEY]?: any;
+        }
       ): Promise<any> {
         const clientConfig = command[V3_CLIENT_CONFIG_KEY];
         const regionPromise = clientConfig?.region?.();
@@ -430,90 +433,95 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
         const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
         const activeContextWithSpan = trace.setSpan(context.active(), span);
 
-        const handlerPromise = new Promise(async (resolve, reject) => {
-          try {
-            const resolvedRegion = await Promise.resolve(regionPromise);
-            normalizedRequest.region = resolvedRegion;
-            span.setAttribute(AttributeNames.AWS_REGION, resolvedRegion);
-          } catch (e) {
-            // there is nothing much we can do in this case.
-            // we'll just continue without region
-            diag.debug(
-              `${AwsInstrumentation.component} instrumentation: failed to extract region from async function`,
-              e
-            );
-          }
-
-          self._callUserPreRequestHook(span, normalizedRequest, moduleVersion);
-          const resultPromise = context.with(activeContextWithSpan, () => {
-            self.servicesExtensions.requestPostSpanHook(normalizedRequest);
-            return self._callOriginalFunction(() =>
-              origHandler.call(this, command)
-            );
-          });
-          const promiseWithResponseLogic = resultPromise
-            .then(response => {
-              const requestId = response.output?.$metadata?.requestId;
-              if (requestId) {
-                span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
-              }
-              const extendedRequestId =
-                response.output?.$metadata?.extendedRequestId;
-              if (extendedRequestId) {
-                span.setAttribute(
-                  AttributeNames.AWS_REQUEST_EXTENDED_ID,
-                  extendedRequestId
-                );
-              }
-
-              const normalizedResponse: NormalizedResponse = {
-                data: response.output,
-                request: normalizedRequest,
-              };
-              self.servicesExtensions.responseHook(
-                normalizedResponse,
-                span,
-                self.tracer,
-                self._config
-              );
-              self._callUserResponseHook(span, normalizedResponse);
-              return response;
+        const handlerPromise = new Promise((resolve, reject) => {
+          Promise.resolve(regionPromise)
+            .then(resolvedRegion => {
+              normalizedRequest.region = resolvedRegion;
+              span.setAttribute(AttributeNames.AWS_REGION, resolvedRegion);
             })
-            .catch(err => {
-              const requestId = err?.RequestId;
-              if (requestId) {
-                span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
-              }
-              const extendedRequestId = err?.extendedRequestId;
-              if (extendedRequestId) {
-                span.setAttribute(
-                  AttributeNames.AWS_REQUEST_EXTENDED_ID,
-                  extendedRequestId
-                );
-              }
-
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: err.message,
-              });
-              span.recordException(err);
-              throw err;
+            .catch(e => {
+              // there is nothing much we can do in this case.
+              // we'll just continue without region
+              diag.debug(
+                `${AwsInstrumentation.component} instrumentation: failed to extract region from async function`,
+                e
+              );
             })
             .finally(() => {
-              span.end();
+              self._callUserPreRequestHook(
+                span,
+                normalizedRequest,
+                moduleVersion
+              );
+              const resultPromise = context.with(activeContextWithSpan, () => {
+                self.servicesExtensions.requestPostSpanHook(normalizedRequest);
+                return self._callOriginalFunction(() =>
+                  origHandler.call(this, command)
+                );
+              });
+              const promiseWithResponseLogic = resultPromise
+                .then(response => {
+                  const requestId = response.output?.$metadata?.requestId;
+                  if (requestId) {
+                    span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
+                  }
+                  const extendedRequestId =
+                    response.output?.$metadata?.extendedRequestId;
+                  if (extendedRequestId) {
+                    span.setAttribute(
+                      AttributeNames.AWS_REQUEST_EXTENDED_ID,
+                      extendedRequestId
+                    );
+                  }
+
+                  const normalizedResponse: NormalizedResponse = {
+                    data: response.output,
+                    request: normalizedRequest,
+                  };
+                  self.servicesExtensions.responseHook(
+                    normalizedResponse,
+                    span,
+                    self.tracer,
+                    self._config
+                  );
+                  self._callUserResponseHook(span, normalizedResponse);
+                  return response;
+                })
+                .catch(err => {
+                  const requestId = err?.RequestId;
+                  if (requestId) {
+                    span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
+                  }
+                  const extendedRequestId = err?.extendedRequestId;
+                  if (extendedRequestId) {
+                    span.setAttribute(
+                      AttributeNames.AWS_REQUEST_EXTENDED_ID,
+                      extendedRequestId
+                    );
+                  }
+
+                  span.setStatus({
+                    code: SpanStatusCode.ERROR,
+                    message: err.message,
+                  });
+                  span.recordException(err);
+                  throw err;
+                })
+                .finally(() => {
+                  span.end();
+                });
+              promiseWithResponseLogic
+                .then(res => {
+                  resolve(res);
+                })
+                .catch(err => reject(err));
             });
-          promiseWithResponseLogic
-            .then(res => {
-              resolve(res);
-            })
-            .catch(err => reject(err));
         });
 
         return requestMetadata.isIncoming
           ? bindPromise(handlerPromise, activeContextWithSpan, 2)
           : handlerPromise;
       };
-      // @ts-ignore
       return patchedHandler;
     };
   }

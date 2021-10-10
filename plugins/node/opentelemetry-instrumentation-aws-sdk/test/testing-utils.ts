@@ -19,6 +19,14 @@ import { getInstrumentation } from '@opentelemetry/contrib-test-utils';
 import * as expect from 'expect';
 import * as AWS from 'aws-sdk';
 
+// we want to mock the request object and trigger events on it's events emitter.
+// the event emitter is not part of the public interface, so we create a type
+// for the mock to use it.
+type CompleteEventHandler = (response: AWS.Response<any, any>) => void;
+type RequestWithEvents = AWS.Request<any, any> & {
+  _events: { complete: CompleteEventHandler[] };
+};
+
 export const mockV2AwsSend = (
   sendResult: any,
   data: any = undefined,
@@ -30,6 +38,7 @@ export const mockV2AwsSend = (
   // once and just setting the result and data, or patching the http layer instead with nock package.
   getInstrumentation()?.disable();
   AWS.Request.prototype.send = function (
+    this: RequestWithEvents,
     cb?: (error: any, response: any) => void
   ) {
     expect(isTracingSuppressed(context.active())).toStrictEqual(
@@ -46,7 +55,6 @@ export const mockV2AwsSend = (
       request: this,
     };
     setImmediate(() => {
-      // @ts-ignore we want to emit the event from mock, but the public interface does not expose such functionality
       this._events.complete.forEach(
         (handler: (response: AWS.Response<any, any>) => void) =>
           handler(response)
@@ -55,7 +63,7 @@ export const mockV2AwsSend = (
     return response;
   };
 
-  AWS.Request.prototype.promise = function () {
+  AWS.Request.prototype.promise = function (this: RequestWithEvents) {
     expect(isTracingSuppressed(context.active())).toStrictEqual(
       expectedInstrumentationSuppressed
     );
@@ -65,7 +73,6 @@ export const mockV2AwsSend = (
       request: this,
     };
     setImmediate(() => {
-      // @ts-ignore we want to emit the event from mock, but the public interface does not expose such functionality
       this._events.complete.forEach(
         (handler: (response: AWS.Response<any, any>) => void) =>
           handler(response)
