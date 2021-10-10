@@ -404,6 +404,52 @@ describe('MongoDBInstrumentation', () => {
     });
   });
 
+  describe('MongoDb useUnifiedTopology enabled', () => {
+    let client: mongodb.MongoClient;
+    let collection: mongodb.Collection;
+    before(done => {
+      accessCollection(URL, DB_NAME, COLLECTION_NAME, {
+        useUnifiedTopology: true,
+      })
+        .then(result => {
+          client = result.client;
+          collection = result.collection;
+          done();
+        })
+        .catch((err: Error) => {
+          console.log(
+            'Skipping test-mongodb. Could not connect. Run MongoDB to test'
+          );
+          shouldTest = false;
+          done();
+        });
+    });
+    after(() => {
+      if (client) {
+        client.close();
+      }
+    });
+    it('should generate correct span attributes', done => {
+      const span = trace.getTracer('default').startSpan('findRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection.find({ a: 1 }).toArray((err, results) => {
+          span.end();
+          const [mongoSpan] = getTestSpans();
+          assert.ifError(err);
+          assert.strictEqual(
+            mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
+            process.env.MONGODB_HOST || '127.0.0.1'
+          );
+          assert.strictEqual(
+            mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
+            process.env.MONGODB_PORT || '27017'
+          );
+          done();
+        });
+      });
+    });
+  });
+
   /** Should intercept command */
   describe('Removing Instrumentation', () => {
     it('should unpatch plugin', () => {
