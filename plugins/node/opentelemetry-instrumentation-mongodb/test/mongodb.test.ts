@@ -25,6 +25,7 @@ import {
   getTestSpans,
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
+import { lookup } from 'dns';
 
 const instrumentation = registerInstrumentationTesting(
   new MongoDBInstrumentation()
@@ -436,15 +437,18 @@ describe('MongoDBInstrumentation', () => {
           span.end();
           const [mongoSpan] = getTestSpans();
           assert.ifError(err);
-          assert.strictEqual(
-            mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
-            process.env.MONGODB_HOST || '127.0.0.1'
-          );
-          assert.strictEqual(
-            mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
-            process.env.MONGODB_PORT || '27017'
-          );
-          done();
+          lookup(process.env.MONGODB_HOST || 'localhost', (err, address) => {
+            if (err) return done(err);
+            assert.strictEqual(
+              mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
+              address
+            );
+            assert.strictEqual(
+              mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
+              process.env.MONGODB_PORT || '27017'
+            );
+            done();
+          });
         });
       });
     });
