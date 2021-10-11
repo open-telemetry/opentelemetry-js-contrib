@@ -47,9 +47,9 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "1.0.2",
-    "@opentelemetry/core": "0.25.0",
-    "@opentelemetry/sdk-trace-base": "0.25.0",
-    "@opentelemetry/sdk-trace-node": "0.25.0",
+    "@opentelemetry/core": "1.0.0",
+    "@opentelemetry/sdk-trace-base": "1.0.0",
+    "@opentelemetry/sdk-trace-node": "1.0.0",
     "@types/mocha": "7.0.2",
     "@types/node": "14.17.9",
     "codecov": "3.8.3",
@@ -63,8 +63,8 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.25.0",
     "@opentelemetry/propagator-aws-xray": "^0.24.0",
-    "@opentelemetry/resources": "^0.25.0",
-    "@opentelemetry/semantic-conventions": "^0.24.0",
+    "@opentelemetry/resources": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/aws-lambda": "8.10.81"
   }
 }
