@@ -20,7 +20,7 @@ import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xm
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
-import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-otlp-http';
 import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
@@ -72,7 +72,7 @@ export class WebInstrumentation {
     if (this.exporters[ExporterType.COLLECTOR_TRACE].enabled) {
       this.provider.addSpanProcessor(
         new BatchSpanProcessor(
-          new CollectorTraceExporter({
+          new OTLPTraceExporter({
             url: this.exporters[ExporterType.COLLECTOR_TRACE].url,
           })
         )
