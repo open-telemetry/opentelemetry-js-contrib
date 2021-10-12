@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 import { isAsyncFunction, isPromise } from '../src/utils';
-import * as BBPromise from 'bluebird';
 import * as assert from 'assert';
 
 describe('utils', () => {
   describe('isPromise', () => {
     it('should be able to validate a promise to be true', () => {
       assert.strictEqual(isPromise(Promise.resolve()), true);
-      assert.strictEqual(
-        isPromise(BBPromise.resolve('mock-resolved-by-bluebird')),
-        true
-      );
     });
 
     it('should be able to validate non-promise to be false', () => {
@@ -60,10 +55,6 @@ describe('utils', () => {
         false
       );
       assert.strictEqual(isAsyncFunction(Promise.resolve()), false);
-      assert.strictEqual(
-        isAsyncFunction(BBPromise.resolve('mock-resolved-by-bluebird')),
-        false
-      );
     });
   });
 });
