@@ -48,7 +48,7 @@ import {
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
-import { HttpTraceContextPropagator } from '@opentelemetry/core';
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -144,7 +144,7 @@ describe('lambda handler', () => {
   };
   const sampledHttpHeader = serializeSpanContext(
     sampledHttpSpanContext,
-    new HttpTraceContextPropagator()
+    new W3CTraceContextPropagator()
   );
 
   const unsampledAwsSpanContext: SpanContext = {
@@ -166,7 +166,7 @@ describe('lambda handler', () => {
   };
   const unsampledHttpHeader = serializeSpanContext(
     unsampledHttpSpanContext,
-    new HttpTraceContextPropagator()
+    new W3CTraceContextPropagator()
   );
 
   const sampledGenericSpanContext: SpanContext = {
@@ -177,7 +177,7 @@ describe('lambda handler', () => {
   };
   const sampledGenericSpan = serializeSpanContext(
     sampledGenericSpanContext,
-    new HttpTraceContextPropagator()
+    new W3CTraceContextPropagator()
   );
 
   beforeEach(() => {
