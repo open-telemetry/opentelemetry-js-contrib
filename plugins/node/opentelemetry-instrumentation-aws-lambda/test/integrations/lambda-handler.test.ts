@@ -28,8 +28,8 @@ import {
   BatchSpanProcessor,
   InMemorySpanExporter,
   ReadableSpan,
-} from '@opentelemetry/tracing';
-import { NodeTracerProvider } from '@opentelemetry/node';
+} from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
@@ -47,7 +47,7 @@ import {
   TextMapPropagator,
 } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
-import { HttpTraceContextPropagator } from '@opentelemetry/core';
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -143,7 +143,7 @@ describe('lambda handler', () => {
   };
   const sampledHttpHeader = serializeSpanContext(
     sampledHttpSpanContext,
-    new HttpTraceContextPropagator()
+    new W3CTraceContextPropagator()
   );
 
   const unsampledAwsSpanContext: SpanContext = {
@@ -165,7 +165,7 @@ describe('lambda handler', () => {
   };
   const unsampledHttpHeader = serializeSpanContext(
     unsampledHttpSpanContext,
-    new HttpTraceContextPropagator()
+    new W3CTraceContextPropagator()
   );
 
   const sampledGenericSpanContext: SpanContext = {
@@ -176,7 +176,7 @@ describe('lambda handler', () => {
   };
   const sampledGenericSpan = serializeSpanContext(
     sampledGenericSpanContext,
-    new HttpTraceContextPropagator()
+    new W3CTraceContextPropagator()
   );
 
   beforeEach(() => {

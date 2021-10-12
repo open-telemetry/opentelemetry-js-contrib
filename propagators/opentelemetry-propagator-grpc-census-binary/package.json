@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagator-grpc-census-binary",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "OpenTelemetry gRPC Census propagator provides a context propagator for OpenTelemetry that can use the gRPC binary header: 'grpc-trace-bin' for interoperability with OpenCensus",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,7 +13,8 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/propagator-grpc-census-binary --include-filtered-dependencies",
+    "prewatch": "npm run precompile",
     "compile": "npm run version:update && tsc -p .",
     "prepare": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
