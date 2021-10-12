@@ -21,7 +21,7 @@ import {
   SpanAttributes,
 } from '@opentelemetry/api';
 import {
-  HttpTraceContextPropagator,
+  W3CTraceContextPropagator,
   TRACE_PARENT_HEADER,
 } from '@opentelemetry/core';
 import {
@@ -248,7 +248,7 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   before(() => {
-    propagation.setGlobalPropagator(new HttpTraceContextPropagator());
+    propagation.setGlobalPropagator(new W3CTraceContextPropagator());
   });
 
   describe('constructor', () => {
