@@ -35,6 +35,7 @@ import {
   TextMapGetter,
   TraceFlags,
   TracerProvider,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import {
   AWSXRAY_TRACE_ID_HEADER,
@@ -375,7 +376,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
     if (!parent) {
       // No context in Lambda environment or HTTP headers.
-      return otelContext.active();
+      return ROOT_CONTEXT;
     }
     return parent;
   }
