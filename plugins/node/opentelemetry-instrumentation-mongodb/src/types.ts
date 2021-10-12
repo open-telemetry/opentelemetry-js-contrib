@@ -148,6 +148,10 @@ export type MongoInternalTopology = {
     host?: string;
     port?: number;
   };
+  // mongodb@3 with useUnifiedTopology option
+  description?: {
+    address?: string;
+  };
 };
 
 export enum MongodbCommandType {

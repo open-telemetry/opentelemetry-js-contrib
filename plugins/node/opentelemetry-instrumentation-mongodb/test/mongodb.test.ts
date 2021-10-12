@@ -25,6 +25,7 @@ import {
   getTestSpans,
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
+import { lookup } from 'dns';
 
 const instrumentation = registerInstrumentationTesting(
   new MongoDBInstrumentation()
@@ -396,6 +397,55 @@ describe('MongoDBInstrumentation', () => {
             assert.strictEqual(
               mainSpan.spanContext().spanId,
               spans2[0].parentSpanId
+            );
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  describe('MongoDb useUnifiedTopology enabled', () => {
+    let client: mongodb.MongoClient;
+    let collection: mongodb.Collection;
+    before(done => {
+      accessCollection(URL, DB_NAME, COLLECTION_NAME, {
+        useUnifiedTopology: true,
+      })
+        .then(result => {
+          client = result.client;
+          collection = result.collection;
+          done();
+        })
+        .catch((err: Error) => {
+          console.log(
+            'Skipping test-mongodb. Could not connect. Run MongoDB to test'
+          );
+          shouldTest = false;
+          done();
+        });
+    });
+    after(() => {
+      if (client) {
+        client.close();
+      }
+    });
+    it('should generate correct span attributes', done => {
+      const span = trace.getTracer('default').startSpan('findRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection.find({ a: 1 }).toArray((err, results) => {
+          span.end();
+          const [mongoSpan] = getTestSpans();
+          assert.ifError(err);
+          lookup(process.env.MONGODB_HOST || 'localhost', (err, address) => {
+            if (err) return done(err);
+            assert.strictEqual(
+              mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
+              address
+            );
+            assert.strictEqual(
+              mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
+              process.env.MONGODB_PORT || '27017'
             );
             done();
           });
