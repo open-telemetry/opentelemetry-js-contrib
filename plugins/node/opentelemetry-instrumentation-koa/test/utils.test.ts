@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import * as utils from "../src/utils";
-import * as assert from "assert";
-import { KoaInstrumentationConfig, KoaLayerType } from "../src/types";
+import * as utils from '../src/utils';
+import * as assert from 'assert';
+import { KoaInstrumentationConfig, KoaLayerType } from '../src/types';
 
-describe("Utils", () => {
-  describe("isLayerIgnored()", () => {
-    it("should not fail with invalid config", () => {
+describe('Utils', () => {
+  describe('isLayerIgnored()', () => {
+    it('should not fail with invalid config', () => {
       assert.strictEqual(utils.isLayerIgnored(KoaLayerType.MIDDLEWARE), false);
       assert.strictEqual(
         utils.isLayerIgnored(
@@ -43,7 +43,7 @@ describe("Utils", () => {
       );
     });
 
-    it("should ignore based on type", () => {
+    it('should ignore based on type', () => {
       assert.strictEqual(
         utils.isLayerIgnored(KoaLayerType.MIDDLEWARE, {
           ignoreLayersType: [KoaLayerType.MIDDLEWARE],
