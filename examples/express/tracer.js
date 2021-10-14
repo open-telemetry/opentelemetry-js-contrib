@@ -54,7 +54,7 @@ function filterSampler(filterFn, parent) {
       if (!filterFn(spanName, spanKind, attr)) {
         return { decision: opentelemetry.SamplingDecision.NOT_RECORD };
       }
-      return parent.shouldSample(ctx, tid, name, kind, attr, links);
+      return parent.shouldSample(ctx, tid, spanName, spanKind, attr, links);
     },
     toString() {
       return `FilterSampler(${parent.toString()})`;
