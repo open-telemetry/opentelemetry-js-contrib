@@ -33,7 +33,7 @@ registerInstrumentations({
   instrumentations: [
     new GraphQLInstrumentation({
     // optional params
-      // allowAttributes: true,
+      // allowValues: true,
       // depth: 2,
       // mergeItems: true,
     }),

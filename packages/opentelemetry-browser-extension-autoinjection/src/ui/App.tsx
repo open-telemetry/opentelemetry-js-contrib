@@ -249,7 +249,7 @@ export class App extends React.Component<AppProps, AppState> {
                 onToggle={this.toggleExporter}
                 onValueChange={this.handleUrlChange}
                 placeholderValue={PlaceholderValues.COLLECTOR_TRACE_URL}
-                exporterPackageUrl="https://www.npmjs.com/package/@opentelemetry/exporter-collector"
+                exporterPackageUrl="https://www.npmjs.com/package/@opentelemetry/exporter-otlp-http"
                 value={exporters[ExporterType.COLLECTOR_TRACE].url}
               />
             </Grid>

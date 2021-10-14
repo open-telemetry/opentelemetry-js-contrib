@@ -11,7 +11,8 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-alibaba-cloud --include-filtered-dependencies",
+    "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -62,7 +63,7 @@
     "@opentelemetry/api": "^1.0.2"
   },
   "dependencies": {
-    "@opentelemetry/resources": "^0.25.0",
-    "@opentelemetry/semantic-conventions": "^0.25.0"
+    "@opentelemetry/resources": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   }
 }
