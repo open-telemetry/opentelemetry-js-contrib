@@ -54,7 +54,7 @@
     "@types/mocha": "7.0.2",
     "@types/node": "14.17.9",
     "@types/react": "17.0.16",
-    "@types/react-addons-test-utils": "0.14.26",
+    "@types/react-addons-test-utils": "15.6.0",
     "@types/react-dom": "17.0.9",
     "@types/shimmer": "1.0.2",
     "@types/sinon": "10.0.2",
