@@ -47,6 +47,24 @@ async function subsystem(fastify) {
     // throw Error('boom  lala');
     res.send(`OK ${result.data.version} ${result2.data.version}`);
   });
+
+  fastify.addHook('onRequest', (req, reply, done) => {
+    const span = trace.getSpan(context.active());
+    console.log('first', span);
+    console.log('kuku1');
+    span.setAttribute('kuku1', 'lala');
+
+    setTimeout(() => {
+      console.log('kuku2');
+      span.setAttribute('kuku2', 'lala');
+      const newSpan = tracing.tracer.startSpan('tada');
+      newSpan.end();
+
+      reply.send('foo');
+      done();
+    }, 2000);
+  });
+
 }
 
 app.post('/run_test/:id', async (req, res) => {

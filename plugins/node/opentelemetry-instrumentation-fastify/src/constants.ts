@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-import { Span } from '@opentelemetry/api';
-import { FastifyReply } from 'fastify';
-import { spanRequestSymbol } from './constants';
-
-export type HandlerOriginal = (() => Promise<unknown>) & (() => void);
-
-export type PluginFastifyReply = FastifyReply & {
-  [spanRequestSymbol]?: Span[];
-};
+export const spanRequestSymbol = Symbol(
+  'opentelemetry.instrumentation.fastify.request_active_span'
+);

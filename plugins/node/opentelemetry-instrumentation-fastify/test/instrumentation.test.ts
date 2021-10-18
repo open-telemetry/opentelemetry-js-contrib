@@ -30,7 +30,7 @@ import { FastifyRequest } from 'fastify/types/request';
 import * as http from 'http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { ANONYMOUS_NAME } from '../src/instrumentation';
-import { FastifyInstrumentation } from '../src';
+import { AttributeNames, FastifyInstrumentation } from '../src';
 
 const URL = require('url').URL;
 
@@ -141,14 +141,14 @@ describe('fastify', () => {
 
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 5);
-      const span = spans[1];
+      const span = spans[3];
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
         'plugin.name': 'fastify-express',
         [SemanticAttributes.HTTP_ROUTE]: '/test',
       });
       assert.strictEqual(span.name, `request handler - ${ANONYMOUS_NAME}`);
-      const baseSpan = spans[2];
+      const baseSpan = spans[1];
       assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
     });
 
@@ -164,7 +164,7 @@ describe('fastify', () => {
 
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 5);
-      const span = spans[1];
+      const span = spans[3];
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
         'fastify.name': 'namedHandler',
@@ -173,7 +173,7 @@ describe('fastify', () => {
       });
       assert.strictEqual(span.name, 'request handler - namedHandler');
 
-      const baseSpan = spans[2];
+      const baseSpan = spans[1];
       assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
     });
 
@@ -217,18 +217,18 @@ describe('fastify', () => {
 
         assert.strictEqual(spans.length, 6);
         const changedRootSpan = spans[2];
-        const span = spans[3];
+        const span = spans[4];
         assert.strictEqual(changedRootSpan.name, 'GET /test/:id');
         assert.strictEqual(span.name, 'request handler - foo');
-        assert.strictEqual(span.parentSpanId, spans[4].spanContext().spanId);
+        assert.strictEqual(span.parentSpanId, spans[3].spanContext().spanId);
       });
 
       it('should create span for fastify express runConnect', async () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const baseSpan = spans[1];
-        const span = spans[0];
+        const baseSpan = spans[0];
+        const span = spans[1];
         assert.strictEqual(span.name, 'middleware - runConnect');
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
@@ -244,7 +244,7 @@ describe('fastify', () => {
 
         assert.strictEqual(spans.length, 6);
         const baseSpan = spans[2];
-        const span = spans[1];
+        const span = spans[0];
         assert.strictEqual(span.name, 'middleware - enhanceRequest');
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
@@ -259,8 +259,8 @@ describe('fastify', () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const baseSpan = spans[4];
-        const span = spans[3];
+        const baseSpan = spans[3];
+        const span = spans[4];
         assert.strictEqual(span.name, 'request handler - foo');
         assert.deepStrictEqual(span.attributes, {
           'plugin.name': 'subsystem',
@@ -284,8 +284,8 @@ describe('fastify', () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const baseSpan = spans[0];
-        const span = spans[4];
+        const baseSpan = spans[1];
+        const span = spans[3];
         assert.strictEqual(span.name, `middleware - ${ANONYMOUS_NAME}`);
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
@@ -302,7 +302,7 @@ describe('fastify', () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const span = spans[3];
+        const span = spans[4];
         assert.strictEqual(span.name, 'request handler - anonymous');
         assert.deepStrictEqual(span.status, {
           code: SpanStatusCode.ERROR,
@@ -312,6 +312,64 @@ describe('fastify', () => {
           'fastify.type': 'request_handler',
           'plugin.name': 'subsystem',
           'http.route': '/test-error',
+        });
+      });
+    });
+
+    describe('spans context', () => {
+      describe('hook callback', () => {
+        it('span should end upon done invocation', async () => {
+          let hookDone: HookHandlerDoneFunction;
+          const hookExecutedPromise = new Promise<void>(resolve => {
+            app.addHook(
+              'onRequest',
+              (_req, _reply, done: HookHandlerDoneFunction) => {
+                hookDone = done;
+                resolve();
+              }
+            );
+          });
+          app.get('/test', (_req, reply: FastifyReply) => {
+            reply.send('request ended in handler');
+          });
+          await startServer();
+          httpRequest.get(`http://localhost:${PORT}/test`);
+          await hookExecutedPromise;
+
+          // done was not yet called from the hook, so it should not end the span
+          const preDoneSpans = getSpans().filter(
+            s => !s.attributes[AttributeNames.PLUGIN_NAME]
+          );
+          assert.strictEqual(preDoneSpans.length, 0);
+          hookDone!();
+          const postDoneSpans = getSpans().filter(
+            s => !s.attributes[AttributeNames.PLUGIN_NAME]
+          );
+          assert.strictEqual(postDoneSpans.length, 1);
+        });
+
+        it('span should end when calling reply.send from hook', async () => {
+          app.addHook(
+            'onRequest',
+            (
+              _req: FastifyRequest,
+              reply: FastifyReply,
+              _done: HookHandlerDoneFunction
+            ) => {
+              reply.send('request ended prematurely in hook');
+            }
+          );
+          app.get('/test', (_req: FastifyRequest, _reply: FastifyReply) => {
+            throw Error(
+              'handler should not be executed as request is ended in onRequest hook'
+            );
+          });
+          await startServer();
+          await httpRequest.get(`http://localhost:${PORT}/test`);
+          const spans = getSpans().filter(
+            s => !s.attributes[AttributeNames.PLUGIN_NAME]
+          );
+          assert.strictEqual(spans.length, 1);
         });
       });
     });

@@ -16,7 +16,6 @@
 
 import {
   context,
-  Span,
   SpanAttributes,
   SpanStatusCode,
   trace,
@@ -38,8 +37,12 @@ import {
   FastifyNames,
   FastifyTypes,
 } from './enums/AttributeNames';
-import type { HandlerOriginal } from './types';
-import { safeExecuteInTheMiddleMaybePromise } from './utils';
+import type { HandlerOriginal, PluginFastifyReply } from './types';
+import {
+  endSpan,
+  safeExecuteInTheMiddleMaybePromise,
+  startSpan,
+} from './utils';
 import { VERSION } from './version';
 
 export const ANONYMOUS_NAME = 'anonymous';
@@ -77,6 +80,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
       if (!instrumentation.isEnabled()) {
         return done();
       }
+      instrumentation._wrap(reply, 'send', instrumentation._patchSend());
+
       const rpcMetadata = getRPCMetadata(context.active());
       const routeName = request.routerPath;
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
@@ -90,10 +95,11 @@ export class FastifyInstrumentation extends InstrumentationBase {
   private _wrapHandler(
     pluginName: string,
     hookName: string,
-    original: () => Promise<any> | void
+    original: (...args: unknown[]) => Promise<any> | void,
+    syncFunctionWithDone: boolean
   ): () => Promise<any> | void {
     const instrumentation = this;
-    return function (this: any, ...args): Promise<any> | void {
+    return function (this: any, ...args: unknown[]): Promise<any> | void {
       if (!instrumentation.isEnabled()) {
         return original.apply(this, args);
       }
@@ -102,11 +108,25 @@ export class FastifyInstrumentation extends InstrumentationBase {
         original.name || ANONYMOUS_NAME
       }`;
 
-      const span = instrumentation._startSpan(spanName, {
+      const reply = args[1] as PluginFastifyReply;
+
+      const span = startSpan(reply, instrumentation.tracer, spanName, {
         [AttributeNames.FASTIFY_TYPE]: FastifyTypes.MIDDLEWARE,
         [AttributeNames.PLUGIN_NAME]: pluginName,
         [AttributeNames.HOOK_NAME]: hookName,
       });
+
+      const origDone =
+        syncFunctionWithDone &&
+        (args[args.length - 1] as HookHandlerDoneFunction);
+      if (origDone) {
+        args[args.length - 1] = function (
+          ...doneArgs: Parameters<HookHandlerDoneFunction>
+        ) {
+          endSpan(reply);
+          origDone.apply(this, doneArgs);
+        };
+      }
 
       return context.with(trace.setSpan(context.active(), span), () => {
         return safeExecuteInTheMiddleMaybePromise(
@@ -121,7 +141,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
               });
               span.recordException(err);
             }
-            span.end();
+            // async hooks should end the span as soon as the promise is resolved
+            if (!syncFunctionWithDone) {
+              endSpan(reply);
+            }
           }
         );
       });
@@ -142,9 +165,19 @@ export class FastifyInstrumentation extends InstrumentationBase {
         if (name === 'onRegister') {
           return original.apply(this, [name as any, handler]);
         }
+
+        const syncFunctionWithDone =
+          typeof args[args.length - 1] === 'function' &&
+          handler.constructor.name !== 'AsyncFunction';
+
         return original.apply(this, [
           name as any,
-          instrumentation._wrapHandler(pluginName, name, handler),
+          instrumentation._wrapHandler(
+            pluginName,
+            name,
+            handler,
+            syncFunctionWithDone
+          ),
         ]);
       };
     };
@@ -170,7 +203,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
     return fastify;
   }
 
-  public _patchSend(span: Span) {
+  public _patchSend() {
     const instrumentation = this;
     return function patchSend(
       original: () => FastifyReply
@@ -190,15 +223,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
             if (!err && maybeError instanceof Error) {
               err = maybeError;
             }
-
-            if (err) {
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: err.message,
-              });
-              span.recordException(err);
-            }
-            span.end();
+            endSpan(this, err);
           }
         );
       };
@@ -230,18 +255,15 @@ export class FastifyInstrumentation extends InstrumentationBase {
       if (handlerName) {
         spanAttributes[AttributeNames.FASTIFY_NAME] = handlerName;
       }
-      const span = instrumentation._startSpan(spanName, spanAttributes);
-      instrumentation._wrap(reply, 'send', instrumentation._patchSend(span));
+      const span = startSpan(
+        reply,
+        instrumentation.tracer,
+        spanName,
+        spanAttributes
+      );
       return context.with(trace.setSpan(context.active(), span), () => {
         done();
       });
     };
-  }
-
-  public _startSpan(
-    spanName: string,
-    spanAttributes: SpanAttributes = {}
-  ): Span {
-    return this.tracer.startSpan(spanName, { attributes: spanAttributes });
   }
 }
