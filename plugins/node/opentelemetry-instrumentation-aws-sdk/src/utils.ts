@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NormalizedRequest } from './types';
-import type { Request } from 'aws-sdk';
-import { Context, SpanAttributes, context } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { AttributeNames } from './enums';
+import { NormalizedRequest } from "./types";
+import type { Request } from "aws-sdk";
+import { Context, SpanAttributes, context } from "@opentelemetry/api";
+import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import { AttributeNames } from "./enums";
 
 const toPascalCase = (str: string): string =>
-  typeof str === 'string' ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+  typeof str === "string" ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
 export const removeSuffixFromStringIfExists = (
   str: string,
@@ -37,7 +37,7 @@ export const normalizeV2Request = (
 ): NormalizedRequest => {
   const service = (awsV2Request as any)?.service;
   return {
-    serviceName: service?.api?.serviceId.replace(/\s+/g, ''),
+    serviceName: service?.api?.serviceId?.replace(/\s+/g, ""),
     commandName: toPascalCase((awsV2Request as any)?.operation),
     commandInput: (awsV2Request as any).params,
     region: service?.config?.region,
@@ -51,10 +51,10 @@ export const normalizeV3Request = (
   region: string | undefined
 ): NormalizedRequest => {
   return {
-    serviceName: serviceName.replace(/\s+/g, ''),
+    serviceName: serviceName?.replace(/\s+/g, ""),
     commandName: removeSuffixFromStringIfExists(
       commandNameWithSuffix,
-      'Command'
+      "Command"
     ),
     commandInput,
     region,
@@ -65,7 +65,7 @@ export const extractAttributesFromNormalizedRequest = (
   normalizedRequest: NormalizedRequest
 ): SpanAttributes => {
   return {
-    [SemanticAttributes.RPC_SYSTEM]: 'aws-api',
+    [SemanticAttributes.RPC_SYSTEM]: "aws-api",
     [SemanticAttributes.RPC_METHOD]: normalizedRequest.commandName,
     [SemanticAttributes.RPC_SERVICE]: normalizedRequest.serviceName,
     [AttributeNames.AWS_REGION]: normalizedRequest.region,
