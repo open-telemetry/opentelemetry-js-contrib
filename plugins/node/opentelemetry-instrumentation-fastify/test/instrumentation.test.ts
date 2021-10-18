@@ -18,12 +18,12 @@ import * as assert from 'assert';
 import { context, SpanStatusCode } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import { HookHandlerDoneFunction } from 'fastify/types/hooks';
 import { FastifyReply } from 'fastify/types/reply';
 import { FastifyRequest } from 'fastify/types/request';
