@@ -1,6 +1,6 @@
 # Overview
 
-This example shows how to use [@opentelemetry/sdk-trace-web](https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-web) with different instrumentations from contrib repo in a browser.
+This example shows how to use [@opentelemetry/sdk-trace-web][] with different instrumentations from contrib repo in a browser.
 
 ## Installation
 
@@ -18,11 +18,14 @@ npm start
 
 By default, the application will run on port `8090`.
 
-## Useful links
+## More information
 
-- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more information on web tracing, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-web>
+- [OpenTelemetry](https://opentelemetry.io)
+- [Web tracing][opentelemetry-sdk-trace-web]
 
 ## LICENSE
 
 Apache License 2.0
+
+[@opentelemetry/sdk-trace-web]: https://www.npmjs.com/package/@opentelemetry/sdk-trace-web
+[opentelemetry-sdk-trace-web]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-web

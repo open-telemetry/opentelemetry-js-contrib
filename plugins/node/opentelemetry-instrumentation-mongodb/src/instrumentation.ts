@@ -382,14 +382,24 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   ) {
     // add network attributes to determine the remote server
     if (topology && topology.s) {
-      span.setAttributes({
-        [SemanticAttributes.NET_HOST_NAME]: `${
-          topology.s.options?.host ?? topology.s.host
-        }`,
-        [SemanticAttributes.NET_HOST_PORT]: `${
-          topology.s.options?.port ?? topology.s.port
-        }`,
-      });
+      let host = topology.s.options?.host ?? topology.s.host;
+      let port: string | undefined = (
+        topology.s.options?.port ?? topology.s.port
+      )?.toString();
+      if (host == null || port == null) {
+        const address = topology.description?.address;
+        if (address) {
+          const addressSegments = address.split(':');
+          host = addressSegments[0];
+          port = addressSegments[1];
+        }
+      }
+      if (host?.length && port?.length) {
+        span.setAttributes({
+          [SemanticAttributes.NET_HOST_NAME]: host,
+          [SemanticAttributes.NET_HOST_PORT]: port,
+        });
+      }
     }
 
     // The namespace is a combination of the database name and the name of the
