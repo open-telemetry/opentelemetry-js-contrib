@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-github",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "OpenTelemetry SDK resource detector for GitHub",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,7 +11,8 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-github --include-filtered-dependencies",
+    "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -60,6 +61,6 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/resources": "^0.24.0"
+    "@opentelemetry/resources": "^1.0.0"
   }
 }

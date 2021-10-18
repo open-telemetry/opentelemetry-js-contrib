@@ -19,8 +19,8 @@ import { trace } from '@opentelemetry/api';
 import { isWrapped } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import * as tracing from '@opentelemetry/tracing';
-import { WebTracerProvider } from '@opentelemetry/web';
+import * as tracing from '@opentelemetry/sdk-trace-base';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { UserInteractionInstrumentation } from '../src';
@@ -486,7 +486,11 @@ describe('UserInteractionInstrumentation', () => {
       btn2.setAttribute('id', 'btn2');
       root.appendChild(btn2);
 
-      root.addEventListener('click', event => {
+      const listenerThis: EventTarget[] = [];
+      root.addEventListener('click', function (event) {
+        // Assert here with failure would also affect other tests due to setTimeout bellow
+        listenerThis.push(this);
+
         switch (event.target) {
           case btn1:
             getData(FILE_URL, () => {
@@ -506,6 +510,17 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
+        assert.strictEqual(
+          listenerThis[0],
+          root,
+          'this inside event listener matches listened target (0)'
+        );
+        assert.strictEqual(
+          listenerThis[1],
+          root,
+          'this inside event listener matches listened target (1)'
+        );
+
         assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
@@ -603,6 +618,43 @@ describe('UserInteractionInstrumentation', () => {
         false,
         'go should be unwrapped'
       );
+    });
+
+    describe('simulate IE', () => {
+      // Save window.EventTarget reference (including enumerable state)
+      const EventTargetDesc = Object.getOwnPropertyDescriptor(
+        window,
+        'EventTarget'
+      )!;
+      before(() => {
+        // @ts-expect-error window.EventTarget not optional
+        delete window.EventTarget;
+      });
+      after(() => {
+        Object.defineProperty(window, 'EventTarget', EventTargetDesc);
+        // Undo unwrap putting originals back on it's targets
+        // @ts-expect-error event listener API not optional
+        delete Node.prototype.addEventListener;
+        // @ts-expect-error copy
+        delete Node.prototype.removeEventListener;
+        // @ts-expect-error copy
+        delete Window.prototype.addEventListener;
+        // @ts-expect-error copy
+        delete Window.prototype.removeEventListener;
+      });
+
+      it('works with missing EventTarget', () => {
+        /*
+         * Would already error out with:
+         * "before each" hook for "works with missing EventTarget"
+         *   ReferenceError: EventTarget is not defined
+         */
+
+        fakeInteraction();
+        assert.equal(exportSpy.args.length, 1, 'should export one span');
+        const spanClick = exportSpy.args[0][0][0];
+        assertClickSpan(spanClick);
+      });
     });
   });
 });

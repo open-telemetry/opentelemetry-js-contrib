@@ -31,7 +31,7 @@ import {
   assertK8sResource,
   assertContainerResource,
   assertEmptyResource,
-} from '@opentelemetry/test-utils';
+} from '@opentelemetry/contrib-test-utils';
 import { Resource } from '@opentelemetry/resources';
 
 const HEADERS = {

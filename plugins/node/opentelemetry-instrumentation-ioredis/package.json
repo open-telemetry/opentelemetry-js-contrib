@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-ioredis",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "OpenTelemetry ioredis automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -9,11 +9,14 @@
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
+    "test-all-versions": "tav",
+    "test-all-versions:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test-all-versions",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-ioredis --include-filtered-dependencies",
+    "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p .",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
@@ -49,10 +52,10 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "1.0.2",
-    "@opentelemetry/context-async-hooks": "0.24.0",
-    "@opentelemetry/node": "0.24.0",
-    "@opentelemetry/test-utils": "^0.24.0",
-    "@opentelemetry/tracing": "0.24.0",
+    "@opentelemetry/context-async-hooks": "1.0.0",
+    "@opentelemetry/contrib-test-utils": "^0.25.0",
+    "@opentelemetry/sdk-trace-base": "1.0.0",
+    "@opentelemetry/sdk-trace-node": "1.0.0",
     "@types/mocha": "7.0.2",
     "@types/node": "14.17.9",
     "codecov": "3.8.3",
@@ -62,12 +65,13 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
+    "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.24.0",
-    "@opentelemetry/semantic-conventions": "^0.24.0",
+    "@opentelemetry/instrumentation": "^0.26.0",
+    "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/ioredis": "4.26.6"
   }
 }

@@ -22,7 +22,7 @@ import {
 
 import * as api from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import { getElementXPath } from '@opentelemetry/web';
+import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
 import {
   AsyncTask,
@@ -267,7 +267,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         useCapture: any
       ) {
         const once = useCapture && useCapture.once;
-        const patchedListener = (...args: any[]) => {
+        const patchedListener = function (this: HTMLElement, ...args: any[]) {
           let parentSpan: api.Span | undefined;
           const event: Event | undefined = args[0];
           const target = event?.target;
@@ -285,14 +285,14 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             return api.context.with(
               api.trace.setSpan(api.context.active(), span),
               () => {
-                const result = plugin._invokeListener(listener, target, args);
+                const result = plugin._invokeListener(listener, this, args);
                 // no zone so end span immediately
                 span.end();
                 return result;
               }
             );
           } else {
-            return plugin._invokeListener(listener, target, args);
+            return plugin._invokeListener(listener, this, args);
           }
         };
         if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
@@ -328,6 +328,24 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         }
       };
     };
+  }
+
+  /**
+   * Most browser provide event listener api via EventTarget in prototype chain.
+   * Exception to this is IE 11 which has it on the prototypes closest to EventTarget:
+   *
+   * * - has addEventListener in IE
+   * ** - has addEventListener in all other browsers
+   * ! - missing in IE
+   *
+   * HTMLElement -> Element -> Node * -> EventTarget **! -> Object
+   * Document -> Node * -> EventTarget **! -> Object
+   * Window * -> WindowProperties ! -> EventTarget **! -> Object
+   */
+  private _getPatchableEventTargets(): EventTarget[] {
+    return window.EventTarget
+      ? [EventTarget.prototype]
+      : [Node.prototype, Window.prototype];
   }
 
   /**
@@ -571,26 +589,27 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       );
     } else {
       this._zonePatched = false;
-      if (isWrapped(EventTarget.prototype.addEventListener)) {
-        this._unwrap(EventTarget.prototype, 'addEventListener');
-        api.diag.debug('removing previous patch from method addEventListener');
-      }
-      if (isWrapped(EventTarget.prototype.removeEventListener)) {
-        this._unwrap(EventTarget.prototype, 'removeEventListener');
-        api.diag.debug(
-          'removing previous patch from method removeEventListener'
+      const targets = this._getPatchableEventTargets();
+      targets.forEach(target => {
+        if (isWrapped(target.addEventListener)) {
+          this._unwrap(target, 'addEventListener');
+          api.diag.debug(
+            'removing previous patch from method addEventListener'
+          );
+        }
+        if (isWrapped(target.removeEventListener)) {
+          this._unwrap(target, 'removeEventListener');
+          api.diag.debug(
+            'removing previous patch from method removeEventListener'
+          );
+        }
+        this._wrap(target, 'addEventListener', this._patchAddEventListener());
+        this._wrap(
+          target,
+          'removeEventListener',
+          this._patchRemoveEventListener()
         );
-      }
-      this._wrap(
-        EventTarget.prototype,
-        'addEventListener',
-        this._patchAddEventListener()
-      );
-      this._wrap(
-        EventTarget.prototype,
-        'removeEventListener',
-        this._patchRemoveEventListener()
-      );
+      });
     }
 
     this._patchHistoryApi();
@@ -619,12 +638,15 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
       }
     } else {
-      if (isWrapped(HTMLElement.prototype.addEventListener)) {
-        this._unwrap(HTMLElement.prototype, 'addEventListener');
-      }
-      if (isWrapped(HTMLElement.prototype.removeEventListener)) {
-        this._unwrap(HTMLElement.prototype, 'removeEventListener');
-      }
+      const targets = this._getPatchableEventTargets();
+      targets.forEach(target => {
+        if (isWrapped(target.addEventListener)) {
+          this._unwrap(target, 'addEventListener');
+        }
+        if (isWrapped(target.removeEventListener)) {
+          this._unwrap(target, 'removeEventListener');
+        }
+      });
     }
     this._unpatchHistoryApi();
   }

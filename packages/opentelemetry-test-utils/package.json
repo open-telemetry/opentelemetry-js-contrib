@@ -1,21 +1,32 @@
 {
-  "name": "@opentelemetry/test-utils",
-  "private": true,
-  "version": "0.24.0",
-  "description": "Test utilities.",
-  "main": "build/index.js",
+  "name": "@opentelemetry/contrib-test-utils",
+  "version": "0.26.0",
+  "description": "Test utilities for opentelemetry components",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "compile": "tsc -p .",
-    "precompile": "tsc --version",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/contrib-test-utils --include-filtered-dependencies",
+    "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "watch": "tsc -w"
   },
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "keywords": [
     "opentelemetry",
-    "test-utils"
+    "contrib-test-utils"
+  ],
+  "files": [
+    "build/**/*.js",
+    "build/**/*.js.map",
+    "build/**/*.d.ts",
+    "LICENSE",
+    "README.md"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -33,9 +44,12 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/core": "0.24.0",
-    "@opentelemetry/resources": "0.24.0",
-    "@opentelemetry/semantic-conventions": "0.24.0",
-    "@opentelemetry/tracing": "0.24.0"
+    "@opentelemetry/core": "1.0.0",
+    "@opentelemetry/exporter-jaeger": "1.0.0",
+    "@opentelemetry/instrumentation": "0.26.0",
+    "@opentelemetry/sdk-trace-node": "1.0.0",
+    "@opentelemetry/resources": "1.0.0",
+    "@opentelemetry/sdk-trace-base": "1.0.0",
+    "@opentelemetry/semantic-conventions": "1.0.0"
   }
 }

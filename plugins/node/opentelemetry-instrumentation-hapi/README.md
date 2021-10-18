@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`Hapi`](https://hapi.dev).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -27,7 +27,7 @@ OpenTelemetry Hapi Instrumentation allows the user to automatically collect trac
 To load a specific instrumentation (Hapi in this case), specify it in the registerInstrumentations' configuration.
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
 
@@ -44,7 +44,7 @@ registerInstrumentations({
 If instead you would just want to load a specific instrumentation only (**hapi** in this case);
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { HapiInstrumentation } = require('@opentelemetry/instrumentation-hapi');
 const provider = new NodeTracerProvider();
 provider.register();

@@ -33,7 +33,7 @@ export class OpenOptionsPage extends React.Component {
     }
   }
 
-  render() {
+  override render() {
     return (
       <Link href="#" onClick={this.openOptionsPage}>
         <Launch></Launch>

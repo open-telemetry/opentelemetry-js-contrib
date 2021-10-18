@@ -8,7 +8,7 @@
 This module provides automatic instrumentation for [`mongodb`](https://github.com/mongodb/node-mongodb-native).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 ## Installation
 
@@ -27,7 +27,7 @@ To load a specific instrumentation (**mongodb** in this case), specify it in the
 
 ```javascript
 const { MongoDBInstrumentation } = require('@opentelemetry/instrumentation-mongodb');
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
@@ -51,6 +51,7 @@ Mongodb instrumentation has few options available to choose from. You can set th
 | ------- | ---- | ----------- |
 | [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-api/src/trace/instrumentation/instrumentation.ts#L91) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
 | `responseHook` | `MongoDBInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
+| `dbStatementSerializer` | `DbStatementSerializer` (function) | Custom serializer function for the db.statement tag |
 
 ## Useful links
 

@@ -16,7 +16,7 @@ npm install --save @opentelemetry/instrumentation-winston
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

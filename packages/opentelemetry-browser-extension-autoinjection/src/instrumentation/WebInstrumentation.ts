@@ -17,15 +17,15 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import { WebTracerProvider } from '@opentelemetry/web';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
-import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-otlp-http';
 import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import {
   Exporters,
   ExporterType,
@@ -72,7 +72,7 @@ export class WebInstrumentation {
     if (this.exporters[ExporterType.COLLECTOR_TRACE].enabled) {
       this.provider.addSpanProcessor(
         new BatchSpanProcessor(
-          new CollectorTraceExporter({
+          new OTLPTraceExporter({
             url: this.exporters[ExporterType.COLLECTOR_TRACE].url,
           })
         )

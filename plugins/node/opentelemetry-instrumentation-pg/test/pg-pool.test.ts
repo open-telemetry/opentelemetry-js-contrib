@@ -23,18 +23,18 @@ import {
   SpanStatus,
   trace,
 } from '@opentelemetry/api';
-import { BasicTracerProvider } from '@opentelemetry/tracing';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
 import {
   PgInstrumentation,
   PgInstrumentationConfig,
   PgResponseHookInformation,
 } from '../src';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';

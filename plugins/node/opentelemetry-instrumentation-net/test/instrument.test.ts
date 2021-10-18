@@ -17,10 +17,10 @@
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import * as assert from 'assert';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { NetInstrumentation } from '../src';
 import * as Sinon from 'sinon';
 import * as net from 'net';

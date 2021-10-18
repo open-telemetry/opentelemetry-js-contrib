@@ -16,7 +16,7 @@ npm install --save @opentelemetry/instrumentation-pino
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { PinoInstrumentation } = require('@opentelemetry/instrumentation-pino');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

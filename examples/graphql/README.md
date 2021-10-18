@@ -46,6 +46,12 @@ npm install
     ```
 
 5. You can also write your own queries, open page `http://localhost:4000/graphql`
+6. You can also test a `graphql-transform-federation`
+    ```shell script
+    # from this directory
+    npm run server:federation
+    npm run client:federation
+    ```
 
 ## Useful links
 

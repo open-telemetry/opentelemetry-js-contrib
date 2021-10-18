@@ -26,7 +26,7 @@ import * as React from 'react';
 import { ExporterOptionProps, ExporterType } from '../types';
 
 export class ExporterOption extends React.Component<ExporterOptionProps> {
-  render() {
+  override render() {
     return (
       <React.Fragment>
         <Grid item xs={12} md={12}>
