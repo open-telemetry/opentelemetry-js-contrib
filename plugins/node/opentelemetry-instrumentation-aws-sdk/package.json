@@ -1,7 +1,7 @@
 {
     "name": "@opentelemetry/instrumentation-aws-sdk",
     "version": "0.25.0",
-    "description": "open telemetry automatic instrumentation for the `aws-sdk` package",
+    "description": "OpenTelemetry automatic instrumentation for the `aws-sdk` package",
     "keywords": [
         "aws",
         "opentelemetry",
