@@ -3,6 +3,8 @@
 This is a internal utils package used across the contrib packages.
 No guarantees are given to uses outside of [open-telemetry/opentelemetry-js-contrib](https://github.com/open-telemetry/opentelemetry-js-contrib/) repository.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Instrumentation Testing
 This package exports a mocha [root hook plugin](https://mochajs.org/#root-hook-plugins), which implements common boilerplate code a developer probably needs for writing instrumentation unit tests in node.
 
