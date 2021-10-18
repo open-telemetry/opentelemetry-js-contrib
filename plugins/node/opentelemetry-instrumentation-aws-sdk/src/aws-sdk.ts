@@ -21,19 +21,19 @@ import {
   Context,
   diag,
   SpanStatusCode,
-} from '@opentelemetry/api';
-import { suppressTracing } from '@opentelemetry/core';
-import type * as AWS from 'aws-sdk';
-import { AttributeNames } from './enums';
-import { ServicesExtensions } from './services';
+} from "@opentelemetry/api";
+import { suppressTracing } from "@opentelemetry/core";
+import type * as AWS from "aws-sdk";
+import { AttributeNames } from "./enums";
+import { ServicesExtensions } from "./services";
 import {
   AwsSdkInstrumentationConfig,
   AwsSdkRequestHookInformation,
   AwsSdkResponseHookInformation,
   NormalizedRequest,
   NormalizedResponse,
-} from './types';
-import { VERSION } from './version';
+} from "./types";
+import { VERSION } from "./version";
 import {
   InstrumentationBase,
   InstrumentationModuleDefinition,
@@ -41,43 +41,43 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
-} from '@opentelemetry/instrumentation';
+} from "@opentelemetry/instrumentation";
 import type {
   MiddlewareStack,
   HandlerExecutionContext,
   Command as AwsV3Command,
   Handler as AwsV3MiddlewareHandler,
   InitializeHandlerArguments,
-} from '@aws-sdk/types';
+} from "@aws-sdk/types";
 import {
   bindPromise,
   extractAttributesFromNormalizedRequest,
   normalizeV2Request,
   normalizeV3Request,
   removeSuffixFromStringIfExists,
-} from './utils';
-import { RequestMetadata } from './services/ServiceExtension';
+} from "./utils";
+import { RequestMetadata } from "./services/ServiceExtension";
 
 const V3_CLIENT_CONFIG_KEY = Symbol(
-  'opentelemetry.instrumentation.aws-sdk.client.config'
+  "opentelemetry.instrumentation.aws-sdk.client.config"
 );
 type V3PluginCommand = AwsV3Command<any, any, any, any, any> & {
   [V3_CLIENT_CONFIG_KEY]?: any;
 };
 
-const REQUEST_SPAN_KEY = Symbol('opentelemetry.instrumentation.aws-sdk.span');
+const REQUEST_SPAN_KEY = Symbol("opentelemetry.instrumentation.aws-sdk.span");
 type V2PluginRequest = AWS.Request<any, any> & {
   [REQUEST_SPAN_KEY]?: Span;
 };
 
 export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
-  static readonly component = 'aws-sdk';
+  static readonly component = "aws-sdk";
   protected override _config!: AwsSdkInstrumentationConfig;
   private servicesExtensions: ServicesExtensions = new ServicesExtensions();
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(
-      '@opentelemetry/instrumentation-aws-sdk',
+      "@opentelemetry/instrumentation-aws-sdk",
       VERSION,
       Object.assign({}, config)
     );
@@ -88,9 +88,15 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
   }
 
   protected init(): InstrumentationModuleDefinition<any>[] {
-    const v3MiddlewareStackFile = new InstrumentationNodeModuleFile(
-      '@aws-sdk/middleware-stack/dist/cjs/MiddlewareStack.js',
-      ['^3.1.0'],
+    const v3MiddlewareStackFileOldVersions = new InstrumentationNodeModuleFile(
+      `@aws-sdk/middleware-stack/dist/cjs/MiddlewareStack.js`,
+      [">=3.1.0 <3.36.0"],
+      this.patchV3ConstructStack.bind(this),
+      this.unpatchV3ConstructStack.bind(this)
+    );
+    const v3MiddlewareStackFileNewVersions = new InstrumentationNodeModuleFile(
+      `@aws-sdk/middleware-stack/dist-cjs/MiddlewareStack.js`,
+      [">=3.36.0"],
       this.patchV3ConstructStack.bind(this),
       this.unpatchV3ConstructStack.bind(this)
     );
@@ -100,27 +106,28 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     // so we are patching the MiddlewareStack.js file directly to get around it.
     const v3MiddlewareStack = new InstrumentationNodeModuleDefinition<
       typeof AWS
-    >('@aws-sdk/middleware-stack', ['^3.1.0'], undefined, undefined, [
-      v3MiddlewareStackFile,
+    >("@aws-sdk/middleware-stack", ["^3.1.0"], undefined, undefined, [
+      v3MiddlewareStackFileOldVersions,
+      v3MiddlewareStackFileNewVersions,
     ]);
 
     const v3SmithyClient = new InstrumentationNodeModuleDefinition<typeof AWS>(
-      '@aws-sdk/smithy-client',
-      ['^3.1.0'],
+      "@aws-sdk/smithy-client",
+      ["^3.1.0"],
       this.patchV3SmithyClient.bind(this),
       this.unpatchV3SmithyClient.bind(this)
     );
 
     const v2Request = new InstrumentationNodeModuleFile<typeof AWS>(
-      'aws-sdk/lib/core.js',
-      ['^2.17.0'],
+      "aws-sdk/lib/core.js",
+      ["^2.17.0"],
       this.patchV2.bind(this),
       this.unpatchV2.bind(this)
     );
 
     const v2Module = new InstrumentationNodeModuleDefinition<typeof AWS>(
-      'aws-sdk',
-      ['^2.17.0'],
+      "aws-sdk",
+      ["^2.17.0"],
       undefined,
       undefined,
       [v2Request]
@@ -131,11 +138,11 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
 
   protected patchV3ConstructStack(moduleExports: any, moduleVersion?: string) {
     diag.debug(
-      'aws-sdk instrumentation: applying patch to aws-sdk v3 constructStack'
+      "aws-sdk instrumentation: applying patch to aws-sdk v3 constructStack"
     );
     this._wrap(
       moduleExports,
-      'constructStack',
+      "constructStack",
       this._getV3ConstructStackPatch.bind(this, moduleVersion)
     );
     return moduleExports;
@@ -143,19 +150,19 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
 
   protected unpatchV3ConstructStack(moduleExports: any) {
     diag.debug(
-      'aws-sdk instrumentation: applying unpatch to aws-sdk v3 constructStack'
+      "aws-sdk instrumentation: applying unpatch to aws-sdk v3 constructStack"
     );
-    this._unwrap(moduleExports, 'constructStack');
+    this._unwrap(moduleExports, "constructStack");
     return moduleExports;
   }
 
   protected patchV3SmithyClient(moduleExports: any) {
     diag.debug(
-      'aws-sdk instrumentation: applying patch to aws-sdk v3 client send'
+      "aws-sdk instrumentation: applying patch to aws-sdk v3 client send"
     );
     this._wrap(
       moduleExports.Client.prototype,
-      'send',
+      "send",
       this._getV3SmithyClientSendPatch.bind(this)
     );
     return moduleExports;
@@ -163,9 +170,9 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
 
   protected unpatchV3SmithyClient(moduleExports: any) {
     diag.debug(
-      'aws-sdk instrumentation: applying patch to aws-sdk v3 constructStack'
+      "aws-sdk instrumentation: applying patch to aws-sdk v3 constructStack"
     );
-    this._unwrap(moduleExports.Client.prototype, 'send');
+    this._unwrap(moduleExports.Client.prototype, "send");
     return moduleExports;
   }
 
@@ -176,12 +183,12 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     this.unpatchV2(moduleExports);
     this._wrap(
       moduleExports?.Request.prototype,
-      'send',
+      "send",
       this._getRequestSendPatch.bind(this, moduleVersion)
     );
     this._wrap(
       moduleExports?.Request.prototype,
-      'promise',
+      "promise",
       this._getRequestPromisePatch.bind(this, moduleVersion)
     );
 
@@ -190,10 +197,10 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
 
   protected unpatchV2(moduleExports?: typeof AWS) {
     if (isWrapped(moduleExports?.Request.prototype.send)) {
-      this._unwrap(moduleExports!.Request.prototype, 'send');
+      this._unwrap(moduleExports!.Request.prototype, "send");
     }
     if (isWrapped(moduleExports?.Request.prototype.promise)) {
-      this._unwrap(moduleExports!.Request.prototype, 'promise');
+      this._unwrap(moduleExports!.Request.prototype, "promise");
     }
   }
 
@@ -295,7 +302,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     completedEventContext: Context
   ) {
     const self = this;
-    v2Request.on('complete', response => {
+    v2Request.on("complete", (response) => {
       // read issue https://github.com/aspecto-io/opentelemetry-ext-js/issues/60
       context.with(completedEventContext, () => {
         if (!v2Request[REQUEST_SPAN_KEY]) {
@@ -361,7 +368,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     if (!isWrapped(middlewareStackToPatch.resolve)) {
       this._wrap(
         middlewareStackToPatch,
-        'resolve',
+        "resolve",
         this._getV3MiddlewareStackResolvePatch.bind(this, moduleVersion)
       );
     }
@@ -370,12 +377,12 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     // module, thus not patched, and we need to take care of it specifically.
     this._wrap(
       middlewareStackToPatch,
-      'clone',
+      "clone",
       this._getV3MiddlewareStackClonePatch.bind(this, moduleVersion)
     );
     this._wrap(
       middlewareStackToPatch,
-      'concat',
+      "concat",
       this._getV3MiddlewareStackClonePatch.bind(this, moduleVersion)
     );
   }
@@ -418,7 +425,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
           clientConfig?.serviceId ??
           removeSuffixFromStringIfExists(
             awsExecutionContext.clientName,
-            'Client'
+            "Client"
           );
         const commandName =
           awsExecutionContext.commandName ?? command.constructor?.name;
@@ -435,11 +442,11 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
 
         const handlerPromise = new Promise((resolve, reject) => {
           Promise.resolve(regionPromise)
-            .then(resolvedRegion => {
+            .then((resolvedRegion) => {
               normalizedRequest.region = resolvedRegion;
               span.setAttribute(AttributeNames.AWS_REGION, resolvedRegion);
             })
-            .catch(e => {
+            .catch((e) => {
               // there is nothing much we can do in this case.
               // we'll just continue without region
               diag.debug(
@@ -460,7 +467,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
                 );
               });
               const promiseWithResponseLogic = resultPromise
-                .then(response => {
+                .then((response) => {
                   const requestId = response.output?.$metadata?.requestId;
                   if (requestId) {
                     span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
@@ -487,7 +494,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
                   self._callUserResponseHook(span, normalizedResponse);
                   return response;
                 })
-                .catch(err => {
+                .catch((err) => {
                   const requestId = err?.RequestId;
                   if (requestId) {
                     span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
@@ -511,10 +518,10 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
                   span.end();
                 });
               promiseWithResponseLogic
-                .then(res => {
+                .then((res) => {
                   resolve(res);
                 })
-                .catch(err => reject(err));
+                .catch((err) => reject(err));
             });
         });
 
