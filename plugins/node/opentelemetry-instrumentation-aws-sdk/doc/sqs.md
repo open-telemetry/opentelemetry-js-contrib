@@ -23,6 +23,8 @@ The following methods are automatically enhanced:
 
 #### Processing Spans
 
+See GH issue [here](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/707)
+
 According to OpenTelemetry specification (and to reasonable expectation for trace structure), user of this library would expect to see one span for the operation of receiving messages batch from SQS, and then, **for each message**, a span with it's own sub-tree for the processing of this specific message.
 
 For example, if a `receiveMessages` returned 2 messages:
