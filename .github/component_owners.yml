@@ -17,6 +17,10 @@ components:
   plugins/node/opentelemetry-instrumentation-aws-lambda:
     - NathanielRN
     - willarmiros
+  plugins/node/opentelemetry-instrumentation-aws-sdk:
+    - NathanielRN
+    - willarmiros
+    - blumamir
   plugins/node/opentelemetry-instrumentation-generic-pool:
     - rauno56
   plugins/node/opentelemetry-instrumentation-graphql:

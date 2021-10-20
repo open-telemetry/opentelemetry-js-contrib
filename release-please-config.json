@@ -1,6 +1,8 @@
 {
   "bootstrap-sha": "798fb2d5c585f6fdee10146bfe15e03409bdddfe",
-  "plugins": ["node-workspace"],
+  "plugins": [
+    "node-workspace"
+  ],
   "bump-minor-pre-major": true,
   "packages": {
     "detectors/node/opentelemetry-resource-detector-alibaba-cloud": {},
@@ -14,6 +16,7 @@
     "packages/opentelemetry-id-generator-aws-xray": {},
     "packages/opentelemetry-test-utils": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},
+    "plugins/node/opentelemetry-instrumentation-aws-sdk": {},
     "plugins/node/opentelemetry-instrumentation-bunyan": {},
     "plugins/node/opentelemetry-instrumentation-cassandra": {},
     "plugins/node/opentelemetry-instrumentation-connect": {},
