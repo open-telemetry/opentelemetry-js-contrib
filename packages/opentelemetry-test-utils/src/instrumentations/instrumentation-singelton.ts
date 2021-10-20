@@ -35,6 +35,9 @@ export const registerInstrumentationTesting = <T extends InstrumentationBase>(
 ): T => {
   const existing = getInstrumentation<T>();
   if (existing) {
+    // we want to have just a single active instrumentation instance,
+    // so in case we do, we disable the current one so it will not get any events
+    instrumentation.disable();
     return existing;
   }
   _global[OTEL_TESTING_INSTRUMENTATION_SINGLETON] = instrumentation;
