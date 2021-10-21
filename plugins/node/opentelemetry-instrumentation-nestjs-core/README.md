@@ -7,6 +7,8 @@
 
 This module provides automatic tracing instrumentation for [Nest framework][pkg-web-url].
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash

@@ -6,6 +6,8 @@ The OpenTelemetry Resource is an immutable representation of the entity producin
 
 [This document][resource-semantic_conventions] defines standard attributes for resources.
 
+Supports OpenTelemetry JS SDK 1.0
+
 ## Installation
 
 ```bash

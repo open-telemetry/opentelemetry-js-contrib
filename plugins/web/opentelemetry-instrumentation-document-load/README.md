@@ -7,6 +7,8 @@
 
 This module provides *automated instrumentation for document load* for Web applications.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
