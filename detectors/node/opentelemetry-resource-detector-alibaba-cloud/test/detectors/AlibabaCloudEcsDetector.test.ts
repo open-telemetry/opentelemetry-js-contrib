@@ -17,6 +17,7 @@
 import * as nock from 'nock';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
+import { CloudProviderValues } from '@opentelemetry/semantic-conventions';
 import { alibabaCloudEcsDetector } from '../../src';
 import {
   assertCloudResource,
@@ -69,7 +70,7 @@ describe('alibabaCloudEcsDetector', () => {
       assert.ok(resource);
 
       assertCloudResource(resource, {
-        provider: 'alibaba_cloud',
+        provider: CloudProviderValues.ALIBABA_CLOUD,
         accountId: 'my-owner-account-id',
         region: 'my-region-id',
         zone: 'my-zone-id',
