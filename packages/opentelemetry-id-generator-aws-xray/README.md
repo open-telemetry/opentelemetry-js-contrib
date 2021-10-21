@@ -12,6 +12,8 @@ trace followed by a unique identifier consisting of 12 bytes of randomly generat
 extension point which allows the usage of this custom IdGenerator as opposed to the out-of-the-box random IdGenerator,
 enabling compatibility with AWS X-Ray.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ### Installation
 
 `
