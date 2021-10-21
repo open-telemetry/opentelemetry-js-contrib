@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import { context, SpanStatusCode } from '@opentelemetry/api';
+import { context, ROOT_CONTEXT, SpanStatusCode } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -371,6 +371,55 @@ describe('fastify', () => {
           );
           assert.strictEqual(spans.length, 1);
         });
+      });
+    });
+
+    describe('application hooks', () => {
+      it('onRoute not instrumented', done => {
+        app.addHook('onRoute', () => {
+          assert.strictEqual(context.active(), ROOT_CONTEXT);
+        });
+        // add a route to trigger the 'onRoute' hook
+        app.get('/test', (_req: FastifyRequest, reply: FastifyReply) => {
+          reply.send('OK');
+        });
+
+        startServer()
+          .then(() => done())
+          .catch(err => done(err));
+      });
+
+      it('onRegister is not instrumented', done => {
+        app.addHook('onRegister', () => {
+          assert.strictEqual(context.active(), ROOT_CONTEXT);
+        });
+        // register a plugin to trigger 'onRegister' hook
+        app.register((fastify, options, done) => {
+          done();
+        });
+        startServer()
+          .then(() => done())
+          .catch(err => done(err));
+      });
+
+      it('onReady is not instrumented', done => {
+        app.addHook('onReady', () => {
+          assert.strictEqual(context.active(), ROOT_CONTEXT);
+        });
+        startServer()
+          .then(() => done())
+          .catch(err => done(err));
+      });
+
+      it('onClose is not instrumented', done => {
+        app.addHook('onClose', () => {
+          assert.strictEqual(context.active(), ROOT_CONTEXT);
+        });
+        startServer()
+          .then(() => {
+            app.close().then(() => done());
+          })
+          .catch(err => done(err));
       });
     });
   });

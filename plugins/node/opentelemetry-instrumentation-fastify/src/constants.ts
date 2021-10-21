@@ -17,3 +17,10 @@
 export const spanRequestSymbol = Symbol(
   'opentelemetry.instrumentation.fastify.request_active_span'
 );
+
+export const applicationHookNames = [
+  'onRegister',
+  'onRoute',
+  'onReady',
+  'onClose',
+];

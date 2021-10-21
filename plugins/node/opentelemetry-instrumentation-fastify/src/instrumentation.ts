@@ -32,6 +32,7 @@ import type { HookHandlerDoneFunction } from 'fastify/types/hooks';
 import type { FastifyInstance } from 'fastify/types/instance';
 import type { FastifyReply } from 'fastify/types/reply';
 import type { FastifyRequest } from 'fastify/types/request';
+import { applicationHookNames } from './constants';
 import {
   AttributeNames,
   FastifyNames,
@@ -162,7 +163,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
         const name = args[0] as string;
         const handler = args[1] as HandlerOriginal;
         const pluginName = this.pluginName;
-        if (name === 'onRegister') {
+        if (applicationHookNames.includes(name)) {
           return original.apply(this, [name as any, handler]);
         }
 
