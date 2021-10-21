@@ -11,6 +11,8 @@ This module provides automatic instrumentation for [`AWS Lambda`](https://docs.a
 
 This module is currently under active development and not ready for general use.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
