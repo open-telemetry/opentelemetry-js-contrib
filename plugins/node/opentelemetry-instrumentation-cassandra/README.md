@@ -7,6 +7,8 @@
 
 This module provides automatic instrumentation for injection of trace context to [`cassandra-driver`](https://www.npmjs.com/package/cassandra-driver).
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
