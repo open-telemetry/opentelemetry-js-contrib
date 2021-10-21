@@ -13,28 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { Span, SpanStatusCode } from '@opentelemetry/api';
-import { DbStatementSerializer } from './types';
-
-export const endSpan = (
-  span: Span,
-  err: NodeJS.ErrnoException | null | undefined
-) => {
-  if (err) {
-    span.recordException(err);
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: err.message,
-    });
-  }
-  span.end();
-};
-
-export const defaultDbStatementSerializer: DbStatementSerializer = (
-  cmdName,
-  cmdArgs
-) =>
-  Array.isArray(cmdArgs) && cmdArgs.length
-    ? `${cmdName} ${cmdArgs.join(' ')}`
-    : cmdName;
+export { ServicesExtensions } from './ServicesExtensions';
