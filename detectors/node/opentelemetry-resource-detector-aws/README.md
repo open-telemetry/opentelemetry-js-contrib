@@ -9,6 +9,8 @@
 
 Resource detector for Amazon Web Services.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
