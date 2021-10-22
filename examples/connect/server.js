@@ -11,6 +11,7 @@ const axios = require('axios');
 const app = connect();
 const PORT = 8080;
 
+// eslint-disable-next-line prefer-arrow-callback
 app.use(function middleware1(req, res, next) {
   next();
 });
@@ -32,7 +33,6 @@ app.use('/run_test', async (req, res) => {
     tracing.log('enabling connect');
     tracing.connectInstrumentation.enable();
   }
-
 });
 
 app.listen(PORT);

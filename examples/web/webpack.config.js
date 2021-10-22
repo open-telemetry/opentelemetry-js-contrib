@@ -10,7 +10,7 @@ const common = {
   mode: 'development',
   entry: {
     'document-load': 'examples/document-load/index.js',
-    'meta': 'examples/meta/index.js',
+    meta: 'examples/meta/index.js',
     'user-interaction': 'examples/user-interaction/index.js',
   },
   output: {
