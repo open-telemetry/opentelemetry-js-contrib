@@ -1,7 +1,7 @@
 'use strict';
 
 // eslint-disable-next-line import/order
-const tracing = require('./tracing')('example-connect-client');
+const tracing = require('./tracing')('example-fastify-client');
 
 const { tracer } = tracing;
 const api = require('@opentelemetry/api');
@@ -15,7 +15,14 @@ function makeRequest() {
 
   api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), async () => {
     try {
-      const res = await axios.post('http://localhost:8080/run_test');
+      const res = await axios.post('http://localhost:8080/run_test/1', {
+      // testing
+      // const res = await axios.post('http://localhost:8080/run_test2/1', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 3000,
+      });
       tracing.log('status:', res.statusText);
       span.setStatus({ code: api.SpanStatusCode.OK });
     } catch (e) {

@@ -19,12 +19,12 @@ import {
   Resource,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import * as http from 'http';
 import {
-  CloudProviderValues,
   CloudPlatformValues,
-} from '../semantic-conventions';
+  CloudProviderValues,
+  SemanticResourceAttributes,
+} from '@opentelemetry/semantic-conventions';
+import * as http from 'http';
 
 /**
  * The AlibabaCloudEcsDetector can be used to detect if a process is running in
