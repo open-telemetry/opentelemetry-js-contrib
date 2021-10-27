@@ -36,3 +36,8 @@ jobs:
           npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='gts' --ignore-scripts -- --only=dev
       - name: Lint
         run: npm run lint
+        
+      - name: Lint markdown files
+        uses: avto-dev/markdown-lint@v1
+        with:
+          args: "./**/*.md -i ./CHANGELOG.md"
