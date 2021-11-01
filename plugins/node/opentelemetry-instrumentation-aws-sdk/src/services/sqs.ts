@@ -38,14 +38,6 @@ import {
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 
-export const START_SPAN_FUNCTION = Symbol(
-  'opentelemetry.instrumentation.aws-sdk.sqs.start_span'
-);
-
-export const END_SPAN_FUNCTION = Symbol(
-  'opentelemetry.instrumentation.aws-sdk.sqs.end_span'
-);
-
 // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-quotas.html
 const SQS_MAX_MESSAGE_ATTRIBUTES = 10;
 class SqsContextSetter implements TextMapSetter<SQS.MessageBodyAttributeMap> {
