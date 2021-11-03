@@ -7,6 +7,8 @@
 
 This module provides automatic instrumentation for injection of trace context to [`winston`](https://www.npmjs.com/package/winston).
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash

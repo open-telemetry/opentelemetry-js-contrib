@@ -11,6 +11,8 @@ This module provides *automated instrumentation and tracing* for GraphQL in Node
 
 Minimum required graphql version is `v14`
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```shell script
@@ -33,7 +35,7 @@ registerInstrumentations({
   instrumentations: [
     new GraphQLInstrumentation({
     // optional params
-      // allowAttributes: true,
+      // allowValues: true,
       // depth: 2,
       // mergeItems: true,
     }),

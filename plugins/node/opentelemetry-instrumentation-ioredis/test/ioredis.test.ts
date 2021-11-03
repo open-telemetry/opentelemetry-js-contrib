@@ -548,11 +548,10 @@ describe('ioredis', () => {
       });
 
       it('should create a child span for lua', done => {
-        instrumentation = new IORedisInstrumentation({
+        const config: IORedisInstrumentationConfig = {
           requireParentSpan: false,
-        });
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        };
+        instrumentation.setConfig(config);
 
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
@@ -624,13 +623,10 @@ describe('ioredis', () => {
 
     describe('Instrumenting without parent span', () => {
       before(() => {
-        instrumentation.disable();
-        instrumentation = new IORedisInstrumentation({
+        const config: IORedisInstrumentationConfig = {
           requireParentSpan: true,
-        });
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
-        instrumentation.enable();
+        };
+        instrumentation.setConfig(config);
       });
       it('should not create child span', async () => {
         await client.set(testKeyName, 'data');
@@ -642,13 +638,10 @@ describe('ioredis', () => {
 
     describe('Instrumentation with requireParentSpan', () => {
       it('should instrument with requireParentSpan equal false', async () => {
-        instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: false,
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
 
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
@@ -670,13 +663,10 @@ describe('ioredis', () => {
       });
 
       it('should not instrument with requireParentSpan equal true', async () => {
-        instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: true,
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
 
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
@@ -690,13 +680,10 @@ describe('ioredis', () => {
       const dbStatementSerializer: DbStatementSerializer = (cmdName, cmdArgs) =>
         `FOOBAR_${cmdName}: ${cmdArgs[0]}`;
       before(() => {
-        instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           dbStatementSerializer,
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
       });
 
       IOREDIS_CALLBACK_OPERATIONS.forEach(command => {
@@ -776,8 +763,14 @@ describe('ioredis', () => {
     });
 
     describe('Instrumenting with a custom hooks', () => {
-      it('should call requestHook when set in config', async () => {
+      before(() => {
         instrumentation.disable();
+        instrumentation = new IORedisInstrumentation();
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+      });
+
+      it('should call requestHook when set in config', async () => {
         const config: IORedisInstrumentationConfig = {
           requestHook: (
             span: Span,
@@ -797,9 +790,7 @@ describe('ioredis', () => {
             );
           },
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -814,7 +805,6 @@ describe('ioredis', () => {
       });
 
       it('should ignore requestHook which throws exception', async () => {
-        instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           requestHook: (
             span: Span,
@@ -827,9 +817,7 @@ describe('ioredis', () => {
             throw Error('error thrown in requestHook');
           },
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -844,7 +832,6 @@ describe('ioredis', () => {
       });
 
       it('should call responseHook when set in config', async () => {
-        instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           responseHook: (
             span: Span,
@@ -861,9 +848,7 @@ describe('ioredis', () => {
             );
           },
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -878,7 +863,6 @@ describe('ioredis', () => {
       });
 
       it('should ignore responseHook which throws exception', async () => {
-        instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           responseHook: (
             _span: Span,
@@ -889,9 +873,7 @@ describe('ioredis', () => {
             throw Error('error thrown in responseHook');
           },
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -900,6 +882,48 @@ describe('ioredis', () => {
 
           // hook throw exception, but span should not be affected
           assert.strictEqual(endedSpans.length, 1);
+        });
+      });
+    });
+
+    describe('setConfig - custom dbStatementSerializer config', () => {
+      const dbStatementSerializer = (
+        cmdName: string,
+        cmdArgs: Array<string | Buffer | number>
+      ) => {
+        return Array.isArray(cmdArgs) && cmdArgs.length
+          ? `FooBar_${cmdName} ${cmdArgs.join(',')}`
+          : cmdName;
+      };
+      const config: IORedisInstrumentationConfig = {
+        dbStatementSerializer: dbStatementSerializer,
+      };
+      before(() => {
+        instrumentation.setConfig(config);
+      });
+
+      IOREDIS_CALLBACK_OPERATIONS.forEach(operation => {
+        it(`should properly execute the db statement serializer for operation ${operation.description}`, done => {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            operation.method((err, _) => {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans.length, 2);
+              const expectedStatement = dbStatementSerializer(
+                operation.name,
+                operation.args
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[SemanticAttributes.DB_STATEMENT],
+                expectedStatement
+              );
+              done();
+            });
+          });
         });
       });
     });
