@@ -30,7 +30,7 @@ import { Pino, PinoInstrumentationConfig } from './types';
 import { VERSION } from './version';
 import type * as pino from 'pino';
 
-const pinoVersions = ['>=5.14.0 <7'];
+const pinoVersions = ['>=5.14.0 <8'];
 
 export class PinoInstrumentation extends InstrumentationBase {
   constructor(config: PinoInstrumentationConfig = {}) {
