@@ -44,7 +44,7 @@ class AwsEc2Detector implements Detector {
   readonly AWS_INSTANCE_HOST_DOCUMENT_PATH = '/latest/meta-data/hostname';
   readonly AWS_METADATA_TTL_HEADER = 'X-aws-ec2-metadata-token-ttl-seconds';
   readonly AWS_METADATA_TOKEN_HEADER = 'X-aws-ec2-metadata-token';
-  readonly MILLISECOND_TIME_OUT = 1000;
+  readonly MILLISECOND_TIME_OUT = 5000;
 
   /**
    * Attempts to connect and obtain an AWS instance Identity document. If the

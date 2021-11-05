@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.0.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.0.0...resource-detector-aws-v1.0.1) (2021-11-01)
+
+
+### Bug Fixes
+
+* increase ec2 resource detector timeout ([#722](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/722)) ([9855161](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/98551614444942aa2941809dd1a61837bfc354d4))
+
 ## [1.0.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v0.25.0...resource-detector-aws-v1.0.0) (2021-10-22)
 
 
