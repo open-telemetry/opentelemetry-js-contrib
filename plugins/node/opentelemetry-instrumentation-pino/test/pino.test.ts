@@ -24,7 +24,7 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { Writable } from 'stream';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import type * as Pino from 'pino';
+import type Pino from 'pino';
 
 import { PinoInstrumentation } from '../src';
 
