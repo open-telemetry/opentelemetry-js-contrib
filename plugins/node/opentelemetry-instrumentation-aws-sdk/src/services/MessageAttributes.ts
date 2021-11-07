@@ -60,7 +60,7 @@ class ContextGetter
 }
 export const contextGetter = new ContextGetter();
 
-export const InjectPropagationContext = (
+export const injectPropagationContext = (
   attributesMap?: SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap
 ): SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap => {
   const attributes = attributesMap ?? {};

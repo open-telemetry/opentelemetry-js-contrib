@@ -34,7 +34,7 @@ import {
   MessagingDestinationKindValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import { contextGetter, InjectPropagationContext } from './MessageAttributes';
+import { contextGetter, injectPropagationContext } from './MessageAttributes';
 
 export class SqsServiceExtension implements ServiceExtension {
   requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
@@ -90,7 +90,7 @@ export class SqsServiceExtension implements ServiceExtension {
             request.commandInput['MessageAttributes'] ?? {};
           if (origMessageAttributes) {
             request.commandInput['MessageAttributes'] =
-              InjectPropagationContext(origMessageAttributes);
+              injectPropagationContext(origMessageAttributes);
           }
         }
         break;
@@ -99,7 +99,7 @@ export class SqsServiceExtension implements ServiceExtension {
         {
           request.commandInput?.Entries?.forEach(
             (messageParams: SQS.SendMessageBatchRequestEntry) => {
-              messageParams.MessageAttributes = InjectPropagationContext(
+              messageParams.MessageAttributes = injectPropagationContext(
                 messageParams.MessageAttributes ?? {}
               );
             }

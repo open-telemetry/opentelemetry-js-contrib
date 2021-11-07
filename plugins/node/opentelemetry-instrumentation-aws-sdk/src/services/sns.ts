@@ -23,7 +23,7 @@ import {
   NormalizedResponse,
   AwsSdkInstrumentationConfig,
 } from '../types';
-import { InjectPropagationContext } from './MessageAttributes';
+import { injectPropagationContext } from './MessageAttributes';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
 export class SnsServiceExtension implements ServiceExtension {
@@ -61,7 +61,7 @@ export class SnsServiceExtension implements ServiceExtension {
       const origMessageAttributes =
         request.commandInput['MessageAttributes'] ?? {};
       if (origMessageAttributes) {
-        request.commandInput['MessageAttributes'] = InjectPropagationContext(
+        request.commandInput['MessageAttributes'] = injectPropagationContext(
           origMessageAttributes
         );
       }
