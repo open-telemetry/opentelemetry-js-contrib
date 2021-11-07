@@ -23,18 +23,17 @@ export class SnsServiceExtension implements ServiceExtension {
     requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
         let spanKind: SpanKind = SpanKind.CLIENT;
         let spanName: string = `SNS ${request.commandName}`;
-
         const spanAttributes = {
-            [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sns',
-            [SemanticAttributes.MESSAGING_DESTINATION_KIND]: MessagingDestinationKindValues.TOPIC,
-            [SemanticAttributes.MESSAGING_DESTINATION]: request.commandInput.TopicArn ||
-                request.commandInput.TargetArn ||
-                request.commandInput.PhoneNumber
+            [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sns'
         };
 
         if (request.commandName === 'Publish') {
             spanKind = SpanKind.PRODUCER;
 
+            spanAttributes[SemanticAttributes.MESSAGING_DESTINATION_KIND] = MessagingDestinationKindValues.TOPIC,
+            spanAttributes[SemanticAttributes.MESSAGING_DESTINATION] = request.commandInput.TopicArn ||
+                request.commandInput.TargetArn ||
+                request.commandInput.PhoneNumber
             request.commandInput.MessageAttributeNames = (
                 request.commandInput.MessageAttributeNames ?? []
             ).concat(propagation.fields());
