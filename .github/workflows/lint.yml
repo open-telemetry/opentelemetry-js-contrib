@@ -13,6 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Lint markdown files
+        uses: avto-dev/markdown-lint@v1
+        with:
+          ignore: "./**/CHANGELOG.md"
+          args: "./**/*.md"
+
       - name: restore lerna
         uses: actions/cache@master # must use unreleased master to cache multiple paths
         id: cache
