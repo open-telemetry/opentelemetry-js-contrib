@@ -36,14 +36,6 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { contextGetter, InjectPropagationContext } from './MessageAttributes';
 
-export const START_SPAN_FUNCTION = Symbol(
-  'opentelemetry.instrumentation.aws-sdk.sqs.start_span'
-);
-
-export const END_SPAN_FUNCTION = Symbol(
-  'opentelemetry.instrumentation.aws-sdk.sqs.end_span'
-);
-
 export class SqsServiceExtension implements ServiceExtension {
   requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
     const queueUrl = this.extractQueueUrl(request.commandInput);
