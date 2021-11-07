@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AwsInstrumentation, AwsSdkSqsProcessHookInformation } from '../src';
+import { AwsInstrumentation } from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -22,17 +22,13 @@ const instrumentation = registerInstrumentationTesting(
   new AwsInstrumentation()
 );
 import * as AWS from 'aws-sdk';
-// import { AWSError } from 'aws-sdk';
 
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import {
-  SpanStatusCode,
-  Span,
-} from '@opentelemetry/api';
-// import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { mockV2AwsSend } from './testing-utils';
-// import { Message } from 'aws-sdk/clients/sqs';
 import * as expect from 'expect';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import * as sinon from 'sinon';
+import { MessagingDestinationKindValues, SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SpanKind } from '@opentelemetry/api';
 
 const responseMockSuccess = {
   requestId: '0000000000000',
@@ -52,92 +48,100 @@ describe('SNS', () => {
 
   beforeEach(() => {
     mockV2AwsSend(responseMockSuccess, {
-      MessageId:'1'
-  } as AWS.SNS.Types.PublishResponse);
+      MessageId: '1'
+    } as AWS.SNS.Types.PublishResponse);
   });
 
 
-  describe('hooks', () => {
-    it('snsProcessHook called and add message attribute to span', async () => {
-      const config = {
-        sqsProcessHook: (
-          span: Span,
-          sqsProcessInfo: AwsSdkSqsProcessHookInformation
-        ) => {
-          span.setAttribute(
-            'attribute from sqs process hook',
-            sqsProcessInfo.message.Body!
-          );
-        },
-      };
+  describe('publish', () => {
+    it('topic arn', async () => {
+      const sns = new AWS.SNS();
 
-      instrumentation.setConfig(config);
 
-      const sqs = new AWS.SQS();
-      const res = await sqs
-        .receiveMessage({
-          QueueUrl: 'queue/url/for/unittests',
+      const TopicArn = 'my topic arn'
+      await sns
+        .publish({
+          Message: 'sns message',
+          TopicArn
         })
         .promise();
-      res.Messages?.map(
-        message => 'some mapping to create child process spans'
-      );
 
-      const processSpans = getTestSpans().filter(
-        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'SNS Publish'
       );
-      expect(processSpans.length).toBe(2);
-      expect(
-        processSpans[0].attributes['attribute from sqs process hook']
-      ).toBe('msg 1 payload');
-      expect(
-        processSpans[1].attributes['attribute from sqs process hook']
-      ).toBe('msg 2 payload');
+      expect(publishSpans.length).toBe(1);
+
+      const publishSpan = publishSpans[0];
+      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]).toBe(MessagingDestinationKindValues.TOPIC)
+      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]).toBe(TopicArn)
+      expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe('Publish')
+      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]).toBe('aws.sns')
+      expect(publishSpan.kind).toBe(SpanKind.PRODUCER)
+
     });
 
-    it('sqsProcessHook not set in config', async () => {
-      const sqs = new AWS.SQS();
-      const res = await sqs
-        .receiveMessage({
-          QueueUrl: 'queue/url/for/unittests',
+    it('phone number', async () => {
+      const sns = new AWS.SNS();
+      const PhoneNumber = 'my phone number'
+      await sns
+        .publish({
+          Message: 'sns message',
+          PhoneNumber
         })
         .promise();
-      res.Messages?.map(
-        message => 'some mapping to create child process spans'
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'SNS Publish'
       );
-      const processSpans = getTestSpans().filter(
-        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
-      );
-      expect(processSpans.length).toBe(2);
+      expect(publishSpans.length).toBe(1);
+      const publishSpan = publishSpans[0];
+      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]).toBe(PhoneNumber)
+
     });
 
-    it('sqsProcessHook throws does not fail span', async () => {
-      const config = {
-        sqsProcessHook: (
-          span: Span,
-          sqsProcessInfo: AwsSdkSqsProcessHookInformation
-        ) => {
-          throw new Error('error from sqsProcessHook hook');
-        },
-      };
-      instrumentation.setConfig(config);
 
-      const sqs = new AWS.SQS();
-      const res = await sqs
-        .receiveMessage({
-          QueueUrl: 'queue/url/for/unittests',
+    it('inject context propagation', async () => {
+      const sns = new AWS.SNS();
+      const hookSpy = sinon.spy((instrumentation['servicesExtensions'] as any)['services'].get('SNS'), 'requestPreSpanHook');
+
+      const TopicArn = 'my topic arn'
+      await sns
+        .publish({
+          Message: 'sns message',
+          TopicArn
         })
         .promise();
-      res.Messages?.map(
-        message => 'some mapping to create child process spans'
-      );
 
-      const processSpans = getTestSpans().filter(
-        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'SNS Publish'
       );
-      expect(processSpans.length).toBe(2);
-      expect(processSpans[0].status.code).toStrictEqual(SpanStatusCode.UNSET);
-      expect(processSpans[1].status.code).toStrictEqual(SpanStatusCode.UNSET);
+      expect(publishSpans.length).toBe(1);
+      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain('traceparent',)
+      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain('tracestate')
+      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain('baggage')
     });
+  });
+
+  describe('createTopic', () => {
+    it('basic createTopic creates a valid span', async () => {
+      const sns = new AWS.SNS();
+
+      const Name = 'my new topic'
+      await sns
+        .createTopic({ Name })
+        .promise();
+
+      const spans = getTestSpans();
+      const createTopicSpans = spans.filter(
+        (s: ReadableSpan) => s.name === 'SNS CreateTopic'
+      );
+      expect(createTopicSpans.length).toBe(1);
+
+      const createTopicSpan = createTopicSpans[0];
+      expect(createTopicSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]).toBeUndefined()
+      expect(createTopicSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]).toBeUndefined()
+      expect(createTopicSpan.kind).toBe(SpanKind.CLIENT)
+    });
+
   });
 });
