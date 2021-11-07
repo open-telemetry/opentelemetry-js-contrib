@@ -38,6 +38,9 @@ const responseMockSuccess = {
   error: null,
 };
 
+const topicName = 'topic';
+const fakeARN = `arn:aws:sns:region:000000000:${topicName}`;
+
 describe('SNS', () => {
   before(() => {
     AWS.config.credentials = {
@@ -59,16 +62,15 @@ describe('SNS', () => {
     it('topic arn', async () => {
       const sns = new AWS.SNS();
 
-      const TopicArn = 'my topic arn';
       await sns
         .publish({
           Message: 'sns message',
-          TopicArn,
+          TopicArn: fakeARN,
         })
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === 'SNS Publish'
+        (s: ReadableSpan) => s.name === `${topicName} Publish`
       );
       expect(publishSpans.length).toBe(1);
 
@@ -78,7 +80,7 @@ describe('SNS', () => {
       ).toBe(MessagingDestinationKindValues.TOPIC);
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-      ).toBe(TopicArn);
+      ).toBe(topicName);
       expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe(
         'Publish'
       );
@@ -99,7 +101,7 @@ describe('SNS', () => {
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === 'SNS Publish'
+        (s: ReadableSpan) => s.name === `${PhoneNumber} Publish`
       );
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];
@@ -112,30 +114,23 @@ describe('SNS', () => {
       const sns = new AWS.SNS();
       const hookSpy = sinon.spy(
         (instrumentation['servicesExtensions'] as any)['services'].get('SNS'),
-        'requestPreSpanHook'
+        'requestPostSpanHook'
       );
 
-      const TopicArn = 'my topic arn';
       await sns
         .publish({
           Message: 'sns message',
-          TopicArn,
+          TopicArn: fakeARN,
         })
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === 'SNS Publish'
+        (s: ReadableSpan) => s.name === `${topicName} Publish`
       );
       expect(publishSpans.length).toBe(1);
-      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain(
-        'traceparent'
-      );
-      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain(
-        'tracestate'
-      );
-      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain(
-        'baggage'
-      );
+      expect(
+        hookSpy.args[0][0].commandInput.MessageAttributes.traceparent
+      ).toBeDefined();
     });
   });
 

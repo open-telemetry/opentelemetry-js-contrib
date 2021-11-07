@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span, Tracer, SpanKind, propagation } from '@opentelemetry/api';
+import { Span, Tracer, SpanKind } from '@opentelemetry/api';
 import {
   MessagingDestinationKindValues,
   SemanticAttributes,
@@ -29,7 +29,7 @@ import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 export class SnsServiceExtension implements ServiceExtension {
   requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
     let spanKind: SpanKind = SpanKind.CLIENT;
-    const spanName = `SNS ${request.commandName}`;
+    let spanName = `SNS ${request.commandName}`;
     const spanAttributes = {
       [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sns',
     };
@@ -37,15 +37,15 @@ export class SnsServiceExtension implements ServiceExtension {
     if (request.commandName === 'Publish') {
       spanKind = SpanKind.PRODUCER;
 
-      (spanAttributes[SemanticAttributes.MESSAGING_DESTINATION_KIND] =
-        MessagingDestinationKindValues.TOPIC),
-        (spanAttributes[SemanticAttributes.MESSAGING_DESTINATION] =
-          request.commandInput.TopicArn ||
-          request.commandInput.TargetArn ||
-          request.commandInput.PhoneNumber);
-      request.commandInput.MessageAttributeNames = (
-        request.commandInput.MessageAttributeNames ?? []
-      ).concat(propagation.fields());
+      spanAttributes[SemanticAttributes.MESSAGING_DESTINATION_KIND] =
+        MessagingDestinationKindValues.TOPIC;
+      const { TopicArn, TargetArn, PhoneNumber } = request.commandInput;
+      spanAttributes[SemanticAttributes.MESSAGING_DESTINATION] =
+        this.extractDestinationName(TopicArn, TargetArn, PhoneNumber);
+
+      spanName = `${spanAttributes[SemanticAttributes.MESSAGING_DESTINATION]} ${
+        request.commandName
+      }`;
     }
 
     return {
@@ -57,7 +57,7 @@ export class SnsServiceExtension implements ServiceExtension {
   }
 
   requestPostSpanHook(request: NormalizedRequest): void {
-    if (request.commandName === 'publish') {
+    if (request.commandName === 'Publish') {
       const origMessageAttributes =
         request.commandInput['MessageAttributes'] ?? {};
       if (origMessageAttributes) {
@@ -74,4 +74,23 @@ export class SnsServiceExtension implements ServiceExtension {
     tracer: Tracer,
     config: AwsSdkInstrumentationConfig
   ): void {}
+
+  extractDestinationName(
+    topicArn: string,
+    targetArn: string,
+    phoneNumber: string
+  ): string {
+    if (topicArn || targetArn) {
+      const arn = topicArn ?? targetArn;
+      try {
+        return arn.substr(arn.lastIndexOf(':') + 1);
+      } catch (err) {
+        return arn;
+      }
+    } else if (phoneNumber) {
+      return phoneNumber;
+    } else {
+      return 'unknown';
+    }
+  }
 }
