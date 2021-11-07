@@ -27,7 +27,10 @@ import { mockV2AwsSend } from './testing-utils';
 import * as expect from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as sinon from 'sinon';
-import { MessagingDestinationKindValues, SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  MessagingDestinationKindValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import { SpanKind } from '@opentelemetry/api';
 
 const responseMockSuccess = {
@@ -48,21 +51,19 @@ describe('SNS', () => {
 
   beforeEach(() => {
     mockV2AwsSend(responseMockSuccess, {
-      MessageId: '1'
+      MessageId: '1',
     } as AWS.SNS.Types.PublishResponse);
   });
-
 
   describe('publish', () => {
     it('topic arn', async () => {
       const sns = new AWS.SNS();
 
-
-      const TopicArn = 'my topic arn'
+      const TopicArn = 'my topic arn';
       await sns
         .publish({
           Message: 'sns message',
-          TopicArn
+          TopicArn,
         })
         .promise();
 
@@ -72,21 +73,28 @@ describe('SNS', () => {
       expect(publishSpans.length).toBe(1);
 
       const publishSpan = publishSpans[0];
-      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]).toBe(MessagingDestinationKindValues.TOPIC)
-      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]).toBe(TopicArn)
-      expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe('Publish')
-      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]).toBe('aws.sns')
-      expect(publishSpan.kind).toBe(SpanKind.PRODUCER)
-
+      expect(
+        publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
+      ).toBe(MessagingDestinationKindValues.TOPIC);
+      expect(
+        publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
+      ).toBe(TopicArn);
+      expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe(
+        'Publish'
+      );
+      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]).toBe(
+        'aws.sns'
+      );
+      expect(publishSpan.kind).toBe(SpanKind.PRODUCER);
     });
 
     it('phone number', async () => {
       const sns = new AWS.SNS();
-      const PhoneNumber = 'my phone number'
+      const PhoneNumber = 'my phone number';
       await sns
         .publish({
           Message: 'sns message',
-          PhoneNumber
+          PhoneNumber,
         })
         .promise();
 
@@ -95,20 +103,23 @@ describe('SNS', () => {
       );
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];
-      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]).toBe(PhoneNumber)
-
+      expect(
+        publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
+      ).toBe(PhoneNumber);
     });
-
 
     it('inject context propagation', async () => {
       const sns = new AWS.SNS();
-      const hookSpy = sinon.spy((instrumentation['servicesExtensions'] as any)['services'].get('SNS'), 'requestPreSpanHook');
+      const hookSpy = sinon.spy(
+        (instrumentation['servicesExtensions'] as any)['services'].get('SNS'),
+        'requestPreSpanHook'
+      );
 
-      const TopicArn = 'my topic arn'
+      const TopicArn = 'my topic arn';
       await sns
         .publish({
           Message: 'sns message',
-          TopicArn
+          TopicArn,
         })
         .promise();
 
@@ -116,9 +127,15 @@ describe('SNS', () => {
         (s: ReadableSpan) => s.name === 'SNS Publish'
       );
       expect(publishSpans.length).toBe(1);
-      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain('traceparent',)
-      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain('tracestate')
-      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain('baggage')
+      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain(
+        'traceparent'
+      );
+      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain(
+        'tracestate'
+      );
+      expect(hookSpy.args[0][0].commandInput.MessageAttributeNames).toContain(
+        'baggage'
+      );
     });
   });
 
@@ -126,10 +143,8 @@ describe('SNS', () => {
     it('basic createTopic creates a valid span', async () => {
       const sns = new AWS.SNS();
 
-      const Name = 'my new topic'
-      await sns
-        .createTopic({ Name })
-        .promise();
+      const Name = 'my new topic';
+      await sns.createTopic({ Name }).promise();
 
       const spans = getTestSpans();
       const createTopicSpans = spans.filter(
@@ -138,10 +153,15 @@ describe('SNS', () => {
       expect(createTopicSpans.length).toBe(1);
 
       const createTopicSpan = createTopicSpans[0];
-      expect(createTopicSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]).toBeUndefined()
-      expect(createTopicSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]).toBeUndefined()
-      expect(createTopicSpan.kind).toBe(SpanKind.CLIENT)
+      expect(
+        createTopicSpan.attributes[
+          SemanticAttributes.MESSAGING_DESTINATION_KIND
+        ]
+      ).toBeUndefined();
+      expect(
+        createTopicSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
+      ).toBeUndefined();
+      expect(createTopicSpan.kind).toBe(SpanKind.CLIENT);
     });
-
   });
 });

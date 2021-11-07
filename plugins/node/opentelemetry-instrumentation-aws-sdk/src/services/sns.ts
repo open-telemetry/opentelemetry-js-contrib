@@ -13,50 +13,65 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span, Tracer, SpanKind, propagation } from "@opentelemetry/api";
-import { MessagingDestinationKindValues, SemanticAttributes } from "@opentelemetry/semantic-conventions";
-import { NormalizedRequest, NormalizedResponse, AwsSdkInstrumentationConfig } from "../types";
-import { InjectPropagationContext } from "./MessageAttributes";
-import { RequestMetadata, ServiceExtension } from "./ServiceExtension";
+import { Span, Tracer, SpanKind, propagation } from '@opentelemetry/api';
+import {
+  MessagingDestinationKindValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
+import {
+  NormalizedRequest,
+  NormalizedResponse,
+  AwsSdkInstrumentationConfig,
+} from '../types';
+import { InjectPropagationContext } from './MessageAttributes';
+import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
 export class SnsServiceExtension implements ServiceExtension {
-    requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
-        let spanKind: SpanKind = SpanKind.CLIENT;
-        let spanName: string = `SNS ${request.commandName}`;
-        const spanAttributes = {
-            [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sns'
-        };
+  requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
+    let spanKind: SpanKind = SpanKind.CLIENT;
+    const spanName = `SNS ${request.commandName}`;
+    const spanAttributes = {
+      [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sns',
+    };
 
-        if (request.commandName === 'Publish') {
-            spanKind = SpanKind.PRODUCER;
+    if (request.commandName === 'Publish') {
+      spanKind = SpanKind.PRODUCER;
 
-            spanAttributes[SemanticAttributes.MESSAGING_DESTINATION_KIND] = MessagingDestinationKindValues.TOPIC,
-            spanAttributes[SemanticAttributes.MESSAGING_DESTINATION] = request.commandInput.TopicArn ||
-                request.commandInput.TargetArn ||
-                request.commandInput.PhoneNumber
-            request.commandInput.MessageAttributeNames = (
-                request.commandInput.MessageAttributeNames ?? []
-            ).concat(propagation.fields());
-        }
-
-        return {
-            isIncoming: false,
-            spanAttributes,
-            spanKind,
-            spanName,
-        };
+      (spanAttributes[SemanticAttributes.MESSAGING_DESTINATION_KIND] =
+        MessagingDestinationKindValues.TOPIC),
+        (spanAttributes[SemanticAttributes.MESSAGING_DESTINATION] =
+          request.commandInput.TopicArn ||
+          request.commandInput.TargetArn ||
+          request.commandInput.PhoneNumber);
+      request.commandInput.MessageAttributeNames = (
+        request.commandInput.MessageAttributeNames ?? []
+      ).concat(propagation.fields());
     }
 
-    requestPostSpanHook(request: NormalizedRequest): void {
-        if (request.commandName === 'publish') {
-            const origMessageAttributes = request.commandInput['MessageAttributes'] ?? {};
-            if (origMessageAttributes) {
-                request.commandInput['MessageAttributes'] =
-                    InjectPropagationContext(origMessageAttributes);
-            }
-        }
-    }
+    return {
+      isIncoming: false,
+      spanAttributes,
+      spanKind,
+      spanName,
+    };
+  }
 
-    responseHook(response: NormalizedResponse, span: Span, tracer: Tracer, config: AwsSdkInstrumentationConfig): void {
+  requestPostSpanHook(request: NormalizedRequest): void {
+    if (request.commandName === 'publish') {
+      const origMessageAttributes =
+        request.commandInput['MessageAttributes'] ?? {};
+      if (origMessageAttributes) {
+        request.commandInput['MessageAttributes'] = InjectPropagationContext(
+          origMessageAttributes
+        );
+      }
     }
+  }
+
+  responseHook(
+    response: NormalizedResponse,
+    span: Span,
+    tracer: Tracer,
+    config: AwsSdkInstrumentationConfig
+  ): void {}
 }

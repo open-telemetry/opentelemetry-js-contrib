@@ -165,5 +165,4 @@ export class SqsServiceExtension implements ServiceExtension {
 
     return segments[segments.length - 1];
   };
-
 }
