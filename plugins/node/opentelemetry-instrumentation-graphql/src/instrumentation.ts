@@ -43,6 +43,7 @@ import {
   Maybe,
 } from './types';
 import {
+  addInputVariableAttributes,
   addSpanSource,
   endSpan,
   getOperation,
@@ -419,9 +420,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     }
 
     if (processedArgs.variableValues && config.allowValues) {
-      Object.entries(processedArgs.variableValues).forEach(([key, value]) => {
-        span.setAttribute(`${AttributeNames.VARIABLES}${String(key)}`, value);
-      });
+      addInputVariableAttributes(span, processedArgs.variableValues);
     }
 
     return span;
