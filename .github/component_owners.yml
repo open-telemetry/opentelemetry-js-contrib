@@ -44,6 +44,8 @@ components:
     - obecny
   plugins/web/opentelemetry-instrumentation-user-interaction:
     - obecny
+  plugins/web/opentelemetry-instrumentation-web-vitals:
+    - mhennoch
   propagators/opentelemetry-propagator-aws-xray:
     - NathanielRN
     - willarmiros
