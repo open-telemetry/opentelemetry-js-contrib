@@ -9,6 +9,8 @@
 
 Resource detector for Amazon Web Services.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -29,7 +31,7 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 ## Available detectors
 
-- `awsBeanstalkDetector`: Populates `service` for processes running on [AWS Elastic Beanstalk](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/Welcome.html)
+- `awsBeanstalkDetector`: Populates `service` for processes running on [AWS Elastic Beanstalk](https://aws.amazon.com/elasticbeanstalk/)
 - `awsEc2Detector`: Populates `cloud` and `host` for processes running on [Amazon EC2](https://aws.amazon.com/ec2/), including abstractions such as ECS on EC2. Notably, it does not populate anything on AWS Fargate
 - `awsEcsDetector`: Populates `container` for containers running on [Amazon ECS](https://aws.amazon.com/ecs/)
 - `awsEksDetector`: Populates `container` and `k8s.cluster_name` for containers running on [Amazon EKS](https://aws.amazon.com/eks/)

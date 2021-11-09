@@ -34,10 +34,11 @@ export interface MongoDBAccess {
 export function accessCollection(
   url: string,
   dbName: string,
-  collectionName: string
+  collectionName: string,
+  options: mongodb.MongoClientOptions = {}
 ): Promise<MongoDBAccess> {
   return new Promise((resolve, reject) => {
-    mongodb.MongoClient.connect(url, (err, client) => {
+    mongodb.MongoClient.connect(url, options, (err, client) => {
       if (err) {
         reject(err);
         return;
