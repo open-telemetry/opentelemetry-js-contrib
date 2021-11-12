@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-node",
-  "version": "0.26.0",
+  "version": "0.26.1",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
@@ -48,7 +48,7 @@
     "@opentelemetry/instrumentation": "^0.26.0",
     "@opentelemetry/instrumentation-dns": "^0.26.0",
     "@opentelemetry/instrumentation-express": "^0.26.0",
-    "@opentelemetry/instrumentation-graphql": "^0.26.0",
+    "@opentelemetry/instrumentation-graphql": "^0.26.1",
     "@opentelemetry/instrumentation-grpc": "^0.26.0",
     "@opentelemetry/instrumentation-http": "^0.26.0",
     "@opentelemetry/instrumentation-ioredis": "^0.26.0",
