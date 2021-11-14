@@ -44,7 +44,10 @@ const responseMockSuccess = {
   error: null,
 };
 
-const spy = sinon.spy(messageAttributes, 'extractPropagationContext');
+const extractContextSpy = sinon.spy(
+  messageAttributes,
+  'extractPropagationContext'
+);
 
 describe('SQS', () => {
   before(() => {
@@ -436,9 +439,9 @@ describe('SQS', () => {
 
   describe('extract payload', () => {
     beforeEach(() => {
-      spy.resetHistory();
+      extractContextSpy.resetHistory();
     });
-    it('should not find in payload', async () => {
+    it('should not extract from payload even if set', async () => {
       mockV2AwsSend(responseMockSuccess, {
         Messages: [{ Body: JSON.stringify({ traceparent: 1 }) }],
       } as AWS.SQS.Types.ReceiveMessageResult);
@@ -449,11 +452,17 @@ describe('SQS', () => {
           QueueUrl: 'queue/url/for/unittests1',
         })
         .promise();
-      expect(spy.returnValues[0]?.traceparent).toBeUndefined();
+      expect(extractContextSpy.returnValues[0]?.traceparent).toBeUndefined();
     });
 
-    it('should find in payload', async () => {
-      const traceparent = 'some-trace-parent-value';
+    it('should extract from payload', async () => {
+      const traceparent = {
+        traceparent: {
+          StringValue:
+            '00-a1d050b7c8ad93c405e7a0d94cda5b03-23a485dc98b24027-01',
+          DataType: 'String',
+        },
+      };
       instrumentation.setConfig({
         sqsExtractContextPropagationFromPayload: true,
       });
@@ -470,10 +479,12 @@ describe('SQS', () => {
         })
         .promise();
 
-      expect(spy.returnValues[0]?.traceparent).toBe(traceparent);
+      expect(extractContextSpy.returnValues[0]?.traceparent).toStrictEqual(
+        traceparent
+      );
     });
 
-    it('should find in attributes', async () => {
+    it('should not extract from payload but from attributes', async () => {
       const traceparentInPayload = 'some-trace-parent-value';
       const traceparentInMessageAttributes = {
         traceparent: {
@@ -503,7 +514,9 @@ describe('SQS', () => {
         })
         .promise();
 
-      expect(spy.returnValues[0]).toBe(traceparentInMessageAttributes);
+      expect(extractContextSpy.returnValues[0]).toBe(
+        traceparentInMessageAttributes
+      );
     });
   });
 });
