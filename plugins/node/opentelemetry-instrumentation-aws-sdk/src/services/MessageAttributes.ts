@@ -90,7 +90,7 @@ export const extractPropagationContext = (
       const payload = JSON.parse(message.Body);
       return payload.MessageAttributes;
     } catch {
-      diag.info(
+      diag.debug(
         'failed to parse SQS payload to extract context propagation, trace might be incomplete.'
       );
     }
