@@ -64,7 +64,7 @@ export const injectPropagationContext = (
   attributesMap?: SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap
 ): SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap => {
   const attributes = attributesMap ?? {};
-  if (Object.keys(attributes).length < MAX_MESSAGE_ATTRIBUTES) {
+  if (Object.keys(attributes).length + propagation.fields().length <= MAX_MESSAGE_ATTRIBUTES) {
     propagation.inject(context.active(), attributes, contextSetter);
   } else {
     diag.warn(
