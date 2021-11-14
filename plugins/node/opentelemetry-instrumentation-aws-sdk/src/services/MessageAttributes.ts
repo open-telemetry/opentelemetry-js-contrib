@@ -21,6 +21,7 @@ import {
   diag,
 } from '@opentelemetry/api';
 import type { SQS, SNS } from 'aws-sdk';
+import type { MessageBodyAttributeMap } from 'aws-sdk/clients/sqs';
 
 // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-quotas.html
 export const MAX_MESSAGE_ATTRIBUTES = 10;
@@ -72,4 +73,27 @@ export const injectPropagationContext = (
     );
   }
   return attributes;
+};
+
+export const extractPropagationContext = (
+  message: SQS.Message,
+  sqsExtractContextPropagationFromPayload: boolean | undefined
+): MessageBodyAttributeMap | undefined => {
+  const propagationFields = propagation.fields();
+  const hasPropagationFields = Object.keys(
+    message.MessageAttributes || []
+  ).some(attr => propagationFields.includes(attr));
+  if (hasPropagationFields) {
+    return message.MessageAttributes;
+  } else if (sqsExtractContextPropagationFromPayload && message.Body) {
+    try {
+      const payload = JSON.parse(message.Body);
+      return payload.MessageAttributes;
+    } catch {
+      diag.info(
+        'failed to parse SQS payload to extract context propagation, trace might be incomplete.'
+      );
+    }
+  }
+  return undefined;
 };
