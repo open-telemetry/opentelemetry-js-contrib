@@ -71,7 +71,7 @@ export class PinoInstrumentation extends InstrumentationBase {
           }, pinoModule);
 
           return patchedPino;
-        },
+        }
       ),
     ];
   }
