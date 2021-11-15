@@ -35,6 +35,9 @@ import { VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
+// Delay to reset the current zone in ms
+// Approximates a single macro cycle in the event loop
+const RESET_ZONE_DELAY_MS = 50;
 
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
@@ -58,11 +61,24 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     api.Span
   >();
 
+  // Stores the zone that is being used to trace the current interaction
+  // Allows for multiple event handlers to be collated into a single trace.
+  private _currentEventZone?: Zone;
+  // Used to reset the currentEventZone when the event handler finishes before being automatically reset after 50ms.
+  private _currentEventZoneTimeout?: number;
+
   constructor(config?: InstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
   }
 
   init() {}
+
+  /**
+   * Controls whether or not to create a span, based on the event type.
+   */
+  protected _allowEventType(eventType: string): boolean {
+    return eventType === 'click';
+  }
 
   /**
    * This will check if last task was timeout and will save the time to
@@ -86,12 +102,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     }
   }
 
-  /**
-   * Controls whether or not to create a span, based on the event type.
-   */
-  protected _allowEventType(eventType: string): boolean {
-    return eventType === 'click';
-  }
   /**
    * Creates a new span
    * @param element
@@ -135,6 +145,15 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
 
       this._spansData.set(span, {
         taskCount: 0,
+      });
+
+      // after 50ms, clear the current zone to allow for new user interactions
+      Zone.root.run(() => {
+        // timeout is stored in case interaction finishes before callback runs
+        this._currentEventZoneTimeout = window.setTimeout(() => {
+          this._currentEventZone = undefined;
+          this._currentEventZoneTimeout = undefined;
+        }, RESET_ZONE_DELAY_MS);
       });
 
       return span;
@@ -181,6 +200,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     const spanData = this._spansData.get(span);
     if (spanData) {
       spanData.taskCount++;
+      Zone.root.run(() => {
+        window.clearTimeout(spanData.completionTimeout);
+        spanData.completionTimeout = undefined;
+      });
     }
   }
 
@@ -412,12 +435,20 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         this: Zone,
         task: AsyncTask
       ) {
-        const currentZone = Zone.current;
+        let currentZone = Zone.current;
+
+        if (plugin._getCurrentSpan(currentZone)) {
+          task._zone = currentZone;
+        } else if (plugin._getCurrentSpan(task.zone)) {
+          currentZone = task.zone;
+        }
+
         const currentSpan = plugin._getCurrentSpan(currentZone);
-        if (currentSpan && plugin._shouldCountTask(task, currentZone)) {
+
+        if (currentSpan && plugin._shouldCountTask(task)) {
           plugin._decrementTask(currentSpan);
         }
-        return original.call(this, task) as T;
+        return original.call(currentZone, task) as T;
       };
     };
   }
@@ -435,13 +466,18 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         this: Zone,
         task: AsyncTask
       ) {
-        const currentZone = Zone.current;
+        let currentZone = Zone.current;
         const currentSpan = plugin._getCurrentSpan(currentZone);
-        if (currentSpan && plugin._shouldCountTask(task, currentZone)) {
+
+        if (currentSpan) {
+          task._zone = currentZone;
+        }
+
+        if (currentSpan && plugin._shouldCountTask(task)) {
           plugin._incrementTask(currentSpan);
           plugin._checkForTimeout(task, currentSpan);
         }
-        return original.call(this, task) as T;
+        return original.call(currentZone, task) as T;
       };
     };
   }
@@ -464,44 +500,47 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
           Array.isArray(applyArgs) && applyArgs[0] instanceof Event
             ? applyArgs[0]
             : undefined;
+
         const target = event?.target;
         let span: api.Span | undefined;
-        const activeZone = this;
+
         if (target) {
-          span = plugin._createSpan(target, task.eventName);
+          // Initializes spanData with a task count of 0
+          if (!plugin._currentEventZone) {
+            // create new span for interaction from current task zone
+            span = plugin._createSpan(target, task.eventName);
+            if (span) {
+              api.context.with(api.trace.setSpan(api.context.active(), span), function () {
+                plugin._currentEventZone = Zone.current;
+              });
+            }
+          }
+
+          if (plugin._currentEventZone) {
+            // Override handler task zone with current interaction zone
+            task._zone = plugin._currentEventZone;
+          }
+
           if (span) {
             plugin._incrementTask(span);
-            return activeZone.run(() => {
-              try {
-                return api.context.with(
-                  api.trace.setSpan(api.context.active(), span!),
-                  () => {
-                    const currentZone = Zone.current;
-                    task._zone = currentZone;
-                    return original.call(
-                      currentZone,
-                      task,
-                      applyThis,
-                      applyArgs
-                    );
-                  }
-                );
-              } finally {
-                plugin._decrementTask(span as api.Span);
-              }
-            });
           }
         } else {
-          span = plugin._getCurrentSpan(activeZone);
+          span = plugin._getCurrentSpan(task.zone);
         }
 
-        try {
-          return original.call(activeZone, task, applyThis, applyArgs);
-        } finally {
-          if (span && plugin._shouldCountTask(task, activeZone)) {
-            plugin._decrementTask(span);
+        return task.zone.run(() => {
+          try {
+            return original.call(task.zone, task, applyThis, applyArgs);
+          } finally {
+            // If target is defined, task is decremented after running event handler.
+            // If _shouldCountTask() returns true, task is decremented after running other macro or micro tasks.
+            if (target || plugin._shouldCountTask(task)) {
+              if (span) {
+                plugin._decrementTask(span);
+              }
+            }
           }
-        }
+        });
       };
     };
   }
@@ -512,20 +551,11 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * @param currentZone
    * @private
    */
-  private _shouldCountTask(task: AsyncTask, currentZone: Zone): boolean {
-    if (task._zone) {
-      currentZone = task._zone;
-    }
-    if (!currentZone || !task.data || task.data.isPeriodic) {
+  private _shouldCountTask(task: AsyncTask): boolean {
+    if (!task.data || task.data.isPeriodic) {
       return false;
     }
-    const currentSpan = this._getCurrentSpan(currentZone);
-    if (!currentSpan) {
-      return false;
-    }
-    if (!this._spansData.get(currentSpan)) {
-      return false;
-    }
+
     return task.type === 'macroTask' || task.type === 'microTask';
   }
 
@@ -538,9 +568,20 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   private _tryToEndSpan(span: api.Span, endTime?: api.HrTime) {
     if (span) {
       const spanData = this._spansData.get(span);
-      if (spanData) {
-        span.end(endTime);
-        this._spansData.delete(span);
+
+      if (spanData && !spanData.completionTimeout) {
+        spanData.completionTimeout = window.setTimeout(() => {
+          span.end(endTime);
+          this._spansData.delete(span);
+
+          if (this._currentEventZoneTimeout) {
+            Zone.root.run(() => {
+              window.clearTimeout(this._currentEventZoneTimeout);
+              this._currentEventZone = undefined;
+              this._currentEventZoneTimeout = undefined;
+            });
+          }
+        });
       }
     }
   }

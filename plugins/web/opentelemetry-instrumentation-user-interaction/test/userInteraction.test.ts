@@ -228,9 +228,15 @@ describe('UserInteractionInstrumentation', () => {
           Zone.current !== newZone,
           'Current zone for 2nd listener click is wrong'
         );
+        console.log(Zone.current.parent?.name, Zone.current.name, rootZone.name);
         assert.ok(
-          Zone.current.parent === rootZone,
+          Zone.current.parent === newZone,
           'Parent Zone for 2nd listener click is wrong'
+        );
+
+        assert.ok(
+          Zone.current.parent?.parent === rootZone,
+          'Parent Zone for new zone that click handlers run through is wrong'
         );
       });
 
