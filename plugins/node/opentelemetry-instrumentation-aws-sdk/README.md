@@ -96,11 +96,8 @@ AWS contains dozens of services accessible with the JS SDK. For many services, t
 Specific service logic currently implemented for:
 
 - [SQS](./docs/sqs.md)
+- [SNS](./docs/sns.md)
 - DynamoDb
-
----
-
-This instrumentation is a work in progress. We implemented some of the specific trace semantics for some of the services, and strive to support more services and extend the already supported services in the future. You can [Open an Issue](https://github.com/aspecto-io/opentelemetry-ext-js/issues), or [Submit a Pull Request](https://github.com/aspecto-io/opentelemetry-ext-js/pulls) if you want to contribute.
 
 ## Potential Side Effects
 

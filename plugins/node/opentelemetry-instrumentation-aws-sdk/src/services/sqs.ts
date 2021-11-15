@@ -18,9 +18,6 @@ import {
   SpanKind,
   Span,
   propagation,
-  diag,
-  TextMapGetter,
-  TextMapSetter,
   trace,
   context,
   ROOT_CONTEXT,
@@ -37,32 +34,7 @@ import {
   MessagingDestinationKindValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-
-// https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-quotas.html
-const SQS_MAX_MESSAGE_ATTRIBUTES = 10;
-class SqsContextSetter implements TextMapSetter<SQS.MessageBodyAttributeMap> {
-  set(carrier: SQS.MessageBodyAttributeMap, key: string, value: string) {
-    carrier[key] = {
-      DataType: 'String',
-      StringValue: value as string,
-    };
-  }
-}
-const sqsContextSetter = new SqsContextSetter();
-
-class SqsContextGetter implements TextMapGetter<SQS.MessageBodyAttributeMap> {
-  keys(carrier: SQS.MessageBodyAttributeMap): string[] {
-    return Object.keys(carrier);
-  }
-
-  get(
-    carrier: SQS.MessageBodyAttributeMap,
-    key: string
-  ): undefined | string | string[] {
-    return carrier?.[key]?.StringValue;
-  }
-}
-const sqsContextGetter = new SqsContextGetter();
+import { contextGetter, injectPropagationContext } from './MessageAttributes';
 
 export class SqsServiceExtension implements ServiceExtension {
   requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
@@ -118,7 +90,7 @@ export class SqsServiceExtension implements ServiceExtension {
             request.commandInput['MessageAttributes'] ?? {};
           if (origMessageAttributes) {
             request.commandInput['MessageAttributes'] =
-              this.InjectPropagationContext(origMessageAttributes);
+              injectPropagationContext(origMessageAttributes);
           }
         }
         break;
@@ -127,7 +99,7 @@ export class SqsServiceExtension implements ServiceExtension {
         {
           request.commandInput?.Entries?.forEach(
             (messageParams: SQS.SendMessageBatchRequestEntry) => {
-              messageParams.MessageAttributes = this.InjectPropagationContext(
+              messageParams.MessageAttributes = injectPropagationContext(
                 messageParams.MessageAttributes ?? {}
               );
             }
@@ -157,7 +129,7 @@ export class SqsServiceExtension implements ServiceExtension {
           parentContext: propagation.extract(
             ROOT_CONTEXT,
             message.MessageAttributes,
-            sqsContextGetter
+            contextGetter
           ),
           attributes: {
             [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sqs',
@@ -193,18 +165,4 @@ export class SqsServiceExtension implements ServiceExtension {
 
     return segments[segments.length - 1];
   };
-
-  InjectPropagationContext(
-    attributesMap?: SQS.MessageBodyAttributeMap
-  ): SQS.MessageBodyAttributeMap {
-    const attributes = attributesMap ?? {};
-    if (Object.keys(attributes).length < SQS_MAX_MESSAGE_ATTRIBUTES) {
-      propagation.inject(context.active(), attributes, sqsContextSetter);
-    } else {
-      diag.warn(
-        'aws-sdk instrumentation: cannot set context propagation on SQS message due to maximum amount of MessageAttributes'
-      );
-    }
-    return attributes;
-  }
 }
