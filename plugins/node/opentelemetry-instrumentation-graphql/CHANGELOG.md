@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.26.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.26.0...instrumentation-graphql-v0.26.1) (2021-11-12)
+
+
+### Bug Fixes
+
+* adding nested input variables in graphql plugin ([#720](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/720)) ([7a7d3a3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/7a7d3a35e66678cf7d11fb9c89b8a26f2d4bfd6b))
+
 ## [0.26.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.25.0...instrumentation-graphql-v0.26.0) (2021-10-22)
 
 

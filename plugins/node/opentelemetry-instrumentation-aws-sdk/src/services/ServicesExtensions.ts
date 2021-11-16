@@ -22,12 +22,14 @@ import {
   NormalizedResponse,
 } from '../types';
 import { DynamodbServiceExtension } from './dynamodb';
+import { SnsServiceExtension } from './sns';
 
 export class ServicesExtensions implements ServiceExtension {
   services: Map<string, ServiceExtension> = new Map();
 
   constructor() {
     this.services.set('SQS', new SqsServiceExtension());
+    this.services.set('SNS', new SnsServiceExtension());
     this.services.set('DynamoDB', new DynamodbServiceExtension());
   }
 
