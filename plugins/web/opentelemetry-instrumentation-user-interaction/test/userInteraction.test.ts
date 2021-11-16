@@ -106,6 +106,7 @@ describe('UserInteractionInstrumentation', () => {
 
     it('should handle task without async operation', () => {
       fakeInteraction();
+      sandbox.clock.next();
       assert.equal(exportSpy.args.length, 1, 'should export one span');
       const spanClick = exportSpy.args[0][0][0];
       assertClickSpan(spanClick);
@@ -121,7 +122,7 @@ describe('UserInteractionInstrumentation', () => {
           done();
         });
       });
-      sandbox.clock.tick(110);
+      sandbox.clock.next();
     });
 
     it('should ignore periodic tasks', done => {
@@ -179,6 +180,7 @@ describe('UserInteractionInstrumentation', () => {
           });
         });
       });
+      sandbox.clock.next();
     });
 
     it('should handle task with timeout and async operation', done => {
@@ -209,6 +211,7 @@ describe('UserInteractionInstrumentation', () => {
           });
         });
       });
+      sandbox.clock.next();
     });
 
     it('should run task from different zone - angular test', done => {
@@ -228,15 +231,13 @@ describe('UserInteractionInstrumentation', () => {
           Zone.current !== newZone,
           'Current zone for 2nd listener click is wrong'
         );
-        console.log(Zone.current.parent?.name, Zone.current.name, rootZone.name);
         assert.ok(
           Zone.current.parent === newZone,
           'Parent Zone for 2nd listener click is wrong'
         );
-
         assert.ok(
           Zone.current.parent?.parent === rootZone,
-          'Parent Zone for new zone that click handlers run through is wrong'
+          'Parent of Parent Zone for 2nd listener click is wrong'
         );
       });
 
@@ -247,11 +248,11 @@ describe('UserInteractionInstrumentation', () => {
             Zone.current.parent === newZone,
             'Parent zone for click is wrong'
           );
-          const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
-          assertClickSpan(spanClick);
-
-          done();
         }, element);
+        sandbox.clock.next();
+        const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
+        assertClickSpan(spanClick);
+        done();
       });
     });
 
@@ -262,14 +263,14 @@ describe('UserInteractionInstrumentation', () => {
         called = true;
       };
       fakeInteraction(callback, btn);
-      sandbox.clock.tick(1000);
+      sandbox.clock.next();
       originalSetTimeout(() => {
         assert.equal(called, false, 'callback should not be called');
         done();
       });
     });
 
-    it('should handle 3 overlapping interactions', done => {
+    it('should handle 3 overlapping interactions', () => {
       const btn1 = document.createElement('button');
       btn1.setAttribute('id', 'btn1');
       const btn2 = document.createElement('button');
@@ -278,52 +279,51 @@ describe('UserInteractionInstrumentation', () => {
       btn3.setAttribute('id', 'btn3');
       fakeInteraction(() => {
         getData(FILE_URL, () => {
-          sandbox.clock.tick(10);
+          sandbox.clock.tick(1);
         }).then(() => {});
       }, btn1);
+      sandbox.clock.next(); // flush macro task
       fakeInteraction(() => {
         getData(FILE_URL, () => {
-          sandbox.clock.tick(10);
+          sandbox.clock.tick(1);
         }).then(() => {});
       }, btn2);
+      sandbox.clock.next(); // flush macro task
       fakeInteraction(() => {
         getData(FILE_URL, () => {
-          sandbox.clock.tick(10);
+          sandbox.clock.tick(1);
         }).then(() => {});
       }, btn3);
-      sandbox.clock.tick(1000);
-      originalSetTimeout(() => {
-        assert.equal(exportSpy.args.length, 6, 'should export 6 spans');
 
-        const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
-        const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
-        const span3: tracing.ReadableSpan = exportSpy.args[2][0][0];
-        const span4: tracing.ReadableSpan = exportSpy.args[3][0][0];
-        const span5: tracing.ReadableSpan = exportSpy.args[4][0][0];
-        const span6: tracing.ReadableSpan = exportSpy.args[5][0][0];
+      sandbox.clock.runAll();
+      assert.strictEqual(exportSpy.args.length, 6, 'should export 6 spans');
 
-        assertClickSpan(span1, 'btn1');
-        assertClickSpan(span2, 'btn2');
-        assertClickSpan(span3, 'btn3');
+      const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
+      const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
+      const span3: tracing.ReadableSpan = exportSpy.args[2][0][0];
+      const span4: tracing.ReadableSpan = exportSpy.args[3][0][0];
+      const span5: tracing.ReadableSpan = exportSpy.args[4][0][0];
+      const span6: tracing.ReadableSpan = exportSpy.args[5][0][0];
 
-        assert.strictEqual(
-          span1.spanContext().spanId,
-          span4.parentSpanId,
-          'span4 has wrong parent'
-        );
-        assert.strictEqual(
-          span2.spanContext().spanId,
-          span5.parentSpanId,
-          'span5 has wrong parent'
-        );
-        assert.strictEqual(
-          span3.spanContext().spanId,
-          span6.parentSpanId,
-          'span6 has wrong parent'
-        );
+      assertClickSpan(span1, 'btn1');
+      assertClickSpan(span2, 'btn2');
+      assertClickSpan(span3, 'btn3');
 
-        done();
-      });
+      assert.strictEqual(
+        span1.spanContext().spanId,
+        span4.parentSpanId,
+        'span4 has wrong parent'
+      );
+      assert.strictEqual(
+        span2.spanContext().spanId,
+        span5.parentSpanId,
+        'span5 has wrong parent'
+      );
+      assert.strictEqual(
+        span3.spanContext().spanId,
+        span6.parentSpanId,
+        'span6 has wrong parent'
+      );
     });
 
     it('should handle interactions listened on document - react < 17', done => {
@@ -353,6 +353,7 @@ describe('UserInteractionInstrumentation', () => {
 
       try {
         btn1.click();
+        sandbox.clock.next(); // flush macro task
         btn2.click();
       } finally {
         // remove added listener so we don't pollute other tests
@@ -413,6 +414,7 @@ describe('UserInteractionInstrumentation', () => {
       });
 
       btn1.click();
+      sandbox.clock.next(); // flush macro tasks
       btn2.click();
 
       sandbox.clock.tick(1000);
@@ -440,6 +442,49 @@ describe('UserInteractionInstrumentation', () => {
 
         done();
       });
+    });
+
+    it('should create one span for when several listeners are attached to same target', () => {
+      const btn1 = document.createElement('button');
+      btn1.setAttribute('id', 'btn1');
+      document.body.appendChild(btn1);
+
+      const listener = (event: MouseEvent) => {
+        switch (event.target) {
+          case btn1:
+            getData(FILE_URL, () => {
+              sandbox.clock.tick(10);
+            }).then(() => {});
+            break;
+        }
+      };
+      const listenerOne = (event: MouseEvent) => listener(event);
+      const listenerTwo = (event: MouseEvent) => listener(event);
+
+      document.addEventListener('click', listenerOne, { once: true });
+      document.addEventListener('click', listenerTwo, { once: true });
+
+      btn1.click();
+
+      sandbox.clock.runAll();
+      assert.strictEqual(exportSpy.args.length, 3, 'should export 3 spans');
+
+      const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
+      const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
+      const span3: tracing.ReadableSpan = exportSpy.args[2][0][0];
+
+      assertClickSpan(span1, 'btn1');
+
+      assert.strictEqual(
+        span1.spanContext().spanId,
+        span2.parentSpanId,
+        'span2 has wrong parent'
+      );
+      assert.strictEqual(
+        span1.spanContext().spanId,
+        span3.parentSpanId,
+        'span3 has wrong parent'
+      );
     });
 
     it('should handle unpatch', () => {
