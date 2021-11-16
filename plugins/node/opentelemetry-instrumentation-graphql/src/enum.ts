@@ -53,3 +53,20 @@ export enum SpanNames {
   SCHEMA_VALIDATE = 'graphql.validateSchema',
   SCHEMA_PARSE = 'graphql.parseSchema',
 }
+
+export const createResolveSpanName = (fieldName: string): string => {
+  return `${SpanNames.RESOLVE}.${fieldName}`;
+};
+
+export const createExecuteSpanName = (
+  operationType?: string,
+  operationName?: string
+): string => {
+  if (operationType) {
+    return `${SpanNames.EXECUTE}.${operationType}`;
+  }
+  if (operationType && operationName) {
+    return `${SpanNames.EXECUTE}.${operationType}.${operationName}`;
+  }
+  return `${SpanNames.EXECUTE}`;
+};

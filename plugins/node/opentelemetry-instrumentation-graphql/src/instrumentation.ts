@@ -25,7 +25,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLFieldResolver } from 'graphql/type/definition';
-import { SpanNames } from './enum';
+import { createExecuteSpanName, SpanNames } from './enum';
 import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL } from './symbols';
 
@@ -39,7 +39,6 @@ import {
   GraphQLInstrumentationParsedConfig,
   OtelExecutionArgs,
   ObjectWithGraphQLData,
-  OPERATION_NOT_SUPPORTED,
   Maybe,
 } from './types';
 import {
@@ -390,29 +389,52 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     });
   }
 
+  private getOperationType(
+    operation: graphqlTypes.DefinitionNode | undefined
+  ): string | null {
+    if (operation && operation.kind == 'OperationDefinition') {
+      return operation.operation;
+    }
+
+    return null;
+  }
+
+  private getOperationName(
+    operation: graphqlTypes.DefinitionNode | undefined,
+    processedArgs: graphqlTypes.ExecutionArgs
+  ): string | null {
+    if (operation && operation.kind == 'OperationDefinition') {
+      if (operation.name) {
+        return operation.name.value;
+      }
+    }
+    if (processedArgs.operationName) {
+      return processedArgs.operationName;
+    }
+    return null;
+  }
+
   private _createExecuteSpan(
     operation: graphqlTypes.DefinitionNode | undefined,
     processedArgs: graphqlTypes.ExecutionArgs
   ): api.Span {
     const config = this._getConfig();
 
-    const span = this.tracer.startSpan(SpanNames.EXECUTE, {});
-    if (operation) {
-      const name = (operation as graphqlTypes.OperationDefinitionNode)
-        .operation;
-      if (name) {
-        span.setAttribute(AttributeNames.OPERATION, name);
+    const operationType = this.getOperationType(operation);
+    const operationName = this.getOperationName(operation, processedArgs);
+
+    const span = this.tracer.startSpan(createExecuteSpanName());
+
+    if (operationType) {
+      span.setAttribute(AttributeNames.OPERATION_TYPE, operationType);
+      span.updateName(createExecuteSpanName(operationType));
+    }
+
+    if (operationName) {
+      span.setAttribute(AttributeNames.OPERATION_NAME, operationName);
+      if (operationType) {
+        span.updateName(createExecuteSpanName(operationType, operationName));
       }
-    } else {
-      let operationName = ' ';
-      if (processedArgs.operationName) {
-        operationName = ` "${processedArgs.operationName}" `;
-      }
-      operationName = OPERATION_NOT_SUPPORTED.replace(
-        '$operationName$',
-        operationName
-      );
-      span.setAttribute(AttributeNames.OPERATION, operationName);
     }
 
     if (processedArgs.document?.loc) {

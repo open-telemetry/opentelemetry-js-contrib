@@ -24,13 +24,13 @@ import { Span } from '@opentelemetry/api';
 import * as assert from 'assert';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLInstrumentation } from '../src';
-import { SpanNames } from '../src/enum';
+import { createExecuteSpanName, SpanNames } from '../src/enum';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import {
   GraphQLInstrumentationConfig,
   GraphQLInstrumentationExecutionResponseHook,
 } from '../src/types';
-import { assertResolveSpan } from './helper';
+import { assertExecuteSpan, assertResolveSpan } from './helper';
 
 const defaultConfig: GraphQLInstrumentationConfig = {};
 const graphQLInstrumentation = new GraphQLInstrumentation(defaultConfig);
@@ -145,21 +145,16 @@ describe('graphql', () => {
       it('should instrument execute', () => {
         const executeSpan = spans[2];
 
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.SOURCE],
+        assertExecuteSpan(
+          executeSpan,
           '\n' +
             '  query {\n' +
             '    books {\n' +
             '      name\n' +
             '    }\n' +
-            '  }\n'
-        );
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+            '  }\n',
           'query'
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
       it('should instrument resolvers', () => {
@@ -247,21 +242,16 @@ describe('graphql', () => {
       it('should instrument execute', () => {
         const executeSpan = spans[2];
 
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.SOURCE],
+        assertExecuteSpan(
+          executeSpan,
           '\n' +
             '  query {\n' +
             '    book(id: *) {\n' +
             '      name\n' +
             '    }\n' +
-            '  }\n'
-        );
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+            '  }\n',
           'query'
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
       it('should instrument resolvers', () => {
@@ -333,25 +323,21 @@ describe('graphql', () => {
       it('should instrument execute', () => {
         const executeSpan = spans[2];
 
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.SOURCE],
+        assertExecuteSpan(
+          executeSpan,
           '\n' +
             '  query Query1 ($id: Int!) {\n' +
             '    book(id: $id) {\n' +
             '      name\n' +
             '    }\n' +
-            '  }\n'
-        );
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
-          'query'
+            '  }\n',
+          'query',
+          'Query1'
         );
         assert.deepStrictEqual(
           executeSpan.attributes[`${AttributeNames.VARIABLES}id`],
           undefined
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
       it('should instrument resolvers', () => {
@@ -425,21 +411,16 @@ describe('graphql', () => {
       it('should instrument execute', () => {
         const executeSpan = spans[2];
 
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.SOURCE],
+        assertExecuteSpan(
+          executeSpan,
           '\n' +
             '  query {\n' +
             '    books {\n' +
             '      name\n' +
             '    }\n' +
-            '  }\n'
-        );
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+            '  }\n',
           'query'
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
     });
   });
@@ -489,21 +470,16 @@ describe('graphql', () => {
       it('should instrument execute', () => {
         const executeSpan = spans[2];
 
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.SOURCE],
+        assertExecuteSpan(
+          executeSpan,
           '\n' +
             '  query {\n' +
             '    books {\n' +
             '      name\n' +
             '    }\n' +
-            '  }\n'
-        );
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+            '  }\n',
           'query'
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
     });
 
@@ -576,21 +552,16 @@ describe('graphql', () => {
       it('should instrument execute', () => {
         const executeSpan = spans[2];
 
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.SOURCE],
+        assertExecuteSpan(
+          executeSpan,
           '\n' +
             '  query {\n' +
             '    book(id: 0) {\n' +
             '      name\n' +
             '    }\n' +
-            '  }\n'
-        );
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+            '  }\n',
           'query'
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
       it('should instrument resolvers', () => {
@@ -665,8 +636,8 @@ describe('graphql', () => {
       it('should instrument execute', () => {
         const executeSpan = spans[2];
 
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.SOURCE],
+        assertExecuteSpan(
+          executeSpan,
           '\n' +
             '  mutation {\n' +
             '    addBook(\n' +
@@ -675,14 +646,9 @@ describe('graphql', () => {
             '    ) {\n' +
             '      id\n' +
             '    }\n' +
-            '  }\n'
-        );
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+            '  }\n',
           'mutation'
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
       it('should instrument resolvers', () => {
@@ -754,25 +720,21 @@ describe('graphql', () => {
       it('should instrument execute', () => {
         const executeSpan = spans[2];
 
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.SOURCE],
+        assertExecuteSpan(
+          executeSpan,
           '\n' +
             '  query Query1 ($id: Int!) {\n' +
             '    book(id: $id) {\n' +
             '      name\n' +
             '    }\n' +
-            '  }\n'
-        );
-        assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
-          'query'
+            '  }\n',
+          'query',
+          'Query1'
         );
         assert.deepStrictEqual(
           executeSpan.attributes[`${AttributeNames.VARIABLES}id`],
           2
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
       it('should instrument resolvers', () => {
@@ -849,8 +811,8 @@ describe('graphql', () => {
     it('should instrument execute', () => {
       const executeSpan = spans[2];
 
-      assert.deepStrictEqual(
-        executeSpan.attributes[AttributeNames.SOURCE],
+      assertExecuteSpan(
+        executeSpan,
         '\n' +
           '  mutation {\n' +
           '    addBook(\n' +
@@ -859,14 +821,9 @@ describe('graphql', () => {
           '    ) {\n' +
           '      id\n' +
           '    }\n' +
-          '  }\n'
-      );
-      assert.deepStrictEqual(
-        executeSpan.attributes[AttributeNames.OPERATION],
+          '  }\n',
         'mutation'
       );
-      assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-      assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
     });
 
     it('should instrument resolvers', () => {
@@ -1000,7 +957,7 @@ describe('graphql', () => {
 
       it('should attach response hook data to the resulting spans', () => {
         const querySpan = spans.find(
-          span => span.attributes['graphql.operation.name'] == 'query'
+          span => span.attributes['graphql.operation.type'] == 'query'
         );
         const instrumentationResult = querySpan?.attributes[dataAttributeName];
         assert.deepStrictEqual(
@@ -1094,21 +1051,17 @@ describe('graphql', () => {
     it('should instrument execute', () => {
       const executeSpan = spans[2];
 
-      assert.deepStrictEqual(
-        executeSpan.attributes[AttributeNames.SOURCE],
+      assertExecuteSpan(
+        executeSpan,
         '\n' +
           '  query {\n' +
           '    book(id: *) {\n' +
           '      name\n' +
           '    }\n' +
-          '  }\n'
+          '  }\n',
+        undefined,
+        'foo'
       );
-      assert.deepStrictEqual(
-        executeSpan.attributes[AttributeNames.OPERATION],
-        'Operation "foo" not supported'
-      );
-      assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
-      assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
     });
   });
 });

@@ -17,7 +17,12 @@
 import type * as graphqlTypes from 'graphql';
 import * as api from '@opentelemetry/api';
 import { GraphQLObjectType } from 'graphql/type/definition';
-import { AllowedOperationTypes, SpanNames, TokenKind } from './enum';
+import {
+  AllowedOperationTypes,
+  createResolveSpanName,
+  SpanNames,
+  TokenKind,
+} from './enum';
 import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 import {
@@ -120,7 +125,7 @@ function createResolverSpan(
   };
 
   const span = tracer.startSpan(
-    SpanNames.RESOLVE,
+    createResolveSpanName(info.fieldName),
     {
       attributes,
     },

@@ -26,9 +26,6 @@ import {
 import { GraphQLSchema } from 'graphql/type/schema';
 import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 
-export const OPERATION_NOT_SUPPORTED =
-  'Operation$operationName$not' + ' supported';
-
 export interface GraphQLInstrumentationExecutionResponseHook {
   (span: api.Span, data: graphqlTypes.ExecutionResult): void;
 }
