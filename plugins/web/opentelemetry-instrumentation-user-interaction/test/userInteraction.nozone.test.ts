@@ -750,7 +750,7 @@ describe('UserInteractionInstrumentation', () => {
          *   ReferenceError: EventTarget is not defined
          */
 
-        fakeInteraction();
+        fakeClickInteraction();
         assert.equal(exportSpy.args.length, 1, 'should export one span');
         const spanClick = exportSpy.args[0][0][0];
         assertClickSpan(spanClick);
