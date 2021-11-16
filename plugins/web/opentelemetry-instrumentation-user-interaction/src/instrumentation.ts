@@ -466,7 +466,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         this: Zone,
         task: AsyncTask
       ) {
-        let currentZone = Zone.current;
+        const currentZone = Zone.current;
         const currentSpan = plugin._getCurrentSpan(currentZone);
 
         if (currentSpan) {
@@ -510,9 +510,12 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             // create new span for interaction from current task zone
             span = plugin._createSpan(target, task.eventName);
             if (span) {
-              api.context.with(api.trace.setSpan(api.context.active(), span), function () {
-                plugin._currentEventZone = Zone.current;
-              });
+              api.context.with(
+                api.trace.setSpan(api.context.active(), span),
+                () => {
+                  plugin._currentEventZone = Zone.current;
+                }
+              );
             }
           }
 
