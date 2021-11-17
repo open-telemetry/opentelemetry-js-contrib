@@ -7,6 +7,8 @@
 
 This module provides a simple way to initialize multiple Node instrumentations.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash

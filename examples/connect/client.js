@@ -2,7 +2,8 @@
 
 // eslint-disable-next-line import/order
 const tracing = require('./tracing')('example-connect-client');
-const tracer = tracing.tracer;
+
+const { tracer } = tracing;
 const api = require('@opentelemetry/api');
 const axios = require('axios').default;
 

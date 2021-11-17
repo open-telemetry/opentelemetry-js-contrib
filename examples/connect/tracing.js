@@ -48,5 +48,5 @@ module.exports = (serviceName) => {
     connectInstrumentation,
     provider,
     tracer: opentelemetry.trace.getTracer('connect-example'),
-  }
+  };
 };

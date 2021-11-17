@@ -13,13 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-// TODO(legendecas): migrate to @opentelemetry/semantic-conventions when
-// these values are released.
-export enum CloudProviderValues {
-  ALIBABA_CLOUD = 'alibaba_cloud',
-}
-
-export enum CloudPlatformValues {
-  ALIBABA_CLOUD_ECS = 'alibaba_cloud_ecs',
-}
+export { default as pubsubPropagation } from './pubsub-propagation';

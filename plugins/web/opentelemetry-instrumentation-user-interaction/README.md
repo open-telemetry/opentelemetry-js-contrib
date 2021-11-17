@@ -11,6 +11,8 @@ With [zone-js] and ZoneContextManager it will fully support the async operations
 If you use Angular you already have the [zone-js]. It will be the same if you use [@opentelemetry/context-zone].
 Without [zone-js] it will still work but with limited support.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
