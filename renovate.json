@@ -21,5 +21,6 @@
   "schedule": [
     "before 3am on Friday"
   ],
-  "labels": ["dependencies"]
+  "labels": ["dependencies"],
+  "semanticCommitType": "feat"
 }
