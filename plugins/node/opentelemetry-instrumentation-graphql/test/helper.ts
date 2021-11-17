@@ -16,7 +16,7 @@
 
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { createExecuteSpanName, createResolveSpanName } from '../src/enum';
+import { createExecuteSpanName, createResolveSpanName } from '../src/utils';
 import { AttributeNames } from '../src/enums/AttributeNames';
 
 export function assertResolveSpan(
@@ -46,10 +46,7 @@ export function assertExecuteSpan(
   parentSpanId?: string
 ) {
   const attrs = span.attributes;
-  assert.deepStrictEqual(
-    span.name,
-    createExecuteSpanName(operationType, operationName)
-  );
+  assert.deepStrictEqual(span.name, createExecuteSpanName(operationType));
   assert.deepStrictEqual(attrs[AttributeNames.SOURCE], source);
   assert.deepStrictEqual(attrs[AttributeNames.OPERATION_NAME], operationName);
   assert.deepStrictEqual(attrs[AttributeNames.OPERATION_TYPE], operationType);

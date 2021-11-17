@@ -24,7 +24,7 @@ import { Span } from '@opentelemetry/api';
 import * as assert from 'assert';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLInstrumentation } from '../src';
-import { createExecuteSpanName, SpanNames } from '../src/enum';
+import { SpanNames } from '../src/enum';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import {
   GraphQLInstrumentationConfig,

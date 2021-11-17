@@ -25,7 +25,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLFieldResolver } from 'graphql/type/definition';
-import { createExecuteSpanName, SpanNames } from './enum';
+import { SpanNames } from './enum';
 import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL } from './symbols';
 
@@ -44,6 +44,7 @@ import {
 import {
   addInputVariableAttributes,
   addSpanSource,
+  createExecuteSpanName,
   endSpan,
   getOperation,
   wrapFieldResolver,
@@ -391,18 +392,18 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
   private getOperationType(
     operation: graphqlTypes.DefinitionNode | undefined
-  ): string | null {
+  ): string | undefined {
     if (operation && operation.kind == 'OperationDefinition') {
       return operation.operation;
     }
 
-    return null;
+    return undefined;
   }
 
   private getOperationName(
     operation: graphqlTypes.DefinitionNode | undefined,
     processedArgs: graphqlTypes.ExecutionArgs
-  ): string | null {
+  ): string | undefined {
     if (operation && operation.kind == 'OperationDefinition') {
       if (operation.name) {
         return operation.name.value;
@@ -411,7 +412,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     if (processedArgs.operationName) {
       return processedArgs.operationName;
     }
-    return null;
+    return undefined;
   }
 
   private _createExecuteSpan(
@@ -423,18 +424,14 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     const operationType = this.getOperationType(operation);
     const operationName = this.getOperationName(operation, processedArgs);
 
-    const span = this.tracer.startSpan(createExecuteSpanName());
+    const span = this.tracer.startSpan(createExecuteSpanName(operationType));
 
     if (operationType) {
       span.setAttribute(AttributeNames.OPERATION_TYPE, operationType);
-      span.updateName(createExecuteSpanName(operationType));
     }
 
     if (operationName) {
       span.setAttribute(AttributeNames.OPERATION_NAME, operationName);
-      if (operationType) {
-        span.updateName(createExecuteSpanName(operationType, operationName));
-      }
     }
 
     if (processedArgs.document?.loc) {
