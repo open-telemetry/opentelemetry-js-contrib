@@ -1,0 +1,6 @@
+pino:
+  versions: ">=5.14.0 < 8"
+  commands: npm run test
+
+  # Fix missing `contrib-test-utils` package
+  pretest: npm run --prefix ../../../ lerna:link
