@@ -440,27 +440,19 @@ describe('UserInteractionInstrumentation', () => {
       });
     });
 
-    it('should create one span for when several listeners are attached to same target', () => {
-      const btn1 = document.createElement('button');
-      btn1.setAttribute('id', 'btn1');
-      document.body.appendChild(btn1);
+    it('should create one span for a single interaction when several listeners are attached to same target', () => {
+      const btn = createButton();
 
-      const listener = (event: MouseEvent) => {
-        switch (event.target) {
-          case btn1:
-            getData(FILE_URL, () => {
-              sandbox.clock.tick(10);
-            }).then(() => {});
-            break;
-        }
+      const listener = () => {
+        getData(FILE_URL, () => {
+          sandbox.clock.tick(10);
+        }).then(() => {});
       };
-      const listenerOne = (event: MouseEvent) => listener(event);
-      const listenerTwo = (event: MouseEvent) => listener(event);
 
-      document.addEventListener('click', listenerOne, { once: true });
-      document.addEventListener('click', listenerTwo, { once: true });
+      btn.addEventListener('click', () => listener());
+      btn.addEventListener('click', () => listener());
 
-      btn1.click();
+      btn.click();
 
       sandbox.clock.runAll();
       assert.strictEqual(exportSpy.args.length, 3, 'should export 3 spans');
@@ -469,7 +461,7 @@ describe('UserInteractionInstrumentation', () => {
       const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
       const span3: tracing.ReadableSpan = exportSpy.args[2][0][0];
 
-      assertClickSpan(span1, 'btn1');
+      assertClickSpan(span1);
 
       assert.strictEqual(
         span1.spanContext().spanId,
@@ -481,6 +473,45 @@ describe('UserInteractionInstrumentation', () => {
         span3.parentSpanId,
         'span3 has wrong parent'
       );
+    });
+
+    it('should group interactions on the same target if click occurs within 50ms window', () => {
+      const btn = createButton();
+
+      btn.addEventListener('click', () => {
+        originalSetTimeout(() => {
+          // long running handler (more than 50ms) on btn target
+        }, 1000);
+      });
+
+      btn.click();
+      btn.click();
+      sandbox.clock.runAll();
+      assert.strictEqual(exportSpy.args.length, 1, 'should export 1 span when clicks occur on same target less than 50ms apart');
+
+      const span: tracing.ReadableSpan = exportSpy.args[0][0][0];
+      assertClickSpan(span);
+    });
+
+    it('should not group interactions on the same target if click occurs after 50ms window', () => {
+      const btn = createButton();
+
+      btn.addEventListener('click', () => {
+        originalSetTimeout(() => {
+          // long running handler (more than 50ms) on btn target
+        }, 1000);
+      });
+
+      btn.click();
+      sandbox.clock.tick(50);
+      btn.click();
+      sandbox.clock.runAll();
+      assert.strictEqual(exportSpy.args.length, 2, 'should export 2 spans when clicks occur on same target more than 50ms apart');
+
+      const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
+      const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
+      assertClickSpan(span1);
+      assertClickSpan(span2);
     });
 
     it('should handle unpatch', () => {
