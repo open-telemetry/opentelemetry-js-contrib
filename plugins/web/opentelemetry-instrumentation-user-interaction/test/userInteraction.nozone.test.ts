@@ -15,7 +15,7 @@
  */
 const originalSetTimeout = window.setTimeout;
 
-import { trace } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { isWrapped } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
@@ -92,6 +92,7 @@ describe('UserInteractionInstrumentation', () => {
       requests = [];
       sandbox.restore();
       exportSpy.restore();
+      context.disable();
       trace.disable();
     });
 
