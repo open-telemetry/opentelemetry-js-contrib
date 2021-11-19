@@ -107,7 +107,7 @@ describe('UserInteractionInstrumentation', () => {
     it('should handle task without async operation', () => {
       fakeInteraction();
       sandbox.clock.next();
-      assert.equal(exportSpy.args.length, 1, 'should export one span');
+      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
       const spanClick = exportSpy.args[0][0][0];
       assertClickSpan(spanClick);
     });
@@ -117,7 +117,7 @@ describe('UserInteractionInstrumentation', () => {
         originalSetTimeout(() => {
           const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
 
-          assert.equal(exportSpy.args.length, 1, 'should export one span');
+          assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
           assertClickSpan(spanClick);
           done();
         });
@@ -129,7 +129,7 @@ describe('UserInteractionInstrumentation', () => {
       fakeInteraction(() => {
         const interval = setInterval(() => {}, 1);
         originalSetTimeout(() => {
-          assert.equal(
+          assert.strictEqual(
             exportSpy.args.length,
             1,
             'should not export more then one span'
@@ -156,25 +156,25 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1000);
         }).then(() => {
           originalSetTimeout(() => {
-            assert.equal(exportSpy.args.length, 2, 'should export 2 spans');
+            assert.strictEqual(exportSpy.args.length, 2, 'should export 2 spans');
 
             const spanXhr: tracing.ReadableSpan = exportSpy.args[0][0][0];
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
-            assert.equal(
+            assert.strictEqual(
               spanXhr.parentSpanId,
               spanClick.spanContext().spanId,
               'xhr span has wrong parent'
             );
-            assert.equal(
+            assert.strictEqual(
               spanClick.name,
               `Navigation: ${location.pathname}#foo=bar1`
             );
 
             const attributes = spanClick.attributes;
-            assert.equal(attributes.component, 'user-interaction');
-            assert.equal(attributes.event_type, 'click');
-            assert.equal(attributes.target_element, 'BUTTON');
-            assert.equal(attributes.target_xpath, '//*[@id="testBtn"]');
+            assert.strictEqual(attributes.component, 'user-interaction');
+            assert.strictEqual(attributes.event_type, 'click');
+            assert.strictEqual(attributes.target_element, 'BUTTON');
+            assert.strictEqual(attributes.target_xpath, '//*[@id="testBtn"]');
 
             done();
           });
@@ -189,11 +189,11 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1000);
         }).then(() => {
           originalSetTimeout(() => {
-            assert.equal(exportSpy.args.length, 2, 'should export 2 spans');
+            assert.strictEqual(exportSpy.args.length, 2, 'should export 2 spans');
 
             const spanXhr: tracing.ReadableSpan = exportSpy.args[0][0][0];
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
-            assert.equal(
+            assert.strictEqual(
               spanXhr.parentSpanId,
               spanClick.spanContext().spanId,
               'xhr span has wrong parent'
@@ -201,7 +201,7 @@ describe('UserInteractionInstrumentation', () => {
             assertClickSpan(spanClick);
 
             const attributes = spanXhr.attributes;
-            assert.equal(
+            assert.strictEqual(
               attributes['http.url'],
               'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
             );
@@ -237,7 +237,7 @@ describe('UserInteractionInstrumentation', () => {
         );
         assert.ok(
           Zone.current.parent?.parent === rootZone,
-          'Parent of Parent Zone for 2nd listener click is wrong'
+          'Parent of parent Zone for 2nd listener click is wrong'
         );
       });
 
@@ -265,7 +265,7 @@ describe('UserInteractionInstrumentation', () => {
       fakeInteraction(callback, btn);
       sandbox.clock.next();
       originalSetTimeout(() => {
-        assert.equal(called, false, 'callback should not be called');
+        assert.strictEqual(called, false, 'callback should not be called');
         done();
       });
     });
@@ -282,13 +282,11 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1);
         }).then(() => {});
       }, btn1);
-      sandbox.clock.next(); // flush macro task
       fakeInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(1);
         }).then(() => {});
       }, btn2);
-      sandbox.clock.next(); // flush macro task
       fakeInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(1);
@@ -353,7 +351,6 @@ describe('UserInteractionInstrumentation', () => {
 
       try {
         btn1.click();
-        sandbox.clock.next(); // flush macro task
         btn2.click();
       } finally {
         // remove added listener so we don't pollute other tests
@@ -362,7 +359,7 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
-        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+        assert.strictEqual(exportSpy.args.length, 4, 'should export 4 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
         const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
@@ -414,12 +411,11 @@ describe('UserInteractionInstrumentation', () => {
       });
 
       btn1.click();
-      sandbox.clock.next(); // flush macro tasks
       btn2.click();
 
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
-        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+        assert.strictEqual(exportSpy.args.length, 4, 'should export 4 spans');
 
         const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
         const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
