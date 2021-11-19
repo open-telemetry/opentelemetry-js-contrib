@@ -41,7 +41,9 @@ export type RunTaskFunction = (
 export interface SpanData {
   hrTimeLastTimeout?: types.HrTime;
   taskCount: number;
-  completionTimeout?: number;
+  interactionTarget?: EventTarget;
+  interactionCompleteTimeout?: number;
+  taskCompleteTimeout?: number;
 }
 
 /**
