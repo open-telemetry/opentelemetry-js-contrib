@@ -7,7 +7,7 @@ client. Propagation through `grpc-trace-bin` header.
 
 Note: traceId **901c68f681e5a85a125b3dad82e51498**
 
-```
+```sh
 $ npm run client:otel:binprop
 
 > grpc-census-prop-example@0.9.0 client:otel:binprop /opentelemetry-js-contrib/examples/grpc-census-prop
@@ -50,7 +50,7 @@ Completed.
 
 Note: traceId **901c68f681e5a85a125b3dad82e51498**
 
-```
+```sh
 $ npm run server:census
 
 > grpc-census-prop-example@0.9.0 server:census /opentelemetry-js-contrib/examples/grpc-census-prop
@@ -93,6 +93,6 @@ Metadata {
   flags: 0 }
 traceid: 901c68f681e5a85a125b3dad82e51498
 RootSpan: {traceId: 901c68f681e5a85a125b3dad82e51498, spanId: 63028b5ce96caec6, name: grpc.rpc.Fetch/Capitalize }
-	ChildSpans:
-		{spanId: d70a03f18955e762, name: tutorials.FetchImpl.capitalize}
+ ChildSpans:
+  {spanId: d70a03f18955e762, name: tutorials.FetchImpl.capitalize}
 ```

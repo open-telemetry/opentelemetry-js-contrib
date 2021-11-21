@@ -48,7 +48,7 @@ registerInstrumentations({
 `<ControllerName>.<memberName>` | `request_context` | Traces the whole request context. | `http.*`, `nestjs.callback`
 `<memberName>` | `handler` | Traces the work of a specific controller member function. | `nestjs.callback`
 
-#### Attributes
+### Attributes
 
 | Name | Description
 | ---- | ----

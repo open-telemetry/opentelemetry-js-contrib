@@ -14,13 +14,13 @@ enabling compatibility with AWS X-Ray.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
-### Installation
+## Installation
 
 `
 npm install --save @opentelemetry/id-generator-aws-xray
 `
 
-### Usage
+## Usage
 
 In the [global tracer configuration file](https://github.com/open-telemetry/opentelemetry-js/blob/master/getting-started/README.md#initialize-a-global-tracer),
 configure the following:
@@ -36,7 +36,7 @@ const tracerConfig = {
 const tracerProvider = new NodeTracerProvider(tracerConfig);
 ```
 
-### Trace ID Details
+## Trace ID Details
 
 Example trace ID format: 58406520a006649127e371903a2de979
 
@@ -51,15 +51,15 @@ A trace ID consists of two parts:
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
-### License
+## License
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
-[discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
-[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
-[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[dependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=packages%2Fopentelemetry-id-generator-aws-xray
-[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-id-generator-aws-xray
-[devDependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=packages%2Fopentelemetry-id-generator-aws-xray&type=dev
-[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-id-generator-aws-xray&type=dev
-[npm-url]: https://www.npmjs.com/package/@opentelemetry/id-generator-aws-xray
-[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fid-generator-aws-xray.svg
+[discussions-url]: <https://github.com/open-telemetry/opentelemetry-js/discussions>
+[license-url]: <https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE>
+[license-image]: <https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat>
+[dependencies-image]: <https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=packages%2Fopentelemetry-id-generator-aws-xray>
+[dependencies-url]: <https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-id-generator-aws-xray>
+[devDependencies-image]: <https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=packages%2Fopentelemetry-id-generator-aws-xray&type=dev>
+[devDependencies-url]: <https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=packages%2Fopentelemetry-id-generator-aws-xray&type=dev>
+[npm-url]: <https://www.npmjs.com/package/@opentelemetry/id-generator-aws-xray>
+[npm-img]: <https://badge.fury.io/js/%40opentelemetry%2Fid-generator-aws-xray.svg>
