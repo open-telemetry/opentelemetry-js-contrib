@@ -14,6 +14,10 @@ jobs:
           - container: "node:8"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-aws-sdk
+              --ignore @opentelemetry/instrumentation-pino
+          - container: "node:10"
+            lerna-extra-args: >-
+              --ignore @opentelemetry/instrumentation-pino
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.container }}
