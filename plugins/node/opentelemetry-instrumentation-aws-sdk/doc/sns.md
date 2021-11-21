@@ -12,10 +12,11 @@ The following methods are automatically enhanced:
 - OpenTelemetry trace context is injected as SNS MessageAttributes, so the service receiving the message can link cascading spans to the trace which created the message.
 
 ### Consumers
-There are many potential consumers: SQS, Lambda, HTTP/S, Email, SMS, mobile notifications. each one of them will received the propagated context in its own way. 
 
+There are many potential consumers: SQS, Lambda, HTTP/S, Email, SMS, mobile notifications. each one of them will received the propagated context in its own way.
 
 ## Integration with SQS
+
 AWS provide two ways of integrating SNS and SQS, one sends the message "as is" and one being parsed, this is called raw message delivery.
 
 When it is turn off (by default) message attributes (sent in SNS) will appear in the payload of SQS, if it turned on the payload will be parsed before sent to SQS and the SNS attributes will be mapped to SQS Message attribute which allow this instrumentation to have propagated context works out-of-the-box.
