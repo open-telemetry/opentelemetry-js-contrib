@@ -98,7 +98,7 @@ const runCallbackTest = (
   testUtils.assertPropagation(pgSpan, parentSpan);
 };
 
-describe('pg-pool@2.x', () => {
+describe('pg-pool', () => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();

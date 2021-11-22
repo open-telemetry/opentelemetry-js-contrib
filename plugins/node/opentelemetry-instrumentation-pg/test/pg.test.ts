@@ -89,7 +89,7 @@ const runCallbackTest = (
   }
 };
 
-describe('pg@7.x', () => {
+describe('pg', () => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
