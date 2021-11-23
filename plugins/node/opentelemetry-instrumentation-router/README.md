@@ -17,8 +17,10 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 ```bash
 npm install --save @opentelemetry/instrumentation-router
 ```
+
 ### Supported Versions
- - `>=1.0.0`
+
+- `>=1.0.0`
 
 ## Usage
 
