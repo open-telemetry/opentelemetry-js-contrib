@@ -282,11 +282,13 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1);
         }).then(() => {});
       }, btn1);
+      sandbox.clock.next();
       fakeInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(1);
         }).then(() => {});
       }, btn2);
+      sandbox.clock.next();
       fakeInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(1);
@@ -351,6 +353,7 @@ describe('UserInteractionInstrumentation', () => {
 
       try {
         btn1.click();
+        sandbox.clock.next();
         btn2.click();
       } finally {
         // remove added listener so we don't pollute other tests
@@ -411,6 +414,7 @@ describe('UserInteractionInstrumentation', () => {
       });
 
       btn1.click();
+      sandbox.clock.next();
       btn2.click();
 
       sandbox.clock.tick(1000);
