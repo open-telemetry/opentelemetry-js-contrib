@@ -486,9 +486,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         applyArgs?: any
       ): Zone {
         const event =
-        Array.isArray(applyArgs) && applyArgs[0] instanceof Event
-        ? applyArgs[0]
-        : undefined;
+          Array.isArray(applyArgs) && applyArgs[0] instanceof Event
+            ? applyArgs[0]
+            : undefined;
 
         const target = plugin._allowEventType(task.eventName) && event?.target;
         let span: api.Span | undefined;
@@ -499,9 +499,12 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             span = plugin._createSpan(target, task.eventName);
 
             if (span) {
-              api.context.with(api.trace.setSpan(api.context.active(), span), () => {
-                plugin._currentInteractionZone = Zone.current;
-              });
+              api.context.with(
+                api.trace.setSpan(api.context.active(), span),
+                () => {
+                  plugin._currentInteractionZone = Zone.current;
+                }
+              );
 
               // Reset the current interaction zone after 50ms
               // This allows new clicks to create spans when the previous interaction is still not complete
@@ -570,7 +573,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * @param endTime
    * @private
    */
-  private _tryToEndSpan(span: api.Span, endTime?: api.HrTime) {
+  private _tryToEndSpan(span: api.Span) {
     if (!span) {
       return;
     }

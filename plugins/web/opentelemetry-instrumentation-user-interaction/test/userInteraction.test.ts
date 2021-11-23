@@ -117,7 +117,11 @@ describe('UserInteractionInstrumentation', () => {
         originalSetTimeout(() => {
           const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
 
-          assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+          assert.strictEqual(
+            exportSpy.args.length,
+            1,
+            'should export one span'
+          );
           assertClickSpan(spanClick);
           done();
         });
@@ -156,7 +160,11 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1000);
         }).then(() => {
           originalSetTimeout(() => {
-            assert.strictEqual(exportSpy.args.length, 2, 'should export 2 spans');
+            assert.strictEqual(
+              exportSpy.args.length,
+              2,
+              'should export 2 spans'
+            );
 
             const spanXhr: tracing.ReadableSpan = exportSpy.args[0][0][0];
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
@@ -189,7 +197,11 @@ describe('UserInteractionInstrumentation', () => {
           sandbox.clock.tick(1000);
         }).then(() => {
           originalSetTimeout(() => {
-            assert.strictEqual(exportSpy.args.length, 2, 'should export 2 spans');
+            assert.strictEqual(
+              exportSpy.args.length,
+              2,
+              'should export 2 spans'
+            );
 
             const spanXhr: tracing.ReadableSpan = exportSpy.args[0][0][0];
             const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
@@ -491,7 +503,11 @@ describe('UserInteractionInstrumentation', () => {
       btn.click();
       btn.click();
       sandbox.clock.runAll();
-      assert.strictEqual(exportSpy.args.length, 1, 'should export 1 span when clicks occur on same target less than 50ms apart');
+      assert.strictEqual(
+        exportSpy.args.length,
+        1,
+        'should export 1 span when clicks occur on same target less than 50ms apart'
+      );
 
       const span: tracing.ReadableSpan = exportSpy.args[0][0][0];
       assertClickSpan(span);
@@ -510,7 +526,11 @@ describe('UserInteractionInstrumentation', () => {
       sandbox.clock.tick(50);
       btn.click();
       sandbox.clock.runAll();
-      assert.strictEqual(exportSpy.args.length, 2, 'should export 2 spans when clicks occur on same target more than 50ms apart');
+      assert.strictEqual(
+        exportSpy.args.length,
+        2,
+        'should export 2 spans when clicks occur on same target more than 50ms apart'
+      );
 
       const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
       const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
