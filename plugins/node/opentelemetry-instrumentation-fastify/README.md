@@ -48,7 +48,6 @@ registerInstrumentations({
 
 See [examples/fastify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/fastify) for a short example.
 
-
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

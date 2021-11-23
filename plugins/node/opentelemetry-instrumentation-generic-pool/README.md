@@ -17,9 +17,10 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 ```bash
 npm install --save @opentelemetry/instrumentation-generic-pool
 ```
+
 ### Supported Versions
- 
- - `>=2.0.0`
+
+- `>=2.0.0`
 
 ## Usage
 
