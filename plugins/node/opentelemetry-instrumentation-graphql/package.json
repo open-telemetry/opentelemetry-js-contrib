@@ -61,7 +61,6 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.26.0",
-    "@types/graphql": "14.5.0"
+    "@opentelemetry/instrumentation": "^0.26.0"
   }
 }
