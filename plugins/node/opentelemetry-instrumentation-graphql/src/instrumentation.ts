@@ -393,7 +393,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   private getOperationType(
     operation: graphqlTypes.DefinitionNode | undefined
   ): string | undefined {
-    if (operation && operation.kind == 'OperationDefinition') {
+    if (operation?.kind === 'OperationDefinition') {
       return operation.operation;
     }
 
@@ -404,15 +404,13 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     operation: graphqlTypes.DefinitionNode | undefined,
     processedArgs: graphqlTypes.ExecutionArgs
   ): string | undefined {
-    if operation?.kind === 'OperationDefinition') {
+    if (operation?.kind === 'OperationDefinition') {
       if (operation.name) {
         return operation.name.value;
       }
     }
-    if (processedArgs.operationName) {
-      return processedArgs.operationName;
-    }
-    return undefined;
+
+    return processedArgs.operationName ?? undefined;
   }
 
   private _createExecuteSpan(
