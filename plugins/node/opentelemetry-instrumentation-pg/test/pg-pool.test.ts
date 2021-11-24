@@ -44,6 +44,10 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
+import { isSupported } from './utils';
+
+const pgVersion = require('pg/package.json').version;
+const nodeVersion = process.versions.node;
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -108,18 +112,28 @@ describe('pg-pool', () => {
   let contextManager: AsyncHooksContextManager;
   let instrumentation: PgInstrumentation;
   const provider = new BasicTracerProvider();
-  const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI:
-  // assumes local postgres db is already available
+
+  const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
   before(function () {
-    if (!shouldTest) {
+    const skipForUnsupported = process.env.IN_TAV && !isSupported(nodeVersion, pgVersion);
+    const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
     }
+
+    if (skipForUnsupported) {
+      console.error(`  pg - skipped - node@${nodeVersion} and pg@${pgVersion} are not compatible`);
+      skip();
+    }
+    if (!shouldTest) {
+      skip();
+    }
+
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (testPostgresLocally) {
       testUtils.startDocker('postgres');
