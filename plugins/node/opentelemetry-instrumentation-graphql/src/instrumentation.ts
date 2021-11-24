@@ -404,7 +404,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     operation: graphqlTypes.DefinitionNode | undefined,
     processedArgs: graphqlTypes.ExecutionArgs
   ): string | undefined {
-    if (operation && operation.kind == 'OperationDefinition') {
+    if operation?.kind === 'OperationDefinition') {
       if (operation.name) {
         return operation.name.value;
       }
