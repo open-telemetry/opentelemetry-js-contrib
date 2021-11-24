@@ -1,5 +1,14 @@
 # Changelog
 
+### [0.26.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.26.1...auto-instrumentations-node-v0.26.2) (2021-11-19)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-koa bumped from ^0.26.0 to ^0.27.0
+
 ### [0.26.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.26.0...auto-instrumentations-node-v0.26.1) (2021-11-12)
 
 
