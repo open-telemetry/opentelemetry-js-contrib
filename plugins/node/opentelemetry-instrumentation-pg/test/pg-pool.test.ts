@@ -118,16 +118,19 @@ describe('pg-pool', () => {
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
   before(function () {
-    const skipForUnsupported = process.env.IN_TAV && !isSupported(nodeVersion, pgVersion);
+    const skipForUnsupported =
+      process.env.IN_TAV && !isSupported(nodeVersion, pgVersion);
     const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
-    }
+    };
 
     if (skipForUnsupported) {
-      console.error(`  pg - skipped - node@${nodeVersion} and pg@${pgVersion} are not compatible`);
+      console.error(
+        `  pg - skipped - node@${nodeVersion} and pg@${pgVersion} are not compatible`
+      );
       skip();
     }
     if (!shouldTest) {
