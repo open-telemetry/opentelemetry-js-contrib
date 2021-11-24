@@ -43,9 +43,9 @@ export class SnsServiceExtension implements ServiceExtension {
       spanAttributes[SemanticAttributes.MESSAGING_DESTINATION] =
         this.extractDestinationName(TopicArn, TargetArn, PhoneNumber);
 
-      spanName = `${spanAttributes[SemanticAttributes.MESSAGING_DESTINATION]} ${
-        request.commandName
-      }`;
+      spanName = `${
+        spanAttributes[SemanticAttributes.MESSAGING_DESTINATION]
+      } send`;
     }
 
     return {
