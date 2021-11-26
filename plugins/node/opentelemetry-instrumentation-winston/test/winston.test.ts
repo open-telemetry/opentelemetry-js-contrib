@@ -25,7 +25,7 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
-import type { Winston3Logger } from '../src/types';
+import type { Winston2Logger, Winston3Logger } from '../src/types';
 import { WinstonInstrumentation } from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -37,7 +37,7 @@ context.setGlobalContextManager(new AsyncHooksContextManager());
 const kMessage = 'log-message';
 
 describe('WinstonInstrumentation', () => {
-  let logger: Winston3Logger;
+  let logger: Winston3Logger | Winston2Logger;
   let writeSpy: sinon.SinonSpy;
   let instrumentation: WinstonInstrumentation;
 
@@ -100,8 +100,14 @@ describe('WinstonInstrumentation', () => {
     beforeEach(initLogger);
 
     it('wraps write', () => {
-      // winston 3.x || winston 2.x
-      assert.ok(isWrapped(logger['write']) || isWrapped(logger['log']));
+      if ('write' in logger) {
+        // winston 3.x
+        assert.ok(isWrapped(logger['write']));
+      } else {
+        // winston 2.x
+        // winston 3.x also has "log", so the order for the checks has to be this
+        assert.ok(isWrapped(logger['log']));
+      }
     });
 
     it('injects span context to records', () => {
