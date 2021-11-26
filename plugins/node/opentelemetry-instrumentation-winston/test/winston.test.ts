@@ -46,13 +46,26 @@ describe('WinstonInstrumentation', () => {
     const stream = new Writable();
     stream._write = () => {};
     writeSpy = sinon.spy(stream, 'write');
-    logger = winston.createLogger({
-      transports: [
-        new winston.transports.Stream({
-          stream,
-        }),
-      ],
-    });
+
+    if (winston['createLogger']) {
+      // winston 3.x
+      logger = winston.createLogger({
+        transports: [
+          new winston.transports.Stream({
+            stream,
+          }),
+        ],
+      });
+    } else if (winston['Logger']) {
+      // winston 2.x
+      logger = new winston.Logger({
+        transports: [
+          new winston.transports.File({
+            stream,
+          }),
+        ]
+      });
+    }
   }
 
   function testInjection(span: Span) {
@@ -87,7 +100,8 @@ describe('WinstonInstrumentation', () => {
     beforeEach(initLogger);
 
     it('wraps write', () => {
-      assert.ok(isWrapped(logger['write']));
+      // winston 3.x || winston 2.x
+      assert.ok(isWrapped(logger['write']) || isWrapped(logger['log']));
     });
 
     it('injects span context to records', () => {
