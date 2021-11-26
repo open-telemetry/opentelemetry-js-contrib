@@ -245,13 +245,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       return currentProvider.forceFlush.bind(currentProvider);
     }
 
-    if (typeof currentProvider.getActiveSpanProcessor === 'function') {
-      const activeSpanProcessor = currentProvider.getActiveSpanProcessor();
-      if (typeof activeSpanProcessor.forceFlush === 'function') {
-        return activeSpanProcessor.forceFlush.bind(activeSpanProcessor);
-      }
-    }
-
     return undefined;
   }
 
