@@ -63,7 +63,7 @@ describe('WinstonInstrumentation', () => {
           new winston.transports.File({
             stream,
           }),
-        ]
+        ],
       });
     }
   }
