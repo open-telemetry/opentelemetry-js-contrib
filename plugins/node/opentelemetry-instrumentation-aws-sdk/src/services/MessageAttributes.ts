@@ -26,7 +26,7 @@ import type { SQS, SNS } from 'aws-sdk';
 export const MAX_MESSAGE_ATTRIBUTES = 10;
 class ContextSetter
   implements
-  TextMapSetter<SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap>
+    TextMapSetter<SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap>
 {
   set(
     carrier: SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap,
@@ -43,14 +43,14 @@ export const contextSetter = new ContextSetter();
 
 export interface AwsSdkContextObject {
   [key: string]: {
-    StringValue?: string,
-    Value?: string
-  }
+    StringValue?: string;
+    Value?: string;
+  };
 }
 
 class ContextGetter
   implements
-  TextMapGetter<SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap>
+    TextMapGetter<SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap>
 {
   keys(
     carrier: SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap
