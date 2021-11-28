@@ -43,6 +43,17 @@ registerInstrumentations({
 
 See [examples/koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/koa) for a short example using both Koa and @koa/router
 
+### Koa Instrumentation Options
+
+| Options | Type | Example | Description |
+| ------- | ---- | ------- | ----------- |
+| `ignoreLayersType`| `KoaLayerType[]` | `['middleware']` | Ignore layers of specified type. |
+
+`ignoreLayersType` accepts an array of `KoaLayerType` which can take the following string values:
+
+- `router`,
+- `middleware`.
+
 ## Koa Packages
 
 This package provides automatic tracing for middleware added using either the core [`Koa`](https://github.com/koajs/koa) package or the [`@koa/router`](https://github.com/koajs/router) package.

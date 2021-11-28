@@ -7,7 +7,7 @@ on client. Propagation through `grpc-trace-bin` header.
 
 Note: traceId **1565fbb4d6f042d8880bedb509bf6f2e**
 
-```
+```sh
 $ npm run client:census
 
 > grpc-census-prop-example@0.9.0 client:census /opentelemetry-js-contrib/examples/grpc-census-prop
@@ -18,8 +18,8 @@ Sleeping 5 seconds before shutdown to ensure all records are flushed.
 (node:14866) DeprecationWarning: grpc.load: Use the @grpc/proto-loader module with grpc.loadPackageDefinition instead
 <  OPENTELEMETRY
 RootSpan: {traceId: 1565fbb4d6f042d8880bedb509bf6f2e, spanId: a5ccb3c920a18ace, name: tutorialsClient.capitalize }
-	ChildSpans:
-		{spanId: c92c3b3f955cdce1, name: grpc.rpc.Fetch/Capitalize}
+ ChildSpans:
+  {spanId: c92c3b3f955cdce1, name: grpc.rpc.Fetch/Capitalize}
 Completed.
 ```
 
@@ -27,7 +27,7 @@ Completed.
 
 Note: traceId **1565fbb4d6f042d8880bedb509bf6f2e**
 
-```
+```sh
 $ npm run server:otel:binprop
 
 > grpc-census-prop-example@0.9.0 server:otel:binprop /opentelemetry-js-contrib/examples/grpc-census-prop

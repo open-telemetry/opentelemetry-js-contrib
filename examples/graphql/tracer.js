@@ -4,17 +4,19 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { GraphQLInstrumentation } = require('@opentelemetry/instrumentation-graphql');
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-otlp-http');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
+const { Resource } = require('@opentelemetry/resources');
+const { SemanticResourceAttributes }  = require('@opentelemetry/semantic-conventions');
 
-const exporter = new CollectorTraceExporter({
-  serviceName: 'basic-service',
+const provider = new NodeTracerProvider({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'graphql-service',
+  }),
 });
 
-const provider = new NodeTracerProvider();
-
-provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()));
 provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register();
 

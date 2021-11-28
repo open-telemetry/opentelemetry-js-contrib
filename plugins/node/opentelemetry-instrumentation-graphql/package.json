@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-graphql",
-  "version": "0.26.0",
+  "version": "0.26.1",
   "description": "OpenTelemetry @opentelemetry/instrumentation-graphql automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "1.0.2",
-    "@opentelemetry/sdk-trace-base": "1.0.0",
+    "@opentelemetry/sdk-trace-base": "1.0.1",
     "@types/mocha": "8.2.3",
     "@types/node": "14.17.9",
     "codecov": "3.8.3",
