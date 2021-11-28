@@ -56,7 +56,7 @@ class ContextGetter
     carrier: SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap,
     key: string
   ): undefined | string | string[] {
-    return carrier?.[key]?.StringValue;
+    return carrier?.[key]?.StringValue || carrier?.[key]?.Value;
   }
 }
 export const contextGetter = new ContextGetter();
