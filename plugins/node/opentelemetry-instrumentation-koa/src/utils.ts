@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { KoaContext, KoaMiddleware, KoaLayerType } from './types';
+import {
+  KoaContext,
+  KoaMiddleware,
+  KoaLayerType,
+  KoaInstrumentationConfig,
+} from './types';
 import { AttributeNames } from './enums/AttributeNames';
 import { SpanAttributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -45,4 +50,20 @@ export const getMiddlewareMetadata = (
       name: `middleware - ${layer.name}`,
     };
   }
+};
+
+/**
+ * Check whether the given request is ignored by configuration
+ * @param [list] List of ignore patterns
+ * @param [onException] callback for doing something when an exception has
+ *     occurred
+ */
+export const isLayerIgnored = (
+  type: KoaLayerType,
+  config?: KoaInstrumentationConfig
+): boolean => {
+  return !!(
+    Array.isArray(config?.ignoreLayersType) &&
+    config?.ignoreLayersType?.includes(type)
+  );
 };
