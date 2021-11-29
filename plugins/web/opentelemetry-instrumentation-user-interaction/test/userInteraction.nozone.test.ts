@@ -546,6 +546,14 @@ describe('UserInteractionInstrumentation', () => {
       });
     });
 
+    it('should handle null event listener argument', () => {
+      // @ts-expect-error Typescript typings report null listener as error
+      // while allowed by EventTarget['addEventListener'] and js engines
+      document.addEventListener('click', null);
+      // @ts-expect-error see above
+      document.removeEventListener('click', null);
+    });
+
     it('should handle disable', () => {
       assert.strictEqual(
         isWrapped(HTMLElement.prototype.addEventListener),
