@@ -3,6 +3,8 @@ import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { BaseOpenTelemetryComponent } from '@opentelemetry/plugin-react-load';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
+const opentelemetry = require('@opentelemetry/api');
+const { diag, DiagConsoleLogger } = opentelemetry;
 
 export default (serviceName) => {
   const provider = new WebTracerProvider();
@@ -21,7 +23,7 @@ export default (serviceName) => {
   const tracer = provider.getTracer(serviceName);
 
   BaseOpenTelemetryComponent.setTracer(serviceName)
-  BaseOpenTelemetryComponent.setLogger(provider.logger)
+  diag.setLogger(new DiagConsoleLogger());
 
   return tracer;
 }
