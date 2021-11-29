@@ -263,7 +263,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       return function addEventListenerPatched(
         this: HTMLElement,
         type: string,
-        listener: EventListenerOrEventListenerObject | null,
+        listener: EventListenerOrEventListenerObject | null,
         useCapture?: boolean | AddEventListenerOptions
       ) {
         // Forward calls with listener = null
