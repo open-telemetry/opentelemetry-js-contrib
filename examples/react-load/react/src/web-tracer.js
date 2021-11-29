@@ -21,7 +21,6 @@ export default (serviceName) => {
   });
 
   const tracer = provider.getTracer(serviceName);
-  
   BaseOpenTelemetryComponent.setTracer(serviceName)
   diag.setLogger(new DiagConsoleLogger());
 
