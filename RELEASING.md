@@ -3,7 +3,7 @@
 This repository uses [Release Please](https://github.com/googleapis/release-please) to manage its releases automatically and independently.
 Modified packages are automatically published to NPM when the auto-generated Release Please PR is merged.
 
-# Manual Publishing Process
+## Manual Publishing Process
 
 For posterity, or in the event of any failures with release-please, the process for performing a manual release is below.
 
@@ -42,13 +42,16 @@ Decide on the next `major.minor.patch` release number based on [semver](http://s
 Since we use `lerna`, we can use [lerna-changelog](https://github.com/lerna/lerna-changelog#lerna-changelog)
 
 #### How to use
+
 Pass your [github token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line) to generate the changelog automatically.
 For security reasons, when you create a Github token, select the permissions: under **repo**, select **Access public repositories**, **commit status**.
 
 In your terminal, execute the following command:
+
 ```bash
 GITHUB_AUTH=<your token> lerna-changelog
 ```
+
 It will print something like:
 
 ```md
@@ -64,10 +67,12 @@ It will print something like:
 - Helpful Hacker ([@helpful-hacker](https://github.com/helpful-hacker))
 - [@careful-coder](https://github.com/careful-coder)
 ```
+
 By default lerna-changelog will show all pull requests that have been merged since the latest tagged commit in the repository. That is however only true for pull requests **with certain labels applied** (see [lerna.json](lerna.json) for authorized labels).
 
 You can also use the `--from` and `--to` options to view a different range of pull requests:
-```
+
+```text
 GITHUB_AUTH=xxxxx lerna-changelog --from=v1.0.0 --to=v2.0.0
 ```
 
@@ -102,6 +107,7 @@ done
 Check your e-mail and make sure the number of “you’ve published this module” emails matches the number you expect.
 
 ## Publish the GitHub Release
+
 Publish the GitHub release, ensuring that the tag points to the newly landed commit corresponding to release proposal `x.y.z`.
 
 ## Update CHANGELOG
@@ -109,7 +115,6 @@ Publish the GitHub release, ensuring that the tag points to the newly landed com
 * After releasing is done, update the [CHANGELOG.md](https://github.com/open-telemetry/opentelemetry-js/blob/main/CHANGELOG.md) and start new Unreleased label.
 * Create a new commit with the exact title: `Post Release: update CHANGELOG.md`.
 * Go through PR review and merge it to GitHub main branch.
-
 
 ## Known Issues
 

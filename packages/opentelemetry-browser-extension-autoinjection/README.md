@@ -16,11 +16,12 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ### from Download
 
-* Go to [Releases](https://github.com/svrnm/opentelemetry-browser-extension/releases) and download the latest opentelemetry-browser-extension-<version>-<mv2|mv3>.zip from Assets. 
+* Go to [Releases](https://github.com/svrnm/opentelemetry-browser-extension/releases) and download the latest opentelemetry-browser-extension-<version>-<mv2|mv3>.zip from Assets.
 * Unzip that file locally
 * Open a new browser window and go to chrome://extensions
 * Turn on "Developer Mode"
-* Click on "Load unpacked" and the select the folder, where the unzipped extension lives. 
+* Click on "Load unpacked" and the select the folder, where the unzipped extension lives.
+
 ### from Source
 
 Run the following in your shell to download and build the extension from source:
@@ -32,7 +33,7 @@ npm install
 npm run build
 ```
 
-This will create a so-called unpacked extension into the `build/` folder you now can load into your browser: 
+This will create a so-called unpacked extension into the `build/` folder you now can load into your browser:
 
 * Open a new browser window and go to chrome://extensions
 * Turn on "Developer Mode"

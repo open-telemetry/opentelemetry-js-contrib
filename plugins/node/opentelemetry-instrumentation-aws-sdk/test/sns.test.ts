@@ -70,7 +70,7 @@ describe('SNS', () => {
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${topicName} Publish`
+        (s: ReadableSpan) => s.name === `${topicName} send`
       );
       expect(publishSpans.length).toBe(1);
 
@@ -101,7 +101,7 @@ describe('SNS', () => {
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${PhoneNumber} Publish`
+        (s: ReadableSpan) => s.name === `${PhoneNumber} send`
       );
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];
@@ -125,7 +125,7 @@ describe('SNS', () => {
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${topicName} Publish`
+        (s: ReadableSpan) => s.name === `${topicName} send`
       );
       expect(publishSpans.length).toBe(1);
       expect(

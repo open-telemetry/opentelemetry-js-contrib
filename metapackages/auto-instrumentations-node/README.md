@@ -16,6 +16,7 @@ npm install --save @opentelemetry/auto-instrumentations-node
 ```
 
 ## Usage
+
 OpenTelemetry Meta Packages for Node automatically loads instrumentations for Node builtin modules and common packages.
 
 Custom configuration for each of the instrumentations can be passed to the function, by providing an object with the name of the instrumentation as a key, and its configuration as the value.
@@ -52,6 +53,7 @@ registerInstrumentations({
 });
 
 ```
+
 ## Supported instrumentations
 
 - [@opentelemetry/instrumentation-dns](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns)

@@ -1,25 +1,29 @@
-# Overview
+## Overview
 
-The React Load plugin provides auto-instrumentation for react lifecycle methods. 
+The React Load plugin provides auto-instrumentation for react lifecycle methods.
 This example uses the plugin and exports them to the console.
 
 The example will show traces belong to the mounting, updating, and umounting flows as defined by React 16.4+. In this example we can show how this plugin can also be used in a Preact app.
 
-# Installation
-```
+## Installation
+
+```sh
 # from this directory
 npm install
 ```
 
-# Run the example
+## Run the example
+
 Run docker
-```
+
+```sh
 # from this directory
 npm run docker:start
 ```
 
 Run app
-```
+
+```sh
 # from this directory
 npm run build
 npm start
@@ -27,22 +31,27 @@ npm start
 
 By default, the application runs on port 8080.
 
-Open Zipkin page at http://localhost:9411/zipkin/ - you should be able to see the spans in zipkin
+Open Zipkin page at <http://localhost:9411/zipkin/> - you should be able to see the spans in zipkin
 
-## Screenshots of traces
+### Screenshots of traces
+
 Take note of the parent-child relationships.
-### First load
-Upon loading, http://localhost:8080 mounting spans will be exported
+
+#### First load
+
+Upon loading, <http://localhost:8080> mounting spans will be exported
 <p align="center"><img src="./images/mounting.png?raw=true"/></p>
 <p align="center"><img src="./images/zipkin-mounting.png?raw=true"/></p>
 
-### Pressing 'Enter'
+#### Pressing 'Enter'
+
 Here we can see the previous component unmounting and the new component mounting.
 <p align="center"><img src="./images/redirect.png?raw=true"/></p>
 <p align="center"><img src="./images/zipkin-redirect.png?raw=true"/></p>
 <p align="center"><img src="./images/zipkin-redirect2.png?raw=true"/></p>
 
-### Pressing 'Make Request'
+#### Pressing 'Make Request'
+
 While in loading state:
 <p align="center"><img src="./images/updating.png?raw=true"/></p>
 <p align="center"><img src="./images/zipkin-updating.png?raw=true"/></p>
@@ -51,12 +60,12 @@ After a few seconds (when the request is fulfilled):
 <p align="center"><img src="./images/updating2.png?raw=true"/></p>
 <p align="center"><img src="./images/zipkin-updating2.png?raw=true"/></p>
 
+## Useful links
 
-# Useful links
 - For more information on OpenTelemetry, visit: [opentelemetry.io][otel]
 - For more information on OpenTelemetry for Node.js, visit: [@opentelemetry/sdk-trace-node][otel-node]
 
-# LICENSE
+## LICENSE
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
