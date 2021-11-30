@@ -154,6 +154,8 @@ export class PgInstrumentation extends InstrumentationBase {
           );
         }
 
+        utils.handlePostQueryHook(pluginConfig, postQueryHookParams);
+
         // Bind callback to parent span
         if (args.length > 0) {
           const parentSpan = trace.getSpan(context.active());
@@ -190,8 +192,6 @@ export class PgInstrumentation extends InstrumentationBase {
             args[0] = { ...(args[0] as object), callback };
           }
         }
-
-        utils.handlePostQueryHook(pluginConfig, postQueryHookParams);
 
         // Perform the original query
         const result: unknown = original.apply(this, args as never);
