@@ -68,6 +68,6 @@
     "winston2": "npm:winston@2.4.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.26.0"
+    "@opentelemetry/instrumentation": "^0.27.0"
   }
 }
