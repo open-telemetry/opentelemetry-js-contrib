@@ -595,6 +595,7 @@ describe('pg', () => {
       });
       assert.strictEqual(called, true);
     });
+
     it('should call postQueryHook with query text and params if set', async () => {
       instrumentation.disable();
       let called = false;
@@ -627,6 +628,7 @@ describe('pg', () => {
       });
       assert.strictEqual(called, true);
     });
+
     it('should call postQueryHook with query config if set', async () => {
       instrumentation.disable();
       const name = 'fetch-text';
