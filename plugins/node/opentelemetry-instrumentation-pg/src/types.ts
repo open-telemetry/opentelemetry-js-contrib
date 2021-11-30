@@ -27,11 +27,27 @@ export interface PgInstrumentationExecutionResponseHook {
   (span: api.Span, responseInfo: PgResponseHookInformation): void;
 }
 
+export interface QueryContext {
+  span: api.Span;
+  query?: string;
+  config?: NormalizedQueryConfig;
+  params?: unknown[];
+}
+
+export interface PgPostQueryHookFunction {
+  (ctx: QueryContext): void;
+}
+
 export interface PgInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, additional information about query parameters will be attached (as `attributes`) to spans representing
    */
   enhancedDatabaseReporting?: boolean;
+
+  /**
+   * Function for adding custom attributes before the query is resolved
+   */
+  postQueryHook?: PgPostQueryHookFunction;
 
   /**
    * Hook that allows adding custom span attributes based on the data

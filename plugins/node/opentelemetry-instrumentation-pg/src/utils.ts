@@ -34,6 +34,7 @@ import {
   PgPoolCallback,
   PgPoolExtended,
   PgInstrumentationConfig,
+  QueryContext,
 } from './types';
 import * as pgTypes from 'pg';
 import { PgInstrumentation } from './';
@@ -167,6 +168,25 @@ export function handleInvalidQuery(
     span.end();
   }
   return result;
+}
+
+export function handlePostQueryHook(
+  config: PgInstrumentationConfig,
+  ctx: QueryContext
+) {
+  if (typeof config.postQueryHook === 'function') {
+    safeExecuteInTheMiddle(
+      () => {
+        config.postQueryHook!(ctx);
+      },
+      err => {
+        if (err) {
+          diag.error('Error running post query hook', err);
+        }
+      },
+      true
+    );
+  }
 }
 
 export function handleExecutionResult(
