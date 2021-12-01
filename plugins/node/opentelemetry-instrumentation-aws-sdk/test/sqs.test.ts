@@ -458,9 +458,8 @@ describe('SQS', () => {
     it('should extract from payload', async () => {
       const traceparent = {
         traceparent: {
-          StringValue:
-            '00-a1d050b7c8ad93c405e7a0d94cda5b03-23a485dc98b24027-01',
-          DataType: 'String',
+          Value: '00-a1d050b7c8ad93c405e7a0d94cda5b03-23a485dc98b24027-01',
+          Type: 'String',
         },
       };
       instrumentation.setConfig({
@@ -478,7 +477,6 @@ describe('SQS', () => {
           QueueUrl: 'queue/url/for/unittests',
         })
         .promise();
-
       expect(extractContextSpy.returnValues[0]?.traceparent).toStrictEqual(
         traceparent
       );
