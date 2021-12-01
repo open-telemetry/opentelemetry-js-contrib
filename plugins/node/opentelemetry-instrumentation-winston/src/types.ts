@@ -36,3 +36,4 @@ export type { Winston2LogMethod };
 export type Winston2LoggerModule = {
   Logger: Winston2Logger & { prototype: { log: Winston2LogMethod } };
 };
+export type { Winston2Logger };
