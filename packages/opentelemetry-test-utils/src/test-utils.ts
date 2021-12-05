@@ -37,7 +37,7 @@ const dockerRunCmds = {
   mysql:
     'docker run --rm -d --name otel-mysql -p 33306:3306 -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=test_db -e MYSQL_USER=otel -e MYSQL_PASSWORD=secret circleci/mysql:5.7',
   postgres:
-    'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres postgres:alpine',
+    'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres postgres:13-alpine',
   memcached:
     'docker run --rm -d --name otel-memcached -p 11211:11211 memcached:1.6.9-alpine',
 };

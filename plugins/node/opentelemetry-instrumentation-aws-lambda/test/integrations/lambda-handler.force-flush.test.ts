@@ -74,7 +74,7 @@ describe('force flush', () => {
         forceFlushed = true;
         resolve();
       });
-    provider.activeSpanProcessor.forceFlush = forceFlush;
+    provider.forceFlush = forceFlush;
     initializeHandler('lambda-test/sync.handler', provider);
 
     await new Promise((resolve, reject) => {
@@ -106,7 +106,7 @@ describe('force flush', () => {
         forceFlushed = true;
         resolve();
       });
-    nodeTracerProvider.activeSpanProcessor.forceFlush = forceFlush;
+    nodeTracerProvider.forceFlush = forceFlush;
     initializeHandler('lambda-test/sync.handler', provider);
 
     await new Promise((resolve, reject) => {

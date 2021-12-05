@@ -46,7 +46,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   readonly version = VERSION;
   moduleName = this.component;
   private _spansData = new WeakMap<api.Span, SpanData>();
-  private _zonePatched = false;
+  private _zonePatched?: boolean;
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
     Function | EventListenerObject,
