@@ -245,20 +245,24 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     result?: PromiseOrValue<graphqlTypes.ExecutionResult>
   ) {
     const config = this._getConfig();
-    if (
-      typeof config.responseHook !== 'function' ||
-      result === undefined ||
-      err
-    ) {
+    if (result === undefined || err) {
       endSpan(span, err);
       return;
     }
 
     if (result.constructor.name === 'Promise') {
       (result as Promise<graphqlTypes.ExecutionResult>).then(resultData => {
+        if (typeof config.responseHook !== 'function') {
+          endSpan(span);
+          return;
+        }
         this._executeResponseHook(span, resultData);
       });
     } else {
+      if (typeof config.responseHook !== 'function') {
+        endSpan(span);
+        return;
+      }
       this._executeResponseHook(span, result as graphqlTypes.ExecutionResult);
     }
   }
