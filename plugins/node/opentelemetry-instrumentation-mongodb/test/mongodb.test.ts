@@ -437,18 +437,21 @@ describe('MongoDBInstrumentation', () => {
           span.end();
           const [mongoSpan] = getTestSpans();
           assert.ifError(err);
-          lookup(process.env.MONGODB_HOST || DEFAULT_MONGO_HOST, (err, address) => {
-            if (err) return done(err);
-            assert.strictEqual(
-              mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
-              address
-            );
-            assert.strictEqual(
-              mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
-              process.env.MONGODB_PORT || '27017'
-            );
-            done();
-          });
+          lookup(
+            process.env.MONGODB_HOST || DEFAULT_MONGO_HOST,
+            (err, address) => {
+              if (err) return done(err);
+              assert.strictEqual(
+                mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
+                address
+              );
+              assert.strictEqual(
+                mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
+                process.env.MONGODB_PORT || '27017'
+              );
+              done();
+            }
+          );
         });
       });
     });
