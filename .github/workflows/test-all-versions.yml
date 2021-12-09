@@ -12,5 +12,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - run: npm install test-all-versions
+      - run: npm install --ignore-scripts
+      - run: lerna bootstrap --since origin/main --include-dependencies
+      - run: lerna run compile --since origin/main --include-dependencies
       - run: lerna run test-all-versions --since origin/main
