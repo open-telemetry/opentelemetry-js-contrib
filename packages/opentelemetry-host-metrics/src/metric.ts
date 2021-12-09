@@ -57,28 +57,28 @@ export class HostMetrics extends BaseMetrics {
   }
 
   private _updateCpuUtilisation(
-    observerBatchResult: api.ObservableResult,
+    observableResult: api.ObservableResult,
     cpuUsages: CpuUsageData[]
   ): void {
     for (let i = 0, j = cpuUsages.length; i < j; i++) {
       const cpuUsage = cpuUsages[i];
-      observerBatchResult.observe(cpuUsage.userP, {
+      observableResult.observe(cpuUsage.userP, {
         state: enums.CPU_LABELS.USER,
         cpu: cpuUsage.cpuNumber,
       });
-      observerBatchResult.observe(cpuUsage.systemP, {
+      observableResult.observe(cpuUsage.systemP, {
         state: enums.CPU_LABELS.SYSTEM,
         cpu: cpuUsage.cpuNumber,
       });
-      observerBatchResult.observe(cpuUsage.idleP, {
+      observableResult.observe(cpuUsage.idleP, {
         state: enums.CPU_LABELS.IDLE,
         cpu: cpuUsage.cpuNumber,
       });
-      observerBatchResult.observe(cpuUsage.interruptP, {
+      observableResult.observe(cpuUsage.interruptP, {
         state: enums.CPU_LABELS.INTERRUPT,
         cpu: cpuUsage.cpuNumber,
       });
-      observerBatchResult.observe(cpuUsage.niceP, {
+      observableResult.observe(cpuUsage.niceP, {
         state: enums.CPU_LABELS.NICE,
         cpu: cpuUsage.cpuNumber,
       });
@@ -86,40 +86,40 @@ export class HostMetrics extends BaseMetrics {
   }
 
   private _updateMemUsage(
-    observerBatchResult: api.ObservableResult,
+    observableResult: api.ObservableResult,
     memUsage: MemoryData
   ): void {
-    observerBatchResult.observe(memUsage.used, {
+    observableResult.observe(memUsage.used, {
       state: enums.MEMORY_LABELS.USED,
     });
-    observerBatchResult.observe(memUsage.free, {
+    observableResult.observe(memUsage.free, {
       state: enums.MEMORY_LABELS.FREE,
     });
   }
 
   private _updateMemUtilization(
-    observerBatchResult: api.ObservableResult,
+    observableResult: api.ObservableResult,
     memUsage: MemoryData
   ): void {
-    observerBatchResult.observe(memUsage.usedP, {
+    observableResult.observe(memUsage.usedP, {
       state: enums.MEMORY_LABELS.USED,
     });
-    observerBatchResult.observe(memUsage.freeP, {
+    observableResult.observe(memUsage.freeP, {
       state: enums.MEMORY_LABELS.FREE,
     });
   }
 
   private _updateNetworkDropped(
-    observerBatchResult: api.ObservableResult,
+    observableResult: api.ObservableResult,
     networkUsages: NetworkData[]
   ): void {
     for (let i = 0, j = networkUsages.length; i < j; i++) {
       const networkUsage = networkUsages[i];
-      observerBatchResult.observe(networkUsage.rx_dropped, {
+      observableResult.observe(networkUsage.rx_dropped, {
         [enums.NETWORK_LABELS.DEVICE]: networkUsage.iface,
         direction: enums.NETWORK_LABELS.RECEIVE,
       });
-      observerBatchResult.observe(networkUsage.tx_dropped, {
+      observableResult.observe(networkUsage.tx_dropped, {
         device: networkUsage.iface,
         direction: enums.NETWORK_LABELS.TRANSMIT,
       });
@@ -127,16 +127,16 @@ export class HostMetrics extends BaseMetrics {
   }
 
   private _updateNetworkErrors(
-    observerBatchResult: api.ObservableResult,
+    observableResult: api.ObservableResult,
     networkUsages: NetworkData[]
   ): void {
     for (let i = 0, j = networkUsages.length; i < j; i++) {
       const networkUsage = networkUsages[i];
-      observerBatchResult.observe(networkUsage.rx_errors, {
+      observableResult.observe(networkUsage.rx_errors, {
         device: networkUsage.iface,
         direction: enums.NETWORK_LABELS.RECEIVE,
       });
-      observerBatchResult.observe(networkUsage.tx_errors, {
+      observableResult.observe(networkUsage.tx_errors, {
         device: networkUsage.iface,
         direction: enums.NETWORK_LABELS.TRANSMIT,
       });
@@ -144,16 +144,16 @@ export class HostMetrics extends BaseMetrics {
   }
 
   private _updateNetworkIO(
-    observerBatchResult: api.ObservableResult,
+    observableResult: api.ObservableResult,
     networkUsages: NetworkData[]
   ): void {
     for (let i = 0, j = networkUsages.length; i < j; i++) {
       const networkUsage = networkUsages[i];
-      observerBatchResult.observe(networkUsage.rx_bytes, {
+      observableResult.observe(networkUsage.rx_bytes, {
         device: networkUsage.iface,
         direction: enums.NETWORK_LABELS.RECEIVE,
       });
-      observerBatchResult.observe(networkUsage.tx_bytes, {
+      observableResult.observe(networkUsage.tx_bytes, {
         device: networkUsage.iface,
         direction: enums.NETWORK_LABELS.TRANSMIT,
       });
