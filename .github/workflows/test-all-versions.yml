@@ -7,29 +7,10 @@ jobs:
   tav:
     name: run test-all-version (tav)
     runs-on: ubuntu-latest
-    outputs:
-      packages: ${{ steps.filter.outputs.changes }}
     steps:
       - name: checkout
         uses: actions/checkout@v2
-      - run: echo ${{ github.repository }}
-      - name: filterpath
-        uses: dorny/paths-filter@v2
-        id: filter
         with:
-          base: main
-          list-files: json
-          filters: .github/workflows/test-all-versions.yml
-          
-  runtav:
-    needs: tav
-    strategy:
-      matrix:
-        pkg: ${{ fromJson(needs.tav.outputs.packages) || fromJson('[]') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
+          fetch-depth: 0
       - run: npm install test-all-versions
-      - run: npm run test-all-versions --if-present
-        working-directory: ${{ matrix.pkg }}
+      - run: lerna run test-all-versions --since origin/main
