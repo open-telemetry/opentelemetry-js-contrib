@@ -28,6 +28,7 @@ OpenTelemetry Mongodb Instrumentation allows the user to automatically collect t
 
 To load a specific instrumentation (**mongodb** in this case), specify it in the Node Tracer's configuration.
 
+
 ```javascript
 const { MongoDBInstrumentation } = require('@opentelemetry/instrumentation-mongodb');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
