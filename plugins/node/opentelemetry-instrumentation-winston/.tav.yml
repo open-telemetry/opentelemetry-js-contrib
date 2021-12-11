@@ -1,0 +1,5 @@
+winston:
+    # a sample from supported versions
+  - versions: "3.3.3 || 3.2.1 || 2.4.5 || 2.4.4 || 2.1.1"
+    commands: npm run test
+

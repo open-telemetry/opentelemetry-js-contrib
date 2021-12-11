@@ -50,7 +50,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   readonly version = VERSION;
   moduleName = this.component;
   private _spansData = new WeakMap<api.Span, SpanData>();
-  private _zonePatched = false;
+  private _zonePatched?: boolean;
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
     Function | EventListenerObject,
@@ -275,14 +275,19 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    */
   private _patchAddEventListener() {
     const plugin = this;
-    return (original: Function) => {
+    return (original: EventTarget['addEventListener']) => {
       return function addEventListenerPatched(
         this: HTMLElement,
-        type: any,
-        listener: any,
-        useCapture: any
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        useCapture?: boolean | AddEventListenerOptions
       ) {
-        const once = useCapture && useCapture.once;
+        // Forward calls with listener = null
+        if (!listener) {
+          return original.call(this, type, listener, useCapture);
+        }
+
+        const once = typeof useCapture === 'object' && useCapture.once;
         const patchedListener = function (this: HTMLElement, ...args: any[]) {
           let parentSpan: api.Span | undefined;
           const event: Event | undefined = args[0];

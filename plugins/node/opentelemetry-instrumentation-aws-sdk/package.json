@@ -1,6 +1,6 @@
 {
     "name": "@opentelemetry/instrumentation-aws-sdk",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "description": "OpenTelemetry automatic instrumentation for the `aws-sdk` package",
     "keywords": [
         "aws",
@@ -47,7 +47,7 @@
     },
     "dependencies": {
         "@opentelemetry/core": "^1.0.0",
-        "@opentelemetry/instrumentation": "^0.26.0",
+        "@opentelemetry/instrumentation": "^0.27.0",
         "@opentelemetry/semantic-conventions": "^1.0.0",
         "@opentelemetry/propagation-utils": "^0.26.0"
     },
@@ -63,14 +63,14 @@
         "@types/sinon": "^10.0.6",
         "aws-sdk": "2.1008.0",
         "eslint": "^7.32.0",
-        "expect": "^25",
+        "expect": "27.4.2",
         "mocha": "7.2.0",
         "nock": "^13.0.11",
         "nyc": "^15.1.0",
         "rimraf": "^3.0.2",
         "sinon": "^12.0.0",
         "gts": "3.1.0",
-        "@opentelemetry/contrib-test-utils": "^0.27.0",
+        "@opentelemetry/contrib-test-utils": "^0.28.0",
         "test-all-versions": "^5.0.1",
         "ts-mocha": "8.0.0",
         "ts-node": "^9.1.1",

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-nestjs-core",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "description": "OpenTelemetry NestJS automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -74,7 +74,7 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.26.0",
+    "@opentelemetry/instrumentation": "^0.27.0",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   }
 }

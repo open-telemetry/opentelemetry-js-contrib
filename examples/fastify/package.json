@@ -40,7 +40,7 @@
     "@opentelemetry/exporter-jaeger": "^1.0.0",
     "@opentelemetry/exporter-zipkin": "^1.0.0",
     "@opentelemetry/exporter-collector": "^0.25.0",
-    "@opentelemetry/instrumentation": "^0.26.0",
+    "@opentelemetry/instrumentation": "^0.27.0",
     "@opentelemetry/instrumentation-fastify": "^0.25.0",
     "@opentelemetry/instrumentation-http": "^0.26.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",

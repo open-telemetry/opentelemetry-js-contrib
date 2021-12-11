@@ -21,193 +21,142 @@ import * as enums from './enum';
 import { getCpuUsageData, getMemoryData } from './stats/common';
 import { getNetworkData } from './stats/si';
 import { CpuUsageData, MemoryData, NetworkData } from './types';
+import { throttle } from './util';
 
 /**
  * Metrics Collector - collects metrics for CPU, Memory, Network
  */
 export class HostMetrics extends BaseMetrics {
-  private _cpuTimeObserver!: api.SumObserver;
-  private _cpuUtilizationObserver!: api.ValueObserver;
-  private _memUsageObserver!: api.UpDownSumObserver;
-  private _memUtilizationObserver!: api.ValueObserver;
-  private _networkDroppedObserver!: api.SumObserver;
-  private _networkErrorsObserver!: api.SumObserver;
-  private _networkIOObserver!: api.SumObserver;
-
   private _updateCpuTime(
-    observerBatchResult: api.BatchObserverResult,
+    observableResult: api.ObservableResult,
     cpuUsages: CpuUsageData[]
   ): void {
     for (let i = 0, j = cpuUsages.length; i < j; i++) {
       const cpuUsage = cpuUsages[i];
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.USER,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuTimeObserver?.observation(cpuUsage.user)]
-      );
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.SYSTEM,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuTimeObserver?.observation(cpuUsage.system)]
-      );
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.IDLE,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuTimeObserver?.observation(cpuUsage.idle)]
-      );
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.INTERRUPT,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuTimeObserver?.observation(cpuUsage.interrupt)]
-      );
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.NICE,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuTimeObserver?.observation(cpuUsage.nice)]
-      );
+      observableResult.observe(cpuUsage.user, {
+        state: enums.CPU_LABELS.USER,
+        cpu: cpuUsage.cpuNumber,
+      });
+      observableResult.observe(cpuUsage.system, {
+        state: enums.CPU_LABELS.SYSTEM,
+        cpu: cpuUsage.cpuNumber,
+      });
+      observableResult.observe(cpuUsage.idle, {
+        state: enums.CPU_LABELS.IDLE,
+        cpu: cpuUsage.cpuNumber,
+      });
+      observableResult.observe(cpuUsage.interrupt, {
+        state: enums.CPU_LABELS.INTERRUPT,
+        cpu: cpuUsage.cpuNumber,
+      });
+      observableResult.observe(cpuUsage.nice, {
+        state: enums.CPU_LABELS.NICE,
+        cpu: cpuUsage.cpuNumber,
+      });
     }
   }
 
   private _updateCpuUtilisation(
-    observerBatchResult: api.BatchObserverResult,
+    observableResult: api.ObservableResult,
     cpuUsages: CpuUsageData[]
   ): void {
     for (let i = 0, j = cpuUsages.length; i < j; i++) {
       const cpuUsage = cpuUsages[i];
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.USER,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuUtilizationObserver?.observation(cpuUsage.userP)]
-      );
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.SYSTEM,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuUtilizationObserver?.observation(cpuUsage.systemP)]
-      );
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.IDLE,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuUtilizationObserver?.observation(cpuUsage.idleP)]
-      );
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.INTERRUPT,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuUtilizationObserver?.observation(cpuUsage.interruptP)]
-      );
-      observerBatchResult.observe(
-        {
-          state: enums.CPU_LABELS.NICE,
-          cpu: cpuUsage.cpuNumber,
-        },
-        [this._cpuUtilizationObserver?.observation(cpuUsage.niceP)]
-      );
+      observableResult.observe(cpuUsage.userP, {
+        state: enums.CPU_LABELS.USER,
+        cpu: cpuUsage.cpuNumber,
+      });
+      observableResult.observe(cpuUsage.systemP, {
+        state: enums.CPU_LABELS.SYSTEM,
+        cpu: cpuUsage.cpuNumber,
+      });
+      observableResult.observe(cpuUsage.idleP, {
+        state: enums.CPU_LABELS.IDLE,
+        cpu: cpuUsage.cpuNumber,
+      });
+      observableResult.observe(cpuUsage.interruptP, {
+        state: enums.CPU_LABELS.INTERRUPT,
+        cpu: cpuUsage.cpuNumber,
+      });
+      observableResult.observe(cpuUsage.niceP, {
+        state: enums.CPU_LABELS.NICE,
+        cpu: cpuUsage.cpuNumber,
+      });
     }
   }
 
   private _updateMemUsage(
-    observerBatchResult: api.BatchObserverResult,
+    observableResult: api.ObservableResult,
     memUsage: MemoryData
   ): void {
-    observerBatchResult.observe(
-      {
-        state: enums.MEMORY_LABELS.USED,
-      },
-      [this._memUsageObserver?.observation(memUsage.used)]
-    );
-    observerBatchResult.observe(
-      {
-        state: enums.MEMORY_LABELS.FREE,
-      },
-      [this._memUsageObserver?.observation(memUsage.free)]
-    );
+    observableResult.observe(memUsage.used, {
+      state: enums.MEMORY_LABELS.USED,
+    });
+    observableResult.observe(memUsage.free, {
+      state: enums.MEMORY_LABELS.FREE,
+    });
   }
 
   private _updateMemUtilization(
-    observerBatchResult: api.BatchObserverResult,
+    observableResult: api.ObservableResult,
     memUsage: MemoryData
   ): void {
-    observerBatchResult.observe(
-      {
-        state: enums.MEMORY_LABELS.USED,
-      },
-      [this._memUtilizationObserver?.observation(memUsage.usedP)]
-    );
-    observerBatchResult.observe(
-      {
-        state: enums.MEMORY_LABELS.FREE,
-      },
-      [this._memUtilizationObserver?.observation(memUsage.freeP)]
-    );
+    observableResult.observe(memUsage.usedP, {
+      state: enums.MEMORY_LABELS.USED,
+    });
+    observableResult.observe(memUsage.freeP, {
+      state: enums.MEMORY_LABELS.FREE,
+    });
   }
 
-  private _updateNetwork(
-    observerBatchResult: api.BatchObserverResult,
+  private _updateNetworkDropped(
+    observableResult: api.ObservableResult,
     networkUsages: NetworkData[]
   ): void {
     for (let i = 0, j = networkUsages.length; i < j; i++) {
       const networkUsage = networkUsages[i];
-      observerBatchResult.observe(
-        {
-          [enums.NETWORK_LABELS.DEVICE]: networkUsage.iface,
-          direction: enums.NETWORK_LABELS.RECEIVE,
-        },
-        [this._networkDroppedObserver?.observation(networkUsage.rx_dropped)]
-      );
-      observerBatchResult.observe(
-        {
-          device: networkUsage.iface,
-          direction: enums.NETWORK_LABELS.TRANSMIT,
-        },
-        [this._networkDroppedObserver?.observation(networkUsage.tx_dropped)]
-      );
+      observableResult.observe(networkUsage.rx_dropped, {
+        [enums.NETWORK_LABELS.DEVICE]: networkUsage.iface,
+        direction: enums.NETWORK_LABELS.RECEIVE,
+      });
+      observableResult.observe(networkUsage.tx_dropped, {
+        device: networkUsage.iface,
+        direction: enums.NETWORK_LABELS.TRANSMIT,
+      });
+    }
+  }
 
-      observerBatchResult.observe(
-        {
-          device: networkUsage.iface,
-          direction: enums.NETWORK_LABELS.RECEIVE,
-        },
-        [this._networkErrorsObserver?.observation(networkUsage.rx_errors)]
-      );
-      observerBatchResult.observe(
-        {
-          device: networkUsage.iface,
-          direction: enums.NETWORK_LABELS.TRANSMIT,
-        },
-        [this._networkErrorsObserver?.observation(networkUsage.tx_errors)]
-      );
+  private _updateNetworkErrors(
+    observableResult: api.ObservableResult,
+    networkUsages: NetworkData[]
+  ): void {
+    for (let i = 0, j = networkUsages.length; i < j; i++) {
+      const networkUsage = networkUsages[i];
+      observableResult.observe(networkUsage.rx_errors, {
+        device: networkUsage.iface,
+        direction: enums.NETWORK_LABELS.RECEIVE,
+      });
+      observableResult.observe(networkUsage.tx_errors, {
+        device: networkUsage.iface,
+        direction: enums.NETWORK_LABELS.TRANSMIT,
+      });
+    }
+  }
 
-      observerBatchResult.observe(
-        {
-          device: networkUsage.iface,
-          direction: enums.NETWORK_LABELS.RECEIVE,
-        },
-        [this._networkIOObserver?.observation(networkUsage.rx_bytes)]
-      );
-      observerBatchResult.observe(
-        {
-          device: networkUsage.iface,
-          direction: enums.NETWORK_LABELS.TRANSMIT,
-        },
-        [this._networkIOObserver?.observation(networkUsage.tx_bytes)]
-      );
+  private _updateNetworkIO(
+    observableResult: api.ObservableResult,
+    networkUsages: NetworkData[]
+  ): void {
+    for (let i = 0, j = networkUsages.length; i < j; i++) {
+      const networkUsage = networkUsages[i];
+      observableResult.observe(networkUsage.rx_bytes, {
+        device: networkUsage.iface,
+        direction: enums.NETWORK_LABELS.RECEIVE,
+      });
+      observableResult.observe(networkUsage.tx_bytes, {
+        device: networkUsage.iface,
+        direction: enums.NETWORK_LABELS.TRANSMIT,
+      });
     }
   }
 
@@ -215,64 +164,75 @@ export class HostMetrics extends BaseMetrics {
    * Creates metrics
    */
   protected _createMetrics(): void {
-    // CPU
-    this._cpuTimeObserver = this._meter.createSumObserver(
+    this._meter.createObservableCounter(
       enums.METRIC_NAMES.CPU_TIME,
-      { description: 'Cpu time in seconds', unit: 's' }
+      {
+        description: 'Cpu time in seconds',
+        unit: 's',
+      },
+      observableResult => {
+        const cpuUsageData = this._getCpuUsageData();
+        this._updateCpuTime(observableResult, cpuUsageData);
+      }
     );
-    this._cpuUtilizationObserver = this._meter.createValueObserver(
+    this._meter.createObservableGauge(
       enums.METRIC_NAMES.CPU_UTILIZATION,
       {
         description: 'Cpu usage time 0-1',
+      },
+      observableResult => {
+        const cpuUsageData = this._getCpuUsageData();
+        this._updateCpuUtilisation(observableResult, cpuUsageData);
       }
     );
-    this._memUsageObserver = this._meter.createUpDownSumObserver(
+    this._meter.createObservableUpDownCounter(
       enums.METRIC_NAMES.MEMORY_USAGE,
       {
         description: 'Memory usage in bytes',
+      },
+      observableResult => {
+        const memoryUsageData = this._getMemoryData();
+        this._updateMemUsage(observableResult, memoryUsageData);
       }
     );
-    this._memUtilizationObserver = this._meter.createValueObserver(
+    this._meter.createObservableGauge(
       enums.METRIC_NAMES.MEMORY_UTILIZATION,
       {
         description: 'Memory usage 0-1',
+      },
+      observableResult => {
+        const memoryUsageData = this._getMemoryData();
+        this._updateMemUtilization(observableResult, memoryUsageData);
       }
     );
-    this._networkDroppedObserver = this._meter.createSumObserver(
+    this._meter.createObservableCounter(
       enums.METRIC_NAMES.NETWORK_DROPPED,
       {
         description: 'Network dropped packets',
+      },
+      async observableResult => {
+        const networkData = await this._getNetworkData();
+        this._updateNetworkDropped(observableResult, networkData);
       }
     );
-    this._networkErrorsObserver = this._meter.createSumObserver(
+    this._meter.createObservableCounter(
       enums.METRIC_NAMES.NETWORK_ERRORS,
       {
         description: 'Network errors counter',
+      },
+      async observableResult => {
+        const networkData = await this._getNetworkData();
+        this._updateNetworkErrors(observableResult, networkData);
       }
     );
-    this._networkIOObserver = this._meter.createSumObserver(
+    this._meter.createObservableCounter(
       enums.METRIC_NAMES.NETWORK_IO,
       {
         description: 'Network transmit and received bytes',
-      }
-    );
-
-    this._meter.createBatchObserver(
-      observerBatchResult => {
-        Promise.all([
-          getMemoryData(),
-          getCpuUsageData(),
-          getNetworkData(),
-        ]).then(([memoryData, cpuUsage, networkData]) => {
-          this._updateCpuTime(observerBatchResult, cpuUsage);
-          this._updateCpuUtilisation(observerBatchResult, cpuUsage);
-          this._updateMemUsage(observerBatchResult, memoryData);
-          this._updateMemUtilization(observerBatchResult, memoryData);
-          this._updateNetwork(observerBatchResult, networkData);
-        });
       },
-      {
-        maxTimeoutUpdateMS: this._maxTimeoutUpdateMS,
+      async observableResult => {
+        const networkData = await this._getNetworkData();
+        this._updateNetworkIO(observableResult, networkData);
       }
     );
   }
@@ -288,4 +248,11 @@ export class HostMetrics extends BaseMetrics {
       }
     );
   }
+
+  private _getMemoryData = throttle(getMemoryData, this._maxTimeoutUpdateMS);
+  private _getCpuUsageData = throttle(
+    getCpuUsageData,
+    this._maxTimeoutUpdateMS
+  );
+  private _getNetworkData = throttle(getNetworkData, this._maxTimeoutUpdateMS);
 }
