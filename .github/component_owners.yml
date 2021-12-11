@@ -44,6 +44,9 @@ components:
     - rauno56
   plugins/web/opentelemetry-instrumentation-document-load:
     - obecny
+  plugins/web/opentelemetry-instrumentation-long-task:
+    - mhennoch
+    - t2t2
   plugins/web/opentelemetry-instrumentation-user-interaction:
     - obecny
   propagators/opentelemetry-propagator-aws-xray:

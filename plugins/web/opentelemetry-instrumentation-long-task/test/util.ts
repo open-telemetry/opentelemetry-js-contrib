@@ -13,22 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as tracing from '@opentelemetry/sdk-trace-base';
 
-export function ObjectKeys<T>(t: T) {
-  return Object.keys(t) as (keyof T)[];
-}
+export class DummySpanExporter implements tracing.SpanExporter {
+  export(spans: tracing.ReadableSpan[]) {}
 
-export function throttle<T>(fn: () => T, ms: number): () => T {
-  let memoized: T | undefined = undefined;
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return () => {
-    if (timeout !== null) {
-      return memoized!;
-    }
-    memoized = fn();
-    timeout = setTimeout(() => {
-      timeout = null;
-    }, ms);
-    return memoized;
-  };
+  shutdown() {
+    return Promise.resolve();
+  }
 }

@@ -234,10 +234,10 @@ function getRecords(records: MetricRecord[], name: string): MetricRecord[] {
 
 function ensureValue(
   record: MetricRecord,
-  labels: Record<string, string>,
+  attributes: Record<string, string>,
   value: number
 ) {
-  assert.deepStrictEqual(record.labels, labels);
+  assert.deepStrictEqual(record.attributes, attributes);
   const point = record.aggregator.toPoint();
   const aggValue =
     typeof point.value === 'number'

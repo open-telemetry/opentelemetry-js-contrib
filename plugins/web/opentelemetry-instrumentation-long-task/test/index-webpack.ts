@@ -13,22 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const testsContext = require.context('.', true, /test$/);
+testsContext.keys().forEach(testsContext);
 
-export function ObjectKeys<T>(t: T) {
-  return Object.keys(t) as (keyof T)[];
-}
-
-export function throttle<T>(fn: () => T, ms: number): () => T {
-  let memoized: T | undefined = undefined;
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return () => {
-    if (timeout !== null) {
-      return memoized!;
-    }
-    memoized = fn();
-    timeout = setTimeout(() => {
-      timeout = null;
-    }, ms);
-    return memoized;
-  };
-}
+const srcContext = require.context('.', true, /src$/);
+srcContext.keys().forEach(srcContext);
