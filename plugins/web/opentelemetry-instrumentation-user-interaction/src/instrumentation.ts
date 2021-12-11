@@ -278,7 +278,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     return (original: EventTarget['addEventListener']) => {
       return function addEventListenerPatched(
         this: HTMLElement,
-        type: string,
+        type: keyof HTMLElementEventMap,
         listener: EventListenerOrEventListenerObject | null,
         useCapture?: boolean | AddEventListenerOptions
       ) {
