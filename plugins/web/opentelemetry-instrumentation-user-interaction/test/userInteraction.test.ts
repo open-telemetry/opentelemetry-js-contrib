@@ -27,12 +27,17 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import 'zone.js';
 import { UserInteractionInstrumentation } from '../src';
-import { WindowWithZone } from '../src/types';
+import {
+  UserInteractionInstrumentationConfig,
+  WindowWithZone,
+} from '../src/types';
 import {
   assertClickSpan,
+  assertInteractionSpan,
   createButton,
   DummySpanExporter,
-  fakeInteraction,
+  fakeClickInteraction,
+  fakeEventInteraction,
   getData,
 } from './helper.test';
 
@@ -55,6 +60,25 @@ describe('UserInteractionInstrumentation', () => {
     let dummySpanExporter: DummySpanExporter;
     let exportSpy: sinon.SinonSpy;
     let requests: sinon.SinonFakeXMLHttpRequest[] = [];
+
+    const registerTestInstrumentations = (
+      config?: UserInteractionInstrumentationConfig
+    ) => {
+      userInteractionInstrumentation?.disable();
+
+      userInteractionInstrumentation = new UserInteractionInstrumentation(
+        config
+      );
+
+      registerInstrumentations({
+        tracerProvider: webTracerProvider,
+        instrumentations: [
+          userInteractionInstrumentation,
+          new XMLHttpRequestInstrumentation(),
+        ],
+      });
+    };
+
     beforeEach(() => {
       contextManager = new ZoneContextManager().enable();
       sandbox = sinon.createSandbox();
@@ -83,36 +107,32 @@ describe('UserInteractionInstrumentation', () => {
       webTracerProvider.register({
         contextManager,
       });
-      userInteractionInstrumentation = new UserInteractionInstrumentation();
 
-      registerInstrumentations({
-        instrumentations: [
-          userInteractionInstrumentation,
-          new XMLHttpRequestInstrumentation(),
-        ],
-      });
+      registerTestInstrumentations();
 
       // this is needed as window is treated as context and karma is adding
       // context which is then detected as spanContext
       (window as { context?: {} }).context = undefined;
     });
+
     afterEach(() => {
       requests = [];
       sandbox.restore();
       exportSpy.restore();
       context.disable();
       trace.disable();
+      userInteractionInstrumentation.disable();
     });
 
     it('should handle task without async operation', () => {
-      fakeInteraction();
+      fakeClickInteraction();
       assert.equal(exportSpy.args.length, 1, 'should export one span');
       const spanClick = exportSpy.args[0][0][0];
       assertClickSpan(spanClick);
     });
 
     it('should ignore timeout when nothing happens afterwards', done => {
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         originalSetTimeout(() => {
           const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
 
@@ -125,7 +145,7 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should ignore periodic tasks', done => {
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         const interval = setInterval(() => {}, 1);
         originalSetTimeout(() => {
           assert.equal(
@@ -145,7 +165,7 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle task with navigation change', done => {
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         history.pushState(
           { test: 'testing' },
           '',
@@ -182,7 +202,7 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle task with timeout and async operation', done => {
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(1000);
         }).then(() => {
@@ -211,6 +231,89 @@ describe('UserInteractionInstrumentation', () => {
       });
     });
 
+    it('should not create spans from unknown events', () => {
+      fakeEventInteraction('play');
+      assert.strictEqual(
+        exportSpy.args.length,
+        0,
+        'should not export any spans'
+      );
+    });
+
+    it('should export spans for configured event types', () => {
+      registerTestInstrumentations({
+        eventNames: ['play'],
+      });
+
+      fakeEventInteraction('play');
+      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      const span = exportSpy.args[0][0][0];
+      assertInteractionSpan(span, { name: 'play' });
+    });
+
+    it('not configured spans should not be exported', () => {
+      registerTestInstrumentations({
+        eventNames: ['play'],
+      });
+
+      fakeClickInteraction();
+      assert.strictEqual(
+        exportSpy.args.length,
+        0,
+        'should not export any spans'
+      );
+    });
+
+    it('should call shouldPreventSpanCreation with proper arguments', () => {
+      const shouldPreventSpanCreation = sinon.stub();
+      registerTestInstrumentations({
+        shouldPreventSpanCreation,
+      });
+
+      const element = createButton();
+      element.addEventListener('click', () => {});
+      element.click();
+
+      const span = exportSpy.args[0][0][0];
+      assert.deepStrictEqual(shouldPreventSpanCreation.args, [
+        ['click', element, span],
+      ]);
+    });
+
+    describe('when shouldPreventSpanCreation returns true', () => {
+      it('should not record span', () => {
+        const shouldPreventSpanCreation = () => true;
+        registerTestInstrumentations({
+          shouldPreventSpanCreation,
+        });
+
+        const element = createButton();
+        element.addEventListener('click', () => {});
+        element.click();
+
+        assert.strictEqual(
+          exportSpy.args.length,
+          0,
+          'should not export any spans'
+        );
+      });
+    });
+
+    describe('when shouldPreventSpanCreation returns false', () => {
+      it('should record span', () => {
+        const shouldPreventSpanCreation = () => false;
+        registerTestInstrumentations({
+          shouldPreventSpanCreation,
+        });
+
+        const element = createButton();
+        element.addEventListener('click', () => {});
+        element.click();
+
+        assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      });
+    });
+
     it('should run task from different zone - angular test', done => {
       const context = ROOT_CONTEXT;
       const rootZone = Zone.current;
@@ -236,7 +339,7 @@ describe('UserInteractionInstrumentation', () => {
 
       newZone.run(() => {
         assert.ok(Zone.current === newZone, 'New zone is wrong');
-        fakeInteraction(() => {
+        fakeClickInteraction(() => {
           assert.ok(
             Zone.current.parent === newZone,
             'Parent zone for click is wrong'
@@ -255,7 +358,7 @@ describe('UserInteractionInstrumentation', () => {
       const callback = function () {
         called = true;
       };
-      fakeInteraction(callback, btn);
+      fakeClickInteraction(callback, btn);
       sandbox.clock.tick(1000);
       originalSetTimeout(() => {
         assert.equal(called, false, 'callback should not be called');
@@ -270,17 +373,17 @@ describe('UserInteractionInstrumentation', () => {
       btn2.setAttribute('id', 'btn2');
       const btn3 = document.createElement('button');
       btn3.setAttribute('id', 'btn3');
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(10);
         }).then(() => {});
       }, btn1);
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(10);
         }).then(() => {});
       }, btn2);
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(10);
         }).then(() => {});

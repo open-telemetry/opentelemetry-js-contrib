@@ -14,13 +14,38 @@
  * limitations under the License.
  */
 
-import * as types from '@opentelemetry/api';
+import { HrTime, Span } from '@opentelemetry/api';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+
+export type EventName = keyof HTMLElementEventMap;
+
+export type ShouldPreventSpanCreation = (
+  eventType: EventName,
+  element: HTMLElement,
+  span: Span
+) => boolean | void;
+
+export interface UserInteractionInstrumentationConfig
+  extends InstrumentationConfig {
+  /**
+   * List of events to instrument (like 'mousedown', 'touchend', 'play' etc).
+   * By default only 'click' event is instrumented.
+   */
+  eventNames?: EventName[];
+
+  /**
+   * Callback function called each time new span is being created.
+   * Return `true` to prevent span recording.
+   * You can also use this handler to enhance created span with extra attributes.
+   */
+  shouldPreventSpanCreation?: ShouldPreventSpanCreation;
+}
 
 /**
  * Async Zone task
  */
 export type AsyncTask = Task & {
-  eventName: string;
+  eventName: EventName;
   target: EventTarget;
   // Allows access to the private `_zone` property of a Zone.js Task.
   _zone: Zone;
@@ -39,7 +64,7 @@ export type RunTaskFunction = (
  * interface to store information in weak map per span
  */
 export interface SpanData {
-  hrTimeLastTimeout?: types.HrTime;
+  hrTimeLastTimeout?: HrTime;
   taskCount: number;
 }
 
