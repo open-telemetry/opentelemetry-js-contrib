@@ -615,6 +615,35 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
       return;
     }
     this._isEnabled = false;
+    const ZoneWithPrototype = this._getZoneWithPrototype();
+    this._diag.debug(
+      'removing patch from',
+      this.moduleName,
+      this.version,
+      'zone:',
+      !!ZoneWithPrototype
+    );
+    if (ZoneWithPrototype && this._zonePatched) {
+      if (isWrapped(ZoneWithPrototype.prototype.runTask)) {
+        this._unwrap(ZoneWithPrototype.prototype, 'runTask');
+      }
+      if (isWrapped(ZoneWithPrototype.prototype.scheduleTask)) {
+        this._unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
+      }
+      if (isWrapped(ZoneWithPrototype.prototype.cancelTask)) {
+        this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
+      }
+    } else {
+      const targets = this._getPatchableEventTargets();
+      targets.forEach(target => {
+        if (isWrapped(target.addEventListener)) {
+          this._unwrap(target, 'addEventListener');
+        }
+        if (isWrapped(target.removeEventListener)) {
+          this._unwrap(target, 'removeEventListener');
+        }
+      });
+    }
   }
 
   /**
