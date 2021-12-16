@@ -32,7 +32,7 @@ const instrumentation = registerInstrumentationTesting(
 );
 
 import * as mongodb from 'mongodb';
-import { assertSpans, accessCollection } from './utils';
+import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation', () => {
@@ -49,7 +49,7 @@ describe('MongoDBInstrumentation', () => {
   }
   // shouldTest = true
 
-  const URL = `mongodb://${process.env.MONGODB_HOST || 'localhost'}:${
+  const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
     process.env.MONGODB_PORT || '27017'
   }`;
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
@@ -437,18 +437,21 @@ describe('MongoDBInstrumentation', () => {
           span.end();
           const [mongoSpan] = getTestSpans();
           assert.ifError(err);
-          lookup(process.env.MONGODB_HOST || 'localhost', (err, address) => {
-            if (err) return done(err);
-            assert.strictEqual(
-              mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
-              address
-            );
-            assert.strictEqual(
-              mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
-              process.env.MONGODB_PORT || '27017'
-            );
-            done();
-          });
+          lookup(
+            process.env.MONGODB_HOST || DEFAULT_MONGO_HOST,
+            (err, address) => {
+              if (err) return done(err);
+              assert.strictEqual(
+                mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
+                address
+              );
+              assert.strictEqual(
+                mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
+                process.env.MONGODB_PORT || '27017'
+              );
+              done();
+            }
+          );
         });
       });
     });

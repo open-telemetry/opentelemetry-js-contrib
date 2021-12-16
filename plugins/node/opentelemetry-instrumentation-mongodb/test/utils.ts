@@ -20,6 +20,8 @@ import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as mongodb from 'mongodb';
 
+export const DEFAULT_MONGO_HOST = '127.0.0.1';
+
 export interface MongoDBAccess {
   client: mongodb.MongoClient;
   collection: mongodb.Collection;
@@ -82,7 +84,7 @@ export function assertSpans(
   );
   assert.strictEqual(
     mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
-    process.env.MONGODB_HOST || 'localhost'
+    process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
 
