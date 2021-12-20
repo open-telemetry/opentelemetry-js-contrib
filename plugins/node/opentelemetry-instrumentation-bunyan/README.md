@@ -15,6 +15,10 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-bunyan
 ```
 
+### Supported Versions
+
+- `^1.0.0`
+
 ## Usage
 
 ```js
