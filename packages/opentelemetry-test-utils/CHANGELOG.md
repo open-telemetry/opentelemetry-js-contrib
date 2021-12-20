@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.27.0...contrib-test-utils-v0.28.0) (2021-11-30)
+
+
+### Features
+
+* use latest instrumentation base ([#769](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/769)) ([7aff23e](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/7aff23ebebbe209fa3b78c2e7f513c9cd2231be4))
+
+## [0.27.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.26.0...contrib-test-utils-v0.27.0) (2021-10-22)
+
+
+### Features
+
+* **instrumentation-aws-sdk:** upstream aws-sdk instrumentation from ext-js ([#678](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/678)) ([f5851e7](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/f5851e72512117dbce571a42930a90c560dbf63d))
+* support API and SDK 1.0 ([#706](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/706)) ([096b694](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/096b694bbc3079f0ab4ee0462869b10eb8185202))
+
 ## [0.26.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.25.0...contrib-test-utils-v0.26.0) (2021-09-22)
 
 

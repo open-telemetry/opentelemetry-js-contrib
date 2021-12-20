@@ -7,6 +7,8 @@
 
 This module provides automatic instrumentation for injection of trace context to [`pino`](https://www.npmjs.com/package/pino).
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -53,7 +55,7 @@ When no span context is active or the span context is invalid, injection is skip
 
 ### Supported versions
 
-`>5.14.0` and `6.x`
+`>=5.14.0 <8`
 
 ## Useful links
 

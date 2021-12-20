@@ -8,6 +8,8 @@
 
 This module provides *automated instrumentation for React lifecycles* for Web applications.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -25,6 +27,7 @@ BaseOpenTelemetryComponent.setTracer('name', 'version');
 ```
 
 To instrument components, extend `BaseOpenTelemetryComponent`:
+
 ```js
 import { BaseOpenTelemetryComponent } from '@opentelemetry/plugin-react-load';
 
@@ -34,6 +37,7 @@ export class Component1 extends BaseOpenTelemetryComponent { ... }
 See [/examples/react-load](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/react-load) for a short example.
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]

@@ -10,6 +10,8 @@ This module provides automatic instrumentation for [`connect`](https://github.co
 For automatic instrumentation see the
 [@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 This instrumentation relies on HTTP calls to also be instrumented. Make sure you install and enable both, otherwise you will have spans that are not connected to each other.
@@ -47,7 +49,6 @@ registerInstrumentations({
 ```
 
 See [examples/connect](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/connect) for a short example.
-
 
 ## Useful links
 

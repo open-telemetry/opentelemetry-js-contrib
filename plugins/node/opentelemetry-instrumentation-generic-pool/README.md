@@ -10,14 +10,17 @@ This module provides basic automatic instrumentation for [`generic-pool`](https:
 For automatic instrumentation see the
 [@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
 npm install --save @opentelemetry/instrumentation-generic-pool
 ```
+
 ### Supported Versions
- 
- - `>=2.0.0`
+
+- `>=2.0.0`
 
 ## Usage
 

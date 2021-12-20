@@ -10,6 +10,8 @@ This module provides automatic instrumentation for [`Koa`](https://github.com/ko
 For automatic instrumentation see the
 [@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -40,6 +42,17 @@ registerInstrumentations({
 ```
 
 See [examples/koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/koa) for a short example using both Koa and @koa/router
+
+### Koa Instrumentation Options
+
+| Options | Type | Example | Description |
+| ------- | ---- | ------- | ----------- |
+| `ignoreLayersType`| `KoaLayerType[]` | `['middleware']` | Ignore layers of specified type. |
+
+`ignoreLayersType` accepts an array of `KoaLayerType` which can take the following string values:
+
+- `router`,
+- `middleware`.
 
 ## Koa Packages
 

@@ -2,6 +2,8 @@
 
 This browser extension allows you to inject [OpenTelemetry](https://opentelemetry.io/) instrumentation in any web page. It uses the [Web SDK](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-web) and can export data to Zipkin or an OpenTelemetry Collector.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ![This animated image shows the process of activating the extension and seeing console output in the developer toolbar](./images/inject-opentelemetry.gif)
 
 ## Supported Environments
@@ -14,11 +16,12 @@ This browser extension allows you to inject [OpenTelemetry](https://opentelemetr
 
 ### from Download
 
-* Go to [Releases](https://github.com/svrnm/opentelemetry-browser-extension/releases) and download the latest opentelemetry-browser-extension-<version>-<mv2|mv3>.zip from Assets. 
+* Go to [Releases](https://github.com/svrnm/opentelemetry-browser-extension/releases) and download the latest opentelemetry-browser-extension-<version>-<mv2|mv3>.zip from Assets.
 * Unzip that file locally
 * Open a new browser window and go to chrome://extensions
 * Turn on "Developer Mode"
-* Click on "Load unpacked" and the select the folder, where the unzipped extension lives. 
+* Click on "Load unpacked" and the select the folder, where the unzipped extension lives.
+
 ### from Source
 
 Run the following in your shell to download and build the extension from source:
@@ -30,7 +33,7 @@ npm install
 npm run build
 ```
 
-This will create a so-called unpacked extension into the `build/` folder you now can load into your browser: 
+This will create a so-called unpacked extension into the `build/` folder you now can load into your browser:
 
 * Open a new browser window and go to chrome://extensions
 * Turn on "Developer Mode"

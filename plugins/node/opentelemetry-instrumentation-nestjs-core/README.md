@@ -7,6 +7,8 @@
 
 This module provides automatic tracing instrumentation for [Nest framework][pkg-web-url].
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -46,7 +48,7 @@ registerInstrumentations({
 `<ControllerName>.<memberName>` | `request_context` | Traces the whole request context. | `http.*`, `nestjs.callback`
 `<memberName>` | `handler` | Traces the work of a specific controller member function. | `nestjs.callback`
 
-#### Attributes
+### Attributes
 
 | Name | Description
 | ---- | ----

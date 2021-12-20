@@ -9,13 +9,17 @@ This module provides *automated instrumentation and tracing* for GraphQL in Node
 
 *Note*: graphql plugin instruments graphql directly. it should work with any package that wraps the graphql package (e.g apollo).
 
-Minimum required graphql version is `v14`
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Installation
 
 ```shell script
 npm install @opentelemetry/instrumentation-graphql
 ```
+
+### Supported Versions
+
+`>=14 <16`
 
 ## Usage
 
@@ -52,6 +56,7 @@ registerInstrumentations({
 | responseHook | GraphQLInstrumentationExecutionResponseHook |     undefined     | Hook that allows adding custom span attributes based on the data returned from "execute" GraphQL action. |   |
 
 ## Examples
+
 Can be found [here](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/graphql)
 
 ## Useful links
@@ -59,6 +64,7 @@ Can be found [here](https://github.com/open-telemetry/opentelemetry-js-contrib/t
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+
 ## License
 
 Apache 2.0 - See [LICENSE][license-url] for more information.

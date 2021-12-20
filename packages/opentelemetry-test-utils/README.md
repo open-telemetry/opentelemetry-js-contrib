@@ -3,12 +3,16 @@
 This is a internal utils package used across the contrib packages.
 No guarantees are given to uses outside of [open-telemetry/opentelemetry-js-contrib](https://github.com/open-telemetry/opentelemetry-js-contrib/) repository.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Instrumentation Testing
+
 This package exports a mocha [root hook plugin](https://mochajs.org/#root-hook-plugins), which implements common boilerplate code a developer probably needs for writing instrumentation unit tests in node.
 
 This package:
+
 - Initializes and registers a global trace provider for tests.
-- Registers a global memory exporter which can be referenced in test to access span. 
+- Registers a global memory exporter which can be referenced in test to access span.
 - Make sure there is only a single instance of an instrumentation class that is used across different `.spec.ts` files so patching is consistent, deterministic and idiomatic.
 - Reset the memory exporter before each test, so spans do not leak from one test to another.
 - Optionally - export the test traces to Jaeger for convenience while debugging and developing.
@@ -16,17 +20,21 @@ This package:
 By using this package, testing instrumentation code can be shorter, and good practices for writing tests are more easily applied.
 
 ### Supporter Version
-Since [root hook plugin](https://mochajs.org/#root-hook-plugins) are used, this package is compatible to mocha v8.0.0 and above. 
+
+Since [root hook plugin](https://mochajs.org/#root-hook-plugins) are used, this package is compatible to mocha v8.0.0 and above.
 
 ### Usage
-1. Add dev dependency on this package: 
 
-```
+1. Add dev dependency on this package:
+
+```sh
 npm install @opentelemetry/test-utils --save-dev
 ```
-2. [`require`](https://mochajs.org/#-require-module-r-module) this package in mocha invocation:
+
+1. [`require`](https://mochajs.org/#-require-module-r-module) this package in mocha invocation:
 
 As command line argument option to mocha:
+
 ```js
     "scripts": {
         "test": "mocha --require @opentelemetry/test-utils",
@@ -41,7 +49,7 @@ Or by using config file / package.json config:
     }
 ```
 
-3. In your `.spec` file, import `registerInstrumentationTesting` and `getTestSpans` functions and use them to create instrumentation class instance and make assertions in the test:
+1. In your `.spec` file, import `registerInstrumentationTesting` and `getTestSpans` functions and use them to create instrumentation class instance and make assertions in the test:
 
 ```js
 import { getTestSpans, registerInstrumentationTesting } from '@opentelemetry/test-utils';

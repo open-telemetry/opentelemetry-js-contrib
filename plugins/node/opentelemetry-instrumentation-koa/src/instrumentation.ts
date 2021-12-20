@@ -18,7 +18,6 @@ import * as api from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
@@ -29,16 +28,17 @@ import {
   KoaComponentName,
   kLayerPatched,
   KoaLayerType,
+  KoaInstrumentationConfig,
 } from './types';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
-import { getMiddlewareMetadata } from './utils';
+import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   static readonly component = KoaComponentName;
-  constructor(config?: InstrumentationConfig) {
+  constructor(config?: KoaInstrumentationConfig) {
     super('@opentelemetry/instrumentation-koa', VERSION, config);
   }
   protected init() {
@@ -126,7 +126,13 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
     isRouter: boolean,
     layerPath?: string
   ): KoaMiddleware {
-    if (middlewareLayer[kLayerPatched] === true) return middlewareLayer;
+    const layerType = isRouter ? KoaLayerType.ROUTER : KoaLayerType.MIDDLEWARE;
+    // Skip patching layer if its ignored in the config
+    if (
+      middlewareLayer[kLayerPatched] === true ||
+      isLayerIgnored(layerType, this._config)
+    )
+      return middlewareLayer;
     middlewareLayer[kLayerPatched] = true;
     api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {

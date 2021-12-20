@@ -25,8 +25,7 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
-import type * as Winston from 'winston';
-import type { Winston3Logger } from '../src/types';
+import type { Winston2Logger, Winston3Logger } from '../src/types';
 import { WinstonInstrumentation } from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -38,11 +37,36 @@ context.setGlobalContextManager(new AsyncHooksContextManager());
 const kMessage = 'log-message';
 
 describe('WinstonInstrumentation', () => {
-  let logger: Winston3Logger;
-  let stream;
+  let logger: Winston3Logger | Winston2Logger;
   let writeSpy: sinon.SinonSpy;
-  let winston: typeof Winston;
   let instrumentation: WinstonInstrumentation;
+
+  function initLogger() {
+    const winston = require('winston');
+    const stream = new Writable();
+    stream._write = () => {};
+    writeSpy = sinon.spy(stream, 'write');
+
+    if (winston['createLogger']) {
+      // winston 3.x
+      logger = winston.createLogger({
+        transports: [
+          new winston.transports.Stream({
+            stream,
+          }),
+        ],
+      });
+    } else if (winston['Logger']) {
+      // winston 2.x
+      logger = new winston.Logger({
+        transports: [
+          new winston.transports.File({
+            stream,
+          }),
+        ],
+      });
+    }
+  }
 
   function testInjection(span: Span) {
     logger.info(kMessage);
@@ -70,22 +94,20 @@ describe('WinstonInstrumentation', () => {
   before(() => {
     instrumentation = new WinstonInstrumentation();
     instrumentation.enable();
-    winston = require('winston');
-    assert.ok(isWrapped(winston.createLogger()['write']));
   });
 
   describe('enabled instrumentation', () => {
-    beforeEach(() => {
-      stream = new Writable();
-      stream._write = () => {};
-      writeSpy = sinon.spy(stream, 'write');
-      logger = winston.createLogger({
-        transports: [
-          new winston.transports.Stream({
-            stream,
-          }),
-        ],
-      });
+    beforeEach(initLogger);
+
+    it('wraps write', () => {
+      if ('write' in logger) {
+        // winston 3.x
+        assert.ok(isWrapped(logger['write']));
+      } else {
+        // winston 2.x
+        // winston 3.x also has "log", so the order for the checks has to be this
+        assert.ok(isWrapped(logger['log']));
+      }
     });
 
     it('injects span context to records', () => {
@@ -144,18 +166,7 @@ describe('WinstonInstrumentation', () => {
       instrumentation.enable();
     });
 
-    beforeEach(() => {
-      stream = new Writable();
-      stream._write = () => {};
-      writeSpy = sinon.spy(stream, 'write');
-      logger = winston.createLogger({
-        transports: [
-          new winston.transports.Stream({
-            stream,
-          }),
-        ],
-      });
-    });
+    beforeEach(initLogger);
 
     it('does not inject span context', () => {
       const span = tracer.startSpan('abc');

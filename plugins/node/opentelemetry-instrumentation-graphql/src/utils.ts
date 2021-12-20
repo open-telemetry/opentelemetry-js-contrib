@@ -16,7 +16,6 @@
 
 import type * as graphqlTypes from 'graphql';
 import * as api from '@opentelemetry/api';
-import { GraphQLObjectType } from 'graphql/type/definition';
 import { AllowedOperationTypes, SpanNames, TokenKind } from './enum';
 import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
@@ -31,6 +30,31 @@ import {
 } from './types';
 
 const OPERATION_VALUES = Object.values(AllowedOperationTypes);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function addInputVariableAttribute(span: api.Span, key: string, variable: any) {
+  if (Array.isArray(variable)) {
+    variable.forEach((value, idx) => {
+      addInputVariableAttribute(span, `${key}.${idx}`, value);
+    });
+  } else if (variable instanceof Object) {
+    Object.entries(variable).forEach(([nestedKey, value]) => {
+      addInputVariableAttribute(span, `${key}.${nestedKey}`, value);
+    });
+  } else {
+    span.setAttribute(`${AttributeNames.VARIABLES}${String(key)}`, variable);
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function addInputVariableAttributes(
+  span: api.Span,
+  variableValues: { [key: string]: any }
+) {
+  Object.entries(variableValues).forEach(([key, value]) => {
+    addInputVariableAttribute(span, key, value);
+  });
+}
 
 export function addSpanSource(
   span: api.Span,
@@ -268,7 +292,7 @@ export function getSourceFromLocation(
 }
 
 export function wrapFields(
-  type: Maybe<GraphQLObjectType & OtelPatched>,
+  type: Maybe<graphqlTypes.GraphQLObjectType & OtelPatched>,
   tracer: api.Tracer,
   getConfig: () => GraphQLInstrumentationParsedConfig
 ): void {

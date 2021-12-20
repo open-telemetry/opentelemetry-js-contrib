@@ -10,13 +10,17 @@ This module provides automatic instrumentation for [`router`](https://github.com
 For automatic instrumentation see the
 [@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
 npm install --save @opentelemetry/instrumentation-router
 ```
+
 ### Supported Versions
- - `>=1.0.0`
+
+- `>=1.0.0`
 
 ## Usage
 

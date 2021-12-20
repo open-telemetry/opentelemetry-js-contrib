@@ -10,6 +10,8 @@ This module provides automatic instrumentation for [`mongodb`](https://github.co
 For automatic instrumentation see the
 [@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -17,7 +19,8 @@ npm install --save @opentelemetry/instrumentation-mongodb
 ```
 
 ### Supported Versions
- - `'>=3.3 <4`
+
+- `'>=3.3 <4`
 
 ## Usage
 
