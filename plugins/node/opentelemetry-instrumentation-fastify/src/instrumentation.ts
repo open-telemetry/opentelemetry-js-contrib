@@ -87,7 +87,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
       const routeName = request.routerPath;
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
         rpcMetadata.span.setAttribute(SemanticAttributes.HTTP_ROUTE, routeName);
-        rpcMetadata.span.updateName(`${request.method} ${routeName || '/'}`);
+        rpcMetadata.span.updateName(`${request.method} ${routeName}`);
       }
       done();
     };
@@ -96,18 +96,17 @@ export class FastifyInstrumentation extends InstrumentationBase {
   private _wrapHandler(
     pluginName: string,
     hookName: string,
-    original: (...args: unknown[]) => Promise<any> | void,
+    original: (...args: unknown[]) => Promise<unknown>,
     syncFunctionWithDone: boolean
-  ): () => Promise<any> | void {
+  ): () => Promise<unknown> {
     const instrumentation = this;
-    return function (this: any, ...args: unknown[]): Promise<any> | void {
+    return function (this: any, ...args: unknown[]): Promise<unknown> {
       if (!instrumentation.isEnabled()) {
         return original.apply(this, args);
       }
 
-      const spanName = `${FastifyNames.MIDDLEWARE} - ${
-        original.name || ANONYMOUS_NAME
-      }`;
+      const spanName = `${FastifyNames.MIDDLEWARE} - ${original.name || ANONYMOUS_NAME
+        }`;
 
       const reply = args[1] as PluginFastifyReply;
 
@@ -129,7 +128,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
         };
       }
 
-      return context.with(trace.setSpan(context.active(), span), () => {
+      return Promise.resolve(context.with(trace.setSpan(context.active(), span), () => {
         return safeExecuteInTheMiddleMaybePromise(
           () => {
             return original.apply(this, args);
@@ -148,7 +147,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
             }
           }
         );
-      });
+      }));
     };
   }
 
@@ -244,9 +243,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
       }
       const requestContext = (request as any).context || {};
       const handlerName = (requestContext.handler?.name || '').substr(6);
-      const spanName = `${FastifyNames.REQUEST_HANDLER} - ${
-        handlerName || ANONYMOUS_NAME
-      }`;
+      const spanName = `${FastifyNames.REQUEST_HANDLER} - ${handlerName || ANONYMOUS_NAME
+        }`;
 
       const spanAttributes: SpanAttributes = {
         [AttributeNames.PLUGIN_NAME]: this.pluginName,
