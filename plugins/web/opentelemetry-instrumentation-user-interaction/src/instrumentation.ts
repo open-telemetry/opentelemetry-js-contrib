@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  isWrapped,
-  InstrumentationBase,
-  InstrumentationConfig,
-} from '@opentelemetry/instrumentation';
+import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
@@ -26,8 +22,11 @@ import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
 import {
   AsyncTask,
+  EventName,
   RunTaskFunction,
+  ShouldPreventSpanCreation,
   SpanData,
+  UserInteractionInstrumentationConfig,
   WindowWithZone,
   ZoneTypeWithPrototype,
 } from './types';
@@ -35,6 +34,11 @@ import { VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
+const DEFAULT_EVENT_NAMES: EventName[] = ['click'];
+
+function defaultShouldPreventSpanCreation() {
+  return false;
+}
 
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
@@ -57,9 +61,16 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     Event,
     api.Span
   >();
+  private _eventNames: Set<EventName>;
+  private _shouldPreventSpanCreation: ShouldPreventSpanCreation;
 
-  constructor(config?: InstrumentationConfig) {
+  constructor(config?: UserInteractionInstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
+    this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES);
+    this._shouldPreventSpanCreation =
+      typeof config?.shouldPreventSpanCreation === 'function'
+        ? config.shouldPreventSpanCreation
+        : defaultShouldPreventSpanCreation;
   }
 
   init() {}
@@ -89,9 +100,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   /**
    * Controls whether or not to create a span, based on the event type.
    */
-  protected _allowEventType(eventType: string): boolean {
-    return eventType === 'click';
+  protected _allowEventName(eventName: EventName): boolean {
+    return this._eventNames.has(eventName);
   }
+
   /**
    * Creates a new span
    * @param element
@@ -99,7 +111,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    */
   private _createSpan(
     element: EventTarget | null | undefined,
-    eventName: string,
+    eventName: EventName,
     parentSpan?: api.Span | undefined
   ): api.Span | undefined {
     if (!(element instanceof HTMLElement)) {
@@ -111,7 +123,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     if (element.hasAttribute('disabled')) {
       return undefined;
     }
-    if (!this._allowEventType(eventName)) {
+    if (!this._allowEventName(eventName)) {
       return undefined;
     }
     const xpath = getElementXPath(element, true);
@@ -132,6 +144,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
           ? api.trace.setSpan(api.context.active(), parentSpan)
           : undefined
       );
+
+      if (this._shouldPreventSpanCreation(eventName, element, span) === true) {
+        return undefined;
+      }
 
       this._spansData.set(span, {
         taskCount: 0,
@@ -262,7 +278,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     return (original: EventTarget['addEventListener']) => {
       return function addEventListenerPatched(
         this: HTMLElement,
-        type: string,
+        type: keyof HTMLElementEventMap,
         listener: EventListenerOrEventListenerObject | null,
         useCapture?: boolean | AddEventListenerOptions
       ) {

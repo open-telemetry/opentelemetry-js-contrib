@@ -7,6 +7,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
+    "test-all-versions": "tav",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
@@ -61,6 +62,7 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
+    "test-all-versions": "^5.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"
   },

@@ -24,7 +24,6 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
-import { GraphQLFieldResolver } from 'graphql/type/definition';
 import { SpanNames } from './enum';
 import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL } from './symbols';
@@ -164,7 +163,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   }
 
   private _patchExecute(
-    defaultFieldResolved: GraphQLFieldResolver<any, any>
+    defaultFieldResolved: graphqlTypes.GraphQLFieldResolver<any, any>
   ): (original: executeType) => executeType {
     const instrumentation = this;
     return function execute(original) {
