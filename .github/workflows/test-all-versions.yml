@@ -71,6 +71,7 @@ jobs:
       OPENTELEMETRY_REDIS_HOST: redis
       OPENTELEMETRY_REDIS_PORT: 6379
       MONGODB_DB: opentelemetry-tests
+      
       MONGODB_HOST: mongo
       MONGODB_PORT: 27017
       MYSQL_USER: otel
