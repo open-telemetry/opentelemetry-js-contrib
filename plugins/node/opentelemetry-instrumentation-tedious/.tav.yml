@@ -1,0 +1,6 @@
+tedious:
+  versions: ">=14"
+  commands: npm run test
+
+  # Fix missing `test-utils` package
+  pretest: npm run --prefix ../../../ lerna:link
