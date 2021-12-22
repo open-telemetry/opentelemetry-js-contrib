@@ -90,15 +90,15 @@ export function endSpan(reply: PluginFastifyReply, err?: any) {
 export function safeExecuteInTheMiddleMaybePromise<T>(
   execute: () => Promise<T>,
   onFinish: (e: unknown, result?: T) => void,
-  preventThrowingError?: boolean,
+  preventThrowingError?: boolean
 ): Promise<T>;
 export function safeExecuteInTheMiddleMaybePromise<T>(
   execute: () => T,
   onFinish: (e: unknown, result?: T) => void,
-  preventThrowingError?: boolean,
+  preventThrowingError?: boolean
 ): T;
 export function safeExecuteInTheMiddleMaybePromise<T>(
-  execute: () => (T | Promise<T>),
+  execute: () => T | Promise<T>,
   onFinish: (e: unknown, result?: T) => void,
   preventThrowingError?: boolean
 ): T | Promise<T> | undefined {
@@ -110,7 +110,7 @@ export function safeExecuteInTheMiddleMaybePromise<T>(
     if (isPromise(result)) {
       result.then(
         res => onFinish(undefined, res),
-        err => onFinish(err),
+        err => onFinish(err)
       );
     }
   } catch (e) {
@@ -123,13 +123,17 @@ export function safeExecuteInTheMiddleMaybePromise<T>(
         throw error;
       }
     }
+    // eslint-disable-next-line no-unsafe-finally
     return result;
   }
 }
 
 function isPromise<T>(val: T | Promise<T>): val is Promise<T> {
-  return typeof val === 'object' &&
-    val &&
-    typeof Object.getOwnPropertyDescriptor(val, "then")?.value === 'function' ||
-    false;
+  return (
+    (typeof val === 'object' &&
+      val &&
+      typeof Object.getOwnPropertyDescriptor(val, 'then')?.value ===
+        'function') ||
+    false
+  );
 }
