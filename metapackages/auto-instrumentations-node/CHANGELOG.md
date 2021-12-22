@@ -1,5 +1,14 @@
 # Changelog
 
+### [0.27.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.27.0...auto-instrumentations-node-v0.27.1) (2021-12-22)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-graphql bumped from ^0.27.0 to ^0.27.1
+
 ## [0.27.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.26.2...auto-instrumentations-node-v0.27.0) (2021-11-30)
 
 
