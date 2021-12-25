@@ -9,8 +9,6 @@ This module provides *automated instrumentation and tracing* for GraphQL in Node
 
 *Note*: graphql plugin instruments graphql directly. it should work with any package that wraps the graphql package (e.g apollo).
 
-Minimum required graphql version is `v14`
-
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Installation
@@ -18,6 +16,10 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 ```shell script
 npm install @opentelemetry/instrumentation-graphql
 ```
+
+### Supported Versions
+
+`>=14 <16`
 
 ## Usage
 

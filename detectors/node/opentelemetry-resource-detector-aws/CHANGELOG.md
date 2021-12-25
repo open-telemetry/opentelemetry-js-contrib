@@ -1,5 +1,14 @@
 # Changelog
 
+### [1.0.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.0.1...resource-detector-aws-v1.0.2) (2021-11-30)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.27.0 to ^0.28.0
+
 ### [1.0.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.0.0...resource-detector-aws-v1.0.1) (2021-11-01)
 
 

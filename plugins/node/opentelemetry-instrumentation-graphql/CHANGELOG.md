@@ -1,5 +1,19 @@
 # Changelog
 
+### [0.27.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.27.0...instrumentation-graphql-v0.27.1) (2021-12-22)
+
+
+### Bug Fixes
+
+* early close of span with graphql execute ([#752](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/752)) ([4a3b410](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/4a3b4107e40845091a267e5452ea17eed8a9fdf6))
+
+## [0.27.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.26.1...instrumentation-graphql-v0.27.0) (2021-11-30)
+
+
+### Features
+
+* use latest instrumentation base ([#769](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/769)) ([7aff23e](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/7aff23ebebbe209fa3b78c2e7f513c9cd2231be4))
+
 ### [0.26.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.26.0...instrumentation-graphql-v0.26.1) (2021-11-12)
 
 
