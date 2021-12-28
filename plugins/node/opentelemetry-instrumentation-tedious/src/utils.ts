@@ -20,7 +20,11 @@
  *
  * @returns Operation executed on Tedious Connection. Does not map to SQL statement in any way.
  */
-export function getSpanName(operation: string, db: string | undefined, sql: string | undefined): string {
+export function getSpanName(
+  operation: string,
+  db: string | undefined,
+  sql: string | undefined
+): string {
   if (operation === 'callProcedure') {
     if (db) {
       return `${operation} ${sql} ${db}`;
