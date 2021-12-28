@@ -29,6 +29,7 @@ import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
 import {
   callProcedureWithParameters,
+  cleanup,
   closeConnection,
   createConnection,
   createStoredProcedure,
@@ -113,7 +114,10 @@ describe('tedious', () => {
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
     tedious = require('tedious');
-    connection = await createConnection(tedious, config);
+    connection = await createConnection(tedious, config).catch(err => {
+      console.error('with config:', config);
+      throw err;
+    });
   });
 
   afterEach(async () => {
@@ -121,6 +125,7 @@ describe('tedious', () => {
     memoryExporter.reset();
     instrumentation.disable();
     if (connection) {
+      await cleanup(tedious, connection);
       await closeConnection(connection);
     }
   });
@@ -165,7 +170,7 @@ describe('tedious', () => {
       name: 'execSql master',
       sql: queryString,
       error: /incorrect syntax/i,
-      procCount: 0,
+      statementCount: 0,
     });
   });
 
@@ -186,7 +191,8 @@ describe('tedious', () => {
     assertSpan(spans[0], {
       name: 'execSql master',
       sql: queryString,
-      procCount: 3,
+      procCount: 1,
+      statementCount: 3,
     });
   });
 
@@ -202,7 +208,8 @@ describe('tedious', () => {
     assertSpan(spans[0], {
       name: 'execSqlBatch master',
       sql: queryString,
-      procCount: 3,
+      procCount: 0,
+      statementCount: 3,
     });
   });
 
@@ -237,6 +244,7 @@ describe('tedious', () => {
     assertSpan(spans[0], {
       name: 'execSql master',
       sql: /create table/i,
+      statementCount: 2,
     });
     assertSpan(spans[1], {
       name: 'prepare master',
@@ -266,8 +274,14 @@ function assertSpan(span: ReadableSpan, expected: any) {
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], host);
   assert.strictEqual(span.attributes[SemanticAttributes.DB_USER], user);
   assert.strictEqual(
-    span.attributes['tedious.proc_count'],
-    expected.procCount ?? 1
+    span.attributes['tedious.procedure_count'],
+    expected.procCount ?? 1,
+    'Invalid procedure_count'
+  );
+  assert.strictEqual(
+    span.attributes['tedious.statement_count'],
+    expected.statementCount ?? 1,
+    'Invalid statement_count'
   );
   if (expected.parentSpan) {
     assert.strictEqual(

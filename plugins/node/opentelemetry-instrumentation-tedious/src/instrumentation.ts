@@ -49,8 +49,7 @@ export class TediousInstrumentation extends InstrumentationBase<
           this._diag.debug(`Patching tedious@${moduleVersion}`);
           // TODO replace with this._diag.debug
 
-          const ConnectionPrototype: any =
-            moduleExports.Connection.prototype;
+          const ConnectionPrototype: any = moduleExports.Connection.prototype;
           for (const method of [
             'callProcedure',
             'execSql',
@@ -72,8 +71,7 @@ export class TediousInstrumentation extends InstrumentationBase<
         },
         (moduleExports: any) => {
           if (moduleExports === undefined) return;
-          const ConnectionPrototype: any =
-            moduleExports.Connection.prototype;
+          const ConnectionPrototype: any = moduleExports.Connection.prototype;
           this._unwrap(ConnectionPrototype, 'execSql');
           this._unwrap(ConnectionPrototype, 'callProcedure');
         }
@@ -97,9 +95,14 @@ export class TediousInstrumentation extends InstrumentationBase<
         }
       ) {
         let procCount = 0;
+        let statementCount = 0;
 
         const span = thisPlugin.tracer.startSpan(
-          getSpanName(operation, this.config?.options?.database, request.sqlTextOrProcedure),
+          getSpanName(
+            operation,
+            this.config?.options?.database,
+            request.sqlTextOrProcedure
+          ),
           {
             kind: api.SpanKind.CLIENT,
             attributes: {
@@ -114,13 +117,13 @@ export class TediousInstrumentation extends InstrumentationBase<
           }
         );
 
-        // for execSqlBatch
-        request.on('done', () => procCount++);
-        // for everything else
-        request.on('doneInProc', () => procCount++);
+        request.on('done', () => statementCount++);
+        request.on('doneInProc', () => statementCount++);
+        request.on('doneProc', () => procCount++);
 
         const endSpan = once((err?: any) => {
-          span.setAttribute('tedious.proc_count', procCount);
+          span.setAttribute('tedious.procedure_count', procCount);
+          span.setAttribute('tedious.statement_count', statementCount);
           if (err) {
             span.setStatus({
               code: api.SpanStatusCode.ERROR,

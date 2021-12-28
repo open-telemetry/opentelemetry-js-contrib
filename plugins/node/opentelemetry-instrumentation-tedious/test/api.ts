@@ -74,14 +74,14 @@ export function query(
       }
     });
 
-    // request.on('returnValue', console.log.bind(console, 'returnValue:'));
-    // request.on('error', console.log.bind(console, 'error:'));
-    // request.on('row', console.log.bind(console, 'row:'));
-    // request.on('done', console.log.bind(console, 'done:'));
-    // request.on('doneInProc', console.log.bind(console, 'doneInProc:'));
-    // request.on('doneProc', console.log.bind(console, 'doneProc:'));
-    // request.on('prepared', console.log.bind(console, 'prepared:'));
-    // request.on('columnMetadata', console.log.bind(console, 'columnMetadata:'));
+    // request.on('returnValue', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'returnValue:'));
+    // request.on('error', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'error:'));
+    // request.on('row', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'row:'));
+    // request.on('done', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'done:'));
+    // request.on('doneInProc', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'doneInProc:'));
+    // request.on('doneProc', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'doneProc:'));
+    // request.on('prepared', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'prepared:'));
+    // request.on('columnMetadata', console.log.bind(console, /*request.sqlTextOrProcedure,*/ 'columnMetadata:'));
 
     request.on('row', (rows: any[]) => {
       result.push(...rows.map(r => r.value));
@@ -98,7 +98,7 @@ export function createStoredProcedure(
 ): Promise<boolean> {
   return new Promise((resolve, reject) => {
     const sql = `
-    CREATE OR ALTER PROCEDURE${storedProcedure}
+    CREATE OR ALTER PROCEDURE ${storedProcedure}
       @inputVal varchar(30),
       @outputCount int OUTPUT
     AS
@@ -121,7 +121,7 @@ export function callProcedureWithParameters(
 ): Promise<any> {
   return new Promise((resolve, reject) => {
     const result: any = {};
-    const request = new tedious.Request(storedProcedure, (err) => {
+    const request = new tedious.Request(storedProcedure, err => {
       if (err) {
         return reject(err);
       }
@@ -193,4 +193,15 @@ export function executePreparedSQL(
     });
     connection.execute(request, { val1: 1, val2: 2 });
   });
+}
+
+export async function cleanup(tedious: tedious, connection: Connection) {
+  return query(
+    tedious,
+    connection,
+    `
+    if exists(select * from sysobjects where name='test_prepared' and xtype='U') drop table ${table};
+    if exists(select * from sysobjects where name='test_proced' and xtype='U') drop procedure ${storedProcedure};
+  `.trim()
+  );
 }
