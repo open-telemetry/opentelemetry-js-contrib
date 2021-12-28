@@ -68,9 +68,9 @@ function run(cmd: string) {
     const proc = childProcess.spawnSync(cmd, {
       shell: true,
     });
-    if (task && task.code !== 0) {
+    if (proc.status !== 0) {
       console.error('Failed run command:', cmd);
-      console.error(task.output);
+      console.error(proc.output);
     }
     return {
       code: proc.status,
