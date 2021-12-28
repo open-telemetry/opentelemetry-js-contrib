@@ -48,7 +48,7 @@ const port = Number(process.env.MSSQL_PORT) || 1433;
 const database = process.env.MSSQL_DATABASE || 'master';
 const host = process.env.MSSQL_HOST || '127.0.0.1';
 const user = process.env.MSSQL_USER || 'sa';
-const password = process.env.MSSQL_PASSWORD || 'secret';
+const password = process.env.MSSQL_PASSWORD || 'mssql_passw0rd';
 
 const instrumentation = new TediousInstrumentation();
 instrumentation.enable();
@@ -89,7 +89,7 @@ describe('tedious', () => {
     }
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (shouldTestLocally) {
-      // testUtils.startDocker('mssql');
+      testUtils.startDocker('mssql');
       // wait 15 seconds for docker container to start
       this.timeout(20000);
       setTimeout(done, 15000);
@@ -101,7 +101,7 @@ describe('tedious', () => {
   after(function () {
     if (shouldTestLocally) {
       this.timeout(5000);
-      // testUtils.cleanUpDocker('mssql');
+      testUtils.cleanUpDocker('mssql');
     }
   });
 
