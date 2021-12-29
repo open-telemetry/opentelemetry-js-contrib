@@ -73,7 +73,9 @@ const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
           .get(INSTANCE_PATH)
           .reply(200, {}, HEADERS)
           .get(INSTANCE_ID_PATH)
-          .reply(200, () => 4520031799277581759, HEADERS)
+          // This number is too large to be safely represented by a JS number
+          // See https://github.com/googleapis/gcp-metadata/tree/fc2f0778138b36285643b2f716c485bf9614611f#take-care-with-large-number-valued-properties
+          .reply(200, () => '4520031799277581759', HEADERS)
           .get(PROJECT_ID_PATH)
           .reply(200, () => 'my-project-id', HEADERS)
           .get(ZONE_PATH)
@@ -92,7 +94,7 @@ const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
           accountId: 'my-project-id',
           zone: 'my-zone',
         });
-        assertHostResource(resource, { id: '4520031799277582000' });
+        assertHostResource(resource, { id: '4520031799277581759' });
       });
 
       it('should populate K8s attributes when KUBERNETES_SERVICE_HOST is set', async () => {
@@ -104,7 +106,7 @@ const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
           .get(INSTANCE_PATH)
           .reply(200, {}, HEADERS)
           .get(INSTANCE_ID_PATH)
-          .reply(200, () => 4520031799277581759, HEADERS)
+          .reply(200, () => '4520031799277581759', HEADERS)
           .get(CLUSTER_NAME_PATH)
           .reply(200, () => 'my-cluster', HEADERS)
           .get(PROJECT_ID_PATH)
