@@ -113,7 +113,7 @@ jobs:
             propagators/*/node_modules
           key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/package.json') }}
       - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == 'node:16'
+        if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
@@ -126,7 +126,7 @@ jobs:
       - name: Unit tests
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
       - name: Report Coverage
-        if: matrix.node == 'node:14'
+        if: matrix.node == '14'
         run: npm run codecov:ci:changed
   browser-tests:
     runs-on: ubuntu-latest
@@ -151,7 +151,7 @@ jobs:
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules
-          key: ${{ runner.os }}-node:12-${{ hashFiles('**/package.json') }}
+          key: ${{ runner.os }}-browser-${{ hashFiles('**/package.json') }}
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
