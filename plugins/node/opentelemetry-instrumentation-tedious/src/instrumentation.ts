@@ -15,6 +15,7 @@
  */
 
 import * as api from '@opentelemetry/api';
+import { EventEmitter } from 'events';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -29,8 +30,6 @@ import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
 import { VERSION } from './version';
 
-type UnknownFunction = (...args: any[]) => any;
-
 const CURRENT_DATABASE = Symbol('OTEL_CURRENT_DATABASE');
 const PATCHED_METHODS = [
   'callProcedure',
@@ -39,6 +38,17 @@ const PATCHED_METHODS = [
   'prepare',
   'execute',
 ];
+
+type UnknownFunction = (...args: any[]) => any;
+type ApproxConnection = EventEmitter & {
+  [CURRENT_DATABASE]: string;
+  config: any;
+};
+type ApproxRequest = EventEmitter & {
+  sqlTextOrProcedure: string | undefined;
+  callback: any;
+  parametersByName: any;
+};
 
 export class TediousInstrumentation extends InstrumentationBase<
   typeof tedious
@@ -89,12 +99,12 @@ export class TediousInstrumentation extends InstrumentationBase<
   }
 
   private _patchConnect(original: UnknownFunction): UnknownFunction {
-    return function patchedConnect(this: { config: any }) {
+    return function patchedConnect(this: ApproxConnection) {
       Object.defineProperty(this, CURRENT_DATABASE, {
         value: this.config?.options?.database,
         writable: true,
       });
-      const setDatabase = databaseName => {
+      const setDatabase = (databaseName: string) => {
         this[CURRENT_DATABASE] = databaseName;
       };
 
@@ -102,7 +112,7 @@ export class TediousInstrumentation extends InstrumentationBase<
       this.once('end', () => {
         this.removeListener('databaseChange', setDatabase);
       });
-      return original.apply(this, arguments);
+      return original.apply(this, arguments as unknown as any[]);
     };
   }
 
@@ -114,26 +124,24 @@ export class TediousInstrumentation extends InstrumentationBase<
       );
 
       return function patchedMethod(
-        this: { config: any },
-        request: {
-          sqlTextOrProcedure: string | undefined;
-          callback: any;
-          on: Function;
-        }
+        this: ApproxConnection,
+        request: ApproxRequest
       ) {
         let procCount = 0;
         let statementCount = 0;
         const incrementStatementCount = () => statementCount++;
         const incrementProcCount = () => procCount++;
         const databaseName = this[CURRENT_DATABASE];
-        const sql = ((request) => {
+        const sql = (request => {
           // Required for <11.0.9
-          if (request.sqlTextOrProcedure === 'sp_prepare' && request?.parametersByName?.stmt?.value) {
+          if (
+            request.sqlTextOrProcedure === 'sp_prepare' &&
+            request?.parametersByName?.stmt?.value
+          ) {
             return request.parametersByName.stmt.value;
           }
           return request.sqlTextOrProcedure;
         })(request);
-
 
         const span = thisPlugin.tracer.startSpan(
           getSpanName(operation, databaseName, sql),
@@ -146,7 +154,8 @@ export class TediousInstrumentation extends InstrumentationBase<
               [SemanticAttributes.NET_PEER_NAME]: this.config?.server,
               // >=4 uses `authentication` object, older versions just userName and password pair
               [SemanticAttributes.DB_USER]:
-                this.config.userName ?? this.config?.authentication?.options?.userName,
+                this.config.userName ??
+                this.config?.authentication?.options?.userName,
               [SemanticAttributes.DB_STATEMENT]: sql,
             },
           }
