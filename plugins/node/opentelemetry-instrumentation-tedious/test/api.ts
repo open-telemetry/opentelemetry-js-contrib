@@ -31,9 +31,7 @@ export const table = '[dbo].[test_prepared]';
 export const transactionTable = '[dbo].[test_transact]';
 
 export const makeApi = (tedious: tedious) => {
-  const createConnection = (
-    config: ConnectionConfig
-  ): Promise<Connection> => {
+  const createConnection = (config: ConnectionConfig): Promise<Connection> => {
     return new Promise((resolve, reject) => {
       const connection = new tedious.Connection(config);
 
@@ -45,7 +43,8 @@ export const makeApi = (tedious: tedious) => {
       });
 
       // <8.3.0 autoconnects
-      if (connection.state !== connection.STATE.CONNECTING) {
+      // `state` and `STATE` are private API
+      if ((connection as any).state !== (connection as any).STATE.CONNECTING) {
         connection.connect();
       }
     });
@@ -63,7 +62,6 @@ export const makeApi = (tedious: tedious) => {
       connection.close();
     });
   };
-
 
   const query = (
     connection: Connection,
@@ -97,9 +95,7 @@ export const makeApi = (tedious: tedious) => {
     });
   };
 
-  const createStoredProcedure = (
-    connection: Connection
-  ): Promise<boolean> => {
+  const createStoredProcedure = (connection: Connection): Promise<boolean> => {
     return new Promise((resolve, reject) => {
       const sql = `
       CREATE OR ALTER PROCEDURE ${storedProcedure}
@@ -118,7 +114,7 @@ export const makeApi = (tedious: tedious) => {
 
       connection.execSql(request);
     });
-  }
+  };
   const callProcedureWithParameters = (
     connection: Connection
   ): Promise<any> => {
@@ -140,11 +136,9 @@ export const makeApi = (tedious: tedious) => {
 
       connection.callProcedure(request);
     });
-  }
+  };
 
-  const createTable = (
-    connection: Connection
-  ): Promise<boolean> => {
+  const createTable = (connection: Connection): Promise<boolean> => {
     return new Promise((resolve, reject) => {
       const sql = `
       if not exists(SELECT * FROM sysobjects WHERE name='test_prepared' AND xtype='U')
@@ -158,10 +152,8 @@ export const makeApi = (tedious: tedious) => {
 
       connection.execSql(request);
     });
-  }
-  const prepareSQL = (
-    connection: Connection
-  ): Promise<Request> => {
+  };
+  const prepareSQL = (connection: Connection): Promise<Request> => {
     return new Promise((resolve, reject) => {
       const sql = `INSERT INTO ${table} VALUES (@val1, @val2)`;
       const request = new tedious.Request(sql, (err, rowCount) => {
@@ -180,7 +172,7 @@ export const makeApi = (tedious: tedious) => {
 
       connection.prepare(request);
     });
-  }
+  };
 
   const executePreparedSQL = (
     connection: Connection,
@@ -193,43 +185,27 @@ export const makeApi = (tedious: tedious) => {
       });
       connection.execute(request, { val1: 1, val2: 2 });
     });
-  }
+  };
 
   /*
     Connection has `inTransaction` boolean and `transactionDepth` property, but the
     reliablility of those are questionable with `abortTransactionOnError` option enabled.
     Usecases to test for in the future:
   */
-  const executeInTransaction = async (
-    connection: Connection
-  ) => {
+  const executeInTransaction = async (connection: Connection) => {
     const tx = transactionApi(connection);
     await tx.begin();
-    await query(
-      connection,
-      `CREATE TABLE ${transactionTable} (c1 int UNIQUE)`
-    );
-    await query(
-      connection,
-      `INSERT INTO ${transactionTable} VALUES ('1')`
-    );
+    await query(connection, `CREATE TABLE ${transactionTable} (c1 int UNIQUE)`);
+    await query(connection, `INSERT INTO ${transactionTable} VALUES ('1')`);
     await tx.commit();
 
     return query(connection, `SELECT * FROM ${transactionTable}`);
-  }
-  const failInTransaction = async (
-    connection: Connection
-  ) => {
+  };
+  const failInTransaction = async (connection: Connection) => {
     const tx = transactionApi(connection);
     await tx.begin();
-    await query(
-      connection,
-      `CREATE TABLE ${transactionTable} (c1 int UNIQUE)`
-    );
-    await query(
-      connection,
-      `INSERT INTO ${transactionTable} VALUES ('1')`
-    );
+    await query(connection, `CREATE TABLE ${transactionTable} (c1 int UNIQUE)`);
+    await query(connection, `INSERT INTO ${transactionTable} VALUES ('1')`);
     await query(
       connection,
       `INSERT INTO ${transactionTable} VALUES ('1')`
@@ -238,7 +214,7 @@ export const makeApi = (tedious: tedious) => {
     return query(connection, `SELECT * FROM ${transactionTable}`).catch(
       () => true
     );
-  }
+  };
 
   const transactionApi = (connection: Connection) => {
     return {
@@ -273,9 +249,10 @@ export const makeApi = (tedious: tedious) => {
     createConnection,
     createStoredProcedure,
     createTable,
+    executeInTransaction,
     executePreparedSQL,
+    failInTransaction,
     prepareSQL,
     query,
   };
-}
-
+};

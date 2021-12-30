@@ -27,11 +27,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
-import {
-  storedProcedure,
-  makeApi,
-  tedious as tedisousType,
-} from './api';
+import { storedProcedure, makeApi } from './api';
 import type { Connection, ConnectionConfig } from 'tedious';
 
 process.env.RUN_MSSQL_TESTS = 'true';
@@ -46,7 +42,7 @@ const instrumentation = new TediousInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
-const config: ConnectionConfig = {
+const config: ConnectionConfig & { userName: string; password: string } = {
   userName: user,
   password,
   server: host,
@@ -69,7 +65,7 @@ const config: ConnectionConfig = {
 };
 
 describe('tedious', () => {
-  let tedious: tedisousType;
+  let tedious: any;
   let contextManager: AsyncHooksContextManager;
   let connection: Connection;
   const provider = new BasicTracerProvider();
@@ -111,7 +107,7 @@ describe('tedious', () => {
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
     tedious = makeApi(require('tedious'));
-    connection = await tedious.createConnection(config).catch(err => {
+    connection = await tedious.createConnection(config).catch((err: any) => {
       console.error('with config:', config);
       throw err;
     });
@@ -233,7 +229,10 @@ describe('tedious', () => {
   it('should instrument prepared statement calls', async () => {
     assert.strictEqual(await tedious.createTable(connection), true);
     const request = await tedious.prepareSQL(connection);
-    assert.strictEqual(await tedious.executePreparedSQL(connection, request), true);
+    assert.strictEqual(
+      await tedious.executePreparedSQL(connection, request),
+      true
+    );
     const spans = memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
@@ -292,7 +291,7 @@ const assertMatch = (actual: string | undefined, expected: RegExp) => {
 };
 
 const assertRejects = (
-  asyncFn: AsyncFunction,
+  asyncFn: () => Promise<unknown>,
   expectedMessageRegexp: RegExp | undefined
 ) => {
   const error = new Error('Missing expected rejection.');
