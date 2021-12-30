@@ -118,6 +118,8 @@ describe('tedious', () => {
       console.error('with config:', config);
       throw err;
     });
+    await cleanup(tedious, connection);
+    memoryExporter.reset();
   });
 
   afterEach(async () => {
@@ -125,7 +127,6 @@ describe('tedious', () => {
     memoryExporter.reset();
     instrumentation.disable();
     if (connection) {
-      await cleanup(tedious, connection);
       await closeConnection(connection);
     }
   });
@@ -156,13 +157,11 @@ describe('tedious', () => {
 
   it('should catch errors', async () => {
     const queryString = 'select !';
-    await query(tedious, connection, queryString)
-      .then(() => {
-        assert.fail('Should not reach here');
-      })
-      .catch(err => {
-        assertMatch(err.message, /incorrect syntax/i);
-      });
+
+    await assertRejects(
+      () => query(tedious, connection, queryString),
+      /incorrect syntax/i
+    );
     const spans = memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
 
@@ -255,6 +254,37 @@ describe('tedious', () => {
       sql: /INSERT INTO/,
     });
   });
+
+  it('should track database changes', async () => {
+    const sql = {
+      create: 'create database temp_otel_db;',
+      use: 'use temp_otel_db;',
+      select: "SELECT 42, 'hello world'",
+    };
+    await query(tedious, connection, sql.create);
+    await query(tedious, connection, sql.use);
+    assert.deepStrictEqual(await query(tedious, connection, sql.select), [
+      42,
+      'hello world',
+    ]);
+
+    const spans = memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 3);
+
+    assertSpan(spans[0], {
+      name: 'execSql master',
+      sql: sql.create,
+    });
+    assertSpan(spans[1], {
+      name: 'execSql master',
+      sql: sql.use,
+    });
+    assertSpan(spans[2], {
+      name: 'execSql temp_otel_db',
+      sql: sql.select,
+      database: 'temp_otel_db',
+    });
+  });
 });
 
 const assertMatch = (actual: string | undefined, expected: RegExp) => {
@@ -264,12 +294,35 @@ const assertMatch = (actual: string | undefined, expected: RegExp) => {
   );
 };
 
+const assertRejects = (
+  asyncFn: AsyncFunction,
+  expectedMessageRegexp: RegExp | undefined
+) => {
+  const error = new Error('Missing expected rejection.');
+  return Promise.resolve()
+    .then(() => asyncFn())
+    .then(() => {
+      throw error;
+    })
+    .catch(err => {
+      if (err === error) {
+        throw error;
+      }
+      if (expectedMessageRegexp) {
+        assertMatch(err?.message || err, expectedMessageRegexp);
+      }
+    });
+};
+
 function assertSpan(span: ReadableSpan, expected: any) {
   assert(span);
   assert.strictEqual(span.name, expected.name);
   assert.strictEqual(span.kind, SpanKind.CLIENT);
   assert.strictEqual(span.attributes[SemanticAttributes.DB_SYSTEM], 'mssql');
-  assert.strictEqual(span.attributes[SemanticAttributes.DB_NAME], database);
+  assert.strictEqual(
+    span.attributes[SemanticAttributes.DB_NAME],
+    expected.database ?? database
+  );
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_PORT], port);
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], host);
   assert.strictEqual(span.attributes[SemanticAttributes.DB_USER], user);
