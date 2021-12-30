@@ -144,8 +144,9 @@ export class TediousInstrumentation extends InstrumentationBase<
               [SemanticAttributes.DB_NAME]: databaseName,
               [SemanticAttributes.NET_PEER_PORT]: this.config?.options?.port,
               [SemanticAttributes.NET_PEER_NAME]: this.config?.server,
+              // >=4 uses `authentication` object, older versions just userName and password pair
               [SemanticAttributes.DB_USER]:
-                this.config?.authentication?.options?.userName,
+                this.config.userName ?? this.config?.authentication?.options?.userName,
               [SemanticAttributes.DB_STATEMENT]: sql,
             },
           }

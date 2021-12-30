@@ -47,6 +47,8 @@ instrumentation.enable();
 instrumentation.disable();
 
 const config: ConnectionConfig = {
+  userName: user,
+  password,
   server: host,
   authentication: {
     type: 'default',
