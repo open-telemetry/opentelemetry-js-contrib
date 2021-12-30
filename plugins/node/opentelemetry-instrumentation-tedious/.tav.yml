@@ -1,6 +1,6 @@
 tedious:
   # 4.0.0 is buggy: https://github.com/tediousjs/tedious/commit/4eceb48
-  versions: ">=4.0.1"
+  versions: ">=1.10.0 <4 || >=4.0.1"
   commands: npm run test
 
   # Fix missing `test-utils` package
