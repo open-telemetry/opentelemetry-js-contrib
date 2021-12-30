@@ -39,8 +39,10 @@ export const createConnection = (
       return resolve(connection);
     });
 
-    // Initialize the connection.
-    connection.connect();
+    // <8.3.0 autoconnects
+    if (connection.state !== connection.STATE.CONNECTING) {
+      connection.connect();
+    }
   });
 };
 export const closeConnection = (connection: Connection): Promise<boolean> => {
