@@ -115,7 +115,6 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
   private _createSpan(
     element: EventTarget | null | undefined,
     eventName: EventName,
-    parentSpan?: api.Span
   ): api.Span | undefined {
     if (!this._isEnabled) {
       return undefined;
@@ -144,9 +143,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
             [AttributeNames.HTTP_URL]: window.location.href,
           },
         },
-        parentSpan
-          ? api.trace.setSpan(api.context.active(), parentSpan)
-          : undefined
+        api.ROOT_CONTEXT
       );
 
       this.lastCreatedSpan = span;
