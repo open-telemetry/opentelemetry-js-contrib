@@ -31,6 +31,15 @@ import { VERSION } from './version';
 
 type UnknownFunction = (...args: any[]) => any;
 
+const CURRENT_DATABASE = Symbol('OTEL_CURRENT_DATABASE');
+const PATCHED_METHODS = [
+  'callProcedure',
+  'execSql',
+  'execSqlBatch',
+  'prepare',
+  'execute',
+];
+
 export class TediousInstrumentation extends InstrumentationBase<
   typeof tedious
 > {
@@ -47,16 +56,9 @@ export class TediousInstrumentation extends InstrumentationBase<
         ['14'],
         (moduleExports: any, moduleVersion) => {
           this._diag.debug(`Patching tedious@${moduleVersion}`);
-          // TODO replace with this._diag.debug
 
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
-          for (const method of [
-            'callProcedure',
-            'execSql',
-            'execSqlBatch',
-            'prepare',
-            'execute',
-          ]) {
+          for (const method of PATCHED_METHODS) {
             if (isWrapped(ConnectionPrototype[method])) {
               this._unwrap(ConnectionPrototype, method);
             }
@@ -67,16 +69,41 @@ export class TediousInstrumentation extends InstrumentationBase<
             );
           }
 
+          if (isWrapped(ConnectionPrototype.connect)) {
+            this._unwrap(ConnectionPrototype, 'connect');
+          }
+          this._wrap(ConnectionPrototype, 'connect', this._patchConnect);
+
           return moduleExports;
         },
         (moduleExports: any) => {
           if (moduleExports === undefined) return;
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
-          this._unwrap(ConnectionPrototype, 'execSql');
-          this._unwrap(ConnectionPrototype, 'callProcedure');
+          for (const method of PATCHED_METHODS) {
+            this._unwrap(ConnectionPrototype, method);
+          }
+          this._unwrap(ConnectionPrototype, 'connect');
         }
       ),
     ];
+  }
+
+  private _patchConnect(original: UnknownFunction): UnknownFunction {
+    return function patchedConnect(this: { config: any }) {
+      Object.defineProperty(this, CURRENT_DATABASE, {
+        value: this.config?.options?.database,
+        writable: true,
+      });
+      const setDatabase = databaseName => {
+        this[CURRENT_DATABASE] = databaseName;
+      };
+
+      this.on('databaseChange', setDatabase);
+      this.once('end', () => {
+        this.removeListener('databaseChange', setDatabase);
+      });
+      return original.apply(this, arguments);
+    };
   }
 
   private _patchQuery(operation: string) {
@@ -98,18 +125,15 @@ export class TediousInstrumentation extends InstrumentationBase<
         let statementCount = 0;
         const incrementStatementCount = () => statementCount++;
         const incrementProcCount = () => procCount++;
+        const databaseName = this[CURRENT_DATABASE];
 
         const span = thisPlugin.tracer.startSpan(
-          getSpanName(
-            operation,
-            this.config?.options?.database,
-            request.sqlTextOrProcedure
-          ),
+          getSpanName(operation, databaseName, request.sqlTextOrProcedure),
           {
             kind: api.SpanKind.CLIENT,
             attributes: {
               [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MSSQL,
-              [SemanticAttributes.DB_NAME]: this.config?.options?.database,
+              [SemanticAttributes.DB_NAME]: databaseName,
               [SemanticAttributes.NET_PEER_PORT]: this.config?.options?.port,
               [SemanticAttributes.NET_PEER_NAME]: this.config?.server,
               [SemanticAttributes.DB_USER]:

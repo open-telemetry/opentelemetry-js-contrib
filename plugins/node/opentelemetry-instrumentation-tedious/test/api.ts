@@ -15,6 +15,7 @@
  */
 
 import * as assert from 'assert';
+import { promisify } from 'util';
 import type { Connection, Request, TYPES, ConnectionConfig } from 'tedious';
 
 export type tedious = {
@@ -146,7 +147,7 @@ export function createTable(
 ): Promise<boolean> {
   return new Promise((resolve, reject) => {
     const sql = `
-    if not exists(select * from sysobjects where name='test_prepared' and xtype='U')
+    if not exists(SELECT * FROM sysobjects WHERE name='test_prepared' AND xtype='U')
     CREATE TABLE ${table} (c1 int, c2 int)`.trim();
     const request = new tedious.Request(sql, (err, rowCount) => {
       if (err) {
@@ -195,13 +196,82 @@ export function executePreparedSQL(
   });
 }
 
-export async function cleanup(tedious: tedious, connection: Connection) {
+/*
+  Connection has `inTransaction` boolean and `transactionDepth` property, but the
+  reliablility of those are questionable with `abortTransactionOnError` option enabled.
+  Usecases to test for in the future:
+*/
+const transactionTable = '[dbo].[test_transact]';
+export async function executeInTransaction(
+  tedious: tedious,
+  connection: Connection
+) {
+  const tx = transactionApi(connection);
+  await tx.begin();
+  await query(
+    tedious,
+    connection,
+    `CREATE TABLE ${transactionTable} (c1 int UNIQUE)`
+  );
+  await query(
+    tedious,
+    connection,
+    `INSERT INTO ${transactionTable} VALUES ('1')`
+  );
+  await tx.commit();
+
+  return query(tedious, connection, `SELECT * FROM ${transactionTable}`);
+}
+export async function failInTransaction(
+  tedious: tedious,
+  connection: Connection
+) {
+  const tx = transactionApi(connection);
+  await tx.begin();
+  await query(
+    tedious,
+    connection,
+    `CREATE TABLE ${transactionTable} (c1 int UNIQUE)`
+  );
+  await query(
+    tedious,
+    connection,
+    `INSERT INTO ${transactionTable} VALUES ('1')`
+  );
+  await query(
+    tedious,
+    connection,
+    `INSERT INTO ${transactionTable} VALUES ('1')`
+  ).catch(() => {});
+  await tx.rollback();
+  return query(tedious, connection, `SELECT * FROM ${transactionTable}`).catch(
+    () => true
+  );
+}
+
+export const transactionApi = (connection: Connection) => {
+  return {
+    begin: () => {
+      return promisify(connection.beginTransaction).call(connection);
+    },
+    commit: () => {
+      return promisify(connection.commitTransaction).call(connection);
+    },
+    rollback: () => {
+      return promisify(connection.rollbackTransaction).call(connection);
+    },
+  };
+};
+
+export function cleanup(tedious: tedious, connection: Connection) {
   return query(
     tedious,
     connection,
     `
-    if exists(select * from sysobjects where name='test_prepared' and xtype='U') drop table ${table};
-    if exists(select * from sysobjects where name='test_proced' and xtype='U') drop procedure ${storedProcedure};
+    if exists(SELECT * FROM sysobjects WHERE name='test_prepared' AND xtype='U') DROP TABLE ${table};
+    if exists(SELECT * FROM sysobjects WHERE name='test_transact' AND xtype='U') DROP TABLE ${transactionTable};
+    if exists(SELECT * FROM sysobjects WHERE name='test_proced' AND xtype='U') DROP PROCEDURE ${storedProcedure};
+    if exists(SELECT * FROM sys.databases WHERE name = 'temp_otel_db') DROP DATABASE temp_otel_db;
   `.trim()
   );
 }
