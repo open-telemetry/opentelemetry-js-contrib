@@ -47,7 +47,6 @@ describe('MongoDBInstrumentation', () => {
     console.log('Skipping test-mongodb. Run MongoDB to test');
     shouldTest = false;
   }
-  shouldTest = true;
 
   const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
     process.env.MONGODB_PORT || '27017'
@@ -79,7 +78,6 @@ describe('MongoDBInstrumentation', () => {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work
     // properly when skipping tests in before() on nested describe() calls.
     // https://github.com/mochajs/mocha/issues/2819
-    instrumentation.enable();
     if (!shouldTest) {
       this.skip();
     }
@@ -92,7 +90,6 @@ describe('MongoDBInstrumentation', () => {
   });
 
   afterEach(done => {
-    instrumentation.disable();
     if (shouldTest) {
       return collection.deleteMany({}, done);
     }
