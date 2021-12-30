@@ -66,6 +66,8 @@ const config: ConnectionConfig = {
   options: {
     port,
     database,
+    // Required for <11.0.8
+    trustServerCertificate: true,
     rowCollectionOnRequestCompletion: true,
     rowCollectionOnDone: true,
   },
@@ -144,7 +146,7 @@ describe('tedious', () => {
     parentSpan.end();
 
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 2);
+    assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -163,7 +165,7 @@ describe('tedious', () => {
       /incorrect syntax/i
     );
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -185,7 +187,7 @@ describe('tedious', () => {
       [42, 42, 42]
     );
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -202,7 +204,7 @@ describe('tedious', () => {
       [42, 42, 42]
     );
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans.length, 1, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSqlBatch master',
@@ -221,7 +223,7 @@ describe('tedious', () => {
       }
     );
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 2);
+    assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -238,7 +240,7 @@ describe('tedious', () => {
     const request = await prepareSQL(tedious, connection);
     assert.strictEqual(await executePreparedSQL(connection, request), true);
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 3);
+    assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
@@ -269,7 +271,7 @@ describe('tedious', () => {
     ]);
 
     const spans = memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 3);
+    assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
     assertSpan(spans[0], {
       name: 'execSql master',
