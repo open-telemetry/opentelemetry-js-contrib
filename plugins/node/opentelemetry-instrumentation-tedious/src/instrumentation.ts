@@ -96,6 +96,8 @@ export class TediousInstrumentation extends InstrumentationBase<
       ) {
         let procCount = 0;
         let statementCount = 0;
+        const incrementStatementCount = () => statementCount++;
+        const incrementProcCount = () => procCount++;
 
         const span = thisPlugin.tracer.startSpan(
           getSpanName(
@@ -117,11 +119,13 @@ export class TediousInstrumentation extends InstrumentationBase<
           }
         );
 
-        request.on('done', () => statementCount++);
-        request.on('doneInProc', () => statementCount++);
-        request.on('doneProc', () => procCount++);
-
         const endSpan = once((err?: any) => {
+          request.removeListener('done', incrementStatementCount);
+          request.removeListener('doneInProc', incrementStatementCount);
+          request.removeListener('doneProc', incrementProcCount);
+          request.removeListener('error', endSpan);
+          this.removeListener('end', endSpan);
+
           span.setAttribute('tedious.procedure_count', procCount);
           span.setAttribute('tedious.statement_count', statementCount);
           if (err) {
@@ -132,6 +136,13 @@ export class TediousInstrumentation extends InstrumentationBase<
           }
           span.end();
         });
+
+        request.on('done', incrementStatementCount);
+        request.on('doneInProc', incrementStatementCount);
+        request.on('doneProc', incrementProcCount);
+        request.once('error', endSpan);
+        this.on('end', endSpan);
+
         if (typeof request.callback === 'function') {
           thisPlugin._wrap(
             request,
