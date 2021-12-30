@@ -18,17 +18,17 @@
 
 import { context, trace, SpanKind, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
-import { MongoDB4Instrumentation, MongoDB4InstrumentationConfig } from '../src';
+import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
 import { MongoResponseHookInformation } from '../src';
-
 import {
   registerInstrumentationTesting,
   getTestSpans,
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
+import { lookup } from 'dns';
 
 const instrumentation = registerInstrumentationTesting(
-  new MongoDB4Instrumentation()
+  new MongoDBInstrumentation()
 );
 
 import * as mongodb from 'mongodb';
@@ -36,17 +36,18 @@ import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation', () => {
-  function create(config: MongoDB4InstrumentationConfig = {}) {
+  function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
   }
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
   // these tests.
-  const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as any;
+  const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
   let shouldTest = true;
   if (!RUN_MONGODB_TESTS) {
     console.log('Skipping test-mongodb. Run MongoDB to test');
     shouldTest = false;
   }
+  shouldTest = true;
 
   const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
     process.env.MONGODB_PORT || '27017'
@@ -78,6 +79,7 @@ describe('MongoDBInstrumentation', () => {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work
     // properly when skipping tests in before() on nested describe() calls.
     // https://github.com/mochajs/mocha/issues/2819
+    instrumentation.enable();
     if (!shouldTest) {
       this.skip();
     }
@@ -90,6 +92,7 @@ describe('MongoDBInstrumentation', () => {
   });
 
   afterEach(done => {
+    instrumentation.disable();
     if (shouldTest) {
       return collection.deleteMany({}, done);
     }
@@ -122,6 +125,7 @@ describe('MongoDBInstrumentation', () => {
       context.with(trace.setSpan(context.active(), span), () => {
         collection.updateOne({ a: 2 }, { $set: { b: 1 } }, (err, result) => {
           span.end();
+          console.log(getTestSpans());
           assert.ifError(err);
           assertSpans(getTestSpans(), 'mongodb.update', SpanKind.CLIENT);
           done();
@@ -135,7 +139,7 @@ describe('MongoDBInstrumentation', () => {
         collection.deleteOne({ a: 3 }, (err, result) => {
           span.end();
           assert.ifError(err);
-          assertSpans(getTestSpans(), 'mongodb.delete', SpanKind.CLIENT);
+          assertSpans(getTestSpans(), 'mongodb.remove', SpanKind.CLIENT);
           done();
         });
       });
@@ -291,11 +295,15 @@ describe('MongoDBInstrumentation', () => {
 
   describe('when specifying a responseHook configuration', () => {
     const dataAttributeName = 'mongodb_data';
+
     describe('with a valid function', () => {
       beforeEach(() => {
         create({
           responseHook: (span: Span, result: MongoResponseHookInformation) => {
-            span.setAttribute(dataAttributeName, JSON.stringify(result.data));
+            span.setAttribute(
+              dataAttributeName,
+              JSON.stringify(result.data.result)
+            );
           },
         });
       });
@@ -310,9 +318,10 @@ describe('MongoDBInstrumentation', () => {
             const spans = getTestSpans();
             const insertSpan = spans[0];
 
+            const anyResult = result as any;
             assert.deepStrictEqual(
-              JSON.parse(insertSpan.attributes[dataAttributeName] as string).n,
-              result?.insertedCount
+              JSON.parse(insertSpan.attributes[dataAttributeName] as string),
+              anyResult.result
             );
 
             done();
@@ -337,14 +346,14 @@ describe('MongoDBInstrumentation', () => {
                 hookAttributeValue?.cursor?.firstBatch[0]._id,
                 results[0]._id.toString()
               );
-            } else {
-              throw new Error('Got an unexpected Results: ' + results);
             }
+
             done();
           });
         });
       });
     });
+
     describe('with an invalid function', () => {
       beforeEach(() => {
         create({
@@ -370,6 +379,7 @@ describe('MongoDBInstrumentation', () => {
       });
     });
   });
+
   describe('Mixed operations with callback', () => {
     it('should create a span for find after callback insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
@@ -399,6 +409,61 @@ describe('MongoDBInstrumentation', () => {
       });
     });
   });
+
+  describe('MongoDb useUnifiedTopology enabled', () => {
+    let client: mongodb.MongoClient;
+    let collection: mongodb.Collection;
+    before(done => {
+      accessCollection(URL, DB_NAME, COLLECTION_NAME, {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        useUnifiedTopology: true,
+      })
+        .then(result => {
+          client = result.client;
+          collection = result.collection;
+          done();
+        })
+        .catch((err: Error) => {
+          console.log(
+            'Skipping test-mongodb. Could not connect. Run MongoDB to test'
+          );
+          shouldTest = false;
+          done();
+        });
+    });
+    after(() => {
+      if (client) {
+        client.close();
+      }
+    });
+    it('should generate correct span attributes', done => {
+      const span = trace.getTracer('default').startSpan('findRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection.find({ a: 1 }).toArray((err, results) => {
+          span.end();
+          const [mongoSpan] = getTestSpans();
+          assert.ifError(err);
+          lookup(
+            process.env.MONGODB_HOST || DEFAULT_MONGO_HOST,
+            (err, address) => {
+              if (err) return done(err);
+              assert.strictEqual(
+                mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
+                address
+              );
+              assert.strictEqual(
+                mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
+                process.env.MONGODB_PORT || '27017'
+              );
+              done();
+            }
+          );
+        });
+      });
+    });
+  });
+
   /** Should intercept command */
   describe('Removing Instrumentation', () => {
     it('should unpatch plugin', () => {

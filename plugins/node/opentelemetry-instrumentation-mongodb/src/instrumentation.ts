@@ -39,10 +39,9 @@ import {
   MongoInternalTopology,
   WireProtocolInternal,
   CommandResult,
+  V4Connection,
 } from './types';
 import { VERSION } from './version';
-
-const supportedVersions = ['>=3.3 <4'];
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<
@@ -53,62 +52,90 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   }
 
   init() {
-    const { patch, unpatch } = this._getPatches();
+    const { v3Patch, v3Unpatch } = this._getV3Patches();
+    const { v4Patch, v4Unpatch } = this._getV4Patches();
+
     return [
       new InstrumentationNodeModuleDefinition<typeof mongodb>(
         'mongodb',
-        supportedVersions,
+        ['>=3.3 <4'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile<WireProtocolInternal>(
             'mongodb/lib/core/wireprotocol/index.js',
-            supportedVersions,
-            patch,
-            unpatch
+            ['>=3.3 <4'],
+            v3Patch,
+            v3Unpatch
+          ),
+        ]
+      ),
+      new InstrumentationNodeModuleDefinition<typeof mongodb>(
+        'mongodb',
+        ['4.*'],
+        undefined,
+        undefined,
+        [
+          new InstrumentationNodeModuleFile<V4Connection>(
+            'mongodb/lib/cmap/connection.js',
+            ['4.*'],
+            v4Patch,
+            v4Unpatch
           ),
         ]
       ),
     ];
   }
 
-  private _getPatches<T extends WireProtocolInternal>() {
+  private _getV3Patches<T extends WireProtocolInternal>() {
     return {
-      patch: (moduleExports: T, moduleVersion?: string) => {
+      v3Patch: (moduleExports: T, moduleVersion?: string) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.insert)) {
           this._unwrap(moduleExports, 'insert');
         }
-        this._wrap(moduleExports, 'insert', this._getPatchOperation('insert'));
+        this._wrap(
+          moduleExports,
+          'insert',
+          this._getV3PatchOperation('insert')
+        );
         // patch remove operation
         if (isWrapped(moduleExports.remove)) {
           this._unwrap(moduleExports, 'remove');
         }
-        this._wrap(moduleExports, 'remove', this._getPatchOperation('remove'));
+        this._wrap(
+          moduleExports,
+          'remove',
+          this._getV3PatchOperation('remove')
+        );
         // patch update operation
         if (isWrapped(moduleExports.update)) {
           this._unwrap(moduleExports, 'update');
         }
-        this._wrap(moduleExports, 'update', this._getPatchOperation('update'));
+        this._wrap(
+          moduleExports,
+          'update',
+          this._getV3PatchOperation('update')
+        );
         // patch other command
         if (isWrapped(moduleExports.command)) {
           this._unwrap(moduleExports, 'command');
         }
-        this._wrap(moduleExports, 'command', this._getPatchCommand());
+        this._wrap(moduleExports, 'command', this._getV3PatchCommand());
         // patch query
         if (isWrapped(moduleExports.query)) {
           this._unwrap(moduleExports, 'query');
         }
-        this._wrap(moduleExports, 'query', this._getPatchFind());
+        this._wrap(moduleExports, 'query', this._getV3PatchFind());
         // patch get more operation on cursor
         if (isWrapped(moduleExports.getMore)) {
           this._unwrap(moduleExports, 'getMore');
         }
-        this._wrap(moduleExports, 'getMore', this._getPatchCursor());
+        this._wrap(moduleExports, 'getMore', this._getV3PatchCursor());
         return moduleExports;
       },
-      unpatch: (moduleExports?: T, moduleVersion?: string) => {
+      v3Unpatch: (moduleExports?: T, moduleVersion?: string) => {
         if (moduleExports === undefined) return;
         diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         this._unwrap(moduleExports, 'insert');
@@ -121,8 +148,33 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private _getV4Patches<T extends V4Connection>() {
+    return {
+      v4Patch: (moduleExports: any, moduleVersion?: string) => {
+        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+        // patch insert operation
+        if (isWrapped(moduleExports.Connection.prototype.command)) {
+          this._unwrap(moduleExports, 'command');
+        }
+
+        this._wrap(
+          moduleExports.Connection.prototype,
+          'command',
+          this._getV4PatchCommand()
+        );
+        return moduleExports;
+      },
+      v4Unpatch: (moduleExports?: any, moduleVersion?: string) => {
+        if (moduleExports === undefined) return;
+        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
+        this._unwrap(moduleExports.Connection.prototype, 'command');
+      },
+    };
+  }
+
   /** Creates spans for common operations */
-  private _getPatchOperation(operationName: 'insert' | 'update' | 'remove') {
+  private _getV3PatchOperation(operationName: 'insert' | 'update' | 'remove') {
     const instrumentation = this;
     return (original: WireProtocolInternal[typeof operationName]) => {
       return function patchedServerCommand(
@@ -154,7 +206,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           }
         );
 
-        instrumentation._populateAttributes(
+        instrumentation._populateV3Attributes(
           span,
           ns,
           server,
@@ -173,7 +225,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   }
 
   /** Creates spans for command operation */
-  private _getPatchCommand() {
+  private _getV3PatchCommand() {
     const instrumentation = this;
     return (original: WireProtocolInternal['command']) => {
       return function patchedServerCommand(
@@ -198,13 +250,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<
             return original.call(this, server, ns, cmd, options, callback);
           }
         }
-        const commandType = instrumentation._getCommandType(cmd);
+        const commandType = MongoDBInstrumentation._getCommandType(cmd);
         const type =
           commandType === MongodbCommandType.UNKNOWN ? 'command' : commandType;
         const span = instrumentation.tracer.startSpan(`mongodb.${type}`, {
           kind: SpanKind.CLIENT,
         });
-        instrumentation._populateAttributes(span, ns, server, cmd);
+        instrumentation._populateV3Attributes(span, ns, server, cmd);
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -216,8 +268,49 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     };
   }
 
+  /** Creates spans for command operation */
+  private _getV4PatchCommand() {
+    const instrumentation = this;
+    return (original: V4Connection['command']) => {
+      return function patchedV4ServerCommand(
+        this: unknown,
+        ns: mongodb.MongoDBNamespace,
+        cmd: any,
+        options: undefined | unknown,
+        callback: mongodb.Callback<any>
+      ) {
+        const currentSpan = trace.getSpan(context.active());
+        const resultHandler = callback;
+        if (
+          !currentSpan ||
+          typeof resultHandler !== 'function' ||
+          typeof cmd !== 'object' ||
+          cmd.ismaster
+        ) {
+          return original.call(this, ns, cmd, options, callback);
+        }
+        const commandType = Object.keys(cmd)[0];
+        const span = instrumentation.tracer.startSpan(
+          `mongodb.${commandType}`,
+          {
+            kind: SpanKind.CLIENT,
+          }
+        );
+        instrumentation._populateV4Attributes(span, this, ns, cmd);
+        const patchedCallback = instrumentation._patchEnd(span, resultHandler);
+        return original.call(
+          this,
+          ns,
+          cmd,
+          options,
+          patchedCallback as mongodb.Callback
+        );
+      };
+    };
+  }
+
   /** Creates spans for find operation */
-  private _getPatchFind() {
+  private _getV3PatchFind() {
     const instrumentation = this;
     return (original: WireProtocolInternal['query']) => {
       return function patchedServerCommand(
@@ -254,7 +347,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         const span = instrumentation.tracer.startSpan('mongodb.find', {
           kind: SpanKind.CLIENT,
         });
-        instrumentation._populateAttributes(span, ns, server, cmd);
+        instrumentation._populateV3Attributes(span, ns, server, cmd);
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -282,7 +375,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   }
 
   /** Creates spans for find operation */
-  private _getPatchCursor() {
+  private _getV3PatchCursor() {
     const instrumentation = this;
     return (original: WireProtocolInternal['getMore']) => {
       return function patchedServerCommand(
@@ -322,7 +415,12 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         const span = instrumentation.tracer.startSpan('mongodb.getMore', {
           kind: SpanKind.CLIENT,
         });
-        instrumentation._populateAttributes(span, ns, server, cursorState.cmd);
+        instrumentation._populateV3Attributes(
+          span,
+          ns,
+          server,
+          cursorState.cmd
+        );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -353,7 +451,9 @@ export class MongoDBInstrumentation extends InstrumentationBase<
    * Get the mongodb command type from the object.
    * @param command Internal mongodb command object
    */
-  private _getCommandType(command: MongoInternalCommand): MongodbCommandType {
+  private static _getCommandType(
+    command: MongoInternalCommand
+  ): MongodbCommandType {
     if (command.createIndexes !== undefined) {
       return MongodbCommandType.CREATE_INDEXES;
     } else if (command.findandmodify !== undefined) {
@@ -370,22 +470,71 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   /**
    * Populate span's attributes by fetching related metadata from the context
    * @param span span to add attributes to
+   * @param ConnectionCtx mongodb internal connection context
    * @param ns mongodb namespace
    * @param command mongodb internal representation of a command
-   * @param topology mongodb internal representation of the network topology
    */
-  private _populateAttributes(
+  private _populateV4Attributes(
+    span: Span,
+    ConnectionCtx: any,
+    ns: mongodb.MongoDBNamespace,
+    command?: any
+  ) {
+    let host, port: undefined | string;
+    if (ConnectionCtx) {
+      const hostParts =
+        typeof ConnectionCtx.address === 'string'
+          ? ConnectionCtx.address.split(':')
+          : '';
+      if (hostParts.length === 2) {
+        host = hostParts[0];
+        port = hostParts[1];
+      }
+
+      // add database related attributes
+      span.setAttributes({
+        [SemanticAttributes.DB_SYSTEM]: 'mongodb',
+        [SemanticAttributes.DB_NAME]: ns.db,
+        [SemanticAttributes.DB_MONGODB_COLLECTION]: ns.collection,
+      });
+    }
+    // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
+    let commandObj: Record<string, unknown>;
+    if (command && command.documents) {
+      commandObj = command.documents[0];
+    } else {
+      commandObj = command.cursors ?? command;
+    }
+
+    this._addAllSpanAttributes(
+      span,
+      ns.db,
+      ns.collection,
+      host,
+      port,
+      commandObj
+    );
+  }
+
+  /**
+   * Populate span's attributes by fetching related metadata from the context
+   * @param span span to add attributes to
+   * @param ns mongodb namespace
+   * @param topology mongodb internal representation of the network topology
+   * @param command mongodb internal representation of a command
+   */
+  private _populateV3Attributes(
     span: Span,
     ns: string,
     topology: MongoInternalTopology,
     command?: MongoInternalCommand
   ) {
     // add network attributes to determine the remote server
+    let host: undefined | string;
+    let port: undefined | string;
     if (topology && topology.s) {
-      let host = topology.s.options?.host ?? topology.s.host;
-      let port: string | undefined = (
-        topology.s.options?.port ?? topology.s.port
-      )?.toString();
+      host = topology.s.options?.host ?? topology.s.host;
+      port = (topology.s.options?.port ?? topology.s.port)?.toString();
       if (host == null || port == null) {
         const address = topology.description?.address;
         if (address) {
@@ -394,12 +543,6 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           port = addressSegments[1];
         }
       }
-      if (host?.length && port?.length) {
-        span.setAttributes({
-          [SemanticAttributes.NET_HOST_NAME]: host,
-          [SemanticAttributes.NET_HOST_PORT]: port,
-        });
-      }
     }
 
     // The namespace is a combination of the database name and the name of the
@@ -407,7 +550,30 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     // It could be a string or an instance of MongoDBNamespace, as such we
     // always coerce to a string to extract db and collection.
     const [dbName, dbCollection] = ns.toString().split('.');
+    let commandObj: undefined | Record<string, unknown>;
+    // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
+    if (command) {
+      commandObj = command.query ?? command.q ?? command;
+    }
 
+    this._addAllSpanAttributes(
+      span,
+      dbName,
+      dbCollection,
+      host,
+      port,
+      commandObj
+    );
+  }
+
+  private _addAllSpanAttributes(
+    span: Span,
+    dbName?: string,
+    dbCollection?: string,
+    host?: undefined | string,
+    port?: undefined | string,
+    commandObj?: any
+  ) {
     // add database related attributes
     span.setAttributes({
       [SemanticAttributes.DB_SYSTEM]: 'mongodb',
@@ -415,10 +581,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<
       [SemanticAttributes.DB_MONGODB_COLLECTION]: dbCollection,
     });
 
-    if (command === undefined) return;
-
-    // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
-    const commandObj = command.query ?? command.q ?? command;
+    if (host?.length && port?.length) {
+      span.setAttributes({
+        [SemanticAttributes.NET_HOST_NAME]: host,
+        [SemanticAttributes.NET_HOST_PORT]: port,
+      });
+    }
+    if (!commandObj) return;
     const dbStatementSerializer =
       typeof this._config.dbStatementSerializer === 'function'
         ? this._config.dbStatementSerializer
@@ -452,7 +621,6 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   /**
    * Triggers the response hook in case it is defined.
    * @param span The span to add the results to.
-   * @param config The MongoDB instrumentation config object
    * @param result The command result
    */
   private _handleExecutionResult(span: Span, result: CommandResult) {

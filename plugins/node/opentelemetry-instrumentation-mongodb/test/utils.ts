@@ -32,6 +32,7 @@ export interface MongoDBAccess {
  * @param url The mongodb URL to access.
  * @param dbName The mongodb database name.
  * @param collectionName The mongodb collection name.
+ * @param options
  */
 export function accessCollection(
   url: string,
@@ -43,6 +44,10 @@ export function accessCollection(
     mongodb.MongoClient.connect(url, options, (err, client) => {
       if (err) {
         reject(err);
+        return;
+      }
+      if (!client) {
+        reject();
         return;
       }
       const db = client.db(dbName);

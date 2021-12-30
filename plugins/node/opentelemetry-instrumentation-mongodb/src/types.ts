@@ -16,6 +16,7 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Span } from '@opentelemetry/api';
+import * as mongodb from 'mongodb';
 
 export interface MongoDBInstrumentationExecutionResponseHook {
   (span: Span, responseInfo: MongoResponseHookInformation): void;
@@ -161,3 +162,15 @@ export enum MongodbCommandType {
   COUNT = 'count',
   UNKNOWN = 'unknown',
 }
+
+// https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
+/* eslint-disable @typescript-eslint/no-unused-vars */
+export class V4Connection {
+  command(
+    ns: mongodb.MongoDBNamespace,
+    cmd: Document,
+    options: undefined | unknown,
+    callback: mongodb.Callback<unknown>
+  ): void {}
+}
+/* eslint-enable @typescript-eslint/no-unused-vars */
