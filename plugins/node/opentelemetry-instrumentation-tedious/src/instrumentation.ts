@@ -53,7 +53,7 @@ export class TediousInstrumentation extends InstrumentationBase<
     return [
       new InstrumentationNodeModuleDefinition<typeof tedious>(
         TediousInstrumentation.COMPONENT,
-        ['14'],
+        ['*'],
         (moduleExports: any, moduleVersion) => {
           this._diag.debug(`Patching tedious@${moduleVersion}`);
 
@@ -126,9 +126,17 @@ export class TediousInstrumentation extends InstrumentationBase<
         const incrementStatementCount = () => statementCount++;
         const incrementProcCount = () => procCount++;
         const databaseName = this[CURRENT_DATABASE];
+        const sql = ((request) => {
+          // Required for <11.0.9
+          if (request.sqlTextOrProcedure === 'sp_prepare' && request?.parametersByName?.stmt?.value) {
+            return request.parametersByName.stmt.value;
+          }
+          return request.sqlTextOrProcedure;
+        })(request);
+
 
         const span = thisPlugin.tracer.startSpan(
-          getSpanName(operation, databaseName, request.sqlTextOrProcedure),
+          getSpanName(operation, databaseName, sql),
           {
             kind: api.SpanKind.CLIENT,
             attributes: {
@@ -138,7 +146,7 @@ export class TediousInstrumentation extends InstrumentationBase<
               [SemanticAttributes.NET_PEER_NAME]: this.config?.server,
               [SemanticAttributes.DB_USER]:
                 this.config?.authentication?.options?.userName,
-              [SemanticAttributes.DB_STATEMENT]: request.sqlTextOrProcedure,
+              [SemanticAttributes.DB_STATEMENT]: sql,
             },
           }
         );
