@@ -28,16 +28,8 @@ import {
 import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
 import {
-  callProcedureWithParameters,
-  cleanup,
-  closeConnection,
-  createConnection,
-  createStoredProcedure,
-  createTable,
-  executePreparedSQL,
-  prepareSQL,
-  query,
   storedProcedure,
+  makeApi,
   tedious as tedisousType,
 } from './api';
 import type { Connection, ConnectionConfig } from 'tedious';
@@ -66,6 +58,7 @@ const config: ConnectionConfig = {
   options: {
     port,
     database,
+    encrypt: true,
     // Required for <11.0.8
     trustServerCertificate: true,
     rowCollectionOnRequestCompletion: true,
@@ -115,12 +108,12 @@ describe('tedious', () => {
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
     instrumentation.enable();
-    tedious = require('tedious');
-    connection = await createConnection(tedious, config).catch(err => {
+    tedious = makeApi(require('tedious'));
+    connection = await tedious.createConnection(config).catch(err => {
       console.error('with config:', config);
       throw err;
     });
-    await cleanup(tedious, connection);
+    await tedious.cleanup(connection);
     memoryExporter.reset();
   });
 
@@ -129,7 +122,7 @@ describe('tedious', () => {
     memoryExporter.reset();
     instrumentation.disable();
     if (connection) {
-      await closeConnection(connection);
+      await tedious.closeConnection(connection);
     }
   });
 
@@ -139,7 +132,7 @@ describe('tedious', () => {
     const parentSpan = provider.getTracer('default').startSpan(PARENT_NAME);
     assert.deepStrictEqual(
       await context.with(trace.setSpan(context.active(), parentSpan), () =>
-        query(tedious, connection, queryString)
+        tedious.query(connection, queryString)
       ),
       [42, 'hello world']
     );
@@ -161,7 +154,7 @@ describe('tedious', () => {
     const queryString = 'select !';
 
     await assertRejects(
-      () => query(tedious, connection, queryString),
+      () => tedious.query(connection, queryString),
       /incorrect syntax/i
     );
     const spans = memoryExporter.getFinishedSpans();
@@ -183,7 +176,7 @@ describe('tedious', () => {
     */
     const queryString = 'SELECT 42; SELECT 42; SELECT 42;';
     assert.deepStrictEqual(
-      await query(tedious, connection, queryString),
+      await tedious.query(connection, queryString),
       [42, 42, 42]
     );
     const spans = memoryExporter.getFinishedSpans();
@@ -200,7 +193,7 @@ describe('tedious', () => {
   it('should instrument execSqlBatch calls containing multiple queries', async () => {
     const queryString = 'SELECT 42; SELECT 42; SELECT 42;';
     assert.deepStrictEqual(
-      await query(tedious, connection, queryString, 'execSqlBatch'),
+      await tedious.query(connection, queryString, 'execSqlBatch'),
       [42, 42, 42]
     );
     const spans = memoryExporter.getFinishedSpans();
@@ -215,9 +208,9 @@ describe('tedious', () => {
   });
 
   it('should instrument stored procedure calls', async () => {
-    assert.strictEqual(await createStoredProcedure(tedious, connection), true);
+    assert.strictEqual(await tedious.createStoredProcedure(connection), true);
     assert.deepStrictEqual(
-      await callProcedureWithParameters(tedious, connection),
+      await tedious.callProcedureWithParameters(connection),
       {
         outputCount: 11,
       }
@@ -236,9 +229,9 @@ describe('tedious', () => {
   });
 
   it('should instrument prepared statement calls', async () => {
-    assert.strictEqual(await createTable(tedious, connection), true);
-    const request = await prepareSQL(tedious, connection);
-    assert.strictEqual(await executePreparedSQL(connection, request), true);
+    assert.strictEqual(await tedious.createTable(connection), true);
+    const request = await tedious.prepareSQL(connection);
+    assert.strictEqual(await tedious.executePreparedSQL(connection, request), true);
     const spans = memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
@@ -263,9 +256,9 @@ describe('tedious', () => {
       use: 'use temp_otel_db;',
       select: "SELECT 42, 'hello world'",
     };
-    await query(tedious, connection, sql.create);
-    await query(tedious, connection, sql.use);
-    assert.deepStrictEqual(await query(tedious, connection, sql.select), [
+    await tedious.query(connection, sql.create);
+    await tedious.query(connection, sql.use);
+    assert.deepStrictEqual(await tedious.query(connection, sql.select), [
       42,
       'hello world',
     ]);
