@@ -27,6 +27,11 @@ export type tedious = {
 };
 
 export const makeApi = (tedious: tedious) => {
+  const fullName = (resource) => {
+    assert.strictEqual(typeof resource, 'string');
+    return `[dbo].[${resource}]`;
+  };
+
   const createConnection = (config: ConnectionConfig): Promise<Connection> => {
     return new Promise((resolve, reject) => {
       const connection = new tedious.Connection(config);
@@ -234,11 +239,55 @@ export const makeApi = (tedious: tedious) => {
     },
   };
 
+  const bulkLoad = {
+    tableName: '[dbo].[test_bulk]',
+    createTable: (connection: Connection): Promise<boolean> => {
+      return new Promise((resolve, reject) => {
+        const sql = `
+        if not exists(SELECT * FROM sysobjects WHERE name='test_bulk' AND xtype='U')
+        CREATE TABLE ${bulkLoad.tableName} ([c1] [int]  DEFAULT 58, [c2] [varchar](30))`.trim();
+        const request = new tedious.Request(sql, (err, rowCount) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(true);
+        });
+
+        connection.execSql(request);
+      });
+    },
+    execute: (
+      connection: Connection
+    ): Promise<boolean> => {
+      return new Promise((resolve, reject) => {
+        const request = connection.newBulkLoad(bulkLoad.tableName, { keepNulls: true }, (err, rowCount) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(rowCount);
+        });
+
+        request.addColumn('c1', tedious.TYPES.Int, { nullable: true });
+        request.addColumn('c2', tedious.TYPES.NVarChar, { length: 50, nullable: true });
+
+        // TODO: 14 doesn't support this syntax
+        // request.addRow({ c1: 1 });
+        // request.addRow({ c1: 2, c2: 'hello' });
+
+        connection.execBulkLoad(request, [
+          { c1: 1 },
+          { c1: 2, c2: 'hello' },
+        ]);
+      });
+    },
+  };
+
   const cleanup = (connection: Connection) => {
     return query(
       connection,
       `
       if exists(SELECT * FROM sysobjects WHERE name='test_prepared' AND xtype='U') DROP TABLE ${preparedSQL.tableName};
+      if exists(SELECT * FROM sysobjects WHERE name='test_bulk' AND xtype='U') DROP TABLE ${bulkLoad.tableName};
       if exists(SELECT * FROM sysobjects WHERE name='test_transact' AND xtype='U') DROP TABLE ${transaction.tableName};
       if exists(SELECT * FROM sysobjects WHERE name='test_proced' AND xtype='U') DROP PROCEDURE ${storedProcedure.procedureName};
       if exists(SELECT * FROM sys.databases WHERE name = 'temp_otel_db') DROP DATABASE temp_otel_db;
@@ -247,6 +296,8 @@ export const makeApi = (tedious: tedious) => {
   };
 
   return {
+    fullName,
+    bulkLoad,
     cleanup,
     closeConnection,
     createConnection,

@@ -23,8 +23,12 @@
 export function getSpanName(
   operation: string,
   db: string | undefined,
-  sql: string | undefined
+  sql: string | undefined,
+  bulkLoadTable: string | undefined
 ): string {
+  if (operation === 'execBulkLoad' && bulkLoadTable && db) {
+    return `${operation} ${bulkLoadTable} ${db}`;
+  }
   if (operation === 'callProcedure') {
     if (db) {
       return `${operation} ${sql} ${db}`;
