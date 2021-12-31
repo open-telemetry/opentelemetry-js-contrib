@@ -26,10 +26,6 @@ export type tedious = {
   ConnectionConfig: ConnectionConfig;
 };
 
-export const storedProcedure = '[dbo].[test_proced]';
-export const table = '[dbo].[test_prepared]';
-export const transactionTable = '[dbo].[test_transact]';
-
 export const makeApi = (tedious: tedious) => {
   const createConnection = (config: ConnectionConfig): Promise<Connection> => {
     return new Promise((resolve, reject) => {
@@ -95,96 +91,102 @@ export const makeApi = (tedious: tedious) => {
     });
   };
 
-  const createStoredProcedure = (connection: Connection): Promise<boolean> => {
-    return new Promise((resolve, reject) => {
-      const sql = `
-      CREATE OR ALTER PROCEDURE ${storedProcedure}
-        @inputVal varchar(30),
-        @outputCount int OUTPUT
-      AS
-        set @outputCount = LEN(@inputVal);`.trim();
+  const storedProcedure = {
+    procedureName: '[dbo].[test_proced]',
+    create: (connection: Connection): Promise<boolean> => {
+      return new Promise((resolve, reject) => {
+        const sql = `
+        CREATE OR ALTER PROCEDURE ${storedProcedure.procedureName}
+          @inputVal varchar(30),
+          @outputCount int OUTPUT
+        AS
+          set @outputCount = LEN(@inputVal);`.trim();
 
-      const request = new tedious.Request(sql, err => {
-        if (err) {
-          return reject(err);
-        }
+        const request = new tedious.Request(sql, err => {
+          if (err) {
+            return reject(err);
+          }
 
-        resolve(true);
+          resolve(true);
+        });
+
+        connection.execSql(request);
       });
+    },
+    call: (
+      connection: Connection
+    ): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        const result: any = {};
+        const request = new tedious.Request(storedProcedure.procedureName, err => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(result);
+        });
 
-      connection.execSql(request);
-    });
-  };
-  const callProcedureWithParameters = (
-    connection: Connection
-  ): Promise<any> => {
-    return new Promise((resolve, reject) => {
-      const result: any = {};
-      const request = new tedious.Request(storedProcedure, err => {
-        if (err) {
-          return reject(err);
-        }
-        resolve(result);
+        request.addParameter('inputVal', tedious.TYPES.VarChar, 'hello world');
+        request.addOutputParameter('outputCount', tedious.TYPES.Int);
+
+        request.on('returnValue', (paramName, value, metadata) => {
+          result[paramName] = value;
+        });
+
+        connection.callProcedure(request);
       });
-
-      request.addParameter('inputVal', tedious.TYPES.VarChar, 'hello world');
-      request.addOutputParameter('outputCount', tedious.TYPES.Int);
-
-      request.on('returnValue', (paramName, value, metadata) => {
-        result[paramName] = value;
-      });
-
-      connection.callProcedure(request);
-    });
-  };
-
-  const createTable = (connection: Connection): Promise<boolean> => {
-    return new Promise((resolve, reject) => {
-      const sql = `
-      if not exists(SELECT * FROM sysobjects WHERE name='test_prepared' AND xtype='U')
-      CREATE TABLE ${table} (c1 int, c2 int)`.trim();
-      const request = new tedious.Request(sql, (err, rowCount) => {
-        if (err) {
-          return reject(err);
-        }
-        resolve(true);
-      });
-
-      connection.execSql(request);
-    });
-  };
-  const prepareSQL = (connection: Connection): Promise<Request> => {
-    return new Promise((resolve, reject) => {
-      const sql = `INSERT INTO ${table} VALUES (@val1, @val2)`;
-      const request = new tedious.Request(sql, (err, rowCount) => {
-        if (err) {
-          return reject(err);
-        }
-      });
-
-      // Types for tedious doesn't take this usecase into account, thus the cast to any
-      (request as any).addParameter('val1', tedious.TYPES.Int);
-      (request as any).addParameter('val2', tedious.TYPES.Int);
-
-      request.on('prepared', () => {
-        resolve(request);
-      });
-
-      connection.prepare(request);
-    });
+    },
   };
 
-  const executePreparedSQL = (
-    connection: Connection,
-    request: Request
-  ): Promise<boolean> => {
-    return new Promise((resolve, reject) => {
-      request.on('error', reject);
-      request.on('requestCompleted', () => {
-        resolve(true);
+
+  const preparedSQL = {
+    tableName: '[dbo].[test_prepared]',
+    createTable: (connection: Connection): Promise<boolean> => {
+      return new Promise((resolve, reject) => {
+        const sql = `
+        if not exists(SELECT * FROM sysobjects WHERE name='test_prepared' AND xtype='U')
+        CREATE TABLE ${preparedSQL.tableName} (c1 int, c2 int)`.trim();
+        const request = new tedious.Request(sql, (err, rowCount) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(true);
+        });
+
+        connection.execSql(request);
       });
-      connection.execute(request, { val1: 1, val2: 2 });
-    });
+    },
+    prepare: (connection: Connection): Promise<Request> => {
+      return new Promise((resolve, reject) => {
+        const sql = `INSERT INTO ${preparedSQL.tableName} VALUES (@val1, @val2)`;
+        const request = new tedious.Request(sql, (err, rowCount) => {
+          if (err) {
+            return reject(err);
+          }
+        });
+
+        // Types for tedious doesn't take this usecase into account, thus the cast to any
+        (request as any).addParameter('val1', tedious.TYPES.Int);
+        (request as any).addParameter('val2', tedious.TYPES.Int);
+
+        request.on('prepared', () => {
+          resolve(request);
+        });
+
+        connection.prepare(request);
+      });
+    },
+    execute: (
+      connection: Connection,
+      request: Request
+    ): Promise<boolean> => {
+      return new Promise((resolve, reject) => {
+        request.on('error', reject);
+        request.on('requestCompleted', () => {
+          resolve(true);
+        });
+        connection.execute(request, { val1: 1, val2: 2 });
+      });
+    },
   };
 
   /*
@@ -192,67 +194,67 @@ export const makeApi = (tedious: tedious) => {
     reliablility of those are questionable with `abortTransactionOnError` option enabled.
     Usecases to test for in the future:
   */
-  const executeInTransaction = async (connection: Connection) => {
-    const tx = transactionApi(connection);
-    await tx.begin();
-    await query(connection, `CREATE TABLE ${transactionTable} (c1 int UNIQUE)`);
-    await query(connection, `INSERT INTO ${transactionTable} VALUES ('1')`);
-    await tx.commit();
+  const transaction = {
+    tableName: '[dbo].[test_transact]',
+    execute: async (connection: Connection) => {
+      const tx = transaction.api(connection);
+      await tx.begin();
+      await query(connection, `CREATE TABLE ${transaction.tableName} (c1 int UNIQUE)`);
+      await query(connection, `INSERT INTO ${transaction.tableName} VALUES ('1')`);
+      await tx.commit();
 
-    return query(connection, `SELECT * FROM ${transactionTable}`);
-  };
-  const failInTransaction = async (connection: Connection) => {
-    const tx = transactionApi(connection);
-    await tx.begin();
-    await query(connection, `CREATE TABLE ${transactionTable} (c1 int UNIQUE)`);
-    await query(connection, `INSERT INTO ${transactionTable} VALUES ('1')`);
-    await query(
-      connection,
-      `INSERT INTO ${transactionTable} VALUES ('1')`
-    ).catch(() => {});
-    await tx.rollback();
-    return query(connection, `SELECT * FROM ${transactionTable}`).catch(
-      () => true
-    );
-  };
-
-  const transactionApi = (connection: Connection) => {
-    return {
-      begin: () => {
-        return promisify(connection.beginTransaction).call(connection);
-      },
-      commit: () => {
-        return promisify(connection.commitTransaction).call(connection);
-      },
-      rollback: () => {
-        return promisify(connection.rollbackTransaction).call(connection);
-      },
-    };
+      return query(connection, `SELECT * FROM ${transaction.tableName}`);
+    },
+    fail: async (connection: Connection) => {
+      const tx = transaction.api(connection);
+      await tx.begin();
+      await query(connection, `CREATE TABLE ${transaction.tableName} (c1 int UNIQUE)`);
+      await query(connection, `INSERT INTO ${transaction.tableName} VALUES ('1')`);
+      await query(
+        connection,
+        `INSERT INTO ${transaction.tableName} VALUES ('1')`
+      ).catch(() => {});
+      await tx.rollback();
+      return query(connection, `SELECT * FROM ${transaction.tableName}`).catch(
+        () => true
+      );
+    },
+    api: (connection: Connection) => {
+      return {
+        begin: () => {
+          return promisify(connection.beginTransaction).call(connection);
+        },
+        commit: () => {
+          return promisify(connection.commitTransaction).call(connection);
+        },
+        rollback: () => {
+          return promisify(connection.rollbackTransaction).call(connection);
+        },
+      };
+    },
   };
 
   const cleanup = (connection: Connection) => {
     return query(
       connection,
       `
-      if exists(SELECT * FROM sysobjects WHERE name='test_prepared' AND xtype='U') DROP TABLE ${table};
-      if exists(SELECT * FROM sysobjects WHERE name='test_transact' AND xtype='U') DROP TABLE ${transactionTable};
-      if exists(SELECT * FROM sysobjects WHERE name='test_proced' AND xtype='U') DROP PROCEDURE ${storedProcedure};
+      if exists(SELECT * FROM sysobjects WHERE name='test_prepared' AND xtype='U') DROP TABLE ${preparedSQL.tableName};
+      if exists(SELECT * FROM sysobjects WHERE name='test_transact' AND xtype='U') DROP TABLE ${transaction.tableName};
+      if exists(SELECT * FROM sysobjects WHERE name='test_proced' AND xtype='U') DROP PROCEDURE ${storedProcedure.procedureName};
       if exists(SELECT * FROM sys.databases WHERE name = 'temp_otel_db') DROP DATABASE temp_otel_db;
     `.trim()
     );
   };
 
   return {
-    callProcedureWithParameters,
     cleanup,
     closeConnection,
     createConnection,
-    createStoredProcedure,
-    createTable,
-    executeInTransaction,
-    executePreparedSQL,
-    failInTransaction,
-    prepareSQL,
+    preparedSQL,
     query,
+    storedProcedure,
+    transaction,
   };
 };
+
+export default makeApi;
