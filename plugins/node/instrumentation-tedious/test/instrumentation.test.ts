@@ -27,7 +27,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
-import { storedProcedure, makeApi } from './api';
+import makeApi from './api';
 import type { Connection, ConnectionConfig } from 'tedious';
 
 process.env.RUN_MSSQL_TESTS = 'true';
@@ -206,9 +206,9 @@ describe('tedious', () => {
   });
 
   it('should instrument stored procedure calls', async () => {
-    assert.strictEqual(await tedious.createStoredProcedure(connection), true);
+    assert.strictEqual(await tedious.storedProcedure.create(connection), true);
     assert.deepStrictEqual(
-      await tedious.callProcedureWithParameters(connection),
+      await tedious.storedProcedure.call(connection),
       {
         outputCount: 11,
       }
@@ -221,16 +221,16 @@ describe('tedious', () => {
       sql: /create or alter procedure/i,
     });
     assertSpan(spans[1], {
-      name: `callProcedure ${storedProcedure} master`,
-      sql: storedProcedure,
+      name: `callProcedure ${tedious.storedProcedure.procedureName} master`,
+      sql: tedious.storedProcedure.procedureName,
     });
   });
 
   it('should instrument prepared statement calls', async () => {
-    assert.strictEqual(await tedious.createTable(connection), true);
-    const request = await tedious.prepareSQL(connection);
+    assert.strictEqual(await tedious.preparedSQL.createTable(connection), true);
+    const request = await tedious.preparedSQL.prepare(connection);
     assert.strictEqual(
-      await tedious.executePreparedSQL(connection, request),
+      await tedious.preparedSQL.execute(connection, request),
       true
     );
     const spans = memoryExporter.getFinishedSpans();
