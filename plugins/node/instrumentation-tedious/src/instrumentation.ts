@@ -35,6 +35,7 @@ const PATCHED_METHODS = [
   'callProcedure',
   'execSql',
   'execSqlBatch',
+  'execBulkLoad',
   'prepare',
   'execute',
 ];
@@ -144,7 +145,7 @@ export class TediousInstrumentation extends InstrumentationBase<
         })(request);
 
         const span = thisPlugin.tracer.startSpan(
-          getSpanName(operation, databaseName, sql),
+          getSpanName(operation, databaseName, sql, request.table),
           {
             kind: api.SpanKind.CLIENT,
             attributes: {
@@ -157,6 +158,7 @@ export class TediousInstrumentation extends InstrumentationBase<
                 this.config.userName ??
                 this.config?.authentication?.options?.userName,
               [SemanticAttributes.DB_STATEMENT]: sql,
+              [SemanticAttributes.DB_SQL_TABLE]: request.table,
             },
           }
         );

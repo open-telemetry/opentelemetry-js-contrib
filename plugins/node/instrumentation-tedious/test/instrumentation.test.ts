@@ -281,6 +281,32 @@ describe('tedious', () => {
       database: 'temp_otel_db',
     });
   });
+
+  it('should instrument BulkLoads', async () => {
+    assert.strictEqual(await tedious.bulkLoad.createTable(connection), true);
+    assert.strictEqual(
+      await tedious.bulkLoad.execute(connection),
+      2
+    );
+    const spans = memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
+
+    assertSpan(spans[0], {
+      name: 'execSql master',
+      sql: /create table/i,
+      statementCount: 2,
+    });
+    assertSpan(spans[1], {
+      name: 'execSqlBatch master',
+      sql: /insert bulk/,
+      procCount: 0,
+    });
+    assertSpan(spans[2], {
+      name: 'execBulkLoad [dbo].[test_bulk] master',
+      procCount: 0,
+      table: '[dbo].[test_bulk]',
+    });
+  });
 });
 
 const assertMatch = (actual: string | undefined, expected: RegExp) => {
@@ -338,6 +364,10 @@ function assertSpan(span: ReadableSpan, expected: any) {
       expected.parentSpan.spanContext().spanId
     );
   }
+  assert.strictEqual(
+    span.attributes[SemanticAttributes.DB_SQL_TABLE],
+    expected.table
+  );
   if (expected.sql) {
     if (expected.sql instanceof RegExp) {
       assertMatch(
