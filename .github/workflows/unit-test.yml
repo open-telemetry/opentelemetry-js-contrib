@@ -9,7 +9,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["8", "10", "12", "14", "16"]
+        node: ["8", "14", "16"]
+        lerna-selector: >-
+          --ignore @opentelemetry/instrumentation-tedious
         include:
           - node: "8"
             lerna-extra-args: >-
@@ -29,19 +31,6 @@ jobs:
         image: mongo
         ports:
         - 27017:27017
-      mssql:
-        image: mcr.microsoft.com/mssql/server:2017-latest
-        env:
-          SA_PASSWORD: mssql_passw0rd
-          ACCEPT_EULA: Y
-        ports:
-        - 1433/tcp
-        options: >-
-          --health-cmd "/opt/mssql-tools/bin/sqlcmd -U sa -P $SA_PASSWORD -Q 'select 1' -b -o /dev/null"
-          --health-interval 1s
-          --health-timeout 30s
-          --health-start-period 10s
-          --health-retries 20
       mysql:
         image: circleci/mysql:5.7
         env:
@@ -86,7 +75,6 @@ jobs:
       RUN_MEMCACHED_TESTS: 1
       RUN_MONGODB_TESTS: 1
       RUN_MYSQL_TESTS: 1
-      RUN_MSSQL_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
       OPENTELEMETRY_MEMCACHED_HOST: memcached
@@ -100,8 +88,6 @@ jobs:
       MONGODB_DB: opentelemetry-tests
       MONGODB_HOST: mongo
       MONGODB_PORT: 27017
-      MSSQL_HOST: mssql
-      MSSQL_PASSWORD: mssql_passw0rd
       MYSQL_USER: otel
       MYSQL_PASSWORD: secret
       MYSQL_DATABASE: circle_database
@@ -139,10 +125,76 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit tests
-        run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
+        run: npm run test:ci:changed -- ${{ matrix.lerna-selector }} ${{ matrix.lerna-extra-args }}
       - name: Report Coverage
         if: matrix.node == '14'
         run: npm run codecov:ci:changed
+
+  unit-test-sql:
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["8", "14", "16"]
+        lerna-selector: >-
+          --scope @opentelemetry/instrumentation-tedious
+        include:
+          - node: "8"
+            lerna-extra-args: >-
+              --ignore @opentelemetry/instrumentation-tedious
+    runs-on: ubuntu-latest
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2017-latest
+        env:
+          SA_PASSWORD: mssql_passw0rd
+          ACCEPT_EULA: Y
+        ports:
+        - 1433/tcp
+        options: >-
+          --health-cmd "/opt/mssql-tools/bin/sqlcmd -U sa -P $SA_PASSWORD -Q 'select 1' -b -o /dev/null"
+          --health-interval 1s
+          --health-timeout 30s
+          --health-start-period 10s
+          --health-retries 20
+    env:
+      RUN_MSSQL_TESTS: 1
+      MSSQL_HOST: mssql
+      MSSQL_PASSWORD: mssql_passw0rd
+      NPM_CONFIG_UNSAFE_PERM: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Cache Dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            package-lock.json
+            detectors/node/*/node_modules
+            metapackages/*/node_modules
+            packages/*/node_modules
+            plugins/node/*/node_modules
+            plugins/web/*/node_modules
+            propagators/*/node_modules
+          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/package.json') }}
+      - name: Legacy Peer Dependencies for npm 7
+        if: matrix.node == '16'
+        run: npm config set legacy-peer-deps=true
+      - name: Install Root Dependencies
+        run: npm install --ignore-scripts
+      - name: Bootstrap Dependencies
+        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
+      - name: Unit tests
+        run: npm run test:ci:changed -- ${{ matrix.lerna-selector }} ${{ matrix.lerna-extra-args }}
+      - name: Report Coverage
+        if: matrix.node == '14'
+        run: npm run codecov:ci:changed
+
   browser-tests:
     runs-on: ubuntu-latest
     container:
