@@ -68,7 +68,7 @@ jobs:
         ports:
         - 9042:9042
         options: >-
-          --health-cmd 'cqlsh -u cassandra -p cassandra -e "USE system"'
+          --health-cmd "cqlsh -u cassandra -p cassandra -e 'USE system'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 7
