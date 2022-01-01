@@ -207,12 +207,9 @@ describe('tedious', () => {
 
   it('should instrument stored procedure calls', async () => {
     assert.strictEqual(await tedious.storedProcedure.create(connection), true);
-    assert.deepStrictEqual(
-      await tedious.storedProcedure.call(connection),
-      {
-        outputCount: 11,
-      }
-    );
+    assert.deepStrictEqual(await tedious.storedProcedure.call(connection), {
+      outputCount: 11,
+    });
     const spans = memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 2, 'Received incorrect number of spans');
 
@@ -284,10 +281,7 @@ describe('tedious', () => {
 
   it('should instrument BulkLoads', async () => {
     assert.strictEqual(await tedious.bulkLoad.createTable(connection), true);
-    assert.strictEqual(
-      await tedious.bulkLoad.execute(connection),
-      2
-    );
+    assert.strictEqual(await tedious.bulkLoad.execute(connection), 2);
     const spans = memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 3, 'Received incorrect number of spans');
 
