@@ -67,6 +67,11 @@ jobs:
         image: bitnami/cassandra:3
         ports:
         - 9042:9042
+        options: >-
+          --health-cmd 'cqlsh -e "USE system"'
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
