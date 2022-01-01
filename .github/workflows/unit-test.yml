@@ -10,8 +10,6 @@ jobs:
       fail-fast: false
       matrix:
         node: ["8", "14", "16"]
-        lerna-selector: >-
-          --ignore @opentelemetry/instrumentation-tedious
         include:
           - node: "8"
             lerna-extra-args: >-
@@ -71,6 +69,8 @@ jobs:
         ports:
         - 9042:9042
     env:
+      LERNA_SELECTOR: >-
+        --ignore @opentelemetry/instrumentation-tedious
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
       RUN_MONGODB_TESTS: 1
@@ -125,7 +125,7 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit tests
-        run: npm run test:ci:changed -- ${{ matrix.lerna-selector }} ${{ matrix.lerna-extra-args }}
+        run: npm run test:ci:changed -- ${{ env.LERNA_SELECTOR }} ${{ matrix.lerna-extra-args }}
       - name: Report Coverage
         if: matrix.node == '14'
         run: npm run codecov:ci:changed
@@ -135,8 +135,6 @@ jobs:
       fail-fast: false
       matrix:
         node: ["8", "14", "16"]
-        lerna-selector: >-
-          --scope @opentelemetry/instrumentation-tedious
         include:
           - node: "8"
             lerna-extra-args: >-
@@ -157,6 +155,8 @@ jobs:
           --health-start-period 10s
           --health-retries 20
     env:
+      LERNA_SELECTOR: >-
+        --scope @opentelemetry/instrumentation-tedious
       RUN_MSSQL_TESTS: 1
       MSSQL_HOST: mssql
       MSSQL_PASSWORD: mssql_passw0rd
@@ -190,7 +190,7 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit tests
-        run: npm run test:ci:changed -- ${{ matrix.lerna-selector }} ${{ matrix.lerna-extra-args }}
+        run: npm run test:ci:changed -- ${{ env.LERNA_SELECTOR }} ${{ matrix.lerna-extra-args }}
       - name: Report Coverage
         if: matrix.node == '14'
         run: npm run codecov:ci:changed
