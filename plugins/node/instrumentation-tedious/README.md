@@ -18,7 +18,7 @@ npm install --save @opentelemetry/instrumentation-tedious
 
 ## Supported Versions
 
-- `14.x`
+- `>=1.11.0`
 
 ## Usage
 
