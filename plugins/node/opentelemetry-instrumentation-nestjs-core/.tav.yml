@@ -1,0 +1,68 @@
+"@nestjs/core":
+  - versions: "^8.2.4" 
+    peerDependencies:
+        - "@nestjs/common@^8.2.4"
+        - "@nestjs/microservices@^8.2.4"
+        - "@nestjs/platform-express@^8.2.4"
+        - "@nestjs/websockets@^8.2.4"
+    commands: npm run test
+    
+  - versions: "8.2.3" 
+    peerDependencies:
+        - "@nestjs/common@8.2.3"
+        - "@nestjs/microservices@8.2.3"
+        - "@nestjs/platform-express@8.2.3"
+        - "@nestjs/websockets@8.2.3"
+    commands: npm run test
+
+  - versions: "8.1.1" 
+    peerDependencies:
+        - "@nestjs/common@8.1.1"
+        - "@nestjs/microservices@8.1.1"
+        - "@nestjs/platform-express@8.1.1"
+        - "@nestjs/websockets@8.1.1"
+    commands: npm run test
+
+  - versions: "8.0.9" 
+    peerDependencies:
+        - "@nestjs/common@8.0.9"
+        - "@nestjs/microservices@8.0.9"
+        - "@nestjs/platform-express@8.0.9"
+        - "@nestjs/websockets@8.0.9"
+    commands: npm run test
+
+  - versions: "8.0.6" 
+    peerDependencies:
+        - "@nestjs/common@8.0.6"
+        - "@nestjs/microservices@8.0.6"
+        - "@nestjs/platform-express@8.0.6"
+        - "@nestjs/websockets@8.0.6"
+    commands: npm run test
+
+  - versions: "7.6.18" 
+    peerDependencies:
+        - "@nestjs/common@7.6.18"
+        - "@nestjs/microservices@7.6.18"
+        - "@nestjs/platform-express@7.6.18"
+        - "@nestjs/websockets@7.6.18"
+        - "rxjs@^6.0.0" 
+    commands: npm run test
+
+  - versions: "7.6.17" 
+    peerDependencies:
+        - "@nestjs/common@7.6.17"
+        - "@nestjs/microservices@7.6.17"
+        - "@nestjs/platform-express@7.6.17"
+        - "@nestjs/websockets@7.6.17"
+        - "rxjs@^6.0.0" 
+    commands: npm run test
+
+  - versions: "7.6.15" 
+    peerDependencies:
+        - "@nestjs/common@7.6.15"
+        - "@nestjs/microservices@7.6.15"
+        - "@nestjs/platform-express@7.6.15"
+        - "@nestjs/websockets@7.6.15"
+        - "rxjs@^6.0.0" 
+    commands: npm run test
+
