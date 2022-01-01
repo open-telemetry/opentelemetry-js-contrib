@@ -48,6 +48,7 @@ type ApproxConnection = EventEmitter & {
 type ApproxRequest = EventEmitter & {
   sqlTextOrProcedure: string | undefined;
   callback: any;
+  table: string | undefined;
   parametersByName: any;
 };
 
@@ -124,10 +125,7 @@ export class TediousInstrumentation extends InstrumentationBase<
         `TediousInstrumentation: patched Connection.prototype.${operation}`
       );
 
-      return function patchedMethod(
-        this: ApproxConnection,
-        request: ApproxRequest
-      ) {
+      function patchedMethod(this: ApproxConnection, request: ApproxRequest) {
         let procCount = 0;
         let statementCount = 0;
         const incrementStatementCount = () => statementCount++;
@@ -201,7 +199,14 @@ export class TediousInstrumentation extends InstrumentationBase<
           this,
           ...arguments
         );
-      };
+      }
+
+      Object.defineProperty(patchedMethod, 'length', {
+        value: originalMethod.length,
+        writable: false,
+      });
+
+      return patchedMethod;
     };
   }
 

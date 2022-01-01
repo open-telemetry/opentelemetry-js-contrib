@@ -27,7 +27,7 @@ export type tedious = {
 };
 
 export const makeApi = (tedious: tedious) => {
-  const fullName = (resource) => {
+  const fullName = (resource: string) => {
     assert.strictEqual(typeof resource, 'string');
     return `[dbo].[${resource}]`;
   };
@@ -118,17 +118,18 @@ export const makeApi = (tedious: tedious) => {
         connection.execSql(request);
       });
     },
-    call: (
-      connection: Connection
-    ): Promise<any> => {
+    call: (connection: Connection): Promise<any> => {
       return new Promise((resolve, reject) => {
         const result: any = {};
-        const request = new tedious.Request(storedProcedure.procedureName, err => {
-          if (err) {
-            return reject(err);
+        const request = new tedious.Request(
+          storedProcedure.procedureName,
+          err => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(result);
           }
-          resolve(result);
-        });
+        );
 
         request.addParameter('inputVal', tedious.TYPES.VarChar, 'hello world');
         request.addOutputParameter('outputCount', tedious.TYPES.Int);
@@ -141,7 +142,6 @@ export const makeApi = (tedious: tedious) => {
       });
     },
   };
-
 
   const preparedSQL = {
     tableName: '[dbo].[test_prepared]',
@@ -180,10 +180,7 @@ export const makeApi = (tedious: tedious) => {
         connection.prepare(request);
       });
     },
-    execute: (
-      connection: Connection,
-      request: Request
-    ): Promise<boolean> => {
+    execute: (connection: Connection, request: Request): Promise<boolean> => {
       return new Promise((resolve, reject) => {
         request.on('error', reject);
         request.on('requestCompleted', () => {
@@ -204,8 +201,14 @@ export const makeApi = (tedious: tedious) => {
     execute: async (connection: Connection) => {
       const tx = transaction.api(connection);
       await tx.begin();
-      await query(connection, `CREATE TABLE ${transaction.tableName} (c1 int UNIQUE)`);
-      await query(connection, `INSERT INTO ${transaction.tableName} VALUES ('1')`);
+      await query(
+        connection,
+        `CREATE TABLE ${transaction.tableName} (c1 int UNIQUE)`
+      );
+      await query(
+        connection,
+        `INSERT INTO ${transaction.tableName} VALUES ('1')`
+      );
       await tx.commit();
 
       return query(connection, `SELECT * FROM ${transaction.tableName}`);
@@ -213,8 +216,14 @@ export const makeApi = (tedious: tedious) => {
     fail: async (connection: Connection) => {
       const tx = transaction.api(connection);
       await tx.begin();
-      await query(connection, `CREATE TABLE ${transaction.tableName} (c1 int UNIQUE)`);
-      await query(connection, `INSERT INTO ${transaction.tableName} VALUES ('1')`);
+      await query(
+        connection,
+        `CREATE TABLE ${transaction.tableName} (c1 int UNIQUE)`
+      );
+      await query(
+        connection,
+        `INSERT INTO ${transaction.tableName} VALUES ('1')`
+      );
       await query(
         connection,
         `INSERT INTO ${transaction.tableName} VALUES ('1')`
@@ -256,25 +265,38 @@ export const makeApi = (tedious: tedious) => {
         connection.execSql(request);
       });
     },
-    execute: (
-      connection: Connection
-    ): Promise<boolean> => {
+    execute: (connection: Connection): Promise<number> => {
       return new Promise((resolve, reject) => {
-        const request = connection.newBulkLoad(bulkLoad.tableName, { keepNulls: true }, (err, rowCount) => {
+        const requestDoneCb = (err: any, rowCount: number) => {
           if (err) {
             return reject(err);
           }
           resolve(rowCount);
-        });
+        };
+        // <2.2.0 didn't take bulkOptions
+        const request =
+          connection.newBulkLoad.length === 2
+            ? connection.newBulkLoad(bulkLoad.tableName, requestDoneCb)
+            : (connection.newBulkLoad as any)(
+                bulkLoad.tableName,
+                { keepNulls: true },
+                requestDoneCb
+              );
 
         request.addColumn('c1', tedious.TYPES.Int, { nullable: true });
-        request.addColumn('c2', tedious.TYPES.NVarChar, { length: 50, nullable: true });
+        request.addColumn('c2', tedious.TYPES.NVarChar, {
+          length: 50,
+          nullable: true,
+        });
 
-        // TODO: 14 doesn't support this syntax
-        // request.addRow({ c1: 1 });
-        // request.addRow({ c1: 2, c2: 'hello' });
+        if (connection.execBulkLoad.length === 1) {
+          // required in <=11.5. not supported in 14
+          request.addRow({ c1: 1 });
+          request.addRow({ c1: 2, c2: 'hello' });
+          return connection.execBulkLoad(request);
+        }
 
-        connection.execBulkLoad(request, [
+        (connection.execBulkLoad as any)(request, [
           { c1: 1 },
           { c1: 2, c2: 'hello' },
         ]);
