@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.26.0...host-metrics-v0.27.0) (2021-12-22)
+
+
+### Features
+
+* update host-metrics to api-metrics v0.27.0 ([#779](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/779)) ([9cef8a7](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/9cef8a7e3a8cb358fd0095b64cbef3874ffee517))
+
 ## [0.26.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.25.0...host-metrics-v0.26.0) (2021-10-22)
 
 
