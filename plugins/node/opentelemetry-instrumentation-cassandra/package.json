@@ -25,6 +25,7 @@
     "tracing",
     "profiling",
     "instrumentation",
+    "cassandra",
     "cassandra-driver"
   ],
   "author": "OpenTelemetry Authors",
