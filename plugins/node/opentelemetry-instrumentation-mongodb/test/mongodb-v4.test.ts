@@ -59,6 +59,7 @@ describe('MongoDBInstrumentation', () => {
 
   before(done => {
     shouldTest = true;
+
     accessCollection(URL, DB_NAME, COLLECTION_NAME)
       .then(result => {
         client = result.client;

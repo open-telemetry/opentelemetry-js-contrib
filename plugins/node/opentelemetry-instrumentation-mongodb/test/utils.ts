@@ -32,7 +32,7 @@ export interface MongoDBAccess {
  * @param url The mongodb URL to access.
  * @param dbName The mongodb database name.
  * @param collectionName The mongodb collection name.
- * @param options
+ * @param options The mongodb client config options.
  */
 export function accessCollection(
   url: string,
@@ -41,19 +41,15 @@ export function accessCollection(
   options: mongodb.MongoClientOptions = {}
 ): Promise<MongoDBAccess> {
   return new Promise((resolve, reject) => {
-    mongodb.MongoClient.connect(url, options, (err, client) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      if (!client) {
-        reject();
-        return;
-      }
-      const db = client.db(dbName);
-      const collection = db.collection(collectionName);
-      resolve({ client, collection });
-    });
+    mongodb.MongoClient.connect(url, { serverSelectionTimeoutMS: 1000 })
+      .then(client => {
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        resolve({ client, collection });
+      })
+      .catch(reason => {
+        reject(reason);
+      });
   });
 }
 
@@ -62,8 +58,8 @@ export function accessCollection(
  * @param spans Readable spans that we need to assert.
  * @param expectedName The expected name of the first root span.
  * @param expectedKind The expected kind of the first root span.
- * @param log
- * @param isEnhancedDatabaseReportingEnabled Is enhanced database reporting enabled: boolean
+ * @param log Whether should debug print the expected spans.
+ * @param isEnhancedDatabaseReportingEnabled Is enhanced database reporting enabled: boolean.
  */
 export function assertSpans(
   spans: ReadableSpan[],
