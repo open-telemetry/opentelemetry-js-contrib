@@ -20,12 +20,12 @@
     "compile": "npm run version:update && tsc -p ."
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "logging",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation",
+    "tracing",
     "winston"
   ],
   "author": "OpenTelemetry Authors",

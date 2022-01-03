@@ -22,12 +22,12 @@
     "watch": "tsc -w"
   },
   "keywords": [
-    "opentelemetry",
     "mongodb",
     "nodejs",
-    "tracing",
+    "opentelemetry",
+    "plugin",
     "profiling",
-    "plugin"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
