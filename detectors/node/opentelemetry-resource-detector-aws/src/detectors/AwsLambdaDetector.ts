@@ -21,6 +21,7 @@ import {
 } from '@opentelemetry/resources';
 import {
   CloudProviderValues,
+  CloudPlatformValues,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
 
@@ -42,6 +43,9 @@ export class AwsLambdaDetector implements Detector {
     const attributes = {
       [SemanticResourceAttributes.CLOUD_PROVIDER]: String(
         CloudProviderValues.AWS
+      ),
+      [SemanticResourceAttributes.CLOUD_PLATFORM]: String(
+        CloudPlatformValues.AWS_LAMBDA
       ),
     };
     if (region) {
