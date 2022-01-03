@@ -92,7 +92,6 @@ jobs:
       MYSQL_PORT: 3306
       NPM_CONFIG_UNSAFE_PERM: true
       CASSANDRA_HOST: localhost
-      CASSANDRA_PORT: 9042
     steps:
       - name: Checkout
         uses: actions/checkout@v2
