@@ -1,0 +1,15 @@
+express:
+  - versions: "^4.17.2"
+    commands: npm run test
+
+  - versions: "4.17.1"
+    commands: npm run test
+
+  - versions: "4.16.4"
+    commands: npm run test
+
+  - versions: "4.16.3"
+    commands: npm run test
+
+  - versions: "4.16.2"
+    commands: npm run test
