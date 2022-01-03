@@ -74,24 +74,24 @@ jobs:
       RUN_MYSQL_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
-      OPENTELEMETRY_MEMCACHED_HOST: memcached
+      OPENTELEMETRY_MEMCACHED_HOST: localhost
       OPENTELEMETRY_MEMCACHED_PORT: 11211
       POSTGRES_USER: postgres
       POSTGRES_DB: circle_database
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
-      OPENTELEMETRY_REDIS_HOST: redis
+      OPENTELEMETRY_REDIS_HOST: localhost
       OPENTELEMETRY_REDIS_PORT: 6379
       MONGODB_DB: opentelemetry-tests
-      MONGODB_HOST: mongo
+      MONGODB_HOST: localhost
       MONGODB_PORT: 27017
       MYSQL_USER: otel
       MYSQL_PASSWORD: secret
       MYSQL_DATABASE: circle_database
-      MYSQL_HOST: mysql
+      MYSQL_HOST: localhost
       MYSQL_PORT: 3306
       NPM_CONFIG_UNSAFE_PERM: true
-      CASSANDRA_HOST: cassandra
+      CASSANDRA_HOST: localhost
       CASSANDRA_PORT: 9042
     steps:
       - name: Checkout
