@@ -23,13 +23,12 @@
     "prepare": "npm run compile"
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "ioredis",
-    "redis",
-    "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "redis",
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

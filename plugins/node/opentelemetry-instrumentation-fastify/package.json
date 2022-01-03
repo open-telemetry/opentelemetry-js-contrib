@@ -18,12 +18,11 @@
     "watch": "tsc -w"
   },
   "keywords": [
-    "opentelemetry",
     "fastify",
-    "nodejs",
-    "tracing",
+    "instrumentation",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

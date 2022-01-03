@@ -21,13 +21,12 @@
     "watch": "tsc -w"
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "koa",
-    "nodejs",
-    "tracing",
-    "profiling",
+    "opentelemetry",
     "plugin",
-    "instrumentation"
+    "profiling",
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

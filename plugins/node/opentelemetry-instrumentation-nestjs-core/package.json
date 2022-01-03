@@ -20,12 +20,12 @@
     "version:update": "node ../../../scripts/version-update.js"
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "nestjs",
-    "nodejs",
-    "tracing",
+    "nestjs-core",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

@@ -24,15 +24,14 @@
     "watch": "tsc -w"
   },
   "keywords": [
+    "instrumentation",
     "opentelemetry",
-    "postgres",
     "pg",
-    "postgresql",
-    "nodejs",
-    "tracing",
-    "profiling",
     "plugin",
-    "instrumentation"
+    "postgres",
+    "postgresql",
+    "profiling",
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

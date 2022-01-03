@@ -20,11 +20,10 @@
     "watch": "tsc -w"
   },
   "keywords": [
-    "opentelemetry",
     "generic-pool",
-    "nodejs",
-    "tracing",
-    "instrumentation"
+    "instrumentation",
+    "opentelemetry",
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

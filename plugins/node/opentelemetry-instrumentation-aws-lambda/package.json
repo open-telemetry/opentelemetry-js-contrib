@@ -19,12 +19,11 @@
     "compile": "npm run version:update && tsc -p ."
   },
   "keywords": [
-    "opentelemetry",
     "aws-lambda",
-    "nodejs",
-    "tracing",
+    "instrumentation",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

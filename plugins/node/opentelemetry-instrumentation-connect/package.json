@@ -19,12 +19,11 @@
     "watch": "tsc -w"
   },
   "keywords": [
-    "opentelemetry",
     "connect",
-    "nodejs",
-    "tracing",
+    "instrumentation",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

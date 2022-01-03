@@ -19,13 +19,12 @@
     "compile": "npm run version:update && tsc -p ."
   },
   "keywords": [
-    "opentelemetry",
-    "logging",
-    "nodejs",
-    "tracing",
-    "profiling",
+    "cassandra-driver",
     "instrumentation",
-    "cassandra-driver"
+    "logging",
+    "opentelemetry",
+    "profiling",
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
