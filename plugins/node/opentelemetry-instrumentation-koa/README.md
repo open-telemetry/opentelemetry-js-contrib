@@ -5,10 +5,10 @@
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for [`Koa`](https://github.com/koajs/koa).
+This module provides automatic instrumentation for [Koa](https://github.com/koajs/koa).
 
 For automatic instrumentation see the
-[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -20,7 +20,7 @@ npm install --save @opentelemetry/instrumentation-koa
 
 ### Supported Versions
 
-- Koa `^2.0.0`
+- `^2.0.0`
 
 ## Usage
 
@@ -41,7 +41,7 @@ registerInstrumentations({
 });
 ```
 
-See [examples/koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/koa) for a short example using both Koa and @koa/router
+See [`examples/koa`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/koa) for a short example using both Koa and @koa/router
 
 ### Koa Instrumentation Options
 
@@ -56,7 +56,7 @@ See [examples/koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tr
 
 ## Koa Packages
 
-This package provides automatic tracing for middleware added using either the core [`Koa`](https://github.com/koajs/koa) package or the [`@koa/router`](https://github.com/koajs/router) package.
+This package provides automatic tracing for middleware added using either the core [`koa`](https://github.com/koajs/koa) package or the [`@koa/router`](https://github.com/koajs/router) package.
 
 ## Useful links
 
