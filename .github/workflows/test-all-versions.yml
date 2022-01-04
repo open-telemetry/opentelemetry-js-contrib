@@ -5,6 +5,8 @@ on:
 
 jobs:
   tav:
+    # skip the workflow for now #816
+    if: false
     name: run test-all-version (tav)
     runs-on: ubuntu-latest
     services:

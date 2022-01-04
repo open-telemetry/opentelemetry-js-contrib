@@ -20,11 +20,11 @@
     "watch": "tsc -w"
   },
   "keywords": [
+    "instrumentation",
+    "nodejs",
     "opentelemetry",
     "restify",
-    "nodejs",
-    "tracing",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
