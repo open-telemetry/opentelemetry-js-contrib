@@ -20,13 +20,13 @@
     "compile": "npm run version:update && tsc -p ."
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "logging",
     "nodejs",
-    "tracing",
+    "opentelemetry",
+    "pino",
     "profiling",
-    "instrumentation",
-    "pino"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -61,7 +61,7 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "11.1.2",
+    "sinon": "12.0.1",
     "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"

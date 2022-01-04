@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-nestjs-core",
-  "version": "0.28.0",
+  "version": "0.28.1",
   "description": "OpenTelemetry NestJS automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -20,12 +20,13 @@
     "version:update": "node ../../../scripts/version-update.js"
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "nestjs",
+    "nestjs-core",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

@@ -88,36 +88,35 @@ export function endSpan(reply: PluginFastifyReply, err?: any) {
  * function fails
  */
 export function safeExecuteInTheMiddleMaybePromise<T>(
-  execute: () => Promise<T> | T,
-  onFinish: (e: Error | undefined, result?: T) => void,
+  execute: () => Promise<T>,
+  onFinish: (e: unknown, result?: T) => void,
   preventThrowingError?: boolean
-): Promise<T> | T | void {
-  let error: Error | undefined;
-  let executeResult: Promise<T> | T | void;
-  let isPromise = false;
-  let result: T | undefined = undefined;
+): Promise<T>;
+export function safeExecuteInTheMiddleMaybePromise<T>(
+  execute: () => T,
+  onFinish: (e: unknown, result?: T) => void,
+  preventThrowingError?: boolean
+): T;
+export function safeExecuteInTheMiddleMaybePromise<T>(
+  execute: () => T | Promise<T>,
+  onFinish: (e: unknown, result?: T) => void,
+  preventThrowingError?: boolean
+): T | Promise<T> | undefined {
+  let error: unknown;
+  let result: T | Promise<T> | undefined = undefined;
   try {
-    executeResult = execute();
-    const promiseResult = executeResult as Promise<T>;
+    result = execute();
 
-    isPromise = promiseResult && typeof promiseResult.then === 'function';
-
-    if (isPromise) {
-      promiseResult.then(
-        res => {
-          onFinish(undefined, res);
-        },
-        (err: Error) => {
-          onFinish(err);
-        }
+    if (isPromise(result)) {
+      result.then(
+        res => onFinish(undefined, res),
+        err => onFinish(err)
       );
-    } else {
-      result = executeResult as T | undefined;
     }
   } catch (e) {
     error = e;
   } finally {
-    if (!isPromise) {
+    if (!isPromise(result)) {
       onFinish(error, result);
       if (error && !preventThrowingError) {
         // eslint-disable-next-line no-unsafe-finally
@@ -125,6 +124,16 @@ export function safeExecuteInTheMiddleMaybePromise<T>(
       }
     }
     // eslint-disable-next-line no-unsafe-finally
-    return executeResult;
+    return result;
   }
+}
+
+function isPromise<T>(val: T | Promise<T>): val is Promise<T> {
+  return (
+    (typeof val === 'object' &&
+      val &&
+      typeof Object.getOwnPropertyDescriptor(val, 'then')?.value ===
+        'function') ||
+    false
+  );
 }

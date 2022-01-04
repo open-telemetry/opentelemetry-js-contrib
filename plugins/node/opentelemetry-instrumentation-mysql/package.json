@@ -19,12 +19,12 @@
     "version:update": "node ../../../scripts/version-update.js"
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "mysql",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
