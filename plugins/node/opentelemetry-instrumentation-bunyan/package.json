@@ -20,13 +20,13 @@
     "version:update": "node ../../../scripts/version-update.js"
   },
   "keywords": [
-    "opentelemetry",
+    "bunyan",
+    "instrumentation",
     "logging",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation",
-    "bunyan"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
