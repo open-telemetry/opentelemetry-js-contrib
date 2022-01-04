@@ -35,7 +35,7 @@ jobs:
           SA_PASSWORD: mssql_passw0rd
           ACCEPT_EULA: Y
         ports:
-        - 1433/tcp
+        - 1433:1433
         options: >-
           --health-cmd "/opt/mssql-tools/bin/sqlcmd -U sa -P $SA_PASSWORD -Q 'select 1' -b -o /dev/null"
           --health-interval 1s
