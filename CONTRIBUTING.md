@@ -87,7 +87,7 @@ This repo is generally meant for hosting components that work with popular open-
 
 ### Adding a New Vendor Component
 
-Vendor components that are hosted in this repo will be versioned the same as all other contrib components, and released in lockstep with them under the `@opentelemetry` org in NPM.
+Vendor components that are hosted in this repo will be versioned the same as all other contrib components, and released in lockstep with them under the `@opentelemetry` org in npm.
 
 In exchange, vendor component contributors are expected to:
 

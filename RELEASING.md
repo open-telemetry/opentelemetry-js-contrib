@@ -1,7 +1,7 @@
 # Releasing OpenTelemetry Packages (for Maintainers Only)
 
 This repository uses [Release Please](https://github.com/googleapis/release-please) to manage its releases automatically and independently.
-Modified packages are automatically published to NPM when the auto-generated Release Please PR is merged.
+Modified packages are automatically published to npm when the auto-generated Release Please PR is merged.
 
 ## Manual Publishing Process
 
