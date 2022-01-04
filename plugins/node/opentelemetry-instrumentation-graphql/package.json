@@ -21,12 +21,12 @@
     "watch": "tsc -w"
   },
   "keywords": [
-    "opentelemetry",
-    "nodejs",
-    "tracing",
+    "graphql",
     "metrics",
+    "nodejs",
+    "opentelemetry",
     "stats",
-    "graphql"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
