@@ -1,11 +1,11 @@
-name: Unit Tests
+name: Unit Tests hashing lock files
 on:
   push:
     branches: [main]
   pull_request:
 
 jobs:
-  unit-test:
+  unit-test-lock:
     strategy:
       fail-fast: false
       matrix:
@@ -112,7 +112,7 @@ jobs:
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules
-          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/package.json') }}
+          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
       - name: Legacy Peer Dependencies for npm 7
         if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
@@ -126,7 +126,7 @@ jobs:
       # - name: Report Coverage
       #   if: matrix.node == '14'
       #   run: npm run codecov:ci:changed
-  browser-tests:
+  browser-tests-lock:
     runs-on: ubuntu-latest
     container:
       image: circleci/node:12-browsers
@@ -151,7 +151,7 @@ jobs:
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules
-          key: ${{ runner.os }}-browser-${{ hashFiles('**/package.json') }}
+          key: ${{ runner.os }}-browser-${{ hashFiles('**/package-lock.json') }}
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
