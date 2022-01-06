@@ -9,15 +9,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["8", "10", "12", "14", "16"]
+        node: ["8", "12", "16"]
         include:
           - node: "8"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-aws-sdk
               --ignore @opentelemetry/instrumentation-pino
-          - node: "10"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/instrumentation-pino
+          # - node: "10"
+          #   lerna-extra-args: >-
+          #     --ignore @opentelemetry/instrumentation-pino
     runs-on: ubuntu-latest
     # services:
     #   memcached:

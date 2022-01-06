@@ -1,11 +1,11 @@
-name: Unit Tests
+name: Unit Tests Shallow
 on:
   push:
     branches: [main]
   pull_request:
 
 jobs:
-  unit-test:
+  unit-test-shallow:
     strategy:
       fail-fast: false
       matrix:
@@ -19,54 +19,54 @@ jobs:
           #   lerna-extra-args: >-
           #     --ignore @opentelemetry/instrumentation-pino
     runs-on: ubuntu-latest
-    services:
-      memcached:
-        image: memcached:1.6.9-alpine
-        ports:
-        - 11211:11211
-      mongo:
-        image: mongo
-        ports:
-        - 27017:27017
-      mysql:
-        image: circleci/mysql:5.7
-        env:
-          MYSQL_USER: otel
-          MYSQL_PASSWORD: secret
-          MYSQL_DATABASE: circle_database
-          MYSQL_ROOT_PASSWORD: rootpw
-        ports:
-        - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      postgres:
-        image: circleci/postgres:9.6-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: circle_database
-        ports:
-        - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis
-        ports:
-        - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      cassandra:
-        image: bitnami/cassandra:3
-        ports:
-        - 9042:9042
+    # services:
+    #   memcached:
+    #     image: memcached:1.6.9-alpine
+    #     ports:
+    #     - 11211:11211
+    #   mongo:
+    #     image: mongo
+    #     ports:
+    #     - 27017:27017
+    #   mysql:
+    #     image: circleci/mysql:5.7
+    #     env:
+    #       MYSQL_USER: otel
+    #       MYSQL_PASSWORD: secret
+    #       MYSQL_DATABASE: circle_database
+    #       MYSQL_ROOT_PASSWORD: rootpw
+    #     ports:
+    #     - 3306:3306
+    #     options: >-
+    #       --health-cmd="mysqladmin ping"
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
+    #   postgres:
+    #     image: circleci/postgres:9.6-alpine
+    #     env:
+    #       POSTGRES_USER: postgres
+    #       POSTGRES_DB: circle_database
+    #     ports:
+    #     - 5432:5432
+    #     options: >-
+    #       --health-cmd pg_isready
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
+    #   redis:
+    #     image: redis
+    #     ports:
+    #     - 6379:6379
+    #     options: >-
+    #       --health-cmd "redis-cli ping"
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
+    #   cassandra:
+    #     image: bitnami/cassandra:3
+    #     ports:
+    #     - 9042:9042
     env:
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
@@ -107,12 +107,18 @@ jobs:
             node_modules
             package-lock.json
             detectors/node/*/node_modules
+            detectors/node/*/package-lock.json
             metapackages/*/node_modules
+            metapackages/*/package-lock.json
             packages/*/node_modules
+            packages/*/package-lock.json
             plugins/node/*/node_modules
+            plugins/node/*/package-lock.json
             plugins/web/*/node_modules
+            plugins/web/*/package-lock.json
             propagators/*/node_modules
-          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/package.json') }}
+            propagators/*/package-lock.json
+          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/package.json', '!**/node_modules/**') }}
       - name: Legacy Peer Dependencies for npm 7
         if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
@@ -120,12 +126,13 @@ jobs:
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
-      - name: Unit tests
-        run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
-      - name: Report Coverage
-        if: matrix.node == '14'
-        run: npm run codecov:ci:changed
-  browser-tests:
+      # Don't actually run tests for now
+      # - name: Unit tests
+      #   run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
+      # - name: Report Coverage
+      #   if: matrix.node == '14'
+      #   run: npm run codecov:ci:changed
+  browser-tests-shallow:
     runs-on: ubuntu-latest
     container:
       image: circleci/node:12-browsers
@@ -145,17 +152,24 @@ jobs:
             node_modules
             package-lock.json
             detectors/node/*/node_modules
+            detectors/node/*/package-lock.json
             metapackages/*/node_modules
+            metapackages/*/package-lock.json
             packages/*/node_modules
+            packages/*/package-lock.json
             plugins/node/*/node_modules
+            plugins/node/*/package-lock.json
             plugins/web/*/node_modules
+            plugins/web/*/package-lock.json
             propagators/*/node_modules
-          key: ${{ runner.os }}-browser-${{ hashFiles('**/package.json') }}
+            propagators/*/package-lock.json
+          key: ${{ runner.os }}-browser-${{ hashFiles('**/package.json', '!**/node_modules/**') }}
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci
-      - name: Unit tests
-        run: npm run test:browser
-      - name: Report Coverage
-        run: npm run codecov:browser
+      # Don't actually run tests for now
+      # - name: Unit tests
+      #   run: npm run test:browser
+      # - name: Report Coverage
+      #   run: npm run codecov:browser
