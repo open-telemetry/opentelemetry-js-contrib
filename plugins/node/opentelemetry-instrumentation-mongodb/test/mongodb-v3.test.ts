@@ -348,7 +348,6 @@ describe('MongoDBInstrumentation', () => {
         });
       });
     });
-
     describe('with an invalid function', () => {
       beforeEach(() => {
         create({
@@ -372,7 +371,6 @@ describe('MongoDBInstrumentation', () => {
       });
     });
   });
-
   describe('Mixed operations with callback', () => {
     it('should create a span for find after callback insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];

@@ -352,7 +352,6 @@ describe('MongoDBInstrumentation', () => {
           },
         });
       });
-
       it('should not do any harm when throwing an exception', done => {
         const span = trace.getTracer('default').startSpan('findRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -362,7 +361,6 @@ describe('MongoDBInstrumentation', () => {
 
             assert.ifError(err);
             assertSpans(spans, 'mongodb.find', SpanKind.CLIENT);
-
             done();
           });
         });
