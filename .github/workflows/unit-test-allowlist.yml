@@ -1,4 +1,4 @@
-name: Unit Tests hashing lock files
+name: Unit Tests allowlist hashing
 on:
   push:
     branches: [main]
@@ -112,7 +112,7 @@ jobs:
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules
-          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
       - name: Legacy Peer Dependencies for npm 7
         if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
@@ -151,7 +151,7 @@ jobs:
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules
-          key: ${{ runner.os }}-browser-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-browser-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies

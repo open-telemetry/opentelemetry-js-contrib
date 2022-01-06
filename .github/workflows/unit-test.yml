@@ -112,7 +112,7 @@ jobs:
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules
-          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/package.json') }}
+          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('**/package.json', '!**/node_modules/**') }}
       - name: Legacy Peer Dependencies for npm 7
         if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
@@ -151,7 +151,7 @@ jobs:
             plugins/node/*/node_modules
             plugins/web/*/node_modules
             propagators/*/node_modules
-          key: ${{ runner.os }}-browser-${{ hashFiles('**/package.json') }}
+          key: ${{ runner.os }}-browser-${{ hashFiles('**/package.json', '!**/node_modules/**') }}
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
