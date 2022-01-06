@@ -9,64 +9,64 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["8", "12", "16"]
+        node: ["8", "10", "12", "14", "16"]
         include:
           - node: "8"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-aws-sdk
               --ignore @opentelemetry/instrumentation-pino
-          # - node: "10"
-          #   lerna-extra-args: >-
-          #     --ignore @opentelemetry/instrumentation-pino
+          - node: "10"
+            lerna-extra-args: >-
+              --ignore @opentelemetry/instrumentation-pino
     runs-on: ubuntu-latest
-    # services:
-    #   memcached:
-    #     image: memcached:1.6.9-alpine
-    #     ports:
-    #     - 11211:11211
-    #   mongo:
-    #     image: mongo
-    #     ports:
-    #     - 27017:27017
-    #   mysql:
-    #     image: circleci/mysql:5.7
-    #     env:
-    #       MYSQL_USER: otel
-    #       MYSQL_PASSWORD: secret
-    #       MYSQL_DATABASE: circle_database
-    #       MYSQL_ROOT_PASSWORD: rootpw
-    #     ports:
-    #     - 3306:3306
-    #     options: >-
-    #       --health-cmd="mysqladmin ping"
-    #       --health-interval 10s
-    #       --health-timeout 5s
-    #       --health-retries 5
-    #   postgres:
-    #     image: circleci/postgres:9.6-alpine
-    #     env:
-    #       POSTGRES_USER: postgres
-    #       POSTGRES_DB: circle_database
-    #     ports:
-    #     - 5432:5432
-    #     options: >-
-    #       --health-cmd pg_isready
-    #       --health-interval 10s
-    #       --health-timeout 5s
-    #       --health-retries 5
-    #   redis:
-    #     image: redis
-    #     ports:
-    #     - 6379:6379
-    #     options: >-
-    #       --health-cmd "redis-cli ping"
-    #       --health-interval 10s
-    #       --health-timeout 5s
-    #       --health-retries 5
-    #   cassandra:
-    #     image: bitnami/cassandra:3
-    #     ports:
-    #     - 9042:9042
+    services:
+      memcached:
+        image: memcached:1.6.9-alpine
+        ports:
+        - 11211:11211
+      mongo:
+        image: mongo
+        ports:
+        - 27017:27017
+      mysql:
+        image: circleci/mysql:5.7
+        env:
+          MYSQL_USER: otel
+          MYSQL_PASSWORD: secret
+          MYSQL_DATABASE: circle_database
+          MYSQL_ROOT_PASSWORD: rootpw
+        ports:
+        - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      postgres:
+        image: circleci/postgres:9.6-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: circle_database
+        ports:
+        - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis
+        ports:
+        - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      cassandra:
+        image: bitnami/cassandra:3
+        ports:
+        - 9042:9042
     env:
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
@@ -120,12 +120,11 @@ jobs:
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
-      # Don't actually run tests for now
-      # - name: Unit tests
-      #   run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
-      # - name: Report Coverage
-      #   if: matrix.node == '14'
-      #   run: npm run codecov:ci:changed
+      - name: Unit tests
+        run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
+      - name: Report Coverage
+        if: matrix.node == '14'
+        run: npm run codecov:ci:changed
   browser-tests:
     runs-on: ubuntu-latest
     container:
@@ -156,8 +155,7 @@ jobs:
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci
-      # Don't actually run tests for now
-      # - name: Unit tests
-      #   run: npm run test:browser
-      # - name: Report Coverage
-      #   run: npm run codecov:browser
+      - name: Unit tests
+        run: npm run test:browser
+      - name: Report Coverage
+        run: npm run codecov:browser
