@@ -5,7 +5,7 @@
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for [`Hapi`](https://hapi.dev).
+This module provides automatic instrumentation for the [Hapi Framework](https://hapi.dev)(`@hapi/hapi` package).
 
 For automatic instrumentation see the
 [@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
@@ -20,7 +20,7 @@ npm install --save @opentelemetry/instrumentation-hapi
 
 ### Supported Versions
 
-- @hapi/hapi `^17.0.0`
+- `>=17.0.0 <21`
 
 ## Usage
 

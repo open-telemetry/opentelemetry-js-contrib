@@ -12,7 +12,7 @@
     "compile:watch": "tsc -w",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-nestjs-core --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-nestjs-core --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -20,12 +20,13 @@
     "version:update": "node ../../../scripts/version-update.js"
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "nestjs",
+    "nestjs-core",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
