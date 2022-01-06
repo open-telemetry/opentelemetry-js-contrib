@@ -11,7 +11,7 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-bunyan --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-bunyan --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -20,13 +20,13 @@
     "version:update": "node ../../../scripts/version-update.js"
   },
   "keywords": [
-    "opentelemetry",
+    "bunyan",
+    "instrumentation",
     "logging",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation",
-    "bunyan"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
