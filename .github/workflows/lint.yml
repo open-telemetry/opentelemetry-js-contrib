@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    if: false
     runs-on: ubuntu-latest
     container:
       image: node:14

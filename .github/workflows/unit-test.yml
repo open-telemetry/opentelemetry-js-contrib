@@ -6,6 +6,7 @@ on:
 
 jobs:
   unit-test:
+    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -149,6 +150,7 @@ jobs:
         run: npm run codecov:ci:changed
 
   browser-test:
+    if: false
     strategy:
       fail-fast: false
       matrix:
