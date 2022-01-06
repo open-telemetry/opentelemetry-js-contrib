@@ -165,12 +165,12 @@ export enum MongodbCommandType {
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
 /* eslint-disable @typescript-eslint/no-unused-vars */
-export class V4Connection {
+export type V4Connection = {
   command(
     ns: mongodb.MongoDBNamespace,
     cmd: Document,
     options: undefined | unknown,
     callback: mongodb.Callback<unknown>
-  ): void {}
-}
+  ): void;
+};
 /* eslint-enable @typescript-eslint/no-unused-vars */
