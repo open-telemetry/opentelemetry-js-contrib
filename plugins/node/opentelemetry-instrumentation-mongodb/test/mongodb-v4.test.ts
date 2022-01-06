@@ -20,7 +20,6 @@ import { context, trace, SpanKind, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
 import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
 import { MongoResponseHookInformation } from '../src';
-
 import {
   registerInstrumentationTesting,
   getTestSpans,
@@ -41,7 +40,7 @@ describe('MongoDBInstrumentation', () => {
   }
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
   // these tests.
-  const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as any;
+  const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
   let shouldTest = true;
   if (!RUN_MONGODB_TESTS) {
     console.log('Skipping test-mongodb. Run MongoDB to test');

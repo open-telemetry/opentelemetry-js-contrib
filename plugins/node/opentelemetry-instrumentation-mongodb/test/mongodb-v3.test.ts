@@ -122,7 +122,6 @@ describe('MongoDBInstrumentation', () => {
       context.with(trace.setSpan(context.active(), span), () => {
         collection.updateOne({ a: 2 }, { $set: { b: 1 } }, (err, result) => {
           span.end();
-          console.log(getTestSpans());
           assert.ifError(err);
           assertSpans(getTestSpans(), 'mongodb.update', SpanKind.CLIENT);
           done();
@@ -292,7 +291,6 @@ describe('MongoDBInstrumentation', () => {
 
   describe('when specifying a responseHook configuration', () => {
     const dataAttributeName = 'mongodb_data';
-
     describe('with a valid function', () => {
       beforeEach(() => {
         create({
@@ -309,17 +307,20 @@ describe('MongoDBInstrumentation', () => {
         const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
         const span = trace.getTracer('default').startSpan('insertRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
-          collection.insertMany(insertData, (err, result) => {
+          collection.insertMany(insertData, (err, results) => {
             span.end();
             assert.ifError(err);
             const spans = getTestSpans();
             const insertSpan = spans[0];
 
-            const anyResult = result as any;
-            assert.deepStrictEqual(
-              JSON.parse(insertSpan.attributes[dataAttributeName] as string),
-              anyResult.result
-            );
+            if (results) {
+              assert.deepStrictEqual(
+                JSON.parse(insertSpan.attributes[dataAttributeName] as string),
+                (<any>results).result
+              );
+            } else {
+              throw new Error('Got an unexpected Results: ' + results);
+            }
 
             done();
           });
@@ -344,7 +345,6 @@ describe('MongoDBInstrumentation', () => {
                 results[0]._id.toString()
               );
             }
-
             done();
           });
         });
@@ -359,7 +359,6 @@ describe('MongoDBInstrumentation', () => {
           },
         });
       });
-
       it('should not do any harm when throwing an exception', done => {
         const span = trace.getTracer('default').startSpan('findRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -369,7 +368,6 @@ describe('MongoDBInstrumentation', () => {
 
             assert.ifError(err);
             assertSpans(spans, 'mongodb.find', SpanKind.CLIENT);
-
             done();
           });
         });
