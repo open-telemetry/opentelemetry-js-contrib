@@ -6,8 +6,10 @@
     "**/*.d.ts",
     "build/**/**/*.js",
     "src/index.ts",
+    "src/version.ts",
     "karma.conf.js",
     "src/platform/browser/*.ts",
+    "test/*.ts",
     "test/index-webpack.ts",
     "webpack/*.js",
     ".eslintrc.js"
