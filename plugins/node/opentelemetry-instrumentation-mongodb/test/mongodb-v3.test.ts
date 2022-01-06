@@ -313,14 +313,10 @@ describe('MongoDBInstrumentation', () => {
             const spans = getTestSpans();
             const insertSpan = spans[0];
 
-            if (results) {
-              assert.deepStrictEqual(
-                JSON.parse(insertSpan.attributes[dataAttributeName] as string),
-                (<any>results).result
-              );
-            } else {
-              throw new Error('Got an unexpected Results: ' + results);
-            }
+            assert.deepStrictEqual(
+              JSON.parse(insertSpan.attributes[dataAttributeName] as string),
+              (<any>results)?.result
+            );
 
             done();
           });
@@ -344,6 +340,8 @@ describe('MongoDBInstrumentation', () => {
                 hookAttributeValue?.cursor?.firstBatch[0]._id,
                 results[0]._id.toString()
               );
+            } else {
+              throw new Error('Got an unexpected Results: ' + results);
             }
             done();
           });

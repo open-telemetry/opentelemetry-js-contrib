@@ -58,7 +58,6 @@ describe('MongoDBInstrumentation', () => {
 
   before(done => {
     shouldTest = true;
-
     accessCollection(URL, DB_NAME, COLLECTION_NAME)
       .then(result => {
         client = result.client;
@@ -304,7 +303,7 @@ describe('MongoDBInstrumentation', () => {
         const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
         const span = trace.getTracer('default').startSpan('insertRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
-          collection.insertMany(insertData, (err, result) => {
+          collection.insertMany(insertData, (err, results) => {
             span.end();
             assert.ifError(err);
             const spans = getTestSpans();
@@ -312,7 +311,7 @@ describe('MongoDBInstrumentation', () => {
 
             assert.deepStrictEqual(
               JSON.parse(insertSpan.attributes[dataAttributeName] as string).n,
-              result?.insertedCount
+              results?.insertedCount
             );
 
             done();
