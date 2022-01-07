@@ -1,5 +1,5 @@
 "@nestjs/core":
-  - versions: "^8.2.4"
+  - versions: "^8.2.4 || 8.2.3 || 8.1.1 || 8.0.9 || 8.0.6"
     peerDependencies:
         - "@nestjs/common@^8.0.0"
         - "@nestjs/microservices@^8.0.0"
@@ -8,43 +8,7 @@
         - "rxjs@^7.1.0"
     commands: npm run test
 
-  - versions: "8.2.3"
-    peerDependencies:
-        - "@nestjs/common@^8.0.0"
-        - "@nestjs/microservices@^8.0.0"
-        - "@nestjs/platform-express@^8.0.0"
-        - "@nestjs/websockets@^8.0.0"
-        - "rxjs@^7.1.0"
-    commands: npm run test
-
-  - versions: "8.1.1"
-    peerDependencies:
-        - "@nestjs/common@^8.0.0"
-        - "@nestjs/microservices@^8.0.0"
-        - "@nestjs/platform-express@^8.0.0"
-        - "@nestjs/websockets@^8.0.0"
-        - "rxjs@^7.1.0"
-    commands: npm run test
-
-  - versions: "8.0.9"
-    peerDependencies:
-        - "@nestjs/common@^8.0.0"
-        - "@nestjs/microservices@^8.0.0"
-        - "@nestjs/platform-express@^8.0.0"
-        - "@nestjs/websockets@^8.0.0"
-        - "rxjs@^7.1.0"
-    commands: npm run test
-
-  - versions: "8.0.6"
-    peerDependencies:
-        - "@nestjs/common@^8.0.0"
-        - "@nestjs/microservices@^8.0.0"
-        - "@nestjs/platform-express@^8.0.0"
-        - "@nestjs/websockets@^8.0.0"
-        - "rxjs@^7.1.0"
-    commands: npm run test
-
-  - versions: "7.6.18"
+  - versions: "7.6.18 || 7.6.17 || 7.6.15"
     peerDependencies:
         - "@nestjs/common@^7.0.0"
         - "@nestjs/microservices@^7.0.0"
@@ -52,22 +16,3 @@
         - "@nestjs/websockets@^7.0.0"
         - "rxjs@^6.0.0"
     commands: npm run test
-
-  - versions: "7.6.17"
-    peerDependencies:
-        - "@nestjs/common@^7.0.0"
-        - "@nestjs/microservices@^7.0.0"
-        - "@nestjs/platform-express@^7.0.0"
-        - "@nestjs/websockets@^7.0.0"
-        - "rxjs@^6.0.0"
-    commands: npm run test
-
-  - versions: "7.6.15"
-    peerDependencies:
-        - "@nestjs/common@^7.0.0"
-        - "@nestjs/microservices@^7.0.0"
-        - "@nestjs/platform-express@^7.0.0"
-        - "@nestjs/websockets@^7.0.0"
-        - "rxjs@^6.0.0"
-    commands: npm run test
-
