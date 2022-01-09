@@ -498,7 +498,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         [SemanticAttributes.DB_MONGODB_COLLECTION]: ns.collection,
       });
     }
-    // capture parameters within the query as well if enhancedDatabaseReporting is enabled
+    // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     let commandObj: Record<string, unknown>;
     if (command && command.documents) {
       commandObj = command.documents[0];
