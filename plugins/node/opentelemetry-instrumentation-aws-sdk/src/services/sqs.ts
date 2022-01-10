@@ -34,7 +34,11 @@ import {
   MessagingDestinationKindValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import { contextGetter, injectPropagationContext } from './MessageAttributes';
+import {
+  contextGetter,
+  extractPropagationContext,
+  injectPropagationContext,
+} from './MessageAttributes';
 
 export class SqsServiceExtension implements ServiceExtension {
   requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
@@ -128,7 +132,10 @@ export class SqsServiceExtension implements ServiceExtension {
           name: queueName ?? 'unknown',
           parentContext: propagation.extract(
             ROOT_CONTEXT,
-            message.MessageAttributes,
+            extractPropagationContext(
+              message,
+              config.sqsExtractContextPropagationFromPayload
+            ),
             contextGetter
           ),
           attributes: {

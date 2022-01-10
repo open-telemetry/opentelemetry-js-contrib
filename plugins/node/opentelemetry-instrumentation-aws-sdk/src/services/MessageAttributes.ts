@@ -41,6 +41,13 @@ class ContextSetter
 }
 export const contextSetter = new ContextSetter();
 
+export interface AwsSdkContextObject {
+  [key: string]: {
+    StringValue?: string;
+    Value?: string;
+  };
+}
+
 class ContextGetter
   implements
     TextMapGetter<SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap>
@@ -52,10 +59,10 @@ class ContextGetter
   }
 
   get(
-    carrier: SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap,
+    carrier: AwsSdkContextObject,
     key: string
   ): undefined | string | string[] {
-    return carrier?.[key]?.StringValue;
+    return carrier?.[key]?.StringValue || carrier?.[key]?.Value;
   }
 }
 export const contextGetter = new ContextGetter();
@@ -75,4 +82,27 @@ export const injectPropagationContext = (
     );
   }
   return attributes;
+};
+
+export const extractPropagationContext = (
+  message: SQS.Message,
+  sqsExtractContextPropagationFromPayload: boolean | undefined
+): AwsSdkContextObject | undefined => {
+  const propagationFields = propagation.fields();
+  const hasPropagationFields = Object.keys(
+    message.MessageAttributes || []
+  ).some(attr => propagationFields.includes(attr));
+  if (hasPropagationFields) {
+    return message.MessageAttributes;
+  } else if (sqsExtractContextPropagationFromPayload && message.Body) {
+    try {
+      const payload = JSON.parse(message.Body);
+      return payload.MessageAttributes;
+    } catch {
+      diag.debug(
+        'failed to parse SQS payload to extract context propagation, trace might be incomplete.'
+      );
+    }
+  }
+  return undefined;
 };

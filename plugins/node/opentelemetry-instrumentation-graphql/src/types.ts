@@ -23,7 +23,6 @@ import {
   GraphQLFieldResolver,
   GraphQLTypeResolver,
 } from 'graphql/type/definition';
-import { GraphQLSchema } from 'graphql/type/schema';
 import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 
 export const OPERATION_NOT_SUPPORTED =
@@ -100,7 +99,7 @@ export type executeFunctionWithArgs = (
 ) => PromiseOrValue<graphqlTypes.ExecutionResult>;
 
 export interface OtelExecutionArgs {
-  schema: GraphQLSchema;
+  schema: graphqlTypes.GraphQLSchema;
   document: DocumentNode & ObjectWithGraphQLData;
   rootValue?: any;
   contextValue?: any & ObjectWithGraphQLData;

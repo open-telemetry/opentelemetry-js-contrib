@@ -239,6 +239,16 @@ function createWrapHandler(
   if (handler.name) {
     Object.defineProperty(wrappedHandler, 'name', { value: handler.name });
   }
+
+  // Get the current metadata and set onto the wrapper to ensure other decorators ( ie: NestJS EventPattern / RolesGuard )
+  // won't be affected by the use of this instrumentation
+  Reflect.getMetadataKeys(handler).forEach(metadataKey => {
+    Reflect.defineMetadata(
+      metadataKey,
+      Reflect.getMetadata(metadataKey, handler),
+      wrappedHandler
+    );
+  });
   return wrappedHandler;
 }
 

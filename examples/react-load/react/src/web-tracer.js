@@ -3,9 +3,16 @@ import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { BaseOpenTelemetryComponent } from '@opentelemetry/plugin-react-load';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
+import { diag, DiagConsoleLogger } from '@opentelemetry/api';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 export default (serviceName) => {
-  const provider = new WebTracerProvider();
+  const provider = new WebTracerProvider({
+    resource: new Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: "react-load-example"
+    }),
+  });
 
   const exporter = new CollectorTraceExporter({
     url: 'http://localhost:55678/v1/trace',
@@ -21,7 +28,7 @@ export default (serviceName) => {
   const tracer = provider.getTracer(serviceName);
 
   BaseOpenTelemetryComponent.setTracer(serviceName)
-  BaseOpenTelemetryComponent.setLogger(provider.logger)
+  diag.setLogger(new DiagConsoleLogger());
 
   return tracer;
 }

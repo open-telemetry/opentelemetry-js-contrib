@@ -80,4 +80,15 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
    * effectively causing those http spans to be non-recordable.
    */
   suppressInternalInstrumentation?: boolean;
+
+  /**
+   * In some cases the context propagation headers may be found in the message payload
+   * rather than the message attribute.
+   * When this field is turned on the instrumentation will parse the payload and extract the
+   * context from there.
+   * Even if the field is on and MessageAttribute contains context propagation field are present,
+   * the MessageAttribute will get priority.
+   * By default it is off.
+   */
+  sqsExtractContextPropagationFromPayload?: boolean;
 }

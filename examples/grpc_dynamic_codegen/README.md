@@ -9,8 +9,8 @@ Using OpenTelemetry gRPC Instrumentation, we can collect traces of our system an
 ## Installation
 
 ```sh
-$ # from this directory
-$ npm install
+# from this directory
+npm install
 ```
 
 Setup [Zipkin Tracing](https://zipkin.io/pages/quickstart.html)
@@ -21,37 +21,38 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
 
 ### Zipkin
 
- - Run the server
+- Run the server
 
    ```sh
-   $ # from this directory
-   $ npm run zipkin:server
+   # from this directory
+   npm run zipkin:server
    ```
 
- - Run the client
+- Run the client
 
    ```sh
-   $ # from this directory
-   $ npm run zipkin:client
+   # from this directory
+   npm run zipkin:client
    ```
 
 ### Jaeger
 
- - Run the server
+- Run the server
 
    ```sh
-   $ # from this directory
-   $ npm run jaeger:server
+   # from this directory
+   npm run jaeger:server
    ```
 
- - Run the client
+- Run the client
 
    ```sh
-   $ # from this directory
-   $ npm run jaeger:client
+   # from this directory
+   npm run jaeger:client
    ```
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node-sdk>
 

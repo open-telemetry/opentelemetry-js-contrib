@@ -43,6 +43,10 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
+import { isSupported } from './utils';
+
+const pgVersion = require('pg/package.json').version;
+const nodeVersion = process.versions.node;
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -89,7 +93,7 @@ const runCallbackTest = (
   }
 };
 
-describe('pg@7.x', () => {
+describe('pg', () => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
@@ -106,12 +110,25 @@ describe('pg@7.x', () => {
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
   before(async function () {
-    if (!shouldTest) {
+    const skipForUnsupported =
+      process.env.IN_TAV && !isSupported(nodeVersion, pgVersion);
+    const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
+    };
+
+    if (skipForUnsupported) {
+      console.error(
+        `  pg - skipped - node@${nodeVersion} and pg@${pgVersion} are not compatible`
+      );
+      skip();
     }
+    if (!shouldTest) {
+      skip();
+    }
+
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (testPostgresLocally) {
       testUtils.startDocker('postgres');

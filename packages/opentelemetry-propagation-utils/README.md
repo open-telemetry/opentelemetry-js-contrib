@@ -1,4 +1,5 @@
 # OpenTelemetry Propagation Utils
+
 [![NPM Published Version][npm-img]][npm-url]
 [![dependencies][dependencies-image]][dependencies-url]
 [![devDependencies][devDependencies-image]][devDependencies-url]
@@ -7,6 +8,7 @@
 A collection of propagation utils for opentelemetry.
 
 ## Install
+
 ```sh
 npm install --save @opentelemetry/propagation-utils
 ```

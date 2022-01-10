@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mysql",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "description": "OpenTelemetry mysql automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,7 +11,7 @@
     "compile": "npm run version:update && tsc -p .",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint": "eslint . --ext .ts",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-mysql --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-mysql --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -19,12 +19,12 @@
     "version:update": "node ../../../scripts/version-update.js"
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "mysql",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -47,9 +47,9 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "1.0.2",
-    "@opentelemetry/context-async-hooks": "1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.27.0",
-    "@opentelemetry/sdk-trace-base": "1.0.0",
+    "@opentelemetry/context-async-hooks": "1.0.1",
+    "@opentelemetry/contrib-test-utils": "^0.28.0",
+    "@opentelemetry/sdk-trace-base": "1.0.1",
     "@types/mocha": "7.0.2",
     "@types/node": "14.17.9",
     "codecov": "3.8.3",
@@ -62,7 +62,7 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.26.0",
+    "@opentelemetry/instrumentation": "^0.27.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/mysql": "2.15.19"
   }
