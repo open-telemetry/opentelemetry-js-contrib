@@ -470,40 +470,35 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   /**
    * Populate span's attributes by fetching related metadata from the context
    * @param span span to add attributes to
-   * @param ConnectionCtx mongodb internal connection context
+   * @param connectionCtx mongodb internal connection context
    * @param ns mongodb namespace
    * @param command mongodb internal representation of a command
    */
   private _populateV4Attributes(
     span: Span,
-    ConnectionCtx: any,
+    connectionCtx: any,
     ns: mongodb.MongoDBNamespace,
     command?: any
   ) {
     let host, port: undefined | string;
-    if (ConnectionCtx) {
+    if (connectionCtx) {
       const hostParts =
-        typeof ConnectionCtx.address === 'string'
-          ? ConnectionCtx.address.split(':')
+        typeof connectionCtx.address === 'string'
+          ? connectionCtx.address.split(':')
           : '';
       if (hostParts.length === 2) {
         host = hostParts[0];
         port = hostParts[1];
       }
-
-      // add database related attributes
-      span.setAttributes({
-        [SemanticAttributes.DB_SYSTEM]: 'mongodb',
-        [SemanticAttributes.DB_NAME]: ns.db,
-        [SemanticAttributes.DB_MONGODB_COLLECTION]: ns.collection,
-      });
     }
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     let commandObj: Record<string, unknown>;
-    if (command && command.documents) {
+    if (command?.documents) {
       commandObj = command.documents[0];
+    } else if (command.cursors) {
+      commandObj = command.cursors;
     } else {
-      commandObj = command.cursors ?? command;
+      commandObj = command;
     }
 
     this._addAllSpanAttributes(
@@ -550,11 +545,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     // It could be a string or an instance of MongoDBNamespace, as such we
     // always coerce to a string to extract db and collection.
     const [dbName, dbCollection] = ns.toString().split('.');
-    let commandObj: undefined | Record<string, unknown>;
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
-    if (command) {
-      commandObj = command.query ?? command.q ?? command;
-    }
+    const commandObj = command?.query ?? command?.q ?? command;
 
     this._addAllSpanAttributes(
       span,
@@ -581,7 +573,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
       [SemanticAttributes.DB_MONGODB_COLLECTION]: dbCollection,
     });
 
-    if (host?.length && port?.length) {
+    if (host && port) {
       span.setAttributes({
         [SemanticAttributes.NET_HOST_NAME]: host,
         [SemanticAttributes.NET_HOST_PORT]: port,

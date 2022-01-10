@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-// for testing locally "npm run docker:start"
+/* For testing locally "npm run docker:start"
+ * These tests cannot be run against the default package dependencies.
+ * In order to run the tests you can "npm run test-all-versions" or install mongodb v3 manually.
+ */
 
 import { context, trace, SpanKind, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
