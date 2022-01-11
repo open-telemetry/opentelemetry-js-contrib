@@ -126,6 +126,12 @@ export class TediousInstrumentation extends InstrumentationBase<
       );
 
       function patchedMethod(this: ApproxConnection, request: ApproxRequest) {
+        if (!(request instanceof EventEmitter)) {
+          thisPlugin._diag.warn(
+            `Unexpected invocation of patched ${operation} method. Span not recorded.`
+          );
+          return originalMethod.apply(this, arguments);
+        }
         let procCount = 0;
         let statementCount = 0;
         const incrementStatementCount = () => statementCount++;
@@ -135,7 +141,7 @@ export class TediousInstrumentation extends InstrumentationBase<
           // Required for <11.0.9
           if (
             request.sqlTextOrProcedure === 'sp_prepare' &&
-            request?.parametersByName?.stmt?.value
+            request.parametersByName?.stmt?.value
           ) {
             return request.parametersByName.stmt.value;
           }
@@ -153,7 +159,7 @@ export class TediousInstrumentation extends InstrumentationBase<
               [SemanticAttributes.NET_PEER_NAME]: this.config?.server,
               // >=4 uses `authentication` object, older versions just userName and password pair
               [SemanticAttributes.DB_USER]:
-                this.config.userName ??
+                this.config?.userName ??
                 this.config?.authentication?.options?.userName,
               [SemanticAttributes.DB_STATEMENT]: sql,
               [SemanticAttributes.DB_SQL_TABLE]: request.table,
