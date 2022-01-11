@@ -130,7 +130,7 @@ export class TediousInstrumentation extends InstrumentationBase<
           thisPlugin._diag.warn(
             `Unexpected invocation of patched ${operation} method. Span not recorded.`
           );
-          return originalMethod.apply(this, arguments);
+          return originalMethod.apply(this, arguments as unknown as any[]);
         }
         let procCount = 0;
         let statementCount = 0;
