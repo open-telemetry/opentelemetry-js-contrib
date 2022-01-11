@@ -30,11 +30,13 @@ export function getSpanName(
     return `${operation} ${bulkLoadTable} ${db}`;
   }
   if (operation === 'callProcedure') {
+    // `sql` refers to procedure name with `callProcedure`
     if (db) {
       return `${operation} ${sql} ${db}`;
     }
     return `${operation} ${sql}`;
   }
+  // do not use `sql` in general case because of high-cardinality
   if (db) {
     return `${operation} ${db}`;
   }
