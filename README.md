@@ -81,11 +81,11 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 
 ### Web Instrumentations
 
-- [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
-- [@opentelemetry/instrumentation-fetch][otel-instrumentation-fetch]
 - [@opentelemetry/instrumentation-document-load][otel-contrib-instrumentation-document-load]
+- [@opentelemetry/instrumentation-fetch][otel-instrumentation-fetch]
 - [@opentelemetry/instrumentation-long-task][otel-contrib-instrumentation-long-task]
 - [@opentelemetry/instrumentation-user-interaction][otel-contrib-instrumentation-user-interaction]
+- [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
 - [@opentelemetry/plugin-react-load][otel-contrib-plugin-react-load]
 
 ### Metapackages
