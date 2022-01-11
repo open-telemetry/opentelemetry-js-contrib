@@ -52,6 +52,13 @@ type ApproxRequest = EventEmitter & {
   parametersByName: any;
 };
 
+function setDatabase(this: ApproxConnection, databaseName: string) {
+  Object.defineProperty(this, CURRENT_DATABASE, {
+    value: databaseName,
+    writable: true,
+  });
+};
+
 export class TediousInstrumentation extends InstrumentationBase<
   typeof tedious
 > {
@@ -102,15 +109,12 @@ export class TediousInstrumentation extends InstrumentationBase<
 
   private _patchConnect(original: UnknownFunction): UnknownFunction {
     return function patchedConnect(this: ApproxConnection) {
-      Object.defineProperty(this, CURRENT_DATABASE, {
-        value: this.config?.options?.database,
-        writable: true,
-      });
-      const setDatabase = (databaseName: string) => {
-        this[CURRENT_DATABASE] = databaseName;
-      };
+      setDatabase.call(this, this.config?.options?.database);
 
+      // remove the listener first in case it's already added
+      this.removeListener('databaseChange', setDatabase);
       this.on('databaseChange', setDatabase);
+
       this.once('end', () => {
         this.removeListener('databaseChange', setDatabase);
       });
