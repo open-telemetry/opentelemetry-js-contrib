@@ -51,11 +51,13 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 ### Node Instrumentations
 
 - [@opentelemetry/instrumentation-aws-lambda][otel-contrib-instrumentation-aws-lambda]
+- [@opentelemetry/instrumentation-aws-sdk][otel-contrib-instrumentation-aws-sdk]
 - [@opentelemetry/instrumentation-bunyan][otel-contrib-instrumentation-bunyan]
 - [@opentelemetry/instrumentation-cassandra-driver][otel-contrib-instrumentation-cassandra]
 - [@opentelemetry/instrumentation-connect][otel-contrib-instrumentation-connect]
 - [@opentelemetry/instrumentation-dns][otel-contrib-instrumentation-dns]
 - [@opentelemetry/instrumentation-express][otel-contrib-instrumentation-express]
+- [@opentelemetry/instrumentation-fastify][otel-contrib-instrumentation-fastify]
 - [@opentelemetry/instrumentation-generic-pool][otel-contrib-instrumentation-generic-pool]
 - [@opentelemetry/instrumentation-graphql][otel-contrib-instrumentation-graphql]
 - [@opentelemetry/instrumentation-grpc][otel-instrumentation-grpc]
@@ -157,6 +159,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-contrib-instrumentation-dns]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns
 [otel-contrib-instrumentation-document-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-document-load
 [otel-contrib-instrumentation-express]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express
+[otel-contrib-instrumentation-fastify]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-fastify
 [otel-contrib-instrumentation-generic-pool]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-generic-pool
 [otel-contrib-instrumentation-graphql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-graphql
 [otel-contrib-instrumentation-hapi]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-hapi
