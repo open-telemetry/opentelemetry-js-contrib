@@ -82,6 +82,7 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 - [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
 - [@opentelemetry/instrumentation-fetch][otel-instrumentation-fetch]
 - [@opentelemetry/instrumentation-document-load][otel-contrib-instrumentation-document-load]
+- [@opentelemetry/instrumentation-long-task][otel-contrib-instrumentation-long-task]
 - [@opentelemetry/instrumentation-user-interaction][otel-contrib-instrumentation-user-interaction]
 - [@opentelemetry/plugin-react-load][otel-contrib-plugin-react-load]
 
@@ -175,6 +176,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-contrib-instrumentation-restify]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify
 [otel-contrib-instrumentation-router]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-router
 [otel-contrib-instrumentation-winston]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston
+[otel-contrib-instrumentation-long-task]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-long-task
 [otel-contrib-instrumentation-user-interaction]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-user-interaction
 [otel-contrib-plugin-react-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-react-load
 
