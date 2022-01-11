@@ -51,11 +51,13 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 ### Node Instrumentations
 
 - [@opentelemetry/instrumentation-aws-lambda][otel-contrib-instrumentation-aws-lambda]
+- [@opentelemetry/instrumentation-aws-sdk][otel-contrib-instrumentation-aws-sdk]
 - [@opentelemetry/instrumentation-bunyan][otel-contrib-instrumentation-bunyan]
 - [@opentelemetry/instrumentation-cassandra-driver][otel-contrib-instrumentation-cassandra]
 - [@opentelemetry/instrumentation-connect][otel-contrib-instrumentation-connect]
 - [@opentelemetry/instrumentation-dns][otel-contrib-instrumentation-dns]
 - [@opentelemetry/instrumentation-express][otel-contrib-instrumentation-express]
+- [@opentelemetry/instrumentation-fastify][otel-contrib-instrumentation-fastify]
 - [@opentelemetry/instrumentation-generic-pool][otel-contrib-instrumentation-generic-pool]
 - [@opentelemetry/instrumentation-graphql][otel-contrib-instrumentation-graphql]
 - [@opentelemetry/instrumentation-grpc][otel-instrumentation-grpc]
@@ -80,10 +82,11 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 
 ### Web Instrumentations
 
-- [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
-- [@opentelemetry/instrumentation-fetch][otel-instrumentation-fetch]
 - [@opentelemetry/instrumentation-document-load][otel-contrib-instrumentation-document-load]
+- [@opentelemetry/instrumentation-fetch][otel-instrumentation-fetch]
+- [@opentelemetry/instrumentation-long-task][otel-contrib-instrumentation-long-task]
 - [@opentelemetry/instrumentation-user-interaction][otel-contrib-instrumentation-user-interaction]
+- [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
 - [@opentelemetry/plugin-react-load][otel-contrib-plugin-react-load]
 
 ### Metapackages
@@ -158,12 +161,14 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-contrib-instrumentation-dns]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns
 [otel-contrib-instrumentation-document-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-document-load
 [otel-contrib-instrumentation-express]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express
+[otel-contrib-instrumentation-fastify]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-fastify
 [otel-contrib-instrumentation-generic-pool]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-generic-pool
 [otel-contrib-instrumentation-graphql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-graphql
 [otel-contrib-instrumentation-hapi]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-hapi
 [otel-contrib-instrumentation-ioredis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis
 [otel-contrib-instrumentation-knex]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-knex
 [otel-contrib-instrumentation-koa]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa
+[otel-contrib-instrumentation-long-task]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-long-task
 [otel-contrib-instrumentation-memcached]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-memcached
 [otel-contrib-instrumentation-mongodb]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb
 [otel-contrib-instrumentation-mysql2]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql2
