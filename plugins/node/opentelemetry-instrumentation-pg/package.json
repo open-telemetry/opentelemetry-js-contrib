@@ -11,7 +11,7 @@
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../../",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-pg --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-pg --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -24,15 +24,15 @@
     "watch": "tsc -w"
   },
   "keywords": [
-    "opentelemetry",
-    "postgres",
-    "pg",
-    "postgresql",
+    "instrumentation",
     "nodejs",
-    "tracing",
-    "profiling",
+    "opentelemetry",
+    "pg",
     "plugin",
-    "instrumentation"
+    "postgres",
+    "postgresql",
+    "profiling",
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

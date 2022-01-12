@@ -12,20 +12,20 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-net --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-net --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p ."
   },
   "keywords": [
-    "opentelemetry",
-    "net",
     "connect",
+    "instrumentation",
+    "net",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
