@@ -30,7 +30,9 @@ import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
 import { VERSION } from './version';
 
-const CURRENT_DATABASE = Symbol('opentelemetry.instrumentation-tedious.current-database');
+const CURRENT_DATABASE = Symbol(
+  'opentelemetry.instrumentation-tedious.current-database'
+);
 const PATCHED_METHODS = [
   'callProcedure',
   'execSql',
@@ -57,7 +59,7 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
     value: databaseName,
     writable: true,
   });
-};
+}
 
 export class TediousInstrumentation extends InstrumentationBase<
   typeof tedious
