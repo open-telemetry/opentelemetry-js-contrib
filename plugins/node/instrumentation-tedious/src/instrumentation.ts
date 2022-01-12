@@ -134,7 +134,7 @@ export class TediousInstrumentation extends InstrumentationBase<
       function patchedMethod(this: ApproxConnection, request: ApproxRequest) {
         if (!(request instanceof EventEmitter)) {
           thisPlugin._diag.warn(
-            `Unexpected invocation of patched ${operation} method. Span not recorded.`
+            `Unexpected invocation of patched ${operation} method. Span not recorded`
           );
           return originalMethod.apply(this, arguments as unknown as any[]);
         }
@@ -203,6 +203,8 @@ export class TediousInstrumentation extends InstrumentationBase<
             'callback',
             thisPlugin._patchCallbackQuery(endSpan)
           );
+        } else {
+          thisPlugin._diag.error('Expected request.callback to be a function');
         }
 
         return api.context.with(
