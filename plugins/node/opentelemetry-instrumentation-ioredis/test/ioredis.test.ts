@@ -222,6 +222,7 @@ describe('ioredis', () => {
     afterEach(async () => {
       await client.del(hashKeyName);
       await client.del(testKeyName);
+      await client.del('response-hook-test');
       memoryExporter.reset();
     });
 
@@ -851,7 +852,7 @@ describe('ioredis', () => {
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
-          await client.incr('response-hook-test');
+          await client.set('response-hook-test', 'test-value');
           const endedSpans = memoryExporter.getFinishedSpans();
           assert.strictEqual(endedSpans.length, 1);
           assert.strictEqual(
@@ -862,10 +863,8 @@ describe('ioredis', () => {
 
         sinon.assert.calledOnce(responseHook);
         const [ , cmdName, , response] = responseHook.firstCall.args;
-        assert.strictEqual(cmdName, 'incr');
-        // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
-        // TODO: enable again
-        // assert.strictEqual(response, 1);
+        assert.strictEqual(cmdName, 'set');
+        assert.strictEqual(response.toString(), 'OK');
       });
 
       it('should ignore responseHook which throws exception', async () => {
