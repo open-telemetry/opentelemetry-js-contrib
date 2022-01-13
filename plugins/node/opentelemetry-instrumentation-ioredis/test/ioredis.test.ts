@@ -776,16 +776,15 @@ describe('ioredis', () => {
       });
 
       it('should call requestHook when set in config', async () => {
-        const requestHook = sinon.spy((
-          span: Span,
-          requestInfo: IORedisRequestHookInformation
-        ) => {
-          span.setAttribute(
-            'attribute key from request hook',
-            'custom value from request hook'
-          );
-        });
-        instrumentation.setConfig({ requestHook });
+        const requestHook = sinon.spy(
+          (span: Span, requestInfo: IORedisRequestHookInformation) => {
+            span.setAttribute(
+              'attribute key from request hook',
+              'custom value from request hook'
+            );
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig> { requestHook });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -799,7 +798,7 @@ describe('ioredis', () => {
         });
 
         sinon.assert.calledOnce(requestHook);
-        const [ , requestInfo] = requestHook.firstCall.args;
+        const [, requestInfo] = requestHook.firstCall.args;
         assert.ok(
           /\d{1,4}\.\d{1,4}\.\d{1,5}.*/.test(
             requestInfo.moduleVersion as string
@@ -810,17 +809,16 @@ describe('ioredis', () => {
       });
 
       it('should ignore requestHook which throws exception', async () => {
-        const requestHook = sinon.spy((
-          span: Span,
-          _requestInfo: IORedisRequestHookInformation
-        ) => {
-          span.setAttribute(
-            'attribute key BEFORE exception',
-            'this attribute is added to span BEFORE exception is thrown thus we can expect it'
-          );
-          throw Error('error thrown in requestHook');
-        });
-        instrumentation.setConfig({ requestHook });
+        const requestHook = sinon.spy(
+          (span: Span, _requestInfo: IORedisRequestHookInformation) => {
+            span.setAttribute(
+              'attribute key BEFORE exception',
+              'this attribute is added to span BEFORE exception is thrown thus we can expect it'
+            );
+            throw Error('error thrown in requestHook');
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig> { requestHook });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -837,18 +835,20 @@ describe('ioredis', () => {
       });
 
       it('should call responseHook when set in config', async () => {
-        const responseHook = sinon.spy((
-          span: Span,
-          cmdName: string,
-          _cmdArgs: Array<string | Buffer | number>,
-          response: unknown
-        ) => {
-          span.setAttribute(
-            'attribute key from hook',
-            'custom value from hook'
-          );
-        });
-        instrumentation.setConfig({ responseHook });
+        const responseHook = sinon.spy(
+          (
+            span: Span,
+            cmdName: string,
+            _cmdArgs: Array<string | Buffer | number>,
+            response: unknown
+          ) => {
+            span.setAttribute(
+              'attribute key from hook',
+              'custom value from hook'
+            );
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig> { responseHook });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -862,21 +862,23 @@ describe('ioredis', () => {
         });
 
         sinon.assert.calledOnce(responseHook);
-        const [ , cmdName, , response] = responseHook.firstCall.args;
+        const [, cmdName, , response] = responseHook.firstCall.args as [Span, string, unknown, Buffer];
         assert.strictEqual(cmdName, 'set');
         assert.strictEqual(response.toString(), 'OK');
       });
 
       it('should ignore responseHook which throws exception', async () => {
-        const responseHook = sinon.spy((
-          _span: Span,
-          _cmdName: string,
-          _cmdArgs: Array<string | Buffer | number>,
-          _response: unknown
-        ) => {
-          throw Error('error thrown in responseHook');
-        });
-        instrumentation.setConfig({ responseHook });
+        const responseHook = sinon.spy(
+          (
+            _span: Span,
+            _cmdName: string,
+            _cmdArgs: Array<string | Buffer | number>,
+            _response: unknown
+          ) => {
+            throw Error('error thrown in responseHook');
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig> { responseHook });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
