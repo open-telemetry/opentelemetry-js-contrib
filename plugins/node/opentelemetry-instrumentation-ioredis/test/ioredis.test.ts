@@ -784,7 +784,9 @@ describe('ioredis', () => {
             );
           }
         );
-        instrumentation.setConfig(<IORedisInstrumentationConfig> { requestHook });
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          requestHook,
+        });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -818,7 +820,9 @@ describe('ioredis', () => {
             throw Error('error thrown in requestHook');
           }
         );
-        instrumentation.setConfig(<IORedisInstrumentationConfig> { requestHook });
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          requestHook,
+        });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -848,7 +852,9 @@ describe('ioredis', () => {
             );
           }
         );
-        instrumentation.setConfig(<IORedisInstrumentationConfig> { responseHook });
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          responseHook,
+        });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -862,7 +868,12 @@ describe('ioredis', () => {
         });
 
         sinon.assert.calledOnce(responseHook);
-        const [, cmdName, , response] = responseHook.firstCall.args as [Span, string, unknown, Buffer];
+        const [, cmdName, , response] = responseHook.firstCall.args as [
+          Span,
+          string,
+          unknown,
+          Buffer
+        ];
         assert.strictEqual(cmdName, 'set');
         assert.strictEqual(response.toString(), 'OK');
       });
@@ -878,7 +889,9 @@ describe('ioredis', () => {
             throw Error('error thrown in responseHook');
           }
         );
-        instrumentation.setConfig(<IORedisInstrumentationConfig> { responseHook });
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          responseHook,
+        });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
