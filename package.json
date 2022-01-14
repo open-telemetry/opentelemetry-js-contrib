@@ -46,8 +46,8 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@commitlint/cli": "13.1.0",
-    "@commitlint/config-conventional": "13.1.0",
+    "@commitlint/cli": "16.0.2",
+    "@commitlint/config-conventional": "16.0.0",
     "@typescript-eslint/eslint-plugin": "5.8.1",
     "@typescript-eslint/parser": "5.8.1",
     "colors": "1.4.0",
