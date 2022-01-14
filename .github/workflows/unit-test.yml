@@ -15,6 +15,7 @@ jobs:
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-aws-sdk
               --ignore @opentelemetry/instrumentation-pino
+              --ignore @opentelemetry/instrumentation-tedious
           - node: "10"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-pino
@@ -28,6 +29,19 @@ jobs:
         image: mongo
         ports:
         - 27017:27017
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2017-latest
+        env:
+          SA_PASSWORD: mssql_passw0rd
+          ACCEPT_EULA: Y
+        ports:
+        - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools/bin/sqlcmd -U sa -P $SA_PASSWORD -Q 'select 1' -b -o /dev/null"
+          --health-interval 1s
+          --health-timeout 30s
+          --health-start-period 10s
+          --health-retries 20
       mysql:
         image: circleci/mysql:5.7
         env:
@@ -72,12 +86,14 @@ jobs:
       RUN_MEMCACHED_TESTS: 1
       RUN_MONGODB_TESTS: 1
       RUN_MYSQL_TESTS: 1
+      RUN_MSSQL_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
       CASSANDRA_HOST: localhost
       MONGODB_DB: opentelemetry-tests
       MONGODB_HOST: localhost
       MONGODB_PORT: 27017
+      MSSQL_PASSWORD: mssql_passw0rd
       MYSQL_DATABASE: circle_database
       MYSQL_HOST: localhost
       MYSQL_PASSWORD: secret
