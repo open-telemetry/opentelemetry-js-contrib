@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.27.0...instrumentation-user-interaction-v0.28.0) (2021-12-22)
+
+
+### Features
+
+* **user-interaction:** support for custom events and span enhancement ([#653](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/653)) ([27e37e3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/27e37e38f983eabdae4f2cfe859d156440378e08))
+
+
+### Bug Fixes
+
+* **user-interaction:** handle null listener in addEventListener ([#765](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/765)) ([aacfe82](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/aacfe82c85a9aebb1fdf3e38521144be09625dc8))
+
+## [0.27.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.26.0...instrumentation-user-interaction-v0.27.0) (2021-11-30)
+
+
+### Features
+
+* use latest instrumentation base ([#769](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/769)) ([7aff23e](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/7aff23ebebbe209fa3b78c2e7f513c9cd2231be4))
+
 ## [0.26.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.25.0...instrumentation-user-interaction-v0.26.0) (2021-10-22)
 
 

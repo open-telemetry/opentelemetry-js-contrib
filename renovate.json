@@ -15,11 +15,11 @@
   ],
   "assignees": [
     "@dyladan",
-    "@mayurkale22",
-    "@obecny"
+    "@mayurkale22"
   ],
   "schedule": [
     "before 3am on Friday"
   ],
-  "labels": ["dependencies"]
+  "labels": ["dependencies"],
+  "semanticCommitType": "feat"
 }

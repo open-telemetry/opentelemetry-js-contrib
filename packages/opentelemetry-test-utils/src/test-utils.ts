@@ -32,14 +32,16 @@ import * as path from 'path';
 
 const dockerRunCmds = {
   cassandra:
-    'docker run -d -p 9042:9042 --name otel-cassandra bitnami/cassandra:3',
-  redis: 'docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine',
+    'docker run --rm -d --name otel-cassandra -p 9042:9042 bitnami/cassandra:3',
+  memcached:
+    'docker run --rm -d --name otel-memcached -p 11211:11211 memcached:1.6.9-alpine',
+  mssql:
+    'docker run --rm -d --name otel-mssql -p 1433:1433 -e SA_PASSWORD=mssql_passw0rd -e ACCEPT_EULA=Y mcr.microsoft.com/mssql/server:2017-latest',
   mysql:
     'docker run --rm -d --name otel-mysql -p 33306:3306 -e MYSQL_ROOT_PASSWORD=rootpw -e MYSQL_DATABASE=test_db -e MYSQL_USER=otel -e MYSQL_PASSWORD=secret circleci/mysql:5.7',
   postgres:
-    'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres postgres:alpine',
-  memcached:
-    'docker run --rm -d --name otel-memcached -p 11211:11211 memcached:1.6.9-alpine',
+    'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres postgres:13-alpine',
+  redis: 'docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine',
 };
 
 export function startDocker(db: keyof typeof dockerRunCmds) {
@@ -66,6 +68,10 @@ function run(cmd: string) {
     const proc = childProcess.spawnSync(cmd, {
       shell: true,
     });
+    if (proc.status !== 0) {
+      console.error('Failed run command:', cmd);
+      console.error(proc.output);
+    }
     return {
       code: proc.status,
       output: proc.output

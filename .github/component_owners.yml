@@ -14,6 +14,8 @@ components:
   packages/opentelemetry-id-generator-aws-xray:
     - NathanielRN
     - willarmiros
+  plugins/node/instrumentation-tedious:
+    - rauno56
   plugins/node/opentelemetry-instrumentation-aws-lambda:
     - NathanielRN
     - willarmiros
@@ -40,8 +42,13 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-router:
     - rauno56
+  plugins/node/opentelemetry-instrumentation-pg:
+    - rauno56
   plugins/web/opentelemetry-instrumentation-document-load:
     - obecny
+  plugins/web/opentelemetry-instrumentation-long-task:
+    - mhennoch
+    - t2t2
   plugins/web/opentelemetry-instrumentation-user-interaction:
     - obecny
   propagators/opentelemetry-propagator-aws-xray:

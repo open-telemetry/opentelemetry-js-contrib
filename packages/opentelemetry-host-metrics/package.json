@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/host-metrics",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "description": "OpenTelemetry Host Metrics for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,7 +11,7 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/host-metrics --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/host-metrics --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -56,14 +56,14 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "11.1.2",
+    "sinon": "12.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/api-metrics": "^0.26.0",
+    "@opentelemetry/api-metrics": "^0.27.0",
     "@opentelemetry/core": "^1.0.0",
-    "@opentelemetry/sdk-metrics-base": "^0.26.0",
+    "@opentelemetry/sdk-metrics-base": "^0.27.0",
     "systeminformation": "^5.0.0"
   }
 }

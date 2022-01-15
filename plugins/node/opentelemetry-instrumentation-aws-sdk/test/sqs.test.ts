@@ -36,11 +36,18 @@ import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { mockV2AwsSend } from './testing-utils';
 import { Message } from 'aws-sdk/clients/sqs';
 import * as expect from 'expect';
+import * as sinon from 'sinon';
+import * as messageAttributes from '../src/services/MessageAttributes';
 
 const responseMockSuccess = {
   requestId: '0000000000000',
   error: null,
 };
+
+const extractContextSpy = sinon.spy(
+  messageAttributes,
+  'extractPropagationContext'
+);
 
 describe('SQS', () => {
   before(() => {
@@ -427,6 +434,87 @@ describe('SQS', () => {
       expect(processSpans.length).toBe(2);
       expect(processSpans[0].status.code).toStrictEqual(SpanStatusCode.UNSET);
       expect(processSpans[1].status.code).toStrictEqual(SpanStatusCode.UNSET);
+    });
+  });
+
+  describe('extract payload', () => {
+    beforeEach(() => {
+      extractContextSpy.resetHistory();
+    });
+    it('should not extract from payload even if set', async () => {
+      mockV2AwsSend(responseMockSuccess, {
+        Messages: [{ Body: JSON.stringify({ traceparent: 1 }) }],
+      } as AWS.SQS.Types.ReceiveMessageResult);
+
+      const sqs = new AWS.SQS();
+      await sqs
+        .receiveMessage({
+          QueueUrl: 'queue/url/for/unittests1',
+        })
+        .promise();
+      expect(extractContextSpy.returnValues[0]?.traceparent).toBeUndefined();
+    });
+
+    it('should extract from payload', async () => {
+      const traceparent = {
+        traceparent: {
+          Value: '00-a1d050b7c8ad93c405e7a0d94cda5b03-23a485dc98b24027-01',
+          Type: 'String',
+        },
+      };
+      instrumentation.setConfig({
+        sqsExtractContextPropagationFromPayload: true,
+      });
+      mockV2AwsSend(responseMockSuccess, {
+        Messages: [
+          { Body: JSON.stringify({ MessageAttributes: { traceparent } }) },
+        ],
+      } as AWS.SQS.Types.ReceiveMessageResult);
+
+      const sqs = new AWS.SQS();
+      await sqs
+        .receiveMessage({
+          QueueUrl: 'queue/url/for/unittests',
+        })
+        .promise();
+      expect(extractContextSpy.returnValues[0]?.traceparent).toStrictEqual(
+        traceparent
+      );
+    });
+
+    it('should not extract from payload but from attributes', async () => {
+      const traceparentInPayload = 'some-trace-parent-value';
+      const traceparentInMessageAttributes = {
+        traceparent: {
+          StringValue:
+            '00-a1d050b7c8ad93c405e7a0d94cda5b03-23a485dc98b24027-01',
+          DataType: 'String',
+        },
+      };
+      instrumentation.setConfig({
+        sqsExtractContextPropagationFromPayload: false,
+      });
+      mockV2AwsSend(responseMockSuccess, {
+        Messages: [
+          {
+            MessageAttributes: traceparentInMessageAttributes,
+            Body: JSON.stringify({
+              MessageAttributes: { traceparentInPayload },
+            }),
+          },
+        ],
+      } as AWS.SQS.Types.ReceiveMessageResult);
+
+      const sqs = new AWS.SQS();
+      await sqs
+        .receiveMessage({
+          QueueUrl: 'queue/url/for/unittests',
+        })
+        .promise();
+
+      expect(extractContextSpy.returnValues[0]).toBe(
+        traceparentInMessageAttributes
+      );
     });
   });
 });

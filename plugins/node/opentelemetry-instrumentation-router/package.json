@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-router",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "description": "OpenTelemetry Router automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,7 +12,7 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-router --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-router --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p .",
@@ -20,11 +20,11 @@
     "watch": "tsc -w"
   },
   "keywords": [
+    "instrumentation",
+    "nodejs",
     "opentelemetry",
     "router",
-    "nodejs",
-    "tracing",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -47,9 +47,9 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "1.0.2",
-    "@opentelemetry/context-async-hooks": "1.0.0",
-    "@opentelemetry/sdk-trace-base": "1.0.0",
-    "@opentelemetry/sdk-trace-node": "1.0.0",
+    "@opentelemetry/context-async-hooks": "1.0.1",
+    "@opentelemetry/sdk-trace-base": "1.0.1",
+    "@opentelemetry/sdk-trace-node": "1.0.1",
     "@types/mocha": "7.0.2",
     "@types/node": "14.17.9",
     "codecov": "3.8.3",
@@ -62,7 +62,7 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.26.0",
+    "@opentelemetry/instrumentation": "^0.27.0",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   }
 }

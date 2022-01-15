@@ -48,6 +48,7 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 | `responseHook`                    | `AwsSdkResponseCustomAttributeFunction`   | Hook for adding custom attributes when response is received from aws.                                                      |
 | `sqsProcessHook`                  | `AwsSdkSqsProcessCustomAttributeFunction` | Hook called after starting sqs `process` span (for each sqs received message), which allow to add custom attributes to it. |
 | `suppressInternalInstrumentation` | `boolean`                                 | Most aws operation use http requests under the hood. Set this to `true` to hide all underlying http spans.                 |
+| `sqsExtractContextPropagationFromPayload` | `boolean` | Will parse and extract context propagation headers from SQS Payload, false by default. [When should it be used?](./doc/sns.md#integration-with-sqs)|
 
 ## Span Attributes
 
@@ -96,11 +97,8 @@ AWS contains dozens of services accessible with the JS SDK. For many services, t
 Specific service logic currently implemented for:
 
 - [SQS](./docs/sqs.md)
+- [SNS](./docs/sns.md)
 - DynamoDb
-
----
-
-This instrumentation is a work in progress. We implemented some of the specific trace semantics for some of the services, and strive to support more services and extend the already supported services in the future. You can [Open an Issue](https://github.com/aspecto-io/opentelemetry-ext-js/issues), or [Submit a Pull Request](https://github.com/aspecto-io/opentelemetry-ext-js/pulls) if you want to contribute.
 
 ## Potential Side Effects
 

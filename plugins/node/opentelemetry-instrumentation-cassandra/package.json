@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cassandra-driver",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "description": "OpenTelemetry instrumentation for cassandra-driver",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,20 +12,20 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-cassandra-driver --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-cassandra-driver --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p ."
   },
   "keywords": [
-    "opentelemetry",
+    "cassandra-driver",
+    "instrumentation",
     "logging",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation",
-    "cassandra-driver"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -48,10 +48,10 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "1.0.2",
-    "@opentelemetry/context-async-hooks": "1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.27.0",
-    "@opentelemetry/sdk-trace-base": "1.0.0",
-    "@opentelemetry/sdk-trace-node": "1.0.0",
+    "@opentelemetry/context-async-hooks": "1.0.1",
+    "@opentelemetry/contrib-test-utils": "^0.28.0",
+    "@opentelemetry/sdk-trace-base": "1.0.1",
+    "@opentelemetry/sdk-trace-node": "1.0.1",
     "@types/mocha": "7.0.2",
     "@types/node": "14.17.9",
     "@types/semver": "7.3.8",
@@ -62,12 +62,12 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "11.1.2",
+    "sinon": "12.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.26.0",
+    "@opentelemetry/instrumentation": "^0.27.0",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   }
 }

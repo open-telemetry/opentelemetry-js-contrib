@@ -20,7 +20,7 @@ npm install --save @opentelemetry/instrumentation-knex
 
 ### Supported Versions
 
- - `>=0.10.0`
+- `>=0.10.0`
 
 ## Usage
 
