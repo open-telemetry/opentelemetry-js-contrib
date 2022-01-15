@@ -1,7 +1,13 @@
 name: Test All Versions
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches:
+      - "main"
+      - "release/**"
+      - "release-please/**"
+  schedule:
+    - cron: "30 4 * * *"
+  workflow_dispatch:
 
 jobs:
   tav:
