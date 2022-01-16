@@ -63,7 +63,7 @@
     "@types/node": "14.18.2",
     "@types/sinon": "10.0.6",
     "aws-sdk": "2.1008.0",
-    "eslint": "7.32.0",
+    "eslint": "8.7.0",
     "expect": "27.4.2",
     "mocha": "7.2.0",
     "nock": "13.2.1",
