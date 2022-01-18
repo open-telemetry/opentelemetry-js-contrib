@@ -35,6 +35,7 @@ import {
   TextMapGetter,
   TraceFlags,
   TracerProvider,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import {
   AWSXRAY_TRACE_ID_HEADER,
@@ -42,9 +43,8 @@ import {
 } from '@opentelemetry/propagator-aws-xray';
 import {
   SemanticAttributes,
-  ResourceAttributes,
+  SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
-import { BasicTracerProvider } from '@opentelemetry/tracing';
 
 import {
   APIGatewayProxyEventHeaders,
@@ -53,7 +53,11 @@ import {
   Handler,
 } from 'aws-lambda';
 
-import { LambdaModule, AwsLambdaInstrumentationConfig } from './types';
+import {
+  LambdaModule,
+  AwsLambdaInstrumentationConfig,
+  EventContextExtractor,
+} from './types';
 import { VERSION } from './version';
 
 const awsPropagator = new AWSXRayPropagator();
@@ -69,13 +73,13 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
-  private _tracerProvider: TracerProvider | undefined;
+  private _forceFlush?: () => Promise<void>;
 
-  constructor(protected _config: AwsLambdaInstrumentationConfig = {}) {
+  constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
   }
 
-  setConfig(config: AwsLambdaInstrumentationConfig = {}) {
+  override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
     this._config = config;
   }
 
@@ -149,9 +153,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       context: Context,
       callback: Callback
     ) {
-      const httpHeaders =
-        typeof event.headers === 'object' ? event.headers : {};
-      const parent = AwsLambdaInstrumentation._determineParent(httpHeaders);
+      const config = plugin._config;
+      const parent = AwsLambdaInstrumentation._determineParent(
+        event,
+        config.disableAwsContextPropagation === true,
+        config.eventContextExtractor ||
+          AwsLambdaInstrumentation._defaultEventContextExtractor
+      );
 
       const name = context.functionName;
       const span = plugin.tracer.startSpan(
@@ -160,8 +168,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           kind: SpanKind.SERVER,
           attributes: {
             [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
-            [ResourceAttributes.FAAS_ID]: context.invokedFunctionArn,
-            [ResourceAttributes.CLOUD_ACCOUNT_ID]:
+            [SemanticResourceAttributes.FAAS_ID]: context.invokedFunctionArn,
+            [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]:
               AwsLambdaInstrumentation._extractAccountId(
                 context.invokedFunctionArn
               ),
@@ -170,9 +178,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         parent
       );
 
-      if (plugin._config.requestHook) {
+      if (config.requestHook) {
         safeExecuteInTheMiddle(
-          () => plugin._config.requestHook!(span, { event, context }),
+          () => config.requestHook!(span, { event, context }),
           e => {
             if (e)
               diag.error('aws-lambda instrumentation: requestHook error', e);
@@ -218,9 +226,26 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     };
   }
 
-  setTracerProvider(tracerProvider: TracerProvider) {
+  override setTracerProvider(tracerProvider: TracerProvider) {
     super.setTracerProvider(tracerProvider);
-    this._tracerProvider = tracerProvider;
+    this._forceFlush = this._getForceFlush(tracerProvider);
+  }
+
+  private _getForceFlush(tracerProvider: TracerProvider) {
+    if (!tracerProvider) return undefined;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let currentProvider: any = tracerProvider;
+
+    if (typeof currentProvider.getDelegate === 'function') {
+      currentProvider = currentProvider.getDelegate();
+    }
+
+    if (typeof currentProvider.forceFlush === 'function') {
+      return currentProvider.forceFlush.bind(currentProvider);
+    }
+
+    return undefined;
   }
 
   private _wrapCallback(original: Callback, span: Span): Callback {
@@ -259,15 +284,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
 
     span.end();
-    if (this._tracerProvider instanceof BasicTracerProvider) {
-      this._tracerProvider
-        .getActiveSpanProcessor()
-        .forceFlush()
-        .then(
-          () => callback(),
-          () => callback()
-        );
+
+    if (this._forceFlush) {
+      this._forceFlush().then(
+        () => callback(),
+        () => callback()
+      );
     } else {
+      diag.error(
+        'Spans may not be exported for the lambda function because we are not force flushing before callback.'
+      );
       callback();
     }
   }
@@ -297,42 +323,57 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     return undefined;
   }
 
+  private static _defaultEventContextExtractor(event: any): OtelContext {
+    // The default extractor tries to get sampled trace header from HTTP headers.
+    const httpHeaders = event.headers || {};
+    return propagation.extract(otelContext.active(), httpHeaders, headerGetter);
+  }
+
   private static _determineParent(
-    httpHeaders: APIGatewayProxyEventHeaders
+    event: any,
+    disableAwsContextPropagation: boolean,
+    eventContextExtractor: EventContextExtractor
   ): OtelContext {
     let parent: OtelContext | undefined = undefined;
-    const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
-    if (lambdaTraceHeader) {
-      parent = awsPropagator.extract(
-        otelContext.active(),
-        { [AWSXRAY_TRACE_ID_HEADER]: lambdaTraceHeader },
-        headerGetter
-      );
-    }
-    if (parent) {
-      const spanContext = trace.getSpan(parent)?.spanContext();
-      if (
-        spanContext &&
-        (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
-      ) {
-        // Trace header provided by Lambda only sampled if a sampled context was propagated from
-        // an upstream cloud service such as S3, or the user is using X-Ray. In these cases, we
-        // need to use it as the parent.
-        return parent;
+    if (!disableAwsContextPropagation) {
+      const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
+      if (lambdaTraceHeader) {
+        parent = awsPropagator.extract(
+          otelContext.active(),
+          { [AWSXRAY_TRACE_ID_HEADER]: lambdaTraceHeader },
+          headerGetter
+        );
+      }
+      if (parent) {
+        const spanContext = trace.getSpan(parent)?.spanContext();
+        if (
+          spanContext &&
+          (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
+        ) {
+          // Trace header provided by Lambda only sampled if a sampled context was propagated from
+          // an upstream cloud service such as S3, or the user is using X-Ray. In these cases, we
+          // need to use it as the parent.
+          return parent;
+        }
       }
     }
-    // There was not a sampled trace header from Lambda so try from HTTP headers.
-    const httpContext = propagation.extract(
-      otelContext.active(),
-      httpHeaders,
-      headerGetter
+    const extractedContext = safeExecuteInTheMiddle(
+      () => eventContextExtractor(event),
+      e => {
+        if (e)
+          diag.error(
+            'aws-lambda instrumentation: eventContextExtractor error',
+            e
+          );
+      },
+      true
     );
-    if (trace.getSpan(httpContext)?.spanContext()) {
-      return httpContext;
+    if (trace.getSpan(extractedContext)?.spanContext()) {
+      return extractedContext;
     }
     if (!parent) {
       // No context in Lambda environment or HTTP headers.
-      return otelContext.active();
+      return ROOT_CONTEXT;
     }
     return parent;
   }

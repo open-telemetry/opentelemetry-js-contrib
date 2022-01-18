@@ -1,0 +1,59 @@
+{
+  "name": "example-fastify",
+  "private": true,
+  "version": "0.25.0",
+  "description": "Example of Fastify integration with OpenTelemetry",
+  "main": "index.js",
+  "scripts": {
+    "client": "node ./client.js",
+    "docker:start": "cd ./docker && docker-compose down && docker-compose up",
+    "docker:stop": "cd ./docker && docker-compose down",
+    "server": "node ./server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js.git"
+  },
+  "keywords": [
+    "opentelemetry",
+    "express",
+    "tracing"
+  ],
+  "engines": {
+    "node": ">=8"
+  },
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.map",
+    "build/src/**/*.d.ts",
+    "doc",
+    "LICENSE",
+    "README.md"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.0.2",
+    "@opentelemetry/exporter-jaeger": "^1.0.0",
+    "@opentelemetry/exporter-zipkin": "^1.0.0",
+    "@opentelemetry/exporter-collector": "^0.25.0",
+    "@opentelemetry/instrumentation": "^0.27.0",
+    "@opentelemetry/instrumentation-fastify": "^0.25.0",
+    "@opentelemetry/instrumentation-http": "^0.26.0",
+    "@opentelemetry/sdk-trace-node": "^1.0.0",
+    "@opentelemetry/resources": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "@opentelemetry/sdk-trace-base": "^1.0.0",
+    "axios": "^0.21.1",
+    "cross-env": "^7.0.3",
+    "fastify": "^3.19.2",
+    "fastify-cors": "^6.0.2",
+    "fastify-express": "^0.3.3",
+    "middie": "^5.3.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
+  "devDependencies": {}
+}

@@ -7,16 +7,22 @@
 
 This module provides automatic instrumentation for injection of trace context to [`bunyan`](https://www.npmjs.com/package/bunyan).
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
 npm install --save @opentelemetry/instrumentation-bunyan
 ```
 
+### Supported Versions
+
+- `^1.0.0`
+
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { BunyanInstrumentation } = require('@opentelemetry/instrumentation-bunyan');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
@@ -44,17 +50,17 @@ bunyan.createLogger({ name: 'example' }).info('foo');
 
 For the current active span, the following will be added to the bunyan record:
 
-* `trace_id`
-* `span_id`
-* `trace_flags`
+- `trace_id`
+- `span_id`
+- `trace_flags`
 
 When no span context is active or the span context is invalid, injection is skipped.
 
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 

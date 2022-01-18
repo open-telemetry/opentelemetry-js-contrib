@@ -24,7 +24,6 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
-import { GraphQLFieldResolver } from 'graphql/type/definition';
 import { SpanNames } from './enum';
 import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL } from './symbols';
@@ -43,6 +42,7 @@ import {
   Maybe,
 } from './types';
 import {
+  addInputVariableAttributes,
   addSpanSource,
   endSpan,
   getOperation,
@@ -77,7 +77,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     return this._config as GraphQLInstrumentationParsedConfig;
   }
 
-  setConfig(config: GraphQLInstrumentationConfig & InstrumentationConfig = {}) {
+  override setConfig(config: GraphQLInstrumentationConfig = {}) {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
@@ -163,7 +163,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   }
 
   private _patchExecute(
-    defaultFieldResolved: GraphQLFieldResolver<any, any>
+    defaultFieldResolved: graphqlTypes.GraphQLFieldResolver<any, any>
   ): (original: executeType) => executeType {
     const instrumentation = this;
     return function execute(original) {
@@ -244,20 +244,24 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     result?: PromiseOrValue<graphqlTypes.ExecutionResult>
   ) {
     const config = this._getConfig();
-    if (
-      typeof config.responseHook !== 'function' ||
-      result === undefined ||
-      err
-    ) {
+    if (result === undefined || err) {
       endSpan(span, err);
       return;
     }
 
     if (result.constructor.name === 'Promise') {
       (result as Promise<graphqlTypes.ExecutionResult>).then(resultData => {
+        if (typeof config.responseHook !== 'function') {
+          endSpan(span);
+          return;
+        }
         this._executeResponseHook(span, resultData);
       });
     } else {
+      if (typeof config.responseHook !== 'function') {
+        endSpan(span);
+        return;
+      }
       this._executeResponseHook(span, result as graphqlTypes.ExecutionResult);
     }
   }
@@ -419,9 +423,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     }
 
     if (processedArgs.variableValues && config.allowValues) {
-      Object.entries(processedArgs.variableValues).forEach(([key, value]) => {
-        span.setAttribute(`${AttributeNames.VARIABLES}${String(key)}`, value);
-      });
+      addInputVariableAttributes(span, processedArgs.variableValues);
     }
 
     return span;

@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { diag, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  Span,
+  SpanKind,
+  SpanStatusCode,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -28,6 +34,11 @@ import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
+type getConnectionCallbackType = (
+  err: mysqlTypes.MysqlError,
+  connection: mysqlTypes.PoolConnection
+) => void;
+
 export class MySQLInstrumentation extends InstrumentationBase<
   typeof mysqlTypes
 > {
@@ -36,8 +47,8 @@ export class MySQLInstrumentation extends InstrumentationBase<
     [SemanticAttributes.DB_SYSTEM]: MySQLInstrumentation.COMPONENT,
   };
 
-  constructor(protected _config: MySQLInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mysql', VERSION, _config);
+  constructor(config?: MySQLInstrumentationConfig) {
+    super('@opentelemetry/instrumentation-mysql', VERSION, config);
   }
 
   protected init() {
@@ -176,21 +187,21 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
         if (arguments.length === 1 && typeof arg1 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg1,
+            arg1 as getConnectionCallbackType,
             format
           );
           return originalGetConnection.call(pool, patchFn);
         }
         if (arguments.length === 2 && typeof arg2 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg2,
+            arg2 as getConnectionCallbackType,
             format
           );
           return originalGetConnection.call(pool, arg1, patchFn);
         }
         if (arguments.length === 3 && typeof arg3 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg3,
+            arg3 as getConnectionCallbackType,
             format
           );
           return originalGetConnection.call(pool, arg1, arg2, patchFn);
@@ -201,22 +212,30 @@ export class MySQLInstrumentation extends InstrumentationBase<
     };
   }
 
-  private _getConnectionCallbackPatchFn(cb: Function, format: formatType) {
+  private _getConnectionCallbackPatchFn(
+    cb: getConnectionCallbackType,
+    format: formatType
+  ) {
     const thisPlugin = this;
-    return function () {
-      if (arguments[1]) {
+    const activeContext = context.active();
+    return function (
+      this: any,
+      err: mysqlTypes.MysqlError,
+      connection: mysqlTypes.PoolConnection
+    ) {
+      if (connection) {
         // this is the callback passed into a query
         // no need to unwrap
-        if (!isWrapped(arguments[1].query)) {
+        if (!isWrapped(connection.query)) {
           thisPlugin._wrap(
-            arguments[1],
+            connection,
             'query',
-            thisPlugin._patchQuery(arguments[1], format)
+            thisPlugin._patchQuery(connection, format)
           );
         }
       }
       if (typeof cb === 'function') {
-        cb(...arguments);
+        context.with(activeContext, cb, this, err, connection);
       }
     };
   }
@@ -260,7 +279,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
           getDbStatement(query, format, values)
         );
 
-        if (arguments.length === 1) {
+        const cbIndex = Array.from(arguments).findIndex(
+          arg => typeof arg === 'function'
+        );
+
+        if (cbIndex === -1) {
           const streamableQuery: mysqlTypes.Query = originalQuery.apply(
             connection,
             arguments
@@ -276,15 +299,15 @@ export class MySQLInstrumentation extends InstrumentationBase<
             .on('end', () => {
               span.end();
             });
-        }
+        } else {
+          thisPlugin._wrap(
+            arguments,
+            cbIndex,
+            thisPlugin._patchCallbackQuery(span)
+          );
 
-        if (typeof arguments[1] === 'function') {
-          thisPlugin._wrap(arguments, 1, thisPlugin._patchCallbackQuery(span));
-        } else if (typeof arguments[2] === 'function') {
-          thisPlugin._wrap(arguments, 2, thisPlugin._patchCallbackQuery(span));
+          return originalQuery.apply(connection, arguments);
         }
-
-        return originalQuery.apply(connection, arguments);
       };
     };
   }

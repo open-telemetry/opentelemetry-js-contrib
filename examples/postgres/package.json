@@ -1,7 +1,7 @@
 {
   "name": "postgres-example",
   "private": true,
-  "version": "0.15.0",
+  "version": "0.23.0",
   "description": "Example of Postgres integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,7 @@
     "tracing"
   ],
   "engines": {
-    "node": ">=8"
+    "node": ">=8.5.0"
   },
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -30,14 +30,14 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.20.0",
-    "@opentelemetry/exporter-jaeger": "^0.20.0",
-    "@opentelemetry/exporter-zipkin": "^0.20.0",
-    "@opentelemetry/instrumentation": "^0.20.0",
-    "@opentelemetry/instrumentation-http": "^0.20.0",
-    "@opentelemetry/instrumentation-pg": "^0.16.0",
-    "@opentelemetry/node": "^0.20.0",
-    "@opentelemetry/tracing": "^0.20.0",
+    "@opentelemetry/api": "^1.0.2",
+    "@opentelemetry/exporter-jaeger": "^0.25.0",
+    "@opentelemetry/exporter-zipkin": "^0.25.0",
+    "@opentelemetry/instrumentation": "^0.25.0",
+    "@opentelemetry/instrumentation-http": "^0.25.0",
+    "@opentelemetry/instrumentation-pg": "^0.23.0",
+    "@opentelemetry/sdk-trace-node": "^0.25.0",
+    "@opentelemetry/sdk-trace-base": "^0.25.0",
     "express": "^4.17.1",
     "pg": "^8.6.0"
   },

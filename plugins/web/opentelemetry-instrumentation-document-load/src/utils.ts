@@ -21,7 +21,7 @@ import {
   PerformanceEntries,
   PerformanceLegacy,
   PerformanceTimingNames as PTN,
-} from '@opentelemetry/web';
+} from '@opentelemetry/sdk-trace-web';
 import { EventNames } from './enums/EventNames';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {

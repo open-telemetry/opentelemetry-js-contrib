@@ -17,9 +17,9 @@
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
-import { context, trace, NoopTracerProvider } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+} from '@opentelemetry/sdk-trace-base';
+import { context, INVALID_SPAN_CONTEXT, trace } from '@opentelemetry/api';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
@@ -101,8 +101,7 @@ describe('BunyanInstrumentation', () => {
     });
 
     it('does not inject span context if span context is invalid', () => {
-      const noopTracer = new NoopTracerProvider().getTracer('noop');
-      const span = noopTracer.startSpan('noop');
+      const span = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
       context.with(trace.setSpan(context.active(), span), () => {
         logger.info('foo');
         sinon.assert.calledOnce(writeSpy);

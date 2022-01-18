@@ -1,0 +1,7 @@
+tedious:
+  # 4.0.0 is broken: https://github.com/tediousjs/tedious/commit/4eceb48
+  versions: ">=1.11.0 <4 || >=4.0.1"
+  commands: npm run test
+
+  # Fix missing `test-utils` package
+  pretest: npm run --prefix ../../../ lerna:link

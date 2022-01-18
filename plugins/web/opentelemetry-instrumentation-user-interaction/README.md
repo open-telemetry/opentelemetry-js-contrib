@@ -11,6 +11,8 @@ With [zone-js] and ZoneContextManager it will fully support the async operations
 If you use Angular you already have the [zone-js]. It will be the same if you use [@opentelemetry/context-zone].
 Without [zone-js] it will still work but with limited support.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -20,8 +22,8 @@ npm install --save @opentelemetry/instrumentation-user-interaction
 ## Usage
 
 ```js
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/tracing';
-import { WebTracerProvider } from '@opentelemetry/web';
+import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';

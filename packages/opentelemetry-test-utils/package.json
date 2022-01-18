@@ -1,39 +1,55 @@
 {
-  "name": "@opentelemetry/test-utils",
-  "private": true,
-  "version": "0.20.0",
-  "description": "Test utilities.",
-  "main": "build/testUtils.js",
+  "name": "@opentelemetry/contrib-test-utils",
+  "version": "0.28.0",
+  "description": "Test utilities for opentelemetry components",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "compile": "tsc -p .",
-    "precompile": "tsc --version",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/contrib-test-utils --include-dependencies",
+    "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "watch": "tsc -w"
   },
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "keywords": [
     "opentelemetry",
-    "test-utils"
+    "contrib-test-utils"
+  ],
+  "files": [
+    "build/**/*.js",
+    "build/**/*.js.map",
+    "build/**/*.d.ts",
+    "LICENSE",
+    "README.md"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/open-telemetry/opentelemetry-js/issues"
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
   "peerDependencies": {
-    "@opentelemetry/api": "^0.20.0"
+    "@opentelemetry/api": "^1.0.2"
   },
   "devDependencies": {
-    "@opentelemetry/api": "0.20.0",
-    "@types/node": "14.17.2",
+    "@opentelemetry/api": "1.0.2",
+    "@types/node": "14.17.9",
     "gts": "3.1.0",
-    "typescript": "4.3.2"
+    "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/core": "^0.20.0",
-    "@opentelemetry/tracing": "^0.20.0"
+    "@opentelemetry/core": "1.0.1",
+    "@opentelemetry/exporter-jaeger": "1.0.1",
+    "@opentelemetry/instrumentation": "0.27.0",
+    "@opentelemetry/sdk-trace-node": "1.0.1",
+    "@opentelemetry/resources": "1.0.1",
+    "@opentelemetry/sdk-trace-base": "1.0.1",
+    "@opentelemetry/semantic-conventions": "1.0.1"
   }
 }

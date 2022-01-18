@@ -4,6 +4,157 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
+## 0.25.0
+
+#### :bug: Bug Fix
+* [#619](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/619) fix: GraphQL throws TypeError: Cannot read property 'startToken' of undefined ([@obecny](https://github.com/obecny))
+* [#643](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/643) fix(user-interaction): event listeners have wrong this when listening for bubbled events ([@t2t2](https://github.com/t2t2))
+* [#562](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/562) fix(mysql): bind get connection callback to active context ([@sstone1](https://github.com/sstone1))
+* [#589](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/589) fix(hapi-instrumentation): close spans on errors in instrumented functions ([@CptSchnitz](https://github.com/CptSchnitz))
+* [#580](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/580) fix: redis instrumentation loses context when using callbacks ([@aspectom](https://github.com/aspectom))
+
+#### :rocket: Enhancement
+* Other
+  * [#626](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/626) feat(mongodb): add db statement serializer config ([@nozik](https://github.com/nozik))
+  * [#622](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/622) docs: add missing fetch instrumentation ([@meteorlxy](https://github.com/meteorlxy))
+  * [#553](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/553) feat: Add NestJS instrumentation ([@Rauno56](https://github.com/Rauno56))
+  * [#588](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/588) chore: adding instrumentation for connect ([@obecny](https://github.com/obecny))
+* `opentelemetry-test-utils`
+  * [#593](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/593) feat: move aws/gcp detectors from opentelemetry-js repo ([@legendecas](https://github.com/legendecas))
+
+#### :house: Internal
+* `opentelemetry-test-utils`
+  * [#641](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/641) chore(mysql2): adding TAV script ([@YanivD](https://github.com/YanivD))
+  * [#639](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/639) build(test-utils): marking test-utils as non private so it can be published ([@blumamir](https://github.com/blumamir))
+  * [#596](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/596) docs(test-utils): add README.md for @opentelemetry/test-utils ([@Rauno56](https://github.com/Rauno56))
+* Other
+  * [#648](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/648) ci: speed up lint workflow with hoisting  ([@YanivD](https://github.com/YanivD))
+  * [#614](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/614) ci: speed up PR unit-test run time ([@blumamir](https://github.com/blumamir))
+  * [#612](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/612) chore: ignore renovate-bot for component owners ([@dyladan](https://github.com/dyladan))
+  * [#597](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/597) chore: add script to update core dependencies ([@dyladan](https://github.com/dyladan))
+  * [#606](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/606) chore: add ownership for aws propagator ([@dyladan](https://github.com/dyladan))
+  * [#601](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/601) chore: configure renovate to bump API ([@Flarna](https://github.com/Flarna))
+
+#### :memo: Documentation
+* `opentelemetry-browser-extension-autoinjection`
+  * [#615](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/615) docs: correct the build instructions ([@jessitron](https://github.com/jessitron))
+
+#### Committers: 16
+- Amir Blum ([@blumamir](https://github.com/blumamir))
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Herman ([@hermanbanken](https://github.com/hermanbanken))
+- Jessica Kerr ([@jessitron](https://github.com/jessitron))
+- Ofer Adelstein ([@CptSchnitz](https://github.com/CptSchnitz))
+- Ran Nozik ([@nozik](https://github.com/nozik))
+- Rauno Viskus ([@Rauno56](https://github.com/Rauno56))
+- Simon Stone ([@sstone1](https://github.com/sstone1))
+- Tom Zach ([@aspectom](https://github.com/aspectom))
+- William Armiros ([@willarmiros](https://github.com/willarmiros))
+- Yaniv Davidi ([@YanivD](https://github.com/YanivD))
+- legendecas ([@legendecas](https://github.com/legendecas))
+- meteorlxy ([@meteorlxy](https://github.com/meteorlxy))
+- t2t2 ([@t2t2](https://github.com/t2t2))
+
+## 0.24.0
+
+#### :bug: Bug Fix
+* [#573](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/573) chore: fixing express example ([@obecny](https://github.com/obecny))
+
+#### :rocket: Enhancement
+* `opentelemetry-browser-extension-autoinjection`, `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#594](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/594) chore: update core deps to 0.24.0 ([@dyladan](https://github.com/dyladan))
+* `opentelemetry-host-metrics`
+  * [#570](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/570) fix(package.json): publish source maps ([@blumamir](https://github.com/blumamir))
+* Other
+  * [#571](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/571) fix(instrumentation-hapi): change root span name to route name ([@CptSchnitz](https://github.com/CptSchnitz))
+  * [#566](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/566) feat(aws-lambda): added eventContextExtractor config option ([@prsnca](https://github.com/prsnca))
+
+#### :house: Internal
+* [#592](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/592) chore(deps): upgrade @types/pino to be compatible with latest sonic-stream types ([@legendecas](https://github.com/legendecas))
+* [#583](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/583) style: use single quotes everywhere and add a rule to eslint ([@CptSchnitz](https://github.com/CptSchnitz))
+* [#549](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/549) chore: enable typescript 4.3 option noImplicitOverride ([@Flarna](https://github.com/Flarna))
+
+#### Committers: 8
+- Amir Blum ([@blumamir](https://github.com/blumamir))
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Daniel Hermon ([@syncush](https://github.com/syncush))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Ofer Adelstein ([@CptSchnitz](https://github.com/CptSchnitz))
+- Yaron ([@prsnca](https://github.com/prsnca))
+- legendecas ([@legendecas](https://github.com/legendecas))
+
+## 0.23.0
+
+#### :bug: Bug Fix
+* [#557](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/557) chore: aligning target for esm build with core repo ([@obecny](https://github.com/obecny))
+
+#### :rocket: Enhancement
+* `opentelemetry-browser-extension-autoinjection`
+  * [#498](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/498) feat: add browser extension ([@svrnm](https://github.com/svrnm))
+* `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#556](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/556) chore: update core and API ([@dyladan](https://github.com/dyladan))
+* Other
+  * [#533](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/533) feat(mongo instrumentation): added response hook option ([@prsnca](https://github.com/prsnca))
+  * [#546](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/546) feat(aws-lambda): disableAwsContextPropagation config option ([@nirsky](https://github.com/nirsky))
+  * [#528](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/528) feat: postgresql responseHook support ([@nata7che](https://github.com/nata7che))
+* `opentelemetry-test-utils`
+  * [#538](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/538) feat: add cassandra-driver instrumentation ([@seemk](https://github.com/seemk))
+  * [#539](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/539) feat: memcached instrumentation ([@Rauno56](https://github.com/Rauno56))
+
+#### :house: Internal
+* [#554](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/554) chore: remove unneeded ts-node dev-dependency ([@Flarna](https://github.com/Flarna))
+
+#### Committers: 9
+- Bartlomiej Obecny ([@obecny](https://github.com/obecny))
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Nir Hadassi ([@nirsky](https://github.com/nirsky))
+- Rauno Viskus ([@Rauno56](https://github.com/Rauno56))
+- Severin Neumann ([@svrnm](https://github.com/svrnm))
+- Siim Kallas ([@seemk](https://github.com/seemk))
+- Yaron ([@prsnca](https://github.com/prsnca))
+- natashz ([@nata7che](https://github.com/nata7che))
+
+## 0.22.0
+
+#### :bug: Bug Fix
+* [#537](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/537) fix(instrumentation-user-interaction): support clicks in React apps ([@kkruk-sumo](https://github.com/kkruk-sumo))
+
+#### :rocket: Enhancement
+* `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#540](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/540) chore: update core and API ([@dyladan](https://github.com/dyladan))
+
+#### Committers: 2
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Krystian Kruk ([@kkruk-sumo](https://github.com/kkruk-sumo))
+
+## 0.21.0
+
+#### :bug: Bug Fix
+* [#524](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/524) [Hapi example] Fix undefined api.statusCode ([@GradedJestRisk](https://github.com/GradedJestRisk))
+
+#### :rocket: Enhancement
+* `opentelemetry-host-metrics`, `opentelemetry-id-generator-aws-xray`, `opentelemetry-test-utils`
+  * [#529](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/529) chore: update core and api to 0.21.0 ([@dyladan](https://github.com/dyladan))
+  * [#522](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/522) chore: move api into peer dependency ([@Flarna](https://github.com/Flarna))
+* Other
+  * [#506](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/506) feat: knex instrumentation ([@Rauno56](https://github.com/Rauno56))
+  * [#508](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/508) feat: graphql responseHook support ([@nozik](https://github.com/nozik))
+  * [#484](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/484) feat(instrumentation-document-load): performance paint timing events ([@kkruk-sumo](https://github.com/kkruk-sumo))
+  * [#510](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/510) chore: add node:16 to the test matrix ([@Rauno56](https://github.com/Rauno56))
+  * [#521](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/521) feat: mysql2 instrumentation ([@Rauno56](https://github.com/Rauno56))
+
+#### Committers: 6
+- Daniel Dyla ([@dyladan](https://github.com/dyladan))
+- Gerhard Stöbich ([@Flarna](https://github.com/Flarna))
+- Krystian Kruk ([@kkruk-sumo](https://github.com/kkruk-sumo))
+- Ran Nozik ([@nozik](https://github.com/nozik))
+- Rauno Viskus ([@Rauno56](https://github.com/Rauno56))
+- [@GradedJestRisk](https://github.com/GradedJestRisk)
+
 ## 0.20.0
 
 #### :bug: Bug Fix

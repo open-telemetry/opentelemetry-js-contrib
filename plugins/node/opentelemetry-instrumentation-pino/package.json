@@ -1,30 +1,32 @@
 {
   "name": "@opentelemetry/instrumentation-pino",
-  "version": "0.20.0",
+  "version": "0.28.0",
   "description": "OpenTelemetry instrumentation for pino",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
-    "precompile": "tsc --version",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-pino --include-dependencies",
+    "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p ."
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "logging",
     "nodejs",
-    "tracing",
+    "opentelemetry",
+    "pino",
     "profiling",
-    "instrumentation",
-    "pino"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -33,6 +35,7 @@
   },
   "files": [
     "build/src/**/*.js",
+    "build/src/**/*.js.map",
     "build/src/**/*.d.ts",
     "doc",
     "LICENSE",
@@ -42,31 +45,30 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^0.20.0"
+    "@opentelemetry/api": "^1.0.2"
   },
   "devDependencies": {
-    "@opentelemetry/api": "0.20.0",
-    "@opentelemetry/context-async-hooks": "0.20.0",
-    "@opentelemetry/node": "0.20.0",
-    "@opentelemetry/tracing": "0.20.0",
+    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/context-async-hooks": "1.0.1",
+    "@opentelemetry/sdk-trace-base": "1.0.1",
+    "@opentelemetry/sdk-trace-node": "1.0.1",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.2",
-    "@types/semver": "7.3.6",
+    "@types/node": "14.17.9",
+    "@types/semver": "7.3.8",
     "@types/sinon": "10.0.2",
-    "codecov": "3.8.2",
+    "codecov": "3.8.3",
     "gts": "3.1.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "pino": "6.11.3",
     "rimraf": "3.0.2",
-    "sinon": "9.2.4",
+    "sinon": "12.0.1",
+    "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
-    "ts-node": "9.1.1",
-    "typescript": "4.3.2"
+    "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.20.0",
-    "@types/pino": "6.3.8",
+    "@opentelemetry/instrumentation": "^0.27.0",
+    "pino": "7.2.0",
     "semver": "^7.3.5"
   }
 }

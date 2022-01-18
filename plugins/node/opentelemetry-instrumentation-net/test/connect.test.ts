@@ -18,9 +18,9 @@ import { SpanStatusCode } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as net from 'net';
 import * as assert from 'assert';
 import { NetInstrumentation } from '../src';
@@ -175,16 +175,32 @@ describe('NetInstrumentation', () => {
     });
 
     it('should produce a generic span in case transport type can not be determined', done => {
-      socket.once(SocketEvent.CLOSE, () => {
-        const span = getSpan();
+      const assertSpan = () => {
+        try {
+          const span = getSpan();
+          assert.strictEqual(
+            span.attributes[SemanticAttributes.NET_TRANSPORT],
+            undefined
+          );
+          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      };
+      try {
+        // socket.connect() will not throw before node@16 only closes
+        socket.once(SocketEvent.CLOSE, assertSpan);
+        socket.connect(undefined as unknown as string);
+      } catch (e) {
+        // socket.connect() will throw in node@16
+        socket.removeListener(SocketEvent.CLOSE, assertSpan);
         assert.strictEqual(
-          span.attributes[SemanticAttributes.NET_TRANSPORT],
-          undefined
+          e.message,
+          'The "options" or "port" or "path" argument must be specified'
         );
-        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-        done();
-      });
-      socket.connect(undefined as unknown as string);
+        assertSpan();
+      }
     });
   });
 

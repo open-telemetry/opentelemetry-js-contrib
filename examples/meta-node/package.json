@@ -1,7 +1,7 @@
 {
   "name": "instrumentations-node-example",
   "private": true,
-  "version": "0.15.0",
+  "version": "0.23.0",
   "description": "Example of using meta package for default auto instrumentations in node",
   "main": "index.js",
   "scripts": {
@@ -35,12 +35,12 @@
     "eslint": "^7.4.0"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.20.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.15.0",
-    "@opentelemetry/exporter-collector": "^0.20.0",
-    "@opentelemetry/instrumentation": "^0.20.0",
-    "@opentelemetry/node": "^0.20.0",
-    "@opentelemetry/tracing": "^0.20.0",
+    "@opentelemetry/api": "^1.0.2",
+    "@opentelemetry/auto-instrumentations-node": "^0.24.0",
+    "@opentelemetry/exporter-collector": "^0.25.0",
+    "@opentelemetry/instrumentation": "^0.25.0",
+    "@opentelemetry/sdk-trace-node": "^0.25.0",
+    "@opentelemetry/sdk-trace-base": "^0.25.0",
     "axios": "^0.21.1",
     "express": "^4.17.1"
   }

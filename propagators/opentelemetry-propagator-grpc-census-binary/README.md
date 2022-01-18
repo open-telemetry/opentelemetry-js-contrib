@@ -15,8 +15,8 @@ This propagator works in conjunction with the OpenTelemetry [gRPC plugin](https:
 Example of usage:
 
 ```javascript
-const { NodeTracerProvider } = require('@opentelemetry/node');
-const { GrpcCensusPropagator } = require("@opentelemetry/propagator-grpc-census-binary");
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { GrpcCensusPropagator } = require('@opentelemetry/propagator-grpc-census-binary');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { GrpcInstrumentation } = require('opentelemetry/instrumentation-grpc');
 

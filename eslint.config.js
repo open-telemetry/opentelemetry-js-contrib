@@ -11,6 +11,7 @@ module.exports = {
       "project": "./tsconfig.json"
   },
   rules: {
+    "quotes": [2, "single", { "avoidEscape": true }],
     "@typescript-eslint/no-this-alias": "off",
     "eqeqeq": "off",
     "prefer-rest-params": "off",

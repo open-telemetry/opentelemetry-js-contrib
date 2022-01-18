@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-import { context, trace } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { context, trace, SpanStatusCode } from '@opentelemetry/api';
+import { RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import { getPlugin } from './plugin';
 const plugin = getPlugin();
 
@@ -324,6 +326,83 @@ describe('Hapi Instrumentation - Core Tests', () => {
       });
       assert.strictEqual(res.statusCode, 200);
       assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+
+    it('should rename root span with route information', async () => {
+      const rootSpan = tracer.startSpan('rootSpan', {});
+      server.route({
+        method: 'GET',
+        path: '/users/{userId}',
+        handler: (request, h) => {
+          return `Hello ${request.params.userId}`;
+        },
+      });
+
+      await server.start();
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      await context.with(
+        setRPCMetadata(trace.setSpan(context.active(), rootSpan), rpcMetadata),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/users/1',
+          });
+          assert.strictEqual(res.statusCode, 200);
+
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'GET /users/{userId}');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(
+            exportedRootSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/users/{userId}'
+          );
+        }
+      );
+    });
+
+    it('should end span and record the error if an error is thrown in route handler', async () => {
+      const errorMessage = 'error';
+      const rootSpan = tracer.startSpan('rootSpan', {});
+      server.route({
+        method: 'GET',
+        path: '/users/{userId}',
+        handler: (request, h) => {
+          throw new Error(errorMessage);
+        },
+      });
+
+      await server.start();
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      await context.with(
+        setRPCMetadata(trace.setSpan(context.active(), rootSpan), rpcMetadata),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/users/1',
+          });
+          assert.strictEqual(res.statusCode, 500);
+
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'route - /users/{userId}');
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(requestHandlerSpan?.events[0].name, 'exception');
+          assert.strictEqual(
+            requestHandlerSpan.status.code,
+            SpanStatusCode.ERROR
+          );
+          assert.strictEqual(requestHandlerSpan.status.message, errorMessage);
+        }
+      );
     });
   });
 

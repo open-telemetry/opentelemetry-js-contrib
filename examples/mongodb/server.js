@@ -68,6 +68,7 @@ function handleInsertQuery(response) {
     } else {
       console.log('1 document inserted');
       // find document to test context propagation using callback
+      // eslint-disable-next-line prefer-arrow-callback
       collection.findOne({}, function () {
         response.end();
       });

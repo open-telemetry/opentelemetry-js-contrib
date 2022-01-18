@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span } from '@opentelemetry/api';
+import { Span, Context as OtelContext } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Handler, Context } from 'aws-lambda';
 
@@ -33,7 +33,10 @@ export type ResponseHook = (
   }
 ) => void;
 
+export type EventContextExtractor = (event: any) => OtelContext;
 export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   requestHook?: RequestHook;
   responseHook?: ResponseHook;
+  disableAwsContextPropagation?: boolean;
+  eventContextExtractor?: EventContextExtractor;
 }

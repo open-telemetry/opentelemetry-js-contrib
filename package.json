@@ -1,6 +1,6 @@
 {
   "name": "opentelemetry-contrib",
-  "version": "0.20.0",
+  "version": "0.1.0",
   "description": "This is a repository for OpenTelemetry JavaScript contributions.",
   "repository": {
     "type": "git",
@@ -14,20 +14,26 @@
   "scripts": {
     "clean": "lerna run clean",
     "postinstall": "npm run bootstrap",
-    "precompile": "tsc --version",
+    "prepare": "husky install",
+    "precompile": "tsc --version && lerna run version",
     "version:update": "lerna run version:update",
     "compile": "lerna run compile",
+    "prewatch": "npm run precompile",
     "test": "lerna run test",
-    "test:browser": "lerna run test:browser",
+    "test:ci:changed": "lerna run test --since origin/main",
+    "test:browser": "lerna run test:browser --concurrency 1",
     "bootstrap": "lerna bootstrap --no-ci",
     "bump": "lerna publish",
     "codecov": "lerna run codecov",
+    "codecov:ci:changed": "lerna run codecov --since origin/main --parallel",
     "codecov:browser": "lerna run codecov:browser",
     "changelog": "lerna-changelog",
+    "lerna:link": "lerna link",
     "lint": "lerna run lint",
     "lint:fix": "lerna run lint:fix",
     "lint:examples": "eslint ./examples/**/*.js",
-    "lint:examples:fix": "eslint ./examples/**/*.js --fix"
+    "lint:examples:fix": "eslint ./examples/**/*.js --fix",
+    "lerna:scope": "lerna bootstrap --include-dependents --include-dependencies --scope"
   },
   "keywords": [
     "opentelemetry",
@@ -40,24 +46,20 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@commitlint/cli": "11.0.0",
-    "@commitlint/config-conventional": "11.0.0",
-    "@typescript-eslint/eslint-plugin": "4.26.0",
-    "@typescript-eslint/parser": "4.26.0",
-    "eslint": "7.27.0",
+    "@commitlint/cli": "16.0.2",
+    "@commitlint/config-conventional": "16.0.0",
+    "@typescript-eslint/eslint-plugin": "5.8.1",
+    "@typescript-eslint/parser": "5.8.1",
+    "colors": "1.4.0",
+    "eslint": "7.32.0",
     "eslint-config-airbnb-base": "14.2.1",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "2.23.4",
     "gts": "3.1.0",
-    "husky": "4.3.8",
+    "husky": "7.0.4",
     "lerna": "3.22.1",
     "lerna-changelog": "1.0.1",
-    "typescript": "4.3.2"
-  },
-  "husky": {
-    "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
+    "typescript": "4.3.5"
   },
   "changelog": {
     "labels": {

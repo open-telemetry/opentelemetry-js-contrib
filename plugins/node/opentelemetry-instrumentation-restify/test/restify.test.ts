@@ -17,12 +17,12 @@
 import * as restify from 'restify';
 import { context, trace } from '@opentelemetry/api';
 import { RPCType, setRPCMetadata } from '@opentelemetry/core';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 
 import RestifyInstrumentation from '../src';
 import * as types from '../src/types';

@@ -1,5 +1,4 @@
 {
-  "lerna": "3.13.4",
   "npmClient": "npm",
   "packages": [
     "packages/*",
@@ -9,7 +8,7 @@
     "propagators/*",
     "detectors/node/*"
   ],
-  "version": "0.20.0",
+  "version": "independent",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",
     "labels": {

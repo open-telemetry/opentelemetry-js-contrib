@@ -48,7 +48,7 @@ const endSpan = (span: Span, err?: Error | null) => {
 export const getTracedCreateClient = (tracer: Tracer, original: Function) => {
   return function createClientTrace(this: redisTypes.RedisClient) {
     const client: redisTypes.RedisClient = original.apply(this, arguments);
-    return context.bind(client);
+    return context.bind(context.active(), client);
   };
 };
 
@@ -57,13 +57,13 @@ export const getTracedCreateStreamTrace = (
   original: Function
 ) => {
   return function create_stream_trace(this: redisTypes.RedisClient) {
-    if (!this.stream) {
+    if (!Object.prototype.hasOwnProperty.call(this, 'stream')) {
       Object.defineProperty(this, 'stream', {
         get() {
           return this._patched_redis_stream;
         },
         set(val: EventEmitter) {
-          context.bind(val);
+          context.bind(context.active(), val);
           this._patched_redis_stream = val;
         },
       });
@@ -127,6 +127,7 @@ export const getTracedInternalSendCommand = (
 
     const originalCallback = arguments[0].callback;
     if (originalCallback) {
+      const originalContext = context.active();
       (arguments[0] as RedisCommand).callback = function callback<T>(
         this: unknown,
         err: Error | null,
@@ -146,7 +147,12 @@ export const getTracedInternalSendCommand = (
         }
 
         endSpan(span, err);
-        return originalCallback.apply(this, arguments);
+        return context.with(
+          originalContext,
+          originalCallback,
+          this,
+          ...arguments
+        );
       };
     }
     try {

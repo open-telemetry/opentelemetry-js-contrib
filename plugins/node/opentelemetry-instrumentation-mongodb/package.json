@@ -1,31 +1,33 @@
 {
   "name": "@opentelemetry/instrumentation-mongodb",
-  "version": "0.20.0",
+  "version": "0.27.0",
   "description": "OpenTelemetry mongodb automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "docker:start": "docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=localhost -p 27017:27017 --rm mongo",
-    "test": "nyc ts-mocha --parallel -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc ts-mocha --parallel -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-mongodb --include-dependencies",
+    "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p .",
     "prepare": "npm run compile",
     "watch": "tsc -w"
   },
   "keywords": [
-    "opentelemetry",
     "mongodb",
     "nodejs",
-    "tracing",
+    "opentelemetry",
+    "plugin",
     "profiling",
-    "plugin"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -34,6 +36,7 @@
   },
   "files": [
     "build/src/**/*.js",
+    "build/src/**/*.js.map",
     "build/src/**/*.d.ts",
     "doc",
     "LICENSE",
@@ -43,27 +46,29 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^0.20.0"
+    "@opentelemetry/api": "^1.0.2"
   },
   "devDependencies": {
-    "@opentelemetry/api": "0.20.0",
-    "@opentelemetry/context-async-hooks": "0.20.0",
-    "@opentelemetry/node": "0.20.0",
-    "@opentelemetry/tracing": "0.20.0",
+    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/contrib-test-utils": "^0.28.0",
+    "@opentelemetry/context-async-hooks": "1.0.1",
+    "@opentelemetry/sdk-trace-base": "1.0.1",
+    "@opentelemetry/sdk-trace-node": "1.0.1",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.2",
-    "codecov": "3.8.2",
+    "@types/node": "14.17.9",
+    "codecov": "3.8.3",
     "gts": "3.1.0",
     "mocha": "7.2.0",
-    "mongodb": "3.6.9",
+    "mongodb": "3.6.11",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
+    "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
-    "typescript": "4.3.2"
+    "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.20.0",
-    "@opentelemetry/semantic-conventions": "^0.20.0",
-    "@types/mongodb": "3.6.17"
+    "@opentelemetry/instrumentation": "^0.27.0",
+    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "@types/mongodb": "3.6.20"
   }
 }

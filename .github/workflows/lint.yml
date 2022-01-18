@@ -9,9 +9,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: node:14
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Lint markdown files
+        uses: avto-dev/markdown-lint@v1
+        with:
+          ignore: "./**/CHANGELOG.md"
+          args: "./**/*.md"
 
       - name: restore lerna
         uses: actions/cache@master # must use unreleased master to cache multiple paths
@@ -33,6 +41,6 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           npm install --only=dev --ignore-scripts
-          npx lerna bootstrap --no-ci --ignore-scripts -- --only=dev
+          npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='gts' --ignore-scripts -- --only=dev
       - name: Lint
         run: npm run lint

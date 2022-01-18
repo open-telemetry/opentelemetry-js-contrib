@@ -16,7 +16,6 @@
 import {
   isWrapped,
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
@@ -36,6 +35,7 @@ import {
   PostgresCallback,
   PgPoolExtended,
   PgPoolCallback,
+  PgInstrumentationConfig,
 } from './types';
 import * as utils from './utils';
 import { AttributeNames } from './enums/AttributeNames';
@@ -45,17 +45,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
 
-export interface PgInstrumentationConfig extends InstrumentationConfig {
-  /**
-   * If true, additional information about query parameters and
-   * results will be attached (as `attributes`) to spans representing
-   * database operations.
-   */
-  enhancedDatabaseReporting?: boolean;
-}
-
 const PG_POOL_COMPONENT = 'pg-pool';
-
 export class PgInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'pg';
 
@@ -134,7 +124,7 @@ export class PgInstrumentation extends InstrumentationBase {
             span = utils.handleParameterizedQuery.call(
               this,
               plugin.tracer,
-              plugin._config as InstrumentationConfig & PgInstrumentationConfig,
+              plugin.getConfig() as PgInstrumentationConfig,
               query,
               params
             );
@@ -146,7 +136,7 @@ export class PgInstrumentation extends InstrumentationBase {
           span = utils.handleConfigQuery.call(
             this,
             plugin.tracer,
-            plugin._config as InstrumentationConfig & PgInstrumentationConfig,
+            plugin.getConfig() as PgInstrumentationConfig,
             queryConfig
           );
         } else {
@@ -164,24 +154,29 @@ export class PgInstrumentation extends InstrumentationBase {
           if (typeof args[args.length - 1] === 'function') {
             // Patch ParameterQuery callback
             args[args.length - 1] = utils.patchCallback(
+              plugin.getConfig() as PgInstrumentationConfig,
               span,
               args[args.length - 1] as PostgresCallback
             );
             // If a parent span exists, bind the callback
             if (parentSpan) {
-              args[args.length - 1] = context.bind(args[args.length - 1]);
+              args[args.length - 1] = context.bind(
+                context.active(),
+                args[args.length - 1]
+              );
             }
           } else if (
             typeof (args[0] as NormalizedQueryConfig).callback === 'function'
           ) {
             // Patch ConfigQuery callback
             let callback = utils.patchCallback(
+              plugin.getConfig() as PgInstrumentationConfig,
               span,
               (args[0] as NormalizedQueryConfig).callback!
             );
             // If a parent span existed, bind the callback
             if (parentSpan) {
-              callback = context.bind(callback);
+              callback = context.bind(context.active(), callback);
             }
 
             // Copy the callback instead of writing to args.callback so that we don't modify user's
@@ -199,6 +194,11 @@ export class PgInstrumentation extends InstrumentationBase {
             .then((result: unknown) => {
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
+                utils.handleExecutionResult(
+                  plugin.getConfig() as PgInstrumentationConfig,
+                  span,
+                  result
+                );
                 span.end();
                 resolve(result);
               });
@@ -250,7 +250,7 @@ export class PgInstrumentation extends InstrumentationBase {
           ) as PgPoolCallback;
           // If a parent span exists, bind the callback
           if (parentSpan) {
-            callback = context.bind(callback);
+            callback = context.bind(context.active(), callback);
           }
         }
 
@@ -263,6 +263,7 @@ export class PgInstrumentation extends InstrumentationBase {
         if (connectResult instanceof Promise) {
           const connectResultPromise = connectResult as Promise<unknown>;
           return context.bind(
+            context.active(),
             connectResultPromise
               .then(result => {
                 // Return a pass-along promise which ends the span and then goes to user's orig resolvers

@@ -23,14 +23,18 @@ import {
   SpanStatus,
   trace,
 } from '@opentelemetry/api';
-import { BasicTracerProvider } from '@opentelemetry/tracing';
-import { PgInstrumentation } from '../src';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
+import {
+  PgInstrumentation,
+  PgInstrumentationConfig,
+  PgResponseHookInformation,
+} from '../src';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
@@ -40,6 +44,10 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
+import { isSupported } from './utils';
+
+const pgVersion = require('pg/package.json').version;
+const nodeVersion = process.versions.node;
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -94,23 +102,41 @@ const runCallbackTest = (
   testUtils.assertPropagation(pgSpan, parentSpan);
 };
 
-describe('pg-pool@2.x', () => {
+describe('pg-pool', () => {
+  function create(config: PgInstrumentationConfig = {}) {
+    instrumentation.setConfig(config);
+    instrumentation.enable();
+  }
+
   let pool: pgPool<pg.Client>;
   let contextManager: AsyncHooksContextManager;
   let instrumentation: PgInstrumentation;
   const provider = new BasicTracerProvider();
-  const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI:
-  // assumes local postgres db is already available
+
+  const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
   before(function () {
-    if (!shouldTest) {
+    const skipForUnsupported =
+      process.env.IN_TAV && !isSupported(nodeVersion, pgVersion);
+    const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
       this.skip();
+    };
+
+    if (skipForUnsupported) {
+      console.error(
+        `  pg - skipped - node@${nodeVersion} and pg@${pgVersion} are not compatible`
+      );
+      skip();
     }
+    if (!shouldTest) {
+      skip();
+    }
+
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (testPostgresLocally) {
       testUtils.startDocker('postgres');
@@ -130,6 +156,7 @@ describe('pg-pool@2.x', () => {
     if (testPostgresLocally) {
       testUtils.cleanUpDocker('postgres');
     }
+
     pool.end(() => {
       done();
     });
@@ -286,6 +313,155 @@ describe('pg-pool@2.x', () => {
           done();
         });
         assert.strictEqual(resNoPromise, undefined, 'No promise is returned');
+      });
+    });
+
+    describe('when specifying a responseHook configuration', () => {
+      const dataAttributeName = 'pg_data';
+      const query = 'SELECT 0::text';
+      const events: TimedEvent[] = [];
+
+      describe('AND valid responseHook', () => {
+        const pgPoolattributes = {
+          ...DEFAULT_PGPOOL_ATTRIBUTES,
+        };
+        const pgAttributes = {
+          ...DEFAULT_PG_ATTRIBUTES,
+          [SemanticAttributes.DB_STATEMENT]: query,
+          [dataAttributeName]: '{"rowCount":1}',
+        };
+
+        beforeEach(async () => {
+          const config: PgInstrumentationConfig = {
+            enhancedDatabaseReporting: true,
+            responseHook: (
+              span: Span,
+              responseInfo: PgResponseHookInformation
+            ) =>
+              span.setAttribute(
+                dataAttributeName,
+                JSON.stringify({ rowCount: responseInfo?.data.rowCount })
+              ),
+          };
+
+          create(config);
+        });
+
+        it('should attach response hook data to resulting spans for query with callback ', done => {
+          const parentSpan = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+          context.with(trace.setSpan(context.active(), parentSpan), () => {
+            const resNoPromise = pool.query(query, (err, result) => {
+              if (err) {
+                return done(err);
+              }
+              runCallbackTest(
+                parentSpan,
+                pgPoolattributes,
+                events,
+                unsetStatus,
+                2,
+                0
+              );
+              runCallbackTest(
+                parentSpan,
+                pgAttributes,
+                events,
+                unsetStatus,
+                2,
+                1
+              );
+              done();
+            });
+            assert.strictEqual(
+              resNoPromise,
+              undefined,
+              'No promise is returned'
+            );
+          });
+        });
+
+        it('should attach response hook data to resulting spans for query returning a Promise', async () => {
+          const span = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async () => {
+              const result = await pool.query(query);
+              runCallbackTest(
+                span,
+                pgPoolattributes,
+                events,
+                unsetStatus,
+                2,
+                0
+              );
+              runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
+              assert.ok(result, 'pool.query() returns a promise');
+            }
+          );
+        });
+      });
+
+      describe('AND invalid responseHook', () => {
+        const pgPoolattributes = {
+          ...DEFAULT_PGPOOL_ATTRIBUTES,
+        };
+        const pgAttributes = {
+          ...DEFAULT_PG_ATTRIBUTES,
+          [SemanticAttributes.DB_STATEMENT]: query,
+        };
+
+        beforeEach(async () => {
+          create({
+            enhancedDatabaseReporting: true,
+            responseHook: (
+              span: Span,
+              responseInfo: PgResponseHookInformation
+            ) => {
+              throw 'some kind of failure!';
+            },
+          });
+        });
+
+        it('should not do any harm when throwing an exception', done => {
+          const parentSpan = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+          context.with(trace.setSpan(context.active(), parentSpan), () => {
+            const resNoPromise = pool.query(query, (err, result) => {
+              if (err) {
+                return done(err);
+              }
+              assert.ok(result);
+
+              runCallbackTest(
+                parentSpan,
+                pgPoolattributes,
+                events,
+                unsetStatus,
+                2,
+                0
+              );
+              runCallbackTest(
+                parentSpan,
+                pgAttributes,
+                events,
+                unsetStatus,
+                2,
+                1
+              );
+              done();
+            });
+            assert.strictEqual(
+              resNoPromise,
+              undefined,
+              'No promise is returned'
+            );
+          });
+        });
       });
     });
   });

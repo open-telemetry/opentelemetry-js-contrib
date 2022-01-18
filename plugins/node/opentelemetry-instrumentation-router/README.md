@@ -8,21 +8,25 @@
 This module provides automatic instrumentation for [`router`](https://github.com/pillarjs/router) and allows the user to automatically collect trace data and export them to their backend of choice.
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Installation
 
 ```bash
 npm install --save @opentelemetry/instrumentation-router
 ```
+
 ### Supported Versions
- - `>=1.0.0`
+
+- `>=1.0.0`
 
 ## Usage
 
 ```js
-const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/tracing');
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const RouterInstrumentation = require('@opentelemetry/instrumentation-router');
 

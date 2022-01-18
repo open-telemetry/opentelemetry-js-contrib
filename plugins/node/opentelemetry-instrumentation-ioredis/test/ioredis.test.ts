@@ -22,15 +22,16 @@ import {
   trace,
   Span,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
+import * as sinon from 'sinon';
 import * as ioredisTypes from 'ioredis';
 import { IORedisInstrumentation } from '../src';
 import {
@@ -221,6 +222,7 @@ describe('ioredis', () => {
     afterEach(async () => {
       await client.del(hashKeyName);
       await client.del(testKeyName);
+      await client.del('response-hook-test');
       memoryExporter.reset();
     });
 
@@ -330,22 +332,16 @@ describe('ioredis', () => {
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: 'scan 0',
+          [SemanticAttributes.DB_STATEMENT]: 'scan 0 MATCH test-* COUNT 1000',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
-          const stream = client.scanStream();
+          const stream = client.scanStream({
+            count: 1000,
+            match: 'test-*',
+          });
           stream
-            .on('data', resultKeys => {
-              // `resultKeys` is an array of strings representing key names.
-              // Note that resultKeys may contain 0 keys, and that it will sometimes
-              // contain duplicates due to SCAN's implementation in Redis.
-              for (let i = 0; i < resultKeys.length; i++) {
-                console.log(resultKeys[i]);
-              }
-            })
             .on('end', () => {
-              console.log('all keys have been visited');
               assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
@@ -364,6 +360,9 @@ describe('ioredis', () => {
             .on('error', err => {
               done(err);
             });
+
+          // Put stream into flowing mode so it will invoke 'end' listener
+          stream.resume();
         });
       });
 
@@ -387,7 +386,7 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans.length, 10);
             span.end();
             assert.strictEqual(endedSpans.length, 11);
-            const spanNames = [
+            const expectedSpanNames = [
               'connect',
               'info',
               'connect',
@@ -400,11 +399,12 @@ describe('ioredis', () => {
               'quit',
               'test span',
             ];
-            let i = 0;
-            while (i < 11) {
-              assert.strictEqual(endedSpans[i].name, spanNames[i]);
-              i++;
-            }
+
+            const actualSpanNames = endedSpans.map(s => s.name);
+            assert.deepStrictEqual(
+              actualSpanNames.sort(),
+              expectedSpanNames.sort()
+            );
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
@@ -421,74 +421,6 @@ describe('ioredis', () => {
           } catch (error) {
             assert.ifError(error);
           }
-        });
-      });
-
-      it('should create a child span for lua', done => {
-        const attributes = {
-          ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
-        };
-
-        const span = provider.getTracer('ioredis-test').startSpan('test span');
-        context.with(trace.setSpan(context.active(), span), () => {
-          // This will define a command echo:
-          client.defineCommand('echo', {
-            numberOfKeys: 1,
-            lua: 'return {KEYS[1],ARGV[1]}',
-          });
-          // Now `echo` can be used just like any other ordinary command,
-          // and ioredis will try to use `EVALSHA` internally when possible for better performance.
-          client.echo(testKeyName, (err, result) => {
-            assert.ifError(err);
-
-            span.end();
-            const endedSpans = memoryExporter.getFinishedSpans();
-            const evalshaSpan = endedSpans[0];
-            // the script may be already cached on server therefore we get either 2 or 3 spans
-            if (endedSpans.length === 3) {
-              assert.strictEqual(endedSpans[2].name, 'test span');
-              assert.strictEqual(endedSpans[1].name, 'eval');
-              assert.strictEqual(endedSpans[0].name, 'evalsha');
-              // in this case, server returns NOSCRIPT error for evalsha,
-              // telling the client to use EVAL instead
-              sanitizeEventForAssertion(evalshaSpan);
-              testUtils.assertSpan(
-                evalshaSpan,
-                SpanKind.CLIENT,
-                attributes,
-                [
-                  {
-                    attributes: {
-                      [SemanticAttributes.EXCEPTION_MESSAGE]:
-                        'NOSCRIPT No matching script. Please use EVAL.',
-                      [SemanticAttributes.EXCEPTION_STACKTRACE]:
-                        predictableStackTrace,
-                      [SemanticAttributes.EXCEPTION_TYPE]: 'ReplyError',
-                    },
-                    name: 'exception',
-                    time: [0, 0],
-                  },
-                ],
-                {
-                  code: SpanStatusCode.ERROR,
-                }
-              );
-            } else {
-              assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[1].name, 'test span');
-              assert.strictEqual(endedSpans[0].name, 'evalsha');
-              testUtils.assertSpan(
-                evalshaSpan,
-                SpanKind.CLIENT,
-                attributes,
-                [],
-                unsetStatus
-              );
-            }
-            testUtils.assertPropagation(evalshaSpan, span);
-            done();
-          });
         });
       });
 
@@ -619,12 +551,87 @@ describe('ioredis', () => {
           }
         });
       });
+
+      it('should create a child span for lua', done => {
+        const config: IORedisInstrumentationConfig = {
+          requireParentSpan: false,
+        };
+        instrumentation.setConfig(config);
+
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
+        };
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          // This will define a command echo:
+          client.defineCommand('echo', {
+            numberOfKeys: 1,
+            lua: 'return {KEYS[1],ARGV[1]}',
+          });
+          // Now `echo` can be used just like any other ordinary command,
+          // and ioredis will try to use `EVALSHA` internally when possible for better performance.
+          client.echo(testKeyName, (err, result) => {
+            assert.ifError(err);
+
+            span.end();
+            const endedSpans = memoryExporter.getFinishedSpans();
+            const evalshaSpan = endedSpans[0];
+            // the script may be already cached on server therefore we get either 2 or 3 spans
+            if (endedSpans.length === 3) {
+              assert.strictEqual(endedSpans[2].name, 'test span');
+              assert.strictEqual(endedSpans[1].name, 'eval');
+              assert.strictEqual(endedSpans[0].name, 'evalsha');
+              // in this case, server returns NOSCRIPT error for evalsha,
+              // telling the client to use EVAL instead
+              sanitizeEventForAssertion(evalshaSpan);
+              testUtils.assertSpan(
+                evalshaSpan,
+                SpanKind.CLIENT,
+                attributes,
+                [
+                  {
+                    attributes: {
+                      [SemanticAttributes.EXCEPTION_MESSAGE]:
+                        'NOSCRIPT No matching script. Please use EVAL.',
+                      [SemanticAttributes.EXCEPTION_STACKTRACE]:
+                        predictableStackTrace,
+                      [SemanticAttributes.EXCEPTION_TYPE]: 'ReplyError',
+                    },
+                    name: 'exception',
+                    time: [0, 0],
+                  },
+                ],
+                {
+                  code: SpanStatusCode.ERROR,
+                }
+              );
+            } else {
+              assert.strictEqual(endedSpans.length, 2);
+              assert.strictEqual(endedSpans[1].name, 'test span');
+              assert.strictEqual(endedSpans[0].name, 'evalsha');
+              testUtils.assertSpan(
+                evalshaSpan,
+                SpanKind.CLIENT,
+                attributes,
+                [],
+                unsetStatus
+              );
+            }
+            testUtils.assertPropagation(evalshaSpan, span);
+            done();
+          });
+        });
+      });
     });
 
     describe('Instrumenting without parent span', () => {
       before(() => {
-        instrumentation.disable();
-        instrumentation.enable();
+        const config: IORedisInstrumentationConfig = {
+          requireParentSpan: true,
+        };
+        instrumentation.setConfig(config);
       });
       it('should not create child span', async () => {
         await client.set(testKeyName, 'data');
@@ -636,13 +643,10 @@ describe('ioredis', () => {
 
     describe('Instrumentation with requireParentSpan', () => {
       it('should instrument with requireParentSpan equal false', async () => {
-        instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: false,
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
 
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
@@ -664,13 +668,10 @@ describe('ioredis', () => {
       });
 
       it('should not instrument with requireParentSpan equal true', async () => {
-        instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: true,
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
 
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
@@ -684,13 +685,10 @@ describe('ioredis', () => {
       const dbStatementSerializer: DbStatementSerializer = (cmdName, cmdArgs) =>
         `FOOBAR_${cmdName}: ${cmdArgs[0]}`;
       before(() => {
-        instrumentation.disable();
         const config: IORedisInstrumentationConfig = {
           dbStatementSerializer,
         };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        instrumentation.setConfig(config);
       });
 
       IOREDIS_CALLBACK_OPERATIONS.forEach(command => {
@@ -770,30 +768,25 @@ describe('ioredis', () => {
     });
 
     describe('Instrumenting with a custom hooks', () => {
-      it('should call requestHook when set in config', async () => {
+      before(() => {
         instrumentation.disable();
-        const config: IORedisInstrumentationConfig = {
-          requestHook: (
-            span: Span,
-            requestInfo: IORedisRequestHookInformation
-          ) => {
-            assert.ok(
-              /\d{1,4}\.\d{1,4}\.\d{1,5}.*/.test(
-                requestInfo.moduleVersion as string
-              )
-            );
-            assert.strictEqual(requestInfo.cmdName, 'incr');
-            assert.deepStrictEqual(requestInfo.cmdArgs, ['request-hook-test']);
+        instrumentation = new IORedisInstrumentation();
+        instrumentation.setTracerProvider(provider);
+        require('ioredis');
+      });
 
+      it('should call requestHook when set in config', async () => {
+        const requestHook = sinon.spy(
+          (span: Span, requestInfo: IORedisRequestHookInformation) => {
             span.setAttribute(
               'attribute key from request hook',
               'custom value from request hook'
             );
-          },
-        };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          requestHook,
+        });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -805,25 +798,31 @@ describe('ioredis', () => {
             'custom value from request hook'
           );
         });
+
+        sinon.assert.calledOnce(requestHook);
+        const [, requestInfo] = requestHook.firstCall.args;
+        assert.ok(
+          /\d{1,4}\.\d{1,4}\.\d{1,5}.*/.test(
+            requestInfo.moduleVersion as string
+          )
+        );
+        assert.strictEqual(requestInfo.cmdName, 'incr');
+        assert.deepStrictEqual(requestInfo.cmdArgs, ['request-hook-test']);
       });
 
       it('should ignore requestHook which throws exception', async () => {
-        instrumentation.disable();
-        const config: IORedisInstrumentationConfig = {
-          requestHook: (
-            span: Span,
-            _requestInfo: IORedisRequestHookInformation
-          ) => {
+        const requestHook = sinon.spy(
+          (span: Span, _requestInfo: IORedisRequestHookInformation) => {
             span.setAttribute(
               'attribute key BEFORE exception',
               'this attribute is added to span BEFORE exception is thrown thus we can expect it'
             );
             throw Error('error thrown in requestHook');
-          },
-        };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          requestHook,
+        });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -835,37 +834,31 @@ describe('ioredis', () => {
             'this attribute is added to span BEFORE exception is thrown thus we can expect it'
           );
         });
+
+        sinon.assert.threw(requestHook);
       });
 
       it('should call responseHook when set in config', async () => {
-        instrumentation.disable();
-        const config: IORedisInstrumentationConfig = {
-          responseHook: (
+        const responseHook = sinon.spy(
+          (
             span: Span,
             cmdName: string,
             _cmdArgs: Array<string | Buffer | number>,
             response: unknown
           ) => {
-            try {
-              assert.strictEqual(cmdName, 'incr');
-              // the command is 'incr' on a key which does not exist, thus it increase 0 by 1 and respond 1
-              assert.strictEqual(response, 1);
-              span.setAttribute(
-                'attribute key from hook',
-                'custom value from hook'
-              );
-            } catch (err) {
-              console.log(err);
-            }
-          },
-        };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+            span.setAttribute(
+              'attribute key from hook',
+              'custom value from hook'
+            );
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          responseHook,
+        });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
-          await client.incr('response-hook-test');
+          await client.set('response-hook-test', 'test-value');
           const endedSpans = memoryExporter.getFinishedSpans();
           assert.strictEqual(endedSpans.length, 1);
           assert.strictEqual(
@@ -873,23 +866,32 @@ describe('ioredis', () => {
             'custom value from hook'
           );
         });
+
+        sinon.assert.calledOnce(responseHook);
+        const [, cmdName, , response] = responseHook.firstCall.args as [
+          Span,
+          string,
+          unknown,
+          Buffer
+        ];
+        assert.strictEqual(cmdName, 'set');
+        assert.strictEqual(response.toString(), 'OK');
       });
 
       it('should ignore responseHook which throws exception', async () => {
-        instrumentation.disable();
-        const config: IORedisInstrumentationConfig = {
-          responseHook: (
+        const responseHook = sinon.spy(
+          (
             _span: Span,
             _cmdName: string,
             _cmdArgs: Array<string | Buffer | number>,
             _response: unknown
           ) => {
             throw Error('error thrown in responseHook');
-          },
-        };
-        instrumentation = new IORedisInstrumentation(config);
-        instrumentation.setTracerProvider(provider);
-        require('ioredis');
+          }
+        );
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          responseHook,
+        });
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -898,6 +900,50 @@ describe('ioredis', () => {
 
           // hook throw exception, but span should not be affected
           assert.strictEqual(endedSpans.length, 1);
+        });
+
+        sinon.assert.threw(responseHook);
+      });
+    });
+
+    describe('setConfig - custom dbStatementSerializer config', () => {
+      const dbStatementSerializer = (
+        cmdName: string,
+        cmdArgs: Array<string | Buffer | number>
+      ) => {
+        return Array.isArray(cmdArgs) && cmdArgs.length
+          ? `FooBar_${cmdName} ${cmdArgs.join(',')}`
+          : cmdName;
+      };
+      const config: IORedisInstrumentationConfig = {
+        dbStatementSerializer: dbStatementSerializer,
+      };
+      before(() => {
+        instrumentation.setConfig(config);
+      });
+
+      IOREDIS_CALLBACK_OPERATIONS.forEach(operation => {
+        it(`should properly execute the db statement serializer for operation ${operation.description}`, done => {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            operation.method((err, _) => {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(endedSpans.length, 2);
+              const expectedStatement = dbStatementSerializer(
+                operation.name,
+                operation.args
+              );
+              assert.strictEqual(
+                endedSpans[0].attributes[SemanticAttributes.DB_STATEMENT],
+                expectedStatement
+              );
+              done();
+            });
+          });
         });
       });
     });

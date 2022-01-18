@@ -1,7 +1,7 @@
 {
   "name": "ioredis-example",
   "private": true,
-  "version": "0.15.0",
+  "version": "0.23.0",
   "description": "Example of HTTP integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -28,12 +28,12 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.20.0",
-    "@opentelemetry/exporter-jaeger": "^0.20.0",
-    "@opentelemetry/instrumentation": "^0.20.0",
-    "@opentelemetry/instrumentation-ioredis": "^0.15.0",
-    "@opentelemetry/node": "^0.20.0",
-    "@opentelemetry/tracing": "^0.20.0",
+    "@opentelemetry/api": "^1.0.2",
+    "@opentelemetry/exporter-jaeger": "^0.25.0",
+    "@opentelemetry/instrumentation": "^0.25.0",
+    "@opentelemetry/instrumentation-ioredis": "^0.23.0",
+    "@opentelemetry/sdk-trace-node": "^0.25.0",
+    "@opentelemetry/sdk-trace-base": "^0.25.0",
     "ioredis": "^4.22.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"

@@ -36,8 +36,8 @@ output the contents of `grpc.Metadata` which allows us to see the values of
 ## Installation
 
 ```sh
-$ # from this directory
-$ npm install
+# from this directory
+npm install
 ```
 
 ## Running the Client and Server combinations
@@ -50,15 +50,15 @@ Propagation through `traceparent` header.
 - Run the server
 
    ```sh
-   $ # from this directory
-   $ npm run server:otel:defprop
+   # from this directory
+   npm run server:otel:defprop
    ```
 
- - Run the client
+- Run the client
 
    ```sh
-   $ # from this directory
-   $ npm run client:otel:defprop
+   # from this directory
+   npm run client:otel:defprop
    ```
 
 ### Combination 2
@@ -69,15 +69,15 @@ on client. Propagation through `grpc-trace-bin` header.
 - Run the server
 
    ```sh
-   $ # from this directory
-   $ npm run server:otel:binprop
+   # from this directory
+   npm run server:otel:binprop
    ```
 
- - Run the client
+- Run the client
 
    ```sh
-   $ # from this directory
-   $ npm run client:census
+   # from this directory
+   npm run client:census
    ```
 
 See [combination2](./combination2.md) for example output
@@ -89,15 +89,15 @@ OpenCensus used on both client and server. Propagation through `grpc-trace-bin` 
 - Run the server
 
    ```sh
-   $ # from this directory
-   $ npm run server:census
+   # from this directory
+   npm run server:census
    ```
 
- - Run the client
+- Run the client
 
    ```sh
-   $ # from this directory
-   $ npm run client:census
+   # from this directory
+   npm run client:census
    ```
 
 ### Combination 4
@@ -108,20 +108,21 @@ client. Propagation through `grpc-trace-bin` header.
 - Run the server
 
    ```sh
-   $ # from this directory
-   $ npm run server:census
+   # from this directory
+   npm run server:census
    ```
 
- - Run the client
+- Run the client
 
    ```sh
-   $ # from this directory
-   $ npm run client:otel:binprop
+   # from this directory
+   npm run client:otel:binprop
    ```
 
 See [combination4](./combination4.md) for example output
 
 ## Useful links
+
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node-sdk>
 

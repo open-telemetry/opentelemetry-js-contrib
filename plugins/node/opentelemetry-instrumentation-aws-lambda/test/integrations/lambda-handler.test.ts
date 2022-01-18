@@ -28,24 +28,27 @@ import {
   BatchSpanProcessor,
   InMemorySpanExporter,
   ReadableSpan,
-} from '@opentelemetry/tracing';
-import { NodeTracerProvider } from '@opentelemetry/node';
+} from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
   SemanticAttributes,
-  ResourceAttributes,
+  SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
 import {
+  Context as OtelContext,
   context,
+  propagation,
   trace,
   SpanContext,
   SpanKind,
   SpanStatusCode,
   TextMapPropagator,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
-import { HttpTraceContextPropagator } from '@opentelemetry/core';
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -141,7 +144,7 @@ describe('lambda handler', () => {
   };
   const sampledHttpHeader = serializeSpanContext(
     sampledHttpSpanContext,
-    new HttpTraceContextPropagator()
+    new W3CTraceContextPropagator()
   );
 
   const unsampledAwsSpanContext: SpanContext = {
@@ -163,7 +166,18 @@ describe('lambda handler', () => {
   };
   const unsampledHttpHeader = serializeSpanContext(
     unsampledHttpSpanContext,
-    new HttpTraceContextPropagator()
+    new W3CTraceContextPropagator()
+  );
+
+  const sampledGenericSpanContext: SpanContext = {
+    traceId: '8a3c60f7d188f8fa79d48a391a778faa',
+    spanId: '0000000000000460',
+    traceFlags: 1,
+    isRemote: true,
+  };
+  const sampledGenericSpan = serializeSpanContext(
+    sampledGenericSpanContext,
+    new W3CTraceContextPropagator()
   );
 
   beforeEach(() => {
@@ -526,6 +540,122 @@ describe('lambda handler', () => {
       // Parent unsampled so no spans exported.
       assert.strictEqual(spans.length, 0);
     });
+
+    it('ignores sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsContextPropagation: true,
+      });
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.notDeepStrictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('takes sampled http context over sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsContextPropagation: true,
+      });
+
+      const proxyEvent = {
+        headers: {
+          traceparent: sampledHttpHeader,
+        },
+      };
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        proxyEvent,
+        ctx
+      );
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(
+        span.spanContext().traceId,
+        sampledHttpSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, sampledHttpSpanContext.spanId);
+    });
+
+    it('takes sampled custom context over sampled lambda context if "eventContextExtractor" is defined', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      const customExtractor = (event: any): OtelContext => {
+        return propagation.extract(context.active(), event.contextCarrier);
+      };
+
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsContextPropagation: true,
+        eventContextExtractor: customExtractor,
+      });
+
+      const otherEvent = {
+        contextCarrier: {
+          traceparent: sampledGenericSpan,
+        },
+      };
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        otherEvent,
+        ctx
+      );
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(
+        span.spanContext().traceId,
+        sampledGenericSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
+    });
+
+    it('creates trace from ROOT_CONTEXT when "disableAwsContextPropagation" is true, eventContextExtractor is provided, and no custom context is found', async () => {
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      const customExtractor = (event: any): OtelContext => {
+        if (!event.contextCarrier) {
+          return ROOT_CONTEXT;
+        }
+
+        return propagation.extract(context.active(), event.contextCarrier);
+      };
+
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsContextPropagation: true,
+        eventContextExtractor: customExtractor,
+      });
+
+      const testSpan = provider.getTracer('test').startSpan('random_span');
+      await context.with(
+        trace.setSpan(context.active(), testSpan),
+        async () => {
+          await lambdaRequire('lambda-test/async').handler(
+            { message: 'event with no context' },
+            ctx
+          );
+        }
+      );
+
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
   });
 
   describe('hooks', () => {
@@ -534,7 +664,7 @@ describe('lambda handler', () => {
         initializeHandler('lambda-test/async.handler', {
           requestHook: (span, { context }) => {
             span.setAttribute(
-              ResourceAttributes.FAAS_NAME,
+              SemanticResourceAttributes.FAAS_NAME,
               context.functionName
             );
           },
@@ -545,7 +675,7 @@ describe('lambda handler', () => {
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
         assert.strictEqual(
-          span.attributes[ResourceAttributes.FAAS_NAME],
+          span.attributes[SemanticResourceAttributes.FAAS_NAME],
           ctx.functionName
         );
         assertSpanSuccess(span);

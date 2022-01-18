@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { context, trace } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { context, SpanStatusCode, trace } from '@opentelemetry/api';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { getPlugin } from './plugin';
 const plugin = getPlugin();
@@ -370,6 +370,42 @@ describe('Hapi Instrumentation - Server.Ext Tests', () => {
       });
       assert.strictEqual(res.statusCode, 200);
       assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 0);
+    });
+
+    it('should end span and record the error if an error is thrown in ext', async () => {
+      const errorMessage = 'error';
+      const rootSpan = tracer.startSpan('rootSpan');
+      const extension: hapi.ServerExtEventsRequestObject = {
+        type: 'onRequest',
+        method: async (request, h, err) => {
+          throw new Error(errorMessage);
+        },
+      };
+      server.ext(extension);
+      await server.start();
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/test',
+          });
+          assert.strictEqual(res.statusCode, 500);
+
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          const extHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'ext - onRequest');
+
+          assert.notStrictEqual(extHandlerSpan, undefined);
+          assert.strictEqual(extHandlerSpan?.events[0].name, 'exception');
+          assert.strictEqual(extHandlerSpan.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(extHandlerSpan.status.message, errorMessage);
+        }
+      );
     });
   });
 });

@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-import {
-  isWrapped,
-  InstrumentationBase,
-  InstrumentationConfig,
-} from '@opentelemetry/instrumentation';
+import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import { getElementXPath } from '@opentelemetry/web';
+import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
 import {
   AsyncTask,
+  EventName,
   RunTaskFunction,
+  ShouldPreventSpanCreation,
   SpanData,
+  UserInteractionInstrumentationConfig,
   WindowWithZone,
   ZoneTypeWithPrototype,
 } from './types';
@@ -35,6 +34,11 @@ import { VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
+const DEFAULT_EVENT_NAMES: EventName[] = ['click'];
+
+function defaultShouldPreventSpanCreation() {
+  return false;
+}
 
 /**
  * This class represents a UserInteraction plugin for auto instrumentation.
@@ -46,7 +50,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   readonly version = VERSION;
   moduleName = this.component;
   private _spansData = new WeakMap<api.Span, SpanData>();
-  private _zonePatched = false;
+  private _zonePatched?: boolean;
   // for addEventListener/removeEventListener state
   private _wrappedListeners = new WeakMap<
     Function | EventListenerObject,
@@ -57,9 +61,16 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     Event,
     api.Span
   >();
+  private _eventNames: Set<EventName>;
+  private _shouldPreventSpanCreation: ShouldPreventSpanCreation;
 
-  constructor(config?: InstrumentationConfig) {
+  constructor(config?: UserInteractionInstrumentationConfig) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
+    this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES);
+    this._shouldPreventSpanCreation =
+      typeof config?.shouldPreventSpanCreation === 'function'
+        ? config.shouldPreventSpanCreation
+        : defaultShouldPreventSpanCreation;
   }
 
   init() {}
@@ -89,26 +100,30 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   /**
    * Controls whether or not to create a span, based on the event type.
    */
-  protected _allowEventType(eventType: string): boolean {
-    return eventType === 'click';
+  protected _allowEventName(eventName: EventName): boolean {
+    return this._eventNames.has(eventName);
   }
+
   /**
    * Creates a new span
    * @param element
    * @param eventName
    */
   private _createSpan(
-    element: HTMLElement,
-    eventName: string,
+    element: EventTarget | null | undefined,
+    eventName: EventName,
     parentSpan?: api.Span | undefined
   ): api.Span | undefined {
+    if (!(element instanceof HTMLElement)) {
+      return undefined;
+    }
     if (!element.getAttribute) {
       return undefined;
     }
     if (element.hasAttribute('disabled')) {
       return undefined;
     }
-    if (!this._allowEventType(eventName)) {
+    if (!this._allowEventName(eventName)) {
       return undefined;
     }
     const xpath = getElementXPath(element, true);
@@ -129,6 +144,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
           ? api.trace.setSpan(api.context.active(), parentSpan)
           : undefined
       );
+
+      if (this._shouldPreventSpanCreation(eventName, element, span) === true) {
+        return undefined;
+      }
 
       this._spansData.set(span, {
         taskCount: 0,
@@ -254,20 +273,25 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * auto instrument the click events
    * This is done when zone is not available
    */
-  private _patchElement() {
+  private _patchAddEventListener() {
     const plugin = this;
-    return (original: Function) => {
+    return (original: EventTarget['addEventListener']) => {
       return function addEventListenerPatched(
         this: HTMLElement,
-        type: any,
-        listener: any,
-        useCapture: any
+        type: keyof HTMLElementEventMap,
+        listener: EventListenerOrEventListenerObject | null,
+        useCapture?: boolean | AddEventListenerOptions
       ) {
-        const once = useCapture && useCapture.once;
-        const patchedListener = (...args: any[]) => {
-          const target = this;
+        // Forward calls with listener = null
+        if (!listener) {
+          return original.call(this, type, listener, useCapture);
+        }
+
+        const once = typeof useCapture === 'object' && useCapture.once;
+        const patchedListener = function (this: HTMLElement, ...args: any[]) {
           let parentSpan: api.Span | undefined;
           const event: Event | undefined = args[0];
+          const target = event?.target;
           if (event) {
             parentSpan = plugin._eventsSpanMap.get(event);
           }
@@ -282,14 +306,14 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             return api.context.with(
               api.trace.setSpan(api.context.active(), span),
               () => {
-                const result = plugin._invokeListener(listener, target, args);
+                const result = plugin._invokeListener(listener, this, args);
                 // no zone so end span immediately
                 span.end();
                 return result;
               }
             );
           } else {
-            return plugin._invokeListener(listener, target, args);
+            return plugin._invokeListener(listener, this, args);
           }
         };
         if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
@@ -325,6 +349,24 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         }
       };
     };
+  }
+
+  /**
+   * Most browser provide event listener api via EventTarget in prototype chain.
+   * Exception to this is IE 11 which has it on the prototypes closest to EventTarget:
+   *
+   * * - has addEventListener in IE
+   * ** - has addEventListener in all other browsers
+   * ! - missing in IE
+   *
+   * HTMLElement -> Element -> Node * -> EventTarget **! -> Object
+   * Document -> Node * -> EventTarget **! -> Object
+   * Window * -> WindowProperties ! -> EventTarget **! -> Object
+   */
+  private _getPatchableEventTargets(): EventTarget[] {
+    return window.EventTarget
+      ? [EventTarget.prototype]
+      : [Node.prototype, Window.prototype];
   }
 
   /**
@@ -439,7 +481,11 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         applyThis?: any,
         applyArgs?: any
       ): Zone {
-        const target: HTMLElement | undefined = task.target;
+        const event =
+          Array.isArray(applyArgs) && applyArgs[0] instanceof Event
+            ? applyArgs[0]
+            : undefined;
+        const target = event?.target;
         let span: api.Span | undefined;
         const activeZone = this;
         if (target) {
@@ -523,7 +569,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   /**
    * implements enable function
    */
-  enable() {
+  override enable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
     api.diag.debug(
       'applying patch to',
@@ -564,26 +610,27 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       );
     } else {
       this._zonePatched = false;
-      if (isWrapped(HTMLElement.prototype.addEventListener)) {
-        this._unwrap(HTMLElement.prototype, 'addEventListener');
-        api.diag.debug('removing previous patch from method addEventListener');
-      }
-      if (isWrapped(HTMLElement.prototype.removeEventListener)) {
-        this._unwrap(HTMLElement.prototype, 'removeEventListener');
-        api.diag.debug(
-          'removing previous patch from method removeEventListener'
+      const targets = this._getPatchableEventTargets();
+      targets.forEach(target => {
+        if (isWrapped(target.addEventListener)) {
+          this._unwrap(target, 'addEventListener');
+          api.diag.debug(
+            'removing previous patch from method addEventListener'
+          );
+        }
+        if (isWrapped(target.removeEventListener)) {
+          this._unwrap(target, 'removeEventListener');
+          api.diag.debug(
+            'removing previous patch from method removeEventListener'
+          );
+        }
+        this._wrap(target, 'addEventListener', this._patchAddEventListener());
+        this._wrap(
+          target,
+          'removeEventListener',
+          this._patchRemoveEventListener()
         );
-      }
-      this._wrap(
-        HTMLElement.prototype,
-        'addEventListener',
-        this._patchElement()
-      );
-      this._wrap(
-        HTMLElement.prototype,
-        'removeEventListener',
-        this._patchRemoveEventListener()
-      );
+      });
     }
 
     this._patchHistoryApi();
@@ -592,7 +639,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   /**
    * implements unpatch function
    */
-  disable() {
+  override disable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
     api.diag.debug(
       'removing patch from',
@@ -612,12 +659,15 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
       }
     } else {
-      if (isWrapped(HTMLElement.prototype.addEventListener)) {
-        this._unwrap(HTMLElement.prototype, 'addEventListener');
-      }
-      if (isWrapped(HTMLElement.prototype.removeEventListener)) {
-        this._unwrap(HTMLElement.prototype, 'removeEventListener');
-      }
+      const targets = this._getPatchableEventTargets();
+      targets.forEach(target => {
+        if (isWrapped(target.addEventListener)) {
+          this._unwrap(target, 'addEventListener');
+        }
+        if (isWrapped(target.removeEventListener)) {
+          this._unwrap(target, 'removeEventListener');
+        }
+      });
     }
     this._unpatchHistoryApi();
   }

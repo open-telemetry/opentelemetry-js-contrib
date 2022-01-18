@@ -28,14 +28,11 @@ import {
 } from '@opentelemetry/instrumentation';
 import { Pino, PinoInstrumentationConfig } from './types';
 import { VERSION } from './version';
-import type * as pino from 'pino';
+import type { pino } from 'pino';
 
-const pinoVersions = ['>=5.14.0 <7'];
+const pinoVersions = ['>=5.14.0 <8'];
 
 export class PinoInstrumentation extends InstrumentationBase {
-  // TODO: https://github.com/open-telemetry/opentelemetry-js/issues/2131
-  _isEnabled: boolean = false;
-
   constructor(config: PinoInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-pino', VERSION, config);
   }
@@ -74,30 +71,17 @@ export class PinoInstrumentation extends InstrumentationBase {
           }, pinoModule);
 
           return patchedPino;
-        },
-        () => {
-          this._isEnabled = false;
         }
       ),
     ];
   }
 
-  getConfig(): PinoInstrumentationConfig {
+  override getConfig(): PinoInstrumentationConfig {
     return this._config;
   }
 
-  setConfig(config: PinoInstrumentationConfig) {
+  override setConfig(config: PinoInstrumentationConfig) {
     this._config = config;
-  }
-
-  enable() {
-    super.enable();
-    this._isEnabled = true;
-  }
-
-  disable() {
-    super.disable();
-    this._isEnabled = false;
   }
 
   private _callHook(span: Span, record: Record<string, string>) {
@@ -121,7 +105,7 @@ export class PinoInstrumentation extends InstrumentationBase {
   private _getMixinFunction() {
     const instrumentation = this;
     return function otelMixin() {
-      if (!instrumentation._isEnabled) {
+      if (!instrumentation.isEnabled()) {
         return {};
       }
 

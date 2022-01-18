@@ -19,15 +19,19 @@ import { trace } from '@opentelemetry/api';
 import { isWrapped } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import * as tracing from '@opentelemetry/tracing';
-import { WebTracerProvider } from '@opentelemetry/web';
+import * as tracing from '@opentelemetry/sdk-trace-base';
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { UserInteractionInstrumentation } from '../src';
+import { UserInteractionInstrumentationConfig } from '../src/types';
 import {
   assertClickSpan,
+  assertInteractionSpan,
+  createButton,
   DummySpanExporter,
-  fakeInteraction,
+  fakeClickInteraction,
+  fakeEventInteraction,
   getData,
 } from './helper.test';
 
@@ -42,6 +46,32 @@ describe('UserInteractionInstrumentation', () => {
     let dummySpanExporter: DummySpanExporter;
     let exportSpy: sinon.SinonSpy;
     let requests: sinon.SinonFakeXMLHttpRequest[] = [];
+
+    const registerTestInstrumentations = (
+      config?: UserInteractionInstrumentationConfig
+    ) => {
+      userInteractionInstrumentation?.disable();
+
+      userInteractionInstrumentation = new UserInteractionInstrumentation({
+        enabled: false,
+        ...config,
+      });
+
+      sandbox
+        .stub(userInteractionInstrumentation, 'getZoneWithPrototype')
+        .callsFake(() => {
+          return false as any;
+        });
+
+      registerInstrumentations({
+        tracerProvider: webTracerProvider,
+        instrumentations: [
+          userInteractionInstrumentation,
+          new XMLHttpRequestInstrumentation(),
+        ],
+      });
+    };
+
     beforeEach(() => {
       sandbox = sinon.createSandbox();
       const fakeXhr = sandbox.useFakeXMLHttpRequest();
@@ -58,16 +88,6 @@ describe('UserInteractionInstrumentation', () => {
 
       sandbox.useFakeTimers();
 
-      userInteractionInstrumentation = new UserInteractionInstrumentation({
-        enabled: false,
-      });
-
-      sandbox
-        .stub(userInteractionInstrumentation, 'getZoneWithPrototype')
-        .callsFake(() => {
-          return false as any;
-        });
-
       webTracerProvider = new WebTracerProvider();
 
       dummySpanExporter = new DummySpanExporter();
@@ -77,22 +97,19 @@ describe('UserInteractionInstrumentation', () => {
       );
       webTracerProvider.register();
 
-      registerInstrumentations({
-        instrumentations: [
-          userInteractionInstrumentation,
-          new XMLHttpRequestInstrumentation(),
-        ],
-      });
+      registerTestInstrumentations();
 
       // this is needed as window is treated as context and karma is adding
       // context which is then detected as spanContext
       (window as { context?: {} }).context = undefined;
     });
+
     afterEach(() => {
       requests = [];
       sandbox.restore();
       exportSpy.restore();
       trace.disable();
+      userInteractionInstrumentation.disable();
     });
 
     it('should not break removeEventListener', () => {
@@ -186,14 +203,14 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle task without async operation', () => {
-      fakeInteraction();
+      fakeClickInteraction();
       assert.equal(exportSpy.args.length, 1, 'should export one span');
       const spanClick = exportSpy.args[0][0][0];
       assertClickSpan(spanClick);
     });
 
     it('should handle timeout', done => {
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         originalSetTimeout(() => {
           const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
 
@@ -215,7 +232,7 @@ describe('UserInteractionInstrumentation', () => {
           callback();
         },
       };
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         originalSetTimeout(() => {
           assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
           done();
@@ -238,7 +255,7 @@ describe('UserInteractionInstrumentation', () => {
           return name === 'disabled' ? true : false;
         },
       };
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         originalSetTimeout(() => {
           assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
           done();
@@ -252,7 +269,7 @@ describe('UserInteractionInstrumentation', () => {
         throw 'foo';
       };
 
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         originalSetTimeout(() => {
           assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
           done();
@@ -262,7 +279,7 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle task with navigation change', done => {
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         history.pushState(
           { test: 'testing' },
           '',
@@ -299,7 +316,7 @@ describe('UserInteractionInstrumentation', () => {
     });
 
     it('should handle task with timeout and async operation', done => {
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(1000);
         }).then(() => {
@@ -337,10 +354,15 @@ describe('UserInteractionInstrumentation', () => {
         callCount++;
       };
       document.body.addEventListener('click', listener1);
-      document.body.firstElementChild?.addEventListener('click', listener2);
-      document.body.firstElementChild?.dispatchEvent(
-        new MouseEvent('click', { bubbles: true })
-      );
+      try {
+        document.body.firstElementChild?.addEventListener('click', listener2);
+        document.body.firstElementChild?.dispatchEvent(
+          new MouseEvent('click', { bubbles: true })
+        );
+      } finally {
+        // remove added listener so we don't pollute other tests
+        document.body.removeEventListener('click', listener1);
+      }
       assert.strictEqual(callCount, 2);
       assert.strictEqual(exportSpy.args.length, 2);
       assert.strictEqual(
@@ -360,17 +382,17 @@ describe('UserInteractionInstrumentation', () => {
       btn2.setAttribute('id', 'btn2');
       const btn3 = document.createElement('button');
       btn3.setAttribute('id', 'btn3');
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(10);
         }).then(() => {});
       }, btn1);
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(10);
         }).then(() => {});
       }, btn2);
-      fakeInteraction(() => {
+      fakeClickInteraction(() => {
         getData(FILE_URL, () => {
           sandbox.clock.tick(10);
         }).then(() => {});
@@ -408,6 +430,228 @@ describe('UserInteractionInstrumentation', () => {
 
         done();
       });
+    });
+
+    it('should handle interactions listened on document - react < 17', done => {
+      const btn1 = document.createElement('button');
+      btn1.setAttribute('id', 'btn1');
+      document.body.appendChild(btn1);
+      const btn2 = document.createElement('button');
+      btn2.setAttribute('id', 'btn2');
+      document.body.appendChild(btn2);
+
+      const listener = (event: MouseEvent) => {
+        switch (event.target) {
+          case btn1:
+            getData(FILE_URL, () => {
+              sandbox.clock.tick(10);
+            }).then(() => {});
+            break;
+          case btn2:
+            getData(FILE_URL, () => {
+              sandbox.clock.tick(10);
+            }).then(() => {});
+            break;
+        }
+      };
+
+      document.addEventListener('click', listener);
+
+      try {
+        btn1.click();
+        btn2.click();
+      } finally {
+        // remove added listener so we don't pollute other tests
+        document.removeEventListener('click', listener);
+      }
+
+      sandbox.clock.tick(1000);
+      originalSetTimeout(() => {
+        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+
+        const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
+        const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
+        const span3: tracing.ReadableSpan = exportSpy.args[2][0][0];
+        const span4: tracing.ReadableSpan = exportSpy.args[3][0][0];
+
+        assertClickSpan(span1, 'btn1');
+        assertClickSpan(span2, 'btn2');
+
+        assert.strictEqual(
+          span1.spanContext().spanId,
+          span3.parentSpanId,
+          'span3 has wrong parent'
+        );
+        assert.strictEqual(
+          span2.spanContext().spanId,
+          span4.parentSpanId,
+          'span4 has wrong parent'
+        );
+
+        done();
+      });
+    });
+
+    it('should handle interactions listened on a parent element (bubbled events) - react >= 17', done => {
+      const root = document.createElement('div');
+      document.body.appendChild(root);
+
+      const btn1 = document.createElement('button');
+      btn1.setAttribute('id', 'btn1');
+      root.appendChild(btn1);
+      const btn2 = document.createElement('button');
+      btn2.setAttribute('id', 'btn2');
+      root.appendChild(btn2);
+
+      const listenerThis: EventTarget[] = [];
+      root.addEventListener('click', function (event) {
+        // Assert here with failure would also affect other tests due to setTimeout bellow
+        listenerThis.push(this);
+
+        switch (event.target) {
+          case btn1:
+            getData(FILE_URL, () => {
+              sandbox.clock.tick(10);
+            }).then(() => {});
+            break;
+          case btn2:
+            getData(FILE_URL, () => {
+              sandbox.clock.tick(10);
+            }).then(() => {});
+            break;
+        }
+      });
+
+      btn1.click();
+      btn2.click();
+
+      sandbox.clock.tick(1000);
+      originalSetTimeout(() => {
+        assert.strictEqual(
+          listenerThis[0],
+          root,
+          'this inside event listener matches listened target (0)'
+        );
+        assert.strictEqual(
+          listenerThis[1],
+          root,
+          'this inside event listener matches listened target (1)'
+        );
+
+        assert.equal(exportSpy.args.length, 4, 'should export 4 spans');
+
+        const span1: tracing.ReadableSpan = exportSpy.args[0][0][0];
+        const span2: tracing.ReadableSpan = exportSpy.args[1][0][0];
+        const span3: tracing.ReadableSpan = exportSpy.args[2][0][0];
+        const span4: tracing.ReadableSpan = exportSpy.args[3][0][0];
+
+        assertClickSpan(span1, 'btn1');
+        assertClickSpan(span2, 'btn2');
+
+        assert.strictEqual(
+          span1.spanContext().spanId,
+          span3.parentSpanId,
+          'span3 has wrong parent'
+        );
+        assert.strictEqual(
+          span2.spanContext().spanId,
+          span4.parentSpanId,
+          'span4 has wrong parent'
+        );
+
+        done();
+      });
+    });
+
+    it('should not create spans from unknown events', () => {
+      fakeEventInteraction('play');
+      assert.strictEqual(
+        exportSpy.args.length,
+        0,
+        'should not export any spans'
+      );
+    });
+
+    it('should export spans for configured event types', () => {
+      registerTestInstrumentations({
+        eventNames: ['play'],
+      });
+
+      fakeEventInteraction('play');
+      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      const span = exportSpy.args[0][0][0];
+      assertInteractionSpan(span, { name: 'play' });
+    });
+
+    it('should not be exported not configured spans', () => {
+      registerTestInstrumentations({
+        eventNames: ['play'],
+      });
+
+      fakeClickInteraction();
+      assert.strictEqual(
+        exportSpy.args.length,
+        0,
+        'should not export any spans'
+      );
+    });
+
+    it('should call shouldPreventSpanCreation with proper arguments', () => {
+      const shouldPreventSpanCreation = sinon.stub();
+      registerTestInstrumentations({
+        shouldPreventSpanCreation,
+      });
+
+      const element = createButton();
+      element.addEventListener('click', () => {});
+      element.click();
+
+      const span = exportSpy.args[0][0][0];
+      assert.deepStrictEqual(shouldPreventSpanCreation.args, [
+        ['click', element, span],
+      ]);
+    });
+
+    describe('when shouldPreventSpanCreation returns true', () => {
+      it('should not record span', () => {
+        const shouldPreventSpanCreation = () => true;
+        registerTestInstrumentations({
+          shouldPreventSpanCreation,
+        });
+
+        const element = createButton();
+        element.addEventListener('click', () => {});
+        element.click();
+
+        assert.strictEqual(
+          exportSpy.args.length,
+          0,
+          'should not export any spans'
+        );
+      });
+    });
+
+    describe('when shouldPreventSpanCreation returns false', () => {
+      it('should record span', () => {
+        const shouldPreventSpanCreation = () => false;
+        registerTestInstrumentations({
+          shouldPreventSpanCreation,
+        });
+
+        const element = createButton();
+        element.addEventListener('click', () => {});
+        element.click();
+
+        assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      });
+    });
+
+    it('should handle null event listener argument', () => {
+      // @ts-expect-error Typescript typings report null listener as error
+      // while allowed by EventTarget['addEventListener'] and js engines
+      document.addEventListener('click', null);
+      // @ts-expect-error see above
+      document.removeEventListener('click', null);
     });
 
     it('should handle disable', () => {
@@ -482,6 +726,43 @@ describe('UserInteractionInstrumentation', () => {
         false,
         'go should be unwrapped'
       );
+    });
+
+    describe('simulate IE', () => {
+      // Save window.EventTarget reference (including enumerable state)
+      const EventTargetDesc = Object.getOwnPropertyDescriptor(
+        window,
+        'EventTarget'
+      )!;
+      before(() => {
+        // @ts-expect-error window.EventTarget not optional
+        delete window.EventTarget;
+      });
+      after(() => {
+        Object.defineProperty(window, 'EventTarget', EventTargetDesc);
+        // Undo unwrap putting originals back on it's targets
+        // @ts-expect-error event listener API not optional
+        delete Node.prototype.addEventListener;
+        // @ts-expect-error copy
+        delete Node.prototype.removeEventListener;
+        // @ts-expect-error copy
+        delete Window.prototype.addEventListener;
+        // @ts-expect-error copy
+        delete Window.prototype.removeEventListener;
+      });
+
+      it('works with missing EventTarget', () => {
+        /*
+         * Would already error out with:
+         * "before each" hook for "works with missing EventTarget"
+         *   ReferenceError: EventTarget is not defined
+         */
+
+        fakeClickInteraction();
+        assert.equal(exportSpy.args.length, 1, 'should export one span');
+        const spanClick = exportSpy.args[0][0][0];
+        assertClickSpan(spanClick);
+      });
     });
   });
 });

@@ -7,6 +7,8 @@
 
 This module provides automatic instrumentation for injection of trace context to [`winston`](https://www.npmjs.com/package/winston).
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -16,7 +18,7 @@ npm install --save @opentelemetry/instrumentation-winston
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 

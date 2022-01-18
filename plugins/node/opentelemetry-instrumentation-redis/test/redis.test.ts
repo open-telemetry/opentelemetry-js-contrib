@@ -22,13 +22,13 @@ import {
   trace,
   Span,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import * as testUtils from '@opentelemetry/test-utils';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { RedisInstrumentation } from '../src';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -209,6 +209,16 @@ describe('redis@2.x', () => {
               testUtils.assertPropagation(endedSpans[0], span);
               done();
             });
+          });
+        });
+      });
+
+      it('should invoke callback with original command context', () => {
+        const rootSpan = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), rootSpan), () => {
+          client.set('callbacksTestKey', 'value', () => {
+            const activeSpan = trace.getSpan(context.active());
+            assert.strictEqual(activeSpan, rootSpan);
           });
         });
       });

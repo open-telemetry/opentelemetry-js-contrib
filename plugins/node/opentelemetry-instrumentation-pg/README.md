@@ -5,10 +5,12 @@
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for [`pg and pg-pool`](https://github.com/brianc/node-postgres)
+This module provides automatic instrumentation for [`pg`](https://github.com/brianc/node-postgres).
 
 For automatic instrumentation see the
-[@opentelemetry/node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Installation
 
@@ -16,13 +18,15 @@ For automatic instrumentation see the
 npm install --save @opentelemetry/instrumentation-pg
 ```
 
-It will install Instrumentation for PG and PG-POOL
+### Supported Versions
+
+- `>=7 <9`
 
 ## Usage
 
 ```js
 const { PgInstrumentation } = require('@opentelemetry/instrumentation-pg');
-const { NodeTracerProvider } = require('@opentelemetry/node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
@@ -46,11 +50,7 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 | Options | Type | Description |
 | ------- | ---- | ----------- |
 | [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-pg/src/pg.ts#L48) | `boolean` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
-
-## Supported Versions
-
-- [pg](https://npmjs.com/package/pg): `7.x`, `8.*`
-- [pg-pool](https://npmjs.com/package/pg-pool): `2.x`, `3.*` (Installed by `pg`)
+| `responseHook` | `PgInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
 
 ## Useful links
 

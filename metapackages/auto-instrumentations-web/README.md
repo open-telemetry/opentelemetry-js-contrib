@@ -5,6 +5,8 @@
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-url]
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 ```bash
@@ -14,10 +16,10 @@ npm install --save @opentelemetry/auto-instrumentations-web
 ## Usage
 
 ```javascript
-const { WebTracerProvider } = require('@opentelemetry/web');
+const { WebTracerProvider } = require('@opentelemetry/sdk-trace-web');
 const { getWebAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-web');
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
-const { SimpleSpanProcessor } = require('@opentelemetry/tracing');
+const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { ZoneContextManager } = require('@opentelemetry/context-zone');
 const { B3Propagator } = require('@opentelemetry/propagator-b3');
@@ -37,7 +39,7 @@ registerInstrumentations({
   instrumentations: [
     getWebAutoInstrumentations({
       // load custom configuration for xml-http-request instrumentation
-      "@opentelemetry/instrumentation-xml-http-request": {
+      '@opentelemetry/instrumentation-xml-http-request': {
         clearTimingResources: true,
       },
     }),

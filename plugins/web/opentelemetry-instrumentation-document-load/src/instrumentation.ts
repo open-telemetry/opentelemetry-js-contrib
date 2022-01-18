@@ -28,7 +28,7 @@ import {
   hasKey,
   PerformanceEntries,
   PerformanceTimingNames as PTN,
-} from '@opentelemetry/web';
+} from '@opentelemetry/sdk-trace-web';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -48,7 +48,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   readonly component: string = 'document-load';
   readonly version: string = '1';
   moduleName = this.component;
-  protected _config!: InstrumentationConfig;
 
   /**
    *
@@ -90,7 +89,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    * Collects information about performance and creates appropriate spans
    */
   private _collectPerformance() {
-    const metaElement = [...document.getElementsByTagName('meta')].find(
+    const metaElement = Array.from(document.getElementsByTagName('meta')).find(
       e => e.getAttribute('name') === TRACE_PARENT_HEADER
     );
     const entries = getPerformanceNavigationEntries();
@@ -235,7 +234,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   /**
    * implements enable function
    */
-  enable() {
+  override enable() {
     // remove previously attached load to avoid adding the same event twice
     // in case of multiple enable calling.
     window.removeEventListener('load', this._onDocumentLoaded);
@@ -245,7 +244,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   /**
    * implements disable function
    */
-  disable() {
+  override disable() {
     window.removeEventListener('load', this._onDocumentLoaded);
   }
 }

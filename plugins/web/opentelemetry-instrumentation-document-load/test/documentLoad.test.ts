@@ -21,7 +21,7 @@ import {
   SpanAttributes,
 } from '@opentelemetry/api';
 import {
-  HttpTraceContextPropagator,
+  W3CTraceContextPropagator,
   TRACE_PARENT_HEADER,
 } from '@opentelemetry/core';
 import {
@@ -29,11 +29,11 @@ import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import {
   PerformanceTimingNames as PTN,
   StackContextManager,
-} from '@opentelemetry/web';
+} from '@opentelemetry/sdk-trace-web';
 
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -248,7 +248,7 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   before(() => {
-    propagation.setGlobalPropagator(new HttpTraceContextPropagator());
+    propagation.setGlobalPropagator(new W3CTraceContextPropagator());
   });
 
   describe('constructor', () => {

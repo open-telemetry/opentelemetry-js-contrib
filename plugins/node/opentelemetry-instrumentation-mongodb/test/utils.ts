@@ -16,9 +16,11 @@
 
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { ReadableSpan } from '@opentelemetry/tracing';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import * as mongodb from 'mongodb';
+
+export const DEFAULT_MONGO_HOST = '127.0.0.1';
 
 export interface MongoDBAccess {
   client: mongodb.MongoClient;
@@ -34,10 +36,11 @@ export interface MongoDBAccess {
 export function accessCollection(
   url: string,
   dbName: string,
-  collectionName: string
+  collectionName: string,
+  options: mongodb.MongoClientOptions = {}
 ): Promise<MongoDBAccess> {
   return new Promise((resolve, reject) => {
-    mongodb.MongoClient.connect(url, (err, client) => {
+    mongodb.MongoClient.connect(url, options, (err, client) => {
       if (err) {
         reject(err);
         return;
@@ -81,14 +84,14 @@ export function assertSpans(
   );
   assert.strictEqual(
     mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
-    process.env.MONGODB_HOST || 'localhost'
+    process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
 
   if (isEnhancedDatabaseReportingEnabled) {
-    const dbStatement = mongoSpan.attributes[
-      SemanticAttributes.DB_STATEMENT
-    ] as any;
+    const dbStatement = JSON.parse(
+      mongoSpan.attributes[SemanticAttributes.DB_STATEMENT] as string
+    );
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');
     }

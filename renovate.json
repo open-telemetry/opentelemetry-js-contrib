@@ -7,15 +7,19 @@
       "groupName": "all non-major dependencies",
       "updateTypes": ["patch", "minor"],
       "groupSlug": "all-minor-patch"
+    },
+    {
+      "matchPackageNames": ["@opentelemetry/api"],
+      "rangeStrategy": "bump"
     }
   ],
   "assignees": [
     "@dyladan",
-    "@mayurkale22",
-    "@obecny"
+    "@mayurkale22"
   ],
   "schedule": [
     "before 3am on Friday"
   ],
-  "labels": ["dependencies"]
+  "labels": ["dependencies"],
+  "semanticCommitType": "feat"
 }
