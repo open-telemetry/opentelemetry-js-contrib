@@ -70,11 +70,19 @@ export type LayerMetadata = {
 
 export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 
+export type ExpressRequestInfo = {
+  request: Request;
+  route: string;
+  layerType?: ExpressLayerType;
+};
+
 export type SpanNameHook = (
-  request: Request,
-  route: string,
-  layerType: ExpressLayerType | null,
-  defaultPath: string
+  info: ExpressRequestInfo,
+  /**
+   * If no decision is taken based on RequestInfo, the default name
+   * supplied by the instrumentation can be used instead.
+   */
+  defaultName: string
 ) => string;
 
 /**

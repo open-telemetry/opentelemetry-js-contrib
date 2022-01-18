@@ -20,13 +20,7 @@ import {
   getRPCMetadata,
   RPCType,
 } from '@opentelemetry/core';
-import {
-  getSpan,
-  trace,
-  context,
-  diag,
-  SpanAttributes,
-} from '@opentelemetry/api';
+import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
 import type * as express from 'express';
 import {
   ExpressLayer,
@@ -34,6 +28,7 @@ import {
   PatchedRequest,
   _LAYERS_STORE_PROPERTY,
   ExpressInstrumentationConfig,
+  ExpressRequestInfo,
 } from './types';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 import { AttributeNames } from './enums/AttributeNames';
@@ -64,12 +59,12 @@ export class ExpressInstrumentation extends InstrumentationBase<
     );
   }
 
-  getConfig(): ExpressInstrumentationConfig {
-    return this._config;
+  override setConfig(config: ExpressInstrumentationConfig = {}) {
+    this._config = Object.assign({}, config);
   }
 
-  setConfig(config: ExpressInstrumentationConfig) {
-    this._config = config;
+  override getConfig(): ExpressInstrumentationConfig {
+    return this._config as ExpressInstrumentationConfig;
   }
 
   init() {
@@ -216,14 +211,11 @@ export class ExpressInstrumentation extends InstrumentationBase<
             ExpressLayerType.REQUEST_HANDLER &&
           rpcMetadata?.type === RPCType.HTTP
         ) {
-          rpcMetadata.span.updateName(
-            instrumentation._getSpanName(
-              req,
-              route,
-              null,
-              `${req.method} ${route.length > 0 ? route : '/'}`
-            )
-          );
+          const name = instrumentation._getSpanName({
+            request: req,
+            route,
+          }, `${req.method} ${route.length > 0 ? route : '/'}`);
+          rpcMetadata.span.updateName(name);
         }
 
         // verify against the config if the layer should be ignored
@@ -237,12 +229,11 @@ export class ExpressInstrumentation extends InstrumentationBase<
           return original.apply(this, arguments);
         }
 
-        const spanName = instrumentation._getSpanName(
-          req,
+        const spanName = instrumentation._getSpanName({
+          request: req,
+          layerType: type,
           route,
-          type,
-          metadata.name
-        );
+        }, metadata.name);
         const span = instrumentation.tracer.startSpan(spanName, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
@@ -304,19 +295,17 @@ export class ExpressInstrumentation extends InstrumentationBase<
   }
 
   _getSpanName(
-    req: express.Request,
-    route: string,
-    type: ExpressLayerType | null,
+    info: ExpressRequestInfo,
     defaultName: string
   ) {
-    const hook = this.getConfig().spanNameHook;
+    const hook = this.getConfig().spanNameHook
 
     if (!hook) {
       return defaultName;
     }
 
     try {
-      return hook(req, route, type, defaultName);
+      return hook(info, defaultName);
     } catch (err) {
       diag.error(
         'express instrumentation: error calling span name rewrite hook',

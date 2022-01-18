@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, trace, Span, Tracer } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -22,10 +22,9 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { setRPCMetadata, RPCType } from '@opentelemetry/core';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
-import { httpRequest, createServer } from './utils';
+import { createServer, httpRequest, serverWithMiddleware } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
@@ -33,39 +32,6 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as express from 'express';
-import * as http from 'http';
-import { AddressInfo } from 'net';
-
-const serverWithMiddleware = async (
-  tracer: Tracer,
-  rootSpan: Span,
-  addMiddlewares: (app: express.Express) => void
-): Promise<http.Server> => {
-  const app = express();
-  if (tracer) {
-    app.use((req, res, next) => {
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
-      return context.with(
-        setRPCMetadata(trace.setSpan(context.active(), rootSpan), rpcMetadata),
-        next
-      );
-    });
-  }
-
-  app.use(express.json());
-
-  addMiddlewares(app);
-
-  const router = express.Router();
-  app.use('/toto', router);
-  router.get('/:id', (req, res) => {
-    setImmediate(() => {
-      res.status(200).end(req.params.id);
-    });
-  });
-  const { server } = await createServer(app);
-  return server;
-};
 
 describe('ExpressInstrumentation', () => {
   const provider = new NodeTracerProvider();
@@ -91,9 +57,9 @@ describe('ExpressInstrumentation', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const app = express();
-      app.use((req, res, next) =>
-        context.with(trace.setSpan(context.active(), rootSpan), next)
-      );
+      app.use((req, res, next) => {
+        context.with(trace.setSpan(context.active(), rootSpan), next);
+      });
       app.use(express.json());
       const customMiddleware: express.RequestHandler = (req, res, next) => {
         for (let i = 0; i < 1000000; i++) {
@@ -105,18 +71,22 @@ describe('ExpressInstrumentation', () => {
       const router = express.Router();
       app.use('/toto', router);
       let finishListenerCount: number | undefined;
-      const server = await serverWithMiddleware(tracer, rootSpan, app => {
-        app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+      const { server, port } = await serverWithMiddleware(
+        tracer,
+        rootSpan,
+        app => {
+          app.use(express.json());
+          app.use((req, res, next) => {
+            res.on('finish', () => {
+              finishListenerCount = res.listenerCount('finish');
+            });
+            next();
           });
-          next();
-        });
-        for (let index = 0; index < 15; index++) {
-          app.use(customMiddleware);
+          for (let index = 0; index < 15; index++) {
+            app.use(customMiddleware);
+          }
         }
-      });
-      const port = (server.address() as AddressInfo).port;
+      );
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -163,24 +133,27 @@ describe('ExpressInstrumentation', () => {
     it('supports sync middlewares directly responding', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let finishListenerCount: number | undefined;
-      const server = await serverWithMiddleware(tracer, rootSpan, app => {
-        app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+      const { server, port } = await serverWithMiddleware(
+        tracer,
+        rootSpan,
+        app => {
+          app.use((req, res, next) => {
+            res.on('finish', () => {
+              finishListenerCount = res.listenerCount('finish');
+            });
+            next();
           });
-          next();
-        });
-        const syncMiddleware: express.RequestHandler = (req, res, next) => {
-          for (let i = 0; i < 1000000; i++) {
-            continue;
+          const syncMiddleware: express.RequestHandler = (req, res, next) => {
+            for (let i = 0; i < 1000000; i++) {
+              continue;
+            }
+            res.status(200).end('middleware');
+          };
+          for (let index = 0; index < 15; index++) {
+            app.use(syncMiddleware);
           }
-          res.status(200).end('middleware');
-        };
-        for (let index = 0; index < 15; index++) {
-          app.use(syncMiddleware);
         }
-      });
-      const port = (server.address() as AddressInfo).port;
+      );
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -206,23 +179,26 @@ describe('ExpressInstrumentation', () => {
     it('supports async middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let finishListenerCount: number | undefined;
-      const server = await serverWithMiddleware(tracer, rootSpan, app => {
-        app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
-          });
-          next();
-        });
-        const asyncMiddleware: express.RequestHandler = (req, res, next) => {
-          setTimeout(() => {
+      const { server, port } = await serverWithMiddleware(
+        tracer,
+        rootSpan,
+        app => {
+          app.use((req, res, next) => {
+            res.on('finish', () => {
+              finishListenerCount = res.listenerCount('finish');
+            });
             next();
-          }, 50);
-        };
-        for (let index = 0; index < 15; index++) {
-          app.use(asyncMiddleware);
+          });
+          const asyncMiddleware: express.RequestHandler = (req, res, next) => {
+            setTimeout(() => {
+              next();
+            }, 50);
+          };
+          for (let index = 0; index < 15; index++) {
+            app.use(asyncMiddleware);
+          }
         }
-      });
-      const port = (server.address() as AddressInfo).port;
+      );
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -248,23 +224,26 @@ describe('ExpressInstrumentation', () => {
     it('supports async middlewares directly responding', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let finishListenerCount: number | undefined;
-      const server = await serverWithMiddleware(tracer, rootSpan, app => {
-        app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+      const { server, port } = await serverWithMiddleware(
+        tracer,
+        rootSpan,
+        app => {
+          app.use((req, res, next) => {
+            res.on('finish', () => {
+              finishListenerCount = res.listenerCount('finish');
+            });
+            next();
           });
-          next();
-        });
-        const asyncMiddleware: express.RequestHandler = (req, res, next) => {
-          setTimeout(() => {
-            res.status(200).end('middleware');
-          }, 50);
-        };
-        for (let index = 0; index < 15; index++) {
-          app.use(asyncMiddleware);
+          const asyncMiddleware: express.RequestHandler = (req, res, next) => {
+            setTimeout(() => {
+              res.status(200).end('middleware');
+            }, 50);
+          };
+          for (let index = 0; index < 15; index++) {
+            app.use(asyncMiddleware);
+          }
         }
-      });
-      const port = (server.address() as AddressInfo).port;
+      );
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),

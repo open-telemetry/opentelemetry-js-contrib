@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { context, setSpan, Span } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/node';
+import { context, trace, Span } from '@opentelemetry/api';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/tracing';
+} from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import type * as http from 'http';
 import { ExpressInstrumentation } from '../src';
@@ -29,8 +29,7 @@ const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
-import { createServer, httpRequest } from './utils';
-import * as express from 'express';
+import { httpRequest, serverWithMiddleware } from './utils';
 
 describe('ExpressInstrumentation hooks', () => {
   const provider = new NodeTracerProvider();
@@ -53,24 +52,18 @@ describe('ExpressInstrumentation hooks', () => {
   });
 
   describe('span name hooks', () => {
-    let app: express.Express;
     let server: http.Server;
     let port: number;
     let rootSpan: Span;
 
     beforeEach(async () => {
-      app = express();
-
       rootSpan = tracer.startSpan('rootSpan');
-      app.use((req, res, next) => {
-        context.with(setSpan(context.active(), rootSpan), next);
-      });
 
-      app.get('*', (req, res) => {
-        res.send('ok');
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.get('*', (req, res) => {
+          res.send('ok');
+        });
       });
-
-      const httpServer = await createServer(app);
       server = httpServer.server;
       port = httpServer.port;
     });
@@ -81,36 +74,39 @@ describe('ExpressInstrumentation hooks', () => {
 
     it('should rename parent span', async () => {
       instrumentation.setConfig({
-        spanNameHook: (req, route, type, defaultName) => {
-          if (type) {
+        spanNameHook: ({ request, route, layerType }, defaultName) => {
+          if (layerType) {
             return defaultName;
           }
 
           if (route === '*') {
-            return `hook - ${req.method} - ${req.url}`;
+            return `hook - ${request.method} - ${request.url}`;
           }
 
           return defaultName;
         },
       });
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/foo/3`);
-        rootSpan.end();
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/foo/3`);
+          rootSpan.end();
 
-        const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 2);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 2);
 
-        assert.notStrictEqual(
-          spans.find(span => span.name === 'hook - GET - /foo/3'),
-          undefined
-        );
+          assert.notStrictEqual(
+            spans.find(span => span.name === 'hook - GET - /foo/3'),
+            undefined
+          );
 
-        assert.notStrictEqual(
-          spans.find(span => span.name === 'request handler - *'),
-          undefined
-        );
-      });
+          assert.notStrictEqual(
+            spans.find(span => span.name === 'request handler - *'),
+            undefined
+          );
+        }
+      );
     });
 
     it('should use the default name when hook throws an error', async () => {
@@ -120,23 +116,26 @@ describe('ExpressInstrumentation hooks', () => {
         },
       });
 
-      await context.with(setSpan(context.active(), rootSpan), async () => {
-        await httpRequest.get(`http://localhost:${port}/foo/3`);
-        rootSpan.end();
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/foo/3`);
+          rootSpan.end();
 
-        const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 2);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 2);
 
-        assert.notStrictEqual(
-          spans.find(span => span.name === 'GET *'),
-          undefined
-        );
+          assert.notStrictEqual(
+            spans.find(span => span.name === 'GET *'),
+            undefined
+          );
 
-        assert.notStrictEqual(
-          spans.find(span => span.name === 'request handler - *'),
-          undefined
-        );
-      });
+          assert.notStrictEqual(
+            spans.find(span => span.name === 'request handler - *'),
+            undefined
+          );
+        }
+      );
     });
   });
 });
