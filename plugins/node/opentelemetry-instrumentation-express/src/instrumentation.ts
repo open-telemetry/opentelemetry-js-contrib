@@ -211,10 +211,13 @@ export class ExpressInstrumentation extends InstrumentationBase<
             ExpressLayerType.REQUEST_HANDLER &&
           rpcMetadata?.type === RPCType.HTTP
         ) {
-          const name = instrumentation._getSpanName({
-            request: req,
-            route,
-          }, `${req.method} ${route.length > 0 ? route : '/'}`);
+          const name = instrumentation._getSpanName(
+            {
+              request: req,
+              route,
+            },
+            `${req.method} ${route.length > 0 ? route : '/'}`
+          );
           rpcMetadata.span.updateName(name);
         }
 
@@ -229,11 +232,14 @@ export class ExpressInstrumentation extends InstrumentationBase<
           return original.apply(this, arguments);
         }
 
-        const spanName = instrumentation._getSpanName({
-          request: req,
-          layerType: type,
-          route,
-        }, metadata.name);
+        const spanName = instrumentation._getSpanName(
+          {
+            request: req,
+            layerType: type,
+            route,
+          },
+          metadata.name
+        );
         const span = instrumentation.tracer.startSpan(spanName, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
@@ -294,11 +300,8 @@ export class ExpressInstrumentation extends InstrumentationBase<
     });
   }
 
-  _getSpanName(
-    info: ExpressRequestInfo,
-    defaultName: string
-  ) {
-    const hook = this.getConfig().spanNameHook
+  _getSpanName(info: ExpressRequestInfo, defaultName: string) {
+    const hook = this.getConfig().spanNameHook;
 
     if (!hook) {
       return defaultName;
