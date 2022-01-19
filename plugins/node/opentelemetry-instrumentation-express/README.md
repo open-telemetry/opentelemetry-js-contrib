@@ -62,7 +62,7 @@ Express instrumentation has few options available to choose from. You can set th
 | ------- | ---- | ------- | ----------- |
 | `ignoreLayers` | `IgnoreMatcher[]` | `[/^\/_internal\//]` | Ignore layers that by match. |
 | `ignoreLayersType`| `ExpressLayerType[]` | `['request_handler']` | Ignore layers of specified type. |
-| `spanNameHook` | `SpanNameHook` | `() => 'my-span-name'` | Allows customizing names of spans. |
+| `spanNameHook` | `SpanNameHook` | `() => 'my-span-name'` | Can be used to customize span names by returning a new name from the hook. |
 
 `ignoreLayers` accepts an array of elements of types:
 
