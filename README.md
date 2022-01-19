@@ -111,6 +111,7 @@ Currently, OpenTelemetry supports automatic collection for following environment
 
 Platform Version | Supported
 ---------------- | ---------
+Node.JS `v16`    | ✅
 Node.JS `v14`    | ✅
 Node.JS `v12`    | ✅
 Node.JS `v10`    | ✅
@@ -120,7 +121,7 @@ Web Browsers     | ✅ See [Browser Support](#browser-support) below
 ### Node Support
 
 Automated tests are run using the latest release of each currently active version of Node.JS.
-While Node.JS v8 is no longer supported by the Node.JS team, the latest version of Node.JS v8 is still included in our testing suite.
+While Node.JS v8 and v10 are no longer supported by the Node.JS team, the latest versions of Node.JS v8 and v10 are still included in our testing suite.
 Please note that versions of Node.JS v8 prior to `v8.5.0` will NOT work, because OpenTelemetry Node depends on the `perf_hooks` module introduced in `v8.5.0`
 
 ### Browser Support
