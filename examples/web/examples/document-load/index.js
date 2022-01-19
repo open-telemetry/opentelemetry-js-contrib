@@ -4,21 +4,28 @@ import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
-import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-otlp-http';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
-import { CompositePropagator, HttpTraceContextPropagator } from '@opentelemetry/core';
+import { CompositePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
-const provider = new WebTracerProvider();
+const provider = new WebTracerProvider({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'web-service-dl',
+  }),
+});
+
 provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
-provider.addSpanProcessor(new SimpleSpanProcessor(new CollectorTraceExporter()));
+provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()));
 
 provider.register({
   contextManager: new ZoneContextManager(),
   propagator: new CompositePropagator({
     propagators: [
       new B3Propagator(),
-      new HttpTraceContextPropagator(),
+      new W3CTraceContextPropagator(),
     ],
   }),
 });
@@ -55,8 +62,8 @@ const getData = (url) => new Promise((resolve, reject) => {
 
 // example of keeping track of context between async operations
 const prepareClickEvent = () => {
-  const url1 = 'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/package.json';
-  const url2 = 'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/packages/opentelemetry-web/package.json';
+  const url1 = 'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
+  const url2 = 'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/packages/opentelemetry-sdk-trace-web/package.json';
 
   const element = document.getElementById('button1');
 

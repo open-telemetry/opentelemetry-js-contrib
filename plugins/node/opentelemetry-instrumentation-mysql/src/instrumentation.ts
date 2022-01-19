@@ -279,7 +279,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
           getDbStatement(query, format, values)
         );
 
-        if (arguments.length === 1) {
+        const cbIndex = Array.from(arguments).findIndex(
+          arg => typeof arg === 'function'
+        );
+
+        if (cbIndex === -1) {
           const streamableQuery: mysqlTypes.Query = originalQuery.apply(
             connection,
             arguments
@@ -295,15 +299,15 @@ export class MySQLInstrumentation extends InstrumentationBase<
             .on('end', () => {
               span.end();
             });
-        }
+        } else {
+          thisPlugin._wrap(
+            arguments,
+            cbIndex,
+            thisPlugin._patchCallbackQuery(span)
+          );
 
-        if (typeof arguments[1] === 'function') {
-          thisPlugin._wrap(arguments, 1, thisPlugin._patchCallbackQuery(span));
-        } else if (typeof arguments[2] === 'function') {
-          thisPlugin._wrap(arguments, 2, thisPlugin._patchCallbackQuery(span));
+          return originalQuery.apply(connection, arguments);
         }
-
-        return originalQuery.apply(connection, arguments);
       };
     };
   }
