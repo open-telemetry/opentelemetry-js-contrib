@@ -76,13 +76,12 @@ Express instrumentation has few options available to choose from. You can set th
 - `middleware`,
 - `request_handler` is the name for anything that's not a router or a middleware.
 
-`spanNameHook` is invoked with the following arguments:
+`spanNameHook` is invoked with the following information:
 
 - `request: express.Request` - the incoming request.
 - `route: string` - current route of the handler creating a span.
-- `layerType: ExpressLayerType | null` - type of the handling layer, or null in the case of the initial root HTTP
-  instrumentation span.
-- `defaultPath: string` - Original name set by the instrumentation.
+- `layerType: ExpressLayerType | undefined` - type of the handling layer, or undefined when renaming root HTTP instrumentation span.
+- `defaultName: string` - original name proposed by the instrumentation.
 
 ## Useful links
 
