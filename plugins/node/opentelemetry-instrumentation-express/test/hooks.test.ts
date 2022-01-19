@@ -72,15 +72,15 @@ describe('ExpressInstrumentation hooks', () => {
       server.close();
     });
 
-    it('should rename parent span', async () => {
+    it('should rename spans', async () => {
       instrumentation.setConfig({
         spanNameHook: ({ request, route, layerType }, defaultName) => {
           if (layerType) {
-            return defaultName;
+            return `hook - ${route}`;
           }
 
           if (route === '*') {
-            return `hook - ${request.method} - ${request.url}`;
+            return `parent - ${request.method} ${request.url}`;
           }
 
           return defaultName;
@@ -97,12 +97,12 @@ describe('ExpressInstrumentation hooks', () => {
           assert.strictEqual(spans.length, 2);
 
           assert.notStrictEqual(
-            spans.find(span => span.name === 'hook - GET - /foo/3'),
+            spans.find(span => span.name === 'parent - GET /foo/3'),
             undefined
           );
 
           assert.notStrictEqual(
-            spans.find(span => span.name === 'request handler - *'),
+            spans.find(span => span.name === 'hook - *'),
             undefined
           );
         }
