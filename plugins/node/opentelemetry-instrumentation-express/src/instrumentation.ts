@@ -303,7 +303,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
   _getSpanName(info: ExpressRequestInfo, defaultName: string) {
     const hook = this.getConfig().spanNameHook;
 
-    if (!hook) {
+    if (!(hook instanceof Function)) {
       return defaultName;
     }
 
