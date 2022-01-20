@@ -3,4 +3,4 @@ redis:
   commands: npm run test
 
   # Fix missing `contrib-test-utils` package
-  pretest: npm run --prefix ../../../ lerna:link 
+  pretest: npm run --prefix ../../../ lerna:link
