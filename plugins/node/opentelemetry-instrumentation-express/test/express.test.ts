@@ -57,9 +57,9 @@ describe('ExpressInstrumentation', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const app = express();
-      app.use((req, res, next) => {
-        context.with(trace.setSpan(context.active(), rootSpan), next);
-      });
+      app.use((req, res, next) =>
+        context.with(trace.setSpan(context.active(), rootSpan), next)
+      );
       app.use(express.json());
       const customMiddleware: express.RequestHandler = (req, res, next) => {
         for (let i = 0; i < 1000000; i++) {
