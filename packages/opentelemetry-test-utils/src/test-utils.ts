@@ -144,7 +144,9 @@ export interface TimedEvent {
 }
 
 export const getPackageVersion = (packageName: string) => {
-  const packagePath = require.resolve(packageName);
+  const packagePath = require?.resolve(packageName, {
+    paths: require?.main?.paths,
+  });
   const packageJsonPath = path.join(path.dirname(packagePath), 'package.json');
   return require(packageJsonPath).version;
 };
