@@ -71,5 +71,6 @@ export async function serverWithMiddleware(
       res.status(200).end(req.params.id);
     });
   });
+
   return createServer(app);
 }
