@@ -30,3 +30,8 @@ exports.stringerror = async function (event, context) {
 exports.context = async function (event, context) {
   return api.trace.getSpan(api.context.active()).spanContext().traceId;
 };
+
+exports.baggage = async function (event, context) {
+  const baggageEntry =  api.propagation.getBaggage(api.context.active()).getAllEntries()[0];
+  return `${baggageEntry[0]}=${baggageEntry[1].value}`;
+}
