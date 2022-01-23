@@ -478,11 +478,12 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
               const promiseWithResponseLogic = resultPromise
                 .then(response => {
                   const requestId = response.output?.$metadata?.requestId;
-                  const httpStatusCode =
-                    response.output?.$metadata?.httpStatusCode;
                   if (requestId) {
                     span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
                   }
+
+                  const httpStatusCode =
+                    response.output?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
                     span.setAttribute(
                       SemanticAttributes.HTTP_STATUS_CODE,
