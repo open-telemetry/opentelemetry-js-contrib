@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-sdk",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "OpenTelemetry automatic instrumentation for the `aws-sdk` package",
   "keywords": [
     "aws",
@@ -71,7 +71,7 @@
     "rimraf": "3.0.2",
     "sinon": "12.0.1",
     "gts": "3.1.0",
-    "@opentelemetry/contrib-test-utils": "^0.28.0",
+    "@opentelemetry/contrib-test-utils": "^0.29.0",
     "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.4"
