@@ -110,6 +110,40 @@ describe('nestjs-core', () => {
     ]);
   });
 
+  it('should not ovewrite metadata set on the request handler', async () => {
+    const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/metadata';
+    const url = '/metadata';
+    const instance = 'MetadataController';
+    const callback = 'getMetadata';
+
+    assert.deepStrictEqual(await request('/metadata'), '["path","method"]');
+
+    assertSpans(memoryExporter.getFinishedSpans(), [
+      {
+        type: 'app_creation',
+        service: 'test',
+        name: 'Create Nest App',
+        module: 'AppModule',
+      },
+      {
+        type: 'handler',
+        service: 'test',
+        name: callback,
+        callback,
+        parentSpanName: `${instance}.${callback}`,
+      },
+      {
+        type: 'request_context',
+        service: 'test',
+        name: `${instance}.${callback}`,
+        method: 'GET',
+        url,
+        path,
+        callback,
+      },
+    ]);
+  });
+
   it('should capture errors', async () => {
     const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/errors';
     const url = '/errors';

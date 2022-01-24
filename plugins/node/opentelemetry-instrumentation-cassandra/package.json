@@ -12,20 +12,20 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-cassandra-driver --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-cassandra-driver --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p ."
   },
   "keywords": [
-    "opentelemetry",
+    "cassandra-driver",
+    "instrumentation",
     "logging",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation",
-    "cassandra-driver"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -62,7 +62,7 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "11.1.2",
+    "sinon": "12.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"
   },

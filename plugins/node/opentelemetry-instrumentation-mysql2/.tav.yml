@@ -3,4 +3,4 @@ mysql2:
   commands: npm run test
 
   # Fix missing `test-utils` package
-  pretest: npm run --prefix ../../../ lerna:link 
+  pretest: npm run --prefix ../../../ lerna:link

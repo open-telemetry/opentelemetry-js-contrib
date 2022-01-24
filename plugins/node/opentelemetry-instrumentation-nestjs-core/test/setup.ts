@@ -139,6 +139,24 @@ export const setup = async (version: string): Promise<App> => {
     YellInterceptor
   );
 
+  let MetadataInterceptor = class MetadataInterceptor
+    implements NestInterceptor
+  {
+    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+      return next
+        .handle()
+        .pipe(map(() => Reflect.getMetadataKeys(context.getHandler())));
+    }
+  };
+  MetadataInterceptor = __decorate(
+    [
+      semver.intersects(version, '^4.0.0')
+        ? common.Interceptor()
+        : common.Injectable(),
+    ],
+    MetadataInterceptor
+  );
+
   const [UsersController, UsersModule] = makeModule(
     'Users',
     () => 'Hello, world!\n',
@@ -147,20 +165,12 @@ export const setup = async (version: string): Promise<App> => {
   const [GuardedController, GuardedModule] = makeModule(
     'Guarded',
     () => 'Hello, guarded!\n',
-    [
-      common.Controller('guarded'),
-      common.UseGuards(MyGuard),
-      common.UseGuards(MyGuard),
-    ]
+    [common.Controller('guarded'), common.UseGuards(MyGuard)]
   );
   const [InterceptedController, InterceptedModule] = makeModule(
     'Intercepted',
     () => 'Hello, Intercepted!\n',
-    [
-      common.Controller('intercepted'),
-      common.UseInterceptors(YellInterceptor),
-      common.UseInterceptors(YellInterceptor),
-    ]
+    [common.Controller('intercepted'), common.UseInterceptors(YellInterceptor)]
   );
   const [ErrorController, ErrorModule] = makeModule(
     'Error',
@@ -170,16 +180,29 @@ export const setup = async (version: string): Promise<App> => {
     [common.Controller('errors')]
   );
 
+  const [MetadataController, MetadataModule] = makeModule(
+    'Metadata',
+    () => 'Hello, Metadata!\n',
+    [common.Controller('metadata'), common.UseInterceptors(MetadataInterceptor)]
+  );
+
   if (semver.intersects(version, '>=4.6.3')) {
     AppModule = __decorate(
       [
         common.Module({
-          imports: [UsersModule, ErrorModule, GuardedModule, InterceptedModule],
+          imports: [
+            UsersModule,
+            ErrorModule,
+            GuardedModule,
+            InterceptedModule,
+            MetadataModule,
+          ],
           controllers: [
             UsersController,
             ErrorController,
             GuardedController,
             InterceptedController,
+            MetadataController,
           ],
         }),
       ],
@@ -189,12 +212,19 @@ export const setup = async (version: string): Promise<App> => {
     AppModule = __decorate(
       [
         common.Module({
-          modules: [UsersModule, ErrorModule, GuardedModule, InterceptedModule],
+          modules: [
+            UsersModule,
+            ErrorModule,
+            GuardedModule,
+            InterceptedModule,
+            MetadataModule,
+          ],
           controllers: [
             UsersController,
             ErrorController,
             GuardedController,
             InterceptedController,
+            MetadataController,
           ],
         }),
       ],

@@ -51,11 +51,13 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 ### Node Instrumentations
 
 - [@opentelemetry/instrumentation-aws-lambda][otel-contrib-instrumentation-aws-lambda]
+- [@opentelemetry/instrumentation-aws-sdk][otel-contrib-instrumentation-aws-sdk]
 - [@opentelemetry/instrumentation-bunyan][otel-contrib-instrumentation-bunyan]
 - [@opentelemetry/instrumentation-cassandra-driver][otel-contrib-instrumentation-cassandra]
 - [@opentelemetry/instrumentation-connect][otel-contrib-instrumentation-connect]
 - [@opentelemetry/instrumentation-dns][otel-contrib-instrumentation-dns]
 - [@opentelemetry/instrumentation-express][otel-contrib-instrumentation-express]
+- [@opentelemetry/instrumentation-fastify][otel-contrib-instrumentation-fastify]
 - [@opentelemetry/instrumentation-generic-pool][otel-contrib-instrumentation-generic-pool]
 - [@opentelemetry/instrumentation-graphql][otel-contrib-instrumentation-graphql]
 - [@opentelemetry/instrumentation-grpc][otel-instrumentation-grpc]
@@ -66,8 +68,8 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 - [@opentelemetry/instrumentation-koa][otel-contrib-instrumentation-koa]
 - [@opentelemetry/instrumentation-memcached][otel-contrib-instrumentation-memcached]
 - [@opentelemetry/instrumentation-mongodb][otel-contrib-instrumentation-mongodb]
-- [@opentelemetry/instrumentation-mysql][otel-contrib-instrumentation-mysql]
 - [@opentelemetry/instrumentation-mysql2][otel-contrib-instrumentation-mysql2]
+- [@opentelemetry/instrumentation-mysql][otel-contrib-instrumentation-mysql]
 - [@opentelemetry/instrumentation-nestjs-core][otel-contrib-instrumentation-nestjs-core]
 - [@opentelemetry/instrumentation-net][otel-contrib-instrumentation-net]
 - [@opentelemetry/instrumentation-pg][otel-contrib-instrumentation-pg]
@@ -75,14 +77,16 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 - [@opentelemetry/instrumentation-redis][otel-contrib-instrumentation-redis]
 - [@opentelemetry/instrumentation-restify][otel-contrib-instrumentation-restify]
 - [@opentelemetry/instrumentation-router][otel-contrib-instrumentation-router]
+- [@opentelemetry/instrumentation-tedious][otel-contrib-instrumentation-tedious]
 - [@opentelemetry/instrumentation-winston][otel-contrib-instrumentation-winston]
 
 ### Web Instrumentations
 
-- [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
-- [@opentelemetry/instrumentation-fetch][otel-instrumentation-fetch]
 - [@opentelemetry/instrumentation-document-load][otel-contrib-instrumentation-document-load]
+- [@opentelemetry/instrumentation-fetch][otel-instrumentation-fetch]
+- [@opentelemetry/instrumentation-long-task][otel-contrib-instrumentation-long-task]
 - [@opentelemetry/instrumentation-user-interaction][otel-contrib-instrumentation-user-interaction]
+- [@opentelemetry/instrumentation-xml-http-request][otel-instrumentation-xml-http-request]
 - [@opentelemetry/plugin-react-load][otel-contrib-plugin-react-load]
 
 ### Metapackages
@@ -107,6 +111,7 @@ Currently, OpenTelemetry supports automatic collection for following environment
 
 Platform Version | Supported
 ---------------- | ---------
+Node.JS `v16`    | ✅
 Node.JS `v14`    | ✅
 Node.JS `v12`    | ✅
 Node.JS `v10`    | ✅
@@ -116,7 +121,7 @@ Web Browsers     | ✅ See [Browser Support](#browser-support) below
 ### Node Support
 
 Automated tests are run using the latest release of each currently active version of Node.JS.
-While Node.JS v8 is no longer supported by the Node.JS team, the latest version of Node.JS v8 is still included in our testing suite.
+While Node.JS v8 and v10 are no longer supported by the Node.JS team, the latest versions of Node.JS v8 and v10 are still included in our testing suite.
 Please note that versions of Node.JS v8 prior to `v8.5.0` will NOT work, because OpenTelemetry Node depends on the `perf_hooks` module introduced in `v8.5.0`
 
 ### Browser Support
@@ -157,16 +162,18 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-contrib-instrumentation-dns]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns
 [otel-contrib-instrumentation-document-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-document-load
 [otel-contrib-instrumentation-express]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express
+[otel-contrib-instrumentation-fastify]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-fastify
 [otel-contrib-instrumentation-generic-pool]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-generic-pool
 [otel-contrib-instrumentation-graphql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-graphql
 [otel-contrib-instrumentation-hapi]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-hapi
 [otel-contrib-instrumentation-ioredis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis
 [otel-contrib-instrumentation-knex]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-knex
 [otel-contrib-instrumentation-koa]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa
+[otel-contrib-instrumentation-long-task]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-long-task
 [otel-contrib-instrumentation-memcached]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-memcached
 [otel-contrib-instrumentation-mongodb]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb
-[otel-contrib-instrumentation-mysql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql
 [otel-contrib-instrumentation-mysql2]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql2
+[otel-contrib-instrumentation-mysql]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql
 [otel-contrib-instrumentation-nestjs-core]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-nestjs-core
 [otel-contrib-instrumentation-net]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-net
 [otel-contrib-instrumentation-pg]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pg
@@ -174,8 +181,9 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-contrib-instrumentation-redis]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis
 [otel-contrib-instrumentation-restify]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify
 [otel-contrib-instrumentation-router]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-router
-[otel-contrib-instrumentation-winston]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston
+[otel-contrib-instrumentation-tedious]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-tedious
 [otel-contrib-instrumentation-user-interaction]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-user-interaction
+[otel-contrib-instrumentation-winston]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston
 [otel-contrib-plugin-react-load]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-react-load
 
 [otel-contrib-auto-instr-node]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-node
