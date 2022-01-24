@@ -24,6 +24,7 @@ import {
 import * as assert from 'assert';
 import type * as http from 'http';
 import { ExpressInstrumentation } from '../src';
+import { SpanNameHook } from '../src/types';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
@@ -114,6 +115,36 @@ describe('ExpressInstrumentation hooks', () => {
         spanNameHook: () => {
           throw new Error();
         },
+      });
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/foo/3`);
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 2);
+
+          assert.notStrictEqual(
+            spans.find(span => span.name === 'GET *'),
+            undefined
+          );
+
+          assert.notStrictEqual(
+            spans.find(span => span.name === 'request handler - *'),
+            undefined
+          );
+        }
+      );
+    });
+
+    it('should use the default name when returning undefined from hook', async () => {
+      const spanNameHook: SpanNameHook = () => {
+        return undefined as unknown as string;
+      };
+      instrumentation.setConfig({
+        spanNameHook,
       });
 
       await context.with(

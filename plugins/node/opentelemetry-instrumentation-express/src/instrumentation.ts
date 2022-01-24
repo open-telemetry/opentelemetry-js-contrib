@@ -308,7 +308,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
     }
 
     try {
-      return hook(info, defaultName);
+      return hook(info, defaultName) ?? defaultName;
     } catch (err) {
       diag.error(
         'express instrumentation: error calling span name rewrite hook',
