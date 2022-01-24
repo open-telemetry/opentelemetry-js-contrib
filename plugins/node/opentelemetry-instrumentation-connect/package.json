@@ -11,7 +11,7 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-connect --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-connect --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
@@ -19,12 +19,12 @@
     "watch": "tsc -w"
   },
   "keywords": [
-    "opentelemetry",
     "connect",
+    "instrumentation",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

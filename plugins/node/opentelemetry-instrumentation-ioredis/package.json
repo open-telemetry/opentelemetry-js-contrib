@@ -15,7 +15,7 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-ioredis --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-ioredis --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p .",
@@ -23,13 +23,13 @@
     "prepare": "npm run compile"
   },
   "keywords": [
-    "opentelemetry",
+    "instrumentation",
     "ioredis",
-    "redis",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "redis",
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -58,6 +58,7 @@
     "@opentelemetry/sdk-trace-node": "1.0.1",
     "@types/mocha": "7.0.2",
     "@types/node": "14.17.9",
+    "@types/sinon": "^10.0.6",
     "codecov": "3.8.3",
     "cross-env": "7.0.3",
     "gts": "3.1.0",
@@ -65,6 +66,7 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
+    "sinon": "^12.0.1",
     "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"

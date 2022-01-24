@@ -5,7 +5,7 @@
 [![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for [`pg and pg-pool`](https://github.com/brianc/node-postgres)
+This module provides automatic instrumentation for [`pg`](https://github.com/brianc/node-postgres).
 
 For automatic instrumentation see the
 [@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
@@ -18,7 +18,9 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-pg
 ```
 
-It will install Instrumentation for PG and PG-POOL
+### Supported Versions
+
+- `>=7 <9`
 
 ## Usage
 
@@ -49,11 +51,6 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 | ------- | ---- | ----------- |
 | [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-pg/src/pg.ts#L48) | `boolean` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
 | `responseHook` | `PgInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
-
-## Supported Versions
-
-- [pg](https://npmjs.com/package/pg): `7.x`, `8.*`
-- [pg-pool](https://npmjs.com/package/pg-pool): `2.x`, `3.*` (Installed by `pg`)
 
 ## Useful links
 

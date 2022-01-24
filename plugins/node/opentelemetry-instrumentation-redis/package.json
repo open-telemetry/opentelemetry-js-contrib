@@ -15,7 +15,7 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-redis --include-filtered-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-redis --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p .",
@@ -23,12 +23,12 @@
     "prepare": "npm run compile"
   },
   "keywords": [
-    "opentelemetry",
-    "redis",
+    "instrumentation",
     "nodejs",
-    "tracing",
+    "opentelemetry",
     "profiling",
-    "instrumentation"
+    "redis",
+    "tracing"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

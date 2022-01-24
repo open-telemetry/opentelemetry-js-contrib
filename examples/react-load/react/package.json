@@ -36,6 +36,7 @@
     "ts-loader": "^6.0.4"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.0.4",
     "@opentelemetry/context-zone": "^0.25.0",
     "@opentelemetry/core": "^0.25.0",
     "@opentelemetry/exporter-collector": "^0.25.0",
@@ -46,7 +47,8 @@
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.2.0",
     "react-scripts": "^3.4.1",
-    "reactstrap": "^8.5.1"
+    "reactstrap": "^8.5.1",
+    "serve": "^13.0.2"
   },
   "browserslist": {
     "production": [
