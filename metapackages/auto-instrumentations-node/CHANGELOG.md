@@ -1,5 +1,27 @@
 # Changelog
 
+### [0.27.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.27.1...auto-instrumentations-node-v0.27.2) (2022-01-24)
+
+
+### Bug Fixes
+
+* rename lerna's --include-filtered-dependencies option ([#817](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/817)) ([cf268e7](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/cf268e7a92b7800ad6dbec9ca77466f9ee03ee1a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-dns bumped from ^0.27.0 to ^0.27.1
+    * @opentelemetry/instrumentation-express bumped from ^0.27.0 to ^0.27.1
+    * @opentelemetry/instrumentation-graphql bumped from ^0.27.1 to ^0.27.2
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.27.0 to ^0.27.1
+    * @opentelemetry/instrumentation-koa bumped from ^0.28.0 to ^0.28.1
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.27.0 to ^0.28.0
+    * @opentelemetry/instrumentation-mysql bumped from ^0.27.0 to ^0.27.1
+    * @opentelemetry/instrumentation-pg bumped from ^0.27.0 to ^0.28.0
+    * @opentelemetry/instrumentation-redis bumped from ^0.27.0 to ^0.28.0
+
 ### [0.27.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.27.0...auto-instrumentations-node-v0.27.1) (2021-12-22)
 
 
