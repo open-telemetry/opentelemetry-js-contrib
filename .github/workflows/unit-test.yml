@@ -85,7 +85,7 @@ jobs:
       OPENTELEMETRY_REDIS_HOST: localhost
       OPENTELEMETRY_REDIS_PORT: 6379
       MONGODB_DB: opentelemetry-tests
-      MONGODB_HOST: localhost
+      MONGODB_HOST: 127.0.0.1
       MONGODB_PORT: 27017
       MYSQL_USER: otel
       MYSQL_PASSWORD: secret

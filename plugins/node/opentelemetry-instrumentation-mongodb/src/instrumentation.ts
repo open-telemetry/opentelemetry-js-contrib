@@ -495,7 +495,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     let commandObj: Record<string, unknown>;
     if (command?.documents) {
       commandObj = command.documents[0];
-    } else if (command.cursors) {
+    } else if (command?.cursors) {
       commandObj = command.cursors;
     } else {
       commandObj = command;
