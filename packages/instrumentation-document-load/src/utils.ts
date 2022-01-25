@@ -11,6 +11,7 @@ import {
   PerformanceLegacy,
   PerformanceTimingNames as PTN,
 } from '@opentelemetry/sdk-trace-web';
+import { getCLS, getFCP, getFID, getLCP, getTTFB, Metric } from 'web-vitals'
 import { EventNames } from './enums/EventNames';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
@@ -49,12 +50,53 @@ export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   return entries;
 };
 
+const vitalsMetricNames: Record<Metric['name'], string> = {
+  FCP: EventNames.FIRST_CONTENTFUL_PAINT,
+  FID: EventNames.FIRST_INPUT_DELAY,
+  TTFB: EventNames.TIME_TO_FIRST_BYTE,
+  LCP: EventNames.LARGEST_CONTENTFUL_PAINT,
+  CLS: EventNames.CUMULATIVE_LAYOUT_SHIFT
+}
+
 const performancePaintNames = {
   'first-paint': EventNames.FIRST_PAINT,
-  'first-contentful-paint': EventNames.FIRST_CONTENTFUL_PAINT,
 };
 
-export const addSpanPerformancePaintEvents = (span: Span) => {
+export const addSpanPerformancePaintEvents = (span: Span, callback: () => void) => {
+  const missedMetrics: Set<Metric['name']> = new Set(['FCP', 'FID', 'TTFB'])
+  if ('chrome' in globalThis) {
+    missedMetrics.add('LCP')
+    missedMetrics.add('CLS')
+  }
+
+  let spanIsEnded = false
+
+  const endSpan = () => {
+    document.removeEventListener('visibilitychange', endSpan)
+    globalThis.removeEventListener('pagehide', endSpan)
+    if (!spanIsEnded) {
+      spanIsEnded = true
+      callback()
+    }
+  }
+
+  const handleNewMetric = (metric: Metric) => {
+    missedMetrics.delete(metric.name)
+    span.addEvent(vitalsMetricNames[metric.name], metric.value)
+    if (!missedMetrics.size) {
+      endSpan()
+    }
+  }
+
+  document.addEventListener('visibilitychange', endSpan)
+  globalThis.addEventListener('pagehide', endSpan)
+
+  getCLS(handleNewMetric)
+  getFCP(handleNewMetric)
+  getFID(handleNewMetric)
+  getLCP(handleNewMetric)
+  getTTFB(handleNewMetric)
+
   const performancePaintTiming = (
     otperformance as unknown as Performance
   ).getEntriesByType?.('paint');
@@ -64,16 +106,5 @@ export const addSpanPerformancePaintEvents = (span: Span) => {
         span.addEvent(performancePaintNames[name], startTime);
       }
     });
-  }
-
-  if (typeof PerformanceObserver === 'function') {
-    const observer = new PerformanceObserver(() => {});
-    observer.observe({ type: 'largest-contentful-paint', buffered: true });
-    if (typeof observer.takeRecords === 'function') {
-      const [lcpRecord] = observer.takeRecords();
-      if (lcpRecord) {
-        span.addEvent(EventNames.LARGEST_CONTENTFUL_PAINT, lcpRecord.startTime);
-      }
-    }
   }
 };
