@@ -487,7 +487,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     }
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     let commandObj: Record<string, unknown>;
-    if (command?.documents) {
+    if (command?.documents && command.documents[0]) {
+      console.log(command.documents[0]);
       commandObj = command.documents[0];
     } else if (command?.cursors) {
       commandObj = command.cursors;
