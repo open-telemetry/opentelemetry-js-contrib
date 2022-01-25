@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-/* For testing locally "npm run docker:start"
- * These tests cannot be run against the default package dependencies.
- * In order to run the tests you can "npm run test-all-versions" or install mongodb v3 manually.
- */
+// for testing locally "npm run docker:start"
 
 import { context, trace, SpanKind, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
@@ -111,36 +108,48 @@ describe('MongoDBInstrumentation', () => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = trace.getTracer('default').startSpan('insertRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
-        collection.insertMany(insertData, (err, result) => {
-          span.end();
-          assert.ifError(err);
-          assertSpans(getTestSpans(), 'mongodb.insert', SpanKind.CLIENT);
-          done();
-        });
+        collection
+          .insertMany(insertData)
+          .then(() => {
+            span.end();
+            assertSpans(getTestSpans(), 'mongodb.insert', SpanKind.CLIENT);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
       });
     });
 
     it('should create a child span for update', done => {
       const span = trace.getTracer('default').startSpan('updateRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
-        collection.updateOne({ a: 2 }, { $set: { b: 1 } }, (err, result) => {
-          span.end();
-          assert.ifError(err);
-          assertSpans(getTestSpans(), 'mongodb.update', SpanKind.CLIENT);
-          done();
-        });
+        collection
+          .updateOne({ a: 2 }, { $set: { b: 1 } })
+          .then(() => {
+            span.end();
+            assertSpans(getTestSpans(), 'mongodb.update', SpanKind.CLIENT);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
       });
     });
 
     it('should create a child span for remove', done => {
       const span = trace.getTracer('default').startSpan('removeRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
-        collection.deleteOne({ a: 3 }, (err, result) => {
-          span.end();
-          assert.ifError(err);
-          assertSpans(getTestSpans(), 'mongodb.remove', SpanKind.CLIENT);
-          done();
-        });
+        collection
+          .deleteOne({ a: 3 })
+          .then(() => {
+            span.end();
+            assertSpans(getTestSpans(), 'mongodb.remove', SpanKind.CLIENT);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
       });
     });
   });
@@ -150,41 +159,52 @@ describe('MongoDBInstrumentation', () => {
     it('should create a child span for find', done => {
       const span = trace.getTracer('default').startSpan('findRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
-        collection.find({ a: 1 }).toArray((err, result) => {
-          span.end();
-          assert.ifError(err);
-          assertSpans(getTestSpans(), 'mongodb.find', SpanKind.CLIENT);
-          done();
-        });
+        collection
+          .find({ a: 1 })
+          .toArray()
+          .then(() => {
+            span.end();
+            assertSpans(getTestSpans(), 'mongodb.find', SpanKind.CLIENT);
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
       });
     });
+
     it('should create a child span for cursor operations', done => {
       const span = trace.getTracer('default').startSpan('findRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
         const cursor = collection.find().batchSize(1);
         cursor.next().then(firstElement => {
           assert(firstElement !== null);
-          cursor.next().then(secondElement => {
-            span.end();
-            assert(secondElement !== null);
-            // assert that we correctly got the first as a find
-            assertSpans(
-              getTestSpans().filter(
-                span => !span.name.includes('mongodb.getMore')
-              ),
-              'mongodb.find',
-              SpanKind.CLIENT
-            );
-            // assert that we correctly got the first as a find
-            assertSpans(
-              getTestSpans().filter(
-                span => !span.name.includes('mongodb.find')
-              ),
-              'mongodb.getMore',
-              SpanKind.CLIENT
-            );
-            done();
-          });
+          cursor
+            .next()
+            .then(secondElement => {
+              span.end();
+              assert(secondElement !== null);
+              // assert that we correctly got the first as a find
+              assertSpans(
+                getTestSpans().filter(
+                  span => !span.name.includes('mongodb.getMore')
+                ),
+                'mongodb.find',
+                SpanKind.CLIENT
+              );
+              // assert that we correctly got the first as a find
+              assertSpans(
+                getTestSpans().filter(
+                  span => !span.name.includes('mongodb.find')
+                ),
+                'mongodb.getMore',
+                SpanKind.CLIENT
+              );
+              done();
+            })
+            .catch(err => {
+              done(err);
+            });
         });
       });
     });
@@ -195,12 +215,20 @@ describe('MongoDBInstrumentation', () => {
     it('should create a child span for create index', done => {
       const span = trace.getTracer('default').startSpan('indexRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
-        collection.createIndex({ a: 1 }, (err, result) => {
-          span.end();
-          assert.ifError(err);
-          assertSpans(getTestSpans(), 'mongodb.createIndexes', SpanKind.CLIENT);
-          done();
-        });
+        collection
+          .createIndex({ a: 1 })
+          .then(() => {
+            span.end();
+            assertSpans(
+              getTestSpans(),
+              'mongodb.createIndexes',
+              SpanKind.CLIENT
+            );
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
       });
     });
   });
@@ -219,18 +247,23 @@ describe('MongoDBInstrumentation', () => {
     it('should properly collect db statement (hide attribute values)', done => {
       const span = trace.getTracer('default').startSpan('insertRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
-        collection.insertOne(object).then(() => {
-          span.end();
-          const spans = getTestSpans();
-          const operationName = 'mongodb.insert';
-          assertSpans(spans, operationName, SpanKind.CLIENT, false, false);
-          const mongoSpan = spans.find(s => s.name === operationName);
-          const dbStatement = JSON.parse(
-            mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
-          );
-          assert.strictEqual(dbStatement[key], '?');
-          done();
-        });
+        collection
+          .insertOne(object)
+          .then(() => {
+            span.end();
+            const spans = getTestSpans();
+            const operationName = 'mongodb.insert';
+            assertSpans(spans, operationName, SpanKind.CLIENT, false, false);
+            const mongoSpan = spans.find(s => s.name === operationName);
+            const dbStatement = JSON.parse(
+              mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+            );
+            assert.strictEqual(dbStatement[key], '?');
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
       });
     });
   });
@@ -252,18 +285,23 @@ describe('MongoDBInstrumentation', () => {
       it('should properly collect db statement', done => {
         const span = trace.getTracer('default').startSpan('insertRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
-          collection.insertOne(object).then(() => {
-            span.end();
-            const spans = getTestSpans();
-            const operationName = 'mongodb.insert';
-            assertSpans(spans, operationName, SpanKind.CLIENT, false, true);
-            const mongoSpan = spans.find(s => s.name === operationName);
-            const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
-            );
-            assert.strictEqual(dbStatement[key], value);
-            done();
-          });
+          collection
+            .insertOne(object)
+            .then(() => {
+              span.end();
+              const spans = getTestSpans();
+              const operationName = 'mongodb.insert';
+              assertSpans(spans, operationName, SpanKind.CLIENT, false, true);
+              const mongoSpan = spans.find(s => s.name === operationName);
+              const dbStatement = JSON.parse(
+                mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+              );
+              assert.strictEqual(dbStatement[key], value);
+              done();
+            })
+            .catch(err => {
+              done(err);
+            });
         });
       });
     });
@@ -281,12 +319,17 @@ describe('MongoDBInstrumentation', () => {
       it('should not do any harm when throwing an exception', done => {
         const span = trace.getTracer('default').startSpan('insertRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
-          collection.insertOne(object).then(() => {
-            span.end();
-            const spans = getTestSpans();
-            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
-            done();
-          });
+          collection
+            .insertOne(object)
+            .then(() => {
+              span.end();
+              const spans = getTestSpans();
+              assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
+              done();
+            })
+            .catch(err => {
+              done(err);
+            });
         });
       });
     });
@@ -310,47 +353,57 @@ describe('MongoDBInstrumentation', () => {
         const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
         const span = trace.getTracer('default').startSpan('insertRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
-          collection.insertMany(insertData, (err, results) => {
-            span.end();
-            assert.ifError(err);
-            const spans = getTestSpans();
-            const insertSpan = spans[0];
+          collection
+            .insertMany(insertData)
+            .then(results => {
+              span.end();
+              const spans = getTestSpans();
+              const insertSpan = spans[0];
 
-            assert.deepStrictEqual(
-              JSON.parse(insertSpan.attributes[dataAttributeName] as string),
-              (<any>results)?.result
-            );
+              assert.deepStrictEqual(
+                JSON.parse(insertSpan.attributes[dataAttributeName] as string),
+                (<any>results)?.result
+              );
 
-            done();
-          });
+              done();
+            })
+            .catch(err => {
+              done(err);
+            });
         });
       });
 
       it('should attach response hook data to the resulting span for find function', done => {
         const span = trace.getTracer('default').startSpan('findRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
-          collection.find({ a: 1 }).toArray((err, results) => {
-            span.end();
-            assert.ifError(err);
-            const spans = getTestSpans();
-            const findSpan = spans[0];
-            const hookAttributeValue = JSON.parse(
-              findSpan.attributes[dataAttributeName] as string
-            );
-
-            if (results) {
-              assert.strictEqual(
-                hookAttributeValue?.cursor?.firstBatch[0]._id,
-                results[0]._id.toString()
+          collection
+            .find({ a: 1 })
+            .toArray()
+            .then(results => {
+              span.end();
+              const spans = getTestSpans();
+              const findSpan = spans[0];
+              const hookAttributeValue = JSON.parse(
+                findSpan.attributes[dataAttributeName] as string
               );
-            } else {
-              throw new Error('Got an unexpected Results: ' + results);
-            }
-            done();
-          });
+
+              if (results) {
+                assert.strictEqual(
+                  hookAttributeValue?.cursor?.firstBatch[0]._id,
+                  results[0]._id.toString()
+                );
+              } else {
+                throw new Error('Got an unexpected Results: ' + results);
+              }
+              done();
+            })
+            .catch(err => {
+              done(err);
+            });
         });
       });
     });
+
     describe('with an invalid function', () => {
       beforeEach(() => {
         create({
@@ -362,44 +415,58 @@ describe('MongoDBInstrumentation', () => {
       it('should not do any harm when throwing an exception', done => {
         const span = trace.getTracer('default').startSpan('findRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
-          collection.find({ a: 1 }).toArray((err, results) => {
-            span.end();
-            const spans = getTestSpans();
-
-            assert.ifError(err);
-            assertSpans(spans, 'mongodb.find', SpanKind.CLIENT);
-            done();
-          });
+          collection
+            .find({ a: 1 })
+            .toArray()
+            .then(() => {
+              span.end();
+              const spans = getTestSpans();
+              assertSpans(spans, 'mongodb.find', SpanKind.CLIENT);
+              done();
+            })
+            .catch(err => {
+              done(err);
+            });
         });
       });
     });
   });
+
   describe('Mixed operations with callback', () => {
     it('should create a span for find after callback insert', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = trace.getTracer('default').startSpan('insertRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
-        collection.insertMany(insertData, (err, result) => {
-          span.end();
-          assert.ifError(err);
-          const spans = getTestSpans();
-          const mainSpan = spans[spans.length - 1];
-          assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
-          resetMemoryExporter();
+        collection
+          .insertMany(insertData)
+          .then(() => {
+            span.end();
+            const spans = getTestSpans();
+            const mainSpan = spans[spans.length - 1];
+            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
+            resetMemoryExporter();
 
-          collection.find({ a: 1 }).toArray((err, result) => {
-            const spans2 = getTestSpans();
-            spans2.push(mainSpan);
+            collection
+              .find({ a: 1 })
+              .toArray()
+              .then(() => {
+                const spans2 = getTestSpans();
+                spans2.push(mainSpan);
 
-            assert.ifError(err);
-            assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT);
-            assert.strictEqual(
-              mainSpan.spanContext().spanId,
-              spans2[0].parentSpanId
-            );
-            done();
+                assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT);
+                assert.strictEqual(
+                  mainSpan.spanContext().spanId,
+                  spans2[0].parentSpanId
+                );
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          })
+          .catch(err => {
+            done(err);
           });
-        });
       });
     });
   });
@@ -469,32 +536,46 @@ describe('MongoDBInstrumentation', () => {
     it('should not create a child span for query', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = trace.getTracer('default').startSpan('insertRootSpan');
-      collection.insertMany(insertData, (err, result) => {
-        span.end();
-        assert.ifError(err);
-        assert.strictEqual(getTestSpans().length, 1);
-        done();
-      });
+      collection
+        .insertMany(insertData)
+        .then(() => {
+          span.end();
+          assert.strictEqual(getTestSpans().length, 1);
+          done();
+        })
+        .catch(err => {
+          done(err);
+        });
     });
 
     it('should not create a child span for cursor', done => {
       const span = trace.getTracer('default').startSpan('findRootSpan');
-      collection.find({}).toArray((err, result) => {
-        span.end();
-        assert.ifError(err);
-        assert.strictEqual(getTestSpans().length, 1);
-        done();
-      });
+      collection
+        .find({})
+        .toArray()
+        .then(() => {
+          span.end();
+          assert.strictEqual(getTestSpans().length, 1);
+          done();
+        })
+        .catch(err => {
+          assert.ifError(err);
+          done(err);
+        });
     });
 
     it('should not create a child span for command', done => {
       const span = trace.getTracer('default').startSpan('indexRootSpan');
-      collection.createIndex({ a: 1 }, (err, result) => {
-        span.end();
-        assert.ifError(err);
-        assert.strictEqual(getTestSpans().length, 1);
-        done();
-      });
+      collection
+        .createIndex({ a: 1 })
+        .then(() => {
+          span.end();
+          assert.strictEqual(getTestSpans().length, 1);
+          done();
+        })
+        .catch(err => {
+          done(err);
+        });
     });
   });
 });

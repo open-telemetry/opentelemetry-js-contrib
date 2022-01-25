@@ -115,7 +115,6 @@ describe('MongoDBInstrumentation', () => {
             done();
           })
           .catch(err => {
-            assert.ifError(err);
             done(err);
           });
       });
@@ -132,7 +131,6 @@ describe('MongoDBInstrumentation', () => {
             done();
           })
           .catch(err => {
-            assert.ifError(err);
             done(err);
           });
       });
@@ -149,7 +147,6 @@ describe('MongoDBInstrumentation', () => {
             done();
           })
           .catch(err => {
-            assert.ifError(err);
             done(err);
           });
       });
@@ -170,7 +167,6 @@ describe('MongoDBInstrumentation', () => {
             done();
           })
           .catch(err => {
-            assert.ifError(err);
             done(err);
           });
       });
@@ -206,7 +202,6 @@ describe('MongoDBInstrumentation', () => {
               done();
             })
             .catch(err => {
-              assert.ifError(err);
               done(err);
             });
         });
@@ -231,7 +226,6 @@ describe('MongoDBInstrumentation', () => {
             done();
           })
           .catch(err => {
-            assert.ifError(err);
             done(err);
           });
       });
@@ -267,7 +261,6 @@ describe('MongoDBInstrumentation', () => {
             done();
           })
           .catch(err => {
-            assert.ifError(err);
             done(err);
           });
       });
@@ -306,7 +299,6 @@ describe('MongoDBInstrumentation', () => {
               done();
             })
             .catch(err => {
-              assert.ifError(err);
               done(err);
             });
         });
@@ -335,7 +327,6 @@ describe('MongoDBInstrumentation', () => {
               done();
             })
             .catch(err => {
-              assert.ifError(err);
               done(err);
             });
         });
@@ -373,7 +364,6 @@ describe('MongoDBInstrumentation', () => {
               done();
             })
             .catch(err => {
-              assert.ifError(err);
               done(err);
             });
         });
@@ -404,7 +394,6 @@ describe('MongoDBInstrumentation', () => {
               done();
             })
             .catch(err => {
-              assert.ifError(err);
               done(err);
             });
         });
@@ -432,7 +421,6 @@ describe('MongoDBInstrumentation', () => {
               done();
             })
             .catch(err => {
-              assert.ifError(err);
               done(err);
             });
         });
@@ -445,31 +433,35 @@ describe('MongoDBInstrumentation', () => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = trace.getTracer('default').startSpan('insertRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
-        collection.insertMany(insertData).then(() => {
-          span.end();
-          const spans = getTestSpans();
-          const mainSpan = spans[spans.length - 1];
-          assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
-          resetMemoryExporter();
+        collection
+          .insertMany(insertData)
+          .then(() => {
+            span.end();
+            const spans = getTestSpans();
+            const mainSpan = spans[spans.length - 1];
+            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
+            resetMemoryExporter();
 
-          collection
-            .find({ a: 1 })
-            .toArray()
-            .then(() => {
-              const spans2 = getTestSpans();
-              spans2.push(mainSpan);
-              assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT);
-              assert.strictEqual(
-                mainSpan.spanContext().spanId,
-                spans2[0].parentSpanId
-              );
-              done();
-            })
-            .catch(err => {
-              assert.ifError(err);
-              done(err);
-            });
-        });
+            collection
+              .find({ a: 1 })
+              .toArray()
+              .then(() => {
+                const spans2 = getTestSpans();
+                spans2.push(mainSpan);
+                assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT);
+                assert.strictEqual(
+                  mainSpan.spanContext().spanId,
+                  spans2[0].parentSpanId
+                );
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          })
+          .catch(err => {
+            done(err);
+          });
       });
     });
   });
@@ -485,14 +477,14 @@ describe('MongoDBInstrumentation', () => {
     it('should not create a child span for query', done => {
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
       const span = trace.getTracer('default').startSpan('insertRootSpan');
-      collection.insertMany(insertData)
+      collection
+        .insertMany(insertData)
         .then(() => {
           span.end();
           assert.strictEqual(getTestSpans().length, 1);
           done();
         })
         .catch(err => {
-          assert.ifError(err);
           done(err);
         });
     });
@@ -523,7 +515,6 @@ describe('MongoDBInstrumentation', () => {
           done();
         })
         .catch(err => {
-          assert.ifError(err);
           done(err);
         });
     });
