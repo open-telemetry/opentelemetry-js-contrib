@@ -274,10 +274,10 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     return (original: V4Connection['command']) => {
       return function patchedV4ServerCommand(
         this: unknown,
-        ns: mongodb.MongoDBNamespace,
+        ns: any,
         cmd: any,
         options: undefined | unknown,
-        callback: mongodb.Callback<any>
+        callback: any
       ) {
         const currentSpan = trace.getSpan(context.active());
         const resultHandler = callback;
@@ -298,13 +298,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         );
         instrumentation._populateV4Attributes(span, this, ns, cmd);
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
-        return original.call(
-          this,
-          ns,
-          cmd,
-          options,
-          patchedCallback as mongodb.Callback
-        );
+        return original.call(this, ns, cmd, options, patchedCallback);
       };
     };
   }
@@ -477,7 +471,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   private _populateV4Attributes(
     span: Span,
     connectionCtx: any,
-    ns: mongodb.MongoDBNamespace,
+    ns: any,
     command?: any
   ) {
     let host, port: undefined | string;

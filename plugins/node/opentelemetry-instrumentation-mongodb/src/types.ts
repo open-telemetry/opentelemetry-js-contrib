@@ -16,7 +16,6 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Span } from '@opentelemetry/api';
-import type * as mongodb from 'mongodb';
 
 export interface MongoDBInstrumentationExecutionResponseHook {
   (span: Span, responseInfo: MongoResponseHookInformation): void;
@@ -167,10 +166,10 @@ export enum MongodbCommandType {
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export type V4Connection = {
   command(
-    ns: mongodb.MongoDBNamespace,
+    ns: any,
     cmd: Document,
     options: undefined | unknown,
-    callback: mongodb.Callback<unknown>
+    callback: any
   ): void;
 };
 /* eslint-enable @typescript-eslint/no-unused-vars */
