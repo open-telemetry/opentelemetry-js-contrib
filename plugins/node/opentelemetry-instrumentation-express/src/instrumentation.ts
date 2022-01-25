@@ -21,13 +21,14 @@ import {
   RPCType,
 } from '@opentelemetry/core';
 import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
-import * as express from 'express';
+import type * as express from 'express';
 import {
   ExpressLayer,
   ExpressRouter,
   PatchedRequest,
   _LAYERS_STORE_PROPERTY,
   ExpressInstrumentationConfig,
+  ExpressRequestInfo,
 } from './types';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 import { AttributeNames } from './enums/AttributeNames';
@@ -56,6 +57,14 @@ export class ExpressInstrumentation extends InstrumentationBase<
       VERSION,
       Object.assign({}, config)
     );
+  }
+
+  override setConfig(config: ExpressInstrumentationConfig = {}) {
+    this._config = Object.assign({}, config);
+  }
+
+  override getConfig(): ExpressInstrumentationConfig {
+    return this._config as ExpressInstrumentationConfig;
   }
 
   init() {
@@ -202,9 +211,14 @@ export class ExpressInstrumentation extends InstrumentationBase<
             ExpressLayerType.REQUEST_HANDLER &&
           rpcMetadata?.type === RPCType.HTTP
         ) {
-          rpcMetadata.span.updateName(
+          const name = instrumentation._getSpanName(
+            {
+              request: req,
+              route,
+            },
             `${req.method} ${route.length > 0 ? route : '/'}`
           );
+          rpcMetadata.span.updateName(name);
         }
 
         // verify against the config if the layer should be ignored
@@ -218,7 +232,15 @@ export class ExpressInstrumentation extends InstrumentationBase<
           return original.apply(this, arguments);
         }
 
-        const span = instrumentation.tracer.startSpan(metadata.name, {
+        const spanName = instrumentation._getSpanName(
+          {
+            request: req,
+            layerType: type,
+            route,
+          },
+          metadata.name
+        );
+        const span = instrumentation.tracer.startSpan(spanName, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
         const startTime = hrTime();
@@ -276,5 +298,23 @@ export class ExpressInstrumentation extends InstrumentationBase<
         return result;
       };
     });
+  }
+
+  _getSpanName(info: ExpressRequestInfo, defaultName: string) {
+    const hook = this.getConfig().spanNameHook;
+
+    if (!(hook instanceof Function)) {
+      return defaultName;
+    }
+
+    try {
+      return hook(info, defaultName) ?? defaultName;
+    } catch (err) {
+      diag.error(
+        'express instrumentation: error calling span name rewrite hook',
+        err
+      );
+      return defaultName;
+    }
   }
 }
