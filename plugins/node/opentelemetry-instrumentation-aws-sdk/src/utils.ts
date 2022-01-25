@@ -78,7 +78,10 @@ export const bindPromise = (
   rebindCount = 1
 ): Promise<any> => {
   const origThen = target.then;
-  target.then = function (onFulfilled, onRejected) {
+  target.then = function (
+    onFulfilled: (value: any) => any,
+    onRejected: (reason: any) => any
+  ) {
     const newOnFulfilled = context.bind(contextForCallbacks, onFulfilled);
     const newOnRejected = context.bind(contextForCallbacks, onRejected);
     const patchedPromise = origThen.call(this, newOnFulfilled, newOnRejected);
