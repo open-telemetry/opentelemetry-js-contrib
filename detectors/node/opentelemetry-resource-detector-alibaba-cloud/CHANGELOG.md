@@ -1,5 +1,19 @@
 # Changelog
 
+### [0.26.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.26.1...resource-detector-alibaba-cloud-v0.26.2) (2022-01-24)
+
+
+### Bug Fixes
+
+* rename lerna's --include-filtered-dependencies option ([#817](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/817)) ([cf268e7](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/cf268e7a92b7800ad6dbec9ca77466f9ee03ee1a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.28.0 to ^0.29.0
+
 ### [0.26.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.26.0...resource-detector-alibaba-cloud-v0.26.1) (2021-11-30)
 
 

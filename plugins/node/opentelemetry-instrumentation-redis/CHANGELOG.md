@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.27.0...instrumentation-redis-v0.28.0) (2022-01-24)
+
+
+### Features
+
+* re-enable TAV ([#823](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/823)) ([2e14f46](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/2e14f46b3f7221ae51ffa12313997f007c300e21))
+
+
+### Bug Fixes
+
+* redis instrumentation startup stream check [#666](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/666) ([#818](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/818)) ([81b3190](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/81b3190af64bda14f87c5b0cbd6172bafda26408))
+* rename lerna's --include-filtered-dependencies option ([#817](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/817)) ([cf268e7](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/cf268e7a92b7800ad6dbec9ca77466f9ee03ee1a))
+* use localhost for services in CI ([#816](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/816)) ([f497313](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/f4973133e86549bbca301983085cc67788a10acd))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.28.0 to ^0.29.0
+
 ## [0.27.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.26.0...instrumentation-redis-v0.27.0) (2021-11-30)
 
 

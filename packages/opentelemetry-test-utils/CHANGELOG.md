@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.29.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.28.0...contrib-test-utils-v0.29.0) (2022-01-24)
+
+
+### Features
+
+* implement instrumentation for `tedious` ([#799](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/799)) ([9326c99](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/9326c99f3cdf3e0166f74093a8093066be78bd0a))
+* re-enable TAV ([#823](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/823)) ([2e14f46](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/2e14f46b3f7221ae51ffa12313997f007c300e21))
+
+
+### Bug Fixes
+
+* rename lerna's --include-filtered-dependencies option ([#817](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/817)) ([cf268e7](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/cf268e7a92b7800ad6dbec9ca77466f9ee03ee1a))
+
 ## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.27.0...contrib-test-utils-v0.28.0) (2021-11-30)
 
 

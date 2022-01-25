@@ -1,5 +1,20 @@
 # Changelog
 
+### [1.0.3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.0.2...resource-detector-aws-v1.0.3) (2022-01-24)
+
+
+### Bug Fixes
+
+* **opentelemetry-resource-detector-aws:** add missing attribute to la… ([#810](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/810)) ([359fee8](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/359fee89b708ce7995ee5a282c753e56c411e87c))
+* rename lerna's --include-filtered-dependencies option ([#817](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/817)) ([cf268e7](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/cf268e7a92b7800ad6dbec9ca77466f9ee03ee1a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.28.0 to ^0.29.0
+
 ### [1.0.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.0.1...resource-detector-aws-v1.0.2) (2021-11-30)
 
 

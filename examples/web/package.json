@@ -1,10 +1,12 @@
 {
   "name": "web-examples",
   "private": true,
-  "version": "0.23.0",
+  "version": "0.26.0",
   "description": "Example of using web plugins in browser",
   "main": "index.js",
   "scripts": {
+    "docker:start": "cd ./docker && docker-compose down && docker-compose up",
+    "docker:startd": "cd ./docker && docker-compose down && docker-compose up -d",
     "start": "webpack-dev-server -d --progress --colors --port 8090 --config webpack.config.js --hot --inline --host 0.0.0.0 --content-base examples"
   },
   "repository": {
@@ -34,18 +36,20 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.0.2",
-    "@opentelemetry/auto-instrumentations-web": "^0.24.0",
-    "@opentelemetry/context-zone": "^0.25.0",
-    "@opentelemetry/core": "^0.25.0",
-    "@opentelemetry/exporter-collector": "^0.25.0",
-    "@opentelemetry/instrumentation": "^0.25.0",
-    "@opentelemetry/instrumentation-document-load": "^0.23.0",
-    "@opentelemetry/instrumentation-user-interaction": "^0.23.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.25.0",
-    "@opentelemetry/propagator-b3": "^0.25.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0",
-    "@opentelemetry/sdk-trace-web": "^0.25.0"
+    "@opentelemetry/api": "^1.0.3",
+    "@opentelemetry/auto-instrumentations-web": "~0.26.0",
+    "@opentelemetry/context-zone": "~1.0.0",
+    "@opentelemetry/core": "~1.0.0",
+    "@opentelemetry/exporter-otlp-http": "~0.26.0",
+    "@opentelemetry/instrumentation": "~0.26.0",
+    "@opentelemetry/instrumentation-document-load": "~0.26.0",
+    "@opentelemetry/instrumentation-user-interaction": "~0.26.0",
+    "@opentelemetry/instrumentation-xml-http-request": "~0.26.0",
+    "@opentelemetry/propagator-b3": "~1.0.0",
+    "@opentelemetry/resources": "~1.0.0",
+    "@opentelemetry/sdk-trace-base": "~1.0.0",
+    "@opentelemetry/sdk-trace-web": "~1.0.0",
+    "@opentelemetry/semantic-conventions": "~1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"
 }

@@ -62,6 +62,7 @@ Express instrumentation has few options available to choose from. You can set th
 | ------- | ---- | ------- | ----------- |
 | `ignoreLayers` | `IgnoreMatcher[]` | `[/^\/_internal\//]` | Ignore layers that by match. |
 | `ignoreLayersType`| `ExpressLayerType[]` | `['request_handler']` | Ignore layers of specified type. |
+| `spanNameHook` | `SpanNameHook` | `() => 'my-span-name'` | Can be used to customize span names by returning a new name from the hook. |
 
 `ignoreLayers` accepts an array of elements of types:
 
@@ -74,6 +75,11 @@ Express instrumentation has few options available to choose from. You can set th
 - `router` is the name of `express.Router()`,
 - `middleware`,
 - `request_handler` is the name for anything that's not a router or a middleware.
+
+`spanNameHook` is invoked with 2 arguments:
+
+- `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer or undefined when renaming the root HTTP instrumentation span.
+- `defaultName: string` - original name proposed by the instrumentation.
 
 ## Useful links
 

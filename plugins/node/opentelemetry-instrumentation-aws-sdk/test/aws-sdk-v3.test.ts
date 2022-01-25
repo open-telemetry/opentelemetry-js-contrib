@@ -78,6 +78,7 @@ describe('instrumentation-aws-sdk-v3', () => {
       expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual('S3');
       expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
+      expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(200);
     });
 
     it('callback interface', done => {
@@ -104,6 +105,9 @@ describe('instrumentation-aws-sdk-v3', () => {
         expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual('S3');
         expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
         expect(span.name).toEqual('S3.PutObject');
+        expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(
+          200
+        );
         done();
       });
     });
@@ -131,6 +135,7 @@ describe('instrumentation-aws-sdk-v3', () => {
       expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual('S3');
       expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
+      expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(200);
     });
 
     it('aws error', async () => {
@@ -315,6 +320,9 @@ describe('instrumentation-aws-sdk-v3', () => {
         expect(span.attributes[SemanticAttributes.MESSAGING_URL]).toEqual(
           params.QueueUrl
         );
+        expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(
+          200
+        );
       });
 
       it('sqs receive add messaging attributes and context', done => {
@@ -352,6 +360,9 @@ describe('instrumentation-aws-sdk-v3', () => {
             .attributes;
           expect(attributes[SemanticAttributes.MESSAGING_OPERATION]).toMatch(
             MessagingOperationValues.RECEIVE
+          );
+          expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(
+            200
           );
           done();
         });

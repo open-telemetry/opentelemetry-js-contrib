@@ -136,7 +136,7 @@ export enum DomAttributes {
 
 export enum PlaceholderValues {
   ZIPKIN_URL = 'http://localhost:9411/api/v2/spans',
-  COLLECTOR_TRACE_URL = 'http://localhost:55681/v1/trace',
+  COLLECTOR_TRACE_URL = 'http://localhost:4318/v1/trace',
 }
 
 export enum Labels {
