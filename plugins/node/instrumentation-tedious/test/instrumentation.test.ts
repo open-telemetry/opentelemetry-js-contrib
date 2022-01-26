@@ -296,9 +296,9 @@ describe('tedious', () => {
       procCount: 0,
     });
     assertSpan(spans[2], {
-      name: 'execBulkLoad [dbo].[test_bulk] master',
+      name: 'execBulkLoad test_bulk master',
       procCount: 0,
-      table: '[dbo].[test_bulk]',
+      table: 'test_bulk',
     });
   });
 });

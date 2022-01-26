@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-node",
-  "version": "0.27.1",
+  "version": "0.27.2",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
@@ -46,16 +46,16 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.27.0",
-    "@opentelemetry/instrumentation-dns": "^0.27.0",
-    "@opentelemetry/instrumentation-express": "^0.27.0",
-    "@opentelemetry/instrumentation-graphql": "^0.27.1",
+    "@opentelemetry/instrumentation-dns": "^0.27.1",
+    "@opentelemetry/instrumentation-express": "^0.27.1",
+    "@opentelemetry/instrumentation-graphql": "^0.27.2",
     "@opentelemetry/instrumentation-grpc": "^0.27.0",
     "@opentelemetry/instrumentation-http": "^0.27.0",
-    "@opentelemetry/instrumentation-ioredis": "^0.27.0",
-    "@opentelemetry/instrumentation-koa": "^0.28.0",
-    "@opentelemetry/instrumentation-mongodb": "^0.27.0",
-    "@opentelemetry/instrumentation-mysql": "^0.27.0",
-    "@opentelemetry/instrumentation-pg": "^0.27.0",
-    "@opentelemetry/instrumentation-redis": "^0.27.0"
+    "@opentelemetry/instrumentation-ioredis": "^0.27.1",
+    "@opentelemetry/instrumentation-koa": "^0.28.1",
+    "@opentelemetry/instrumentation-mongodb": "^0.28.0",
+    "@opentelemetry/instrumentation-mysql": "^0.27.1",
+    "@opentelemetry/instrumentation-pg": "^0.28.0",
+    "@opentelemetry/instrumentation-redis": "^0.28.0"
   }
 }

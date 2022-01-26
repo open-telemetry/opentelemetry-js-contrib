@@ -70,6 +70,24 @@ export type LayerMetadata = {
 
 export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 
+export type ExpressRequestInfo = {
+  request: Request;
+  route: string;
+  /**
+   * If layerType is undefined, SpanNameHook is being invoked to rename the original root HTTP span.
+   */
+  layerType?: ExpressLayerType;
+};
+
+export type SpanNameHook = (
+  info: ExpressRequestInfo,
+  /**
+   * If no decision is taken based on RequestInfo, the default name
+   * supplied by the instrumentation can be used instead.
+   */
+  defaultName: string
+) => string;
+
 /**
  * Options available for the Express Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-Instrumentation-express#express-Instrumentation-options))
  */
@@ -78,4 +96,5 @@ export interface ExpressInstrumentationConfig extends InstrumentationConfig {
   ignoreLayers?: IgnoreMatcher[];
   /** Ignore specific layers based on their type */
   ignoreLayersType?: ExpressLayerType[];
+  spanNameHook?: SpanNameHook;
 }

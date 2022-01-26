@@ -250,6 +250,7 @@ export const makeApi = (tedious: tedious) => {
 
   const bulkLoad = {
     tableName: '[dbo].[test_bulk]',
+    tableNameShort: 'test_bulk',
     createTable: (connection: Connection): Promise<boolean> => {
       return new Promise((resolve, reject) => {
         const sql = `
@@ -276,9 +277,9 @@ export const makeApi = (tedious: tedious) => {
         // <2.2.0 didn't take bulkOptions
         const request =
           connection.newBulkLoad.length === 2
-            ? connection.newBulkLoad(bulkLoad.tableName, requestDoneCb)
+            ? connection.newBulkLoad(bulkLoad.tableNameShort, requestDoneCb)
             : (connection.newBulkLoad as any)(
-                bulkLoad.tableName,
+                bulkLoad.tableNameShort,
                 { keepNulls: true },
                 requestDoneCb
               );

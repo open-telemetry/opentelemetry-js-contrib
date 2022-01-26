@@ -2,7 +2,7 @@ version: "3"
 services:
   # Collector
   collector:
-    image: otel/opentelemetry-collector:0.30.0
+    image: otel/opentelemetry-collector:0.38.0
 #    image: otel/opentelemetry-collector:latest
     command: ["--config=/conf/collector-config.yaml", "--log-level=DEBUG"]
     volumes:
@@ -10,7 +10,7 @@ services:
     ports:
       - "9464:9464"
       - "4317:4317"
-      - "55681:55681"
+      - "4318:4318"
     depends_on:
       - zipkin-all-in-one
 
