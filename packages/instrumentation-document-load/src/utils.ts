@@ -11,7 +11,7 @@ import {
   PerformanceLegacy,
   PerformanceTimingNames as PTN,
 } from '@opentelemetry/sdk-trace-web';
-import { getCLS, getFCP, getFID, getLCP, getTTFB, Metric } from 'web-vitals'
+import { getCLS, getFCP, getFID, getLCP, getTTFB, Metric } from 'web-vitals';
 import { EventNames } from './enums/EventNames';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
@@ -56,7 +56,7 @@ const vitalsMetricNames: Record<Metric['name'], string> = {
   TTFB: EventNames.TIME_TO_FIRST_BYTE,
   LCP: EventNames.LARGEST_CONTENTFUL_PAINT,
   CLS: EventNames.CUMULATIVE_LAYOUT_SHIFT
-}
+};
 
 const performancePaintNames = {
   'first-paint': EventNames.FIRST_PAINT,
@@ -65,37 +65,38 @@ const performancePaintNames = {
 export const addSpanPerformancePaintEvents = (span: Span, callback: () => void) => {
   const missedMetrics: Set<Metric['name']> = new Set(['FCP', 'FID', 'TTFB'])
   if ('chrome' in globalThis) {
-    missedMetrics.add('LCP')
-    missedMetrics.add('CLS')
+    // LCP and CLS are only available in chromium according to web-vitals README
+    missedMetrics.add('LCP');
+    missedMetrics.add('CLS');
   }
 
-  let spanIsEnded = false
+  let spanIsEnded = false;
 
   const endSpan = () => {
-    document.removeEventListener('visibilitychange', endSpan)
-    globalThis.removeEventListener('pagehide', endSpan)
+    document.removeEventListener('visibilitychange', endSpan);
+    globalThis.removeEventListener('pagehide', endSpan);
     if (!spanIsEnded) {
-      spanIsEnded = true
-      callback()
+      spanIsEnded = true;
+      callback();
     }
   }
 
   const handleNewMetric = (metric: Metric) => {
-    missedMetrics.delete(metric.name)
-    span.addEvent(vitalsMetricNames[metric.name], metric.value)
+    missedMetrics.delete(metric.name);
+    span.addEvent(vitalsMetricNames[metric.name], metric.value);
     if (!missedMetrics.size) {
-      endSpan()
+      endSpan();
     }
   }
 
-  document.addEventListener('visibilitychange', endSpan)
-  globalThis.addEventListener('pagehide', endSpan)
+  document.addEventListener('visibilitychange', endSpan);
+  globalThis.addEventListener('pagehide', endSpan);
 
-  getCLS(handleNewMetric)
-  getFCP(handleNewMetric)
-  getFID(handleNewMetric)
-  getLCP(handleNewMetric)
-  getTTFB(handleNewMetric)
+  getCLS(handleNewMetric);
+  getFCP(handleNewMetric);
+  getFID(handleNewMetric);
+  getLCP(handleNewMetric);
+  getTTFB(handleNewMetric);
 
   const performancePaintTiming = (
     otperformance as unknown as Performance
