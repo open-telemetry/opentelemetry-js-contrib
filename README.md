@@ -135,6 +135,12 @@ We'd love your help!. Use tags [up-for-grabs][up-for-grabs-issues] and
 [good first issue][good-first-issues] to get started with the project. Follow
 [CONTRIBUTING](CONTRIBUTING.md) guide to report issues or submit a proposal.
 
+### Thanks to all the people who already contributed
+
+<a href="https://github.com/open-telemetry/opentelemetry-js-contrib/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=open-telemetry/opentelemetry-js-contrib" />
+</a>      
+      
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
