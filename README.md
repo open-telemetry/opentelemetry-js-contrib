@@ -139,8 +139,8 @@ We'd love your help!. Use tags [up-for-grabs][up-for-grabs-issues] and
 
 <a href="https://github.com/open-telemetry/opentelemetry-js-contrib/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=open-telemetry/opentelemetry-js-contrib" />
-</a>      
-      
+</a>
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
