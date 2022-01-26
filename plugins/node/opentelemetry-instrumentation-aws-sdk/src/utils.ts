@@ -72,19 +72,24 @@ export const extractAttributesFromNormalizedRequest = (
   };
 };
 
-export const bindPromise = (
-  target: Promise<any>,
+export const bindPromise = <T = unknown>(
+  target: Promise<T>,
   contextForCallbacks: Context,
   rebindCount = 1
-): Promise<any> => {
+): Promise<T> => {
   const origThen = target.then;
-  target.then = function (
-    onFulfilled: (value: any) => any,
-    onRejected: (reason: any) => any
-  ) {
+  type PromiseThenParameters = Parameters<Promise<T>['then']>;
+  target.then = function <TResult1 = T, TResult2 = never>(
+    onFulfilled: PromiseThenParameters[0],
+    onRejected: PromiseThenParameters[1]
+  ): Promise<TResult1 | TResult2> {
     const newOnFulfilled = context.bind(contextForCallbacks, onFulfilled);
     const newOnRejected = context.bind(contextForCallbacks, onRejected);
-    const patchedPromise = origThen.call(this, newOnFulfilled, newOnRejected);
+    const patchedPromise = origThen.call<
+      Promise<T>,
+      any[],
+      Promise<TResult1 | TResult2>
+    >(this, newOnFulfilled, newOnRejected);
     return rebindCount > 1
       ? bindPromise(patchedPromise, contextForCallbacks, rebindCount - 1)
       : patchedPromise;
