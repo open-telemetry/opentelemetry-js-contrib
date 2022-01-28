@@ -25,6 +25,7 @@ import * as assert from 'assert';
 import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation, ExpressLayerType } from '../src';
+import { createServer, httpRequest } from './utils';
 
 const instrumentation = new ExpressInstrumentation({
   ignoreLayersType: [
@@ -38,26 +39,6 @@ instrumentation.disable();
 
 import * as express from 'express';
 import * as http from 'http';
-import { AddressInfo } from 'net';
-
-const httpRequest = {
-  get: (options: http.ClientRequestArgs | string) => {
-    return new Promise((resolve, reject) => {
-      return http.get(options, resp => {
-        let data = '';
-        resp.on('data', chunk => {
-          data += chunk;
-        });
-        resp.on('end', () => {
-          resolve(data);
-        });
-        resp.on('error', err => {
-          reject(err);
-        });
-      });
-    });
-  },
-};
 
 describe('ExpressInstrumentation', () => {
   const provider = new NodeTracerProvider();
@@ -81,6 +62,7 @@ describe('ExpressInstrumentation', () => {
 
   describe('when route exists', () => {
     let server: http.Server;
+    let port: number;
     let rootSpan: Span;
 
     beforeEach(async () => {
@@ -110,8 +92,9 @@ describe('ExpressInstrumentation', () => {
         });
       });
 
-      server = http.createServer(app);
-      await new Promise<void>(resolve => server.listen(0, resolve));
+      const httpServer = await createServer(app);
+      server = httpServer.server;
+      port = httpServer.port;
     });
 
     afterEach(() => {
@@ -119,7 +102,6 @@ describe('ExpressInstrumentation', () => {
     });
 
     it('should ignore all ExpressLayerType based on config', async () => {
-      const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -145,7 +127,6 @@ describe('ExpressInstrumentation', () => {
     });
 
     it('root span name should be modified to GET /todo/:id', async () => {
-      const port = (server.address() as AddressInfo).port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
