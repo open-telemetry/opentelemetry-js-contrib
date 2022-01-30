@@ -52,7 +52,7 @@
     "@opentelemetry/sdk-trace-base": "1.0.1",
     "@types/express": "4.17.13",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.4",
+    "@types/node": "16.11.21",
     "codecov": "3.8.2",
     "fastify-express": "0.3.3",
     "gts": "3.1.0",

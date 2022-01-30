@@ -59,7 +59,7 @@
     "@opentelemetry/sdk-trace-base": "1.0.1",
     "@opentelemetry/sdk-trace-node": "1.0.1",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.6",
+    "@types/node": "16.11.21",
     "@types/semver": "7.3.8",
     "@types/vinyl-fs": "2.4.12",
     "codecov": "3.8.3",
