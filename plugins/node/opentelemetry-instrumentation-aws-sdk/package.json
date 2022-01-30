@@ -60,7 +60,7 @@
     "@opentelemetry/api": "1.0.1",
     "@opentelemetry/sdk-trace-base": "1.0.1",
     "@types/mocha": "8.2.3",
-    "@types/node": "14.18.2",
+    "@types/node": "16.11.21",
     "@types/sinon": "10.0.6",
     "aws-sdk": "2.1008.0",
     "eslint": "8.7.0",
