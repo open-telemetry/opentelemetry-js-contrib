@@ -15,6 +15,7 @@
     "packages/opentelemetry-host-metrics": {},
     "packages/opentelemetry-id-generator-aws-xray": {},
     "packages/opentelemetry-test-utils": {},
+    "plugins/node/instrumentation-tedious": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},
     "plugins/node/opentelemetry-instrumentation-aws-sdk": {},
     "plugins/node/opentelemetry-instrumentation-bunyan": {},

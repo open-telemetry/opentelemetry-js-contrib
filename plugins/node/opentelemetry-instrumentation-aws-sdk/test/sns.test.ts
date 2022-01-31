@@ -101,7 +101,7 @@ describe('SNS', () => {
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${PhoneNumber} send`
+        (s: ReadableSpan) => s.name === 'phone_number send'
       );
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];

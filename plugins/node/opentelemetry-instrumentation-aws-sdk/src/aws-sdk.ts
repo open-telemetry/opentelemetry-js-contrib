@@ -57,6 +57,7 @@ import {
   removeSuffixFromStringIfExists,
 } from './utils';
 import { RequestMetadata } from './services/ServiceExtension';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const V3_CLIENT_CONFIG_KEY = Symbol(
   'opentelemetry.instrumentation.aws-sdk.client.config'
@@ -328,6 +329,14 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
         }
 
         span.setAttribute(AttributeNames.AWS_REQUEST_ID, response.requestId);
+
+        const httpStatusCode = response.httpResponse?.statusCode;
+        if (httpStatusCode) {
+          span.setAttribute(
+            SemanticAttributes.HTTP_STATUS_CODE,
+            httpStatusCode
+          );
+        }
         span.end();
       });
     });
@@ -472,6 +481,16 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
                   if (requestId) {
                     span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
                   }
+
+                  const httpStatusCode =
+                    response.output?.$metadata?.httpStatusCode;
+                  if (httpStatusCode) {
+                    span.setAttribute(
+                      SemanticAttributes.HTTP_STATUS_CODE,
+                      httpStatusCode
+                    );
+                  }
+
                   const extendedRequestId =
                     response.output?.$metadata?.extendedRequestId;
                   if (extendedRequestId) {

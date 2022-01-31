@@ -57,7 +57,7 @@ export const getTracedCreateStreamTrace = (
   original: Function
 ) => {
   return function create_stream_trace(this: redisTypes.RedisClient) {
-    if (!this.stream) {
+    if (!Object.prototype.hasOwnProperty.call(this, 'stream')) {
       Object.defineProperty(this, 'stream', {
         get() {
           return this._patched_redis_stream;

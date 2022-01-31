@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-nestjs-core",
-  "version": "0.28.1",
+  "version": "0.28.2",
   "description": "OpenTelemetry NestJS automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -17,6 +17,7 @@
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js"
   },
   "keywords": [
@@ -48,17 +49,17 @@
     "@opentelemetry/api": "^1.0.2"
   },
   "devDependencies": {
-    "@nestjs/common": "8.0.6",
-    "@nestjs/core": "8.0.6",
-    "@nestjs/microservices": "8.0.6",
-    "@nestjs/platform-express": "8.0.6",
-    "@nestjs/websockets": "8.0.6",
+    "@nestjs/common": "8.2.6",
+    "@nestjs/core": "8.2.6",
+    "@nestjs/microservices": "8.2.6",
+    "@nestjs/platform-express": "8.2.6",
+    "@nestjs/websockets": "8.2.6",
     "@opentelemetry/api": "1.0.2",
     "@opentelemetry/context-async-hooks": "1.0.1",
     "@opentelemetry/sdk-trace-base": "1.0.1",
     "@opentelemetry/sdk-trace-node": "1.0.1",
     "@types/mocha": "7.0.2",
-    "@types/node": "14.17.6",
+    "@types/node": "16.11.21",
     "@types/semver": "7.3.8",
     "@types/vinyl-fs": "2.4.12",
     "codecov": "3.8.3",
@@ -71,6 +72,7 @@
     "rxjs": "7.3.0",
     "rxjs-compat": "6.6.7",
     "semver": "7.3.5",
+    "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"
   },
