@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         if: ${{ steps.release.outputs.releases_created }}
         with:
           node-version: 14
