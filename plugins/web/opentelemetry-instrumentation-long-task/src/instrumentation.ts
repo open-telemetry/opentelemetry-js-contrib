@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { SpanAttributes } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import {
   InstrumentationBase,
@@ -33,6 +34,8 @@ interface TaskAttributionTiming extends PerformanceEntry {
   containerName: string;
 }
 
+type ObserverCallback = (entry: PerformanceLongTaskTiming) => SpanAttributes;
+
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 
 export class LongTaskInstrumentation extends InstrumentationBase {
@@ -41,13 +44,18 @@ export class LongTaskInstrumentation extends InstrumentationBase {
   moduleName = this.component;
 
   private _observer?: PerformanceObserver;
+  private _observerCallback?: ObserverCallback;
 
   /**
    *
    * @param config
    */
-  constructor(config: InstrumentationConfig = {}) {
+  constructor(
+    config: InstrumentationConfig = {},
+    observerCallback?: ObserverCallback
+  ) {
     super('@opentelemetry/instrumentation-long-task', VERSION, config);
+    this._observerCallback = observerCallback;
   }
 
   init() {}
@@ -69,6 +77,9 @@ export class LongTaskInstrumentation extends InstrumentationBase {
     const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {
       startTime: hrTime(entry.startTime),
     });
+    if (this._observerCallback) {
+      span.setAttributes(this._observerCallback(entry));
+    }
     span.setAttribute('component', this.component);
     span.setAttribute('longtask.name', entry.name);
     span.setAttribute('longtask.entry_type', entry.entryType);
