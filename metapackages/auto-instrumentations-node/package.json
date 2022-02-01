@@ -46,16 +46,32 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.27.0",
+    "@opentelemetry/instrumentation-aws-lambda": "^0.28.0",
+    "@opentelemetry/instrumentation-aws-sdk": "^0.5.0",
+    "@opentelemetry/instrumentation-bunyan": "^0.27.0",
+    "@opentelemetry/instrumentation-cassandra-driver": "^0.27.0",
+    "@opentelemetry/instrumentation-connect": "^0.27.0",
     "@opentelemetry/instrumentation-dns": "^0.27.1",
     "@opentelemetry/instrumentation-express": "^0.27.1",
+    "@opentelemetry/instrumentation-fastify": "^0.25.0",
+    "@opentelemetry/instrumentation-generic-pool": "^0.27.0",
     "@opentelemetry/instrumentation-graphql": "^0.27.2",
     "@opentelemetry/instrumentation-grpc": "^0.27.0",
+    "@opentelemetry/instrumentation-hapi": "^0.27.0",
     "@opentelemetry/instrumentation-http": "^0.27.0",
     "@opentelemetry/instrumentation-ioredis": "^0.27.1",
+    "@opentelemetry/instrumentation-knex": "^0.27.0",
     "@opentelemetry/instrumentation-koa": "^0.28.1",
+    "@opentelemetry/instrumentation-memcached": "^0.27.0",
     "@opentelemetry/instrumentation-mongodb": "^0.28.0",
     "@opentelemetry/instrumentation-mysql": "^0.27.1",
+    "@opentelemetry/instrumentation-mysql2": "^0.28.0",
+    "@opentelemetry/instrumentation-nestjs-core": "^0.28.1",
+    "@opentelemetry/instrumentation-net": "^0.27.0",
     "@opentelemetry/instrumentation-pg": "^0.28.0",
-    "@opentelemetry/instrumentation-redis": "^0.28.0"
+    "@opentelemetry/instrumentation-pino": "^0.28.0",
+    "@opentelemetry/instrumentation-redis": "^0.28.0",
+    "@opentelemetry/instrumentation-restify": "^0.27.0",
+    "@opentelemetry/instrumentation-winston": "^0.27.0"
   }
 }
