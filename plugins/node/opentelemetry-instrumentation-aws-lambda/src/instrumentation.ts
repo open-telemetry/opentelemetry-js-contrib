@@ -156,6 +156,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       const config = plugin._config;
       const parent = AwsLambdaInstrumentation._determineParent(
         event,
+        context,
         config.disableAwsContextPropagation === true,
         config.eventContextExtractor ||
           AwsLambdaInstrumentation._defaultEventContextExtractor
@@ -331,6 +332,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   private static _determineParent(
     event: any,
+    context: Context,
     disableAwsContextPropagation: boolean,
     eventContextExtractor: EventContextExtractor
   ): OtelContext {
@@ -358,7 +360,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       }
     }
     const extractedContext = safeExecuteInTheMiddle(
-      () => eventContextExtractor(event),
+      () => eventContextExtractor(event, context),
       e => {
         if (e)
           diag.error(
