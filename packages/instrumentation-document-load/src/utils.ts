@@ -50,7 +50,7 @@ export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   return entries;
 };
 
-const vitalsMetricNames: Record<Metric['name'], string> = {
+const vitalsMetricNames: Record<Metric['name'], EventNames> = {
   FCP: EventNames.FIRST_CONTENTFUL_PAINT,
   FID: EventNames.FIRST_INPUT_DELAY,
   TTFB: EventNames.TIME_TO_FIRST_BYTE,
@@ -58,11 +58,12 @@ const vitalsMetricNames: Record<Metric['name'], string> = {
   CLS: EventNames.CUMULATIVE_LAYOUT_SHIFT
 };
 
-const performancePaintNames = {
+const performancePaintNames: Record<string, EventNames> = {
   'first-paint': EventNames.FIRST_PAINT,
 };
 
 export const addSpanPerformancePaintEvents = (span: Span, callback: () => void) => {
+  const metrics: Partial<Record<EventNames, number>> = {}
   const missedMetrics: Set<Metric['name']> = new Set(['FCP', 'FID', 'TTFB'])
   if ('chrome' in globalThis) {
     // LCP and CLS are only available in chromium according to web-vitals README
@@ -77,13 +78,16 @@ export const addSpanPerformancePaintEvents = (span: Span, callback: () => void) 
     globalThis.removeEventListener('pagehide', endSpan);
     if (!spanIsEnded) {
       spanIsEnded = true;
+      Object.entries(metrics).forEach(([metric, value]) => {
+        span.addEvent(metric, value);
+      })
       callback();
     }
   }
 
   const handleNewMetric = (metric: Metric) => {
     missedMetrics.delete(metric.name);
-    span.addEvent(vitalsMetricNames[metric.name], metric.value);
+    metrics[vitalsMetricNames[metric.name]] = metric.value;
     if (!missedMetrics.size) {
       endSpan();
     }
@@ -98,14 +102,30 @@ export const addSpanPerformancePaintEvents = (span: Span, callback: () => void) 
   getLCP(handleNewMetric);
   getTTFB(handleNewMetric);
 
+  // collect first-paint because it's not a part of web-vitals
   const performancePaintTiming = (
     otperformance as unknown as Performance
   ).getEntriesByType?.('paint');
   if (performancePaintTiming) {
     performancePaintTiming.forEach(({ name, startTime }) => {
       if (hasKey(performancePaintNames, name)) {
-        span.addEvent(performancePaintNames[name], startTime);
+        metrics[performancePaintNames[name]] = startTime;
       }
     });
+  }
+
+  // collect largest-contentful-paint manually because web-vitals returns it
+  // after user interaction and it may not work in synthetic monitoring;
+  // we save only the latest recorded metric value in case when web-vitals returns different LCP
+  if (typeof PerformanceObserver === 'function') {
+    const observer = new PerformanceObserver(() => {});
+    observer.observe({ type: 'largest-contentful-paint', buffered: true });
+    if (typeof observer.takeRecords === 'function') {
+      const [lcpRecord] = observer.takeRecords();
+      if (lcpRecord) {
+        missedMetrics.delete('LCP');
+        metrics[EventNames.LARGEST_CONTENTFUL_PAINT] = lcpRecord.startTime;
+      }
+    }
   }
 };
