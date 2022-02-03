@@ -21,20 +21,11 @@ import {
   InstrumentationConfig,
 } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
-
-// Currently missing in typescript DOM definitions
-interface PerformanceLongTaskTiming extends PerformanceEntry {
-  attribution: TaskAttributionTiming[];
-}
-
-interface TaskAttributionTiming extends PerformanceEntry {
-  containerType: string;
-  containerSrc: string;
-  containerId: string;
-  containerName: string;
-}
-
-type ObserverCallback = (entry: PerformanceLongTaskTiming) => SpanAttributes;
+import type {
+  ObserverCallback,
+  PerformanceLongTaskTiming,
+  LongtaskInstrumentationConfig
+} from './types';
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 
@@ -51,11 +42,10 @@ export class LongTaskInstrumentation extends InstrumentationBase {
    * @param config
    */
   constructor(
-    config: InstrumentationConfig = {},
-    observerCallback?: ObserverCallback
+    config: LongtaskInstrumentationConfig = {}
   ) {
     super('@opentelemetry/instrumentation-long-task', VERSION, config);
-    this._observerCallback = observerCallback;
+    this._observerCallback = config.observerCallback;
   }
 
   init() {}
