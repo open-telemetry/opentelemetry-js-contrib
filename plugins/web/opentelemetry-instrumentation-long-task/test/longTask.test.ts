@@ -109,12 +109,10 @@ describe('LongTaskInstrumentation', () => {
   it('should attach additional attributes from callback', async () => {
     deregister();
     const additionalAttributes = { foo: 'bar' };
-    longTaskInstrumentation = new LongTaskInstrumentation(
-      {
-        enabled: false,
-        observerCallback: () => additionalAttributes,
-      }
-    );
+    longTaskInstrumentation = new LongTaskInstrumentation({
+      enabled: false,
+      observerCallback: () => additionalAttributes,
+    });
     deregister = registerInstrumentations({
       instrumentations: [longTaskInstrumentation],
     });
@@ -132,12 +130,10 @@ describe('LongTaskInstrumentation', () => {
   it('should not fail to export span if observerCallback throws', async () => {
     deregister();
     const errorCallback = sandbox.stub().throws();
-    longTaskInstrumentation = new LongTaskInstrumentation(
-      {
-        enabled: false,
-        observerCallback: errorCallback,
-      }
-    );
+    longTaskInstrumentation = new LongTaskInstrumentation({
+      enabled: false,
+      observerCallback: errorCallback,
+    });
     deregister = registerInstrumentations({
       instrumentations: [longTaskInstrumentation],
     });
@@ -145,5 +141,5 @@ describe('LongTaskInstrumentation', () => {
     await waitForLongTask(exportSpy);
     assert.strictEqual(errorCallback.threw(), true, 'callback threw error');
     assert.strictEqual(exportSpy.callCount, 1, 'export was called once');
-  })
+  });
 });

@@ -18,9 +18,8 @@ import { diag } from '@opentelemetry/api';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
 import type {
-  ObserverCallback,
   PerformanceLongTaskTiming,
-  LongtaskInstrumentationConfig
+  LongtaskInstrumentationConfig,
 } from './types';
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
@@ -31,17 +30,14 @@ export class LongTaskInstrumentation extends InstrumentationBase {
   moduleName = this.component;
 
   private _observer?: PerformanceObserver;
-  private _observerCallback?: ObserverCallback;
+  override _config!: LongtaskInstrumentationConfig;
 
   /**
    *
    * @param config
    */
-  constructor(
-    config: LongtaskInstrumentationConfig = {}
-  ) {
+  constructor(config: LongtaskInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-long-task', VERSION, config);
-    this._observerCallback = config.observerCallback;
   }
 
   init() {}
@@ -63,11 +59,11 @@ export class LongTaskInstrumentation extends InstrumentationBase {
     const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {
       startTime: hrTime(entry.startTime),
     });
-    if (this._observerCallback) {
+    if (this._config.observerCallback) {
       try {
-        span.setAttributes(this._observerCallback(entry));
+        this._config.observerCallback(span, entry);
       } catch (err) {
-        diag.error(err as string);
+        diag.error('longtask instrumentation: observer callback failed', err);
       }
     }
     span.setAttribute('component', this.component);
