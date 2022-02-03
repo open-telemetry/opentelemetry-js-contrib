@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { SpanAttributes } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import {
-  InstrumentationBase,
-  InstrumentationConfig,
-} from '@opentelemetry/instrumentation';
+import { diag } from '@opentelemetry/api';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
 import type {
   ObserverCallback,
@@ -68,7 +64,11 @@ export class LongTaskInstrumentation extends InstrumentationBase {
       startTime: hrTime(entry.startTime),
     });
     if (this._observerCallback) {
-      span.setAttributes(this._observerCallback(entry));
+      try {
+        span.setAttributes(this._observerCallback(entry));
+      } catch (err) {
+        diag.error(err as string);
+      }
     }
     span.setAttribute('component', this.component);
     span.setAttribute('longtask.name', entry.name);
