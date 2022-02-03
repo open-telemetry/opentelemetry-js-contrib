@@ -285,7 +285,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           !currentSpan ||
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object' ||
-          cmd.ismaster
+          cmd.ismaster ||
+          cmd.hello
         ) {
           return original.call(this, ns, cmd, options, callback);
         }
@@ -488,7 +489,6 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     let commandObj: Record<string, unknown>;
     if (command?.documents && command.documents[0]) {
-      console.log(command.documents[0]);
       commandObj = command.documents[0];
     } else if (command?.cursors) {
       commandObj = command.cursors;
