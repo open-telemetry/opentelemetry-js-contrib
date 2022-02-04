@@ -73,7 +73,7 @@
     "gts": "3.1.0",
     "@opentelemetry/contrib-test-utils": "^0.29.0",
     "test-all-versions": "5.0.1",
-    "ts-mocha": "8.0.0",
+    "ts-mocha": "9.0.2",
     "typescript": "4.3.4"
   },
   "engines": {
