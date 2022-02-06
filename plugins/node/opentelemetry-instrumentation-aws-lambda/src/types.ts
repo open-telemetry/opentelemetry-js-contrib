@@ -33,7 +33,10 @@ export type ResponseHook = (
   }
 ) => void;
 
-export type EventContextExtractor = (event: any) => OtelContext;
+export type EventContextExtractor = (
+  event: any,
+  context: Context
+) => OtelContext;
 export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   requestHook?: RequestHook;
   responseHook?: ResponseHook;
