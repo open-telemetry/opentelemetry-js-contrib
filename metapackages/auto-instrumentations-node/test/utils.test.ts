@@ -25,19 +25,35 @@ describe('utils', () => {
     it('should load default instrumentations', () => {
       const instrumentations = getNodeAutoInstrumentations();
       const expectedInstrumentations = [
+        '@opentelemetry/instrumentation-aws-lambda',
+        '@opentelemetry/instrumentation-aws-sdk',
+        '@opentelemetry/instrumentation-bunyan',
+        '@opentelemetry/instrumentation-cassandra-driver',
+        '@opentelemetry/instrumentation-connect',
         '@opentelemetry/instrumentation-dns',
         '@opentelemetry/instrumentation-express',
+        '@opentelemetry/instrumentation-fastify',
+        '@opentelemetry/instrumentation-generic-pool',
         '@opentelemetry/instrumentation-graphql',
         '@opentelemetry/instrumentation-grpc',
+        '@opentelemetry/instrumentation-hapi',
         '@opentelemetry/instrumentation-http',
         '@opentelemetry/instrumentation-ioredis',
+        '@opentelemetry/instrumentation-knex',
         '@opentelemetry/instrumentation-koa',
+        '@opentelemetry/instrumentation-memcached',
         '@opentelemetry/instrumentation-mongodb',
+        '@opentelemetry/instrumentation-mysql2',
         '@opentelemetry/instrumentation-mysql',
+        '@opentelemetry/instrumentation-nestjs-core',
+        '@opentelemetry/instrumentation-net',
         '@opentelemetry/instrumentation-pg',
+        '@opentelemetry/instrumentation-pino',
         '@opentelemetry/instrumentation-redis',
+        '@opentelemetry/instrumentation-restify',
+        '@opentelemetry/instrumentation-winston',
       ];
-      assert.strictEqual(instrumentations.length, 11);
+      assert.strictEqual(instrumentations.length, 27);
       for (let i = 0, j = instrumentations.length; i < j; i++) {
         assert.strictEqual(
           instrumentations[i].instrumentationName,
