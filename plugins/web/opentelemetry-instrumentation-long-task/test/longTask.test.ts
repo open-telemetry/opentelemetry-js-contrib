@@ -111,7 +111,9 @@ describe('LongTaskInstrumentation', () => {
     const additionalAttributes = { foo: 'bar' };
     longTaskInstrumentation = new LongTaskInstrumentation({
       enabled: false,
-      observerCallback: () => additionalAttributes,
+      observerCallback: span => {
+        span.setAttributes(additionalAttributes);
+      },
     });
     deregister = registerInstrumentations({
       instrumentations: [longTaskInstrumentation],

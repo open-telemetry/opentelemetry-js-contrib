@@ -61,7 +61,7 @@ export class LongTaskInstrumentation extends InstrumentationBase {
     });
     if (this._config.observerCallback) {
       try {
-        this._config.observerCallback(span, entry);
+        this._config.observerCallback(span, { longtaskEntry: entry });
       } catch (err) {
         diag.error('longtask instrumentation: observer callback failed', err);
       }

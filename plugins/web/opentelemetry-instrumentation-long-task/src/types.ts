@@ -28,9 +28,13 @@ export interface TaskAttributionTiming extends PerformanceEntry {
   containerName: string;
 }
 
+export interface ObserverCallbackInformation {
+  longtaskEntry: PerformanceLongTaskTiming;
+}
+
 export type ObserverCallback = (
   span: Span,
-  entry: PerformanceLongTaskTiming
+  information: ObserverCallbackInformation
 ) => void;
 
 export interface LongtaskInstrumentationConfig extends InstrumentationConfig {
