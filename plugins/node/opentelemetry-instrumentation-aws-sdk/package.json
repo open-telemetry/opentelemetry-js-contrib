@@ -69,7 +69,7 @@
     "nock": "13.2.1",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "12.0.1",
+    "sinon": "13.0.1",
     "gts": "3.1.0",
     "@opentelemetry/contrib-test-utils": "^0.29.0",
     "test-all-versions": "5.0.1",
