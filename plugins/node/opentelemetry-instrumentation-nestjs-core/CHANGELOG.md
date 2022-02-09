@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.28.3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.28.2...instrumentation-nestjs-core-v0.28.3) (2022-02-06)
+
+
+### Bug Fixes
+
+* **auto-instrumentations-node:** add more instrumentations ([#865](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/865)) ([6ba387a](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/6ba387ab45d0f67fdfac85c43bb0f0f67f2a119b))
+
 ### [0.28.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.28.1...instrumentation-nestjs-core-v0.28.2) (2022-01-24)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.27.3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.27.2...instrumentation-graphql-v0.27.3) (2022-02-06)
+
+
+### Bug Fixes
+
+* **graphql:** move graphql to dependencies ([#850](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/850)) ([18e4f93](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/18e4f93007b19ecb33f8711ae0d20c51a90887d5))
+
 ### [0.27.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.27.1...instrumentation-graphql-v0.27.2) (2022-01-24)
 
 
