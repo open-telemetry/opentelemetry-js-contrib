@@ -17,6 +17,7 @@
 import * as api from '@opentelemetry/api';
 import {
   InstrumentationBase,
+  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
@@ -35,7 +36,7 @@ export class Instrumentation extends InstrumentationBase<typeof NestJS> {
     component: Instrumentation.COMPONENT,
   };
 
-  constructor() {
+  constructor(config: InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-nestjs-core', VERSION);
   }
 
