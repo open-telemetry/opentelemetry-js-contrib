@@ -31,7 +31,7 @@ exports.context = async function (event, context) {
   return api.trace.getSpan(api.context.active()).spanContext().traceId;
 };
 
-exports.baggage = async function (event, context) {
+exports.handler_return_baggage = async function (event, context) {
   const [baggageEntryKey, baggageEntryValue] =  api.propagation.getBaggage(api.context.active()).getAllEntries()[0];
   return `${baggageEntryKey}=${baggageEntryValue.value}`;
 }
