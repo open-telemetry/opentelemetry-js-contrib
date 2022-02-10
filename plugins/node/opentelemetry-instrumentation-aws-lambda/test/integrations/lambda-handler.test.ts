@@ -626,7 +626,7 @@ describe('lambda handler', () => {
       assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
     });
 
-    it('prefer to extract baggage over sampled lambda context if "eventContextExtractor" is defined', async () => {
+    it('prefers to extract baggage over sampled lambda context if "eventContextExtractor" is defined', async () => {
       process.env[traceContextEnvironmentKey] = sampledAwsHeader;
       const customExtractor = (event: any): OtelContext => {
         return propagation.extract(context.active(),
