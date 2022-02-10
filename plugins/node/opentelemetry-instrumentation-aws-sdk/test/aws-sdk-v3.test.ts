@@ -417,15 +417,9 @@ describe('instrumentation-aws-sdk-v3', () => {
         });
         instrumentation.enable();
 
-        let request:
-          | (ClientRequest & {
-              headers: Record<string, string>;
-            })
-          | undefined;
         nock(`https://lambda.${region}.amazonaws.com/`)
           .post('/2015-03-31/functions/ot-test-function-name/invocations')
-          .reply(function (uri, requestBody, callback) {
-            request = this.req;
+          .reply((uri, requestBody, callback) => {
             callback(null, [
               200,
               'null',
