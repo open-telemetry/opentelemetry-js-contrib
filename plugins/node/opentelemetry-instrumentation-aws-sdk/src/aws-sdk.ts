@@ -74,7 +74,7 @@ type V2PluginRequest = AWS.Request<any, any> & {
 export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
   static readonly component = 'aws-sdk';
   protected override _config!: AwsSdkInstrumentationConfig;
-  private servicesExtensions: ServicesExtensions = new ServicesExtensions();
+  private servicesExtensions: ServicesExtensions;
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(
@@ -82,10 +82,16 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
       VERSION,
       Object.assign({}, config)
     );
+    this.servicesExtensions = new ServicesExtensions(
+      config.customServiceExtensions
+    );
   }
 
   override setConfig(config: AwsSdkInstrumentationConfig = {}) {
     this._config = Object.assign({}, config);
+    this.servicesExtensions = new ServicesExtensions(
+      this._config.customServiceExtensions
+    );
   }
 
   protected init(): InstrumentationModuleDefinition<any>[] {

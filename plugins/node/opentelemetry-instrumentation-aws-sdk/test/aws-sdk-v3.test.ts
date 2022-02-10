@@ -32,6 +32,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { SQS } from '@aws-sdk/client-sqs';
+import { Lambda, InvocationType } from '@aws-sdk/client-lambda';
 
 // set aws environment variables, so tests in non aws environment are able to run
 process.env.AWS_ACCESS_KEY_ID = 'testing';
@@ -39,13 +40,24 @@ process.env.AWS_SECRET_ACCESS_KEY = 'testing';
 
 import 'mocha';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
-import { context, SpanStatusCode, trace, Span } from '@opentelemetry/api';
+import {
+  context,
+  SpanStatusCode,
+  trace,
+  Span,
+  SpanKind,
+} from '@opentelemetry/api';
 import {
   MessagingDestinationKindValues,
   MessagingOperationValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from '../src/enums';
+import {
+  LambdaTestCustomServiceExtension,
+  SqsTestCustomServiceExtension,
+} from './test-custom-extensions';
+import { ClientRequest } from 'http';
 import * as expect from 'expect';
 import * as fs from 'fs';
 import * as nock from 'nock';
@@ -272,6 +284,267 @@ describe('instrumentation-aws-sdk-v3', () => {
         expect(span.attributes['attribute.from.request.hook']).toEqual(
           params.Bucket
         );
+      });
+    });
+
+    describe('custom services extensions', () => {
+      it('should use any provided custom extensions requestPreSpanHook to add span attributes', async () => {
+        const lambdaClient = new Lambda({ region });
+        instrumentation.disable();
+        instrumentation.setConfig({
+          suppressInternalInstrumentation: true,
+          customServiceExtensions: [
+            {
+              serviceName: 'Lambda',
+              extension: new LambdaTestCustomServiceExtension(),
+            },
+          ],
+        });
+        instrumentation.enable();
+
+        nock(`https://lambda.${region}.amazonaws.com/`)
+          .post('/2015-03-31/functions/ot-test-function-name/invocations')
+          .reply(200, 'null');
+
+        const params = {
+          FunctionName: 'ot-test-function-name',
+          InvocationType: InvocationType.RequestResponse,
+          Payload: Buffer.from(
+            JSON.stringify({
+              test: 'payload',
+            })
+          ),
+        };
+        await lambdaClient.invoke(params);
+        expect(getTestSpans().length).toBe(1);
+        const [span] = getTestSpans();
+
+        expect(span.attributes[SemanticAttributes.RPC_SYSTEM]).toEqual(
+          'aws-api'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_METHOD]).toEqual(
+          'Invoke'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual(
+          'Lambda'
+        );
+        expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+
+        // custom messaging attributes
+        expect(span.kind).toEqual(SpanKind.CLIENT);
+        expect(span.attributes[SemanticAttributes.FAAS_INVOKED_NAME]).toEqual(
+          'ot-test-function-name'
+        );
+        expect(
+          span.attributes[SemanticAttributes.FAAS_INVOKED_PROVIDER]
+        ).toEqual('aws');
+      });
+
+      it('should use any provided custom extensions requestPostSpanHook to add propagation context', async () => {
+        const lambdaClient = new Lambda({ region });
+        instrumentation.disable();
+        instrumentation.setConfig({
+          suppressInternalInstrumentation: true,
+          customServiceExtensions: [
+            {
+              serviceName: 'Lambda',
+              extension: new LambdaTestCustomServiceExtension(),
+            },
+          ],
+        });
+        instrumentation.enable();
+
+        let request:
+          | (ClientRequest & {
+              headers: Record<string, string>;
+            })
+          | undefined;
+        nock(`https://lambda.${region}.amazonaws.com/`)
+          .post('/2015-03-31/functions/ot-test-function-name/invocations')
+          .reply(function (uri, requestBody, callback) {
+            request = this.req;
+            callback(null, [200, 'null']);
+          });
+
+        const params = {
+          FunctionName: 'ot-test-function-name',
+          InvocationType: InvocationType.RequestResponse,
+          Payload: Buffer.from(
+            JSON.stringify({
+              test: 'payload',
+            })
+          ),
+        };
+        await lambdaClient.invoke(params);
+        expect(getTestSpans().length).toBe(1);
+        const [span] = getTestSpans();
+
+        expect(span.attributes[SemanticAttributes.RPC_SYSTEM]).toEqual(
+          'aws-api'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_METHOD]).toEqual(
+          'Invoke'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual(
+          'Lambda'
+        );
+        expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+
+        // Context propagation
+        expect(request).toBeDefined();
+        const requestHeaders = request!.headers;
+        expect(requestHeaders['x-amz-client-context']).toBeDefined();
+        const clientContext = JSON.parse(
+          Buffer.from(
+            requestHeaders['x-amz-client-context'],
+            'base64'
+          ).toString()
+        ) as Record<string, any>;
+        expect(clientContext.Custom).toHaveProperty('traceparent');
+      });
+
+      it('should use any provided custom extensions responseHook to add any span attributes from the API response', async () => {
+        const lambdaClient = new Lambda({ region });
+        instrumentation.disable();
+        instrumentation.setConfig({
+          suppressInternalInstrumentation: true,
+          customServiceExtensions: [
+            {
+              serviceName: 'Lambda',
+              extension: new LambdaTestCustomServiceExtension(),
+            },
+          ],
+        });
+        instrumentation.enable();
+
+        let request:
+          | (ClientRequest & {
+              headers: Record<string, string>;
+            })
+          | undefined;
+        nock(`https://lambda.${region}.amazonaws.com/`)
+          .post('/2015-03-31/functions/ot-test-function-name/invocations')
+          .reply(function (uri, requestBody, callback) {
+            request = this.req;
+            callback(null, [
+              200,
+              'null',
+              {
+                'x-amz-executed-version': '$LATEST',
+                'x-amzn-requestid': '95882c2b-3fd2-485d-ada3-9fcb1ca65459',
+              },
+            ]);
+          });
+
+        const params = {
+          FunctionName: 'ot-test-function-name',
+          InvocationType: InvocationType.RequestResponse,
+          Payload: Buffer.from(
+            JSON.stringify({
+              test: 'payload',
+            })
+          ),
+        };
+        await lambdaClient.invoke(params);
+        expect(getTestSpans().length).toBe(1);
+        const [span] = getTestSpans();
+
+        expect(span.attributes[SemanticAttributes.RPC_SYSTEM]).toEqual(
+          'aws-api'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_METHOD]).toEqual(
+          'Invoke'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual(
+          'Lambda'
+        );
+        expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+
+        // Response attributes
+        expect(span.attributes[SemanticAttributes.FAAS_EXECUTION]).toEqual(
+          '95882c2b-3fd2-485d-ada3-9fcb1ca65459'
+        );
+      });
+
+      it('should default to the basic SDK instrumentation if the config is overridden', async () => {
+        const lambdaClient = new Lambda({ region });
+        instrumentation.disable();
+        instrumentation.setConfig({
+          suppressInternalInstrumentation: true,
+        });
+        instrumentation.enable();
+
+        nock(`https://lambda.${region}.amazonaws.com/`)
+          .post('/2015-03-31/functions/ot-test-function-name/invocations')
+          .reply(200, 'null');
+
+        const params = {
+          FunctionName: 'ot-test-function-name',
+          InvocationType: InvocationType.RequestResponse,
+          Payload: Buffer.from(
+            JSON.stringify({
+              test: 'payload',
+            })
+          ),
+        };
+        await lambdaClient.invoke(params);
+        expect(getTestSpans().length).toBe(1);
+        const [span] = getTestSpans();
+
+        expect(span.attributes[SemanticAttributes.RPC_SYSTEM]).toEqual(
+          'aws-api'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_METHOD]).toEqual(
+          'Invoke'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual(
+          'Lambda'
+        );
+        expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+
+        // custom messaging attributes should be absent as we've reverted to just adding what the
+        // default AWS SDK instrumentation understands
+        expect(span.kind).toEqual(SpanKind.INTERNAL);
+        expect(span.attributes).not.toHaveProperty(
+          SemanticAttributes.FAAS_INVOKED_NAME
+        );
+        expect(span.attributes).not.toHaveProperty(
+          SemanticAttributes.FAAS_INVOKED_PROVIDER
+        );
+      });
+
+      it('should override a built-in service extension if a custom service extension is provided for the same service', async () => {
+        const sqsClient = new SQS({ region });
+        instrumentation.disable();
+        instrumentation.setConfig({
+          suppressInternalInstrumentation: true,
+          customServiceExtensions: [
+            {
+              serviceName: 'SQS',
+              extension: new SqsTestCustomServiceExtension(),
+            },
+          ],
+        });
+        instrumentation.enable();
+
+        nock(`https://sqs.${region}.amazonaws.com/`)
+          .post('/')
+          .reply(
+            200,
+            fs.readFileSync('./test/mock-responses/sqs-send.xml', 'utf8')
+          );
+
+        const params = {
+          QueueUrl:
+            'https://sqs.us-east-1.amazonaws.com/731241200085/otel-demo-aws-sdk',
+          MessageBody: 'payload example from v3 without batch',
+        };
+        await sqsClient.sendMessage(params);
+        expect(getTestSpans().length).toBe(1);
+        const [span] = getTestSpans();
+
+        // Ensure the span name set by the custom instrumentation is there
+        expect(span.name).toEqual('custom SQS span');
       });
     });
   });

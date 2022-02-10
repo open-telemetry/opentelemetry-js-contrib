@@ -14,3 +14,7 @@
  * limitations under the License.
  */
 export { ServicesExtensions } from './ServicesExtensions';
+export { RequestMetadata, ServiceExtension } from './ServiceExtension';
+export { SnsServiceExtension } from './sns';
+export { SqsServiceExtension } from './sqs';
+export { DynamodbServiceExtension } from './dynamodb';

@@ -18,6 +18,7 @@ import { ServiceExtension, RequestMetadata } from './ServiceExtension';
 import { SqsServiceExtension } from './sqs';
 import {
   AwsSdkInstrumentationConfig,
+  AwsSdkServiceExtensionDefinition,
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
@@ -27,10 +28,18 @@ import { SnsServiceExtension } from './sns';
 export class ServicesExtensions implements ServiceExtension {
   services: Map<string, ServiceExtension> = new Map();
 
-  constructor() {
+  constructor(customServiceExtensions?: AwsSdkServiceExtensionDefinition[]) {
     this.services.set('SQS', new SqsServiceExtension());
     this.services.set('SNS', new SnsServiceExtension());
     this.services.set('DynamoDB', new DynamodbServiceExtension());
+    if (customServiceExtensions !== undefined) {
+      for (const serviceExtensionDefinition of customServiceExtensions) {
+        this.services.set(
+          serviceExtensionDefinition.serviceName,
+          serviceExtensionDefinition.extension
+        );
+      }
+    }
   }
 
   requestPreSpanHook(request: NormalizedRequest): RequestMetadata {

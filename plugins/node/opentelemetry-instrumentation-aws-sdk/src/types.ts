@@ -16,6 +16,7 @@
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type * as AWS from 'aws-sdk';
+import { ServiceExtension } from './services/ServiceExtension';
 
 /**
  * These are normalized request and response, which are used by both sdk v2 and v3.
@@ -61,6 +62,10 @@ export interface AwsSdkSqsProcessCustomAttributeFunction {
   (span: Span, sqsProcessInfo: AwsSdkSqsProcessHookInformation): void;
 }
 
+export interface AwsSdkServiceExtensionDefinition {
+  serviceName: string;
+  extension: ServiceExtension;
+}
 export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
   /** hook for adding custom attributes before request is sent to aws */
   preRequestHook?: AwsSdkRequestCustomAttributeFunction;
@@ -91,4 +96,12 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
    * By default it is off.
    */
   sqsExtractContextPropagationFromPayload?: boolean;
+
+  /**
+   * Some users will want to be able to leverage the AWS SDK instrumentation to provide instrumentation
+   * for services not yet catered for, or to instrument already catered for services in different ways.
+   * Rather than forcing them to implement an instrumentation from scratch this allows them to specify
+   * custom services extensions to be used alongside the built in ones
+   */
+  customServiceExtensions?: AwsSdkServiceExtensionDefinition[];
 }

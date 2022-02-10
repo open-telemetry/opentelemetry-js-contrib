@@ -49,7 +49,7 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 | `sqsProcessHook`                  | `AwsSdkSqsProcessCustomAttributeFunction` | Hook called after starting sqs `process` span (for each sqs received message), which allow to add custom attributes to it. |
 | `suppressInternalInstrumentation` | `boolean`                                 | Most aws operation use http requests under the hood. Set this to `true` to hide all underlying http spans.                 |
 | `sqsExtractContextPropagationFromPayload` | `boolean` | Will parse and extract context propagation headers from SQS Payload, false by default. [When should it be used?](./doc/sns.md#integration-with-sqs)|
-
+| `customServiceExtensions` | `AwsSdkServiceExtensionDefinition[]` | Allows for the provision of custom service extensions by the end user. |
 ## Span Attributes
 
 Both V2 and V3 instrumentations are collecting the following attributes:
@@ -100,6 +100,7 @@ Specific service logic currently implemented for:
 - [SNS](./docs/sns.md)
 - DynamoDb
 
+The `customServiceExtensions` configuration parameter allows for users to define their own custom service extensions beyond these built-in ones, or to extend or replace these built-in ones.
 ## Potential Side Effects
 
 The instrumentation is doing best effort to support the trace specification of OpenTelemetry. For SQS, it involves defining new attributes on the `Messages` array, as well as on the manipulated types generated from this array (to set correct trace context for a single SQS message operation). Those properties are defined as [non-enumerable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Enumerability_and_ownership_of_properties) properties, so they have minimum side effect on the app. They will, however, show when using the `Object.getOwnPropertyDescriptors` and `Reflect.ownKeys` functions on SQS `Messages` array and for each `Message` in the array.
