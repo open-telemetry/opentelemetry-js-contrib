@@ -91,7 +91,7 @@ jobs:
       RUN_REDIS_TESTS: 1
       CASSANDRA_HOST: localhost
       MONGODB_DB: opentelemetry-tests
-      MONGODB_HOST: localhost
+      MONGODB_HOST: 127.0.0.1
       MONGODB_PORT: 27017
       MSSQL_PASSWORD: mssql_passw0rd
       MYSQL_DATABASE: circle_database

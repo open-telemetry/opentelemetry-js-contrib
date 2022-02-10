@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.27.1...instrumentation-express-v0.28.0) (2022-02-06)
+
+
+### Features
+
+* **express:** allow rewriting span names ([#463](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/463)) ([7510757](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/7510757aeeee47a7f0c4bb31de45be3a71bb673e))
+
 ### [0.27.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.27.0...instrumentation-express-v0.27.1) (2022-01-24)
 
 
