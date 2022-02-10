@@ -50,6 +50,7 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 | `suppressInternalInstrumentation` | `boolean`                                 | Most aws operation use http requests under the hood. Set this to `true` to hide all underlying http spans.                 |
 | `sqsExtractContextPropagationFromPayload` | `boolean` | Will parse and extract context propagation headers from SQS Payload, false by default. [When should it be used?](./doc/sns.md#integration-with-sqs)|
 | `customServiceExtensions` | `AwsSdkServiceExtensionDefinition[]` | Allows for the provision of custom service extensions by the end user. |
+
 ## Span Attributes
 
 Both V2 and V3 instrumentations are collecting the following attributes:
