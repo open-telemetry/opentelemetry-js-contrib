@@ -626,10 +626,12 @@ describe('lambda handler', () => {
       assert.strictEqual(span.parentSpanId, sampledGenericSpanContext.spanId);
     });
 
-    it('extracts baggage over sampled lambda context if "eventContextExtractor" is defined', async () => {
+    it('prefer to extract baggage over sampled lambda context if "eventContextExtractor" is defined', async () => {
       process.env[traceContextEnvironmentKey] = sampledAwsHeader;
       const customExtractor = (event: any): OtelContext => {
-        return propagation.extract(context.active(), event.contextCarrier);
+        return propagation.extract(context.active(),
+          event.customContextCarrier)
+        ;
       };
 
       initializeHandler('lambda-test/async.baggage', {
@@ -639,18 +641,18 @@ describe('lambda handler', () => {
 
       const baggage = 'abcd=1234';
       const otherEvent = {
-        contextCarrier: {
+        customContextCarrier: {
           traceparent: sampledGenericSpan,
           baggage,
         },
       };
 
-      const result = await lambdaRequire('lambda-test/async').baggage(
+      const actual = await lambdaRequire('lambda-test/async').baggage(
         otherEvent,
         ctx
       );
 
-      assert.strictEqual(result, baggage);
+      assert.strictEqual(actual, baggage);
     });
 
     it('creates trace from ROOT_CONTEXT when "disableAwsContextPropagation" is true, eventContextExtractor is provided, and no custom context is found', async () => {

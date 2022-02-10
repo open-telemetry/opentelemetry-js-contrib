@@ -32,6 +32,6 @@ exports.context = async function (event, context) {
 };
 
 exports.baggage = async function (event, context) {
-  const baggageEntry =  api.propagation.getBaggage(api.context.active()).getAllEntries()[0];
-  return `${baggageEntry[0]}=${baggageEntry[1].value}`;
+  const [baggageEntryKey, baggageEntryValue] =  api.propagation.getBaggage(api.context.active()).getAllEntries()[0];
+  return `${baggageEntryKey}=${baggageEntryValue.value}`;
 }
