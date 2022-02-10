@@ -102,6 +102,7 @@ Specific service logic currently implemented for:
 - DynamoDb
 
 The `customServiceExtensions` configuration parameter allows for users to define their own custom service extensions beyond these built-in ones, or to extend or replace these built-in ones.
+
 ## Potential Side Effects
 
 The instrumentation is doing best effort to support the trace specification of OpenTelemetry. For SQS, it involves defining new attributes on the `Messages` array, as well as on the manipulated types generated from this array (to set correct trace context for a single SQS message operation). Those properties are defined as [non-enumerable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Enumerability_and_ownership_of_properties) properties, so they have minimum side effect on the app. They will, however, show when using the `Object.getOwnPropertyDescriptors` and `Reflect.ownKeys` functions on SQS `Messages` array and for each `Message` in the array.
