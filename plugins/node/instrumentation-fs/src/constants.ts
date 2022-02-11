@@ -23,17 +23,9 @@ export const SYNC_FUNCTIONS: (keyof typeof fs)[] = [
   'appendFileSync',
   'chmodSync',
   'chownSync',
-  'closeSync',
   'copyFileSync',
-  // 'cpSync',
+  'cpSync', // added in v16
   'existsSync',
-  'fchmodSync',
-  'fchownSync',
-  'fdatasyncSync',
-  'fstatSync',
-  'fsyncSync',
-  'ftruncateSync',
-  'futimesSync',
   'lchownSync',
   'linkSync',
   'lstatSync',
@@ -45,8 +37,6 @@ export const SYNC_FUNCTIONS: (keyof typeof fs)[] = [
   'readdirSync',
   'readFileSync',
   'readlinkSync',
-  'readSync',
-  'readvSync',
   'realpathSync',
   'renameSync',
   'rmdirSync',
@@ -57,8 +47,19 @@ export const SYNC_FUNCTIONS: (keyof typeof fs)[] = [
   'unlinkSync',
   'utimesSync',
   'writeFileSync',
-  'writeSync',
-  'writevSync',
+  // 'closeSync', // functions on file descriptor
+  // 'fchmodSync', // functions on file descriptor
+  // 'fchownSync', // functions on file descriptor
+  // 'fdatasyncSync', // functions on file descriptor
+  // 'fstatSync', // functions on file descriptor
+  // 'fsyncSync', // functions on file descriptor
+  // 'ftruncateSync', // functions on file descriptor
+  // 'futimesSync', // functions on file descriptor
+  // 'lchmodSync', // only implemented on macOS
+  // 'readSync', // functions on file descriptor
+  // 'readvSync', // functions on file descriptor
+  // 'writeSync', // functions on file descriptor
+  // 'writevSync', // functions on file descriptor
 ];
 
 export const ASYNC_FUNCTIONS: (keyof typeof fs)[] = [
@@ -66,17 +67,9 @@ export const ASYNC_FUNCTIONS: (keyof typeof fs)[] = [
   'appendFile',
   'chmod',
   'chown',
-  'close',
   'copyFile',
-  // 'cp',
-  'exists',
-  'fchmod',
-  'fchown',
-  'fdatasync',
-  'fstat',
-  'fsync',
-  'ftruncate',
-  'futimes',
+  'cp', // added in v16
+  'exists', // deprecated, inconsistent cb signature
   'lchown',
   'link',
   'lstat',
@@ -85,11 +78,9 @@ export const ASYNC_FUNCTIONS: (keyof typeof fs)[] = [
   'mkdtemp',
   'open',
   'opendir',
-  'read',
   'readdir',
   'readFile',
   'readlink',
-  'readv',
   'realpath',
   'rename',
   'rm',
@@ -99,7 +90,49 @@ export const ASYNC_FUNCTIONS: (keyof typeof fs)[] = [
   'truncate',
   'unlink',
   'utimes',
-  'write',
   'writeFile',
-  'writev',
+  // 'close', // functions on file descriptor
+  // 'fchmod', // functions on file descriptor
+  // 'fchown', // functions on file descriptor
+  // 'fdatasync', // functions on file descriptor
+  // 'fstat', // functions on file descriptor
+  // 'fsync', // functions on file descriptor
+  // 'ftruncate', // functions on file descriptor
+  // 'futimes', // functions on file descriptor
+  // 'lchmod', // only implemented on macOS
+  // 'read', // functions on file descriptor
+  // 'readv', // functions on file descriptor
+  // 'write', // functions on file descriptor
+  // 'writev', // functions on file descriptor
+];
+
+export const PROMISE_FUNCTIONS: (keyof typeof fs['promises'])[] = [
+  'access',
+  'appendFile',
+  'chmod',
+  'chown',
+  'copyFile',
+  'cp', // added in v16
+  'lchown',
+  'link',
+  'lstat',
+  'lutimes',
+  'mkdir',
+  'mkdtemp',
+  'open',
+  'opendir',
+  'readdir',
+  'readFile',
+  'readlink',
+  'realpath',
+  'rename',
+  'rm',
+  'rmdir',
+  'stat',
+  'symlink',
+  'truncate',
+  'unlink',
+  'utimes',
+  'writeFile',
+  // 'lchmod', // only implemented on macOS
 ];

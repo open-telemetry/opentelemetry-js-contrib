@@ -23,7 +23,7 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
-import { ASYNC_FUNCTIONS, SYNC_FUNCTIONS } from './constants';
+import { ASYNC_FUNCTIONS, PROMISE_FUNCTIONS, SYNC_FUNCTIONS } from './constants';
 import type * as fs from 'fs';
 
 interface FsInstrumentationConfig extends InstrumentationConfig {
@@ -46,6 +46,12 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
         ['*'],
         fs => {
           this._diag.debug('Applying patch for fs');
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fs.promises[fName])) {
+              this._unwrap(fs.promises, fName);
+            }
+            this._wrap(fs.promises, fName, <any>this._patchPromiseFunction.bind(this));
+          }
           for (const fName of ASYNC_FUNCTIONS) {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
@@ -71,6 +77,70 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
         }
       ),
     ];
+  }
+
+  protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
+    original: T
+  ): T {
+    const instrumentation = this;
+    return <any>async function (this: any, ...args: any[]) {
+      if (isTracingSuppressed(api.context.active())) {
+        // Performance optimization. Avoid creating additional contexts and spans
+        // if we already know that the tracing is being suppressed.
+        return original.apply(this, args);
+      }
+      const { createHook, endHook } =
+        instrumentation.getConfig() as FsInstrumentationConfig;
+      if (typeof createHook === 'function') {
+        if (
+          // promise and async variants get mixed here for the hooks
+          createHook(original.name, {
+            args: args,
+          }) === false
+        ) {
+          // return original.apply(this, args);
+          return api.context.with(
+            suppressTracing(api.context.active()),
+            original,
+            this,
+            ...args
+          );
+        }
+      }
+
+      const span = instrumentation.tracer.startSpan(
+        `fs ${original.name}`
+      ) as api.Span;
+      try {
+        // QUESTION: Should we immediately suppress all internal nested calls?
+        const res = await api.context.with(
+          api.trace.setSpan(api.context.active(), span),
+          original,
+          this,
+          ...args
+        );
+        if (typeof endHook === 'function') {
+          try {
+            endHook(original.name, { args: args, span });
+          } catch (e) {
+            instrumentation._diag.error('caught endHook error', e);
+          }
+        }
+        span.end();
+        return res;
+      } catch (err) {
+        span.recordException(err);
+        span.setStatus({
+          message: err.message,
+          code: api.SpanStatusCode.ERROR,
+        });
+        if (typeof endHook === 'function') {
+          endHook(original.name, { args: args, span });
+        }
+        span.end();
+        throw err;
+      }
+    };
   }
 
   protected _patchAsyncFunction<T extends (...args: any[]) => ReturnType<T>>(
