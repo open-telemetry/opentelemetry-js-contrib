@@ -121,13 +121,13 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
             }
             if (typeof endHook === 'function') {
               try {
-                endHook(original.name, { args: args, span });
+                endHook(original.name, { args: arguments, span });
               } catch (e) {
                 instrumentation._diag.error('caught endHook error', e);
               }
             }
             span.end();
-            return cb.apply(this, args);
+            return cb.apply(this, arguments);
           }
         );
 
