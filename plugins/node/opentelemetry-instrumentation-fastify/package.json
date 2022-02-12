@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-fastify",
   "version": "0.25.0",
-  "description": "OpenTelemetry fastly automatic instrumentation package.",
+  "description": "OpenTelemetry fastify automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
