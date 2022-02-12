@@ -48,7 +48,6 @@ export enum TokenKind {
 export enum SpanNames {
   EXECUTE = 'graphql.execute',
   PARSE = 'graphql.parse',
-  RESOLVE = 'graphql.resolve',
   VALIDATE = 'graphql.validate',
   SCHEMA_VALIDATE = 'graphql.validateSchema',
   SCHEMA_PARSE = 'graphql.parseSchema',
