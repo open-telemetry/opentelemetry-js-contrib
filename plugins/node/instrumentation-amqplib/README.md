@@ -56,9 +56,10 @@ amqplib instrumentation has few options available to choose from. You can set th
 | `publishConfirmHook`                  | `AmqplibPublishConfirmCustomAttributeFunction`    | hook for adding custom attributes after publish message is confirmed by the broker.                                             |
 | `consumeHook`                  | `AmqplibConsumerCustomAttributeFunction`    | hook for adding custom attributes before consumer message is processed.                                             |
 | `consumeEndHook`                  | `AmqplibConsumerEndCustomAttributeFunction`    | hook for adding custom attributes after consumer message is acked to server.                                             |
-| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#ConsumeTimeout) below                                             | 
+| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#ConsumeTimeout) below                                             |
 
 ### Consume Timeout
+
 When user is setting up consume callback, it is user's responsibility to call ack/nack etc on the msg to resolve it in the server. If user is not calling the ack, the message will stay in the queue until channel is closed, or until server timeout expires (if configured).
 
 While we wait for the ack, a reference to the message is stored in plugin, which
