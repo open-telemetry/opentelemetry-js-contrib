@@ -430,16 +430,9 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           parentContext
         );
 
-        if (self._config.moduleVersionAttributeName && moduleVersion) {
-          span.setAttribute(
-            self._config.moduleVersionAttributeName,
-            moduleVersion
-          );
-        }
-
         if (self._config.consumeHook) {
           safeExecuteInTheMiddle(
-            () => self._config.consumeHook!(span, { msg }),
+            () => self._config.consumeHook!(span, { moduleVersion, msg }),
             e => {
               if (e) {
                 diag.error('amqplib instrumentation: consumerHook error', e);
@@ -497,7 +490,6 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
         exchange,
         routingKey,
         channel,
-        moduleVersion,
         options
       );
 
@@ -505,6 +497,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
         safeExecuteInTheMiddle(
           () =>
             self._config.publishHook!(span, {
+              moduleVersion,
               exchange,
               routingKey,
               content,
@@ -531,17 +524,14 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           if (self._config.publishConfirmHook) {
             safeExecuteInTheMiddle(
               () =>
-                self._config.publishConfirmHook!(
-                  span,
-                  {
-                    exchange,
-                    routingKey,
-                    content,
-                    options,
-                    isConfirmChannel: true,
-                    confirmError: err,
-                  },
-                ),
+                self._config.publishConfirmHook!(span, {
+                  exchange,
+                  routingKey,
+                  content,
+                  options,
+                  isConfirmChannel: true,
+                  confirmError: err,
+                }),
               e => {
                 if (e) {
                   diag.error(
@@ -599,7 +589,6 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           exchange,
           routingKey,
           channel,
-          moduleVersion,
           options
         );
 
@@ -607,6 +596,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           safeExecuteInTheMiddle(
             () =>
               self._config.publishHook!(span, {
+                moduleVersion,
                 exchange,
                 routingKey,
                 content,
@@ -638,7 +628,6 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     exchange: string,
     routingKey: string,
     channel: InstrumentationPublishChannel,
-    moduleVersion: string | undefined,
     options?: amqp.Options.Publish
   ) {
     const normalizedExchange = normalizeExchange(exchange);
@@ -659,9 +648,6 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
         },
       }
     );
-    if (self._config.moduleVersionAttributeName && moduleVersion) {
-      span.setAttribute(self._config.moduleVersionAttributeName, moduleVersion);
-    }
     const modifiedOptions = options ?? {};
     modifiedOptions.headers = modifiedOptions.headers ?? {};
 
@@ -729,7 +715,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     if (!this._config.consumeEndHook) return;
 
     safeExecuteInTheMiddle(
-      () => this._config.consumeEndHook!(span, {msg, rejected, endOperation}),
+      () => this._config.consumeEndHook!(span, { msg, rejected, endOperation }),
       e => {
         if (e) {
           diag.error('amqplib instrumentation: consumerEndHook error', e);

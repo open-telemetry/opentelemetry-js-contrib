@@ -17,7 +17,13 @@ import 'mocha';
 import * as expect from 'expect';
 import * as sinon from 'sinon';
 import * as lodash from 'lodash';
-import { AmqplibInstrumentation, ConsumeEndInfo, ConsumeInfo, EndOperation, PublishInfo } from '../src';
+import {
+  AmqplibInstrumentation,
+  ConsumeEndInfo,
+  ConsumeInfo,
+  EndOperation,
+  PublishInfo,
+} from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -548,30 +554,6 @@ describe('amqplib instrumentation promise model', () => {
       });
     });
 
-    it('moduleVersionAttributeName works with publish and consume', async () => {
-      const VERSION_ATTR = 'module.version';
-      instrumentation.setConfig({
-        moduleVersionAttributeName: VERSION_ATTR,
-      });
-
-      channel.sendToQueue(queueName, Buffer.from(msgPayload));
-
-      await asyncConsume(
-        channel,
-        queueName,
-        [msg => expect(msg.content.toString()).toEqual(msgPayload)],
-        {
-          noAck: true,
-        }
-      );
-      expect(getTestSpans().length).toBe(2);
-      getTestSpans().forEach(s =>
-        expect(s.attributes[VERSION_ATTR]).toMatch(
-          /\d{1,4}\.\d{1,4}\.\d{1,5}.*/
-        )
-      );
-    });
-
     describe('hooks', () => {
       it('publish and consume hooks success', async () => {
         const attributeNameFromHook = 'attribute.name.from.hook';
@@ -591,7 +573,8 @@ describe('amqplib instrumentation promise model', () => {
           },
           consumeEndHook: (
             span: Span,
-            consumeEndInfo: ConsumeEndInfo): void => {
+            consumeEndInfo: ConsumeEndInfo
+          ): void => {
             span.setAttribute(attributeNameFromEndHook, endHookAttributeValue);
             expect(consumeEndInfo.endOperation).toEqual(EndOperation.AutoAck);
           },
@@ -1164,30 +1147,6 @@ describe('amqplib instrumentation promise model', () => {
           publishSpan.spanContext().spanId
         );
       });
-    });
-
-    it('moduleVersionAttributeName works with publish and consume', async () => {
-      const VERSION_ATTR = 'module.version';
-      instrumentation.setConfig({
-        moduleVersionAttributeName: VERSION_ATTR,
-      });
-
-      await asyncConfirmSend(confirmChannel, queueName, msgPayload);
-
-      await asyncConsume(
-        confirmChannel,
-        queueName,
-        [msg => expect(msg.content.toString()).toEqual(msgPayload)],
-        {
-          noAck: true,
-        }
-      );
-      expect(getTestSpans().length).toBe(2);
-      getTestSpans().forEach(s =>
-        expect(s.attributes[VERSION_ATTR]).toMatch(
-          /\d{1,4}\.\d{1,4}\.\d{1,5}.*/
-        )
-      );
     });
 
     describe('hooks', () => {

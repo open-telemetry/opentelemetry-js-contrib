@@ -18,6 +18,7 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type * as amqp from 'amqplib';
 
 export interface PublishInfo {
+  moduleVersion: string | undefined;
   exchange: string;
   routingKey: string;
   content: Buffer;
@@ -26,17 +27,18 @@ export interface PublishInfo {
 }
 
 export interface PublishConfirmedInfo extends PublishInfo {
-    confirmError?: any;
+  confirmError?: any;
 }
 
 export interface ConsumeInfo {
-    msg: amqp.ConsumeMessage;
+  moduleVersion: string | undefined;
+  msg: amqp.ConsumeMessage;
 }
 
 export interface ConsumeEndInfo {
-    msg: amqp.ConsumeMessage;
-    rejected: boolean | null;
-    endOperation: EndOperation;
+  msg: amqp.ConsumeMessage;
+  rejected: boolean | null;
+  endOperation: EndOperation;
 }
 
 export interface AmqplibPublishCustomAttributeFunction {
@@ -52,10 +54,7 @@ export interface AmqplibConsumerCustomAttributeFunction {
 }
 
 export interface AmqplibConsumerEndCustomAttributeFunction {
-  (
-    span: Span,
-    consumeEndInfo: ConsumeEndInfo,
-  ): void;
+  (span: Span, consumeEndInfo: ConsumeEndInfo): void;
 }
 
 export enum EndOperation {
@@ -82,12 +81,6 @@ export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
 
   /** hook for adding custom attributes after consumer message is acked to server */
   consumeEndHook?: AmqplibConsumerEndCustomAttributeFunction;
-
-  /**
-   * If passed, a span attribute will be added to all spans with key of the provided "moduleVersionAttributeName"
-   * and value of the module version.
-   */
-  moduleVersionAttributeName?: string;
 
   /**
    * When user is setting up consume callback, it is user's responsibility to call
