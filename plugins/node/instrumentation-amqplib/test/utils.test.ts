@@ -1,151 +1,169 @@
-import "mocha";
-import * as expect from "expect";
-import { getConnectionAttributesFromServer, getConnectionAttributesFromUrl } from "../src/utils";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
-import * as amqp from "amqplib";
-import { rabbitMqUrl } from "./utils";
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import 'mocha';
+import * as expect from 'expect';
+import {
+  getConnectionAttributesFromServer,
+  getConnectionAttributesFromUrl,
+} from '../src/utils';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import * as amqp from 'amqplib';
+import { rabbitMqUrl } from './utils';
 
-describe("utils", function () {
-  describe("getConnectionAttributesFromServer", function () {
-
+describe('utils', () => {
+  describe('getConnectionAttributesFromServer', () => {
     let conn: amqp.Connection;
     before(async () => {
-        conn = await amqp.connect(rabbitMqUrl);
+      conn = await amqp.connect(rabbitMqUrl);
     });
     after(async () => {
-        await conn.close();
+      await conn.close();
     });
 
-    it("messaging system attribute", function () {
+    it('messaging system attribute', () => {
       const attributes = getConnectionAttributesFromServer(conn.connection);
       expect(attributes).toStrictEqual({
-          [SemanticAttributes.MESSAGING_SYSTEM]: 'rabbitmq',
+        [SemanticAttributes.MESSAGING_SYSTEM]: 'rabbitmq',
       });
     });
   });
 
-  describe("getConnectionAttributesFromUrl", function () {
-    it("all features", function () {
+  describe('getConnectionAttributesFromUrl', () => {
+    it('all features', () => {
       const attributes = getConnectionAttributesFromUrl(
-        `amqp://user:pass@host:10000/vhost`
+        'amqp://user:pass@host:10000/vhost'
       );
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL]: "AMQP",
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.NET_PEER_NAME]: "host",
+        [SemanticAttributes.MESSAGING_PROTOCOL]: 'AMQP',
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.NET_PEER_NAME]: 'host',
         [SemanticAttributes.NET_PEER_PORT]: 10000,
-        [SemanticAttributes.MESSAGING_URL]: `amqp://user:***@host:10000/vhost`,
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://user:***@host:10000/vhost',
       });
     });
 
-    it("all features encoded", function () {
+    it('all features encoded', () => {
       const attributes = getConnectionAttributesFromUrl(
-        `amqp://user%61:%61pass@ho%61st:10000/v%2fhost`
+        'amqp://user%61:%61pass@ho%61st:10000/v%2fhost'
       );
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL]: "AMQP",
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.NET_PEER_NAME]: "ho%61st",
+        [SemanticAttributes.MESSAGING_PROTOCOL]: 'AMQP',
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.NET_PEER_NAME]: 'ho%61st',
         [SemanticAttributes.NET_PEER_PORT]: 10000,
-        [SemanticAttributes.MESSAGING_URL]: `amqp://user%61:***@ho%61st:10000/v%2fhost`,
+        [SemanticAttributes.MESSAGING_URL]:
+          'amqp://user%61:***@ho%61st:10000/v%2fhost',
       });
     });
 
-    it("only protocol", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp://`);
+    it('only protocol', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp://');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL]: "AMQP",
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.NET_PEER_NAME]: "localhost",
+        [SemanticAttributes.MESSAGING_PROTOCOL]: 'AMQP',
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.NET_PEER_NAME]: 'localhost',
         [SemanticAttributes.NET_PEER_PORT]: 5672,
-        [SemanticAttributes.MESSAGING_URL]: `amqp://`,
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://',
       });
     });
 
-    it("empty username and password", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp://:@/`);
+    it('empty username and password', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp://:@/');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.MESSAGING_URL]: `amqp://:***@/`,
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://:***@/',
       });
     });
 
-    it("username and no password", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp://user@`);
+    it('username and no password', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp://user@');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.MESSAGING_URL]: `amqp://user@`,
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://user@',
       });
     });
 
-    it("username and password, no host", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp://user:pass@`);
+    it('username and password, no host', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp://user:pass@');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.MESSAGING_URL]: `amqp://user:***@`,
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://user:***@',
       });
     });
 
-    it("host only", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp://host`);
+    it('host only', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp://host');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL]: "AMQP",
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.NET_PEER_NAME]: "host",
+        [SemanticAttributes.MESSAGING_PROTOCOL]: 'AMQP',
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.NET_PEER_NAME]: 'host',
         [SemanticAttributes.NET_PEER_PORT]: 5672,
-        [SemanticAttributes.MESSAGING_URL]: `amqp://host`,
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://host',
       });
     });
 
-    it("port only", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp://:10000`);
+    it('port only', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp://:10000');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.MESSAGING_URL]: `amqp://:10000`,
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://:10000',
       });
     });
 
-    it("vhost only", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp:///vhost`);
+    it('vhost only', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp:///vhost');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL]: "AMQP",
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.NET_PEER_NAME]: "localhost",
+        [SemanticAttributes.MESSAGING_PROTOCOL]: 'AMQP',
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.NET_PEER_NAME]: 'localhost',
         [SemanticAttributes.NET_PEER_PORT]: 5672,
-        [SemanticAttributes.MESSAGING_URL]: `amqp:///vhost`,
+        [SemanticAttributes.MESSAGING_URL]: 'amqp:///vhost',
       });
     });
 
-    it("host only, trailing slash", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp://host/`);
+    it('host only, trailing slash', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp://host/');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL]: "AMQP",
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.NET_PEER_NAME]: "host",
+        [SemanticAttributes.MESSAGING_PROTOCOL]: 'AMQP',
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.NET_PEER_NAME]: 'host',
         [SemanticAttributes.NET_PEER_PORT]: 5672,
-        [SemanticAttributes.MESSAGING_URL]: `amqp://host/`,
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://host/',
       });
     });
 
-    it("vhost encoded", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp://host/%2f`);
+    it('vhost encoded', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp://host/%2f');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL]: "AMQP",
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.NET_PEER_NAME]: "host",
+        [SemanticAttributes.MESSAGING_PROTOCOL]: 'AMQP',
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.NET_PEER_NAME]: 'host',
         [SemanticAttributes.NET_PEER_PORT]: 5672,
-        [SemanticAttributes.MESSAGING_URL]: `amqp://host/%2f`,
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://host/%2f',
       });
     });
 
-    it("IPv6 host", function () {
-      const attributes = getConnectionAttributesFromUrl(`amqp://[::1]`);
+    it('IPv6 host', () => {
+      const attributes = getConnectionAttributesFromUrl('amqp://[::1]');
       expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL]: "AMQP",
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1",
-        [SemanticAttributes.NET_PEER_NAME]: "[::1]",
+        [SemanticAttributes.MESSAGING_PROTOCOL]: 'AMQP',
+        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
+        [SemanticAttributes.NET_PEER_NAME]: '[::1]',
         [SemanticAttributes.NET_PEER_PORT]: 5672,
-        [SemanticAttributes.MESSAGING_URL]: `amqp://[::1]`,
+        [SemanticAttributes.MESSAGING_URL]: 'amqp://[::1]',
       });
     });
   });

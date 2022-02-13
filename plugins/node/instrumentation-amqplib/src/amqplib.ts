@@ -1,3 +1,18 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import {
   context,
   diag,
@@ -6,7 +21,7 @@ import {
   Span,
   SpanKind,
   SpanStatusCode,
-} from "@opentelemetry/api";
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationModuleDefinition,
@@ -14,18 +29,18 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
-} from "@opentelemetry/instrumentation";
+} from '@opentelemetry/instrumentation';
 import {
   SemanticAttributes,
   MessagingOperationValues,
   MessagingDestinationKindValues,
-} from "@opentelemetry/semantic-conventions";
-import type * as amqp from "amqplib";
+} from '@opentelemetry/semantic-conventions';
+import type * as amqp from 'amqplib';
 import {
   AmqplibInstrumentationConfig,
   DEFAULT_CONFIG,
   EndOperation,
-} from "./types";
+} from './types';
 import {
   CHANNEL_CONSUME_TIMEOUT_TIMER,
   CHANNEL_SPANS_NOT_ENDED,
@@ -40,15 +55,15 @@ import {
   MESSAGE_STORED_SPAN,
   normalizeExchange,
   unmarkConfirmChannelTracing,
-} from "./utils";
-import { VERSION } from "./version";
+} from './utils';
+import { VERSION } from './version';
 
 export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
   protected override _config!: AmqplibInstrumentationConfig;
 
   constructor(config: AmqplibInstrumentationConfig = {}) {
     super(
-      "@opentelemetry/instrumentation-amqplib",
+      '@opentelemetry/instrumentation-amqplib',
       VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
@@ -61,30 +76,30 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
   protected init(): InstrumentationModuleDefinition<typeof amqp> {
     const channelModelModuleFile =
       new InstrumentationNodeModuleFile<amqp.Channel>(
-        `amqplib/lib/channel_model.js`,
-        [">=0.5.5"],
+        'amqplib/lib/channel_model.js',
+        ['>=0.5.5'],
         this.patchChannelModel.bind(this),
         this.unpatchChannelModel.bind(this)
       );
 
     const callbackModelModuleFile =
       new InstrumentationNodeModuleFile<amqp.Channel>(
-        `amqplib/lib/callback_model.js`,
-        [">=0.5.5"],
+        'amqplib/lib/callback_model.js',
+        ['>=0.5.5'],
         this.patchChannelModel.bind(this),
         this.unpatchChannelModel.bind(this)
       );
 
     const connectModuleFile = new InstrumentationNodeModuleFile<amqp.Channel>(
-      `amqplib/lib/connect.js`,
-      [">=0.5.5"],
+      'amqplib/lib/connect.js',
+      ['>=0.5.5'],
       this.patchConnect.bind(this),
       this.unpatchConnect.bind(this)
     );
 
     const module = new InstrumentationNodeModuleDefinition<typeof amqp>(
-      "amqplib",
-      [">=0.5.5"],
+      'amqplib',
+      ['>=0.5.5'],
       undefined,
       undefined,
       [channelModelModuleFile, connectModuleFile, callbackModelModuleFile]
@@ -95,14 +110,14 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
   private patchConnect(moduleExports: any) {
     moduleExports = this.unpatchConnect(moduleExports);
     if (!isWrapped(moduleExports.connect)) {
-      this._wrap(moduleExports, "connect", this.getConnectPatch.bind(this));
+      this._wrap(moduleExports, 'connect', this.getConnectPatch.bind(this));
     }
     return moduleExports;
   }
 
   private unpatchConnect(moduleExports: any) {
     if (isWrapped(moduleExports.connect)) {
-      this._unwrap(moduleExports, "connect");
+      this._unwrap(moduleExports, 'connect');
     }
     return moduleExports;
   }
@@ -114,63 +129,63 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     if (!isWrapped(moduleExports.Channel.prototype.publish)) {
       this._wrap(
         moduleExports.Channel.prototype,
-        "publish",
+        'publish',
         this.getPublishPatch.bind(this, moduleVersion)
       );
     }
     if (!isWrapped(moduleExports.Channel.prototype.consume)) {
       this._wrap(
         moduleExports.Channel.prototype,
-        "consume",
+        'consume',
         this.getConsumePatch.bind(this, moduleVersion)
       );
     }
     if (!isWrapped(moduleExports.Channel.prototype.ack)) {
       this._wrap(
         moduleExports.Channel.prototype,
-        "ack",
+        'ack',
         this.getAckPatch.bind(this, false, EndOperation.Ack)
       );
     }
     if (!isWrapped(moduleExports.Channel.prototype.nack)) {
       this._wrap(
         moduleExports.Channel.prototype,
-        "nack",
+        'nack',
         this.getAckPatch.bind(this, true, EndOperation.Nack)
       );
     }
     if (!isWrapped(moduleExports.Channel.prototype.reject)) {
       this._wrap(
         moduleExports.Channel.prototype,
-        "reject",
+        'reject',
         this.getAckPatch.bind(this, true, EndOperation.Reject)
       );
     }
     if (!isWrapped(moduleExports.Channel.prototype.ackAll)) {
       this._wrap(
         moduleExports.Channel.prototype,
-        "ackAll",
+        'ackAll',
         this.getAckAllPatch.bind(this, false, EndOperation.AckAll)
       );
     }
     if (!isWrapped(moduleExports.Channel.prototype.nackAll)) {
       this._wrap(
         moduleExports.Channel.prototype,
-        "nackAll",
+        'nackAll',
         this.getAckAllPatch.bind(this, true, EndOperation.NackAll)
       );
     }
     if (!isWrapped(moduleExports.Channel.prototype.emit)) {
       this._wrap(
         moduleExports.Channel.prototype,
-        "emit",
+        'emit',
         this.getChannelEmitPatch.bind(this)
       );
     }
     if (!isWrapped(moduleExports.ConfirmChannel.prototype.publish)) {
       this._wrap(
         moduleExports.ConfirmChannel.prototype,
-        "publish",
+        'publish',
         this.getConfirmedPublishPatch.bind(this, moduleVersion)
       );
     }
@@ -179,31 +194,31 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
 
   private unpatchChannelModel(moduleExports: any) {
     if (isWrapped(moduleExports.Channel.prototype.publish)) {
-      this._unwrap(moduleExports.Channel.prototype, "publish");
+      this._unwrap(moduleExports.Channel.prototype, 'publish');
     }
     if (isWrapped(moduleExports.Channel.prototype.consume)) {
-      this._unwrap(moduleExports.Channel.prototype, "consume");
+      this._unwrap(moduleExports.Channel.prototype, 'consume');
     }
     if (isWrapped(moduleExports.Channel.prototype.ack)) {
-      this._unwrap(moduleExports.Channel.prototype, "ack");
+      this._unwrap(moduleExports.Channel.prototype, 'ack');
     }
     if (isWrapped(moduleExports.Channel.prototype.nack)) {
-      this._unwrap(moduleExports.Channel.prototype, "nack");
+      this._unwrap(moduleExports.Channel.prototype, 'nack');
     }
     if (isWrapped(moduleExports.Channel.prototype.reject)) {
-      this._unwrap(moduleExports.Channel.prototype, "reject");
+      this._unwrap(moduleExports.Channel.prototype, 'reject');
     }
     if (isWrapped(moduleExports.Channel.prototype.ackAll)) {
-      this._unwrap(moduleExports.Channel.prototype, "ackAll");
+      this._unwrap(moduleExports.Channel.prototype, 'ackAll');
     }
     if (isWrapped(moduleExports.Channel.prototype.nackAll)) {
-      this._unwrap(moduleExports.Channel.prototype, "nackAll");
+      this._unwrap(moduleExports.Channel.prototype, 'nackAll');
     }
     if (isWrapped(moduleExports.Channel.prototype.emit)) {
-      this._unwrap(moduleExports.Channel.prototype, "emit");
+      this._unwrap(moduleExports.Channel.prototype, 'emit');
     }
     if (isWrapped(moduleExports.ConfirmChannel.prototype.publish)) {
-      this._unwrap(moduleExports.ConfirmChannel.prototype, "publish");
+      this._unwrap(moduleExports.ConfirmChannel.prototype, 'publish');
     }
     return moduleExports;
   }
@@ -253,7 +268,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
       this: InstrumentationConsumeChannel,
       eventName: string
     ) {
-      if (eventName === "close") {
+      if (eventName === 'close') {
         self.endAllSpansOnChannel(
           this,
           true,
@@ -265,7 +280,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           clearInterval(activeTimer);
         }
         delete this[CHANNEL_CONSUME_TIMEOUT_TIMER];
-      } else if (eventName === "error") {
+      } else if (eventName === 'error') {
         self.endAllSpansOnChannel(
           this,
           true,
@@ -312,7 +327,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
       const spansNotEnded: { msg: amqp.Message }[] =
         channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
       const msgIndex = spansNotEnded.findIndex(
-        (msgDetails) => msgDetails.msg === message
+        msgDetails => msgDetails.msg === message
       );
       if (msgIndex < 0) {
         // should not happen in happy flow
@@ -358,7 +373,9 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
       options?: amqp.Options.Consume
     ): Promise<amqp.Replies.Consume> {
       const channel = this;
-      if (!channel.hasOwnProperty(CHANNEL_SPANS_NOT_ENDED)) {
+      if (
+        !Object.prototype.hasOwnProperty.call(channel, CHANNEL_SPANS_NOT_ENDED)
+      ) {
         if (self._config.consumeTimeoutMs) {
           const timer = setInterval(() => {
             self.checkConsumeTimeoutOnChannel(channel);
@@ -423,9 +440,9 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
         if (self._config.consumeHook) {
           safeExecuteInTheMiddle(
             () => self._config.consumeHook!(span, msg),
-            (e) => {
+            e => {
               if (e) {
-                diag.error("amqplib instrumentation: consumerHook error", e);
+                diag.error('amqplib instrumentation: consumerHook error', e);
               }
             },
             true
@@ -494,9 +511,9 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
               options,
               isConfirmChannel: true,
             }),
-          (e) => {
+          e => {
             if (e) {
-              diag.error("amqplib instrumentation: publishHook error", e);
+              diag.error('amqplib instrumentation: publishHook error', e);
             }
           },
           true
@@ -525,10 +542,10 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
                   },
                   err
                 ),
-              (e) => {
+              e => {
                 if (e) {
                   diag.error(
-                    "amqplib instrumentation: publishConfirmHook error",
+                    'amqplib instrumentation: publishConfirmHook error',
                     e
                   );
                 }
@@ -596,9 +613,9 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
                 options,
                 isConfirmChannel: false,
               }),
-            (e) => {
+            e => {
               if (e) {
-                diag.error("amqplib instrumentation: publishHook error", e);
+                diag.error('amqplib instrumentation: publishHook error', e);
               }
             },
             true
@@ -672,10 +689,10 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           operation !== EndOperation.ChannelError
             ? `${operation} called on message${
                 requeue === true
-                  ? " with requeue"
+                  ? ' with requeue'
                   : requeue === false
-                  ? " without requeue"
-                  : ""
+                  ? ' without requeue'
+                  : ''
               }`
             : operation,
       });
@@ -693,7 +710,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
   ) {
     const spansNotEnded: { msg: amqp.Message }[] =
       channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
-    spansNotEnded.forEach((msgDetails) => {
+    spansNotEnded.forEach(msgDetails => {
       this.endConsumerSpan(msgDetails.msg, isRejected, operation, requeue);
     });
     Object.defineProperty(channel, CHANNEL_SPANS_NOT_ENDED, {
@@ -713,9 +730,9 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
 
     safeExecuteInTheMiddle(
       () => this._config.consumeEndHook!(span, msg, rejected, endOperation),
-      (e) => {
+      e => {
         if (e) {
-          diag.error("amqplib instrumentation: consumerEndHook error", e);
+          diag.error('amqplib instrumentation: consumerEndHook error', e);
         }
       },
       true

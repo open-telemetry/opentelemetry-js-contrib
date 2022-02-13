@@ -1,3 +1,18 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import {
   Context,
   createContextKey,
@@ -5,21 +20,22 @@ import {
   Span,
   SpanAttributes,
   SpanAttributeValue,
-} from "@opentelemetry/api";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
-import type * as amqp from "amqplib";
+} from '@opentelemetry/api';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import type * as amqp from 'amqplib';
+import * as urlLib from 'url';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(
-  "opentelemetry.amqplib.message.stored-span"
+  'opentelemetry.amqplib.message.stored-span'
 );
 export const CHANNEL_SPANS_NOT_ENDED: unique symbol = Symbol(
-  "opentelemetry.amqplib.channel.spans-not-ended"
+  'opentelemetry.amqplib.channel.spans-not-ended'
 );
 export const CHANNEL_CONSUME_TIMEOUT_TIMER: unique symbol = Symbol(
-  "opentelemetry.amqplib.channel.consumer-timeout-timer"
+  'opentelemetry.amqplib.channel.consumer-timeout-timer'
 );
 export const CONNECTION_ATTRIBUTES: unique symbol = Symbol(
-  "opentelemetry.amqplib.connection.attributes"
+  'opentelemetry.amqplib.connection.attributes'
 );
 
 export type InstrumentationPublishChannel = (
@@ -39,14 +55,14 @@ export type InstrumentationMessage = amqp.Message & {
 };
 
 const IS_CONFIRM_CHANNEL_CONTEXT_KEY: symbol = createContextKey(
-  "opentelemetry.amqplib.channel.is-confirm-channel"
+  'opentelemetry.amqplib.channel.is-confirm-channel'
 );
 
 export const normalizeExchange = (exchangeName: string) =>
-  exchangeName !== "" ? exchangeName : "<default>";
+  exchangeName !== '' ? exchangeName : '<default>';
 
 const censorPassword = (url: string): string => {
-  return url.replace(/:[^:@/]*@/, ":***@");
+  return url.replace(/:[^:@/]*@/, ':***@');
 };
 
 const getPort = (
@@ -55,23 +71,23 @@ const getPort = (
 ): number => {
   // we are using the resolved protocol which is upper case
   // this code mimic the behavior of the amqplib which is used to set connection params
-  return portFromUrl || (resolvedProtocol === "AMQP" ? 5672 : 5671);
+  return portFromUrl || (resolvedProtocol === 'AMQP' ? 5672 : 5671);
 };
 
-const getProtocol = (protocolFromUrl: string | undefined): string => {
-  const resolvedProtocol = protocolFromUrl || "amqp";
+const getProtocol = (protocolFromUrl: string | null): string => {
+  const resolvedProtocol = protocolFromUrl || 'amqp';
   // the substring removed the ':' part of the protocol ('amqp:' -> 'amqp')
-  const noEndingColon = resolvedProtocol.endsWith(":")
+  const noEndingColon = resolvedProtocol.endsWith(':')
     ? resolvedProtocol.substring(0, resolvedProtocol.length - 1)
     : resolvedProtocol;
   // upper cases to match spec
   return noEndingColon.toUpperCase();
 };
 
-const getHostname = (hostnameFromUrl: string | undefined): string => {
+const getHostname = (hostnameFromUrl: string | null): string => {
   // if user supplies empty hostname, it gets forwarded to 'net' package which default it to localhost.
   // https://nodejs.org/docs/latest-v12.x/api/net.html#net_socket_connect_options_connectlistener
-  return hostnameFromUrl || "localhost";
+  return hostnameFromUrl || 'localhost';
 };
 
 const extractConnectionAttributeOrLog = (
@@ -94,7 +110,7 @@ const extractConnectionAttributeOrLog = (
 };
 
 export const getConnectionAttributesFromServer = (
-  conn: amqp.Connection["connection"]
+  conn: amqp.Connection['connection']
 ): SpanAttributes => {
   const product = conn.serverProperties.product?.toLowerCase?.();
   if (product) {
@@ -110,11 +126,11 @@ export const getConnectionAttributesFromUrl = (
   url: string | amqp.Options.Connect
 ): SpanAttributes => {
   const attributes: SpanAttributes = {
-    [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: "0.9.1", // this is the only protocol supported by the instrumented library
+    [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
   };
 
-  url = url || "amqp://localhost";
-  if (typeof url === "object") {
+  url = url || 'amqp://localhost';
+  if (typeof url === 'object') {
     const connectOptions = url as amqp.Options.Connect;
 
     const protocol = getProtocol(connectOptions?.protocol);
@@ -123,7 +139,7 @@ export const getConnectionAttributesFromUrl = (
         url,
         SemanticAttributes.MESSAGING_PROTOCOL,
         protocol,
-        "protocol"
+        'protocol'
       ),
     });
 
@@ -133,7 +149,7 @@ export const getConnectionAttributesFromUrl = (
         url,
         SemanticAttributes.NET_PEER_NAME,
         hostname,
-        "hostname"
+        'hostname'
       ),
     });
 
@@ -143,14 +159,14 @@ export const getConnectionAttributesFromUrl = (
         url,
         SemanticAttributes.NET_PEER_PORT,
         port,
-        "port"
+        'port'
       ),
     });
   } else {
     const censoredUrl = censorPassword(url);
     attributes[SemanticAttributes.MESSAGING_URL] = censoredUrl;
     try {
-      const urlParts = new URL(censoredUrl);
+      const urlParts = urlLib.parse(censoredUrl);
 
       const protocol = getProtocol(urlParts.protocol);
       Object.assign(attributes, {
@@ -158,7 +174,7 @@ export const getConnectionAttributesFromUrl = (
           censoredUrl,
           SemanticAttributes.MESSAGING_PROTOCOL,
           protocol,
-          "protocol"
+          'protocol'
         ),
       });
 
@@ -168,22 +184,25 @@ export const getConnectionAttributesFromUrl = (
           censoredUrl,
           SemanticAttributes.NET_PEER_NAME,
           hostname,
-          "hostname"
+          'hostname'
         ),
       });
 
-      const port = getPort(parseInt(urlParts.port), protocol);
+      const port = getPort(
+        urlParts.port ? parseInt(urlParts.port) : undefined,
+        protocol
+      );
       Object.assign(attributes, {
         ...extractConnectionAttributeOrLog(
           censoredUrl,
           SemanticAttributes.NET_PEER_PORT,
           port,
-          "port"
+          'port'
         ),
       });
     } catch (err) {
       diag.error(
-        "amqplib instrumentation: error while extracting connection details from connection url",
+        'amqplib instrumentation: error while extracting connection details from connection url',
         {
           censoredUrl,
           err,
