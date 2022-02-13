@@ -50,6 +50,7 @@ OpenTelemetry can collect tracing data automatically using instrumentations. Ven
 
 ### Node Instrumentations
 
+- [@opentelemetry/instrumentation-amqplib][otel-contrib-instrumentation-amqplib]
 - [@opentelemetry/instrumentation-aws-lambda][otel-contrib-instrumentation-aws-lambda]
 - [@opentelemetry/instrumentation-aws-sdk][otel-contrib-instrumentation-aws-sdk]
 - [@opentelemetry/instrumentation-bunyan][otel-contrib-instrumentation-bunyan]
@@ -160,6 +161,7 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [otel-instrumentation-http]: https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http
 [otel-instrumentation-xml-http-request]: https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-xml-http-request
 
+[otel-contrib-instrumentation-amqplib]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-amqplib
 [otel-contrib-instrumentation-aws-lambda]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-aws-lambda
 [otel-contrib-instrumentation-aws-sdk]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-aws-sdk
 [otel-contrib-instrumentation-bunyan]: https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-bunyan
