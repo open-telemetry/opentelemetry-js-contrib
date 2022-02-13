@@ -17,7 +17,7 @@ import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type * as amqp from 'amqplib';
 
-export interface PublishParams {
+export interface PublishInfo {
   exchange: string;
   routingKey: string;
   content: Buffer;
@@ -25,24 +25,36 @@ export interface PublishParams {
   isConfirmChannel?: boolean;
 }
 
+export interface PublishConfirmedInfo extends PublishInfo {
+    confirmError?: any;
+}
+
+export interface ConsumeInfo {
+    msg: amqp.ConsumeMessage;
+}
+
+export interface ConsumeEndInfo {
+    msg: amqp.ConsumeMessage;
+    rejected: boolean | null;
+    endOperation: EndOperation;
+}
+
 export interface AmqplibPublishCustomAttributeFunction {
-  (span: Span, publishParams: PublishParams): void;
+  (span: Span, publishInfo: PublishInfo): void;
 }
 
 export interface AmqplibConfirmCustomAttributeFunction {
-  (span: Span, publishParams: PublishParams, confirmError: any): void;
+  (span: Span, publishConfirmedInto: PublishConfirmedInfo): void;
 }
 
 export interface AmqplibConsumerCustomAttributeFunction {
-  (span: Span, msg: amqp.ConsumeMessage): void;
+  (span: Span, consumeInfo: ConsumeInfo): void;
 }
 
 export interface AmqplibConsumerEndCustomAttributeFunction {
   (
     span: Span,
-    msg: amqp.ConsumeMessage,
-    rejected: boolean | null,
-    endOperation: EndOperation
+    consumeEndInfo: ConsumeEndInfo,
   ): void;
 }
 

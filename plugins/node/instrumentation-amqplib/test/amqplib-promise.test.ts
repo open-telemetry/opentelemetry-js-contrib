@@ -17,7 +17,7 @@ import 'mocha';
 import * as expect from 'expect';
 import * as sinon from 'sinon';
 import * as lodash from 'lodash';
-import { AmqplibInstrumentation, EndOperation, PublishParams } from '../src';
+import { AmqplibInstrumentation, ConsumeEndInfo, ConsumeInfo, EndOperation, PublishInfo } from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -70,12 +70,12 @@ describe('amqplib instrumentation promise model', () => {
     expect(endHookSpy.callCount).toBe(expectedEndOperations.length);
     expectedEndOperations.forEach(
       (endOperation: EndOperation, index: number) => {
-        expect(endHookSpy.args[index][3]).toEqual(endOperation);
+        expect(endHookSpy.args[index][1].endOperation).toEqual(endOperation);
         switch (endOperation) {
           case EndOperation.AutoAck:
           case EndOperation.Ack:
           case EndOperation.AckAll:
-            expect(endHookSpy.args[index][2]).toBeFalsy();
+            expect(endHookSpy.args[index][1].rejected).toBeFalsy();
             break;
 
           case EndOperation.Reject:
@@ -83,7 +83,7 @@ describe('amqplib instrumentation promise model', () => {
           case EndOperation.NackAll:
           case EndOperation.ChannelClosed:
           case EndOperation.ChannelError:
-            expect(endHookSpy.args[index][2]).toBeTruthy();
+            expect(endHookSpy.args[index][1].rejected).toBeTruthy();
             break;
         }
       }
@@ -579,24 +579,21 @@ describe('amqplib instrumentation promise model', () => {
         const attributeNameFromEndHook = 'attribute.name.from.endhook';
         const endHookAttributeValue = 'attribute value from end hook';
         instrumentation.setConfig({
-          publishHook: (span: Span, publishParams: PublishParams): void => {
+          publishHook: (span: Span, publishParams: PublishInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
             expect(publishParams.exchange).toEqual('');
             expect(publishParams.routingKey).toEqual(queueName);
             expect(publishParams.content.toString()).toEqual(msgPayload);
           },
-          consumeHook: (span: Span, msg: amqp.ConsumeMessage | null): void => {
+          consumeHook: (span: Span, consumeInfo: ConsumeInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
-            expect(msg!.content.toString()).toEqual(msgPayload);
+            expect(consumeInfo.msg!.content.toString()).toEqual(msgPayload);
           },
           consumeEndHook: (
             span: Span,
-            msg: amqp.ConsumeMessage | null,
-            rejected: boolean | null,
-            endOperation: EndOperation
-          ): void => {
+            consumeEndInfo: ConsumeEndInfo): void => {
             span.setAttribute(attributeNameFromEndHook, endHookAttributeValue);
-            expect(endOperation).toEqual(EndOperation.AutoAck);
+            expect(consumeEndInfo.endOperation).toEqual(EndOperation.AutoAck);
           },
         });
 
@@ -621,11 +618,11 @@ describe('amqplib instrumentation promise model', () => {
         const attributeNameFromHook = 'attribute.name.from.hook';
         const hookAttributeValue = 'attribute value from hook';
         instrumentation.setConfig({
-          publishHook: (span: Span, publishParams: PublishParams): void => {
+          publishHook: (span: Span, publishParams: PublishInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
             throw new Error('error from hook');
           },
-          consumeHook: (span: Span, msg: amqp.ConsumeMessage | null): void => {
+          consumeHook: (span: Span, consumeInfo: ConsumeInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
             throw new Error('error from hook');
           },
@@ -1206,7 +1203,7 @@ describe('amqplib instrumentation promise model', () => {
         const consumeEndHookAttributeValue =
           'attribute value from consume end hook';
         instrumentation.setConfig({
-          publishHook: (span: Span, publishParams: PublishParams) => {
+          publishHook: (span: Span, publishParams: PublishInfo) => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
             expect(publishParams.exchange).toEqual('');
             expect(publishParams.routingKey).toEqual(queueName);
@@ -1222,21 +1219,19 @@ describe('amqplib instrumentation promise model', () => {
             expect(publishParams.routingKey).toEqual(queueName);
             expect(publishParams.content.toString()).toEqual(msgPayload);
           },
-          consumeHook: (span: Span, msg: amqp.ConsumeMessage | null) => {
+          consumeHook: (span: Span, consumeInfo: ConsumeInfo) => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
-            expect(msg!.content.toString()).toEqual(msgPayload);
+            expect(consumeInfo.msg!.content.toString()).toEqual(msgPayload);
           },
           consumeEndHook: (
             span: Span,
-            msg: amqp.ConsumeMessage | null,
-            rejected: boolean | null,
-            endOperation: EndOperation
+            consumeEndInfo: ConsumeEndInfo
           ): void => {
             span.setAttribute(
               attributeNameFromConsumeEndHook,
               consumeEndHookAttributeValue
             );
-            expect(endOperation).toEqual(EndOperation.AutoAck);
+            expect(consumeEndInfo.endOperation).toEqual(EndOperation.AutoAck);
           },
         });
 
@@ -1264,18 +1259,18 @@ describe('amqplib instrumentation promise model', () => {
         const attributeNameFromHook = 'attribute.name.from.hook';
         const hookAttributeValue = 'attribute value from hook';
         instrumentation.setConfig({
-          publishHook: (span: Span, publishParams: PublishParams): void => {
+          publishHook: (span: Span, publishParams: PublishInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
             throw new Error('error from hook');
           },
           publishConfirmHook: (
             span: Span,
-            publishParams: PublishParams
+            publishParams: PublishInfo
           ): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
             throw new Error('error from hook');
           },
-          consumeHook: (span: Span, msg: amqp.ConsumeMessage | null): void => {
+          consumeHook: (span: Span, consumeInfo: ConsumeInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
             throw new Error('error from hook');
           },

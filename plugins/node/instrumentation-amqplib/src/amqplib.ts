@@ -439,7 +439,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
 
         if (self._config.consumeHook) {
           safeExecuteInTheMiddle(
-            () => self._config.consumeHook!(span, msg),
+            () => self._config.consumeHook!(span, { msg }),
             e => {
               if (e) {
                 diag.error('amqplib instrumentation: consumerHook error', e);
@@ -539,8 +539,8 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
                     content,
                     options,
                     isConfirmChannel: true,
+                    confirmError: err,
                   },
-                  err
                 ),
               e => {
                 if (e) {
@@ -729,7 +729,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     if (!this._config.consumeEndHook) return;
 
     safeExecuteInTheMiddle(
-      () => this._config.consumeEndHook!(span, msg, rejected, endOperation),
+      () => this._config.consumeEndHook!(span, {msg, rejected, endOperation}),
       e => {
         if (e) {
           diag.error('amqplib instrumentation: consumerEndHook error', e);
