@@ -501,7 +501,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
               exchange,
               routingKey,
               content,
-              options,
+              options: modifiedOptions,
               isConfirmChannel: true,
             }),
           e => {
@@ -601,7 +601,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
                 exchange,
                 routingKey,
                 content,
-                options,
+                options: modifiedOptions,
                 isConfirmChannel: false,
               }),
             e => {
