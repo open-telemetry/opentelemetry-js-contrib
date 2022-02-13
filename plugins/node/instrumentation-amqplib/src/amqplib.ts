@@ -525,6 +525,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
             safeExecuteInTheMiddle(
               () =>
                 self._config.publishConfirmHook!(span, {
+                  moduleVersion,
                   exchange,
                   routingKey,
                   content,
