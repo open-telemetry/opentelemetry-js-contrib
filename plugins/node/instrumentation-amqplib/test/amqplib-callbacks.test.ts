@@ -31,21 +31,19 @@ import {
 import { context, SpanKind } from '@opentelemetry/api';
 import { asyncConfirmSend, asyncConsume } from './utils';
 import {
+  censoredUrl,
+  rabbitMqUrl,
   TEST_RABBITMQ_HOST,
-  TEST_RABBITMQ_PASS,
   TEST_RABBITMQ_PORT,
-  TEST_RABBITMQ_USER,
 } from './config';
 
 const msgPayload = 'payload from test';
 const queueName = 'queue-name-from-unittest';
 
 describe('amqplib instrumentation callback model', () => {
-  const url = `amqp://${TEST_RABBITMQ_USER}:${TEST_RABBITMQ_PASS}@${TEST_RABBITMQ_HOST}:${TEST_RABBITMQ_PORT}`;
-  const censoredUrl = `amqp://${TEST_RABBITMQ_USER}:***@${TEST_RABBITMQ_HOST}:${TEST_RABBITMQ_PORT}`;
   let conn: amqpCallback.Connection;
   before(done => {
-    amqpCallback.connect(url, (err, connection) => {
+    amqpCallback.connect(rabbitMqUrl, (err, connection) => {
       conn = connection;
       done();
     });

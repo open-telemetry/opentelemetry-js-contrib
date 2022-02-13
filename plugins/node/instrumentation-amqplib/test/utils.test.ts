@@ -21,7 +21,7 @@ import {
 } from '../src/utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as amqp from 'amqplib';
-import { rabbitMqUrl } from './utils';
+import { rabbitMqUrl } from './config';
 
 describe('utils', () => {
   describe('getConnectionAttributesFromServer', () => {

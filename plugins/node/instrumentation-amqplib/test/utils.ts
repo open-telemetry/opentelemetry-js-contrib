@@ -16,14 +16,6 @@
 import type * as amqp from 'amqplib';
 import type * as amqpCallback from 'amqplib/callback_api';
 import * as expect from 'expect';
-import {
-  TEST_RABBITMQ_HOST,
-  TEST_RABBITMQ_PASS,
-  TEST_RABBITMQ_PORT,
-  TEST_RABBITMQ_USER,
-} from './config';
-
-export const rabbitMqUrl = `amqp://${TEST_RABBITMQ_USER}:${TEST_RABBITMQ_PASS}@${TEST_RABBITMQ_HOST}:${TEST_RABBITMQ_PORT}`;
 
 export const asyncConfirmSend = (
   confirmChannel: amqp.ConfirmChannel | amqpCallback.ConfirmChannel,

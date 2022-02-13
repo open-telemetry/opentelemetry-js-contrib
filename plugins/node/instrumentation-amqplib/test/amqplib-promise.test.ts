@@ -42,10 +42,10 @@ import {
 import { Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { asyncConfirmPublish, asyncConfirmSend, asyncConsume } from './utils';
 import {
+  censoredUrl,
+  rabbitMqUrl,
   TEST_RABBITMQ_HOST,
-  TEST_RABBITMQ_PASS,
   TEST_RABBITMQ_PORT,
-  TEST_RABBITMQ_USER,
 } from './config';
 import { SinonSpy } from 'sinon';
 
@@ -59,11 +59,9 @@ const CHANNEL_CLOSED_IN_TEST = Symbol(
 );
 
 describe('amqplib instrumentation promise model', () => {
-  const url = `amqp://${TEST_RABBITMQ_USER}:${TEST_RABBITMQ_PASS}@${TEST_RABBITMQ_HOST}:${TEST_RABBITMQ_PORT}`;
-  const censoredUrl = `amqp://${TEST_RABBITMQ_USER}:***@${TEST_RABBITMQ_HOST}:${TEST_RABBITMQ_PORT}`;
   let conn: amqp.Connection;
   before(async () => {
-    conn = await amqp.connect(url);
+    conn = await amqp.connect(rabbitMqUrl);
   });
   after(async () => {
     await conn.close();

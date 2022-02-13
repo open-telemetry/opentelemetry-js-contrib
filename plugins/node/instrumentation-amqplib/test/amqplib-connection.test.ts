@@ -16,6 +16,8 @@
 import 'mocha';
 import * as expect from 'expect';
 import {
+  censoredUrl,
+  rabbitMqUrl,
   TEST_RABBITMQ_HOST,
   TEST_RABBITMQ_PASS,
   TEST_RABBITMQ_PORT,
@@ -130,9 +132,7 @@ describe('amqplib instrumentation connection', () => {
   describe('connect with url string', () => {
     it('should extract connection attributes from url options', async function () {
       const testName = this.test!.title;
-      const url = `amqp://${TEST_RABBITMQ_USER}:${TEST_RABBITMQ_PASS}@${TEST_RABBITMQ_HOST}:${TEST_RABBITMQ_PORT}`;
-      const censoredUrl = `amqp://${TEST_RABBITMQ_USER}:***@${TEST_RABBITMQ_HOST}:${TEST_RABBITMQ_PORT}`;
-      const conn = await amqp.connect(url);
+      const conn = await amqp.connect(rabbitMqUrl);
 
       try {
         const channel = await conn.createChannel();
