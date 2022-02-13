@@ -23,7 +23,6 @@ import {
 } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import type * as amqp from 'amqplib';
-import * as urlLib from 'url';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(
   'opentelemetry.amqplib.message.stored-span'
@@ -74,7 +73,7 @@ const getPort = (
   return portFromUrl || (resolvedProtocol === 'AMQP' ? 5672 : 5671);
 };
 
-const getProtocol = (protocolFromUrl: string | null): string => {
+const getProtocol = (protocolFromUrl: string | undefined): string => {
   const resolvedProtocol = protocolFromUrl || 'amqp';
   // the substring removed the ':' part of the protocol ('amqp:' -> 'amqp')
   const noEndingColon = resolvedProtocol.endsWith(':')
@@ -84,7 +83,7 @@ const getProtocol = (protocolFromUrl: string | null): string => {
   return noEndingColon.toUpperCase();
 };
 
-const getHostname = (hostnameFromUrl: string | null): string => {
+const getHostname = (hostnameFromUrl: string | undefined): string => {
   // if user supplies empty hostname, it gets forwarded to 'net' package which default it to localhost.
   // https://nodejs.org/docs/latest-v12.x/api/net.html#net_socket_connect_options_connectlistener
   return hostnameFromUrl || 'localhost';
@@ -166,7 +165,7 @@ export const getConnectionAttributesFromUrl = (
     const censoredUrl = censorPassword(url);
     attributes[SemanticAttributes.MESSAGING_URL] = censoredUrl;
     try {
-      const urlParts = urlLib.parse(censoredUrl);
+      const urlParts = new URL(censoredUrl);
 
       const protocol = getProtocol(urlParts.protocol);
       Object.assign(attributes, {
@@ -201,6 +200,7 @@ export const getConnectionAttributesFromUrl = (
         ),
       });
     } catch (err) {
+        console.log(err);
       diag.error(
         'amqplib instrumentation: error while extracting connection details from connection url',
         {

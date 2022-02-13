@@ -115,14 +115,6 @@ describe('utils', () => {
       });
     });
 
-    it('port only', () => {
-      const attributes = getConnectionAttributesFromUrl('amqp://:10000');
-      expect(attributes).toStrictEqual({
-        [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1',
-        [SemanticAttributes.MESSAGING_URL]: 'amqp://:10000',
-      });
-    });
-
     it('vhost only', () => {
       const attributes = getConnectionAttributesFromUrl('amqp:///vhost');
       expect(attributes).toStrictEqual({
