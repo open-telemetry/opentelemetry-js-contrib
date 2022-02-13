@@ -13,52 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import 'mocha';
-import * as expect from 'expect';
-import * as sinon from 'sinon';
-import * as lodash from 'lodash';
+import "mocha";
+import * as expect from "expect";
+import * as sinon from "sinon";
+import * as lodash from "lodash";
 import {
   AmqplibInstrumentation,
   ConsumeEndInfo,
   ConsumeInfo,
   EndOperation,
   PublishInfo,
-} from '../src';
+} from "../src";
 import {
   getTestSpans,
   registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
+} from "@opentelemetry/contrib-test-utils";
 
 const instrumentation = registerInstrumentationTesting(
   new AmqplibInstrumentation()
 );
 
-import * as amqp from 'amqplib';
-import { ConsumeMessage } from 'amqplib';
+import * as amqp from "amqplib";
+import { ConsumeMessage } from "amqplib";
 import {
   MessagingDestinationKindValues,
   SemanticAttributes,
-} from '@opentelemetry/semantic-conventions';
-import { Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import { asyncConfirmPublish, asyncConfirmSend, asyncConsume } from './utils';
+} from "@opentelemetry/semantic-conventions";
+import { Span, SpanKind, SpanStatusCode } from "@opentelemetry/api";
+import { asyncConfirmPublish, asyncConfirmSend, asyncConsume } from "./utils";
 import {
   censoredUrl,
   rabbitMqUrl,
   TEST_RABBITMQ_HOST,
   TEST_RABBITMQ_PORT,
-} from './config';
-import { SinonSpy } from 'sinon';
+} from "./config";
+import { SinonSpy } from "sinon";
 
-const msgPayload = 'payload from test';
-const queueName = 'queue-name-from-unittest';
+const msgPayload = "payload from test";
+const queueName = "queue-name-from-unittest";
 
 // signal that the channel is closed in test, thus it should not be closed again in afterEach.
 // could not find a way to get this from amqplib directly.
 const CHANNEL_CLOSED_IN_TEST = Symbol(
-  'opentelemetry.amqplib.unittest.channel_closed_in_test'
+  "opentelemetry.amqplib.unittest.channel_closed_in_test"
 );
 
-describe('amqplib instrumentation promise model', () => {
+describe("amqplib instrumentation promise model", () => {
   let conn: amqp.Connection;
   before(async () => {
     conn = await amqp.connect(rabbitMqUrl);
@@ -94,7 +94,7 @@ describe('amqplib instrumentation promise model', () => {
     );
   };
 
-  describe('channel', () => {
+  describe("channel", () => {
     let channel: amqp.Channel & { [CHANNEL_CLOSED_IN_TEST]?: boolean };
     beforeEach(async () => {
       endHookSpy = sinon.spy();
@@ -107,20 +107,20 @@ describe('amqplib instrumentation promise model', () => {
       await channel.purgeQueue(queueName);
       // install an error handler, otherwise when we have tests that create error on the channel,
       // it throws and crash process
-      channel.on('error', (err: Error) => {});
+      channel.on("error", (err: Error) => {});
     });
     afterEach(async () => {
       if (!channel[CHANNEL_CLOSED_IN_TEST]) {
         try {
-          await new Promise<void>(resolve => {
-            channel.on('close', resolve);
+          await new Promise<void>((resolve) => {
+            channel.on("close", resolve);
             channel.close();
           });
         } catch {}
       }
     });
 
-    it('simple publish and consume from queue', async () => {
+    it("simple publish and consume from queue", async () => {
       const hadSpaceInBuffer = channel.sendToQueue(
         queueName,
         Buffer.from(msgPayload)
@@ -130,7 +130,7 @@ describe('amqplib instrumentation promise model', () => {
       await asyncConsume(
         channel,
         queueName,
-        [msg => expect(msg.content.toString()).toEqual(msgPayload)],
+        [(msg) => expect(msg.content.toString()).toEqual(msgPayload)],
         {
           noAck: true,
         }
@@ -141,10 +141,10 @@ describe('amqplib instrumentation promise model', () => {
       expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-      ).toEqual('rabbitmq');
+      ).toEqual("rabbitmq");
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-      ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
+      ).toEqual(""); // according to spec: "This will be an empty string if the default exchange is used"
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
       ).toEqual(MessagingDestinationKindValues.TOPIC);
@@ -155,10 +155,10 @@ describe('amqplib instrumentation promise model', () => {
       ).toEqual(queueName);
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-      ).toEqual('AMQP');
+      ).toEqual("AMQP");
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
-      ).toEqual('0.9.1');
+      ).toEqual("0.9.1");
       expect(publishSpan.attributes[SemanticAttributes.MESSAGING_URL]).toEqual(
         censoredUrl
       );
@@ -173,10 +173,10 @@ describe('amqplib instrumentation promise model', () => {
       expect(consumeSpan.kind).toEqual(SpanKind.CONSUMER);
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-      ).toEqual('rabbitmq');
+      ).toEqual("rabbitmq");
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-      ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
+      ).toEqual(""); // according to spec: "This will be an empty string if the default exchange is used"
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
       ).toEqual(MessagingDestinationKindValues.TOPIC);
@@ -187,10 +187,10 @@ describe('amqplib instrumentation promise model', () => {
       ).toEqual(queueName);
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-      ).toEqual('AMQP');
+      ).toEqual("AMQP");
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
-      ).toEqual('0.9.1');
+      ).toEqual("0.9.1");
       expect(consumeSpan.attributes[SemanticAttributes.MESSAGING_URL]).toEqual(
         censoredUrl
       );
@@ -212,23 +212,23 @@ describe('amqplib instrumentation promise model', () => {
       expectConsumeEndSpyStatus([EndOperation.AutoAck]);
     });
 
-    describe('ending consume spans', () => {
-      it('message acked sync', async () => {
+    describe("ending consume spans", () => {
+      it("message acked sync", async () => {
         channel.sendToQueue(queueName, Buffer.from(msgPayload));
 
-        await asyncConsume(channel, queueName, [msg => channel.ack(msg)]);
+        await asyncConsume(channel, queueName, [(msg) => channel.ack(msg)]);
         // assert consumed message span has ended
         expect(getTestSpans().length).toBe(2);
         expectConsumeEndSpyStatus([EndOperation.Ack]);
       });
 
-      it('message acked async', async () => {
+      it("message acked async", async () => {
         channel.sendToQueue(queueName, Buffer.from(msgPayload));
 
         // start async timer and ack the message after the callback returns
-        await new Promise<void>(resolve => {
+        await new Promise<void>((resolve) => {
           asyncConsume(channel, queueName, [
-            msg =>
+            (msg) =>
               setTimeout(() => {
                 channel.ack(msg);
                 resolve();
@@ -240,24 +240,24 @@ describe('amqplib instrumentation promise model', () => {
         expectConsumeEndSpyStatus([EndOperation.Ack]);
       });
 
-      it('message nack no requeue', async () => {
+      it("message nack no requeue", async () => {
         channel.sendToQueue(queueName, Buffer.from(msgPayload));
 
         await asyncConsume(channel, queueName, [
-          msg => channel.nack(msg, false, false),
+          (msg) => channel.nack(msg, false, false),
         ]);
-        await new Promise(resolve => setTimeout(resolve, 20)); // just make sure we don't get it again
+        await new Promise((resolve) => setTimeout(resolve, 20)); // just make sure we don't get it again
         // assert consumed message span has ended
         expect(getTestSpans().length).toBe(2);
         const [_, consumerSpan] = getTestSpans();
         expect(consumerSpan.status.code).toEqual(SpanStatusCode.ERROR);
         expect(consumerSpan.status.message).toEqual(
-          'nack called on message without requeue'
+          "nack called on message without requeue"
         );
         expectConsumeEndSpyStatus([EndOperation.Nack]);
       });
 
-      it('message nack requeue, then acked', async () => {
+      it("message nack requeue, then acked", async () => {
         channel.sendToQueue(queueName, Buffer.from(msgPayload));
 
         await asyncConsume(channel, queueName, [
@@ -269,21 +269,21 @@ describe('amqplib instrumentation promise model', () => {
         const [_, rejectedConsumerSpan, successConsumerSpan] = getTestSpans();
         expect(rejectedConsumerSpan.status.code).toEqual(SpanStatusCode.ERROR);
         expect(rejectedConsumerSpan.status.message).toEqual(
-          'nack called on message with requeue'
+          "nack called on message with requeue"
         );
         expect(successConsumerSpan.status.code).toEqual(SpanStatusCode.UNSET);
         expectConsumeEndSpyStatus([EndOperation.Nack, EndOperation.Ack]);
       });
 
-      it('ack allUpTo 2 msgs sync', async () => {
+      it("ack allUpTo 2 msgs sync", async () => {
         lodash.times(3, () =>
           channel.sendToQueue(queueName, Buffer.from(msgPayload))
         );
 
         await asyncConsume(channel, queueName, [
           null,
-          msg => channel.ack(msg, true),
-          msg => channel.ack(msg),
+          (msg) => channel.ack(msg, true),
+          (msg) => channel.ack(msg),
         ]);
         // assert all 3 messages are acked, including the first one which is acked by allUpTo
         expect(getTestSpans().length).toBe(6);
@@ -294,22 +294,22 @@ describe('amqplib instrumentation promise model', () => {
         ]);
       });
 
-      it('nack allUpTo 2 msgs sync', async () => {
+      it("nack allUpTo 2 msgs sync", async () => {
         lodash.times(3, () =>
           channel.sendToQueue(queueName, Buffer.from(msgPayload))
         );
 
         await asyncConsume(channel, queueName, [
           null,
-          msg => channel.nack(msg, true, false),
-          msg => channel.nack(msg, false, false),
+          (msg) => channel.nack(msg, true, false),
+          (msg) => channel.nack(msg, false, false),
         ]);
         // assert all 3 messages are acked, including the first one which is acked by allUpTo
         expect(getTestSpans().length).toBe(6);
-        lodash.range(3, 6).forEach(i => {
+        lodash.range(3, 6).forEach((i) => {
           expect(getTestSpans()[i].status.code).toEqual(SpanStatusCode.ERROR);
           expect(getTestSpans()[i].status.message).toEqual(
-            'nack called on message without requeue'
+            "nack called on message without requeue"
           );
         });
         expectConsumeEndSpyStatus([
@@ -319,7 +319,7 @@ describe('amqplib instrumentation promise model', () => {
         ]);
       });
 
-      it('ack not in received order', async () => {
+      it("ack not in received order", async () => {
         lodash.times(3, () =>
           channel.sendToQueue(queueName, Buffer.from(msgPayload))
         );
@@ -337,7 +337,7 @@ describe('amqplib instrumentation promise model', () => {
         ]);
       });
 
-      it('ackAll', async () => {
+      it("ackAll", async () => {
         lodash.times(2, () =>
           channel.sendToQueue(queueName, Buffer.from(msgPayload))
         );
@@ -348,7 +348,7 @@ describe('amqplib instrumentation promise model', () => {
         expectConsumeEndSpyStatus([EndOperation.AckAll, EndOperation.AckAll]);
       });
 
-      it('nackAll', async () => {
+      it("nackAll", async () => {
         lodash.times(2, () =>
           channel.sendToQueue(queueName, Buffer.from(msgPayload))
         );
@@ -359,60 +359,60 @@ describe('amqplib instrumentation promise model', () => {
         ]);
         // assert all 2 span messages are ended by calling nackAll
         expect(getTestSpans().length).toBe(4);
-        lodash.range(2, 4).forEach(i => {
+        lodash.range(2, 4).forEach((i) => {
           expect(getTestSpans()[i].status.code).toEqual(SpanStatusCode.ERROR);
           expect(getTestSpans()[i].status.message).toEqual(
-            'nackAll called on message without requeue'
+            "nackAll called on message without requeue"
           );
         });
         expectConsumeEndSpyStatus([EndOperation.NackAll, EndOperation.NackAll]);
       });
 
-      it('reject', async () => {
+      it("reject", async () => {
         lodash.times(1, () =>
           channel.sendToQueue(queueName, Buffer.from(msgPayload))
         );
 
         await asyncConsume(channel, queueName, [
-          msg => channel.reject(msg, false),
+          (msg) => channel.reject(msg, false),
         ]);
         expect(getTestSpans().length).toBe(2);
         expect(getTestSpans()[1].status.code).toEqual(SpanStatusCode.ERROR);
         expect(getTestSpans()[1].status.message).toEqual(
-          'reject called on message without requeue'
+          "reject called on message without requeue"
         );
         expectConsumeEndSpyStatus([EndOperation.Reject]);
       });
 
-      it('reject with requeue', async () => {
+      it("reject with requeue", async () => {
         lodash.times(1, () =>
           channel.sendToQueue(queueName, Buffer.from(msgPayload))
         );
 
         await asyncConsume(channel, queueName, [
-          msg => channel.reject(msg, true),
-          msg => channel.reject(msg, false),
+          (msg) => channel.reject(msg, true),
+          (msg) => channel.reject(msg, false),
         ]);
         expect(getTestSpans().length).toBe(3);
         expect(getTestSpans()[1].status.code).toEqual(SpanStatusCode.ERROR);
         expect(getTestSpans()[1].status.message).toEqual(
-          'reject called on message with requeue'
+          "reject called on message with requeue"
         );
         expect(getTestSpans()[2].status.code).toEqual(SpanStatusCode.ERROR);
         expect(getTestSpans()[2].status.message).toEqual(
-          'reject called on message without requeue'
+          "reject called on message without requeue"
         );
         expectConsumeEndSpyStatus([EndOperation.Reject, EndOperation.Reject]);
       });
 
-      it('closing channel should end all open spans on it', async () => {
+      it("closing channel should end all open spans on it", async () => {
         lodash.times(1, () =>
           channel.sendToQueue(queueName, Buffer.from(msgPayload))
         );
 
-        await new Promise<void>(resolve =>
+        await new Promise<void>((resolve) =>
           asyncConsume(channel, queueName, [
-            async msg => {
+            async (msg) => {
               await channel.close();
               resolve();
               channel[CHANNEL_CLOSED_IN_TEST] = true;
@@ -422,22 +422,22 @@ describe('amqplib instrumentation promise model', () => {
 
         expect(getTestSpans().length).toBe(2);
         expect(getTestSpans()[1].status.code).toEqual(SpanStatusCode.ERROR);
-        expect(getTestSpans()[1].status.message).toEqual('channel closed');
+        expect(getTestSpans()[1].status.message).toEqual("channel closed");
         expectConsumeEndSpyStatus([EndOperation.ChannelClosed]);
       });
 
-      it('error on channel should end all open spans on it', done => {
+      it("error on channel should end all open spans on it", (done) => {
         lodash.times(2, () =>
           channel.sendToQueue(queueName, Buffer.from(msgPayload))
         );
 
-        channel.on('close', () => {
+        channel.on("close", () => {
           expect(getTestSpans().length).toBe(4);
           // second consume ended with valid ack, previous message not acked when channel is errored.
           // since we first ack the second message, it appear first in the finished spans array
           expect(getTestSpans()[2].status.code).toEqual(SpanStatusCode.UNSET);
           expect(getTestSpans()[3].status.code).toEqual(SpanStatusCode.ERROR);
-          expect(getTestSpans()[3].status.message).toEqual('channel error');
+          expect(getTestSpans()[3].status.message).toEqual("channel error");
           expectConsumeEndSpyStatus([
             EndOperation.Ack,
             EndOperation.ChannelError,
@@ -446,7 +446,7 @@ describe('amqplib instrumentation promise model', () => {
         });
         asyncConsume(channel, queueName, [
           null,
-          msg => {
+          (msg) => {
             try {
               channel.ack(msg);
               channel[CHANNEL_CLOSED_IN_TEST] = true;
@@ -457,7 +457,7 @@ describe('amqplib instrumentation promise model', () => {
         ]);
       });
 
-      it('not acking the message trigger timeout', async () => {
+      it("not acking the message trigger timeout", async () => {
         instrumentation.setConfig({
           consumeEndHook: endHookSpy,
           consumeTimeoutMs: 1,
@@ -470,23 +470,23 @@ describe('amqplib instrumentation promise model', () => {
         await asyncConsume(channel, queueName, [null]);
 
         // we have timeout of 1 ms, so we wait more than that and check span indeed ended
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
 
         expect(getTestSpans().length).toBe(2);
         expectConsumeEndSpyStatus([EndOperation.InstrumentationTimeout]);
       });
     });
 
-    describe('routing and exchange', () => {
-      it('topic exchange', async () => {
-        const exchangeName = 'topic exchange';
-        const routingKey = 'topic.name.from.unittest';
-        await channel.assertExchange(exchangeName, 'topic', { durable: false });
+    describe("routing and exchange", () => {
+      it("topic exchange", async () => {
+        const exchangeName = "topic exchange";
+        const routingKey = "topic.name.from.unittest";
+        await channel.assertExchange(exchangeName, "topic", { durable: false });
 
-        const { queue: queueName } = await channel.assertQueue('', {
+        const { queue: queueName } = await channel.assertQueue("", {
           durable: false,
         });
-        await channel.bindQueue(queueName, exchangeName, '#');
+        await channel.bindQueue(queueName, exchangeName, "#");
 
         channel.publish(exchangeName, routingKey, Buffer.from(msgPayload));
 
@@ -500,7 +500,7 @@ describe('amqplib instrumentation promise model', () => {
         expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
         expect(
           publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-        ).toEqual('rabbitmq');
+        ).toEqual("rabbitmq");
         expect(
           publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
         ).toEqual(exchangeName);
@@ -514,16 +514,16 @@ describe('amqplib instrumentation promise model', () => {
         ).toEqual(routingKey);
         expect(
           publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-        ).toEqual('AMQP');
+        ).toEqual("AMQP");
         expect(
           publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
-        ).toEqual('0.9.1');
+        ).toEqual("0.9.1");
 
         // assert consume span
         expect(consumeSpan.kind).toEqual(SpanKind.CONSUMER);
         expect(
           consumeSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-        ).toEqual('rabbitmq');
+        ).toEqual("rabbitmq");
         expect(
           consumeSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
         ).toEqual(exchangeName);
@@ -537,10 +537,10 @@ describe('amqplib instrumentation promise model', () => {
         ).toEqual(routingKey);
         expect(
           consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-        ).toEqual('AMQP');
+        ).toEqual("AMQP");
         expect(
           consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
-        ).toEqual('0.9.1');
+        ).toEqual("0.9.1");
 
         // assert context propagation
         expect(consumeSpan.spanContext().traceId).toEqual(
@@ -552,29 +552,29 @@ describe('amqplib instrumentation promise model', () => {
       });
     });
 
-    describe('hooks', () => {
-      it('publish and consume hooks success', async () => {
-        const attributeNameFromHook = 'attribute.name.from.hook';
-        const hookAttributeValue = 'attribute value from hook';
-        const attributeNameFromEndHook = 'attribute.name.from.endhook';
-        const endHookAttributeValue = 'attribute value from end hook';
+    describe("hooks", () => {
+      it("publish and consume hooks success", async () => {
+        const attributeNameFromHook = "attribute.name.from.hook";
+        const hookAttributeValue = "attribute value from hook";
+        const attributeNameFromEndHook = "attribute.name.from.endhook";
+        const endHookAttributeValue = "attribute value from end hook";
         instrumentation.setConfig({
           publishHook: (span: Span, publishParams: PublishInfo): void => {
-            span.setAttribute(attributeNameFromHook, hookAttributeValue);
-            expect(publishParams.exchange).toEqual('');
+            expect(publishParams.exchange).toEqual("");
             expect(publishParams.routingKey).toEqual(queueName);
             expect(publishParams.content.toString()).toEqual(msgPayload);
+            span.setAttribute(attributeNameFromHook, hookAttributeValue);
           },
           consumeHook: (span: Span, consumeInfo: ConsumeInfo): void => {
-            span.setAttribute(attributeNameFromHook, hookAttributeValue);
             expect(consumeInfo.msg!.content.toString()).toEqual(msgPayload);
+            span.setAttribute(attributeNameFromHook, hookAttributeValue);
           },
           consumeEndHook: (
             span: Span,
             consumeEndInfo: ConsumeEndInfo
           ): void => {
-            span.setAttribute(attributeNameFromEndHook, endHookAttributeValue);
             expect(consumeEndInfo.endOperation).toEqual(EndOperation.AutoAck);
+            span.setAttribute(attributeNameFromEndHook, endHookAttributeValue);
           },
         });
 
@@ -595,17 +595,17 @@ describe('amqplib instrumentation promise model', () => {
         );
       });
 
-      it('hooks throw should not affect user flow or span creation', async () => {
-        const attributeNameFromHook = 'attribute.name.from.hook';
-        const hookAttributeValue = 'attribute value from hook';
+      it("hooks throw should not affect user flow or span creation", async () => {
+        const attributeNameFromHook = "attribute.name.from.hook";
+        const hookAttributeValue = "attribute value from hook";
         instrumentation.setConfig({
           publishHook: (span: Span, publishParams: PublishInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
-            throw new Error('error from hook');
+            throw new Error("error from hook");
           },
           consumeHook: (span: Span, consumeInfo: ConsumeInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
-            throw new Error('error from hook');
+            throw new Error("error from hook");
           },
         });
 
@@ -615,7 +615,7 @@ describe('amqplib instrumentation promise model', () => {
           noAck: true,
         });
         expect(getTestSpans().length).toBe(2);
-        getTestSpans().forEach(s =>
+        getTestSpans().forEach((s) =>
           expect(s.attributes[attributeNameFromHook]).toEqual(
             hookAttributeValue
           )
@@ -623,9 +623,9 @@ describe('amqplib instrumentation promise model', () => {
       });
     });
 
-    describe('delete queue', () => {
-      it('consumer receives null msg when a queue is deleted in broker', async () => {
-        const queueNameForDeletion = 'queue-to-be-deleted';
+    describe("delete queue", () => {
+      it("consumer receives null msg when a queue is deleted in broker", async () => {
+        const queueNameForDeletion = "queue-to-be-deleted";
         await channel.assertQueue(queueNameForDeletion, { durable: false });
         await channel.purgeQueue(queueNameForDeletion);
 
@@ -639,7 +639,7 @@ describe('amqplib instrumentation promise model', () => {
     });
   });
 
-  describe('confirm channel', () => {
+  describe("confirm channel", () => {
     let confirmChannel: amqp.ConfirmChannel & {
       [CHANNEL_CLOSED_IN_TEST]?: boolean;
     };
@@ -654,26 +654,26 @@ describe('amqplib instrumentation promise model', () => {
       await confirmChannel.purgeQueue(queueName);
       // install an error handler, otherwise when we have tests that create error on the channel,
       // it throws and crash process
-      confirmChannel.on('error', (err: Error) => {});
+      confirmChannel.on("error", (err: Error) => {});
     });
     afterEach(async () => {
       if (!confirmChannel[CHANNEL_CLOSED_IN_TEST]) {
         try {
-          await new Promise<void>(resolve => {
-            confirmChannel.on('close', resolve);
+          await new Promise<void>((resolve) => {
+            confirmChannel.on("close", resolve);
             confirmChannel.close();
           });
         } catch {}
       }
     });
 
-    it('simple publish with confirm and consume from queue', async () => {
+    it("simple publish with confirm and consume from queue", async () => {
       await asyncConfirmSend(confirmChannel, queueName, msgPayload);
 
       await asyncConsume(
         confirmChannel,
         queueName,
-        [msg => expect(msg.content.toString()).toEqual(msgPayload)],
+        [(msg) => expect(msg.content.toString()).toEqual(msgPayload)],
         {
           noAck: true,
         }
@@ -684,10 +684,10 @@ describe('amqplib instrumentation promise model', () => {
       expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-      ).toEqual('rabbitmq');
+      ).toEqual("rabbitmq");
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-      ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
+      ).toEqual(""); // according to spec: "This will be an empty string if the default exchange is used"
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
       ).toEqual(MessagingDestinationKindValues.TOPIC);
@@ -698,10 +698,10 @@ describe('amqplib instrumentation promise model', () => {
       ).toEqual(queueName);
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-      ).toEqual('AMQP');
+      ).toEqual("AMQP");
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
-      ).toEqual('0.9.1');
+      ).toEqual("0.9.1");
       expect(publishSpan.attributes[SemanticAttributes.MESSAGING_URL]).toEqual(
         censoredUrl
       );
@@ -716,10 +716,10 @@ describe('amqplib instrumentation promise model', () => {
       expect(consumeSpan.kind).toEqual(SpanKind.CONSUMER);
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-      ).toEqual('rabbitmq');
+      ).toEqual("rabbitmq");
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-      ).toEqual(''); // according to spec: "This will be an empty string if the default exchange is used"
+      ).toEqual(""); // according to spec: "This will be an empty string if the default exchange is used"
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
       ).toEqual(MessagingDestinationKindValues.TOPIC);
@@ -730,10 +730,10 @@ describe('amqplib instrumentation promise model', () => {
       ).toEqual(queueName);
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-      ).toEqual('AMQP');
+      ).toEqual("AMQP");
       expect(
         consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
-      ).toEqual('0.9.1');
+      ).toEqual("0.9.1");
       expect(consumeSpan.attributes[SemanticAttributes.MESSAGING_URL]).toEqual(
         censoredUrl
       );
@@ -752,16 +752,16 @@ describe('amqplib instrumentation promise model', () => {
       expectConsumeEndSpyStatus([EndOperation.AutoAck]);
     });
 
-    it('confirm throw should not affect span end', async () => {
-      const confirmUserError = new Error('callback error');
+    it("confirm throw should not affect span end", async () => {
+      const confirmUserError = new Error("callback error");
       await asyncConfirmSend(confirmChannel, queueName, msgPayload, () => {
         throw confirmUserError;
-      }).catch(reject => expect(reject).toEqual(confirmUserError));
+      }).catch((reject) => expect(reject).toEqual(confirmUserError));
 
       await asyncConsume(
         confirmChannel,
         queueName,
-        [msg => expect(msg.content.toString()).toEqual(msgPayload)],
+        [(msg) => expect(msg.content.toString()).toEqual(msgPayload)],
         {
           noAck: true,
         }
@@ -771,25 +771,25 @@ describe('amqplib instrumentation promise model', () => {
       expectConsumeEndSpyStatus([EndOperation.AutoAck]);
     });
 
-    describe('ending consume spans', () => {
-      it('message acked sync', async () => {
+    describe("ending consume spans", () => {
+      it("message acked sync", async () => {
         await asyncConfirmSend(confirmChannel, queueName, msgPayload);
 
         await asyncConsume(confirmChannel, queueName, [
-          msg => confirmChannel.ack(msg),
+          (msg) => confirmChannel.ack(msg),
         ]);
         // assert consumed message span has ended
         expect(getTestSpans().length).toBe(2);
         expectConsumeEndSpyStatus([EndOperation.Ack]);
       });
 
-      it('message acked async', async () => {
+      it("message acked async", async () => {
         await asyncConfirmSend(confirmChannel, queueName, msgPayload);
 
         // start async timer and ack the message after the callback returns
-        await new Promise<void>(resolve => {
+        await new Promise<void>((resolve) => {
           asyncConsume(confirmChannel, queueName, [
-            msg =>
+            (msg) =>
               setTimeout(() => {
                 confirmChannel.ack(msg);
                 resolve();
@@ -801,24 +801,24 @@ describe('amqplib instrumentation promise model', () => {
         expectConsumeEndSpyStatus([EndOperation.Ack]);
       });
 
-      it('message nack no requeue', async () => {
+      it("message nack no requeue", async () => {
         await asyncConfirmSend(confirmChannel, queueName, msgPayload);
 
         await asyncConsume(confirmChannel, queueName, [
-          msg => confirmChannel.nack(msg, false, false),
+          (msg) => confirmChannel.nack(msg, false, false),
         ]);
-        await new Promise(resolve => setTimeout(resolve, 20)); // just make sure we don't get it again
+        await new Promise((resolve) => setTimeout(resolve, 20)); // just make sure we don't get it again
         // assert consumed message span has ended
         expect(getTestSpans().length).toBe(2);
         const [_, consumerSpan] = getTestSpans();
         expect(consumerSpan.status.code).toEqual(SpanStatusCode.ERROR);
         expect(consumerSpan.status.message).toEqual(
-          'nack called on message without requeue'
+          "nack called on message without requeue"
         );
         expectConsumeEndSpyStatus([EndOperation.Nack]);
       });
 
-      it('message nack requeue, then acked', async () => {
+      it("message nack requeue, then acked", async () => {
         await asyncConfirmSend(confirmChannel, queueName, msgPayload);
 
         await asyncConsume(confirmChannel, queueName, [
@@ -830,13 +830,13 @@ describe('amqplib instrumentation promise model', () => {
         const [_, rejectedConsumerSpan, successConsumerSpan] = getTestSpans();
         expect(rejectedConsumerSpan.status.code).toEqual(SpanStatusCode.ERROR);
         expect(rejectedConsumerSpan.status.message).toEqual(
-          'nack called on message with requeue'
+          "nack called on message with requeue"
         );
         expect(successConsumerSpan.status.code).toEqual(SpanStatusCode.UNSET);
         expectConsumeEndSpyStatus([EndOperation.Nack, EndOperation.Ack]);
       });
 
-      it('ack allUpTo 2 msgs sync', async () => {
+      it("ack allUpTo 2 msgs sync", async () => {
         await Promise.all(
           lodash.times(3, () =>
             asyncConfirmSend(confirmChannel, queueName, msgPayload)
@@ -845,8 +845,8 @@ describe('amqplib instrumentation promise model', () => {
 
         await asyncConsume(confirmChannel, queueName, [
           null,
-          msg => confirmChannel.ack(msg, true),
-          msg => confirmChannel.ack(msg),
+          (msg) => confirmChannel.ack(msg, true),
+          (msg) => confirmChannel.ack(msg),
         ]);
         // assert all 3 messages are acked, including the first one which is acked by allUpTo
         expect(getTestSpans().length).toBe(6);
@@ -857,7 +857,7 @@ describe('amqplib instrumentation promise model', () => {
         ]);
       });
 
-      it('nack allUpTo 2 msgs sync', async () => {
+      it("nack allUpTo 2 msgs sync", async () => {
         await Promise.all(
           lodash.times(3, () =>
             asyncConfirmSend(confirmChannel, queueName, msgPayload)
@@ -866,15 +866,15 @@ describe('amqplib instrumentation promise model', () => {
 
         await asyncConsume(confirmChannel, queueName, [
           null,
-          msg => confirmChannel.nack(msg, true, false),
-          msg => confirmChannel.nack(msg, false, false),
+          (msg) => confirmChannel.nack(msg, true, false),
+          (msg) => confirmChannel.nack(msg, false, false),
         ]);
         // assert all 3 messages are acked, including the first one which is acked by allUpTo
         expect(getTestSpans().length).toBe(6);
-        lodash.range(3, 6).forEach(i => {
+        lodash.range(3, 6).forEach((i) => {
           expect(getTestSpans()[i].status.code).toEqual(SpanStatusCode.ERROR);
           expect(getTestSpans()[i].status.message).toEqual(
-            'nack called on message without requeue'
+            "nack called on message without requeue"
           );
         });
         expectConsumeEndSpyStatus([
@@ -884,7 +884,7 @@ describe('amqplib instrumentation promise model', () => {
         ]);
       });
 
-      it('ack not in received order', async () => {
+      it("ack not in received order", async () => {
         await Promise.all(
           lodash.times(3, () =>
             asyncConfirmSend(confirmChannel, queueName, msgPayload)
@@ -908,7 +908,7 @@ describe('amqplib instrumentation promise model', () => {
         ]);
       });
 
-      it('ackAll', async () => {
+      it("ackAll", async () => {
         await Promise.all(
           lodash.times(2, () =>
             asyncConfirmSend(confirmChannel, queueName, msgPayload)
@@ -924,7 +924,7 @@ describe('amqplib instrumentation promise model', () => {
         expectConsumeEndSpyStatus([EndOperation.AckAll, EndOperation.AckAll]);
       });
 
-      it('nackAll', async () => {
+      it("nackAll", async () => {
         await Promise.all(
           lodash.times(2, () =>
             asyncConfirmSend(confirmChannel, queueName, msgPayload)
@@ -937,16 +937,16 @@ describe('amqplib instrumentation promise model', () => {
         ]);
         // assert all 2 span messages are ended by calling nackAll
         expect(getTestSpans().length).toBe(4);
-        lodash.range(2, 4).forEach(i => {
+        lodash.range(2, 4).forEach((i) => {
           expect(getTestSpans()[i].status.code).toEqual(SpanStatusCode.ERROR);
           expect(getTestSpans()[i].status.message).toEqual(
-            'nackAll called on message without requeue'
+            "nackAll called on message without requeue"
           );
         });
         expectConsumeEndSpyStatus([EndOperation.NackAll, EndOperation.NackAll]);
       });
 
-      it('reject', async () => {
+      it("reject", async () => {
         await Promise.all(
           lodash.times(1, () =>
             asyncConfirmSend(confirmChannel, queueName, msgPayload)
@@ -954,17 +954,17 @@ describe('amqplib instrumentation promise model', () => {
         );
 
         await asyncConsume(confirmChannel, queueName, [
-          msg => confirmChannel.reject(msg, false),
+          (msg) => confirmChannel.reject(msg, false),
         ]);
         expect(getTestSpans().length).toBe(2);
         expect(getTestSpans()[1].status.code).toEqual(SpanStatusCode.ERROR);
         expect(getTestSpans()[1].status.message).toEqual(
-          'reject called on message without requeue'
+          "reject called on message without requeue"
         );
         expectConsumeEndSpyStatus([EndOperation.Reject]);
       });
 
-      it('reject with requeue', async () => {
+      it("reject with requeue", async () => {
         await Promise.all(
           lodash.times(1, () =>
             asyncConfirmSend(confirmChannel, queueName, msgPayload)
@@ -972,31 +972,31 @@ describe('amqplib instrumentation promise model', () => {
         );
 
         await asyncConsume(confirmChannel, queueName, [
-          msg => confirmChannel.reject(msg, true),
-          msg => confirmChannel.reject(msg, false),
+          (msg) => confirmChannel.reject(msg, true),
+          (msg) => confirmChannel.reject(msg, false),
         ]);
         expect(getTestSpans().length).toBe(3);
         expect(getTestSpans()[1].status.code).toEqual(SpanStatusCode.ERROR);
         expect(getTestSpans()[1].status.message).toEqual(
-          'reject called on message with requeue'
+          "reject called on message with requeue"
         );
         expect(getTestSpans()[2].status.code).toEqual(SpanStatusCode.ERROR);
         expect(getTestSpans()[2].status.message).toEqual(
-          'reject called on message without requeue'
+          "reject called on message without requeue"
         );
         expectConsumeEndSpyStatus([EndOperation.Reject, EndOperation.Reject]);
       });
 
-      it('closing channel should end all open spans on it', async () => {
+      it("closing channel should end all open spans on it", async () => {
         await Promise.all(
           lodash.times(1, () =>
             asyncConfirmSend(confirmChannel, queueName, msgPayload)
           )
         );
 
-        await new Promise<void>(resolve =>
+        await new Promise<void>((resolve) =>
           asyncConsume(confirmChannel, queueName, [
-            async msg => {
+            async (msg) => {
               await confirmChannel.close();
               resolve();
               confirmChannel[CHANNEL_CLOSED_IN_TEST] = true;
@@ -1006,23 +1006,23 @@ describe('amqplib instrumentation promise model', () => {
 
         expect(getTestSpans().length).toBe(2);
         expect(getTestSpans()[1].status.code).toEqual(SpanStatusCode.ERROR);
-        expect(getTestSpans()[1].status.message).toEqual('channel closed');
+        expect(getTestSpans()[1].status.message).toEqual("channel closed");
         expectConsumeEndSpyStatus([EndOperation.ChannelClosed]);
       });
 
-      it('error on channel should end all open spans on it', done => {
+      it("error on channel should end all open spans on it", (done) => {
         Promise.all(
           lodash.times(2, () =>
             asyncConfirmSend(confirmChannel, queueName, msgPayload)
           )
         ).then(() => {
-          confirmChannel.on('close', () => {
+          confirmChannel.on("close", () => {
             expect(getTestSpans().length).toBe(4);
             // second consume ended with valid ack, previous message not acked when channel is errored.
             // since we first ack the second message, it appear first in the finished spans array
             expect(getTestSpans()[2].status.code).toEqual(SpanStatusCode.UNSET);
             expect(getTestSpans()[3].status.code).toEqual(SpanStatusCode.ERROR);
-            expect(getTestSpans()[3].status.message).toEqual('channel error');
+            expect(getTestSpans()[3].status.message).toEqual("channel error");
             expectConsumeEndSpyStatus([
               EndOperation.Ack,
               EndOperation.ChannelError,
@@ -1031,7 +1031,7 @@ describe('amqplib instrumentation promise model', () => {
           });
           asyncConsume(confirmChannel, queueName, [
             null,
-            msg => {
+            (msg) => {
               try {
                 confirmChannel.ack(msg);
                 confirmChannel[CHANNEL_CLOSED_IN_TEST] = true;
@@ -1043,7 +1043,7 @@ describe('amqplib instrumentation promise model', () => {
         });
       });
 
-      it('not acking the message trigger timeout', async () => {
+      it("not acking the message trigger timeout", async () => {
         instrumentation.setConfig({
           consumeEndHook: endHookSpy,
           consumeTimeoutMs: 1,
@@ -1058,25 +1058,25 @@ describe('amqplib instrumentation promise model', () => {
         await asyncConsume(confirmChannel, queueName, [null]);
 
         // we have timeout of 1 ms, so we wait more than that and check span indeed ended
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
 
         expect(getTestSpans().length).toBe(2);
         expectConsumeEndSpyStatus([EndOperation.InstrumentationTimeout]);
       });
     });
 
-    describe('routing and exchange', () => {
-      it('topic exchange', async () => {
-        const exchangeName = 'topic exchange';
-        const routingKey = 'topic.name.from.unittest';
-        await confirmChannel.assertExchange(exchangeName, 'topic', {
+    describe("routing and exchange", () => {
+      it("topic exchange", async () => {
+        const exchangeName = "topic exchange";
+        const routingKey = "topic.name.from.unittest";
+        await confirmChannel.assertExchange(exchangeName, "topic", {
           durable: false,
         });
 
-        const { queue: queueName } = await confirmChannel.assertQueue('', {
+        const { queue: queueName } = await confirmChannel.assertQueue("", {
           durable: false,
         });
-        await confirmChannel.bindQueue(queueName, exchangeName, '#');
+        await confirmChannel.bindQueue(queueName, exchangeName, "#");
 
         await asyncConfirmPublish(
           confirmChannel,
@@ -1095,7 +1095,7 @@ describe('amqplib instrumentation promise model', () => {
         expect(publishSpan.kind).toEqual(SpanKind.PRODUCER);
         expect(
           publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-        ).toEqual('rabbitmq');
+        ).toEqual("rabbitmq");
         expect(
           publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
         ).toEqual(exchangeName);
@@ -1109,16 +1109,16 @@ describe('amqplib instrumentation promise model', () => {
         ).toEqual(routingKey);
         expect(
           publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-        ).toEqual('AMQP');
+        ).toEqual("AMQP");
         expect(
           publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
-        ).toEqual('0.9.1');
+        ).toEqual("0.9.1");
 
         // assert consume span
         expect(consumeSpan.kind).toEqual(SpanKind.CONSUMER);
         expect(
           consumeSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]
-        ).toEqual('rabbitmq');
+        ).toEqual("rabbitmq");
         expect(
           consumeSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
         ).toEqual(exchangeName);
@@ -1132,10 +1132,10 @@ describe('amqplib instrumentation promise model', () => {
         ).toEqual(routingKey);
         expect(
           consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
-        ).toEqual('AMQP');
+        ).toEqual("AMQP");
         expect(
           consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL_VERSION]
-        ).toEqual('0.9.1');
+        ).toEqual("0.9.1");
 
         // assert context propagation
         expect(consumeSpan.spanContext().traceId).toEqual(
@@ -1147,38 +1147,38 @@ describe('amqplib instrumentation promise model', () => {
       });
     });
 
-    describe('hooks', () => {
-      it('publish and consume hooks success', async () => {
-        const attributeNameFromHook = 'attribute.name.from.hook';
-        const hookAttributeValue = 'attribute value from hook';
+    describe("hooks", () => {
+      it("publish and consume hooks success", async () => {
+        const attributeNameFromHook = "attribute.name.from.hook";
+        const hookAttributeValue = "attribute value from hook";
         const attributeNameFromConfirmEndHook =
-          'attribute.name.from.confirm.endhook';
+          "attribute.name.from.confirm.endhook";
         const confirmEndHookAttributeValue =
-          'attribute value from confirm end hook';
+          "attribute value from confirm end hook";
         const attributeNameFromConsumeEndHook =
-          'attribute.name.from.consume.endhook';
+          "attribute.name.from.consume.endhook";
         const consumeEndHookAttributeValue =
-          'attribute value from consume end hook';
+          "attribute value from consume end hook";
         instrumentation.setConfig({
           publishHook: (span: Span, publishParams: PublishInfo) => {
-            span.setAttribute(attributeNameFromHook, hookAttributeValue);
-            expect(publishParams.exchange).toEqual('');
+            expect(publishParams.exchange).toEqual("");
             expect(publishParams.routingKey).toEqual(queueName);
             expect(publishParams.content.toString()).toEqual(msgPayload);
             expect(publishParams.isConfirmChannel).toBe(true);
+            span.setAttribute(attributeNameFromHook, hookAttributeValue);
           },
           publishConfirmHook: (span, publishParams) => {
+            expect(publishParams.exchange).toEqual("");
+            expect(publishParams.routingKey).toEqual(queueName);
+            expect(publishParams.content.toString()).toEqual(msgPayload);
             span.setAttribute(
               attributeNameFromConfirmEndHook,
               confirmEndHookAttributeValue
             );
-            expect(publishParams.exchange).toEqual('');
-            expect(publishParams.routingKey).toEqual(queueName);
-            expect(publishParams.content.toString()).toEqual(msgPayload);
           },
           consumeHook: (span: Span, consumeInfo: ConsumeInfo) => {
-            span.setAttribute(attributeNameFromHook, hookAttributeValue);
             expect(consumeInfo.msg!.content.toString()).toEqual(msgPayload);
+            span.setAttribute(attributeNameFromHook, hookAttributeValue);
           },
           consumeEndHook: (
             span: Span,
@@ -1212,24 +1212,24 @@ describe('amqplib instrumentation promise model', () => {
         ).toEqual(consumeEndHookAttributeValue);
       });
 
-      it('hooks throw should not affect user flow or span creation', async () => {
-        const attributeNameFromHook = 'attribute.name.from.hook';
-        const hookAttributeValue = 'attribute value from hook';
+      it("hooks throw should not affect user flow or span creation", async () => {
+        const attributeNameFromHook = "attribute.name.from.hook";
+        const hookAttributeValue = "attribute value from hook";
         instrumentation.setConfig({
           publishHook: (span: Span, publishParams: PublishInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
-            throw new Error('error from hook');
+            throw new Error("error from hook");
           },
           publishConfirmHook: (
             span: Span,
             publishParams: PublishInfo
           ): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
-            throw new Error('error from hook');
+            throw new Error("error from hook");
           },
           consumeHook: (span: Span, consumeInfo: ConsumeInfo): void => {
             span.setAttribute(attributeNameFromHook, hookAttributeValue);
-            throw new Error('error from hook');
+            throw new Error("error from hook");
           },
         });
 
@@ -1239,7 +1239,7 @@ describe('amqplib instrumentation promise model', () => {
           noAck: true,
         });
         expect(getTestSpans().length).toBe(2);
-        getTestSpans().forEach(s =>
+        getTestSpans().forEach((s) =>
           expect(s.attributes[attributeNameFromHook]).toEqual(
             hookAttributeValue
           )
