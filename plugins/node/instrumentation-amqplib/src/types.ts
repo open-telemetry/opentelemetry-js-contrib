@@ -45,7 +45,7 @@ export interface AmqplibPublishCustomAttributeFunction {
   (span: Span, publishInfo: PublishInfo): void;
 }
 
-export interface AmqplibConfirmCustomAttributeFunction {
+export interface AmqplibPublishConfirmCustomAttributeFunction {
   (span: Span, publishConfirmedInto: PublishConfirmedInfo): void;
 }
 
@@ -74,7 +74,7 @@ export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
   publishHook?: AmqplibPublishCustomAttributeFunction;
 
   /** hook for adding custom attributes after publish message is confirmed by the broker */
-  publishConfirmHook?: AmqplibConfirmCustomAttributeFunction;
+  publishConfirmHook?: AmqplibPublishConfirmCustomAttributeFunction;
 
   /** hook for adding custom attributes before consumer message is processed */
   consumeHook?: AmqplibConsumerCustomAttributeFunction;
@@ -87,7 +87,7 @@ export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
    * ack/nack etc on the msg to resolve it in the server.
    * If user is not calling the ack, the message will stay in the queue until
    * channel is closed, or until server timeout expires (if configured).
-   * While we wait for the ack, a copy of the message is stored in plugin, which
+   * While we wait for the ack, a reference to the message is stored in plugin, which
    * will never be garbage collected.
    * To prevent memory leak, plugin has it's own configuration of timeout, which
    * will close the span if user did not call ack after this timeout.
