@@ -25,6 +25,7 @@ describe('utils', () => {
     it('should load default instrumentations', () => {
       const instrumentations = getNodeAutoInstrumentations();
       const expectedInstrumentations = [
+        '@opentelemetry/instrumentation-amqplib',
         '@opentelemetry/instrumentation-aws-lambda',
         '@opentelemetry/instrumentation-aws-sdk',
         '@opentelemetry/instrumentation-bunyan',
