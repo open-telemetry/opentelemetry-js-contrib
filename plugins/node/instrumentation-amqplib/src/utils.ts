@@ -200,7 +200,6 @@ export const getConnectionAttributesFromUrl = (
         ),
       });
     } catch (err) {
-        console.log(err);
       diag.error(
         'amqplib instrumentation: error while extracting connection details from connection url',
         {
