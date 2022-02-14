@@ -23,7 +23,11 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
-import { ASYNC_FUNCTIONS, PROMISE_FUNCTIONS, SYNC_FUNCTIONS } from './constants';
+import {
+  ASYNC_FUNCTIONS,
+  PROMISE_FUNCTIONS,
+  SYNC_FUNCTIONS,
+} from './constants';
 import type * as fs from 'fs';
 
 interface FsInstrumentationConfig extends InstrumentationConfig {
@@ -50,7 +54,11 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
             if (isWrapped(fs.promises[fName])) {
               this._unwrap(fs.promises, fName);
             }
-            this._wrap(fs.promises, fName, <any>this._patchPromiseFunction.bind(this));
+            this._wrap(
+              fs.promises,
+              fName,
+              <any>this._patchPromiseFunction.bind(this)
+            );
           }
           for (const fName of ASYNC_FUNCTIONS) {
             if (isWrapped(fs[fName])) {

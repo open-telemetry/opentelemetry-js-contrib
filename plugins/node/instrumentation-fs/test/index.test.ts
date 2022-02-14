@@ -28,6 +28,8 @@ import { SemanticResourceAttributes as ResourceAttributesSC } from '@opentelemet
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import * as sinon from 'sinon';
 import type * as FSType from 'fs';
+import * as fs from 'fs';
+import tests from './definitions';
 
 const TEST_ATTRIBUTE = 'test.attr';
 const TEST_VALUE = 'test.attr.value';
@@ -89,57 +91,147 @@ describe('fs instrumentation', () => {
     return exporter.shutdown();
   });
 
+  const syncTest = (name, args, { error, result }, spans) => {
+    const syncName = `${name}Sync`;
+    const rootSpanName = `${syncName} test span`;
+    it(`${syncName} ${error ? 'error' : 'success'}`, () => {
+      const rootSpan = tracer.startSpan(rootSpanName);
+
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      context.with(trace.setSpan(context.active(), rootSpan), () => {
+        if (error) {
+          assert.throws(() => fs[syncName](...args), error);
+        } else {
+          assert.deepEqual(fs[syncName](...args), result);
+        }
+      });
+      rootSpan.end();
+
+      assertSpans(memoryExporter.getFinishedSpans(), [
+        ...spans.map(s => {
+          const spanName = s.name.replace(/%NAME/, syncName);
+          const attributes = {
+            ...(s.attributes ?? {}),
+          };
+          attributes[TEST_ATTRIBUTE] = TEST_VALUE;
+          return {
+            ...s,
+            name: spanName,
+            attributes,
+          };
+        }),
+        { name: rootSpanName },
+      ]);
+    });
+  };
+
+  const asyncTest = (name, args, { error, result }, spans) => {
+    const rootSpanName = `${name} test span`;
+    it(`${name} ${error ? 'error' : 'success'}`, done => {
+      const rootSpan = tracer.startSpan(rootSpanName);
+
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      context.with(trace.setSpan(context.active(), rootSpan), () => {
+        fs[name](...args, (actualError, actualResult) => {
+          assert.strictEqual(trace.getSpan(context.active()), rootSpan);
+
+          try {
+            rootSpan.end();
+            if (error) {
+              assert(
+                error.test(actualError?.message ?? ''),
+                `Expected ${actualError?.message} to match ${error}`
+              );
+            } else {
+              if (actualError) {
+                return done(actualError);
+              }
+              assert.deepEqual(actualResult, result);
+            }
+            assertSpans(memoryExporter.getFinishedSpans(), [
+              ...spans.map(s => {
+                const spanName = s.name.replace(/%NAME/, name);
+                const attributes = {
+                  ...(s.attributes ?? {}),
+                };
+                attributes[TEST_ATTRIBUTE] = TEST_VALUE;
+                return {
+                  ...s,
+                  name: spanName,
+                  attributes,
+                };
+              }),
+              { name: rootSpanName },
+            ]);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
+  };
+
+  const promiseTest = (name, args, { error, result }, spans) => {
+    const rootSpanName = `${name} test span`;
+    it(`promises.${name} ${error ? 'error' : 'success'}`, async () => {
+      const rootSpan = tracer.startSpan(rootSpanName);
+
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await context
+        .with(trace.setSpan(context.active(), rootSpan), () => {
+          return fs.promises[name](...args);
+        })
+        .then(actualResult => {
+          if (error) {
+            assert.fail(`promises.${name} did not reject`);
+          } else {
+            assert.deepEqual(actualResult, result);
+          }
+        })
+        .catch(actualError => {
+          if (error) {
+            assert(
+              error.test(actualError?.message ?? ''),
+              `Expected "${actualError?.message}" to match ${error}`
+            );
+          } else {
+            assert.fail(`Did not expect promises.${name} to reject`);
+          }
+        });
+      rootSpan.end();
+      assertSpans(memoryExporter.getFinishedSpans(), [
+        ...spans.map(s => {
+          const spanName = s.name.replace(/%NAME/, name);
+          const attributes = {
+            ...(s.attributes ?? {}),
+          };
+          attributes[TEST_ATTRIBUTE] = TEST_VALUE;
+          return {
+            ...s,
+            name: spanName,
+            attributes,
+          };
+        }),
+        { name: rootSpanName },
+      ]);
+    });
+  };
+
+  tests.forEach(([name, args, result, spans, options = {}]) => {
+    if (options.sync !== false) {
+      syncTest(name, args, result, spans);
+    }
+    if (options.async !== false) {
+      asyncTest(name, args, result, spans);
+    }
+    if (options.promise !== false) {
+      promiseTest(name, args, result, spans);
+    }
+  });
+
   describe('Instrumenting syncronous calls', () => {
-    it('should instrument readFileSync calls', () => {
-      const rootSpan = tracer.startSpan('readFileSync test span');
-
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      context.with(trace.setSpan(context.active(), rootSpan), () => {
-        assert.deepEqual(
-          TEST_CONTENTS,
-          fs.readFileSync('./test/fixtures/readtest')
-        );
-      });
-      rootSpan.end();
-
-      assertSpans(memoryExporter.getFinishedSpans(), [
-        { name: 'fs openSync', attributes: { [TEST_ATTRIBUTE]: TEST_VALUE } },
-        {
-          name: 'fs readFileSync',
-          attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
-        },
-        { name: 'readFileSync test span' },
-      ]);
-    });
-
-    it('should catch errors on readFileSync calls', () => {
-      const rootSpan = tracer.startSpan('readFileSync test span');
-
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      context.with(trace.setSpan(context.active(), rootSpan), () => {
-        const fs = require('fs');
-        assert.throws(
-          () => fs.readFileSync('./test/fixtures/readtest-404'),
-          /enoent/i
-        );
-      });
-      rootSpan.end();
-
-      assertSpans(memoryExporter.getFinishedSpans(), [
-        {
-          name: 'fs openSync',
-          error: /ENOENT/,
-          attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
-        },
-        {
-          name: 'fs readFileSync',
-          error: /ENOENT/,
-          attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
-        },
-        { name: 'readFileSync test span' },
-      ]);
-    });
-
     it('should instrument writeFileSync calls', () => {
       fs.writeFileSync('./test/fixtures/writetest', Buffer.from(TEST_CONTENTS));
 
@@ -159,110 +251,6 @@ describe('fs instrumentation', () => {
       assertSpans(memoryExporter.getFinishedSpans(), [
         { name: 'fs mkdirSync', attributes: { [TEST_ATTRIBUTE]: TEST_VALUE } },
         { name: 'fs rmdirSync', attributes: { [TEST_ATTRIBUTE]: TEST_VALUE } },
-      ]);
-    });
-  });
-
-  describe('Instrumenting asyncronous calls', () => {
-    it('should instrument readFile calls', done => {
-      const rootSpan = tracer.startSpan('readFile test span');
-
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      context.with(trace.setSpan(context.active(), rootSpan), () => {
-        fs.readFile('./test/fixtures/readtest', (err, result) => {
-          assert.strictEqual(trace.getSpan(context.active()), rootSpan);
-          try {
-            rootSpan.end();
-            if (err) {
-              return done(err);
-            }
-            assert.deepEqual(TEST_CONTENTS, result);
-            assertSpans(memoryExporter.getFinishedSpans(), [
-              {
-                name: 'fs readFile',
-                attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
-              },
-              { name: 'readFile test span' },
-            ]);
-            done();
-          } catch (e) {
-            done(e);
-          }
-        });
-      });
-    });
-
-    it('should catch errors on readFile calls', done => {
-      const rootSpan = tracer.startSpan('readFile test span');
-
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      context.with(trace.setSpan(context.active(), rootSpan), () => {
-        fs.readFile('./test/fixtures/readtest-404', (err, result) => {
-          assert.strictEqual(trace.getSpan(context.active()), rootSpan);
-          try {
-            rootSpan.end();
-            assert(
-              /enoent/i.test(err?.message || ''),
-              `Expected ${err?.message} to match /enoent/i`
-            );
-            assertSpans(memoryExporter.getFinishedSpans(), [
-              {
-                name: 'fs readFile',
-                error: /ENOENT/,
-                attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
-              },
-              { name: 'readFile test span' },
-            ]);
-            done();
-          } catch (e) {
-            done(e);
-          }
-        });
-      });
-    });
-  });
-
-  describe('Instrumenting promise calls', () => {
-    it('should instrument readFile calls', async () => {
-      const rootSpan = tracer.startSpan('readFile test span');
-
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      const result = await context.with(trace.setSpan(context.active(), rootSpan), () => {
-        return fs.promises.readFile('./test/fixtures/readtest');
-      });
-      rootSpan.end();
-      assert.deepEqual(TEST_CONTENTS, result);
-      assertSpans(memoryExporter.getFinishedSpans(), [
-        {
-          name: 'fs readFile',
-          attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
-        },
-        { name: 'readFile test span' },
-      ]);
-    });
-
-    it('should catch errors on readFile calls', async () => {
-      const rootSpan = tracer.startSpan('readFile test span');
-
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      const result = await context.with(trace.setSpan(context.active(), rootSpan), () => {
-        return fs.promises.readFile('./test/fixtures/readtest-404');
-      }).then(() => {
-        assert.fail('Expected readFile to reject');
-      }).catch((err) => {
-        assert(
-          /enoent/i.test(err?.message || ''),
-          `Expected ${err?.message} to match /enoent/i`
-        );
-      });
-      rootSpan.end();
-      assertSpans(memoryExporter.getFinishedSpans(), [
-        {
-          name: 'fs readFile',
-          error: /ENOENT/,
-          attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
-        },
-        { name: 'readFile test span' },
       ]);
     });
   });
@@ -324,11 +312,11 @@ const assertSpan = (span: ReadableSpan, expected: any) => {
     );
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
   } else {
-    assert.strictEqual(span.status.message, undefined);
     assert.strictEqual(
       span.status.code,
       SpanStatusCode.UNSET,
       'Expected status to be unset'
     );
+    assert.strictEqual(span.status.message, undefined);
   }
 };
