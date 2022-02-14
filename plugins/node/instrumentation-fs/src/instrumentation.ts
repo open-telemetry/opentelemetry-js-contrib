@@ -77,6 +77,16 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
         fs => {
           if (fs === undefined) return;
           this._diag.debug('Removing patch for fs');
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fs.promises[fName])) {
+              this._unwrap(fs.promises, fName);
+            }
+          }
+          for (const fName of ASYNC_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
+            }
+          }
           for (const fName of SYNC_FUNCTIONS) {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
