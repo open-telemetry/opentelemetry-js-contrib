@@ -197,7 +197,8 @@ describe('fs instrumentation', () => {
               `Expected "${actualError?.message}" to match ${error}`
             );
           } else {
-            assert.fail(`Did not expect promises.${name} to reject`);
+            actualError.message = `Did not expect promises.${name} to reject: ${actualError.message}`;
+            assert.fail(actualError);
           }
         });
       rootSpan.end();
