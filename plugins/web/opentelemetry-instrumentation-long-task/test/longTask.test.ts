@@ -141,7 +141,15 @@ describe('LongTaskInstrumentation', () => {
     });
 
     await waitForLongTask(exportSpy);
-    assert.strictEqual(errorCallback.threw(), true, 'callback threw error');
-    assert.strictEqual(exportSpy.callCount, 1, 'export was called once');
+    assert.strictEqual(
+      errorCallback.threw(),
+      true,
+      'expected callback to throw error'
+    );
+    assert.strictEqual(
+      exportSpy.callCount,
+      1,
+      'expected export to be called once'
+    );
   });
 });
