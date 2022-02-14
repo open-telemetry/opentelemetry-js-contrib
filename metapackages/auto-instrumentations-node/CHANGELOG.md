@@ -1,5 +1,24 @@
 # Changelog
 
+### [0.27.3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.27.2...auto-instrumentations-node-v0.27.3) (2022-02-06)
+
+
+### Bug Fixes
+
+* **auto-instrumentations-node:** add more instrumentations ([#865](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/865)) ([6ba387a](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/6ba387ab45d0f67fdfac85c43bb0f0f67f2a119b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.28.0 to ^0.29.0
+    * @opentelemetry/instrumentation-express bumped from ^0.27.1 to ^0.28.0
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.27.0 to ^0.27.2
+    * @opentelemetry/instrumentation-graphql bumped from ^0.27.2 to ^0.27.3
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.28.1 to ^0.28.3
+    * @opentelemetry/instrumentation-restify bumped from ^0.27.0 to ^0.27.2
+
 ### [0.27.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.27.1...auto-instrumentations-node-v0.27.2) (2022-01-24)
 
 
