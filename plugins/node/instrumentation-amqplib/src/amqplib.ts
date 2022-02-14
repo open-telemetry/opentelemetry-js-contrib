@@ -251,7 +251,10 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
             const serverAttributes = getConnectionAttributesFromServer(
               conn as any
             );
-            (conn as any)[CONNECTION_ATTRIBUTES] = { ...urlAttributes, ...serverAttributes };
+            (conn as any)[CONNECTION_ATTRIBUTES] = {
+              ...urlAttributes,
+              ...serverAttributes,
+            };
           }
           openCallback.apply(this, arguments);
         }
