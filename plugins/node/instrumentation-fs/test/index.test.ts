@@ -31,6 +31,8 @@ import type * as FSType from 'fs';
 import * as fs from 'fs';
 import tests from './definitions';
 
+const supportsPromises = parseInt(process.versions.node.split('.')[0]) >= 12;
+
 const TEST_ATTRIBUTE = 'test.attr';
 const TEST_VALUE = 'test.attr.value';
 
@@ -181,6 +183,7 @@ describe('fs instrumentation', () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context
         .with(trace.setSpan(context.active(), rootSpan), () => {
+          // eslint-disable-next-line node/no-unsupported-features/node-builtins
           return fs.promises[name](...args);
         })
         .then(actualResult => {
@@ -270,25 +273,27 @@ describe('fs instrumentation', () => {
     });
   });
 
-  describe('promise functions', () => {
-    const selection = tests.filter(
-      ([, , , , options = {}]) => options.promise !== false
-    );
-
-    selection.forEach(([name, args, result, spans, options = {}]) => {
-      promiseTest(name, args, result, spans);
-    });
-
-    describe('having instrumentation disabled', () => {
-      beforeEach(() => {
-        plugin.disable();
-      });
+  if (supportsPromises) {
+    describe('promise functions', () => {
+      const selection = tests.filter(
+        ([, , , , options = {}]) => options.promise !== false
+      );
 
       selection.forEach(([name, args, result, spans, options = {}]) => {
-        promiseTest(name, args, result, []);
+        promiseTest(name, args, result, spans);
+      });
+
+      describe('having instrumentation disabled', () => {
+        beforeEach(() => {
+          plugin.disable();
+        });
+
+        selection.forEach(([name, args, result, spans, options = {}]) => {
+          promiseTest(name, args, result, []);
+        });
       });
     });
-  });
+  }
 });
 
 const assertSpans = (spans: ReadableSpan[], expected: any) => {
