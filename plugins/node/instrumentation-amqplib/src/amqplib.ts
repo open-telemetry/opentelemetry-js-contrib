@@ -251,10 +251,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
             const serverAttributes = getConnectionAttributesFromServer(
               conn as any
             );
-            Object.defineProperty(conn, CONNECTION_ATTRIBUTES, {
-              value: { ...urlAttributes, ...serverAttributes },
-              enumerable: false,
-            });
+            (conn as any)[CONNECTION_ATTRIBUTES] = { ...urlAttributes, ...serverAttributes };
           }
           openCallback.apply(this, arguments);
         }
@@ -381,22 +378,14 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
             self.checkConsumeTimeoutOnChannel(channel);
           }, self._config.consumeTimeoutMs);
           timer.unref();
-          Object.defineProperty(channel, CHANNEL_CONSUME_TIMEOUT_TIMER, {
-            value: timer,
-            enumerable: false,
-            configurable: true,
-          });
+          channel[CHANNEL_CONSUME_TIMEOUT_TIMER] = timer;
         }
-        Object.defineProperty(channel, CHANNEL_SPANS_NOT_ENDED, {
-          value: [],
-          enumerable: false,
-          configurable: true,
-        });
+        channel[CHANNEL_SPANS_NOT_ENDED] = [];
       }
 
       const patchedOnMessage = function (
         this: unknown,
-        msg: amqp.ConsumeMessage | null
+        msg: InstrumentationMessage | null
       ) {
         // msg is expected to be null for signaling consumer cancel notification
         // https://www.rabbitmq.com/consumer-cancel.html
@@ -450,11 +439,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           });
 
           // store the span on the message, so we can end it when user call 'ack' on it
-          Object.defineProperty(msg, MESSAGE_STORED_SPAN, {
-            value: span,
-            enumerable: false,
-            configurable: true,
-          });
+          msg[MESSAGE_STORED_SPAN] = span;
         }
 
         context.with(trace.setSpan(context.active(), span), () => {
@@ -700,11 +685,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     spansNotEnded.forEach(msgDetails => {
       this.endConsumerSpan(msgDetails.msg, isRejected, operation, requeue);
     });
-    Object.defineProperty(channel, CHANNEL_SPANS_NOT_ENDED, {
-      value: [],
-      enumerable: false,
-      configurable: true,
-    });
+    channel[CHANNEL_SPANS_NOT_ENDED] = [];
   }
 
   private callConsumeEndHook(
