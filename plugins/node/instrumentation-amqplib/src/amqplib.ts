@@ -279,7 +279,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
         if (activeTimer) {
           clearInterval(activeTimer);
         }
-        delete this[CHANNEL_CONSUME_TIMEOUT_TIMER];
+        this[CHANNEL_CONSUME_TIMEOUT_TIMER] = undefined;
       } else if (eventName === 'error') {
         self.endAllSpansOnChannel(
           this,
@@ -686,7 +686,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     }
     this.callConsumeEndHook(storedSpan, message, isRejected, operation);
     storedSpan.end();
-    delete message[MESSAGE_STORED_SPAN];
+    message[MESSAGE_STORED_SPAN] = undefined;
   }
 
   private endAllSpansOnChannel(
