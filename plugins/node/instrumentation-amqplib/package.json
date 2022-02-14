@@ -1,5 +1,5 @@
 {
-  "name": "@opentelemetry/instrumentation-amqplib",
+  "name": "@mzahor-test-org/instrumentation-amqplib",
   "version": "0.27.0",
   "description": "OpenTelemetry automatic instrumentation for the `amqplib` package",
   "keywords": [
