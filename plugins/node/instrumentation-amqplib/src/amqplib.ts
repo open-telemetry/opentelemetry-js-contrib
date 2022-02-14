@@ -21,6 +21,7 @@ import {
   Span,
   SpanKind,
   SpanStatusCode,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import {
   InstrumentationBase,
@@ -398,7 +399,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
         }
 
         const headers = msg.properties.headers ?? {};
-        const parentContext = propagation.extract(context.active(), headers);
+        const parentContext = propagation.extract(ROOT_CONTEXT, headers);
         const exchange = msg.fields?.exchange;
         const span = self.tracer.startSpan(
           `${queue} process`,
