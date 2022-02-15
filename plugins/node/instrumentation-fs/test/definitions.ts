@@ -13,18 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import { FMember, FPMember } from '../src/types';
 import * as fs from 'fs';
+
+export type FsFunction = FPMember & FMember;
+export type Opts = {
+  sync?: boolean;
+  async?: boolean;
+  promise?: boolean;
+};
+export type Result = { error?: RegExp; result?: any };
+export type TestCase = [FsFunction, any[], Result, any[], Opts?];
+export type TestCreator = (
+  name: FsFunction,
+  args: any[],
+  result: Result,
+  spans: any[]
+) => void;
 
 const TEST_CONTENTS = Buffer.from('hello, world\n');
 
-const syncOnly = { async: false, promise: false };
-const asyncOnly = { sync: false, promise: false };
-const promiseOnly = { sync: false, async: false };
-const noSync = { sync: false };
-const noAsync = { async: false };
-const noPromise = { promise: false };
+const syncOnly: Opts = { async: false, promise: false };
+const asyncOnly: Opts = { sync: false, promise: false };
+const promiseOnly: Opts = { sync: false, async: false };
+const noSync: Opts = { sync: false };
+// const noAsync: Opts = { async: false };
+// const noPromise: Opts = { promise: false };
 const ENOENT = /ENOENT: no such file or directory, /;
-export default [
+const tests: TestCase[] = [
   [
     'access',
     ['./test/fixtures/readtest', fs.constants.R_OK],
@@ -90,3 +107,5 @@ export default [
     asyncOnly,
   ],
 ];
+
+export default tests;

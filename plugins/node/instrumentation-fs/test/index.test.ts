@@ -28,8 +28,8 @@ import { SemanticResourceAttributes as ResourceAttributesSC } from '@opentelemet
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import * as sinon from 'sinon';
 import type * as FSType from 'fs';
-import * as fs from 'fs';
-import tests from './definitions';
+import tests, { TestCase, TestCreator } from './definitions';
+import type { FMember, FPMember } from '../src/types';
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0]) >= 12;
 
@@ -57,8 +57,6 @@ const plugin = new Instrumentation({
   endHook,
 });
 const exporter = new JaegerExporter();
-
-const TEST_CONTENTS = Buffer.from('hello, world\n');
 
 describe('fs instrumentation', () => {
   const provider = new BasicTracerProvider({
@@ -93,8 +91,13 @@ describe('fs instrumentation', () => {
     return exporter.shutdown();
   });
 
-  const syncTest = (name, args, { error, result }, spans) => {
-    const syncName = `${name}Sync`;
+  const syncTest: TestCreator = (
+    name: FMember,
+    args,
+    { error, result },
+    spans
+  ) => {
+    const syncName: FMember = `${name}Sync` as FMember;
     const rootSpanName = `${syncName} test span`;
     it(`${syncName} ${error ? 'error' : 'success'}`, () => {
       const rootSpan = tracer.startSpan(rootSpanName);
@@ -102,15 +105,15 @@ describe('fs instrumentation', () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       context.with(trace.setSpan(context.active(), rootSpan), () => {
         if (error) {
-          assert.throws(() => fs[syncName](...args), error);
+          assert.throws(() => Reflect.apply(fs[syncName], fs, args), error);
         } else {
-          assert.deepEqual(fs[syncName](...args), result);
+          assert.deepEqual(Reflect.apply(fs[syncName], fs, args), result);
         }
       });
       rootSpan.end();
 
       assertSpans(memoryExporter.getFinishedSpans(), [
-        ...spans.map(s => {
+        ...spans.map((s: any) => {
           const spanName = s.name.replace(/%NAME/, syncName);
           const attributes = {
             ...(s.attributes ?? {}),
@@ -127,7 +130,12 @@ describe('fs instrumentation', () => {
     });
   };
 
-  const asyncTest = (name, args, { error, result }, spans) => {
+  const asyncTest: TestCreator = (
+    name: FMember,
+    args,
+    { error, result },
+    spans
+  ) => {
     const rootSpanName = `${name} test span`;
     it(`${name} ${error ? 'error' : 'success'}`, done => {
       const rootSpan = tracer.startSpan(rootSpanName);
@@ -135,47 +143,55 @@ describe('fs instrumentation', () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       context.with(trace.setSpan(context.active(), rootSpan), () => {
-        fs[name](...args, (actualError, actualResult) => {
-          assert.strictEqual(trace.getSpan(context.active()), rootSpan);
+        (fs[name] as Function)(
+          ...args,
+          (actualError: any | undefined, actualResult: any) => {
+            assert.strictEqual(trace.getSpan(context.active()), rootSpan);
 
-          try {
-            rootSpan.end();
-            if (error) {
-              assert(
-                error.test(actualError?.message ?? ''),
-                `Expected ${actualError?.message} to match ${error}`
-              );
-            } else {
-              if (actualError) {
-                return done(actualError);
+            try {
+              rootSpan.end();
+              if (error) {
+                assert(
+                  error.test(actualError?.message ?? ''),
+                  `Expected ${actualError?.message} to match ${error}`
+                );
+              } else {
+                if (actualError) {
+                  return done(actualError);
+                }
+                assert.deepEqual(actualResult, result);
               }
-              assert.deepEqual(actualResult, result);
+              assertSpans(memoryExporter.getFinishedSpans(), [
+                ...spans.map((s: any) => {
+                  const spanName = s.name.replace(/%NAME/, name);
+                  const attributes = {
+                    ...(s.attributes ?? {}),
+                  };
+                  attributes[TEST_ATTRIBUTE] = TEST_VALUE;
+                  return {
+                    ...s,
+                    name: spanName,
+                    attributes,
+                  };
+                }),
+                { name: rootSpanName },
+              ]);
+              done();
+            } catch (e) {
+              done(e);
             }
-            assertSpans(memoryExporter.getFinishedSpans(), [
-              ...spans.map(s => {
-                const spanName = s.name.replace(/%NAME/, name);
-                const attributes = {
-                  ...(s.attributes ?? {}),
-                };
-                attributes[TEST_ATTRIBUTE] = TEST_VALUE;
-                return {
-                  ...s,
-                  name: spanName,
-                  attributes,
-                };
-              }),
-              { name: rootSpanName },
-            ]);
-            done();
-          } catch (e) {
-            done(e);
           }
-        });
+        );
       });
     });
   };
 
-  const promiseTest = (name, args, { error, result }, spans) => {
+  const promiseTest: TestCreator = (
+    name: FPMember,
+    args,
+    { error, result },
+    spans
+  ) => {
     const rootSpanName = `${name} test span`;
     it(`promises.${name} ${error ? 'error' : 'success'}`, async () => {
       const rootSpan = tracer.startSpan(rootSpanName);
@@ -184,16 +200,16 @@ describe('fs instrumentation', () => {
       await context
         .with(trace.setSpan(context.active(), rootSpan), () => {
           // eslint-disable-next-line node/no-unsupported-features/node-builtins
-          return fs.promises[name](...args);
+          return Reflect.apply(fs.promises[name], fs.promises, args);
         })
-        .then(actualResult => {
+        .then((actualResult: any) => {
           if (error) {
             assert.fail(`promises.${name} did not reject`);
           } else {
             assert.deepEqual(actualResult, result);
           }
         })
-        .catch(actualError => {
+        .catch((actualError: any) => {
           if (error) {
             assert(
               error.test(actualError?.message ?? ''),
@@ -206,7 +222,7 @@ describe('fs instrumentation', () => {
         });
       rootSpan.end();
       assertSpans(memoryExporter.getFinishedSpans(), [
-        ...spans.map(s => {
+        ...spans.map((s: any) => {
           const spanName = s.name.replace(/%NAME/, name);
           const attributes = {
             ...(s.attributes ?? {}),
@@ -224,11 +240,11 @@ describe('fs instrumentation', () => {
   };
 
   describe('syncronous functions', () => {
-    const selection = tests.filter(
+    const selection: TestCase[] = tests.filter(
       ([, , , , options = {}]) => options.sync !== false
     );
 
-    selection.forEach(([name, args, result, spans, options = {}]) => {
+    selection.forEach(([name, args, result, spans]) => {
       syncTest(name, args, result, spans);
     });
 
@@ -247,18 +263,18 @@ describe('fs instrumentation', () => {
         plugin.disable();
       });
 
-      selection.forEach(([name, args, result, spans, options = {}]) => {
+      selection.forEach(([name, args, result]) => {
         syncTest(name, args, result, []);
       });
     });
   });
 
   describe('asyncronous functions', () => {
-    const selection = tests.filter(
+    const selection: TestCase[] = tests.filter(
       ([, , , , options = {}]) => options.async !== false
     );
 
-    selection.forEach(([name, args, result, spans, options = {}]) => {
+    selection.forEach(([name, args, result, spans]) => {
       asyncTest(name, args, result, spans);
     });
 
@@ -267,7 +283,7 @@ describe('fs instrumentation', () => {
         plugin.disable();
       });
 
-      selection.forEach(([name, args, result, spans, options = {}]) => {
+      selection.forEach(([name, args, result]) => {
         asyncTest(name, args, result, []);
       });
     });
@@ -275,12 +291,12 @@ describe('fs instrumentation', () => {
 
   if (supportsPromises) {
     describe('promise functions', () => {
-      const selection = tests.filter(
+      const selection: TestCase[] = tests.filter(
         ([, , , , options = {}]) => options.promise !== false
       );
 
-      selection.forEach(([name, args, result, spans, options = {}]) => {
-        promiseTest(name, args, result, spans);
+      selection.forEach(([name, args, result, spans]) => {
+        promiseTest(name as FPMember, args, result, spans);
       });
 
       describe('having instrumentation disabled', () => {
@@ -288,8 +304,8 @@ describe('fs instrumentation', () => {
           plugin.disable();
         });
 
-        selection.forEach(([name, args, result, spans, options = {}]) => {
-          promiseTest(name, args, result, []);
+        selection.forEach(([name, args, result]) => {
+          promiseTest(name as FPMember, args, result, []);
         });
       });
     });
@@ -301,7 +317,7 @@ const assertSpans = (spans: ReadableSpan[], expected: any) => {
     spans.length,
     expected.length,
     `Expected ${expected.length} spans, got ${spans.length}(${spans
-      .map(s => `"${s.name}"`)
+      .map((s: any) => `"${s.name}"`)
       .join(', ')})`
   );
 

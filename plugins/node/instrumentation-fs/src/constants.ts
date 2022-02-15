@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-import type * as fs from 'fs';
+import type { FMember, FPMember } from './types';
 
-// extract the type of any property
-
-export const SYNC_FUNCTIONS: (keyof typeof fs)[] = [
+export const SYNC_FUNCTIONS: FMember[] = [
   'accessSync',
   'appendFileSync',
   'chmodSync',
   'chownSync',
   'copyFileSync',
-  'cpSync', // added in v16
+  'cpSync' as FMember, // added in v16
   'existsSync',
   'lchownSync',
   'linkSync',
@@ -62,13 +60,13 @@ export const SYNC_FUNCTIONS: (keyof typeof fs)[] = [
   // 'writevSync', // functions on file descriptor
 ];
 
-export const ASYNC_FUNCTIONS: (keyof typeof fs)[] = [
+export const ASYNC_FUNCTIONS: FMember[] = [
   'access',
   'appendFile',
   'chmod',
   'chown',
   'copyFile',
-  'cp', // added in v16
+  'cp' as FMember, // added in v16
   'exists', // deprecated, inconsistent cb signature
   'lchown',
   'link',
@@ -106,13 +104,13 @@ export const ASYNC_FUNCTIONS: (keyof typeof fs)[] = [
   // 'writev', // functions on file descriptor
 ];
 
-export const PROMISE_FUNCTIONS: (keyof typeof fs['promises'])[] = [
+export const PROMISE_FUNCTIONS: FPMember[] = [
   'access',
   'appendFile',
   'chmod',
   'chown',
   'copyFile',
-  'cp', // added in v16
+  'cp' as FPMember, // added in v16
   'lchown',
   'link',
   'lstat',
