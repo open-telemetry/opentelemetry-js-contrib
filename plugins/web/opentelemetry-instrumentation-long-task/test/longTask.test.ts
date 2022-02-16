@@ -30,6 +30,26 @@ function generateLongTask() {
   while (performance.now() - startingTimestamp < LONGTASK_DURATION) {}
 }
 
+async function waitForLongTask(exportSpy: sinon.SinonStub) {
+  let taskStart: number;
+  return await new Promise<number>(resolve => {
+    // Resolve promise when export gets called
+    exportSpy.callsFake(() => {
+      if (!taskStart) {
+        // Hasn't generated expected longtask yet
+        return;
+      }
+      resolve(taskStart);
+    });
+    setTimeout(() => {
+      // Cleanup any past longtasks
+      exportSpy.resetHistory();
+      taskStart = performance.timeOrigin + performance.now();
+      generateLongTask();
+    }, 1);
+  });
+}
+
 describe('LongTaskInstrumentation', () => {
   let longTaskInstrumentation: LongTaskInstrumentation;
   let sandbox: sinon.SinonSandbox;
@@ -65,23 +85,7 @@ describe('LongTaskInstrumentation', () => {
   });
 
   it('should report long taking tasks', async () => {
-    let taskStart: number;
-    await new Promise<void>(resolve => {
-      // Resolve promise when export gets called
-      exportSpy.callsFake(() => {
-        if (!taskStart) {
-          // Hasn't generated expected longtask yet
-          return;
-        }
-        resolve();
-      });
-      setTimeout(() => {
-        // Cleanup any past longtasks
-        exportSpy.resetHistory();
-        taskStart = performance.timeOrigin + performance.now();
-        generateLongTask();
-      }, 1);
-    });
+    const taskStart = await waitForLongTask(exportSpy);
 
     assert.strictEqual(exportSpy.args.length, 1, 'should export once');
     assert.strictEqual(
@@ -99,6 +103,53 @@ describe('LongTaskInstrumentation', () => {
     assert.ok(
       hrTimeToNanoseconds(span.duration) > LONGTASK_DURATION,
       "span duration should be longtask's"
+    );
+  });
+
+  it('should attach additional attributes from callback', async () => {
+    deregister();
+    const additionalAttributes = { foo: 'bar' };
+    longTaskInstrumentation = new LongTaskInstrumentation({
+      enabled: false,
+      observerCallback: span => {
+        span.setAttributes(additionalAttributes);
+      },
+    });
+    deregister = registerInstrumentations({
+      instrumentations: [longTaskInstrumentation],
+    });
+
+    await waitForLongTask(exportSpy);
+    const span: ReadableSpan = exportSpy.args[0][0][0];
+    assert.ok(
+      Object.entries(additionalAttributes).every(([key, value]) => {
+        return span.attributes[key] === value;
+      }),
+      'span should have key/value pairs from additional attributes'
+    );
+  });
+
+  it('should not fail to export span if observerCallback throws', async () => {
+    deregister();
+    const errorCallback = sandbox.stub().throws();
+    longTaskInstrumentation = new LongTaskInstrumentation({
+      enabled: false,
+      observerCallback: errorCallback,
+    });
+    deregister = registerInstrumentations({
+      instrumentations: [longTaskInstrumentation],
+    });
+
+    await waitForLongTask(exportSpy);
+    assert.strictEqual(
+      errorCallback.threw(),
+      true,
+      'expected callback to throw error'
+    );
+    assert.strictEqual(
+      exportSpy.callCount,
+      1,
+      'expected export to be called once'
     );
   });
 });
