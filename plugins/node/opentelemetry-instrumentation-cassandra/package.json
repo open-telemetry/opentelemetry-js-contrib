@@ -11,7 +11,7 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
+    "codecov": "nyc report --reporter=json",
     "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-cassandra-driver --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",

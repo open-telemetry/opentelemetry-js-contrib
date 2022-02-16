@@ -10,7 +10,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "codecov:browser": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
+    "codecov:browser": "nyc report --reporter=json",
     "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-user-interaction --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",

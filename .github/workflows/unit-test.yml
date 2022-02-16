@@ -144,12 +144,14 @@ jobs:
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit tests
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
+      - name: Create coverage reports
+        if: matrix.node == '14'
+        run: npm run codecov:ci:changed
       - name: Report Coverage
         if: matrix.node == '14'
         uses: codecov/codecov-action@v2
         with:
-          files: 'detectors/node/*/coverage/*.json,metapackages/*/coverage/*.json,packages/*/coverage/*.json,plugins/node/*/coverage/*.json,plugins/web/*/coverage/*.json,propagators/*/coverage/*.json'
-          verbose: true # optional (default = false)
+          verbose: true
           dry_run: true
 
   browser-test:
@@ -195,3 +197,9 @@ jobs:
         run: npm run test:browser
       - name: Report Coverage
         run: npm run codecov:browser
+      - name: Report Coverage
+        if: matrix.node == '14'
+        uses: codecov/codecov-action@v2
+        with:
+          verbose: true # optional (default = false)
+          dry_run: true
