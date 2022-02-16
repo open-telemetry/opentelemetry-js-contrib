@@ -19,7 +19,6 @@
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p .",
-    "codecov": "nyc report --reporter=json",
     "prepare": "npm run compile"
   },
   "keywords": [

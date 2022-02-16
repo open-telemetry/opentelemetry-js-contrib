@@ -144,9 +144,6 @@ jobs:
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit tests
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
-      - name: Create coverage reports
-        if: matrix.node == '14'
-        run: npm run codecov:ci:changed
       - name: Report Coverage
         if: matrix.node == '14'
         uses: codecov/codecov-action@v2
@@ -195,10 +192,9 @@ jobs:
         run: npx lerna bootstrap --no-ci
       - name: Unit tests
         run: npm run test:browser
-      - name: Report Coverage
+      - name: Create coverage reports
         run: npm run codecov:browser
       - name: Report Coverage
-        if: matrix.node == '14'
         uses: codecov/codecov-action@v2
         with:
           verbose: true # optional (default = false)

@@ -11,7 +11,6 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "codecov": "nyc report --reporter=json",
     "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-dns --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",

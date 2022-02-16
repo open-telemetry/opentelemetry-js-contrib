@@ -8,7 +8,6 @@
   "scripts": {
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
     "test-all-versions": "tav",
-    "codecov": "nyc report --reporter=json",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",

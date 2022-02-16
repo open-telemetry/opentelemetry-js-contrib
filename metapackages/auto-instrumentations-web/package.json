@@ -14,7 +14,6 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "codecov:browser": "nyc report --reporter=json",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
