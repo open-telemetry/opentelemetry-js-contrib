@@ -191,8 +191,6 @@ jobs:
         run: npx lerna bootstrap --no-ci
       - name: Unit tests
         run: npm run test:browser
-      - name: Create coverage reports
-        run: npm run codecov:browser
       - name: Report Coverage
         uses: codecov/codecov-action@v2
         with:
