@@ -149,7 +149,6 @@ jobs:
         uses: codecov/codecov-action@v2
         with:
           verbose: true
-          dry_run: true
 
   browser-test:
     strategy:
@@ -197,5 +196,4 @@ jobs:
       - name: Report Coverage
         uses: codecov/codecov-action@v2
         with:
-          verbose: true # optional (default = false)
-          dry_run: true
+          verbose: true
