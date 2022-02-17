@@ -18,7 +18,6 @@ import * as api from '@opentelemetry/api';
 import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
@@ -33,19 +32,21 @@ import type {
   FsInstrumentationConfig,
 } from './types';
 
+type FS = typeof fs;
+
 const hasPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
-export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
+export default class FsInstrumentation extends InstrumentationBase<FS> {
   constructor(protected override _config: FsInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-fs', VERSION, _config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<typeof fs>[] {
+  init(): InstrumentationNodeModuleDefinition<FS>[] {
     return [
-      new InstrumentationNodeModuleDefinition<typeof fs>(
+      new InstrumentationNodeModuleDefinition<FS>(
         'fs',
         ['*'],
-        (fs, moduleVersion, a) => {
+        (fs: FS) => {
           this._diag.debug('Applying patch for fs');
           if (hasPromises) {
             for (const fName of PROMISE_FUNCTIONS) {
@@ -73,7 +74,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
           }
           return fs;
         },
-        fs => {
+        (fs: FS) => {
           if (fs === undefined) return;
           this._diag.debug('Removing patch for fs');
           if (hasPromises) {
