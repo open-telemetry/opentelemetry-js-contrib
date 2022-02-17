@@ -27,10 +27,10 @@ export const SYNC_FUNCTIONS: FMember[] = [
   'lchownSync',
   'linkSync',
   'lstatSync',
-  'lutimesSync',
+  'lutimesSync', // added in v12
   'mkdirSync',
   'mkdtempSync',
-  'opendirSync',
+  'opendirSync', // added in v12
   'openSync',
   'readdirSync',
   'readFileSync',
@@ -38,7 +38,7 @@ export const SYNC_FUNCTIONS: FMember[] = [
   'realpathSync',
   'renameSync',
   'rmdirSync',
-  'rmSync',
+  'rmSync', // added in v14
   'statSync',
   'symlinkSync',
   'truncateSync',
@@ -71,17 +71,17 @@ export const ASYNC_FUNCTIONS: FMember[] = [
   'lchown',
   'link',
   'lstat',
-  'lutimes',
+  'lutimes', // added in v12
   'mkdir',
   'mkdtemp',
   'open',
-  'opendir',
+  'opendir', // added in v12
   'readdir',
   'readFile',
   'readlink',
   'realpath',
   'rename',
-  'rm',
+  'rm', // added in v14
   'rmdir',
   'stat',
   'symlink',
@@ -114,17 +114,17 @@ export const PROMISE_FUNCTIONS: FPMember[] = [
   'lchown',
   'link',
   'lstat',
-  'lutimes',
+  'lutimes', // added in v12
   'mkdir',
   'mkdtemp',
   'open',
-  'opendir',
+  'opendir', // added in v12
   'readdir',
   'readFile',
   'readlink',
   'realpath',
   'rename',
-  'rm',
+  'rm', // added in v14
   'rmdir',
   'stat',
   'symlink',
