@@ -29,14 +29,11 @@ import {
   SYNC_FUNCTIONS,
 } from './constants';
 import type * as fs from 'fs';
+import type {
+  FsInstrumentationConfig,
+} from './types';
 
-interface FsInstrumentationConfig extends InstrumentationConfig {
-  createHook?: (functionName: string, info: { args: unknown }) => boolean;
-  endHook?: (
-    functionName: string,
-    info: { args: unknown; span: api.Span }
-  ) => void;
-}
+const hasPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
 export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
   constructor(protected override _config: FsInstrumentationConfig = {}) {
@@ -48,38 +45,42 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
       new InstrumentationNodeModuleDefinition<typeof fs>(
         'fs',
         ['*'],
-        fs => {
+        (fs, moduleVersion, a) => {
           this._diag.debug('Applying patch for fs');
-          for (const fName of PROMISE_FUNCTIONS) {
-            if (isWrapped(fs.promises[fName])) {
-              this._unwrap(fs.promises, fName);
+          if (hasPromises) {
+            for (const fName of PROMISE_FUNCTIONS) {
+              if (isWrapped(fs.promises[fName])) {
+                this._unwrap(fs.promises, fName);
+              }
+              this._wrap(
+                fs.promises,
+                fName,
+                <any>this._patchPromiseFunction.bind(this, fName)
+              );
             }
-            this._wrap(
-              fs.promises,
-              fName,
-              <any>this._patchPromiseFunction.bind(this)
-            );
           }
           for (const fName of ASYNC_FUNCTIONS) {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
             }
-            this._wrap(fs, fName, <any>this._patchAsyncFunction.bind(this));
+            this._wrap(fs, fName, <any>this._patchAsyncFunction.bind(this, fName));
           }
           for (const fName of SYNC_FUNCTIONS) {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
             }
-            this._wrap(fs, fName, <any>this._patchSyncFunction.bind(this));
+            this._wrap(fs, fName, <any>this._patchSyncFunction.bind(this, fName));
           }
           return fs;
         },
         fs => {
           if (fs === undefined) return;
           this._diag.debug('Removing patch for fs');
-          for (const fName of PROMISE_FUNCTIONS) {
-            if (isWrapped(fs.promises[fName])) {
-              this._unwrap(fs.promises, fName);
+          if (hasPromises) {
+            for (const fName of PROMISE_FUNCTIONS) {
+              if (isWrapped(fs.promises[fName])) {
+                this._unwrap(fs.promises, fName);
+              }
             }
           }
           for (const fName of ASYNC_FUNCTIONS) {
@@ -98,6 +99,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
   }
 
   protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
+    fnName: string,
     original: T
   ): T {
     const instrumentation = this;
@@ -112,7 +114,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
       if (typeof createHook === 'function') {
         if (
           // promise and async variants get mixed here for the hooks
-          createHook(original.name, {
+          createHook(fnName, {
             args: args,
           }) === false
         ) {
@@ -127,7 +129,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
       }
 
       const span = instrumentation.tracer.startSpan(
-        `fs ${original.name}`
+        `fs ${fnName}`
       ) as api.Span;
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
@@ -139,7 +141,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
         );
         if (typeof endHook === 'function') {
           try {
-            endHook(original.name, { args: args, span });
+            endHook(fnName, { args: args, span });
           } catch (e) {
             instrumentation._diag.error('caught endHook error', e);
           }
@@ -153,7 +155,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
           code: api.SpanStatusCode.ERROR,
         });
         if (typeof endHook === 'function') {
-          endHook(original.name, { args: args, span });
+          endHook(fnName, { args: args, span });
         }
         span.end();
         throw err;
@@ -162,6 +164,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
   }
 
   protected _patchAsyncFunction<T extends (...args: any[]) => ReturnType<T>>(
+    fnName: string,
     original: T
   ): T {
     const instrumentation = this;
@@ -175,7 +178,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
         instrumentation.getConfig() as FsInstrumentationConfig;
       if (typeof createHook === 'function') {
         if (
-          createHook(original.name, {
+          createHook(fnName, {
             args: args,
           }) === false
         ) {
@@ -193,7 +196,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
       const cb = args[lastIdx];
       if (typeof cb === 'function') {
         const span = instrumentation.tracer.startSpan(
-          `fs ${original.name}`
+          `fs ${fnName}`
         ) as api.Span;
 
         // return to the context active during the call in the callback
@@ -209,7 +212,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
             }
             if (typeof endHook === 'function') {
               try {
-                endHook(original.name, { args: arguments, span });
+                endHook(fnName, { args: arguments, span });
               } catch (e) {
                 instrumentation._diag.error('caught endHook error', e);
               }
@@ -234,7 +237,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
           });
           if (typeof endHook === 'function') {
             try {
-              endHook(original.name, { args: args, span });
+              endHook(fnName, { args: args, span });
             } catch (e) {
               instrumentation._diag.error('caught endHook error', e);
             }
@@ -250,6 +253,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
   }
 
   protected _patchSyncFunction<T extends (...args: any[]) => ReturnType<T>>(
+    fnName: string,
     original: T
   ): T {
     const instrumentation = this;
@@ -263,7 +267,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
         instrumentation.getConfig() as FsInstrumentationConfig;
       if (typeof createHook === 'function') {
         if (
-          createHook(original.name, {
+          createHook(fnName, {
             args: args,
           }) === false
         ) {
@@ -278,7 +282,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
       }
 
       const span = instrumentation.tracer.startSpan(
-        `fs ${original.name}`
+        `fs ${fnName}`
       ) as api.Span;
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
@@ -290,7 +294,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
         );
         if (typeof endHook === 'function') {
           try {
-            endHook(original.name, { args: args, span });
+            endHook(fnName, { args: args, span });
           } catch (e) {
             instrumentation._diag.error('caught endHook error', e);
           }
@@ -304,7 +308,7 @@ export default class FsInstrumentation extends InstrumentationBase<typeof fs> {
           code: api.SpanStatusCode.ERROR,
         });
         if (typeof endHook === 'function') {
-          endHook(original.name, { args: args, span });
+          endHook(fnName, { args: args, span });
         }
         span.end();
         throw err;

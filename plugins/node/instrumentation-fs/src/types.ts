@@ -22,3 +22,11 @@ export type FunctionProperties<T> = Pick<T, FunctionPropertyNames<T>>;
 
 export type FMember = FunctionPropertyNames<typeof fs>;
 export type FPMember = FunctionPropertyNames<typeof fs['promises']>;
+
+export interface FsInstrumentationConfig extends InstrumentationConfig {
+  createHook?: (functionName: string, info: { args: unknown }) => boolean;
+  endHook?: (
+    functionName: string,
+    info: { args: unknown; span: api.Span }
+  ) => void;
+}
