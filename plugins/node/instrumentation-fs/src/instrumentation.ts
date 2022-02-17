@@ -28,9 +28,7 @@ import {
   SYNC_FUNCTIONS,
 } from './constants';
 import type * as fs from 'fs';
-import type {
-  FsInstrumentationConfig,
-} from './types';
+import type { FsInstrumentationConfig } from './types';
 
 type FS = typeof fs;
 
@@ -64,13 +62,21 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
             }
-            this._wrap(fs, fName, <any>this._patchAsyncFunction.bind(this, fName));
+            this._wrap(
+              fs,
+              fName,
+              <any>this._patchAsyncFunction.bind(this, fName)
+            );
           }
           for (const fName of SYNC_FUNCTIONS) {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
             }
-            this._wrap(fs, fName, <any>this._patchSyncFunction.bind(this, fName));
+            this._wrap(
+              fs,
+              fName,
+              <any>this._patchSyncFunction.bind(this, fName)
+            );
           }
           return fs;
         },
@@ -129,9 +135,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }
       }
 
-      const span = instrumentation.tracer.startSpan(
-        `fs ${fnName}`
-      ) as api.Span;
+      const span = instrumentation.tracer.startSpan(`fs ${fnName}`) as api.Span;
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
         const res = await api.context.with(
@@ -282,9 +286,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }
       }
 
-      const span = instrumentation.tracer.startSpan(
-        `fs ${fnName}`
-      ) as api.Span;
+      const span = instrumentation.tracer.startSpan(`fs ${fnName}`) as api.Span;
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
         const res = api.context.with(

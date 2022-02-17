@@ -16,9 +16,7 @@
 import type * as fs from 'fs';
 
 import type * as api from '@opentelemetry/api';
-import type {
-  InstrumentationConfig,
-} from '@opentelemetry/instrumentation';
+import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export type FunctionPropertyNames<T> = {
   [K in keyof T]: T[K] extends Function ? K : never;
