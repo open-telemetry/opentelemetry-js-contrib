@@ -20,7 +20,7 @@ npm install --save @opentelemetry/instrumentation-mysql2
 
 ## Supported Versions
 
-- `1.x`
+- `>= 1.4.2, < 2.0`
 - `2.x`
 
 ## Usage
