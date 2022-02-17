@@ -16,48 +16,35 @@
 
 import type { FMember, FPMember } from './types';
 
-export const SYNC_FUNCTIONS: FMember[] = [
-  'accessSync',
-  'appendFileSync',
-  'chmodSync',
-  'chownSync',
-  'copyFileSync',
-  'cpSync' as FMember, // added in v16
-  'existsSync',
-  'lchownSync',
-  'linkSync',
-  'lstatSync',
-  'lutimesSync', // added in v12
-  'mkdirSync',
-  'mkdtempSync',
-  'opendirSync', // added in v12
-  'openSync',
-  'readdirSync',
-  'readFileSync',
-  'readlinkSync',
-  'realpathSync',
-  'renameSync',
-  'rmdirSync',
-  'rmSync', // added in v14
-  'statSync',
-  'symlinkSync',
-  'truncateSync',
-  'unlinkSync',
-  'utimesSync',
-  'writeFileSync',
-  // 'closeSync', // functions on file descriptor
-  // 'fchmodSync', // functions on file descriptor
-  // 'fchownSync', // functions on file descriptor
-  // 'fdatasyncSync', // functions on file descriptor
-  // 'fstatSync', // functions on file descriptor
-  // 'fsyncSync', // functions on file descriptor
-  // 'ftruncateSync', // functions on file descriptor
-  // 'futimesSync', // functions on file descriptor
-  // 'lchmodSync', // only implemented on macOS
-  // 'readSync', // functions on file descriptor
-  // 'readvSync', // functions on file descriptor
-  // 'writeSync', // functions on file descriptor
-  // 'writevSync', // functions on file descriptor
+export const PROMISE_FUNCTIONS: FPMember[] = [
+  'access',
+  'appendFile',
+  'chmod',
+  'chown',
+  'copyFile',
+  'cp' as FPMember, // added in v16
+  'lchown',
+  'link',
+  'lstat',
+  'lutimes', // added in v12
+  'mkdir',
+  'mkdtemp',
+  'open',
+  'opendir', // added in v12
+  'readdir',
+  'readFile',
+  'readlink',
+  'realpath',
+  'rename',
+  'rm', // added in v14
+  'rmdir',
+  'stat',
+  'symlink',
+  'truncate',
+  'unlink',
+  'utimes',
+  'writeFile',
+  // 'lchmod', // only implemented on macOS
 ];
 
 export const ASYNC_FUNCTIONS: FMember[] = [
@@ -104,33 +91,46 @@ export const ASYNC_FUNCTIONS: FMember[] = [
   // 'writev', // functions on file descriptor
 ];
 
-export const PROMISE_FUNCTIONS: FPMember[] = [
-  'access',
-  'appendFile',
-  'chmod',
-  'chown',
-  'copyFile',
-  'cp' as FPMember, // added in v16
-  'lchown',
-  'link',
-  'lstat',
-  'lutimes', // added in v12
-  'mkdir',
-  'mkdtemp',
-  'open',
-  'opendir', // added in v12
-  'readdir',
-  'readFile',
-  'readlink',
-  'realpath',
-  'rename',
-  'rm', // added in v14
-  'rmdir',
-  'stat',
-  'symlink',
-  'truncate',
-  'unlink',
-  'utimes',
-  'writeFile',
-  // 'lchmod', // only implemented on macOS
+export const SYNC_FUNCTIONS: FMember[] = [
+  'accessSync',
+  'appendFileSync',
+  'chmodSync',
+  'chownSync',
+  'copyFileSync',
+  'cpSync' as FMember, // added in v16
+  'existsSync',
+  'lchownSync',
+  'linkSync',
+  'lstatSync',
+  'lutimesSync', // added in v12
+  'mkdirSync',
+  'mkdtempSync',
+  'opendirSync', // added in v12
+  'openSync',
+  'readdirSync',
+  'readFileSync',
+  'readlinkSync',
+  'realpathSync',
+  'renameSync',
+  'rmdirSync',
+  'rmSync', // added in v14
+  'statSync',
+  'symlinkSync',
+  'truncateSync',
+  'unlinkSync',
+  'utimesSync',
+  'writeFileSync',
+  // 'closeSync', // functions on file descriptor
+  // 'fchmodSync', // functions on file descriptor
+  // 'fchownSync', // functions on file descriptor
+  // 'fdatasyncSync', // functions on file descriptor
+  // 'fstatSync', // functions on file descriptor
+  // 'fsyncSync', // functions on file descriptor
+  // 'ftruncateSync', // functions on file descriptor
+  // 'futimesSync', // functions on file descriptor
+  // 'lchmodSync', // only implemented on macOS
+  // 'readSync', // functions on file descriptor
+  // 'readvSync', // functions on file descriptor
+  // 'writeSync', // functions on file descriptor
+  // 'writevSync', // functions on file descriptor
 ];
