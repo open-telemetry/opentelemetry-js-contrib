@@ -26,7 +26,6 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-
 import { MySQL2Instrumentation } from '../src';
 
 const LIB_VERSION = testUtils.getPackageVersion('mysql2');

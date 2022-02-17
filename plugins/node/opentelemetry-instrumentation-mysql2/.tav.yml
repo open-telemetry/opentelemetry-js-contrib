@@ -1,5 +1,5 @@
 mysql2:
-  versions: 2.*
+  versions: 1.* || 2.*
   commands: npm run test
 
   # Fix missing `test-utils` package
