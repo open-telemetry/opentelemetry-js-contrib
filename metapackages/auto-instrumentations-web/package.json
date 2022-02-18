@@ -14,7 +14,6 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "codecov:browser": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -39,7 +38,6 @@
     "@types/sinon": "10.0.2",
     "@types/webpack-env": "1.16.2",
     "babel-loader": "8.2.2",
-    "codecov": "3.8.3",
     "colors": "1.4.0",
     "gts": "3.1.0",
     "istanbul-instrumenter-loader": "3.0.1",
