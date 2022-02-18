@@ -8,7 +8,6 @@
   "scripts": {
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
     "test-all-versions": "tav",
-    "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
@@ -56,7 +55,6 @@
     "@opentelemetry/sdk-trace-node": "1.0.1",
     "@types/mocha": "7.0.2",
     "@types/node": "16.11.21",
-    "codecov": "3.8.3",
     "gts": "3.1.0",
     "koa": "2.13.1",
     "mocha": "7.2.0",
