@@ -1,4 +1,4 @@
-# OpenTelemetry FS Instrumentation for Node.js
+# OpenTelemetry `fs` Instrumentation for Node.js
 
 [![NPM Published Version][npm-img]][npm-url]
 [![dependencies][dependencies-image]][dependencies-url]
@@ -11,6 +11,8 @@ For automatic instrumentation see the
 [@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
+See the full list of instrumented functions in [constants.ts](src/constants.ts);
 
 ## Installation
 
@@ -31,20 +33,20 @@ provider.register();
 registerInstrumentations({
   instrumentations: [
     new FsInstrumentation({
-      // see under for available configuration
+      // see below for available configuration
     }),
   ],
 });
 ```
 
-### Fs Instrumentation Options
+### Instrumentation Options
 
 You can set the following:
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`createHook`](TODO-LINK) | `TODO: Type here` | Fs instrumentation will not trace all requests that match hostnames |
-| [`endHook`](TODO-LINK) | `TODO: Type here` | Function called just before the span is ended. |
+| `createHook` | `(functionName: string, info: { args: ArrayLike<unknown> }) => boolean` | Hook called before creating the span. If `false` is returned this and all the sibling calls will not be traced. |
+| `endHook` | `( functionName: string, info: { args: ArrayLike<unknown>; span: api.Span } ) => void` | Function called just before the span is ended. Useful for adding attributes. |
 
 ## Useful links
 
