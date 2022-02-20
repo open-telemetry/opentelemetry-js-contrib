@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import * as semver from 'semver';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -669,5 +670,5 @@ function assertSpan(
 function isPoolClusterEndIgnoreCallback() {
   // Since v2.2.0 `end` function respect callback
   // https://github.com/sidorares/node-mysql2/commit/1481015626e506754adc4308e5508356a3a03aa0
-  return ['2.0.0', '2.0.1', '2.0.2', '2.1.0'].includes(LIB_VERSION);
+  return semver.lt(LIB_VERSION, '2.2.0');
 }
