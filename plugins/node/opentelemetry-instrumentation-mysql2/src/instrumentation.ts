@@ -107,12 +107,18 @@ export class MySQL2Instrumentation extends InstrumentationBase<
             ),
           },
         });
-        const endSpan = once((err?: any) => {
+        const endSpan = once((err?: any, results?: any) => {
           if (err) {
             span.setStatus({
               code: api.SpanStatusCode.ERROR,
               message: err.message,
             });
+          } else if (results) {
+            try {
+              span.setAttribute('db.query_result', JSON.stringify(results));
+            } catch (err) {
+              // Do nothing
+            }
           }
           span.end();
         });

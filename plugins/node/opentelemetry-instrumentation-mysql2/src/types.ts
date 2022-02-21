@@ -15,5 +15,18 @@
  */
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import type { Span } from '@opentelemetry/api';
 
-export type MySQL2InstrumentationConfig = InstrumentationConfig;
+export interface MySQL2InstrumentationExecutionResponseHook {
+  (span: Span, queryResults: any): void;
+}
+
+export interface MySQL2InstrumentationConfig extends InstrumentationConfig {
+  /**
+   * Hook that allows adding custom span attributes based on the data
+   * returned MySQL2 queries.
+   *
+   * @default undefined
+   */
+  responseHook?: MySQL2InstrumentationExecutionResponseHook;
+}
