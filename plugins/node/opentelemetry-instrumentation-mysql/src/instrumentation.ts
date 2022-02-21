@@ -45,7 +45,6 @@ type getConnectionCallbackType = (
 export class MySQLInstrumentation extends InstrumentationBase<
   typeof mysqlTypes
 > {
-  static readonly COMPONENT = 'mysql';
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };

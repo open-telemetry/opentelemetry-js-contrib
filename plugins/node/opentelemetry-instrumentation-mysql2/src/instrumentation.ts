@@ -39,7 +39,6 @@ type formatType = typeof mysqlTypes.format;
 export class MySQL2Instrumentation extends InstrumentationBase<
   typeof mysqlTypes
 > {
-  static readonly COMPONENT = 'mysql';
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
