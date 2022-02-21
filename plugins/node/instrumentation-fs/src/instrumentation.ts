@@ -35,8 +35,8 @@ type FS = typeof fs;
 const hasPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
 export default class FsInstrumentation extends InstrumentationBase<FS> {
-  constructor(protected override _config?: FsInstrumentationConfig) {
-    super('@opentelemetry/instrumentation-fs', VERSION, _config);
+  constructor(config?: FsInstrumentationConfig) {
+    super('@opentelemetry/instrumentation-fs', VERSION, config);
   }
 
   init(): InstrumentationNodeModuleDefinition<FS>[] {
