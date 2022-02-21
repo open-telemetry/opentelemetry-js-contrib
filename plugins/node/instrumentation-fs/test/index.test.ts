@@ -25,7 +25,6 @@ import * as assert from 'assert';
 import Instrumentation from '../src';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes as ResourceAttributesSC } from '@opentelemetry/semantic-conventions';
-import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import * as sinon from 'sinon';
 import type * as FSType from 'fs';
 import tests, { TestCase, TestCreator } from './definitions';
@@ -56,7 +55,6 @@ const plugin = new Instrumentation({
   createHook,
   endHook,
 });
-const exporter = new JaegerExporter();
 
 describe('fs instrumentation', () => {
   const provider = new BasicTracerProvider({
@@ -67,7 +65,6 @@ describe('fs instrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor(memoryExporter);
   provider.addSpanProcessor(spanProcessor);
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
   plugin.setTracerProvider(provider);
   const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
@@ -85,10 +82,6 @@ describe('fs instrumentation', () => {
     plugin.disable();
     memoryExporter.reset();
     context.disable();
-  });
-
-  after(() => {
-    return exporter.shutdown();
   });
 
   const syncTest: TestCreator = (
