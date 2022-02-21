@@ -19,6 +19,7 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql2';
@@ -113,13 +114,23 @@ export class MySQL2Instrumentation extends InstrumentationBase<
               code: api.SpanStatusCode.ERROR,
               message: err.message,
             });
-          } else if (results) {
-            try {
-              span.setAttribute('db.query_result', JSON.stringify(results));
-            } catch (err) {
-              // Do nothing
+          } else {
+            const config: MySQL2InstrumentationConfig = thisPlugin._config;
+            if (typeof config.responseHook === 'function') {
+              safeExecuteInTheMiddle(
+                () => {
+                  config.responseHook!(span, results);
+                },
+                err => {
+                  if (err) {
+                    thisPlugin._diag.warn('Failed executing responseHook', err);
+                  }
+                },
+                true
+              );
             }
           }
+
           span.end();
         });
 
@@ -142,8 +153,8 @@ export class MySQL2Instrumentation extends InstrumentationBase<
             .once('error', err => {
               endSpan(err);
             })
-            .once('result', () => {
-              endSpan();
+            .once('result', results => {
+              endSpan(undefined, results);
             });
 
           return streamableQuery;
@@ -175,7 +186,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<
         results?: any,
         fields?: mysqlTypes.FieldPacket[]
       ) {
-        endSpan(err);
+        endSpan(err, results);
         return originalCallback(...arguments);
       };
     };

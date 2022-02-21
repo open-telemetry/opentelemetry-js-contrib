@@ -43,6 +43,14 @@ registerInstrumentations({
 })
 ```
 
+### MySQL2 Instrumentation Options
+
+You can set the following instrumentation options:
+
+| Options | Type | Description |
+| ------- | ---- | ----------- |
+| `responseHook` | `MySQL2InstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
