@@ -174,11 +174,11 @@ describe('DynamoDB', () => {
           ).toStrictEqual(['test-table']);
           expect(
             attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
-            ).toStrictEqual(
-              consumedCapacityResponseMockData.map((x: ConsumedCapacity) =>
-                JSON.stringify(x)
-              )
-            );
+          ).toStrictEqual(
+            consumedCapacityResponseMockData.map((x: ConsumedCapacity) =>
+              JSON.stringify(x)
+            )
+          );
           expect(
             JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
           ).toEqual(dynamodb_params);
