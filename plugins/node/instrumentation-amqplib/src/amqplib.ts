@@ -23,7 +23,11 @@ import {
   SpanStatusCode,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import { hrTime, hrTimeDuration, hrTimeToMilliseconds } from '@opentelemetry/core';
+import {
+  hrTime,
+  hrTimeDuration,
+  hrTimeToMilliseconds,
+} from '@opentelemetry/core';
 import {
   InstrumentationBase,
   InstrumentationModuleDefinition,
@@ -714,13 +718,17 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
 
   private checkConsumeTimeoutOnChannel(channel: InstrumentationConsumeChannel) {
     const currentTime = hrTime();
-    const spansNotEnded =
-      channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
+    const spansNotEnded = channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
     let i: number;
     for (i = 0; i < spansNotEnded.length; i++) {
       const currMessage = spansNotEnded[i];
-      const timeFromConsume = hrTimeDuration(currMessage.timeOfConsume, currentTime);
-      if (hrTimeToMilliseconds(timeFromConsume) < this._config.consumeTimeoutMs!) {
+      const timeFromConsume = hrTimeDuration(
+        currMessage.timeOfConsume,
+        currentTime
+      );
+      if (
+        hrTimeToMilliseconds(timeFromConsume) < this._config.consumeTimeoutMs!
+      ) {
         break;
       }
       this.endConsumerSpan(
