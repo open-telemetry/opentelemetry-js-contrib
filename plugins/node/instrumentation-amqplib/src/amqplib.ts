@@ -23,6 +23,7 @@ import {
   SpanStatusCode,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
+import { hrTime, hrTimeDuration, hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
   InstrumentationBase,
   InstrumentationModuleDefinition,
@@ -439,7 +440,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           // store the message on the channel so we can close the span on ackAll etc
           channel[CHANNEL_SPANS_NOT_ENDED]!.push({
             msg,
-            timeOfConsume: new Date(),
+            timeOfConsume: hrTime(),
           });
 
           // store the span on the message, so we can end it when user call 'ack' on it
@@ -712,14 +713,14 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
   }
 
   private checkConsumeTimeoutOnChannel(channel: InstrumentationConsumeChannel) {
-    const currentTime = new Date().getTime();
-    const spansNotEnded: { msg: amqp.Message; timeOfConsume: Date }[] =
+    const currentTime = hrTime();
+    const spansNotEnded =
       channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
     let i: number;
     for (i = 0; i < spansNotEnded.length; i++) {
       const currMessage = spansNotEnded[i];
-      const timeFromConsume = currentTime - currMessage.timeOfConsume.getTime();
-      if (timeFromConsume < this._config.consumeTimeoutMs!) {
+      const timeFromConsume = hrTimeDuration(currMessage.timeOfConsume, currentTime);
+      if (hrTimeToMilliseconds(timeFromConsume) < this._config.consumeTimeoutMs!) {
         break;
       }
       this.endConsumerSpan(

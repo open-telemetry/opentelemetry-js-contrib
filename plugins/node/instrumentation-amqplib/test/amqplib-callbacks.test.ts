@@ -45,7 +45,7 @@ describe('amqplib instrumentation callback model', () => {
   before(done => {
     amqpCallback.connect(rabbitMqUrl, (err, connection) => {
       conn = connection;
-      done();
+      done(err);
     });
   });
   after(done => {

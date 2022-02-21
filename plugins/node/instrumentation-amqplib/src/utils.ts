@@ -17,6 +17,7 @@ import {
   Context,
   createContextKey,
   diag,
+  HrTime,
   Span,
   SpanAttributes,
   SpanAttributeValue,
@@ -45,7 +46,7 @@ export type InstrumentationConsumeChannel = amqp.Channel & {
   connection: { [CONNECTION_ATTRIBUTES]: SpanAttributes };
   [CHANNEL_SPANS_NOT_ENDED]?: {
     msg: amqp.ConsumeMessage;
-    timeOfConsume: Date;
+    timeOfConsume: HrTime;
   }[];
   [CHANNEL_CONSUME_TIMEOUT_TIMER]?: NodeJS.Timer;
 };
