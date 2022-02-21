@@ -38,7 +38,7 @@ const TEST_VALUE = 'test.attr.value';
 
 const serviceName = 'fs-tests';
 
-const createHook = sinon.spy((fnName, { args, span }) => {
+const createHook = sinon.spy((fnName: FMember | FPMember, { args, span }) => {
   // `ts-node`, which we use via `ts-mocha` also patches module loading and creates
   // a lot of unrelated spans. Filter those out.
   if (['readFileSync', 'existsSync'].includes(fnName)) {

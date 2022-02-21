@@ -28,11 +28,11 @@ export type FPMember = FunctionPropertyNames<typeof fs['promises']>;
 
 export interface FsInstrumentationConfig extends InstrumentationConfig {
   createHook?: (
-    functionName: string,
+    functionName: FMember | FPMember,
     info: { args: ArrayLike<unknown> }
   ) => boolean;
   endHook?: (
-    functionName: string,
+    functionName: FMember | FPMember,
     info: { args: ArrayLike<unknown>; span: api.Span }
   ) => void;
 }

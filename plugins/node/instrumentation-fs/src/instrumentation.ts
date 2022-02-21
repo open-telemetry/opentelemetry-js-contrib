@@ -28,7 +28,7 @@ import {
   SYNC_FUNCTIONS,
 } from './constants';
 import type * as fs from 'fs';
-import type { FsInstrumentationConfig } from './types';
+import type { FMember, FPMember, FsInstrumentationConfig } from './types';
 
 type FS = typeof fs;
 
@@ -106,7 +106,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
   }
 
   protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
-    fnName: string,
+    functionName: FPMember,
     original: T
   ): T {
     const instrumentation = this;
@@ -121,7 +121,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
       if (typeof createHook === 'function') {
         if (
           // promise and async variants get mixed here for the hooks
-          createHook(fnName, {
+          createHook(functionName, {
             args: args,
           }) === false
         ) {
@@ -135,7 +135,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }
       }
 
-      const span = instrumentation.tracer.startSpan(`fs ${fnName}`) as api.Span;
+      const span = instrumentation.tracer.startSpan(
+        `fs ${functionName}`
+      ) as api.Span;
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
         const res = await api.context.with(
@@ -146,7 +148,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         );
         if (typeof endHook === 'function') {
           try {
-            endHook(fnName, { args: args, span });
+            endHook(functionName, { args: args, span });
           } catch (e) {
             instrumentation._diag.error('caught endHook error', e);
           }
@@ -160,7 +162,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           code: api.SpanStatusCode.ERROR,
         });
         if (typeof endHook === 'function') {
-          endHook(fnName, { args: args, span });
+          endHook(functionName, { args: args, span });
         }
         span.end();
         throw err;
@@ -169,7 +171,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
   }
 
   protected _patchAsyncFunction<T extends (...args: any[]) => ReturnType<T>>(
-    fnName: string,
+    functionName: FMember,
     original: T
   ): T {
     const instrumentation = this;
@@ -183,7 +185,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         instrumentation.getConfig() as FsInstrumentationConfig;
       if (typeof createHook === 'function') {
         if (
-          createHook(fnName, {
+          createHook(functionName, {
             args: args,
           }) === false
         ) {
@@ -201,7 +203,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
       const cb = args[lastIdx];
       if (typeof cb === 'function') {
         const span = instrumentation.tracer.startSpan(
-          `fs ${fnName}`
+          `fs ${functionName}`
         ) as api.Span;
 
         // return to the context active during the call in the callback
@@ -217,7 +219,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             }
             if (typeof endHook === 'function') {
               try {
-                endHook(fnName, { args: arguments, span });
+                endHook(functionName, { args: arguments, span });
               } catch (e) {
                 instrumentation._diag.error('caught endHook error', e);
               }
@@ -242,7 +244,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           });
           if (typeof endHook === 'function') {
             try {
-              endHook(fnName, { args: args, span });
+              endHook(functionName, { args: args, span });
             } catch (e) {
               instrumentation._diag.error('caught endHook error', e);
             }
@@ -258,7 +260,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
   }
 
   protected _patchSyncFunction<T extends (...args: any[]) => ReturnType<T>>(
-    fnName: string,
+    functionName: FMember,
     original: T
   ): T {
     const instrumentation = this;
@@ -272,7 +274,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         instrumentation.getConfig() as FsInstrumentationConfig;
       if (typeof createHook === 'function') {
         if (
-          createHook(fnName, {
+          createHook(functionName, {
             args: args,
           }) === false
         ) {
@@ -286,7 +288,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }
       }
 
-      const span = instrumentation.tracer.startSpan(`fs ${fnName}`) as api.Span;
+      const span = instrumentation.tracer.startSpan(
+        `fs ${functionName}`
+      ) as api.Span;
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
         const res = api.context.with(
@@ -297,7 +301,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         );
         if (typeof endHook === 'function') {
           try {
-            endHook(fnName, { args: args, span });
+            endHook(functionName, { args: args, span });
           } catch (e) {
             instrumentation._diag.error('caught endHook error', e);
           }
@@ -311,7 +315,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           code: api.SpanStatusCode.ERROR,
         });
         if (typeof endHook === 'function') {
-          endHook(fnName, { args: args, span });
+          endHook(functionName, { args: args, span });
         }
         span.end();
         throw err;
