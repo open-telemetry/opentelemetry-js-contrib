@@ -188,7 +188,6 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             args: args,
           }) === false
         ) {
-          // return original.apply(this, arguments);
           return api.context.with(
             suppressTracing(api.context.active()),
             original,
