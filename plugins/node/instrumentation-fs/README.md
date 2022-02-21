@@ -45,8 +45,8 @@ You can set the following:
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| `createHook` | `(functionName: string, info: { args: ArrayLike<unknown> }) => boolean` | Hook called before creating the span. If `false` is returned this and all the sibling calls will not be traced. |
-| `endHook` | `( functionName: string, info: { args: ArrayLike<unknown>; span: api.Span } ) => void` | Function called just before the span is ended. Useful for adding attributes. |
+| `createHook` | `(functionName: FMember | FPMember, info: { args: ArrayLike<unknown> }) => boolean` | Hook called before creating the span. If `false` is returned this and all the sibling calls will not be traced. |
+| `endHook` | `( functionName: FMember | FPMember, info: { args: ArrayLike<unknown>; span: api.Span } ) => void` | Function called just before the span is ended. Useful for adding attributes. |
 
 ## Useful links
 
