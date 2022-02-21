@@ -26,7 +26,10 @@ import {
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql';
 import { MySQLInstrumentationConfig } from './types';
 import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
@@ -44,7 +47,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
 > {
   static readonly COMPONENT = 'mysql';
   static readonly COMMON_ATTRIBUTES = {
-    [SemanticAttributes.DB_SYSTEM]: MySQLInstrumentation.COMPONENT,
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
 
   constructor(config?: MySQLInstrumentationConfig) {

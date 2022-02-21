@@ -23,7 +23,10 @@ import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 
 import { mockV2AwsSend } from './testing-utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import * as expect from 'expect';
 import type { ConsumedCapacity as ConsumedCapacityV2 } from 'aws-sdk/clients/dynamodb';
 import type { ConsumedCapacity as ConsumedCapacityV3 } from '@aws-sdk/client-dynamodb';
@@ -73,7 +76,9 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
+            DbSystemValues.DYNAMODB
+          );
           expect(attrs[SemanticAttributes.DB_NAME]).toStrictEqual('test-table');
           expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual('Query');
           expect(
@@ -120,7 +125,9 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
+            DbSystemValues.DYNAMODB
+          );
           expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
             'BatchGetItem'
           );
@@ -165,7 +172,9 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
+            DbSystemValues.DYNAMODB
+          );
           expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
             'BatchGetItem'
           );

@@ -39,7 +39,10 @@ import {
   DbStatementSerializer,
   IORedisRequestHookInformation,
 } from '../src/types';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -51,7 +54,7 @@ const CONFIG = {
 const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
-  [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
+  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
   [SemanticAttributes.NET_PEER_IP]: URL,

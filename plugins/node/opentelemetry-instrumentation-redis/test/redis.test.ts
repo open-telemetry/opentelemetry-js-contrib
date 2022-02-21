@@ -31,7 +31,10 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { RedisInstrumentation } from '../src';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new RedisInstrumentation();
 instrumentation.enable();
@@ -50,7 +53,7 @@ const CONFIG = {
 const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
-  [SemanticAttributes.DB_SYSTEM]: RedisInstrumentation.COMPONENT,
+  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
   [SemanticAttributes.NET_PEER_IP]: URL,
