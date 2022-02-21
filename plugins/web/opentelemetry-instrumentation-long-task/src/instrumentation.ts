@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import { hrTime } from '@opentelemetry/core';
-import {
-  InstrumentationBase,
-  InstrumentationConfig,
-} from '@opentelemetry/instrumentation';
+import { diag } from '@opentelemetry/api';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
-
-// Currently missing in typescript DOM definitions
-interface PerformanceLongTaskTiming extends PerformanceEntry {
-  attribution: TaskAttributionTiming[];
-}
-
-interface TaskAttributionTiming extends PerformanceEntry {
-  containerType: string;
-  containerSrc: string;
-  containerId: string;
-  containerName: string;
-}
+import type {
+  PerformanceLongTaskTiming,
+  LongtaskInstrumentationConfig,
+} from './types';
 
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 
@@ -41,12 +30,13 @@ export class LongTaskInstrumentation extends InstrumentationBase {
   moduleName = this.component;
 
   private _observer?: PerformanceObserver;
+  override _config!: LongtaskInstrumentationConfig;
 
   /**
    *
    * @param config
    */
-  constructor(config: InstrumentationConfig = {}) {
+  constructor(config: LongtaskInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-long-task', VERSION, config);
   }
 
@@ -69,6 +59,13 @@ export class LongTaskInstrumentation extends InstrumentationBase {
     const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {
       startTime: hrTime(entry.startTime),
     });
+    if (this._config.observerCallback) {
+      try {
+        this._config.observerCallback(span, { longtaskEntry: entry });
+      } catch (err) {
+        diag.error('longtask instrumentation: observer callback failed', err);
+      }
+    }
     span.setAttribute('component', this.component);
     span.setAttribute('longtask.name', entry.name);
     span.setAttribute('longtask.entry_type', entry.entryType);
