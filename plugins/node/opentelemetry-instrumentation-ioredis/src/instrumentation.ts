@@ -143,7 +143,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
       span.setAttributes({
         [SemanticAttributes.NET_PEER_NAME]: host,
         [SemanticAttributes.NET_PEER_PORT]: port,
-        [SemanticAttributes.NET_PEER_IP]: `redis://${host}:${port}`,
+        [SemanticAttributes.DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
 
       try {
