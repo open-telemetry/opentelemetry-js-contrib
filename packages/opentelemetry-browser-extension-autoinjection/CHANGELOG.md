@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.27.3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/browser-extension-autoinjection-v0.27.2...browser-extension-autoinjection-v0.27.3) (2022-02-06)
+
+
+### Bug Fixes
+
+* update eslint-plugin-import to resolve conflicts ([#864](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/864)) ([45efaee](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/45efaeec1da51398e44857dc9fe7ab3ef9456983))
+
 ### [0.27.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/browser-extension-autoinjection-v0.27.1...browser-extension-autoinjection-v0.27.2) (2022-01-24)
 
 

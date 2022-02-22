@@ -24,7 +24,10 @@ const instrumentation = registerInstrumentationTesting(
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  MessagingOperationValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import {
   context,
   SpanKind,
@@ -171,12 +174,16 @@ describe('SQS', () => {
       numChildPerProcessSpan: number
     ) => {
       const awsReceiveSpan = spans.filter(
-        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'receive'
+        s =>
+          s.attributes[SemanticAttributes.MESSAGING_OPERATION] ===
+          MessagingOperationValues.RECEIVE
       );
       expect(awsReceiveSpan.length).toBe(1);
 
       const processSpans = spans.filter(
-        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
+        s =>
+          s.attributes[SemanticAttributes.MESSAGING_OPERATION] ===
+          MessagingOperationValues.PROCESS
       );
       expect(processSpans.length).toBe(2);
       expect(processSpans[0].parentSpanId).toStrictEqual(
@@ -380,7 +387,9 @@ describe('SQS', () => {
       );
 
       const processSpans = getTestSpans().filter(
-        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
+        s =>
+          s.attributes[SemanticAttributes.MESSAGING_OPERATION] ===
+          MessagingOperationValues.PROCESS
       );
       expect(processSpans.length).toBe(2);
       expect(
@@ -402,7 +411,9 @@ describe('SQS', () => {
         message => 'some mapping to create child process spans'
       );
       const processSpans = getTestSpans().filter(
-        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
+        s =>
+          s.attributes[SemanticAttributes.MESSAGING_OPERATION] ===
+          MessagingOperationValues.PROCESS
       );
       expect(processSpans.length).toBe(2);
     });
@@ -429,7 +440,9 @@ describe('SQS', () => {
       );
 
       const processSpans = getTestSpans().filter(
-        s => s.attributes[SemanticAttributes.MESSAGING_OPERATION] === 'process'
+        s =>
+          s.attributes[SemanticAttributes.MESSAGING_OPERATION] ===
+          MessagingOperationValues.PROCESS
       );
       expect(processSpans.length).toBe(2);
       expect(processSpans[0].status.code).toStrictEqual(SpanStatusCode.UNSET);
