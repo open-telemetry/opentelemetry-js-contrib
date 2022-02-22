@@ -657,7 +657,7 @@ describe('mysql@2.x', () => {
         instrumentation.disable();
         instrumentation.setTracerProvider(provider);
         const config: MySQL2InstrumentationConfig = {
-          responseHook: (span, queryResults) => {
+          responseHook: (span, responseHookInfo) => {
             throw new Error('random failure!');
           },
         };
@@ -684,10 +684,10 @@ describe('mysql@2.x', () => {
         instrumentation.disable();
         instrumentation.setTracerProvider(provider);
         const config: MySQL2InstrumentationConfig = {
-          responseHook: (span, queryResults) => {
+          responseHook: (span, responseHookInfo) => {
             span.setAttribute(
               queryResultAttribute,
-              JSON.stringify(queryResults)
+              JSON.stringify(responseHookInfo.queryResults)
             );
           },
         };

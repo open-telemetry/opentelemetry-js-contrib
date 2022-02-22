@@ -119,7 +119,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<
             if (typeof config.responseHook === 'function') {
               safeExecuteInTheMiddle(
                 () => {
-                  config.responseHook!(span, results);
+                  config.responseHook!(span, { queryResults: results });
                 },
                 err => {
                   if (err) {
