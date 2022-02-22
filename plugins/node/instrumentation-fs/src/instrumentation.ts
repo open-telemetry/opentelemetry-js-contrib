@@ -148,7 +148,6 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           ...args
         );
         instrumentation._runEndHook(functionName, { args: args, span });
-        span.end();
         return res;
       } catch (error) {
         span.recordException(error);
@@ -157,8 +156,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           code: api.SpanStatusCode.ERROR,
         });
         instrumentation._runEndHook(functionName, { args: args, span, error });
-        span.end();
         throw error;
+      } finally {
+        span.end();
       }
     };
   }
@@ -280,7 +280,6 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           ...args
         );
         instrumentation._runEndHook(functionName, { args: args, span });
-        span.end();
         return res;
       } catch (error) {
         span.recordException(error);
@@ -289,8 +288,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           code: api.SpanStatusCode.ERROR,
         });
         instrumentation._runEndHook(functionName, { args: args, span, error });
-        span.end();
         throw error;
+      } finally {
+        span.end();
       }
     };
   }
