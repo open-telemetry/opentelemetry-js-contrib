@@ -120,7 +120,7 @@ export const getTracedInternalSendCommand = (
     }
     if (this.address) {
       span.setAttribute(
-        SemanticAttributes.DB_CONNECTION_STRING,
+        SemanticAttributes.NET_PEER_IP,
         `redis://${this.address}`
       );
     }

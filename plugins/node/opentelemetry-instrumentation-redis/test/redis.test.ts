@@ -53,7 +53,7 @@ const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: RedisInstrumentation.COMPONENT,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
-  [SemanticAttributes.DB_CONNECTION_STRING]: URL,
+  [SemanticAttributes.NET_PEER_IP]: URL,
 };
 
 const unsetStatus: SpanStatus = {
