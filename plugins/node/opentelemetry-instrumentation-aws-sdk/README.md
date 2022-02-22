@@ -98,6 +98,7 @@ Specific service logic currently implemented for:
 
 - [SQS](./docs/sqs.md)
 - [SNS](./docs/sns.md)
+- [Lambda](./docs/lambda.md)
 - DynamoDb
 
 ## Potential Side Effects
