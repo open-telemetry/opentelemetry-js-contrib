@@ -32,6 +32,7 @@ import {
 } from '../types';
 import {
   MessagingDestinationKindValues,
+  MessagingOperationValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 import {
@@ -63,7 +64,8 @@ export class SqsServiceExtension implements ServiceExtension {
           isIncoming = true;
           spanKind = SpanKind.CONSUMER;
           spanName = `${queueName} receive`;
-          spanAttributes[SemanticAttributes.MESSAGING_OPERATION] = 'receive';
+          spanAttributes[SemanticAttributes.MESSAGING_OPERATION] =
+            MessagingOperationValues.RECEIVE;
 
           request.commandInput.MessageAttributeNames = (
             request.commandInput.MessageAttributeNames ?? []
@@ -145,7 +147,8 @@ export class SqsServiceExtension implements ServiceExtension {
               MessagingDestinationKindValues.QUEUE,
             [SemanticAttributes.MESSAGING_MESSAGE_ID]: message.MessageId,
             [SemanticAttributes.MESSAGING_URL]: queueUrl,
-            [SemanticAttributes.MESSAGING_OPERATION]: 'process',
+            [SemanticAttributes.MESSAGING_OPERATION]:
+              MessagingOperationValues.PROCESS,
           },
         }),
         processHook: (span: Span, message: SQS.Message) =>
