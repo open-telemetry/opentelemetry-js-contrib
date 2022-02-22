@@ -118,7 +118,7 @@ describe('fs instrumentation', () => {
     });
   };
 
-  const asyncTest: TestCreator = (
+  const callbackTest: TestCreator = (
     name: FMember,
     args,
     { error, result },
@@ -227,26 +227,34 @@ describe('fs instrumentation', () => {
     });
   };
 
-  describe('syncronous functions', () => {
+  describe('Syncronous API', () => {
     const selection: TestCase[] = tests.filter(
       ([, , , , options = {}]) => options.sync !== false
     );
 
-    selection.forEach(([name, args, result, spans]) => {
-      syncTest(name, args, result, spans);
+    describe('instrumentation enabled', () => {
+      selection.forEach(([name, args, result, spans]) => {
+        syncTest(name, args, result, spans);
+      });
+
+      it('should instrument mkdirSync calls', () => {
+        fs.mkdirSync('./test/fixtures/mkdirSync');
+        fs.rmdirSync('./test/fixtures/mkdirSync');
+
+        assertSpans(memoryExporter.getFinishedSpans(), [
+          {
+            name: 'fs mkdirSync',
+            attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
+          },
+          {
+            name: 'fs rmdirSync',
+            attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
+          },
+        ]);
+      });
     });
 
-    it('should instrument mkdirSync calls', () => {
-      fs.mkdirSync('./test/fixtures/mkdirSync');
-      fs.rmdirSync('./test/fixtures/mkdirSync');
-
-      assertSpans(memoryExporter.getFinishedSpans(), [
-        { name: 'fs mkdirSync', attributes: { [TEST_ATTRIBUTE]: TEST_VALUE } },
-        { name: 'fs rmdirSync', attributes: { [TEST_ATTRIBUTE]: TEST_VALUE } },
-      ]);
-    });
-
-    describe('having instrumentation disabled', () => {
+    describe('instrumentation disabled', () => {
       beforeEach(() => {
         plugin.disable();
       });
@@ -257,37 +265,41 @@ describe('fs instrumentation', () => {
     });
   });
 
-  describe('asyncronous functions', () => {
+  describe('Callback API', () => {
     const selection: TestCase[] = tests.filter(
-      ([, , , , options = {}]) => options.async !== false
+      ([, , , , options = {}]) => options.callback !== false
     );
 
-    selection.forEach(([name, args, result, spans]) => {
-      asyncTest(name, args, result, spans);
+    describe('instrumentation enabled', () => {
+      selection.forEach(([name, args, result, spans]) => {
+        callbackTest(name, args, result, spans);
+      });
     });
 
-    describe('having instrumentation disabled', () => {
+    describe('instrumentation disabled', () => {
       beforeEach(() => {
         plugin.disable();
       });
 
       selection.forEach(([name, args, result]) => {
-        asyncTest(name, args, result, []);
+        callbackTest(name, args, result, []);
       });
     });
   });
 
   if (supportsPromises) {
-    describe('promise functions', () => {
+    describe('Promise API', () => {
       const selection: TestCase[] = tests.filter(
         ([, , , , options = {}]) => options.promise !== false
       );
 
-      selection.forEach(([name, args, result, spans]) => {
-        promiseTest(name as FPMember, args, result, spans);
+      describe('instrumentation enabled', () => {
+        selection.forEach(([name, args, result, spans]) => {
+          promiseTest(name as FPMember, args, result, spans);
+        });
       });
 
-      describe('having instrumentation disabled', () => {
+      describe('instrumentation disabled', () => {
         beforeEach(() => {
           plugin.disable();
         });

@@ -20,7 +20,7 @@ import * as fs from 'fs';
 export type FsFunction = FPMember & FMember;
 export type Opts = {
   sync?: boolean;
-  async?: boolean;
+  callback?: boolean;
   promise?: boolean;
 };
 export type Result = { error?: RegExp; result?: any };
@@ -34,11 +34,11 @@ export type TestCreator = (
 
 const TEST_CONTENTS = Buffer.from('hello, world\n');
 
-const syncOnly: Opts = { async: false, promise: false };
-const asyncOnly: Opts = { sync: false, promise: false };
-const promiseOnly: Opts = { sync: false, async: false };
+const syncOnly: Opts = { callback: false, promise: false };
+const callbackOnly: Opts = { sync: false, promise: false };
+const promiseOnly: Opts = { sync: false, callback: false };
 const noSync: Opts = { sync: false };
-// const noAsync: Opts = { async: false };
+// const noAsync: Opts = { callback: false };
 // const noPromise: Opts = { promise: false };
 const ENOENT = /ENOENT: no such file or directory, /;
 const tests: TestCase[] = [
@@ -104,7 +104,7 @@ const tests: TestCase[] = [
     ['./test/fixtures/writetest', TEST_CONTENTS],
     { result: undefined },
     [{ name: 'fs open' }, { name: 'fs %NAME' }],
-    asyncOnly,
+    callbackOnly,
   ],
 ];
 

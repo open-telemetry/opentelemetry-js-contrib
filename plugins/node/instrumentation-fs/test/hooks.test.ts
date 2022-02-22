@@ -97,27 +97,25 @@ describe('fs instrumentation: hooks', () => {
     memoryExporter.reset();
   });
 
-  if (supportsPromises) {
-    describe('promise calls', () => {
-      it('should not fail the original successful call when hooks throw', async () => {
-        // eslint-disable-next-line node/no-unsupported-features/node-builtins
-        await fs.promises.access('./test/fixtures/readtest', fs.constants.R_OK);
+  describe('Syncronous API', () => {
+    it('should not fail the original successful call when hooks throw', () => {
+      fs.accessSync('./test/fixtures/readtest', fs.constants.R_OK);
 
-        assertSuccessfulCallHooks('access');
-      });
-
-      it('should not shadow the error from original call when hooks throw', async () => {
-        // eslint-disable-next-line node/no-unsupported-features/node-builtins
-        await fs.promises
-          .access('./test/fixtures/readtest-404', fs.constants.R_OK)
-          .catch(assertNotHookError);
-
-        assertFailingCallHooks('access');
-      });
+      assertSuccessfulCallHooks('accessSync');
     });
-  }
 
-  describe('async calls', () => {
+    it('should not shadow the error from original call when hooks throw', () => {
+      try {
+        fs.accessSync('./test/fixtures/readtest-404', fs.constants.R_OK);
+      } catch (e) {
+        assertNotHookError(e);
+      }
+
+      assertFailingCallHooks('accessSync');
+    });
+  });
+
+  describe('Callback API', () => {
     it('should not fail the original successful call when hooks throw', done => {
       fs.access('./test/fixtures/readtest', fs.constants.R_OK, () => {
         try {
@@ -144,21 +142,23 @@ describe('fs instrumentation: hooks', () => {
     });
   });
 
-  describe('sync calls', () => {
-    it('should not fail the original successful call when hooks throw', () => {
-      fs.accessSync('./test/fixtures/readtest', fs.constants.R_OK);
+  if (supportsPromises) {
+    describe('Promise API', () => {
+      it('should not fail the original successful call when hooks throw', async () => {
+        // eslint-disable-next-line node/no-unsupported-features/node-builtins
+        await fs.promises.access('./test/fixtures/readtest', fs.constants.R_OK);
 
-      assertSuccessfulCallHooks('accessSync');
+        assertSuccessfulCallHooks('access');
+      });
+
+      it('should not shadow the error from original call when hooks throw', async () => {
+        // eslint-disable-next-line node/no-unsupported-features/node-builtins
+        await fs.promises
+          .access('./test/fixtures/readtest-404', fs.constants.R_OK)
+          .catch(assertNotHookError);
+
+        assertFailingCallHooks('access');
+      });
     });
-
-    it('should not shadow the error from original call when hooks throw', () => {
-      try {
-        fs.accessSync('./test/fixtures/readtest-404', fs.constants.R_OK);
-      } catch (e) {
-        assertNotHookError(e);
-      }
-
-      assertFailingCallHooks('accessSync');
-    });
-  });
+  }
 });

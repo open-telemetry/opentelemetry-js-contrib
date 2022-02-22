@@ -52,6 +52,26 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         ['*'],
         (fs: FS) => {
           this._diag.debug('Applying patch for fs');
+          for (const fName of SYNC_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
+            }
+            this._wrap(
+              fs,
+              fName,
+              <any>this._patchSyncFunction.bind(this, fName)
+            );
+          }
+          for (const fName of CALLBACK_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
+            }
+            this._wrap(
+              fs,
+              fName,
+              <any>this._patchCallbackFunction.bind(this, fName)
+            );
+          }
           if (supportsPromises) {
             for (const fName of PROMISE_FUNCTIONS) {
               if (isWrapped(fs.promises[fName])) {
@@ -64,31 +84,21 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
               );
             }
           }
-          for (const fName of CALLBACK_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
-            }
-            this._wrap(
-              fs,
-              fName,
-              <any>this._patchCallbackFunction.bind(this, fName)
-            );
-          }
-          for (const fName of SYNC_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
-            }
-            this._wrap(
-              fs,
-              fName,
-              <any>this._patchSyncFunction.bind(this, fName)
-            );
-          }
           return fs;
         },
         (fs: FS) => {
           if (fs === undefined) return;
           this._diag.debug('Removing patch for fs');
+          for (const fName of SYNC_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
+            }
+          }
+          for (const fName of CALLBACK_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
+            }
+          }
           if (supportsPromises) {
             for (const fName of PROMISE_FUNCTIONS) {
               if (isWrapped(fs.promises[fName])) {
@@ -96,27 +106,17 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
               }
             }
           }
-          for (const fName of CALLBACK_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
-            }
-          }
-          for (const fName of SYNC_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
-            }
-          }
         }
       ),
     ];
   }
 
-  protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
-    functionName: FPMember,
+  protected _patchSyncFunction<T extends (...args: any[]) => ReturnType<T>>(
+    functionName: FMember,
     original: T
   ): T {
     const instrumentation = this;
-    return <any>async function (this: any, ...args: any[]) {
+    return <any>function (this: any, ...args: any[]) {
       if (isTracingSuppressed(api.context.active())) {
         // Performance optimization. Avoid creating additional contexts and spans
         // if we already know that the tracing is being suppressed.
@@ -141,7 +141,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
 
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
-        const res = await api.context.with(
+        const res = api.context.with(
           api.trace.setSpan(api.context.active(), span),
           original,
           this,
@@ -243,12 +243,12 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     };
   }
 
-  protected _patchSyncFunction<T extends (...args: any[]) => ReturnType<T>>(
-    functionName: FMember,
+  protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
+    functionName: FPMember,
     original: T
   ): T {
     const instrumentation = this;
-    return <any>function (this: any, ...args: any[]) {
+    return <any>async function (this: any, ...args: any[]) {
       if (isTracingSuppressed(api.context.active())) {
         // Performance optimization. Avoid creating additional contexts and spans
         // if we already know that the tracing is being suppressed.
@@ -273,7 +273,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
 
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
-        const res = api.context.with(
+        const res = await api.context.with(
           api.trace.setSpan(api.context.active(), span),
           original,
           this,
