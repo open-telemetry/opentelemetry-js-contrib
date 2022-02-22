@@ -150,15 +150,15 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         instrumentation._runEndHook(functionName, { args: args, span });
         span.end();
         return res;
-      } catch (err) {
-        span.recordException(err);
+      } catch (error) {
+        span.recordException(error);
         span.setStatus({
-          message: err.message,
+          message: error.message,
           code: api.SpanStatusCode.ERROR,
         });
-        instrumentation._runEndHook(functionName, { args: args, span });
+        instrumentation._runEndHook(functionName, { args: args, span, error });
         span.end();
-        throw err;
+        throw error;
       }
     };
   }
@@ -197,15 +197,19 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         // return to the context active during the call in the callback
         args[lastIdx] = api.context.bind(
           api.context.active(),
-          function (this: unknown, err?: Error) {
-            if (err) {
-              span.recordException(err);
+          function (this: unknown, error?: Error) {
+            if (error) {
+              span.recordException(error);
               span.setStatus({
-                message: err.message,
+                message: error.message,
                 code: api.SpanStatusCode.ERROR,
               });
             }
-            instrumentation._runEndHook(functionName, { args: args, span });
+            instrumentation._runEndHook(functionName, {
+              args: args,
+              span,
+              error,
+            });
             span.end();
             return cb.apply(this, arguments);
           }
@@ -218,15 +222,19 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             this,
             ...args
           );
-        } catch (err) {
-          span.recordException(err);
+        } catch (error) {
+          span.recordException(error);
           span.setStatus({
-            message: err.message,
+            message: error.message,
             code: api.SpanStatusCode.ERROR,
           });
-          instrumentation._runEndHook(functionName, { args: args, span });
+          instrumentation._runEndHook(functionName, {
+            args: args,
+            span,
+            error,
+          });
           span.end();
-          throw err;
+          throw error;
         }
       } else {
         // TODO: what to do if we are pretty sure it's going to throw
@@ -274,15 +282,15 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         instrumentation._runEndHook(functionName, { args: args, span });
         span.end();
         return res;
-      } catch (err) {
-        span.recordException(err);
+      } catch (error) {
+        span.recordException(error);
         span.setStatus({
-          message: err.message,
+          message: error.message,
           code: api.SpanStatusCode.ERROR,
         });
-        instrumentation._runEndHook(functionName, { args: args, span });
+        instrumentation._runEndHook(functionName, { args: args, span, error });
         span.end();
-        throw err;
+        throw error;
       }
     };
   }

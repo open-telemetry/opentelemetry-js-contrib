@@ -32,7 +32,7 @@ export type CreateHook = (
 ) => boolean;
 export type EndHook = (
   functionName: FMember | FPMember,
-  info: { args: ArrayLike<unknown>; span: api.Span }
+  info: { args: ArrayLike<unknown>; span: api.Span; error?: Error }
 ) => void;
 
 export interface FsInstrumentationConfig extends InstrumentationConfig {
