@@ -23,58 +23,53 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import Instrumentation from '../src';
-import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes as ResourceAttributesSC } from '@opentelemetry/semantic-conventions';
 import * as sinon from 'sinon';
 import type * as FSType from 'fs';
 import tests, { TestCase, TestCreator } from './definitions';
-import type { FMember, FPMember } from '../src/types';
+import type { FMember, FPMember, CreateHook, EndHook } from '../src/types';
 
-const supportsPromises = parseInt(process.versions.node.split('.')[0]) >= 12;
+const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
 const TEST_ATTRIBUTE = 'test.attr';
 const TEST_VALUE = 'test.attr.value';
 
-const serviceName = 'fs-tests';
-
-const createHook = sinon.spy((fnName: FMember | FPMember, { args, span }) => {
-  // `ts-node`, which we use via `ts-mocha` also patches module loading and creates
-  // a lot of unrelated spans. Filter those out.
-  if (['readFileSync', 'existsSync'].includes(fnName)) {
-    const filename = args[0];
-    if (!/test\/fixtures/.test(filename)) {
-      return false;
+const createHook = <CreateHook>sinon.spy(
+  (fnName: FMember | FPMember, { args, span }) => {
+    // `ts-node`, which we use via `ts-mocha` also patches module loading and creates
+    // a lot of unrelated spans. Filter those out.
+    if (['readFileSync', 'existsSync'].includes(fnName)) {
+      const filename = args[0];
+      if (!/test\/fixtures/.test(filename)) {
+        return false;
+      }
     }
+    return true;
   }
-  return true;
-});
-const endHook = sinon.spy((fnName, { args, span }) => {
+);
+const endHook = <EndHook>sinon.spy((fnName, { args, span }) => {
   span.setAttribute(TEST_ATTRIBUTE, TEST_VALUE);
 });
-const plugin = new Instrumentation({
+const pluginConfig = {
   createHook,
   endHook,
-});
+};
+const provider = new BasicTracerProvider();
+const tracer = provider.getTracer('default');
+const memoryExporter = new InMemorySpanExporter();
+provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
 describe('fs instrumentation', () => {
-  const provider = new BasicTracerProvider({
-    resource: new Resource({
-      [ResourceAttributesSC.SERVICE_NAME]: serviceName,
-    }),
-  });
-  const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  provider.addSpanProcessor(spanProcessor);
-  plugin.setTracerProvider(provider);
-  const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
   let fs: typeof FSType;
+  let plugin: Instrumentation;
 
   beforeEach(async () => {
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
-    fs = require('fs');
+    plugin = new Instrumentation(pluginConfig);
+    plugin.setTracerProvider(provider);
     plugin.enable();
+    fs = require('fs');
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 

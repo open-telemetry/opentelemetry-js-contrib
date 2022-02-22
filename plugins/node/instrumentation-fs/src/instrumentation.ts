@@ -28,11 +28,17 @@ import {
   SYNC_FUNCTIONS,
 } from './constants';
 import type * as fs from 'fs';
-import type { FMember, FPMember, FsInstrumentationConfig } from './types';
+import type {
+  FMember,
+  FPMember,
+  CreateHook,
+  EndHook,
+  FsInstrumentationConfig,
+} from './types';
 
 type FS = typeof fs;
 
-const hasPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
+const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
 export default class FsInstrumentation extends InstrumentationBase<FS> {
   constructor(config?: FsInstrumentationConfig) {
@@ -46,7 +52,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         ['*'],
         (fs: FS) => {
           this._diag.debug('Applying patch for fs');
-          if (hasPromises) {
+          if (supportsPromises) {
             for (const fName of PROMISE_FUNCTIONS) {
               if (isWrapped(fs.promises[fName])) {
                 this._unwrap(fs.promises, fName);
@@ -83,7 +89,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         (fs: FS) => {
           if (fs === undefined) return;
           this._diag.debug('Removing patch for fs');
-          if (hasPromises) {
+          if (supportsPromises) {
             for (const fName of PROMISE_FUNCTIONS) {
               if (isWrapped(fs.promises[fName])) {
                 this._unwrap(fs.promises, fName);
@@ -116,27 +122,23 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         // if we already know that the tracing is being suppressed.
         return original.apply(this, args);
       }
-      const { createHook, endHook } =
-        instrumentation.getConfig() as FsInstrumentationConfig;
-      if (typeof createHook === 'function') {
-        if (
-          // promise and async variants get mixed here for the hooks
-          createHook(functionName, {
-            args: args,
-          }) === false
-        ) {
-          return api.context.with(
-            suppressTracing(api.context.active()),
-            original,
-            this,
-            ...args
-          );
-        }
+      if (
+        instrumentation._runCreateHook(functionName, {
+          args: args,
+        }) === false
+      ) {
+        return api.context.with(
+          suppressTracing(api.context.active()),
+          original,
+          this,
+          ...args
+        );
       }
 
       const span = instrumentation.tracer.startSpan(
         `fs ${functionName}`
       ) as api.Span;
+
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
         const res = await api.context.with(
@@ -145,13 +147,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           this,
           ...args
         );
-        if (typeof endHook === 'function') {
-          try {
-            endHook(functionName, { args: args, span });
-          } catch (e) {
-            instrumentation._diag.error('caught endHook error', e);
-          }
-        }
+        instrumentation._runEndHook(functionName, { args: args, span });
         span.end();
         return res;
       } catch (err) {
@@ -160,9 +156,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           message: err.message,
           code: api.SpanStatusCode.ERROR,
         });
-        if (typeof endHook === 'function') {
-          endHook(functionName, { args: args, span });
-        }
+        instrumentation._runEndHook(functionName, { args: args, span });
         span.end();
         throw err;
       }
@@ -180,21 +174,17 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         // if we already know that the tracing is being suppressed.
         return original.apply(this, args);
       }
-      const { createHook, endHook } =
-        instrumentation.getConfig() as FsInstrumentationConfig;
-      if (typeof createHook === 'function') {
-        if (
-          createHook(functionName, {
-            args: args,
-          }) === false
-        ) {
-          return api.context.with(
-            suppressTracing(api.context.active()),
-            original,
-            this,
-            ...args
-          );
-        }
+      if (
+        instrumentation._runCreateHook(functionName, {
+          args: args,
+        }) === false
+      ) {
+        return api.context.with(
+          suppressTracing(api.context.active()),
+          original,
+          this,
+          ...args
+        );
       }
 
       const lastIdx = args.length - 1;
@@ -215,13 +205,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
                 code: api.SpanStatusCode.ERROR,
               });
             }
-            if (typeof endHook === 'function') {
-              try {
-                endHook(functionName, { args: arguments, span });
-              } catch (e) {
-                instrumentation._diag.error('caught endHook error', e);
-              }
-            }
+            instrumentation._runEndHook(functionName, { args: args, span });
             span.end();
             return cb.apply(this, arguments);
           }
@@ -240,13 +224,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             message: err.message,
             code: api.SpanStatusCode.ERROR,
           });
-          if (typeof endHook === 'function') {
-            try {
-              endHook(functionName, { args: args, span });
-            } catch (e) {
-              instrumentation._diag.error('caught endHook error', e);
-            }
-          }
+          instrumentation._runEndHook(functionName, { args: args, span });
           span.end();
           throw err;
         }
@@ -268,26 +246,23 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         // if we already know that the tracing is being suppressed.
         return original.apply(this, args);
       }
-      const { createHook, endHook } =
-        instrumentation.getConfig() as FsInstrumentationConfig;
-      if (typeof createHook === 'function') {
-        if (
-          createHook(functionName, {
-            args: args,
-          }) === false
-        ) {
-          return api.context.with(
-            suppressTracing(api.context.active()),
-            original,
-            this,
-            ...args
-          );
-        }
+      if (
+        instrumentation._runCreateHook(functionName, {
+          args: args,
+        }) === false
+      ) {
+        return api.context.with(
+          suppressTracing(api.context.active()),
+          original,
+          this,
+          ...args
+        );
       }
 
       const span = instrumentation.tracer.startSpan(
         `fs ${functionName}`
       ) as api.Span;
+
       try {
         // QUESTION: Should we immediately suppress all internal nested calls?
         const res = api.context.with(
@@ -296,13 +271,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           this,
           ...args
         );
-        if (typeof endHook === 'function') {
-          try {
-            endHook(functionName, { args: args, span });
-          } catch (e) {
-            instrumentation._diag.error('caught endHook error', e);
-          }
-        }
+        instrumentation._runEndHook(functionName, { args: args, span });
         span.end();
         return res;
       } catch (err) {
@@ -311,12 +280,35 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           message: err.message,
           code: api.SpanStatusCode.ERROR,
         });
-        if (typeof endHook === 'function') {
-          endHook(functionName, { args: args, span });
-        }
+        instrumentation._runEndHook(functionName, { args: args, span });
         span.end();
         throw err;
       }
     };
+  }
+
+  protected _runCreateHook(
+    ...args: Parameters<CreateHook>
+  ): ReturnType<CreateHook> {
+    const { createHook } = this.getConfig() as FsInstrumentationConfig;
+    if (typeof createHook === 'function') {
+      try {
+        return createHook(...args);
+      } catch (e) {
+        this._diag.error('caught createHook error', e);
+      }
+    }
+    return true;
+  }
+
+  protected _runEndHook(...args: Parameters<EndHook>): ReturnType<EndHook> {
+    const { endHook } = this.getConfig() as FsInstrumentationConfig;
+    if (typeof endHook === 'function') {
+      try {
+        endHook(...args);
+      } catch (e) {
+        this._diag.error('caught endHook error', e);
+      }
+    }
   }
 }

@@ -26,13 +26,16 @@ export type FunctionProperties<T> = Pick<T, FunctionPropertyNames<T>>;
 export type FMember = FunctionPropertyNames<typeof fs>;
 export type FPMember = FunctionPropertyNames<typeof fs['promises']>;
 
+export type CreateHook = (
+  functionName: FMember | FPMember,
+  info: { args: ArrayLike<unknown> }
+) => boolean;
+export type EndHook = (
+  functionName: FMember | FPMember,
+  info: { args: ArrayLike<unknown>; span: api.Span }
+) => void;
+
 export interface FsInstrumentationConfig extends InstrumentationConfig {
-  createHook?: (
-    functionName: FMember | FPMember,
-    info: { args: ArrayLike<unknown> }
-  ) => boolean;
-  endHook?: (
-    functionName: FMember | FPMember,
-    info: { args: ArrayLike<unknown>; span: api.Span }
-  ) => void;
+  createHook?: CreateHook;
+  endHook?: EndHook;
 }
