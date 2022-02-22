@@ -47,7 +47,7 @@ export const PROMISE_FUNCTIONS: FPMember[] = [
   // 'lchmod', // only implemented on macOS
 ];
 
-export const ASYNC_FUNCTIONS: FMember[] = [
+export const CALLBACK_FUNCTIONS: FMember[] = [
   'access',
   'appendFile',
   'chmod',

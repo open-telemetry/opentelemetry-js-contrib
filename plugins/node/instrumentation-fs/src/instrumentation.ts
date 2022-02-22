@@ -23,7 +23,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
 import {
-  ASYNC_FUNCTIONS,
+  CALLBACK_FUNCTIONS,
   PROMISE_FUNCTIONS,
   SYNC_FUNCTIONS,
 } from './constants';
@@ -64,14 +64,14 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
               );
             }
           }
-          for (const fName of ASYNC_FUNCTIONS) {
+          for (const fName of CALLBACK_FUNCTIONS) {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
             }
             this._wrap(
               fs,
               fName,
-              <any>this._patchAsyncFunction.bind(this, fName)
+              <any>this._patchCallbackFunction.bind(this, fName)
             );
           }
           for (const fName of SYNC_FUNCTIONS) {
@@ -96,7 +96,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
               }
             }
           }
-          for (const fName of ASYNC_FUNCTIONS) {
+          for (const fName of CALLBACK_FUNCTIONS) {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
             }
@@ -163,7 +163,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     };
   }
 
-  protected _patchAsyncFunction<T extends (...args: any[]) => ReturnType<T>>(
+  protected _patchCallbackFunction<T extends (...args: any[]) => ReturnType<T>>(
     functionName: FMember,
     original: T
   ): T {
