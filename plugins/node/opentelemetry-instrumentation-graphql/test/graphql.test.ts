@@ -61,7 +61,7 @@ const sourceBookById = `
 `;
 
 const sourceAddBook = `
-  mutation {
+  mutation AddBook {
     addBook(
       name: "Fifth Book"
       authorIds: "0,2"
@@ -155,8 +155,12 @@ describe('graphql', () => {
             '  }\n'
         );
         assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
           'query'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          undefined
         );
         assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
@@ -278,8 +282,12 @@ describe('graphql', () => {
             '  }\n'
         );
         assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
           'query'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          undefined
         );
         assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
@@ -364,8 +372,12 @@ describe('graphql', () => {
             '  }\n'
         );
         assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
           'query'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          'Query1'
         );
         assert.deepStrictEqual(
           executeSpan.attributes[`${AttributeNames.VARIABLES}id`],
@@ -456,8 +468,12 @@ describe('graphql', () => {
             '  }\n'
         );
         assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
           'query'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          undefined
         );
         assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
@@ -520,8 +536,12 @@ describe('graphql', () => {
             '  }\n'
         );
         assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
           'query'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          undefined
         );
         assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
@@ -607,8 +627,12 @@ describe('graphql', () => {
             '  }\n'
         );
         assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
           'query'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          undefined
         );
         assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
@@ -664,7 +688,7 @@ describe('graphql', () => {
         assert.deepStrictEqual(
           parseSpan.attributes[AttributeNames.SOURCE],
           '\n' +
-            '  mutation {\n' +
+            '  mutation AddBook {\n' +
             '    addBook(\n' +
             '      name: "Fifth Book"\n' +
             '      authorIds: "0,2"\n' +
@@ -689,7 +713,7 @@ describe('graphql', () => {
         assert.deepStrictEqual(
           executeSpan.attributes[AttributeNames.SOURCE],
           '\n' +
-            '  mutation {\n' +
+            '  mutation AddBook {\n' +
             '    addBook(\n' +
             '      name: "Fifth Book"\n' +
             '      authorIds: "0,2"\n' +
@@ -699,8 +723,12 @@ describe('graphql', () => {
             '  }\n'
         );
         assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
           'mutation'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          'AddBook'
         );
         assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
@@ -785,8 +813,12 @@ describe('graphql', () => {
             '  }\n'
         );
         assert.deepStrictEqual(
-          executeSpan.attributes[AttributeNames.OPERATION],
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
           'query'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          'Query1'
         );
         assert.deepStrictEqual(
           executeSpan.attributes[`${AttributeNames.VARIABLES}id`],
@@ -848,7 +880,7 @@ describe('graphql', () => {
       assert.deepStrictEqual(
         parseSpan.attributes[AttributeNames.SOURCE],
         '\n' +
-          '  mutation {\n' +
+          '  mutation AddBook {\n' +
           '    addBook(\n' +
           '      name: "*"\n' +
           '      authorIds: "*"\n' +
@@ -873,7 +905,7 @@ describe('graphql', () => {
       assert.deepStrictEqual(
         executeSpan.attributes[AttributeNames.SOURCE],
         '\n' +
-          '  mutation {\n' +
+          '  mutation AddBook {\n' +
           '    addBook(\n' +
           '      name: "*"\n' +
           '      authorIds: "*"\n' +
@@ -883,8 +915,12 @@ describe('graphql', () => {
           '  }\n'
       );
       assert.deepStrictEqual(
-        executeSpan.attributes[AttributeNames.OPERATION],
+        executeSpan.attributes[AttributeNames.OPERATION_TYPE],
         'mutation'
+      );
+      assert.deepStrictEqual(
+        executeSpan.attributes[AttributeNames.OPERATION_NAME],
+        'AddBook'
       );
       assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
       assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
@@ -1021,7 +1057,7 @@ describe('graphql', () => {
 
       it('should attach response hook data to the resulting spans', () => {
         const querySpan = spans.find(
-          span => span.attributes['graphql.operation.name'] == 'query'
+          span => span.attributes[AttributeNames.OPERATION_TYPE] == 'query'
         );
         const instrumentationResult = querySpan?.attributes[dataAttributeName];
         assert.deepStrictEqual(
@@ -1125,7 +1161,7 @@ describe('graphql', () => {
           '  }\n'
       );
       assert.deepStrictEqual(
-        executeSpan.attributes[AttributeNames.OPERATION],
+        executeSpan.attributes[AttributeNames.OPERATION_NAME],
         'Operation "foo" not supported'
       );
       assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
