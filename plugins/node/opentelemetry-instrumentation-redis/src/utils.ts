@@ -120,7 +120,7 @@ export const getTracedInternalSendCommand = (
     }
     if (this.address) {
       span.setAttribute(
-        SemanticAttributes.NET_PEER_IP,
+        SemanticAttributes.DB_CONNECTION_STRING,
         `redis://${this.address}`
       );
     }
@@ -140,7 +140,9 @@ export const getTracedInternalSendCommand = (
               responseHook(span, cmd.command, cmd.args, reply);
             },
             err => {
-              diag.error('Error executing responseHook', err);
+              if (err) {
+                diag.error('Error executing responseHook', err);
+              }
             },
             true
           );
