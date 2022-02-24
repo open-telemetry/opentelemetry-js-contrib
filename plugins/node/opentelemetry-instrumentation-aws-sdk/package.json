@@ -49,8 +49,7 @@
     "@opentelemetry/core": "^1.0.0",
     "@opentelemetry/instrumentation": "^0.27.0",
     "@opentelemetry/propagation-utils": "^0.26.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "aws-lambda": "^1.0.7"
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "3.37.0",
@@ -61,7 +60,6 @@
     "@opentelemetry/api": "1.0.1",
     "@opentelemetry/contrib-test-utils": "^0.29.0",
     "@opentelemetry/sdk-trace-base": "1.0.1",
-    "@types/aws-lambda": "^8.10.92",
     "@types/mocha": "8.2.3",
     "@types/node": "16.11.21",
     "@types/sinon": "10.0.6",
