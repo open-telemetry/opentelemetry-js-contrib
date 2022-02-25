@@ -401,10 +401,18 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
     const span = this.tracer.startSpan(SpanNames.EXECUTE, {});
     if (operation) {
-      const name = (operation as graphqlTypes.OperationDefinitionNode)
-        .operation;
-      if (name) {
-        span.setAttribute(AttributeNames.OPERATION, name);
+      const operationDefinition =
+        operation as graphqlTypes.OperationDefinitionNode;
+      span.setAttribute(
+        AttributeNames.OPERATION_TYPE,
+        operationDefinition.operation
+      );
+
+      if (operationDefinition.name) {
+        span.setAttribute(
+          AttributeNames.OPERATION_NAME,
+          operationDefinition.name.value
+        );
       }
     } else {
       let operationName = ' ';
@@ -415,7 +423,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
         '$operationName$',
         operationName
       );
-      span.setAttribute(AttributeNames.OPERATION, operationName);
+      span.setAttribute(AttributeNames.OPERATION_NAME, operationName);
     }
 
     if (processedArgs.document?.loc) {
