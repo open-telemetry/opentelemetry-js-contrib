@@ -1,5 +1,9 @@
 # Changelog
 
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.26.0 to ^1.0.0
+
 ## [0.5.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.4.0...instrumentation-aws-sdk-v0.5.0) (2022-01-24)
 
 

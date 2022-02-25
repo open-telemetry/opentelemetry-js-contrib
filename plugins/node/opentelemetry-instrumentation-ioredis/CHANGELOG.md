@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.27.1...instrumentation-ioredis-v0.28.0) (2022-02-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ioredis:** net.peer.ip -> db.connection_string
+
+### Bug Fixes
+
+* **ioredis:** net.peer.ip -> db.connection_string ([986c349](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/986c3499b324ebdf49aabf35bc3711c91bb91ec8))
+
+
+### Dependencies
+
+
+
 ### [0.27.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.27.0...instrumentation-ioredis-v0.27.1) (2022-01-24)
 
 

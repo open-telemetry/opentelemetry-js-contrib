@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.28.0...instrumentation-mongodb-v0.29.0) (2022-02-25)
+
+
+### Features
+
+* **mongodb4:** added mongodb4 instrumentation ([#869](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/869)) ([47700e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/47700e10dc6e4bd9ba0255cae85dec07ab4dd448))
+
+
+### Dependencies
+
+
+
 ## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.27.0...instrumentation-mongodb-v0.28.0) (2022-01-24)
 
 

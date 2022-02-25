@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.27.1...instrumentation-mysql-v0.28.0) (2022-02-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **mysql*,redis:** net.peer.ip -> db.connection_string
+
+### Bug Fixes
+
+* **mysql*,redis:** net.peer.ip -> db.connection_string ([bf39b90](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bf39b908fd64cec92c862b2deca5d760ddcf4509))
+
+
+### Dependencies
+
+
+
 ### [0.27.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.27.0...instrumentation-mysql-v0.27.1) (2022-01-24)
 
 

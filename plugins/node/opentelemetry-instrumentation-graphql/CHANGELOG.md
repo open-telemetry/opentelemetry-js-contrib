@@ -1,5 +1,17 @@
 # Changelog
 
+### [0.27.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.27.3...instrumentation-graphql-v0.27.4) (2022-02-25)
+
+
+### Bug Fixes
+
+* **graphql:** fix `graphql.operation.name` field ([#903](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/903)) ([5529261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/552926146c838efd7e2b778ae6fb815e9e304965))
+
+
+### Dependencies
+
+
+
 ### [0.27.3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.27.2...instrumentation-graphql-v0.27.3) (2022-02-06)
 
 
