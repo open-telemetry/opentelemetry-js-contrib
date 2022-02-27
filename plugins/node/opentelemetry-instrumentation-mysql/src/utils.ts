@@ -36,7 +36,11 @@ export function getConnectionAttributes(
   return {
     [SemanticAttributes.NET_PEER_NAME]: host,
     [SemanticAttributes.NET_PEER_PORT]: port,
-    [SemanticAttributes.NET_PEER_IP]: getJDBCString(host, port, database),
+    [SemanticAttributes.DB_CONNECTION_STRING]: getJDBCString(
+      host,
+      port,
+      database
+    ),
     [SemanticAttributes.DB_NAME]: database,
     [SemanticAttributes.DB_USER]: user,
   };
