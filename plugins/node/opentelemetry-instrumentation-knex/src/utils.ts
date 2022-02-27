@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { DbSystemValues } from '@opentelemetry/semantic-conventions';
+
 type Exception = {
   new (message: string): Exception;
   constructor: Exception;
@@ -50,8 +52,8 @@ export const cloneErrorWithNewMessage = (err: Exception, message: string) => {
 };
 
 const systemMap = new Map([
-  ['sqlite3', 'sqlite'],
-  ['pg', 'postgresql'],
+  ['sqlite3', DbSystemValues.SQLITE],
+  ['pg', DbSystemValues.POSTGRESQL],
 ]);
 export const mapSystem = (knexSystem: string) => {
   return systemMap.get(knexSystem) || knexSystem;

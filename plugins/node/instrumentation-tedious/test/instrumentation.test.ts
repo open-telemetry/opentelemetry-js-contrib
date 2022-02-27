@@ -16,7 +16,10 @@
 
 import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import * as util from 'util';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
@@ -334,7 +337,10 @@ function assertSpan(span: ReadableSpan, expected: any) {
   assert(span);
   assert.strictEqual(span.name, expected.name);
   assert.strictEqual(span.kind, SpanKind.CLIENT);
-  assert.strictEqual(span.attributes[SemanticAttributes.DB_SYSTEM], 'mssql');
+  assert.strictEqual(
+    span.attributes[SemanticAttributes.DB_SYSTEM],
+    DbSystemValues.MSSQL
+  );
   assert.strictEqual(
     span.attributes[SemanticAttributes.DB_NAME],
     expected.database ?? database
