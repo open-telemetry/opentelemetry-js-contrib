@@ -196,5 +196,50 @@ describe('DynamoDB', () => {
         }
       );
     });
+
+    it('should populate BatchGetIem when consumedCapacity is undefined', done => {
+      mockV2AwsSend(responseMockSuccess, {
+        Responses: { 'test-table': [{ key1: { S: 'val1' } }] },
+        UnprocessedKeys: {},
+        ConsumedCapacity: undefined,
+      } as AWS.DynamoDB.Types.BatchGetItemOutput);
+
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const dynamodb_params = {
+        RequestItems: {
+          'test-table': {
+            Keys: [{ key1: { S: 'val1' } }],
+            ProjectionExpression: 'id',
+          },
+        },
+        ReturnConsumedCapacity: 'NONE',
+      };
+      dynamodb.batchGet(
+        dynamodb_params,
+        (
+          err: AWSError,
+          data: AWS.DynamoDB.DocumentClient.BatchGetItemOutput
+        ) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
+            'BatchGetItem'
+          );
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
+          ).toStrictEqual(['test-table']);
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
+          ).toBeUndefined();
+          expect(
+            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
+          ).toEqual(dynamodb_params);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
   });
 });
