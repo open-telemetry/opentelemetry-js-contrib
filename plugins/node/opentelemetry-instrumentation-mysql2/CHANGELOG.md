@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.29.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.28.0...instrumentation-mysql2-v0.29.0) (2022-02-28)
+
+
+### Features
+
+* add mysql2 responsehook ([#915](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/915)) ([f436601](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/f4366015e2a628efc4cb8a47d508ba5620175f88))
+* support mysql2 v1 ([#908](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/908)) ([d3883d3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/d3883d38b7cf929404cf4eac9a9a48b7d1f4327f))
+
 ## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.27.0...instrumentation-mysql2-v0.28.0) (2022-01-24)
 
 

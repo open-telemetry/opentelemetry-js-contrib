@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.28.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.28.0...instrumentation-redis-v0.28.1) (2022-02-28)
+
+
+### Bug Fixes
+
+* **opentelemetry-instrumentation-redis:** add condition before error print ([#897](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/897)) ([f1d2fd0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/f1d2fd084c8e3e494e3606c4eca53158495f43f6))
+
 ## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.27.0...instrumentation-redis-v0.28.0) (2022-01-24)
 
 

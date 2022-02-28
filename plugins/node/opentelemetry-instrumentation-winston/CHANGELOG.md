@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.27.2](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.27.1...instrumentation-winston-v0.27.2) (2022-02-28)
+
+
+### Bug Fixes
+
+* **documentation:** mixed up winston readme for hook ([#910](https://www.github.com/open-telemetry/opentelemetry-js-contrib/issues/910)) ([0a557e8](https://www.github.com/open-telemetry/opentelemetry-js-contrib/commit/0a557e86c0d70dc6ab7af9736b1746f89c5fc8bf))
+
 ### [0.27.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.27.0...instrumentation-winston-v0.27.1) (2022-01-24)
 
 
