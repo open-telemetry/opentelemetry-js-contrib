@@ -22,7 +22,10 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { IORedisInstrumentationConfig, IORedisCommand } from './types';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { endSpan, defaultDbStatementSerializer } from './utils';
 import { VERSION } from './version';
@@ -34,8 +37,6 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
 export class IORedisInstrumentation extends InstrumentationBase<
   typeof ioredisTypes
 > {
-  static readonly DB_SYSTEM = 'redis';
-
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-ioredis',
@@ -113,7 +114,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
       const span = instrumentation.tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
+          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
           [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
             cmd.name,
             cmd.args
@@ -143,7 +144,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
       span.setAttributes({
         [SemanticAttributes.NET_PEER_NAME]: host,
         [SemanticAttributes.NET_PEER_PORT]: port,
-        [SemanticAttributes.NET_PEER_IP]: `redis://${host}:${port}`,
+        [SemanticAttributes.DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
 
       try {
@@ -186,7 +187,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SemanticAttributes.DB_SYSTEM]: IORedisInstrumentation.DB_SYSTEM,
+          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
           [SemanticAttributes.DB_STATEMENT]: 'connect',
         },
       });
@@ -195,7 +196,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
       span.setAttributes({
         [SemanticAttributes.NET_PEER_NAME]: host,
         [SemanticAttributes.NET_PEER_PORT]: port,
-        [SemanticAttributes.NET_PEER_IP]: `redis://${host}:${port}`,
+        [SemanticAttributes.DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
       try {
         const client = original.apply(this, arguments);
