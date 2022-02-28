@@ -32,7 +32,10 @@ import {
 } from './types';
 import { EventEmitter } from 'events';
 import { RedisInstrumentation } from './';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
 const endSpan = (span: Span, err?: Error | null) => {
@@ -102,7 +105,7 @@ export const getTracedInternalSendCommand = (
       {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SemanticAttributes.DB_SYSTEM]: RedisInstrumentation.COMPONENT,
+          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
           [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
             cmd.command,
             cmd.args
