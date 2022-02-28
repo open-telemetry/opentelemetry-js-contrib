@@ -105,7 +105,7 @@ export function getDbStatement(
 export function getSpanName(query: string | Query | QueryOptions): string {
   const rawQuery = typeof query === 'object' ? query.sql : query;
   // Extract the SQL verb
-  return rawQuery.split(' ')[0];
+  return rawQuery?.split(' ')?.[0];
 }
 
 export const once = (fn: Function) => {
