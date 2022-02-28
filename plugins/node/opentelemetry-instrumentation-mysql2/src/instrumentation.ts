@@ -19,8 +19,12 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
 import {
@@ -36,9 +40,8 @@ type formatType = typeof mysqlTypes.format;
 export class MySQL2Instrumentation extends InstrumentationBase<
   typeof mysqlTypes
 > {
-  static readonly COMPONENT = 'mysql';
   static readonly COMMON_ATTRIBUTES = {
-    [SemanticAttributes.DB_SYSTEM]: MySQL2Instrumentation.COMPONENT,
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
 
   constructor(config?: MySQL2InstrumentationConfig) {
@@ -107,13 +110,29 @@ export class MySQL2Instrumentation extends InstrumentationBase<
             ),
           },
         });
-        const endSpan = once((err?: any) => {
+        const endSpan = once((err?: any, results?: any) => {
           if (err) {
             span.setStatus({
               code: api.SpanStatusCode.ERROR,
               message: err.message,
             });
+          } else {
+            const config: MySQL2InstrumentationConfig = thisPlugin._config;
+            if (typeof config.responseHook === 'function') {
+              safeExecuteInTheMiddle(
+                () => {
+                  config.responseHook!(span, { queryResults: results });
+                },
+                err => {
+                  if (err) {
+                    thisPlugin._diag.warn('Failed executing responseHook', err);
+                  }
+                },
+                true
+              );
+            }
           }
+
           span.end();
         });
 
@@ -136,8 +155,8 @@ export class MySQL2Instrumentation extends InstrumentationBase<
             .once('error', err => {
               endSpan(err);
             })
-            .once('result', () => {
-              endSpan();
+            .once('result', results => {
+              endSpan(undefined, results);
             });
 
           return streamableQuery;
@@ -169,7 +188,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<
         results?: any,
         fields?: mysqlTypes.FieldPacket[]
       ) {
-        endSpan(err);
+        endSpan(err, results);
         return originalCallback(...arguments);
       };
     };

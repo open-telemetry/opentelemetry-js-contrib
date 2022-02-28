@@ -29,7 +29,10 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import type * as mongodb from 'mongodb';
 import {
   CursorState,
@@ -563,7 +566,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
   ) {
     // add database related attributes
     span.setAttributes({
-      [SemanticAttributes.DB_SYSTEM]: 'mongodb',
+      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MONGODB,
       [SemanticAttributes.DB_NAME]: dbName,
       [SemanticAttributes.DB_MONGODB_COLLECTION]: dbCollection,
     });

@@ -23,7 +23,10 @@ import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 
 import { mockV2AwsSend } from './testing-utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import * as expect from 'expect';
 import type { ConsumedCapacity as ConsumedCapacityV2 } from 'aws-sdk/clients/dynamodb';
 import type { ConsumedCapacity as ConsumedCapacityV3 } from '@aws-sdk/client-dynamodb';
@@ -73,7 +76,9 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
+            DbSystemValues.DYNAMODB
+          );
           expect(attrs[SemanticAttributes.DB_NAME]).toStrictEqual('test-table');
           expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual('Query');
           expect(
@@ -120,7 +125,9 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
+            DbSystemValues.DYNAMODB
+          );
           expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
             'BatchGetItem'
           );
@@ -165,7 +172,9 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
+            DbSystemValues.DYNAMODB
+          );
           expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
             'BatchGetItem'
           );
@@ -179,6 +188,51 @@ describe('DynamoDB', () => {
               JSON.stringify(x)
             )
           );
+          expect(
+            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
+          ).toEqual(dynamodb_params);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should populate BatchGetIem when consumedCapacity is undefined', done => {
+      mockV2AwsSend(responseMockSuccess, {
+        Responses: { 'test-table': [{ key1: { S: 'val1' } }] },
+        UnprocessedKeys: {},
+        ConsumedCapacity: undefined,
+      } as AWS.DynamoDB.Types.BatchGetItemOutput);
+
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const dynamodb_params = {
+        RequestItems: {
+          'test-table': {
+            Keys: [{ key1: { S: 'val1' } }],
+            ProjectionExpression: 'id',
+          },
+        },
+        ReturnConsumedCapacity: 'NONE',
+      };
+      dynamodb.batchGet(
+        dynamodb_params,
+        (
+          err: AWSError,
+          data: AWS.DynamoDB.DocumentClient.BatchGetItemOutput
+        ) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
+            'BatchGetItem'
+          );
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
+          ).toStrictEqual(['test-table']);
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
+          ).toBeUndefined();
           expect(
             JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
           ).toEqual(dynamodb_params);

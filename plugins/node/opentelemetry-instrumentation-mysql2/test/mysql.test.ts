@@ -17,7 +17,10 @@
 import * as semver from 'semver';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
@@ -26,7 +29,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { MySQL2Instrumentation } from '../src';
+import { MySQL2Instrumentation, MySQL2InstrumentationConfig } from '../src';
 
 const LIB_VERSION = testUtils.getPackageVersion('mysql2');
 const port = Number(process.env.MYSQL_PORT) || 33306;
@@ -644,6 +647,126 @@ describe('mysql@2.x', () => {
       );
     });
   });
+
+  describe('#responseHook', () => {
+    const queryResultAttribute = 'query_result';
+
+    after(() => {
+      instrumentation.setConfig({});
+    });
+
+    describe('invalid repsonse hook', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setTracerProvider(provider);
+        const config: MySQL2InstrumentationConfig = {
+          responseHook: (span, responseHookInfo) => {
+            throw new Error('random failure!');
+          },
+        };
+        instrumentation.setConfig(config);
+        instrumentation.enable();
+      });
+
+      it('should not affect the behavior of the query', done => {
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          const sql = 'SELECT 1+1 as solution';
+          connection.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            done();
+          });
+        });
+      });
+    });
+
+    describe('valid response hook', () => {
+      before(() => {
+        instrumentation.disable();
+        instrumentation.setTracerProvider(provider);
+        const config: MySQL2InstrumentationConfig = {
+          responseHook: (span, responseHookInfo) => {
+            span.setAttribute(
+              queryResultAttribute,
+              JSON.stringify(responseHookInfo.queryResults)
+            );
+          },
+        };
+        instrumentation.setConfig(config);
+        instrumentation.enable();
+      });
+
+      it('should extract data from responseHook - connection', done => {
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          const sql = 'SELECT 1+1 as solution';
+          connection.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql);
+            assert.strictEqual(
+              spans[0].attributes[queryResultAttribute],
+              JSON.stringify(res)
+            );
+            done();
+          });
+        });
+      });
+
+      it('should extract data from responseHook - pool', done => {
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          const sql = 'SELECT 1+1 as solution';
+          pool.getConnection((err, conn) => {
+            conn.query(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+              assert.ifError(err);
+              assert.ok(res);
+              assert.strictEqual(res[0].solution, 2);
+              const spans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(spans.length, 1);
+              assertSpan(spans[0], sql);
+              assert.strictEqual(
+                spans[0].attributes[queryResultAttribute],
+                JSON.stringify(res)
+              );
+              done();
+            });
+          });
+        });
+      });
+
+      it('should extract data from responseHook - poolCluster', done => {
+        poolCluster.getConnection((err, poolClusterConnection) => {
+          assert.ifError(err);
+          const span = provider.getTracer('default').startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            const sql = 'SELECT 1+1 as solution';
+            poolClusterConnection.query(
+              sql,
+              (err, res: mysqlTypes.RowDataPacket[]) => {
+                assert.ifError(err);
+                assert.ok(res);
+                assert.strictEqual(res[0].solution, 2);
+                const spans = memoryExporter.getFinishedSpans();
+                assert.strictEqual(spans.length, 1);
+                assertSpan(spans[0], sql);
+                assert.strictEqual(
+                  spans[0].attributes[queryResultAttribute],
+                  JSON.stringify(res)
+                );
+                done();
+              }
+            );
+          });
+        });
+      });
+    });
+  });
 });
 
 function assertSpan(
@@ -652,7 +775,10 @@ function assertSpan(
   values?: any,
   errorMessage?: string
 ) {
-  assert.strictEqual(span.attributes[SemanticAttributes.DB_SYSTEM], 'mysql');
+  assert.strictEqual(
+    span.attributes[SemanticAttributes.DB_SYSTEM],
+    DbSystemValues.MYSQL
+  );
   assert.strictEqual(span.attributes[SemanticAttributes.DB_NAME], database);
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_PORT], port);
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], host);
