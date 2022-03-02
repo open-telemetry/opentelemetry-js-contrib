@@ -7,7 +7,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf build/*",
-    "compile": "npm run version:update && tsc -p .",
+    "compile": "tsc -p .",
     "compile:watch": "tsc -w",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

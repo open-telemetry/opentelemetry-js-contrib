@@ -15,7 +15,7 @@
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc -p ."
+    "compile": "tsc -p ."
   },
   "keywords": [
     "aws-lambda",
