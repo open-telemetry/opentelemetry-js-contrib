@@ -64,7 +64,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
     const operation = response.request.commandName;
 
     if (operation === 'BatchGetItem') {
-      if ('ConsumedCapacity' in response.data) {
+      if (Array.isArray(response.data?.ConsumedCapacity)) {
         span.setAttribute(
           SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY,
           response.data.ConsumedCapacity.map(
