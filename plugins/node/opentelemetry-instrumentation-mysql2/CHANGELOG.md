@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.28.0...instrumentation-mysql2-v0.29.0) (2022-03-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **mysql*,redis:** net.peer.ip -> db.connection_string
+
+### Features
+
+* add mysql2 responsehook ([#915](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/915)) ([f436601](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f4366015e2a628efc4cb8a47d508ba5620175f88))
+* support mysql2 v1 ([#908](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/908)) ([d3883d3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3883d38b7cf929404cf4eac9a9a48b7d1f4327f))
+
+
+### Bug Fixes
+
+* **mysql*,redis:** net.peer.ip -> db.connection_string ([bf39b90](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bf39b908fd64cec92c862b2deca5d760ddcf4509))
+* use SQL verb for mysql2 span name when query object is used ([#923](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/923)) ([3d1388b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3d1388b0f779417de86b5b9af84d9000c7f67782))
+
 ## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.27.0...instrumentation-mysql2-v0.28.0) (2022-01-24)
 
 
