@@ -146,6 +146,10 @@ describe('mysql@2.x', () => {
         query.on('end', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans[0].name, 'SELECT');
+          assert.strictEqual(
+            spans[0].attributes[SemanticAttributes.DB_STATEMENT],
+            sql
+          );
           done();
         });
       });
@@ -161,7 +165,11 @@ describe('mysql@2.x', () => {
 
         query.on('end', () => {
           const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans[0].name, sql);
+          assert.strictEqual(spans[0].name, 'SELECT');
+          assert.strictEqual(
+            spans[0].attributes[SemanticAttributes.DB_STATEMENT],
+            query.sql
+          );
           done();
         });
       });
