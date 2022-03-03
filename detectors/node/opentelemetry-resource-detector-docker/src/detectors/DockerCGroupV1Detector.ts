@@ -27,7 +27,7 @@ import { diag } from '@opentelemetry/api';
 
 export class DockerCGroupV1Detector implements Detector {
   readonly CONTAINER_ID_LENGTH = 64;
-  readonly DEFAULT_CGROUP_PATH = './container-example.txt';
+  readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
   readonly TIMEOUT_MS = 2000;
   readonly UTF8_UNICODE = 'utf8';
 
