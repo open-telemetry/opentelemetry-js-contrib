@@ -1,4 +1,4 @@
-# OpenTelemetry Resource Detector for AWS
+# OpenTelemetry Resource Detector for Docker 
 
 [![NPM Published Version][npm-img]][npm-url]
 [![dependencies][dependencies-image]][dependencies-url]
@@ -21,9 +21,9 @@ npm install --save @opentelemetry/resource-detector-docker
 
 ```typescript
 import { detectResources } from '@opentelemetry/resources';
-import { dockerCGroupDetector } from '@opentelemetry/resource-detector-docker'
+import { dockerCGroupV1Detector } from '@opentelemetry/resource-detector-docker'
 const resource = await detectResources({
-   detectors: [dockerCGroupDetector],
+   detectors: [dockerCGroupV1Detector],
 })
 
 const tracerProvider = new NodeTracerProvider({ resource });
@@ -31,7 +31,7 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 ## Available detectors
 
-- `dockerCGroupDetector`: Populates `container.id` for processes running on docker cgroup v1
+- `dockerCGroupV1Detector`: Populates `container.id` for processes running on docker cgroup v1
 
 ## Useful links
 
