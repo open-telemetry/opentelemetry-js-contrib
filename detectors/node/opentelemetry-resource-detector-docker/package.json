@@ -1,0 +1,58 @@
+{
+  "name": "@opentelemetry/resource-detector-docker",
+  "version": "1.0.0",
+  "description": "Opentelemetry resource detector to get docker containerId",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "scripts": {
+    "clean": "rimraf build/*",
+    "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../../",
+    "compile": "npm run version:update && tsc -p .",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-docker --include-dependencies",
+    "prewatch": "npm run precompile",
+    "prepare": "npm run compile",
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "version:update": "node ../../../scripts/version-update.js",
+    "watch": "tsc -w"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.0.4",
+    "@opentelemetry/contrib-test-utils": "^0.29.0",
+    "@types/mocha": "8.2.3",
+    "@types/node": "^17.0.14",
+    "@types/sinon": "10.0.2",
+    "eslint-plugin-header": "^3.1.1",
+    "mocha": "7.2.0",
+    "nock": "12.0.3",
+    "nyc": "15.1.0",
+    "rimraf": "3.0.2",
+    "sinon": "^12.0.1",
+    "ts-mocha": "8.0.0",
+    "typescript": "^4.5.5"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.0.4"
+  },
+  "dependencies": {
+    "@opentelemetry/core": "^1.0.1",
+    "@opentelemetry/resources": "^1.0.1",
+    "@opentelemetry/semantic-conventions": "^1.0.1",
+    "gts": "^3.1.0"
+  }
+}
