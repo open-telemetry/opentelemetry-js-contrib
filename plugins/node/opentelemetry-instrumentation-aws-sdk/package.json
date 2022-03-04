@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-sdk",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "OpenTelemetry automatic instrumentation for the `aws-sdk` package",
   "keywords": [
     "aws",
@@ -30,11 +30,10 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf build/*",
-    "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope $(npm pkg get name) --include-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-aws-sdk --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
@@ -50,7 +49,7 @@
     "@opentelemetry/core": "^1.0.0",
     "@opentelemetry/instrumentation": "^0.27.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@opentelemetry/propagation-utils": "^0.26.0"
+    "@opentelemetry/propagation-utils": "^0.27.0"
   },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "3.37.0",
@@ -69,7 +68,7 @@
     "nock": "13.2.1",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "12.0.1",
+    "sinon": "13.0.1",
     "gts": "3.1.0",
     "@opentelemetry/contrib-test-utils": "^0.29.0",
     "test-all-versions": "5.0.1",

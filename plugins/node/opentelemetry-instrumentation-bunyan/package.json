@@ -7,7 +7,6 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf build/*",
-    "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -56,12 +55,11 @@
     "@types/node": "16.11.21",
     "@types/sinon": "10.0.2",
     "bunyan": "1.8.15",
-    "codecov": "3.8.3",
     "gts": "3.1.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "12.0.1",
+    "sinon": "13.0.1",
     "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"

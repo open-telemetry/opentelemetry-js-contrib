@@ -2,6 +2,10 @@
   "extension": [
     ".ts"
   ],
+  "include": [
+    "src/**"
+  ],
+  "reporter": ["text", "json"],
   "exclude": [
     "**/*.d.ts",
     "build/**/**/*.js",
