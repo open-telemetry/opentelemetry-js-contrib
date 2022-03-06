@@ -232,7 +232,7 @@ describe('fs instrumentation', () => {
       ([, , , , options = {}]) => options.sync !== false
     );
 
-    describe('instrumentation enabled', () => {
+    describe('Instrumentation enabled', () => {
       selection.forEach(([name, args, result, spans]) => {
         syncTest(name, args, result, spans);
       });
@@ -254,7 +254,7 @@ describe('fs instrumentation', () => {
       });
     });
 
-    describe('instrumentation disabled', () => {
+    describe('Instrumentation disabled', () => {
       beforeEach(() => {
         plugin.disable();
       });
@@ -270,13 +270,13 @@ describe('fs instrumentation', () => {
       ([, , , , options = {}]) => options.callback !== false
     );
 
-    describe('instrumentation enabled', () => {
+    describe('Instrumentation enabled', () => {
       selection.forEach(([name, args, result, spans]) => {
         callbackTest(name, args, result, spans);
       });
     });
 
-    describe('instrumentation disabled', () => {
+    describe('Instrumentation disabled', () => {
       beforeEach(() => {
         plugin.disable();
       });
@@ -293,13 +293,13 @@ describe('fs instrumentation', () => {
         ([, , , , options = {}]) => options.promise !== false
       );
 
-      describe('instrumentation enabled', () => {
+      describe('Instrumentation enabled', () => {
         selection.forEach(([name, args, result, spans]) => {
           promiseTest(name as FPMember, args, result, spans);
         });
       });
 
-      describe('instrumentation disabled', () => {
+      describe('Instrumentation disabled', () => {
         beforeEach(() => {
           plugin.disable();
         });
