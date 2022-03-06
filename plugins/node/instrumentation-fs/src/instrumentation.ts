@@ -140,9 +140,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
       ) as api.Span;
 
       try {
-        // QUESTION: Should we immediately suppress all internal nested calls?
+        // Suppress tracing for internal fs calls
         const res = api.context.with(
-          api.trace.setSpan(api.context.active(), span),
+          suppressTracing(api.trace.setSpan(api.context.active(), span)),
           original,
           this,
           ...args
@@ -194,7 +194,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           `fs ${functionName}`
         ) as api.Span;
 
-        // return to the context active during the call in the callback
+        // Return to the context active during the call in the callback
         args[lastIdx] = api.context.bind(
           api.context.active(),
           function (this: unknown, error?: Error) {
@@ -216,8 +216,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         );
 
         try {
+          // Suppress tracing for internal fs calls
           return api.context.with(
-            api.trace.setSpan(api.context.active(), span),
+            suppressTracing(api.trace.setSpan(api.context.active(), span)),
             original,
             this,
             ...args
@@ -272,9 +273,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
       ) as api.Span;
 
       try {
-        // QUESTION: Should we immediately suppress all internal nested calls?
+        // Suppress tracing for internal fs calls
         const res = await api.context.with(
-          api.trace.setSpan(api.context.active(), span),
+          suppressTracing(api.trace.setSpan(api.context.active(), span)),
           original,
           this,
           ...args

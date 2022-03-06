@@ -33,13 +33,6 @@ export type TestCreator = (
 ) => void;
 
 const TEST_CONTENTS = Buffer.from('hello, world\n');
-
-const syncOnly: Opts = { callback: false, promise: false };
-const callbackOnly: Opts = { sync: false, promise: false };
-const promiseOnly: Opts = { sync: false, callback: false };
-const noSync: Opts = { sync: false };
-// const noAsync: Opts = { callback: false };
-// const noPromise: Opts = { promise: false };
 const ENOENT = /ENOENT: no such file or directory, /;
 const tests: TestCase[] = [
   [
@@ -58,53 +51,19 @@ const tests: TestCase[] = [
     'readFile',
     ['./test/fixtures/readtest'],
     { result: TEST_CONTENTS },
-    [{ name: 'fs openSync' }, { name: 'fs %NAME' }],
-    syncOnly,
-  ],
-  [
-    'readFile',
-    ['./test/fixtures/readtest'],
-    { result: TEST_CONTENTS },
     [{ name: 'fs %NAME' }],
-    noSync,
-  ],
-  [
-    'readFile',
-    ['./test/fixtures/readtest-404'],
-    { error: ENOENT },
-    [
-      { name: 'fs openSync', error: ENOENT },
-      { name: 'fs %NAME', error: ENOENT },
-    ],
-    syncOnly,
   ],
   [
     'readFile',
     ['./test/fixtures/readtest-404'],
     { error: ENOENT },
     [{ name: 'fs %NAME', error: ENOENT }],
-    noSync,
-  ],
-  [
-    'writeFile',
-    ['./test/fixtures/writetest', TEST_CONTENTS],
-    { result: undefined },
-    [{ name: 'fs openSync' }, { name: 'fs %NAME' }],
-    syncOnly,
   ],
   [
     'writeFile',
     ['./test/fixtures/writetest', TEST_CONTENTS],
     { result: undefined },
     [{ name: 'fs %NAME' }],
-    promiseOnly,
-  ],
-  [
-    'writeFile',
-    ['./test/fixtures/writetest', TEST_CONTENTS],
-    { result: undefined },
-    [{ name: 'fs open' }, { name: 'fs %NAME' }],
-    callbackOnly,
   ],
 ];
 
