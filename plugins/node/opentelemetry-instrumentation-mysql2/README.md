@@ -20,7 +20,7 @@ npm install --save @opentelemetry/instrumentation-mysql2
 
 ## Supported Versions
 
-- `2.x`
+- `>= 1.4.2, < 3.0`
 
 ## Usage
 
@@ -42,6 +42,14 @@ registerInstrumentations({
   ],
 })
 ```
+
+### MySQL2 Instrumentation Options
+
+You can set the following instrumentation options:
+
+| Options | Type | Description |
+| ------- | ---- | ----------- |
+| `responseHook` | `MySQL2InstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
 
 ## Useful links
 

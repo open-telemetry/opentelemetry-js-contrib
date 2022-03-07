@@ -23,6 +23,7 @@ import { VERSION } from './version';
 import * as constants from './constants';
 import {
   InstrumentationBase,
+  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
@@ -36,7 +37,7 @@ const { diag } = api;
 export class RestifyInstrumentation extends InstrumentationBase<
   typeof restify
 > {
-  constructor() {
+  constructor(config: InstrumentationConfig = {}) {
     super(`@opentelemetry/instrumentation-${constants.MODULE_NAME}`, VERSION);
   }
 

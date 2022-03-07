@@ -31,9 +31,32 @@ provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 registerInstrumentations({
   tracerProvider: provider,
   instrumentations: [
-    new LongTaskInstrumentation(),
+    new LongTaskInstrumentation({
+      // see under for available configuration
+    }),
   ],
 });
+```
+
+### longtask Instrumentation Options
+
+| Options | Type | Description |
+| --- | --- | --- |
+| `observerCallback` | `ObserverCallback` | Callback executed on observed `longtask`, allowing additional attributes to be attached to the span. |
+
+The `observerCallback` function is passed the created span and the `longtask` `PerformanceEntry`,
+allowing the user to add custom attributes to the span with any logic.
+For example, a webapp with client-side routing can add contextual information on the current page,
+even if the tracer was instantiated before navigation.
+
+Usage Example:
+
+```js
+longtaskInstrumentationConfig = {
+  observerCallback: (span, longtaskEvent) => {
+    span.setAttribute('location.pathname', window.location.pathname)
+  }
+}
 ```
 
 ## Useful links

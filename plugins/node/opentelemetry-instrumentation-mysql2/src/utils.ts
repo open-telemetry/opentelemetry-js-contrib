@@ -36,7 +36,11 @@ export function getConnectionAttributes(config: Config): SpanAttributes {
   return {
     [SemanticAttributes.NET_PEER_NAME]: host,
     [SemanticAttributes.NET_PEER_PORT]: port,
-    [SemanticAttributes.NET_PEER_IP]: getJDBCString(host, port, database),
+    [SemanticAttributes.DB_CONNECTION_STRING]: getJDBCString(
+      host,
+      port,
+      database
+    ),
     [SemanticAttributes.DB_NAME]: database,
     [SemanticAttributes.DB_USER]: user,
   };
@@ -99,10 +103,9 @@ export function getDbStatement(
  * @returns SQL statement without variable arguments or SQL verb
  */
 export function getSpanName(query: string | Query | QueryOptions): string {
-  if (typeof query === 'object') {
-    return query.sql;
-  }
-  return query.split(' ')[0];
+  const rawQuery = typeof query === 'object' ? query.sql : query;
+  // Extract the SQL verb
+  return rawQuery?.split(' ')?.[0];
 }
 
 export const once = (fn: Function) => {

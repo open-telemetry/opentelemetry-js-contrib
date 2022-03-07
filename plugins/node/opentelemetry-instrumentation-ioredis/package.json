@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-ioredis",
-  "version": "0.27.1",
+  "version": "0.28.0",
   "description": "OpenTelemetry ioredis automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -19,7 +19,6 @@
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc -p .",
-    "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../",
     "prepare": "npm run compile"
   },
   "keywords": [
@@ -59,14 +58,13 @@
     "@types/mocha": "7.0.2",
     "@types/sinon": "10.0.9",
     "@types/node": "16.11.21",
-    "codecov": "3.8.3",
     "cross-env": "7.0.3",
     "gts": "3.1.0",
     "ioredis": "4.27.7",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "12.0.1",
+    "sinon": "13.0.1",
     "test-all-versions": "5.0.1",
     "ts-mocha": "8.0.0",
     "typescript": "4.3.5"
