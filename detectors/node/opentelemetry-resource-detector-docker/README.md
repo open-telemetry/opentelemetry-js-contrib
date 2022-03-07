@@ -1,4 +1,5 @@
 # OpenTelemetry Resource Detector for Docker
+
 [![NPM Published Version][npm-img]][npm-url]
 [![dependencies][dependencies-image]][dependencies-url]
 [![devDependencies][devDependencies-image]][devDependencies-url]
