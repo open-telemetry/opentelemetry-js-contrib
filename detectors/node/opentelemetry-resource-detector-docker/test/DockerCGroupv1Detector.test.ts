@@ -83,7 +83,7 @@ describe('dockerCGroupV1Detector', () => {
         .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
         .onSecondCall()
         .resolves('');
-     
+
       const resource: Resource = await dockerCGroupV1Detector.detect();
 
       sinon.assert.calledOnce(fileStub);
