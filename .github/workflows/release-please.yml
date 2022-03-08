@@ -18,7 +18,7 @@ jobs:
       # The logic below handles the npm publication:
       - name: Checkout Repository
         if: ${{ steps.release.outputs.releases_created }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
