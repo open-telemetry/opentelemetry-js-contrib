@@ -8,5 +8,5 @@ The following methods are automatically enhanced:
 
 ### invoke
 
-- [Outgoing Attributes](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/faas.md#outgoing-invocations) are added by this instrumentation according to the spec.
+- Attributes are added by this instrumentation according to the [spec for Outgoing Invocations of a FaaS from a client](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/faas.md#outgoing-invocations) .
 - OpenTelemetry trace context is injected into the `ClientContext` parameter, allowing functions to extract this using the `Custom` property within the function.
