@@ -29,13 +29,13 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import {
-  WinstonInstrumentationConfig,
+import type { WinstonInstrumentationConfig } from './types';
+import type {
   Winston2LogMethod,
   Winston2LoggerModule,
   Winston3LogMethod,
   Winston3Logger,
-} from './types';
+} from './internal-types';
 import { VERSION } from './version';
 
 const winston3Versions = ['>=3 <4'];
