@@ -1,6 +1,6 @@
 # Lambda
 
-Lambda is Amazon's function-as-a-service (FaaS) platform. Thus, it should follow the [OpenTelemetry specification for FaaS systems](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/faas.md).
+Lambda is Amazon's function-as-a-service (FaaS) platform. This instrumentation follows the [OpenTelemetry specification for FaaS systems](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/faas.md).
 
 ## Specific trace semantics
 
