@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-redis",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "description": "OpenTelemetry redis automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -15,10 +15,10 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-redis --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-redis --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc -p .",
+    "compile": "tsc -p .",
     "prepare": "npm run compile"
   },
   "keywords": [

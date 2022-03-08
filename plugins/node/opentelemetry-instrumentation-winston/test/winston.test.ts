@@ -25,7 +25,7 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
-import type { Winston2Logger, Winston3Logger } from '../src/types';
+import type { Winston2Logger, Winston3Logger } from '../src/internal-types';
 import { WinstonInstrumentation } from '../src';
 
 const memoryExporter = new InMemorySpanExporter();

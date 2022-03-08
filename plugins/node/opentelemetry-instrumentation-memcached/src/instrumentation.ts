@@ -21,7 +21,10 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 import type * as Memcached from 'memcached';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
 import { InstrumentationConfig } from './types';
 import { VERSION } from './version';
@@ -29,7 +32,7 @@ import { VERSION } from './version';
 export class Instrumentation extends InstrumentationBase<typeof Memcached> {
   static readonly COMPONENT = 'memcached';
   static readonly COMMON_ATTRIBUTES = {
-    [SemanticAttributes.DB_SYSTEM]: Instrumentation.COMPONENT,
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MEMCACHED,
   };
   static readonly DEFAULT_CONFIG: InstrumentationConfig = {
     enhancedDatabaseReporting: false,

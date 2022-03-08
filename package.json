@@ -15,7 +15,7 @@
     "clean": "lerna run clean",
     "postinstall": "npm run bootstrap",
     "prepare": "husky install",
-    "precompile": "tsc --version && lerna run version",
+    "precompile": "tsc --version && npm run version:update",
     "version:update": "lerna run version:update",
     "compile": "lerna run compile",
     "prewatch": "npm run precompile",

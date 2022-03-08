@@ -15,7 +15,10 @@
  */
 import { Span, SpanKind, Tracer } from '@opentelemetry/api';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import {
   AwsSdkInstrumentationConfig,
   NormalizedRequest,
@@ -30,7 +33,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
     const operation = normalizedRequest.commandName;
 
     const spanAttributes = {
-      [SemanticAttributes.DB_SYSTEM]: 'dynamodb',
+      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.DYNAMODB,
       [SemanticAttributes.DB_NAME]: normalizedRequest.commandInput?.TableName,
       [SemanticAttributes.DB_OPERATION]: operation,
       [SemanticAttributes.DB_STATEMENT]: JSON.stringify(
@@ -61,7 +64,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
     const operation = response.request.commandName;
 
     if (operation === 'BatchGetItem') {
-      if ('ConsumedCapacity' in response.data) {
+      if (Array.isArray(response.data?.ConsumedCapacity)) {
         span.setAttribute(
           SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY,
           response.data.ConsumedCapacity.map(

@@ -13,10 +13,8 @@
       "rangeStrategy": "bump"
     }
   ],
-  "assignees": [
-    "@dyladan",
-    "@mayurkale22"
-  ],
+  "ignoreDeps": ["lerna", "lerna-changelog"],
+  "assignees": ["@blumamir", "@dyladan", "@legendecas", "@Rauno56", "@vmarchaud"],
   "schedule": [
     "before 3am on Friday"
   ],
