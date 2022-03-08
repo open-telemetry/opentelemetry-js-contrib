@@ -274,6 +274,37 @@ describe('fs instrumentation', () => {
       selection.forEach(([name, args, result, spans]) => {
         callbackTest(name, args, result, spans);
       });
+
+      it('should not suppress tracing in callbacks', done => {
+        const readFileCatchErrors = (cb: Function) => {
+          fs.readFile('./test/fixtures/readtest', (err, result) => {
+            try {
+              if (err) {
+                return done(err);
+              }
+              cb(result);
+            } catch (err) {
+              done(err);
+            }
+          });
+        };
+
+        readFileCatchErrors(() => {
+          readFileCatchErrors(() => {
+            assertSpans(memoryExporter.getFinishedSpans(), [
+              {
+                name: 'fs readFile',
+                attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
+              },
+              {
+                name: 'fs readFile',
+                attributes: { [TEST_ATTRIBUTE]: TEST_VALUE },
+              },
+            ]);
+            done();
+          });
+        });
+      });
     });
 
     describe('Instrumentation disabled', () => {
