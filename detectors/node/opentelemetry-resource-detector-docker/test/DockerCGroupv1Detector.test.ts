@@ -26,7 +26,7 @@ import {
 import { DockerCGroupV1Detector } from '../src';
 
 describe('dockerCGroupV1Detector', () => {
-  let readStub, fileStub;
+  let readStub;
   const correctCgroupData =
     'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
 
@@ -36,37 +36,17 @@ describe('dockerCGroupV1Detector', () => {
 
   describe('Supported docker - Container ID ', () => {
     it('should return a container ID for supported docker - cgroup v1', async () => {
-      fileStub = sinon
-        .stub(DockerCGroupV1Detector, 'fileAccessAsync' as any)
-        .resolves(undefined);
-
       const resource: Resource = await dockerCGroupV1Detector.detect();
-      sinon.assert.calledOnce(fileStub);
-
-      assert.ok(resource);
-    });
-
-    it('should return an empty resource for file access denied', async () => {
-      fileStub = sinon
-        .stub(DockerCGroupV1Detector, 'fileAccessAsync' as any)
-        .rejects('permission denied');
-
-      const resource: Resource = await dockerCGroupV1Detector.detect();
-      sinon.assert.calledOnce(fileStub);
       assert.ok(resource);
     });
 
     it('should return a resource with container ID with a valid container ID present', async () => {
-      fileStub = sinon
-        .stub(DockerCGroupV1Detector, 'fileAccessAsync' as any)
-        .resolves();
       readStub = sinon
         .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
         .resolves(correctCgroupData);
 
       const resource: Resource = await dockerCGroupV1Detector.detect();
 
-      sinon.assert.calledOnce(fileStub);
       sinon.assert.calledOnce(readStub);
 
       assert.ok(resource);
@@ -76,9 +56,6 @@ describe('dockerCGroupV1Detector', () => {
     });
 
     it('should return a resource with clusterName attribute when cgroup file does not contain valid Container ID', async () => {
-      fileStub = sinon
-        .stub(DockerCGroupV1Detector, 'fileAccessAsync' as any)
-        .resolves();
       readStub = sinon
         .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
         .onSecondCall()
@@ -86,7 +63,6 @@ describe('dockerCGroupV1Detector', () => {
 
       const resource: Resource = await dockerCGroupV1Detector.detect();
 
-      sinon.assert.calledOnce(fileStub);
       sinon.assert.calledOnce(readStub);
 
       assert.ok(resource);
@@ -96,9 +72,7 @@ describe('dockerCGroupV1Detector', () => {
       const errorMsg = {
         fileNotFoundError: new Error('cannot file in the path}'),
       };
-      fileStub = sinon
-        .stub(DockerCGroupV1Detector, 'fileAccessAsync' as any)
-        .resolves('');
+
       readStub = sinon
         .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
         .onSecondCall()
@@ -106,7 +80,6 @@ describe('dockerCGroupV1Detector', () => {
 
       const resource: Resource = await dockerCGroupV1Detector.detect();
 
-      sinon.assert.calledOnce(fileStub);
       sinon.assert.calledOnce(readStub);
 
       assertEmptyResource(resource);

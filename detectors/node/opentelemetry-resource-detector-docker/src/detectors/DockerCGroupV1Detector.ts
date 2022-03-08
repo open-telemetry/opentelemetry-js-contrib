@@ -32,16 +32,10 @@ export class DockerCGroupV1Detector implements Detector {
   readonly UTF8_UNICODE = 'utf8';
 
   private static readFileAsync = util.promisify(fs.readFile);
-  private static fileAccessAsync = util.promisify(fs.access);
 
   async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
     try {
-      if (!(await this._isSupportedDocker())) {
-        return Resource.empty();
-      }
-
       const containerId = await this._getContainerId();
-
       return !containerId
         ? Resource.empty()
         : new Resource({
@@ -75,16 +69,6 @@ export class DockerCGroupV1Detector implements Detector {
       }
     }
     return undefined;
-  }
-
-  private async _isSupportedDocker(): Promise<boolean | false> {
-    try {
-      await DockerCGroupV1Detector.fileAccessAsync(this.DEFAULT_CGROUP_PATH);
-      return true;
-    } catch (e) {
-      diag.error(`cannot access ${this.DEFAULT_CGROUP_PATH} folder ${e}`);
-      return false;
-    }
   }
 }
 
