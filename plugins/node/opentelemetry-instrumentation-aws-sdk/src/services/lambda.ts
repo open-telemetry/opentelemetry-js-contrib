@@ -27,8 +27,11 @@ import {
   NormalizedResponse,
 } from '../types';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
-import { TextMapSetter, context, propagation } from '@opentelemetry/api';
-import { InvocationRequest } from '@aws-sdk/client-lambda';
+import { context, propagation } from '@opentelemetry/api';
+
+class LambdaCommands {
+  public static readonly Invoke: string = 'Invoke';
+}
 
 export class LambdaServiceExtension implements ServiceExtension {
   requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
@@ -47,7 +50,7 @@ export class LambdaServiceExtension implements ServiceExtension {
           spanAttributes[SemanticAttributes.FAAS_INVOKED_REGION] =
             request.region;
         }
-        spanName = `${functionName} invoke`;
+        spanName = `${functionName} ${LambdaCommands.Invoke}`;
         break;
     }
     return {
@@ -60,11 +63,13 @@ export class LambdaServiceExtension implements ServiceExtension {
 
   requestPostSpanHook = (request: NormalizedRequest) => {
     switch (request.commandName) {
-      case 'Invoke':
+      case LambdaCommands.Invoke:
         {
-          request.commandInput = injectPropagationContext(
-            request.commandInput as InvocationRequest
-          );
+          if (request.commandInput) {
+            request.commandInput.ClientContext = injectLambdaPropagationContext(
+              request.commandInput.ClientContext
+            );
+          }
         }
         break;
     }
@@ -76,10 +81,15 @@ export class LambdaServiceExtension implements ServiceExtension {
     tracer: Tracer,
     config: AwsSdkInstrumentationConfig
   ) {
-    const operation = response.request.commandName;
-
-    if (operation === 'Invoke') {
-      span.setAttribute(SemanticAttributes.FAAS_EXECUTION, response.requestId);
+    switch (response.request.commandName) {
+      case LambdaCommands.Invoke:
+        {
+          span.setAttribute(
+            SemanticAttributes.FAAS_EXECUTION,
+            response.requestId
+          );
+        }
+        break;
     }
   }
 
@@ -87,47 +97,45 @@ export class LambdaServiceExtension implements ServiceExtension {
     return commandInput?.FunctionName;
   };
 }
-class ContextSetter implements TextMapSetter<Record<string, any>> {
-  set(carrier: Record<string, any>, key: string, value: string): void {
-    try {
-      const parsedClientContext = carrier.ClientContext
-        ? JSON.parse(
-            Buffer.from(carrier.ClientContext, 'base64').toString('utf8')
-          )
-        : {};
-      const updatedPayload = {
-        ...parsedClientContext,
-        Custom: {
-          ...parsedClientContext.Custom,
-          [key]: value,
-        },
-      };
-      const encodedPayload = Buffer.from(
-        JSON.stringify(updatedPayload)
-      ).toString('base64');
 
-      // The length of client context is capped at 3583 bytes of base64 encoded data
-      // (https://docs.aws.amazon.com/lambda/latest/dg/API_Invoke.html#API_Invoke_RequestSyntax)
-      if (encodedPayload.length > 3583) {
-        diag.warn(
-          'lambda instrumentation: cannot set context propagation on lambda invoke parameters due to ClientContext length limitations.'
-        );
-        return;
-      }
-      carrier.ClientContext = encodedPayload;
-    } catch (e) {
-      diag.debug(
-        'lambda instrumentation: failed to set context propagation on ClientContext',
-        e
+const injectLambdaPropagationContext = (
+  clientContext: string | undefined
+): string | undefined => {
+  try {
+    const propagatedContext = {};
+    propagation.inject(context.active(), propagatedContext);
+
+    const parsedClientContext = clientContext
+      ? JSON.parse(Buffer.from(clientContext, 'base64').toString('utf8'))
+      : {};
+
+    const updatedClientContext = {
+      ...parsedClientContext,
+      Custom: {
+        ...parsedClientContext.Custom,
+        ...propagatedContext,
+      },
+    };
+
+    const encodedClientContext = Buffer.from(
+      JSON.stringify(updatedClientContext)
+    ).toString('base64');
+
+    // The length of client context is capped at 3583 bytes of base64 encoded data
+    // (https://docs.aws.amazon.com/lambda/latest/dg/API_Invoke.html#API_Invoke_RequestSyntax)
+    if (encodedClientContext.length > 3583) {
+      diag.warn(
+        'lambda instrumentation: cannot set context propagation on lambda invoke parameters due to ClientContext length limitations.'
       );
+      return clientContext;
     }
-  }
-}
-const contextSetter = new ContextSetter();
 
-const injectPropagationContext = (
-  invocationRequest: InvocationRequest
-): InvocationRequest => {
-  propagation.inject(context.active(), invocationRequest, contextSetter);
-  return invocationRequest;
+    return encodedClientContext;
+  } catch (e) {
+    diag.debug(
+      'lambda instrumentation: failed to set context propagation on ClientContext',
+      e
+    );
+    return clientContext;
+  }
 };

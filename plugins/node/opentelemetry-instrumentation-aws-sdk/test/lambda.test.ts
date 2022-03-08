@@ -60,7 +60,7 @@ describe('Lambda', () => {
         };
         const span = await getInvokedSpan(params);
 
-        expect(span.name).toEqual(`${params.FunctionName} invoke`);
+        expect(span.name).toEqual(`${params.FunctionName} Invoke`);
       });
 
       it('should set the span kind to CLIENT', async () => {
@@ -241,6 +241,7 @@ describe('Lambda', () => {
           ).toString()
         ) as Record<string, any>;
         expect(clientContext.Custom).toHaveProperty('existing', 'data');
+        expect(clientContext.Custom).toHaveProperty('traceparent');
       });
 
       it('should maintain any existing top-level fields in the client context', async () => {
@@ -294,6 +295,7 @@ describe('Lambda', () => {
           ).toString()
         ) as Record<string, any>;
         expect(updatedClientContext.env).toStrictEqual(clientContext.env);
+        expect(updatedClientContext.Custom).toHaveProperty('traceparent');
       });
 
       // It probably should be valid JSON, and I'm not sure what the lambda internals make of it if
@@ -331,6 +333,7 @@ describe('Lambda', () => {
 
         await lambdaClient.invoke(params);
 
+        // Keep whatever was there before
         expect(request).toBeDefined();
         const requestHeaders = request!.headers;
         const clientContext = Buffer.from(
