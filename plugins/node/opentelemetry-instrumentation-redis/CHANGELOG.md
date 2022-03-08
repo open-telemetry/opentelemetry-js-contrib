@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.28.0...instrumentation-redis-v0.29.0) (2022-03-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **mysql*,redis:** net.peer.ip -> db.connection_string
+
+### Bug Fixes
+
+* **mysql*,redis:** net.peer.ip -> db.connection_string ([bf39b90](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bf39b908fd64cec92c862b2deca5d760ddcf4509))
+* **opentelemetry-instrumentation-redis:** add condition before error print ([#897](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/897)) ([f1d2fd0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f1d2fd084c8e3e494e3606c4eca53158495f43f6))
+
 ## [0.28.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.27.0...instrumentation-redis-v0.28.0) (2022-01-24)
 
 
