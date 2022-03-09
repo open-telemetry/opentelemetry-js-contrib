@@ -15,6 +15,8 @@
  */
 
 const path = require('path');
+const semver = require('semver');
+
 const appRoot = process.cwd();
 const packageJsonUrl = path.resolve(`${appRoot}/package.json`);
 const pjson = require(packageJsonUrl);
@@ -32,10 +34,10 @@ if (peerVersion) {
       `Package ${pjson.name} does't have API version pinned in dev dependencies: ${devVersion}`
     );
   }
-  if (peerVersion !== `^${devVersion}`) {
+  if (!semver.satisfies(devVersion, peerVersion)) {
     throw new Error(
       `Package ${pjson.name} depends on peer API version ${peerVersion} ` +
-      `but version ${devVersion} in development`
+      `but version ${devVersion} in development which doesn't satisfy the peer API version`
     );
   }
   console.log(`${pjson.name} OK`);

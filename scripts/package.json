@@ -1,0 +1,8 @@
+{
+  "name": "opentelemetry-contrib-scripts",
+  "private": true,
+  "license": "Apache-2.0",
+  "dependencies": {
+    "semver": "7.3.5"
+  }
+}
