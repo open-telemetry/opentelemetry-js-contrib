@@ -18,5 +18,8 @@ jobs:
       - name: Install lerna
         run: npm install -g lerna
 
+      - name: Install script dependencies
+        run: npm install
+
       - name: Check API dependency semantics
         run: lerna exec "node \$LERNA_ROOT_PATH/scripts/peer-api-check.js"
