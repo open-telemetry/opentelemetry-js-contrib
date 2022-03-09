@@ -5,10 +5,11 @@
   "description": "Example of Express integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
-    "zipkin:server": "cross-env EXPORTER=zipkin node ./server.js",
-    "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js",
-    "jaeger:server": "cross-env EXPORTER=jaeger node ./server.js",
-    "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js"
+    "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",
+    "zipkin:client": "cross-env EXPORTER=zipkin ts-node src/client.ts",
+    "jaeger:server": "cross-env EXPORTER=jaeger ts-node src/server.ts",
+    "jaeger:client": "cross-env EXPORTER=jaeger ts-node src/client.ts",
+    "compile": "tsc -p ."
   },
   "repository": {
     "type": "git",
@@ -32,16 +33,18 @@
     "@opentelemetry/exporter-jaeger": "^0.25.0",
     "@opentelemetry/exporter-zipkin": "^0.25.0",
     "@opentelemetry/instrumentation": "^0.25.0",
-    "@opentelemetry/instrumentation-express": "^0.23.0",
     "@opentelemetry/instrumentation-http": "^0.25.0",
     "@opentelemetry/resources": "^0.25.0",
-    "@opentelemetry/semantic-conventions": "^0.25.0",
-    "@opentelemetry/sdk-trace-node": "^0.25.0",
     "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@opentelemetry/sdk-trace-node": "^0.25.0",
+    "@opentelemetry/semantic-conventions": "^0.25.0",
     "axios": "^0.21.1",
     "cross-env": "^7.0.3",
     "express": "^4.17.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
-  "devDependencies": {}
+  "devDependencies": {
+    "ts-node": "^10.6.0",
+    "typescript": "^4.6.2"
+  }
 }
