@@ -96,9 +96,9 @@ AWS contains dozens of services accessible with the JS SDK. For many services, t
 
 Specific service logic currently implemented for:
 
-- [SQS](./docs/sqs.md)
-- [SNS](./docs/sns.md)
-- [Lambda](./docs/lambda.md)
+- [SQS](./doc/sqs.md)
+- [SNS](./doc/sns.md)
+- [Lambda](./doc/lambda.md)
 - DynamoDb
 
 ## Potential Side Effects
