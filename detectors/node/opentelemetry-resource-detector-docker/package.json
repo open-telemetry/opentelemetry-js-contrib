@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/resource-detector-docker",
-  "version": "1.0.0",
-  "description": "Opentelemetry resource detector to get docker containerId",
+  "version": "0.1.0",
+  "description": "Opentelemetry resource detector to get docker resource attributes",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
