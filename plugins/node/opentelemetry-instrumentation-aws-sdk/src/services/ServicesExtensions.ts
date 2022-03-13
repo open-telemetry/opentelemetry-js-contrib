@@ -23,6 +23,7 @@ import {
 } from '../types';
 import { DynamodbServiceExtension } from './dynamodb';
 import { SnsServiceExtension } from './sns';
+import { LambdaServiceExtension } from './lambda';
 
 export class ServicesExtensions implements ServiceExtension {
   services: Map<string, ServiceExtension> = new Map();
@@ -31,6 +32,7 @@ export class ServicesExtensions implements ServiceExtension {
     this.services.set('SQS', new SqsServiceExtension());
     this.services.set('SNS', new SnsServiceExtension());
     this.services.set('DynamoDB', new DynamodbServiceExtension());
+    this.services.set('Lambda', new LambdaServiceExtension());
   }
 
   requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
