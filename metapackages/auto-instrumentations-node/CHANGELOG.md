@@ -1,5 +1,19 @@
 # Changelog
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.5.0 to ^0.5.1
+    * @opentelemetry/instrumentation-fastify bumped from ^0.25.0 to ^0.26.0
+    * @opentelemetry/instrumentation-graphql bumped from ^0.27.3 to ^0.27.4
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.27.1 to ^0.28.0
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.28.0 to ^0.29.0
+    * @opentelemetry/instrumentation-mysql bumped from ^0.27.1 to ^0.28.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.28.0 to ^0.29.0
+    * @opentelemetry/instrumentation-redis bumped from ^0.28.0 to ^0.29.0
+    * @opentelemetry/instrumentation-winston bumped from ^0.27.0 to ^0.27.2
+
 ### [0.27.3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.27.2...auto-instrumentations-node-v0.27.3) (2022-02-06)
 
 

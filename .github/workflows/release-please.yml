@@ -18,12 +18,12 @@ jobs:
       # The logic below handles the npm publication:
       - name: Checkout Repository
         if: ${{ steps.release.outputs.releases_created }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         if: ${{ steps.release.outputs.releases_created }}
         with:
           node-version: 14

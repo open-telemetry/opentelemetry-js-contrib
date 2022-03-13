@@ -16,6 +16,7 @@
     "packages/opentelemetry-id-generator-aws-xray": {},
     "packages/opentelemetry-propagation-utils": {},
     "packages/opentelemetry-test-utils": {},
+    "plugins/node/instrumentation-fs": {},
     "plugins/node/instrumentation-tedious": {},
     "plugins/node/opentelemetry-instrumentation-amqplib": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},

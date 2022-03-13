@@ -311,9 +311,11 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
         }
         delete v2Request[REQUEST_SPAN_KEY];
 
+        const requestId = response.requestId;
         const normalizedResponse: NormalizedResponse = {
           data: response.data,
           request: normalizedRequest,
+          requestId: requestId,
         };
 
         self._callUserResponseHook(span, normalizedResponse);
@@ -328,7 +330,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
           );
         }
 
-        span.setAttribute(AttributeNames.AWS_REQUEST_ID, response.requestId);
+        span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
 
         const httpStatusCode = response.httpResponse?.statusCode;
         if (httpStatusCode) {
@@ -503,6 +505,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
                   const normalizedResponse: NormalizedResponse = {
                     data: response.output,
                     request: normalizedRequest,
+                    requestId: requestId,
                   };
                   self.servicesExtensions.responseHook(
                     normalizedResponse,
