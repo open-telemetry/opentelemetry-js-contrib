@@ -6,7 +6,7 @@
 This module provides automatic instrumentation for [`restify`](https://github.com/restify/node-restify) and allows the user to automatically collect trace data and export them to their backend of choice.
 
 For automatic instrumentation see the
-[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 

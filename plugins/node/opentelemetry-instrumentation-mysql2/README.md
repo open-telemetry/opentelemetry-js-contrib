@@ -6,7 +6,7 @@
 This module provides automatic instrumentation for [`mysql2`](https://github.com/sidorares/node-mysql2).
 
 For automatic instrumentation see the
-[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 

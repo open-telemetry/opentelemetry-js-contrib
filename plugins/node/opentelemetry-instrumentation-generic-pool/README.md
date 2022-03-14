@@ -6,7 +6,7 @@
 This module provides basic automatic instrumentation for [`generic-pool`](https://github.com/coopernurse/node-pool) creating a span for every acquire call.
 
 For automatic instrumentation see the
-[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node) package.
+[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
