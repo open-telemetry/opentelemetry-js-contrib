@@ -1,8 +1,6 @@
 # OpenTelemetry Meta Packages for Node
 
 [![NPM Published Version][npm-img]][npm-url]
-[![dependencies][dependencies-image]][dependencies-url]
-[![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-url]
 
 This module provides a simple way to initialize multiple Node instrumentations.
@@ -101,9 +99,5 @@ APACHE 2.0 - See [LICENSE][license-url] for more information.
 
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[dependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=metapackages%2Fauto-instrumentations-node
-[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=metapackages%2Fauto-instrumentations-node
-[devDependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=metapackages%2Fauto-instrumentations-node&type=dev
-[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=metapackages%2Fauto-instrumentations-node&type=dev
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fauto-instrumentations-node.svg
