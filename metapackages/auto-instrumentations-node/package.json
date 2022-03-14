@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.27.0",
+    "@opentelemetry/instrumentation-amqplib": "^0.27.0",
     "@opentelemetry/instrumentation-aws-lambda": "^0.29.0",
     "@opentelemetry/instrumentation-aws-sdk": "^0.5.1",
     "@opentelemetry/instrumentation-bunyan": "^0.27.0",

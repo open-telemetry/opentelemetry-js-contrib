@@ -16,6 +16,8 @@ components:
   packages/opentelemetry-id-generator-aws-xray:
     - NathanielRN
     - willarmiros
+  plugins/node/instrumentation-amqplib:
+    - blumamir
   plugins/node/instrumentation-fs:
     - rauno56
   plugins/node/instrumentation-tedious:
