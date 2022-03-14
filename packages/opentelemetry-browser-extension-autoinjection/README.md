@@ -1,6 +1,6 @@
 # OpenTelemetry Browser Extension
 
-This browser extension allows you to inject [OpenTelemetry](https://opentelemetry.io/) instrumentation in any web page. It uses the [Web SDK](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-web) and can export data to Zipkin or an OpenTelemetry Collector.
+This browser extension allows you to inject [OpenTelemetry](https://opentelemetry.io/) instrumentation in any web page. It uses the [Web SDK](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-web) and can export data to Zipkin or an OpenTelemetry Collector.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 

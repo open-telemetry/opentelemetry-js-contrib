@@ -15,7 +15,7 @@ npm install --save @opentelemetry/instrumentation-aws-sdk
 
 ## Usage
 
-For further automatic instrumentation instruction see the [@opentelemetry/instrumentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation) package.
+For further automatic instrumentation instruction see the [@opentelemetry/instrumentation](https://www.npmjs.com/package/@opentelemetry/instrumentation) package.
 
 ```js
 const { NodeTracerProvider } = require("@opentelemetry/sdk-trace-node");

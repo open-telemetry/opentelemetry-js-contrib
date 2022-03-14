@@ -50,7 +50,7 @@ Mongodb instrumentation has few options available to choose from. You can set th
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`enhancedDatabaseReporting`](https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-api/src/trace/instrumentation/instrumentation.ts#L91) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
+| [`enhancedDatabaseReporting`](./src/types.ts#L32) | `string` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
 | `responseHook` | `MongoDBInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
 | `dbStatementSerializer` | `DbStatementSerializer` (function) | Custom serializer function for the db.statement tag |
 

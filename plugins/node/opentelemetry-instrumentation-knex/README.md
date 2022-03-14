@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for [`knex`](https://github.com/knex/node-knex) and allows the user to automatically collect trace data and export them to their backend of choice.
+This module provides automatic instrumentation for [`knex`](https://github.com/knex/knex) and allows the user to automatically collect trace data and export them to their backend of choice.
 
 For automatic instrumentation see the
 [@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.

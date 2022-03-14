@@ -61,7 +61,7 @@ The dev dependency of `@hapi/podium@4.1.1` is required to force the compatible t
 
 ## Hapi Instrumentation Support
 
-This package provides automatic tracing for hapi server routes and [request lifecycle](https://github.com/hapijs/hapi/blob/main/API.md#request-lifecycle) extensions defined either directly or via a Hapi plugin.
+This package provides automatic tracing for hapi server routes and [request lifecycle](https://github.com/hapijs/hapi/blob/master/API.md#request-lifecycle) extensions defined either directly or via a Hapi plugin.
 
 ## Useful links
 
