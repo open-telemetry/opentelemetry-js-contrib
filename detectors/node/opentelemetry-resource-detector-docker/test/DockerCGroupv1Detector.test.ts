@@ -35,10 +35,10 @@ describe('dockerCGroupV1Detector', () => {
   });
 
   describe('Supported docker - Container ID ', () => {
-    it('should return a emoty resource - docker cgroup v1 detector', async () => {
+    it('should return a resource attributes without container id - docker cgroup v1 detector', async () => {
       const resource: Resource = await dockerCGroupV1Detector.detect();
-      
-      assert.deepStrictEqual( resource.attributes, {} )
+
+      assert.deepStrictEqual(resource.attributes, {});
       assert.ok(resource);
     });
 
@@ -63,7 +63,7 @@ describe('dockerCGroupV1Detector', () => {
         .resolves('');
 
       const resource: Resource = await dockerCGroupV1Detector.detect();
-      assert.deepStrictEqual( resource.attributes, {} )
+      assert.deepStrictEqual(resource.attributes, {});
 
       sinon.assert.calledOnce(readStub);
       assert.ok(resource);
@@ -71,12 +71,12 @@ describe('dockerCGroupV1Detector', () => {
 
     it('should return an empty resource when containerId is not valid', async () => {
       const errorMsg = {
-        fileNotFoundError: new Error('cannot file in the path}'),
+        fileNotFoundError: new Error('cannot find file in path'),
       };
 
       readStub = sinon
         .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
-        .rejects(errorMsg);
+        .rejects(errorMsg.fileNotFoundError);
 
       const resource: Resource = await dockerCGroupV1Detector.detect();
 
