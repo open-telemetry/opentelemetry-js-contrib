@@ -36,6 +36,10 @@ describe('dockerCGroupV1Detector', () => {
 
   describe('Supported docker - Container ID ', () => {
     it('should return a resource attributes without container id - docker cgroup v1 detector', async () => {
+      readStub = sinon
+        .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
+        .resolves(undefined);
+
       const resource: Resource = await dockerCGroupV1Detector.detect();
 
       assert.deepStrictEqual(resource.attributes, {});

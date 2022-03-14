@@ -41,7 +41,10 @@ export class DockerCGroupV1Detector implements Detector {
             [SemanticResourceAttributes.CONTAINER_ID]: containerId,
           });
     } catch (e) {
-      diag.warn('Process is not running on a supported docker version', e);
+      diag.info(
+        'Docker CGROUP V1 Detector did not identify running inside a supported docker container, no docker attributes will be added to resource: ',
+        e
+      );
       return Resource.empty();
     }
   }
@@ -61,8 +64,9 @@ export class DockerCGroupV1Detector implements Detector {
     } catch (e) {
       if (e instanceof Error) {
         const errorMessage = e.message;
-        diag.warn(
-          `Docker CGROUP V1 Detector failed to read container ID: ${errorMessage}`
+        diag.info(
+          'Docker CGROUP V1 Detector failed to read the Container ID: ',
+          errorMessage
         );
       }
     }
