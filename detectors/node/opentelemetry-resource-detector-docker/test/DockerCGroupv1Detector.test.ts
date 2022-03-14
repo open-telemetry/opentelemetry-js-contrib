@@ -35,8 +35,10 @@ describe('dockerCGroupV1Detector', () => {
   });
 
   describe('Supported docker - Container ID ', () => {
-    it('should return a container ID for supported docker - cgroup v1', async () => {
+    it('should return a emoty resource - docker cgroup v1 detector', async () => {
       const resource: Resource = await dockerCGroupV1Detector.detect();
+      
+      assert.deepStrictEqual( resource.attributes, {} )
       assert.ok(resource);
     });
 
@@ -55,16 +57,15 @@ describe('dockerCGroupV1Detector', () => {
       });
     });
 
-    it('should return a resource with clusterName attribute when cgroup file does not contain valid Container ID', async () => {
+    it('should return a resource without attribute container.id when cgroup file does not contain valid Container ID', async () => {
       readStub = sinon
         .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
-        .onSecondCall()
         .resolves('');
 
       const resource: Resource = await dockerCGroupV1Detector.detect();
+      assert.deepStrictEqual( resource.attributes, {} )
 
       sinon.assert.calledOnce(readStub);
-
       assert.ok(resource);
     });
 
@@ -75,13 +76,11 @@ describe('dockerCGroupV1Detector', () => {
 
       readStub = sinon
         .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
-        .onSecondCall()
         .rejects(errorMsg);
 
       const resource: Resource = await dockerCGroupV1Detector.detect();
 
       sinon.assert.calledOnce(readStub);
-
       assertEmptyResource(resource);
     });
   });

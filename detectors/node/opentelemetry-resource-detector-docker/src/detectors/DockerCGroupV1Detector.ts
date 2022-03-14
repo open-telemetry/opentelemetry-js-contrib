@@ -28,7 +28,6 @@ import { diag } from '@opentelemetry/api';
 export class DockerCGroupV1Detector implements Detector {
   readonly CONTAINER_ID_LENGTH = 64;
   readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
-  readonly TIMEOUT_MS = 2000;
   readonly UTF8_UNICODE = 'utf8';
 
   private static readFileAsync = util.promisify(fs.readFile);
@@ -39,7 +38,7 @@ export class DockerCGroupV1Detector implements Detector {
       return !containerId
         ? Resource.empty()
         : new Resource({
-            [SemanticResourceAttributes.CONTAINER_ID]: containerId || '',
+            [SemanticResourceAttributes.CONTAINER_ID]: containerId,
           });
     } catch (e) {
       diag.warn('Process is not running on a supported docker version', e);
@@ -60,9 +59,8 @@ export class DockerCGroupV1Detector implements Detector {
         }
       }
     } catch (e) {
-      let errorMessage = '';
       if (e instanceof Error) {
-        errorMessage = e.message;
+        const errorMessage = e.message;
         diag.warn(
           `Docker CGROUP V1 Detector failed to read container ID: ${errorMessage}`
         );
