@@ -49,11 +49,11 @@ export interface AmqplibPublishConfirmCustomAttributeFunction {
   (span: Span, publishConfirmedInto: PublishConfirmedInfo): void;
 }
 
-export interface AmqplibConsumerCustomAttributeFunction {
+export interface AmqplibConsumeCustomAttributeFunction {
   (span: Span, consumeInfo: ConsumeInfo): void;
 }
 
-export interface AmqplibConsumerEndCustomAttributeFunction {
+export interface AmqplibConsumeEndCustomAttributeFunction {
   (span: Span, consumeEndInfo: ConsumeEndInfo): void;
 }
 
@@ -77,10 +77,10 @@ export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
   publishConfirmHook?: AmqplibPublishConfirmCustomAttributeFunction;
 
   /** hook for adding custom attributes before consumer message is processed */
-  consumeHook?: AmqplibConsumerCustomAttributeFunction;
+  consumeHook?: AmqplibConsumeCustomAttributeFunction;
 
   /** hook for adding custom attributes after consumer message is acked to server */
-  consumeEndHook?: AmqplibConsumerEndCustomAttributeFunction;
+  consumeEndHook?: AmqplibConsumeEndCustomAttributeFunction;
 
   /**
    * When user is setting up consume callback, it is user's responsibility to call
