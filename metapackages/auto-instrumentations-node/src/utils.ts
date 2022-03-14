@@ -16,6 +16,7 @@
 
 import { diag } from '@opentelemetry/api';
 import { Instrumentation } from '@opentelemetry/instrumentation';
+import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
 import { AwsLambdaInstrumentation } from '@opentelemetry/instrumentation-aws-lambda';
 import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
@@ -45,6 +46,7 @@ import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 
 const InstrumentationMap = {
+  '@opentelemetry/instrumentation-amqplib': AmqplibInstrumentation,
   '@opentelemetry/instrumentation-aws-lambda': AwsLambdaInstrumentation,
   '@opentelemetry/instrumentation-aws-sdk': AwsInstrumentation,
   '@opentelemetry/instrumentation-bunyan': BunyanInstrumentation,
