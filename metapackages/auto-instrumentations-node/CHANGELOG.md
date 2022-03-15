@@ -14,6 +14,23 @@
     * @opentelemetry/instrumentation-redis bumped from ^0.28.0 to ^0.29.0
     * @opentelemetry/instrumentation-winston bumped from ^0.27.0 to ^0.27.2
 
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.27.3...auto-instrumentations-node-v0.28.0) (2022-03-14)
+
+
+### Features
+
+* amqplib instrumentation ([#892](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/892)) ([f6c16b6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f6c16b6e03f0984af79131e2607b6095350d796c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.27.0 to ^0.28.0
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.29.0 to ^0.30.0
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.5.1 to ^0.6.0
+    * @opentelemetry/instrumentation-winston bumped from ^0.27.2 to ^0.27.3
+
 ### [0.27.3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.27.2...auto-instrumentations-node-v0.27.3) (2022-02-06)
 
 
