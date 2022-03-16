@@ -31,6 +31,7 @@ export interface NormalizedRequest {
 export interface NormalizedResponse {
   data: any;
   request: NormalizedRequest;
+  requestId: string;
 }
 
 export interface AwsSdkRequestHookInformation {

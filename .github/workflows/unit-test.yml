@@ -16,6 +16,7 @@ jobs:
               --ignore @opentelemetry/instrumentation-aws-sdk
               --ignore @opentelemetry/instrumentation-pino
               --ignore @opentelemetry/instrumentation-tedious
+              --ignore @opentelemetry/instrumentation-amqplib
           - node: "10"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-pino
@@ -81,6 +82,13 @@ jobs:
         image: bitnami/cassandra:3
         ports:
         - 9042:9042
+      rabbitmq:
+        image: rabbitmq:3
+        ports:
+        - 22221:5672
+        env:
+          RABBITMQ_DEFAULT_USER: username
+          RABBITMQ_DEFAULT_PASS: password
     env:
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
@@ -110,10 +118,10 @@ jobs:
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
       - name: Cache Dependencies
@@ -160,10 +168,10 @@ jobs:
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
       - name: Cache Dependencies

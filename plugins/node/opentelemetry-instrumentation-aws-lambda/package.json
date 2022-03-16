@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-lambda",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "description": "OpenTelemetry AWS Lambda automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,11 +11,11 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-aws-lambda --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-aws-lambda --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc -p ."
+    "compile": "tsc -p ."
   },
   "keywords": [
     "aws-lambda",
@@ -51,7 +51,6 @@
     "@opentelemetry/sdk-trace-node": "1.0.1",
     "@types/mocha": "7.0.2",
     "@types/node": "16.11.21",
-    "colors": "1.4.0",
     "gts": "3.1.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",

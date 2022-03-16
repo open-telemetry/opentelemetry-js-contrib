@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.29.0...instrumentation-aws-lambda-v0.30.0) (2022-03-14)
+
+
+### Features
+
+* support baggage propagation in aws lambda custom context extraction ([#843](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/843)) ([da792fe](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/da792fe3c629354cf9e8faeca48c17e73dffc6be))
+
 ## [0.29.0](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.28.1...instrumentation-aws-lambda-v0.29.0) (2022-02-06)
 
 

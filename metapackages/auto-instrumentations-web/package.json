@@ -17,11 +17,10 @@
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/auto-instrumentations-web --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/auto-instrumentations-web --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "test:browser": "nyc karma start --single-run",
-    "version": "node ../../scripts/version-update.js",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "bugs": {
@@ -38,7 +37,6 @@
     "@types/sinon": "10.0.2",
     "@types/webpack-env": "1.16.2",
     "babel-loader": "8.2.2",
-    "colors": "1.4.0",
     "gts": "3.1.0",
     "istanbul-instrumenter-loader": "3.0.1",
     "karma": "6.3.16",
