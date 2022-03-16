@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.27.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.27.2...instrumentation-winston-v0.27.3) (2022-03-14)
+
+
+### Bug Fixes
+
+* avoid leaking winston types ([#932](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/932)) ([31c4886](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/31c4886e168c24496a2c60721eb0d9e3b8732d27))
+
 ### [0.27.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.27.1...instrumentation-winston-v0.27.2) (2022-03-02)
 
 
