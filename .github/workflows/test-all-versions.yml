@@ -22,6 +22,7 @@ jobs:
               --ignore @opentelemetry/instrumentation-aws-sdk
               --ignore @opentelemetry/instrumentation-pino
               --ignore @opentelemetry/instrumentation-tedious
+              --ignore @opentelemetry/instrumentation-amqplib
           - node: "10"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-pino
