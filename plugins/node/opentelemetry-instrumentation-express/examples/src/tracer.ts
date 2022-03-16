@@ -47,7 +47,7 @@ export const setupTracing = (serviceName: string) => {
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
 
-  return opentelemetry.trace.getTracer('express-example'); // REMARK: should this use serviceName?
+  return opentelemetry.trace.getTracer(serviceName);
 };
 
 type FilterFunction = (spanName: string, spanKind: SpanKind, attributes: SpanAttributes) => boolean;
