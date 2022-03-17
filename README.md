@@ -1,7 +1,7 @@
 ---
 <p align="center">
   <strong>
-    <a href="https://github.com/open-telemetry/opentelemetry-js/blob/main/getting-started/README.md">Getting Started<a/>
+    <a href="https://opentelemetry.io/docs/js/getting_started">Getting Started<a/>
     &nbsp;&nbsp;&bull;&nbsp;&nbsp;
     <a href="https://open-telemetry.github.io/opentelemetry-js">API Documentation<a/>
   </strong>

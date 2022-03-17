@@ -11,7 +11,7 @@ that is already instrumented using OpenCensus.
 If both sides of gRPC communication are using OpenTelemetry instrumentation then
 the `propagator-grpc-census-binary` propagator isn't required. Context will be
 propagated using the `traceparent` header (thanks to the
-[HttpTraceContextPropagator](https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-core/src/trace/HttpTraceContextPropagator.ts)
+[HttpTraceContextPropagator](https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-core/src/trace/W3CTraceContextPropagator.ts)
 propagator from opentelemetry-core). If there is a mix of OpenCensus and OpenTelemetry
 instrumentation then the `propagator-grpc-census-binary` propagator allows OpenTelemetry
 to propagate context through the `grpc-trace-bin` binary header.
@@ -124,7 +124,7 @@ See [combination4](./combination4.md) for example output
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-node-sdk>
+- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node-sdk>
 
 ## LICENSE
 
