@@ -5,11 +5,11 @@ This example shows how to use 2 popular graphql servers
 - [Apollo GraphQL](https://www.npmjs.com/package/apollo-server)
 - [GraphQL HTTP Server Middleware](https://www.npmjs.com/package/express-graphql)
 
-and [@opentelemetry/instrumentation-graphql](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-instrumentation-graphql) to instrument a simple Node.js application.
+and [@opentelemetry/instrumentation-graphql](https://www.npmjs.com/package/@opentelemetry/instrumentation-graphql) to instrument a simple Node.js application.
 
 This instrumentation should work with any graphql server as it instruments graphql directly.
 
-This example will export spans data simultaneously using [Exporter Collector](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-exporter-collector).
+This example will export spans data simultaneously using [@opentelemetry/exporter-trace-otlp-http](https://www.npmjs.com/package/@opentelemetry/exporter-trace-otlp-http).
 
 ## Installation
 
