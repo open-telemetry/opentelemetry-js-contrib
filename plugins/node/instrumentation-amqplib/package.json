@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-amqplib",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "description": "OpenTelemetry automatic instrumentation for the `amqplib` package",
   "keywords": [
     "amqplib",
@@ -32,7 +32,7 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope $(npm pkg get name) --include-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-amqplib --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
