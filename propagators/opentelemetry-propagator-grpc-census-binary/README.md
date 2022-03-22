@@ -1,8 +1,6 @@
 # OpenTelemetry Propagator gRPC Census
 
 [![NPM Published Version][npm-img]][npm-url]
-[![dependencies][dependencies-image]][dependencies-url]
-[![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
 OpenTelemetry gRPC Census propagator provides gRPC header propagation for systems that use the OpenCensus 'grpc-trace-bin' binary header format. This allows for context propagation when either:
@@ -10,7 +8,7 @@ OpenTelemetry gRPC Census propagator provides gRPC header propagation for system
 * incoming gRPC calls come from services already instrumented using OpenCensus
 * outgoing gRPC calls go to services already instrumented using OpenCensus
 
-This propagator works in conjunction with the OpenTelemetry [gRPC plugin](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-plugin-grpc).
+This propagator works in conjunction with the OpenTelemetry [gRPC plugin](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/exporter-trace-otlp-grpc).
 
 Example of usage:
 
@@ -56,9 +54,5 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[dependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=propagators%2Fopentelemetry-propagator-grpc-census-binary
-[dependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=propagators%2Fopentelemetry-propagator-grpc-census-binary
-[devDependencies-image]: https://status.david-dm.org/gh/open-telemetry/opentelemetry-js-contrib.svg?path=propagators%2Fopentelemetry-propagator-grpc-census-binary&type=dev
-[devDependencies-url]: https://david-dm.org/open-telemetry/opentelemetry-js-contrib?path=propagators%2Fopentelemetry-propagator-grpc-census-binary&type=dev
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/propagator-grpc-census-binary
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fpropagator-grpc-census-binary.svg

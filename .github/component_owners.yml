@@ -5,6 +5,8 @@ components:
   detectors/node/opentelemetry-resource-detector-aws:
     - NathanielRN
     - willarmiros
+  detectors/node/opentelemetry-resource-detector-docker:
+    - abhee11
   metapackages/auto-instrumentations-node:
     - obecny
   metapackages/auto-instrumentations-web:

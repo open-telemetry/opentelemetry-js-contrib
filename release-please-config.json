@@ -9,6 +9,7 @@
     "detectors/node/opentelemetry-resource-detector-aws": {},
     "detectors/node/opentelemetry-resource-detector-gcp": {},
     "detectors/node/opentelemetry-resource-detector-github": {},
+    "detectors/node/opentelemetry-resource-detector-docker": {},
     "metapackages/auto-instrumentations-node": {},
     "metapackages/auto-instrumentations-web": {},
     "packages/opentelemetry-browser-extension-autoinjection": {},
