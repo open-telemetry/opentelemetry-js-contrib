@@ -4,7 +4,6 @@
 
 For instance, examples of using `express` instrumentation have moved from this directory to [plugins/node/opentelemetry-instrumentation-express](https://github.com/open-telemetry/opentelemetry-js/tree/main/plugins/node/opentelemetry-instrumentation-express).
 
-
 ## Instructions for Migrating an Example
 
 * [ ] Move the files
