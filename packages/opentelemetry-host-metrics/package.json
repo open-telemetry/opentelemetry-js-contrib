@@ -43,10 +43,10 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.2"
+    "@opentelemetry/api": "^1.1.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/api": "1.1.1",
     "@types/mocha": "8.2.3",
     "@types/node": "16.11.21",
     "@types/sinon": "10.0.2",
@@ -60,7 +60,7 @@
   },
   "dependencies": {
     "@opentelemetry/api-metrics": "^0.27.0",
-    "@opentelemetry/core": "^1.0.0",
+    "@opentelemetry/core": "^1.1.0",
     "@opentelemetry/sdk-metrics-base": "^0.27.0",
     "systeminformation": "^5.0.0"
   }

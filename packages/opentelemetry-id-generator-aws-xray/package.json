@@ -51,10 +51,10 @@
     "README.md"
   ],
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.2"
+    "@opentelemetry/api": "^1.1.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/api": "1.1.1",
     "@types/mocha": "8.2.3",
     "@types/node": "16.11.21",
     "@types/sinon": "10.0.2",
@@ -77,6 +77,6 @@
     "webpack": "4.46.0"
   },
   "dependencies": {
-    "@opentelemetry/core": "^1.0.0"
+    "@opentelemetry/core": "^1.1.0"
   }
 }
