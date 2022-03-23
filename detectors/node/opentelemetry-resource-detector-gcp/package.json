@@ -59,8 +59,8 @@
     "@opentelemetry/api": "^1.1.0"
   },
   "dependencies": {
-    "@opentelemetry/resources": "^1.0.0",
-    "@opentelemetry/semantic-conventions": "^1.1.0",
+    "@opentelemetry/resources": "^1.1.1",
+    "@opentelemetry/semantic-conventions": "^1.1.1",
     "gcp-metadata": "^4.1.4",
     "semver": "7.3.5"
   }

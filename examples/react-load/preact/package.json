@@ -37,11 +37,11 @@
     "sirv-cli": "1.0.3"
   },
   "dependencies": {
-    "@opentelemetry/context-zone": "^0.25.0",
+    "@opentelemetry/context-zone": "^1.1.1",
     "@opentelemetry/exporter-collector": "^0.25.0",
     "@opentelemetry/plugin-react-load": "^0.23.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0",
-    "@opentelemetry/sdk-trace-web": "^0.25.0",
+    "@opentelemetry/sdk-trace-base": "^1.1.1",
+    "@opentelemetry/sdk-trace-web": "^1.1.1",
     "preact": "^10.3.2",
     "preact-render-to-string": "^5.1.4",
     "preact-router": "^3.2.1"

@@ -108,7 +108,7 @@ async function getCorePackages() {
     return Promise.all(
         JSON.parse(coreLernaList)
             .map(async p => {
-                const nextVersion = await exec(`npm view ${p.name}@next version`);
+                const nextVersion = await exec(`npm view ${p.name}@latest version`);
                 return {
                     ...p,
                     nextVersion: nextVersion.trim(),

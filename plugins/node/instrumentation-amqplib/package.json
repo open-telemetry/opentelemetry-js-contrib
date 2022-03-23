@@ -46,9 +46,9 @@
     "@opentelemetry/api": "^1.0.1"
   },
   "dependencies": {
-    "@opentelemetry/core": "^1.0.0",
+    "@opentelemetry/core": "^1.1.1",
     "@opentelemetry/instrumentation": "^0.27.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.1.1",
     "@types/amqplib": "^0.5.17"
   },
   "devDependencies": {

@@ -60,7 +60,7 @@
     "@opentelemetry/api": "^1.1.0"
   },
   "dependencies": {
-    "@opentelemetry/resources": "^1.0.0",
-    "@opentelemetry/semantic-conventions": "^1.1.0"
+    "@opentelemetry/resources": "^1.1.1",
+    "@opentelemetry/semantic-conventions": "^1.1.1"
   }
 }

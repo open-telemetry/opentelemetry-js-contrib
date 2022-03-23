@@ -80,9 +80,9 @@
     "zone.js": "0.11.4"
   },
   "dependencies": {
-    "@opentelemetry/core": "^1.1.0",
+    "@opentelemetry/core": "^1.1.1",
     "@opentelemetry/instrumentation": "^0.27.0",
-    "@opentelemetry/sdk-trace-web": "^1.1.0"
+    "@opentelemetry/sdk-trace-web": "^1.1.1"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.1.0",

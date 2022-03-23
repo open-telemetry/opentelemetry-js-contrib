@@ -85,11 +85,11 @@
     "react": "^16.13.1 || ^17.0.0"
   },
   "dependencies": {
-    "@opentelemetry/context-zone": "^1.1.0",
-    "@opentelemetry/core": "^1.1.0",
-    "@opentelemetry/sdk-trace-base": "^1.1.0",
-    "@opentelemetry/sdk-trace-web": "^1.1.0",
-    "@opentelemetry/semantic-conventions": "^1.1.0",
+    "@opentelemetry/context-zone": "^1.1.1",
+    "@opentelemetry/core": "^1.1.1",
+    "@opentelemetry/sdk-trace-base": "^1.1.1",
+    "@opentelemetry/sdk-trace-web": "^1.1.1",
+    "@opentelemetry/semantic-conventions": "^1.1.1",
     "shimmer": "^1.2.1"
   }
 }
