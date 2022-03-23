@@ -35,7 +35,6 @@ Example tsconfig.json file:
   },
   "include": [
     "src/**/*.ts",
-    "test/**/*.ts"
   ]
 }
 ```
