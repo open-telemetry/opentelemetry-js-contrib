@@ -46,7 +46,7 @@
     "@opentelemetry/api": "^1.1.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.1.1",
+    "@opentelemetry/api": "1.1.0",
     "@types/mocha": "8.2.3",
     "@types/node": "16.11.21",
     "@types/sinon": "10.0.2",
