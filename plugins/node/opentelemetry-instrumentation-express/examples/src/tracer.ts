@@ -19,7 +19,7 @@ import { SemanticAttributes, SemanticResourceAttributes as ResourceAttributesSC 
 import { SpanAttributes } from "@opentelemetry/api/build/src/trace/attributes";
 
 const Exporter = (process.env.EXPORTER || '').toLowerCase().startsWith('z') ? ZipkinExporter : JaegerExporter;
-const { ExpressInstrumentation } = require('../../src');
+import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
 export const setupTracing = (serviceName: string) => {
