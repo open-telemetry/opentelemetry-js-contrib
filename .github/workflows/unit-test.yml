@@ -149,7 +149,7 @@ jobs:
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha' --nohoist='@opentelemetry/api'
+        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit tests
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
       - name: Report Coverage
