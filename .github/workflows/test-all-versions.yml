@@ -133,7 +133,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: Cache Dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             node_modules
