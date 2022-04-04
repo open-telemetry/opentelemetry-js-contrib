@@ -21,6 +21,12 @@ const appRoot = process.cwd();
 const packageJsonUrl = path.resolve(`${appRoot}/package.json`);
 const pjson = require(packageJsonUrl);
 
+const isExample = pjson.private && /-example$/.test(pjson.name);
+
+if (isExample) {
+  return console.log(`Skipping checking ${pjson.name} because it's an example`);
+}
+
 if (pjson.dependencies && pjson.dependencies['@opentelemetry/api']) {
   throw new Error(`Package ${pjson.name} depends on API but it should be a peer dependency`);
 }
