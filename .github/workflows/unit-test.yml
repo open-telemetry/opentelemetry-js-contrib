@@ -19,6 +19,7 @@ jobs:
               --ignore @opentelemetry/instrumentation-amqplib
           - node: "10"
             lerna-extra-args: >-
+              --ignore @opentelemetry/instrumentation-aws-sdk
               --ignore @opentelemetry/instrumentation-pino
     runs-on: ubuntu-latest
     services:
