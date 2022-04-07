@@ -98,7 +98,8 @@ describe('dns.lookup()', () => {
       });
     });
 
-    it('should export a valid span with error NOT_FOUND', done => {
+    it('should export a valid span with error NOT_FOUND', function (done) {
+      this.timeout(4000);
       const hostname = 'ᚕ';
       dns.lookup(hostname, (err, address, family) => {
         assert.ok(err);

@@ -111,7 +111,8 @@ describe('dns.promises.lookup()', () => {
       assertSpan(span, { addresses: [{ address, family }], hostname });
     });
 
-    it('should export a valid span with error NOT_FOUND', async () => {
+    it('should export a valid span with error NOT_FOUND', async function () {
+      this.timeout(4000);
       const hostname = 'ᚕ';
       try {
         await lookupPromise(hostname);
