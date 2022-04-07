@@ -166,6 +166,20 @@
     //    */
     //   // "autoinstallerName": "my-task"
     // }
+    {
+      "commandKind": "bulk",
+      "name": "prebuild",
+      "summary": "Run prebuild tasks",
+      "enableParallelism": true,
+      "ignoreMissingScript": true
+    },
+    {
+      "commandKind": "bulk",
+      "name": "test",
+      "summary": "Run unit tests",
+      "enableParallelism": true,
+      "ignoreMissingScript": true
+    }
   ],
 
   /**
