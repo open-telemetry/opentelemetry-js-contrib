@@ -457,5 +457,25 @@
     //   "projectFolder": "tools/my-toolchain",
     //   "reviewCategory": "tools"
     // }
+    // {
+    //   "packageName": "@opentelemetry/browser-extension-autoinjection",
+    //   "projectFolder": "packages/opentelemetry-browser-extension-autoinjection"
+    // }
+    {
+      "packageName": "@opentelemetry/host-metrics",
+      "projectFolder": "packages/opentelemetry-host-metrics"
+    },
+    {
+      "packageName": "@opentelemetry/id-generator-aws-xray",
+      "projectFolder": "packages/opentelemetry-id-generator-aws-xray"
+    },
+    {
+      "packageName": "@opentelemetry/propagation-utils",
+      "projectFolder": "packages/opentelemetry-propagation-utils"
+    },
+    {
+      "packageName": "@opentelemetry/contrib-test-utils",
+      "projectFolder": "packages/opentelemetry-test-utils"
+    },
   ]
 }
