@@ -12,12 +12,12 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-express --include-dependencies",
-    "prewatch": "npm run precompile",
+    "prebuild": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-express --include-dependencies",
+    "prewatch": "npm run prebuild",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "tsc -p .",
-    "compile:examples": "cd examples && npm run compile",
-    "prepare": "npm run compile",
+    "build": "tsc -p .",
+    "build:examples": "cd examples && npm run build",
+    "prepare": "npm run build",
     "watch": "tsc -w"
   },
   "keywords": [

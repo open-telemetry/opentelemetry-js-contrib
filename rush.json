@@ -62,7 +62,7 @@
      * The default value is false to avoid legacy compatibility issues.
      * It is strongly recommended to set strictPeerDependencies=true.
      */
-    "strictPeerDependencies": true,
+    // "strictPeerDependencies": true,
 
     /**
      * Configures the strategy used to select versions during installation.
@@ -76,7 +76,7 @@
      * After modifying this field, it's recommended to run "rush update --full" so that the package manager
      * will recalculate all version selections.
      */
-    // "resolutionStrategy": "fast",
+    "resolutionStrategy": "fewer-dependencies",
 
     /**
      * If true, then `rush install` will report an error if manual modifications
@@ -110,7 +110,7 @@
      *
      * This option is experimental. The default value is false.
      */
-    "useWorkspaces": true
+    // "useWorkspaces": true
   },
 
   /**
@@ -175,8 +175,8 @@
    * To remove these restrictions, you could set projectFolderMinDepth=1
    * and set projectFolderMaxDepth to a large number.
    */
-  // "projectFolderMinDepth": 2,
-  // "projectFolderMaxDepth": 3,
+  "projectFolderMinDepth": 2,
+  "projectFolderMaxDepth": 3,
 
   /**
    * Today the npmjs.com registry enforces fairly strict naming rules for packages, but in the early
@@ -477,5 +477,177 @@
       "packageName": "@opentelemetry/contrib-test-utils",
       "projectFolder": "packages/opentelemetry-test-utils"
     },
+    {
+      "packageName": "@opentelemetry/resource-detector-alibaba-cloud",
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-alibaba-cloud"
+    },
+    {
+      "packageName": "@opentelemetry/resource-detector-aws",
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-aws"
+    },
+    {
+      "packageName": "@opentelemetry/resource-detector-docker",
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-docker"
+    },
+    {
+      "packageName": "@opentelemetry/resource-detector-gcp",
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-gcp"
+    },
+    {
+      "packageName": "@opentelemetry/resource-detector-github",
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-github"
+    },
+    {
+      "packageName": "@opentelemetry/auto-instrumentations-node",
+      "projectFolder": "metapackages/auto-instrumentations-node"
+    },
+    {
+      "packageName": "@opentelemetry/auto-instrumentations-web",
+      "projectFolder": "metapackages/auto-instrumentations-web"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-amqplib",
+      "projectFolder": "plugins/node/instrumentation-amqplib"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-fs",
+      "projectFolder": "plugins/node/instrumentation-fs"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-tedious",
+      "projectFolder": "plugins/node/instrumentation-tedious"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-aws-lambda",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-aws-lambda"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-aws-sdk",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-aws-sdk"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-bunyan",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-bunyan"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-cassandra-driver",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-cassandra"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-connect",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-connect"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-dns",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-dns"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-express",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-express"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-fastify",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-fastify"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-generic-pool",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-generic-pool"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-graphql",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-graphql"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-hapi",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-hapi"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-ioredis",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-ioredis"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-knex",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-knex"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-koa",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-koa"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-memcached",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-memcached"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-mongodb",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-mongodb"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-mysql",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-mysql"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-mysql2",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-mysql2"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-nestjs-core",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-nestjs-core"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-net",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-net"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-pg",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-pg"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-pino",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-pino"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-redis",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-redis"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-restify",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-restify"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-router",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-router"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-winston",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-winston"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-document-load",
+      "projectFolder": "plugins/web/opentelemetry-instrumentation-document-load"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-long-task",
+      "projectFolder": "plugins/web/opentelemetry-instrumentation-long-task"
+    },
+    {
+      "packageName": "@opentelemetry/instrumentation-user-interaction",
+      "projectFolder": "plugins/web/opentelemetry-instrumentation-user-interaction"
+    },
+    {
+      "packageName": "@opentelemetry/plugin-react-load",
+      "projectFolder": "plugins/web/opentelemetry-plugin-react-load"
+    },
+    {
+      "packageName": "@opentelemetry/propagator-aws-xray",
+      "projectFolder": "propagators/opentelemetry-propagator-aws-xray"
+    },
+    {
+      "packageName": "@opentelemetry/propagator-grpc-census-binary",
+      "projectFolder": "propagators/opentelemetry-propagator-grpc-census-binary"
+    },
+    {
+      "packageName": "@opentelemetry/propagator-ot-trace",
+      "projectFolder": "propagators/opentelemetry-propagator-ot-trace"
+    }
   ]
 }

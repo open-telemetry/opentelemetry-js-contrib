@@ -17,12 +17,12 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "build": "tsc --build tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/auto-instrumentations-web --include-dependencies",
-    "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prebuild": "tsc --version && lerna run version:update --scope @opentelemetry/auto-instrumentations-web --include-dependencies",
+    "prewatch": "npm run prebuild",
+    "prepare": "npm run build",
     "test:browser": "nyc karma start --single-run",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },

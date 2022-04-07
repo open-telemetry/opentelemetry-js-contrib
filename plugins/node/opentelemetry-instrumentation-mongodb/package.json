@@ -14,11 +14,11 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-mongodb --include-dependencies",
-    "prewatch": "npm run precompile",
+    "prebuild": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-mongodb --include-dependencies",
+    "prewatch": "npm run prebuild",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "tsc -p .",
-    "prepare": "npm run compile",
+    "build": "tsc -p .",
+    "prepare": "npm run build",
     "watch": "tsc -w"
   },
   "keywords": [
@@ -68,6 +68,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.29.2",
     "@opentelemetry/semantic-conventions": "^1.0.0",
+    "@types/bson": "4.0.5",
     "@types/mongodb": "3.6.20"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb#readme"

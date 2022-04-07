@@ -11,11 +11,11 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-fs --include-dependencies",
-    "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prebuild": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-fs --include-dependencies",
+    "prewatch": "npm run prebuild",
+    "prepare": "npm run build",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc -p ."
+    "build": "npm run version:update && tsc -p ."
   },
   "keywords": [
     "fs",

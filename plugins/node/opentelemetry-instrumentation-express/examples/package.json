@@ -9,7 +9,7 @@
     "zipkin:client": "cross-env EXPORTER=zipkin ts-node src/client.ts",
     "jaeger:server": "cross-env EXPORTER=jaeger ts-node src/server.ts",
     "jaeger:client": "cross-env EXPORTER=jaeger ts-node src/client.ts",
-    "compile": "tsc -p ."
+    "build": "tsc -p ."
   },
   "repository": {
     "type": "git",
