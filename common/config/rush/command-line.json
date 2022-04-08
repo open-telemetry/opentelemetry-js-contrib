@@ -168,6 +168,13 @@
     // }
     {
       "commandKind": "bulk",
+      "name": "build:examples",
+      "summary": "Build examples",
+      "enableParallelism": true,
+      "ignoreMissingScript": true
+    },
+    {
+      "commandKind": "bulk",
       "name": "prebuild",
       "summary": "Run prebuild tasks",
       "enableParallelism": true,

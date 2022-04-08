@@ -152,17 +152,16 @@ jobs:
             propagators/*/node_modules
             propagators/*/package-lock.json
           key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
-      - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == '16'
-        run: npm config set legacy-peer-deps=true
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
-      - name: Unit tests
-        run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
+        run: node common/scripts/install-run-rush.js install
+      - name: Build all packages
+        run: node common/scripts/install-run-rush.js rebuild
+      - name: Unit test all packages
+        run: node common/scripts/install-run-rush.js test
       - name: Build examples
-        run: npm run compile:examples
+        run: node common/scripts/install-run-rush.js build:examples
       - name: Report Coverage
         if: matrix.node == '14'
         uses: codecov/codecov-action@v3
@@ -207,9 +206,11 @@ jobs:
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci
-      - name: Unit tests
-        run: npm run test:browser
+        run: node common/scripts/install-run-rush.js install
+      - name: Build all packages
+        run: node common/scripts/install-run-rush.js rebuild
+      - name: Unit test all packages
+        run: node common/scripts/install-run-rush.js test
       - name: Report Coverage
         uses: codecov/codecov-action@v3
         with:
