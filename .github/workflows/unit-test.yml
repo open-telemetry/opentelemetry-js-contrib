@@ -155,7 +155,7 @@ jobs:
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
       - name: Report Coverage
         if: matrix.node == '14'
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           verbose: true
 
@@ -201,6 +201,6 @@ jobs:
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           verbose: true
