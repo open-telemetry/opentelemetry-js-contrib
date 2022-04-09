@@ -156,6 +156,8 @@ jobs:
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
         run: node common/scripts/install-run-rush.js install
+      - name: Prepare build
+        run: node common/scripts/install-run-rush.js prebuild
       - name: Build all packages
         run: node common/scripts/install-run-rush.js rebuild
       - name: Unit test all packages
