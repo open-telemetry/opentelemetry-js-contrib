@@ -10,7 +10,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "prebuild": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-user-interaction --include-dependencies",
+    "prebuild": "tsc --version && node ../../../scripts/version-update.js",
     "prewatch": "npm run prebuild",
     "version:update": "node ../../../scripts/version-update.js",
     "build": "npm run version:update && tsc --build tsconfig.json tsconfig.esm.json",

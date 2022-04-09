@@ -11,7 +11,7 @@
     "build": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prebuild": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-docker --include-dependencies",
+    "prebuild": "tsc --version && node ../../../scripts/version-update.js",
     "prewatch": "npm run prebuild",
     "prepare": "npm run build",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",

@@ -10,7 +10,7 @@
     "build:mv3": "npx webpack --mode=production --env MV=3",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "prebuild": "tsc --version && lerna run version:update --scope @opentelemetry/browser-extension-autoinjection --include-dependencies",
+    "prebuild": "tsc --version && node ../../../scripts/version-update.js",
     "prewatch": "npm run prebuild",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
