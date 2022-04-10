@@ -46,7 +46,9 @@ export class PinoInstrumentation extends InstrumentationBase {
           const instrumentation = this;
           const patchedPino = Object.assign((...args: unknown[]) => {
             if (args.length == 0) {
-              return pinoModule({ mixin: instrumentation._getMixinFunction() });
+              return pinoModule({
+                mixin: instrumentation._getMixinFunction(),
+              });
             }
 
             if (args.length == 1) {
@@ -84,7 +86,7 @@ export class PinoInstrumentation extends InstrumentationBase {
     this._config = config;
   }
 
-  private _callHook(span: Span, record: Record<string, string>) {
+  private _callHook(span: Span, record: Record<string, string>, level: number) {
     const hook = this.getConfig().logHook;
 
     if (!hook) {
@@ -92,7 +94,7 @@ export class PinoInstrumentation extends InstrumentationBase {
     }
 
     safeExecuteInTheMiddle(
-      () => hook(span, record),
+      () => hook(span, record, level),
       err => {
         if (err) {
           diag.error('pino instrumentation: error calling logHook', err);
@@ -104,7 +106,7 @@ export class PinoInstrumentation extends InstrumentationBase {
 
   private _getMixinFunction() {
     const instrumentation = this;
-    return function otelMixin() {
+    return function otelMixin(_context: object, level: number) {
       if (!instrumentation.isEnabled()) {
         return {};
       }
@@ -127,7 +129,7 @@ export class PinoInstrumentation extends InstrumentationBase {
         trace_flags: `0${spanContext.traceFlags.toString(16)}`,
       };
 
-      instrumentation._callHook(span, record);
+      instrumentation._callHook(span, record, level);
 
       return record;
     };
@@ -146,8 +148,11 @@ export class PinoInstrumentation extends InstrumentationBase {
     const originalMixin = options.mixin;
     const otelMixin = this._getMixinFunction();
 
-    options.mixin = () => {
-      return Object.assign(otelMixin(), originalMixin());
+    options.mixin = (context: object, level: number) => {
+      return Object.assign(
+        otelMixin(context, level),
+        originalMixin(context, level)
+      );
     };
 
     return options;
