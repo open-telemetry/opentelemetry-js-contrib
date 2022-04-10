@@ -14,7 +14,7 @@
     "prewatch": "npm run prebuild",
     "prepare": "npm run build",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts' 2>&1",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js"
   },
