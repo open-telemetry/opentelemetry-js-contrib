@@ -22,7 +22,7 @@ import type { pino } from 'pino';
 export type LogHookFunction = (
   span: Span,
   record: Record<string, any>,
-  level?: number
+  level?: number // Available in pino >= 7.9.0
 ) => void;
 
 export interface PinoInstrumentationConfig extends InstrumentationConfig {

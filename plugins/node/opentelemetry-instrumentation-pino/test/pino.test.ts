@@ -115,7 +115,7 @@ describe('PinoInstrumentation', () => {
         enabled: true,
         logHook: (_span, record, level) => {
           record['resource.service.name'] = 'test-service';
-          if (semver.compare(pino.version, '7.9.0') >= 0) {
+          if (semver.satisfies(pino.version, '>= 7.9.0')) {
             assert.strictEqual(level, 30);
           }
         },
