@@ -15,6 +15,7 @@
  */
 import 'mocha';
 import * as expect from 'expect';
+import { shouldTest } from './utils';
 import {
   censoredUrl,
   rabbitMqUrl,
@@ -34,6 +35,12 @@ import * as amqp from 'amqplib';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 describe('amqplib instrumentation connection', () => {
+  before(function () {
+    if (!shouldTest) {
+      this.skip();
+    }
+  });
+
   describe('connect with url object', () => {
     it('should extract connection attributes form url options', async function () {
       const testName = this.test!.title;
