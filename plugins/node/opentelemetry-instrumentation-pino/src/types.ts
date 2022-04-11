@@ -19,7 +19,11 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type { pino } from 'pino';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type LogHookFunction = (span: Span, record: Record<string, any>) => void;
+export type LogHookFunction = (
+  span: Span,
+  record: Record<string, any>,
+  level?: number // Available in pino >= 7.9.0
+) => void;
 
 export interface PinoInstrumentationConfig extends InstrumentationConfig {
   logHook?: LogHookFunction;
