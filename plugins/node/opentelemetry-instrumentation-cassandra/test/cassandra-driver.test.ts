@@ -165,7 +165,7 @@ describe('CassandraDriverInstrumentation', () => {
 
   after(async function () {
     this.timeout(60000);
-    await client.shutdown();
+    await client?.shutdown?.();
     if (testCassandraLocally) {
       testUtils.cleanUpDocker('cassandra');
     }
