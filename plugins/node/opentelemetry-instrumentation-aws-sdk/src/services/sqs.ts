@@ -133,7 +133,7 @@ export class SqsServiceExtension implements ServiceExtension {
         // TODO: How should this be handled?
         break;
 
-      case 'ReceiveMessage':
+      case 'ReceiveMessage': {
         const messages: SQS.Message[] = response?.data?.Messages;
         if (messages) {
           const queueUrl = this.extractQueueUrl(response.request.commandInput);
@@ -175,6 +175,7 @@ export class SqsServiceExtension implements ServiceExtension {
           );
         }
         break;
+      }
     }
   };
 
