@@ -33,8 +33,6 @@ import { TediousInstrumentation } from '../src';
 import makeApi from './api';
 import type { Connection, ConnectionConfig } from 'tedious';
 
-process.env.RUN_MSSQL_TESTS = 'true';
-
 const port = Number(process.env.MSSQL_PORT) || 1433;
 const database = process.env.MSSQL_DATABASE || 'master';
 const host = process.env.MSSQL_HOST || '127.0.0.1';
