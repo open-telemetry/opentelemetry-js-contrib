@@ -27,7 +27,7 @@ registerInstrumentations({
   instrumentations: [
     new PinoInstrumentation({
       // Optional hook to insert additional context to log object.
-      logHook: (span, record) => {
+      logHook: (span, record, level) => {
         record['resource.service.name'] = provider.resource.attributes['service.name'];
       },
     }),
