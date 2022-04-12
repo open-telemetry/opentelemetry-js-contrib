@@ -1,5 +1,4 @@
 
-
 ---
 <p align="center">
   <strong>
@@ -79,8 +78,9 @@ We'd love your help! Use tags [up-for-grabs][up-for-grabs-issues] and [good firs
 
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+* For more information on OpenTelemetry, visit [OpenTelemetry.io](https://opentelemetry.io/)
+* For help or feedback on this project, join us in [GitHub Discussions][discussions-url] or in [Slack](https://cloud-native.slack.com/archives/C01NL1GRPQR)
+* For more 3rd party components for JS as well as other languages, check [OpenTelemetry Registry](https://opentelemetry.io/registry/)
 
 ## License
 
