@@ -20,7 +20,7 @@ const webpackNodePolyfills = require('./webpack.node-polyfills.js');
 module.exports = {
   mode: 'development',
   target: 'web',
-  output: { filename: 'bundle.js' },
+  name: 'bundle',
   resolve: { extensions: ['.ts', '.js', '.tsx'] },
   devtool: 'inline-source-map',
   module: {
@@ -31,7 +31,7 @@ module.exports = {
         exclude: /(node_modules|\.test\.[tj]sx?$)/,
         test: /\.ts$/,
         use: {
-          loader: 'istanbul-instrumenter-loader',
+          loader: '@jsdevtools/coverage-istanbul-loader',
           options: { esModules: true }
         }
       },
