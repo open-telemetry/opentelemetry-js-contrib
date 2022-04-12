@@ -77,7 +77,7 @@
     "@opentelemetry/semantic-conventions": "1.0.1",
     "change-case": "4.1.2",
     "json5": "2.2.0",
-    "react": "17.0.2",
-    "react-dom": "17.0.2"
+    "react": "18.0.0",
+    "react-dom": "18.0.0"
   }
 }
