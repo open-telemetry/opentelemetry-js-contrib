@@ -1,4 +1,5 @@
 
+
 ---
 <p align="center">
   <strong>
@@ -50,13 +51,9 @@ This project includes:
 * [Context Propagators](./propagators),
 * [Resource Detectors](./detectors).
 
-### Instrumentations
+**Instrumentations**: OpenTelemetry can collect tracing data automatically using instrumentations. Vendors/Users can also create and use their own.
 
-OpenTelemetry can collect tracing data automatically using instrumentations. Vendors/Users can also create and use their own.
-
-### Resource Detectors
-
-OpenTelemetry can collect resource attributes of the entity that producing telemetry. For example, a process producing telemetry that is running in a container on Kubernetes has a Pod name, it is in a namespace and possibly is part of a Deployment which also has a name. All three of these attributes can be included in the `Resource`.
+**Resource Detectors**: OpenTelemetry can collect resource attributes of the entity that producing telemetry. For example, a process producing telemetry that is running in a container on Kubernetes has a Pod name, it is in a namespace and possibly is part of a Deployment which also has a name. All three of these attributes can be included in the `Resource`.
 
 ## Supported Runtimes
 
@@ -82,8 +79,8 @@ We'd love your help! Use tags [up-for-grabs][up-for-grabs-issues] and [good firs
 
 ## Useful links
 
-- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 
