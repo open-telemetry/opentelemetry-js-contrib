@@ -18,7 +18,7 @@ module.exports = {
   listenAddress: 'localhost',
   hostname: 'localhost',
   browsers: ['ChromeHeadless'],
-  frameworks: ['mocha'],
+  frameworks: ['mocha', 'webpack'],
   coverageIstanbulReporter: {
     reports: ['json'],
     dir: '.nyc_output',
