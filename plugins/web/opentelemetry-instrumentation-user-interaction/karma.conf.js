@@ -14,12 +14,31 @@
  * limitations under the License.
  */
 
+const webpack = require('webpack');
+
 const karmaWebpackConfig = require('../../../karma.webpack');
 const karmaBaseConfig = require('../../../karma.base');
 
 module.exports = (config) => {
+  {
+    const plugins = karmaWebpackConfig.plugins = [];
+    plugins.push(new webpack.ProvidePlugin({
+      process: 'process/browser',
+    }));
+  }
+
+  {
+    const plugins = karmaBaseConfig.plugins = [];
+    const toAdd = Object.keys(require('./package.json').devDependencies)
+      .filter((packageName) => packageName.startsWith('karma-'))
+      .map((packageName) => require(packageName));
+    plugins.push(
+      ...toAdd
+    );
+  }
+
   config.set(Object.assign({}, karmaBaseConfig, {
     frameworks: karmaBaseConfig.frameworks.concat(['jquery-1.8.3']),
-    webpack: karmaWebpackConfig,
+    webpack: karmaWebpackConfig
   }))
 };
