@@ -24,6 +24,7 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { Writable } from 'stream';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
+import * as semver from 'semver';
 import type { pino as Pino } from 'pino';
 
 import { PinoInstrumentation } from '../src';
@@ -112,8 +113,11 @@ describe('PinoInstrumentation', () => {
       const span = tracer.startSpan('abc');
       instrumentation.setConfig({
         enabled: true,
-        logHook: (_span, record) => {
+        logHook: (_span, record, level) => {
           record['resource.service.name'] = 'test-service';
+          if (semver.satisfies(pino.version, '>= 7.9.0')) {
+            assert.strictEqual(level, 30);
+          }
         },
       });
       context.with(trace.setSpan(context.active(), span), () => {
