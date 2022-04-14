@@ -463,191 +463,238 @@
     // }
     {
       "packageName": "@opentelemetry/host-metrics",
-      "projectFolder": "packages/opentelemetry-host-metrics"
+      "projectFolder": "packages/opentelemetry-host-metrics",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/id-generator-aws-xray",
-      "projectFolder": "packages/opentelemetry-id-generator-aws-xray"
+      "projectFolder": "packages/opentelemetry-id-generator-aws-xray",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/propagation-utils",
-      "projectFolder": "packages/opentelemetry-propagation-utils"
+      "projectFolder": "packages/opentelemetry-propagation-utils",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/contrib-test-utils",
-      "projectFolder": "packages/opentelemetry-test-utils"
+      "projectFolder": "packages/opentelemetry-test-utils",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/resource-detector-alibaba-cloud",
-      "projectFolder": "detectors/node/opentelemetry-resource-detector-alibaba-cloud"
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-alibaba-cloud",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/resource-detector-aws",
-      "projectFolder": "detectors/node/opentelemetry-resource-detector-aws"
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-aws",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/resource-detector-docker",
-      "projectFolder": "detectors/node/opentelemetry-resource-detector-docker"
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-docker",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/resource-detector-gcp",
-      "projectFolder": "detectors/node/opentelemetry-resource-detector-gcp"
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-gcp",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/resource-detector-github",
-      "projectFolder": "detectors/node/opentelemetry-resource-detector-github"
+      "projectFolder": "detectors/node/opentelemetry-resource-detector-github",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/auto-instrumentations-node",
-      "projectFolder": "metapackages/auto-instrumentations-node"
+      "projectFolder": "metapackages/auto-instrumentations-node",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/auto-instrumentations-web",
-      "projectFolder": "metapackages/auto-instrumentations-web"
+      "projectFolder": "metapackages/auto-instrumentations-web",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-amqplib",
-      "projectFolder": "plugins/node/instrumentation-amqplib"
+      "projectFolder": "plugins/node/instrumentation-amqplib",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-fs",
-      "projectFolder": "plugins/node/instrumentation-fs"
+      "projectFolder": "plugins/node/instrumentation-fs",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-tedious",
-      "projectFolder": "plugins/node/instrumentation-tedious"
+      "projectFolder": "plugins/node/instrumentation-tedious",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-aws-lambda",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-aws-lambda"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-aws-lambda",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-aws-sdk",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-aws-sdk"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-aws-sdk",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-bunyan",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-bunyan"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-bunyan",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-cassandra-driver",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-cassandra"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-cassandra",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-connect",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-connect"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-connect",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-dns",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-dns"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-dns",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-express",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-express"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-express",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-fastify",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-fastify"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-fastify",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-generic-pool",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-generic-pool"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-generic-pool",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-graphql",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-graphql"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-graphql",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-hapi",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-hapi"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-hapi",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-ioredis",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-ioredis"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-ioredis",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-knex",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-knex"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-knex",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-koa",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-koa"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-koa",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-memcached",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-memcached"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-memcached",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-mongodb",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-mongodb"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-mongodb",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-mysql",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-mysql"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-mysql",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-mysql2",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-mysql2"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-mysql2",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-nestjs-core",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-nestjs-core"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-nestjs-core",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-net",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-net"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-net",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-pg",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-pg"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-pg",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-pino",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-pino"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-pino",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-redis",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-redis"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-redis",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-restify",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-restify"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-restify",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-router",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-router"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-router",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-winston",
-      "projectFolder": "plugins/node/opentelemetry-instrumentation-winston"
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-winston",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-document-load",
-      "projectFolder": "plugins/web/opentelemetry-instrumentation-document-load"
+      "projectFolder": "plugins/web/opentelemetry-instrumentation-document-load",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-long-task",
-      "projectFolder": "plugins/web/opentelemetry-instrumentation-long-task"
+      "projectFolder": "plugins/web/opentelemetry-instrumentation-long-task",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/instrumentation-user-interaction",
-      "projectFolder": "plugins/web/opentelemetry-instrumentation-user-interaction"
+      "projectFolder": "plugins/web/opentelemetry-instrumentation-user-interaction",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/plugin-react-load",
-      "projectFolder": "plugins/web/opentelemetry-plugin-react-load"
+      "projectFolder": "plugins/web/opentelemetry-plugin-react-load",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/propagator-aws-xray",
-      "projectFolder": "propagators/opentelemetry-propagator-aws-xray"
+      "projectFolder": "propagators/opentelemetry-propagator-aws-xray",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/propagator-grpc-census-binary",
-      "projectFolder": "propagators/opentelemetry-propagator-grpc-census-binary"
+      "projectFolder": "propagators/opentelemetry-propagator-grpc-census-binary",
+      "versionPolicyName": "experimentalPlugin"
     },
     {
       "packageName": "@opentelemetry/propagator-ot-trace",
-      "projectFolder": "propagators/opentelemetry-propagator-ot-trace"
+      "projectFolder": "propagators/opentelemetry-propagator-ot-trace",
+      "versionPolicyName": "experimentalPlugin"
     }
   ]
 }
