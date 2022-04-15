@@ -56,20 +56,12 @@ describe('ExpressInstrumentation', () => {
   describe('Instrumenting normal get operations', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const app = express();
-      app.use((req, res, next) =>
-        context.with(trace.setSpan(context.active(), rootSpan), next)
-      );
-      app.use(express.json());
       const customMiddleware: express.RequestHandler = (req, res, next) => {
         for (let i = 0; i < 1000000; i++) {
           continue;
         }
         return next();
       };
-      app.use(customMiddleware);
-      const router = express.Router();
-      app.use('/toto', router);
       let finishListenerCount: number | undefined;
       const { server, port } = await serverWithMiddleware(
         tracer,
@@ -289,22 +281,30 @@ describe('ExpressInstrumentation', () => {
 
   describe('Disabling plugin', () => {
     it('should not create new spans', async () => {
+      instrumentation.disable();
       const rootSpan = tracer.startSpan('rootSpan');
-      const app = express();
-      app.use(express.json());
-      app.use((req, res, next) => {
-        for (let i = 0; i < 1000; i++) {
-          continue;
+      const { server, port } = await serverWithMiddleware(
+        tracer,
+        rootSpan,
+        app => {
+          app.use(express.json());
+          const customMiddleware: express.RequestHandler = (req, res, next) => {
+            for (let i = 0; i < 1000; i++) {
+              continue;
+            }
+            return next();
+          };
+          app.use(customMiddleware);
         }
-        return next();
-      });
-      const { server, port } = await createServer(app);
+      );
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
           await httpRequest.get(`http://localhost:${port}/toto/tata`);
           rootSpan.end();
+          // There should be exactly one span, and it should be the root span.
+          // There should not be any spans from the Express instrumentation.
           assert.deepEqual(memoryExporter.getFinishedSpans().length, 1);
           assert.notStrictEqual(
             memoryExporter.getFinishedSpans()[0],
