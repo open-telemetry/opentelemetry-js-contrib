@@ -19,6 +19,7 @@ import {
   isWrapped,
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
 import type * as redisTypes from 'redis';
 import {
@@ -48,6 +49,43 @@ export class RedisInstrumentation extends InstrumentationBase<
 
   protected init() {
     return [
+
+      // @node-redis/client is a new package introduced and consumed by 'redis ^4.0.0'
+      new InstrumentationNodeModuleDefinition<unknown>(
+        '@node-redis/client',
+        ['^1.0.0'],
+        () => {},
+        () => {},
+        [ new InstrumentationNodeModuleFile<any>(
+          '@node-redis/client/dist/lib/client/commands-queue.js',
+          ['^1.0.0'],
+          (moduleExports: any, moduleVersion?: string) => {
+            const commandsQueuePrototype = moduleExports.default.prototype;
+            if (
+              isWrapped(
+                commandsQueuePrototype?.addCommand
+              )
+            ) {
+              this._unwrap(
+                commandsQueuePrototype,
+                'addCommand'
+              );
+            }
+            this._wrap(
+              commandsQueuePrototype,
+              'addCommand',
+              this._getPatchAddCommandV4()
+            );
+  
+
+            console.log(moduleExports.default.prototype['addCommand']);
+          },
+          (moduleExports: unknown, moduleVersion?: string) => {
+            
+          },
+        )]
+      ),
+
       new InstrumentationNodeModuleDefinition<typeof redisTypes>(
         'redis',
         ['^2.6.0', '^3.0.0'],
@@ -67,7 +105,7 @@ export class RedisInstrumentation extends InstrumentationBase<
           this._wrap(
             moduleExports.RedisClient.prototype,
             'internal_send_command',
-            this._getPatchInternalSendCommand()
+            this._getPatchInternalSendCommandV2V3()
           );
 
           diag.debug('patching redis.RedisClient.create_stream');
@@ -103,10 +141,21 @@ export class RedisInstrumentation extends InstrumentationBase<
       ),
     ];
   }
+
+  private _getPatchAddCommandV4() {
+    return function addCommandPatchWrapper(original: Function) {
+      return function addCommandPatch() {
+        console.log('here )))))))))))))))))))))))))');
+        return original.apply(this, arguments);
+      }
+    }
+  }
+
   /**
    * Patch internal_send_command(...) to trace requests
+   * This is for v2 and v3 only
    */
-  private _getPatchInternalSendCommand() {
+  private _getPatchInternalSendCommandV2V3() {
     const tracer = this.tracer;
     const config = this._config;
     return function internal_send_command(original: Function) {
