@@ -175,6 +175,9 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
           span.recordException(err);
           throw err;
         } finally {
+          if (context._matchedRouteName) {
+            span.updateName(context._matchedRouteName);
+          }
           span.end();
         }
       });

@@ -135,7 +135,7 @@ describe('Koa Instrumentation', () => {
       );
 
       const router = new KoaRouter();
-      router.get('/post/:id', ctx => {
+      router.get('insertOperation', '/post/:id', ctx => {
         ctx.body = `Post id: ${ctx.params.id}`;
       });
 
@@ -150,7 +150,7 @@ describe('Koa Instrumentation', () => {
           assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
           const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
-            .find(span => span.name.includes('router - /post/:id'));
+            .find(span => span.name === 'insertOperation');
           assert.notStrictEqual(requestHandlerSpan, undefined);
 
           assert.strictEqual(
