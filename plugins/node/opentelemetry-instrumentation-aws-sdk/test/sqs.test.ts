@@ -25,7 +25,7 @@ import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 
 import {
-	MessagingDestinationKindValues,
+  MessagingDestinationKindValues,
   MessagingOperationValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
@@ -42,7 +42,7 @@ import { Message } from 'aws-sdk/clients/sqs';
 import * as expect from 'expect';
 import * as sinon from 'sinon';
 import * as messageAttributes from '../src/services/MessageAttributes';
-import {AttributeNames} from '../src/enums';
+import { AttributeNames } from '../src/enums';
 
 const responseMockSuccess = {
   requestId: '0000000000000',
@@ -363,15 +363,15 @@ describe('SQS', () => {
   });
 
   describe('hooks', () => {
-    it("sqsResponseHook add messaging attributes", async () => {
-      const region = "us-east-1";
+    it('sqsResponseHook add messaging attributes', async () => {
+      const region = 'us-east-1';
       const sqs = new AWS.SQS();
       sqs.config.update({ region });
 
-      const QueueName = "unittest";
+      const QueueName = 'unittest';
       const params = {
         QueueUrl: `queue/url/for/${QueueName}`,
-        MessageBody: "payload example from v2 without batch",
+        MessageBody: 'payload example from v2 without batch',
       };
 
       const response = await sqs.sendMessage(params).promise();
@@ -380,16 +380,16 @@ describe('SQS', () => {
       const [span] = getTestSpans();
 
       // make sure we have the general aws attributes:
-      expect(span.attributes[SemanticAttributes.RPC_SYSTEM]).toEqual("aws-api");
+      expect(span.attributes[SemanticAttributes.RPC_SYSTEM]).toEqual('aws-api');
       expect(span.attributes[SemanticAttributes.RPC_METHOD]).toEqual(
-        "SendMessage"
+        'SendMessage'
       );
-      expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual("SQS");
+      expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual('SQS');
       expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
 
       // custom messaging attributes
       expect(span.attributes[SemanticAttributes.MESSAGING_SYSTEM]).toEqual(
-        "aws.sqs"
+        'aws.sqs'
       );
       expect(
         span.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
