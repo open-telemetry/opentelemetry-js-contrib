@@ -15,11 +15,18 @@
  */
 
 export enum AttributeNames {
-  COMPONENT = 'component',
+  // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions
+  INSTRUMENTATION_NAME = 'otel.scope.version',
+  INSTRUMENTATION_VERSION = 'otel.scope.version',
+  HTTP_URL = 'http.url',
+  HTTP_USER_AGENT = 'http.user_agent',
+
+  // NOT ON OFFICIAL SPEC
   EVENT_TYPE = 'event_type',
   TARGET_ELEMENT = 'target_element',
   TARGET_XPATH = 'target_xpath',
-  HTTP_URL = 'http.url',
-  // NOT ON OFFICIAL SPEC
-  HTTP_USER_AGENT = 'http.user_agent',
+  LISTENERS_COUNT = 'listeners.count',
+  TASKS_SCHEDULED_COUNT = 'tasks.scheduled.count',
+  TASKS_RAN_COUNT = 'tasks.ran.count',
+  TASKS_CANCELLED_COUNT = 'tasks.cancelled.count',
 }

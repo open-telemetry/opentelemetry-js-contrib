@@ -86,3 +86,15 @@ interface ZonePrototype {
  * type to be  able to use prototype on Zone
  */
 export type ZoneTypeWithPrototype = ZonePrototype & Zone;
+
+export interface UserInteractionAggregates {
+  listenerCount: number;
+  scheduledTaskCount: number;
+  cancelledTaskCount: number;
+  ranTaskCount: number;
+}
+
+export interface UserInteractionEvents {
+  processingStart: number;
+  processingEnd: number;
+}

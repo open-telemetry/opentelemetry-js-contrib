@@ -57,12 +57,6 @@ describe('UserInteractionInstrumentation', () => {
         ...config,
       });
 
-      sandbox
-        .stub(userInteractionInstrumentation, 'getZoneWithPrototype')
-        .callsFake(() => {
-          return false as any;
-        });
-
       registerInstrumentations({
         tracerProvider: webTracerProvider,
         instrumentations: [
