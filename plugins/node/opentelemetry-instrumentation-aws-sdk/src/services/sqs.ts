@@ -125,7 +125,7 @@ export class SqsServiceExtension implements ServiceExtension {
       case 'SendMessage':
         span.setAttribute(
           SemanticAttributes.MESSAGING_MESSAGE_ID,
-          response.data.MessageId
+          response?.data?.MessageId
         );
         break;
 
