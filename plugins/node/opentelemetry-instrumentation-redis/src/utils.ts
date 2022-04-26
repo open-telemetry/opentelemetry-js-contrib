@@ -75,7 +75,8 @@ export const getTracedCreateStreamTrace = (
   };
 };
 
-const defaultDbStatementSerializer: DbStatementSerializer = cmdName => cmdName;
+export const defaultDbStatementSerializer: DbStatementSerializer = cmdName =>
+  cmdName;
 
 export const getTracedInternalSendCommand = (
   tracer: Tracer,

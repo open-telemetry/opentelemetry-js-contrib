@@ -42,21 +42,20 @@ instrumentation.disable();
 
 import * as redisTypes from 'redis';
 import { RedisResponseCustomAttributeFunction } from '../src/types';
+import {
+  redisTestConfig,
+  redisTestUrl,
+  shouldTest,
+  shouldTestLocal,
+} from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
 
-const CONFIG = {
-  host: process.env.OPENTELEMETRY_REDIS_HOST || 'localhost',
-  port: process.env.OPENTELEMETRY_REDIS_PORT || '63790',
-};
-
-const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
-
 const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
-  [SemanticAttributes.DB_CONNECTION_STRING]: URL,
+  [SemanticAttributes.NET_PEER_NAME]: redisTestConfig.host,
+  [SemanticAttributes.NET_PEER_PORT]: redisTestConfig.port,
+  [SemanticAttributes.DB_CONNECTION_STRING]: redisTestUrl,
 };
 
 const unsetStatus: SpanStatus = {
@@ -67,8 +66,6 @@ describe('redis@2.x', () => {
   const provider = new NodeTracerProvider();
   const tracer = provider.getTracer('external');
   let redis: typeof redisTypes;
-  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
-  const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
 
   let contextManager: AsyncHooksContextManager;
   beforeEach(() => {
