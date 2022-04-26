@@ -55,7 +55,7 @@
     "@types/node": "16.11.21",
     "@types/react": "17.0.16",
     "@types/react-addons-test-utils": "0.14.26",
-    "@types/react-dom": "17.0.9",
+    "@types/react-dom": "18.0.2",
     "@types/shimmer": "1.0.2",
     "@types/sinon": "10.0.2",
     "@types/webpack-env": "1.16.2",
