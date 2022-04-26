@@ -116,7 +116,7 @@ describe('redis@2.x', () => {
       };
 
       context.with(trace.setSpan(context.active(), span), () => {
-        client = redis.createClient(URL);
+        client = redis.createClient(redisTestUrl);
         client.on('ready', readyHandler);
         client.on('error', errorHandler);
       });
@@ -155,7 +155,7 @@ describe('redis@2.x', () => {
     ];
 
     before(done => {
-      client = redis.createClient(URL);
+      client = redis.createClient(redisTestUrl);
       client.on('error', err => {
         done(err);
       });
@@ -248,7 +248,10 @@ describe('redis@2.x', () => {
     });
 
     describe('dbStatementSerializer config', () => {
-      const dbStatementSerializer = (cmdName: string, cmdArgs: string[]) => {
+      const dbStatementSerializer = (
+        cmdName: string,
+        cmdArgs: Array<string | Buffer>
+      ) => {
         return Array.isArray(cmdArgs) && cmdArgs.length
           ? `${cmdName} ${cmdArgs.join(' ')}`
           : cmdName;
@@ -291,7 +294,7 @@ describe('redis@2.x', () => {
         const responseHook: RedisResponseCustomAttributeFunction = (
           span: Span,
           _cmdName: string,
-          _cmdArgs: string[],
+          _cmdArgs: Array<string | Buffer>,
           response: unknown
         ) => {
           span.setAttribute(dataFieldName, new String(response).toString());
@@ -322,7 +325,7 @@ describe('redis@2.x', () => {
         const badResponseHook: RedisResponseCustomAttributeFunction = (
           _span: Span,
           _cmdName: string,
-          _cmdArgs: string[],
+          _cmdArgs: Array<string | Buffer>,
           _response: unknown
         ) => {
           throw 'Some kind of error';

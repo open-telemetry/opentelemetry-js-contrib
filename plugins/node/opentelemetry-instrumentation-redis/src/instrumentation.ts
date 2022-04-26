@@ -103,6 +103,8 @@ export class RedisInstrumentation extends InstrumentationBase<
                 return moduleExports;
               }
 
+              // this is the function that extend a redis client with a list of commands.
+              // the function patches the commandExecutor to record a span
               this._diag.debug('Patching redis commands executor');
               if (isWrapped(moduleExports?.extendWithCommands)) {
                 this._unwrap(moduleExports, 'extendWithCommands');
@@ -379,7 +381,6 @@ export class RedisInstrumentation extends InstrumentationBase<
   }
 
   private _getPatchRedisClientMultiV4() {
-    const plugin = this;
     return function multiPatchWrapper(original: Function) {
       return function multiPatch(this: any) {
         const multiRes = original.apply(this, arguments);
