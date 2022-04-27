@@ -51,7 +51,7 @@
     "typescript": "^4.5.5"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.4"
+    "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
     "@opentelemetry/resources": "^1.0.1",
