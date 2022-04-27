@@ -47,12 +47,12 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.0.0",
-    "@opentelemetry/instrumentation": "^0.27.0",
+    "@opentelemetry/instrumentation": "^0.28.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/amqplib": "^0.5.17"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.1",
+    "@opentelemetry/api": "1.2.0",
     "@types/lodash": "4.14.178",
     "@types/mocha": "8.2.3",
     "@types/sinon": "10.0.2",
