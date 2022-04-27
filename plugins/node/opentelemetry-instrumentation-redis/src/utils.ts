@@ -119,7 +119,7 @@ export const getTracedInternalSendCommand = (
     if (this.options) {
       span.setAttributes({
         [SemanticAttributes.NET_PEER_NAME]: this.options.host,
-        [SemanticAttributes.NET_PEER_PORT]: this.options.port,
+        [SemanticAttributes.NET_PEER_PORT]: parseInt(this.options.port),
       });
     }
     if (this.address) {
