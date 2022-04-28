@@ -16,6 +16,7 @@
 
 import { diag } from '@opentelemetry/api';
 import { Instrumentation } from '@opentelemetry/instrumentation';
+
 import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
 import { AwsLambdaInstrumentation } from '@opentelemetry/instrumentation-aws-lambda';
 import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
@@ -25,6 +26,7 @@ import { ConnectInstrumentation } from '@opentelemetry/instrumentation-connect';
 import { DnsInstrumentation } from '@opentelemetry/instrumentation-dns';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { FastifyInstrumentation } from '@opentelemetry/instrumentation-fastify';
+import { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
 import { GenericPoolInstrumentation } from '@opentelemetry/instrumentation-generic-pool';
 import { GraphQLInstrumentation } from '@opentelemetry/instrumentation-graphql';
 import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
@@ -45,6 +47,8 @@ import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
 import { RedisInstrumentation as RedisInstrumentationV2 } from '@opentelemetry/instrumentation-redis';
 import { RedisInstrumentation as RedisInstrumentationV4 } from '@opentelemetry/instrumentation-redis-4';
 import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
+import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
+import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 
 const InstrumentationMap = {
@@ -58,6 +62,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-dns': DnsInstrumentation,
   '@opentelemetry/instrumentation-express': ExpressInstrumentation,
   '@opentelemetry/instrumentation-fastify': FastifyInstrumentation,
+  '@opentelemetry/instrumentation-fs': FsInstrumentation,
   '@opentelemetry/instrumentation-generic-pool': GenericPoolInstrumentation,
   '@opentelemetry/instrumentation-graphql': GraphQLInstrumentation,
   '@opentelemetry/instrumentation-grpc': GrpcInstrumentation,
@@ -78,6 +83,8 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-redis': RedisInstrumentationV2,
   '@opentelemetry/instrumentation-redis-4': RedisInstrumentationV4,
   '@opentelemetry/instrumentation-restify': RestifyInstrumentation,
+  '@opentelemetry/instrumentation-router': RouterInstrumentation,
+  '@opentelemetry/instrumentation-tedious': TediousInstrumentation,
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 
