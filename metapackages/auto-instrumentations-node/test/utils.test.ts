@@ -25,45 +25,58 @@ describe('utils', () => {
     it('should load default instrumentations', () => {
       const instrumentations = getNodeAutoInstrumentations();
       const expectedInstrumentations = [
-        '@opentelemetry/instrumentation-amqplib',
-        '@opentelemetry/instrumentation-aws-lambda',
-        '@opentelemetry/instrumentation-aws-sdk',
-        '@opentelemetry/instrumentation-bunyan',
-        '@opentelemetry/instrumentation-cassandra-driver',
-        '@opentelemetry/instrumentation-connect',
-        '@opentelemetry/instrumentation-dns',
-        '@opentelemetry/instrumentation-express',
-        '@opentelemetry/instrumentation-fastify',
-        '@opentelemetry/instrumentation-generic-pool',
-        '@opentelemetry/instrumentation-graphql',
-        '@opentelemetry/instrumentation-grpc',
-        '@opentelemetry/instrumentation-hapi',
-        '@opentelemetry/instrumentation-http',
-        '@opentelemetry/instrumentation-ioredis',
-        '@opentelemetry/instrumentation-knex',
-        '@opentelemetry/instrumentation-koa',
-        '@opentelemetry/instrumentation-lru-memoizer',
-        '@opentelemetry/instrumentation-memcached',
-        '@opentelemetry/instrumentation-mongodb',
-        '@opentelemetry/instrumentation-mysql2',
-        '@opentelemetry/instrumentation-mysql',
-        '@opentelemetry/instrumentation-nestjs-core',
-        '@opentelemetry/instrumentation-net',
-        '@opentelemetry/instrumentation-pg',
-        '@opentelemetry/instrumentation-pino',
-        '@opentelemetry/instrumentation-redis',
-        '@opentelemetry/instrumentation-redis-4',
-        '@opentelemetry/instrumentation-restify',
-        '@opentelemetry/instrumentation-winston',
+        "@opentelemetry/instrumentation-amqplib",
+        "@opentelemetry/instrumentation-aws-lambda",
+        "@opentelemetry/instrumentation-aws-sdk",
+        "@opentelemetry/instrumentation-bunyan",
+        "@opentelemetry/instrumentation-cassandra-driver",
+        "@opentelemetry/instrumentation-connect",
+        "@opentelemetry/instrumentation-dns",
+        "@opentelemetry/instrumentation-express",
+        "@opentelemetry/instrumentation-fastify",
+        "@opentelemetry/instrumentation-fs",
+        "@opentelemetry/instrumentation-generic-pool",
+        "@opentelemetry/instrumentation-graphql",
+        "@opentelemetry/instrumentation-grpc",
+        "@opentelemetry/instrumentation-hapi",
+        "@opentelemetry/instrumentation-http",
+        "@opentelemetry/instrumentation-ioredis",
+        "@opentelemetry/instrumentation-knex",
+        "@opentelemetry/instrumentation-koa",
+        "@opentelemetry/instrumentation-lru-memoizer",
+        "@opentelemetry/instrumentation-memcached",
+        "@opentelemetry/instrumentation-mongodb",
+        "@opentelemetry/instrumentation-mysql",
+        "@opentelemetry/instrumentation-mysql2",
+        "@opentelemetry/instrumentation-nestjs-core",
+        "@opentelemetry/instrumentation-net",
+        "@opentelemetry/instrumentation-pg",
+        "@opentelemetry/instrumentation-pino",
+        "@opentelemetry/instrumentation-redis",
+        "@opentelemetry/instrumentation-redis-4",
+        "@opentelemetry/instrumentation-restify",
+        "@opentelemetry/instrumentation-router",
+        "@opentelemetry/instrumentation-tedious",
+        "@opentelemetry/instrumentation-winston",
       ];
-      assert.strictEqual(instrumentations.length, 30);
-      for (let i = 0, j = instrumentations.length; i < j; i++) {
-        assert.strictEqual(
-          instrumentations[i].instrumentationName,
-          expectedInstrumentations[i],
-          `Instrumentation ${expectedInstrumentations[i]}, not loaded`
-        );
-      }
+      assert.deepStrictEqual(
+        new Set(instrumentations.map(i => i.instrumentationName)),
+        new Set(expectedInstrumentations)
+      );
+    });
+
+    it('should include all installed instrumentations', () => {
+      const instrumentations = getNodeAutoInstrumentations();
+      const installedInstrumentations = Object.keys(
+        require('../package.json').dependencies
+      ).filter(depName => {
+        return depName.startsWith('@opentelemetry/instrumentation-');
+      });
+
+      assert.deepStrictEqual(
+        new Set(instrumentations.map(i => i.instrumentationName)),
+        new Set(installedInstrumentations)
+      );
     });
 
     it('should use user config', () => {
