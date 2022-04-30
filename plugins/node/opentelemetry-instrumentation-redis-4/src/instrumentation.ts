@@ -28,9 +28,7 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
-import {
-  defaultDbStatementSerializer,
-} from './utils';
+import { defaultDbStatementSerializer } from './utils';
 import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
 import {
@@ -55,9 +53,7 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
 };
 
-export class RedisInstrumentation extends InstrumentationBase<
-  any
-> {
+export class RedisInstrumentation extends InstrumentationBase<any> {
   static readonly COMPONENT = 'redis';
 
   constructor(protected override _config: RedisInstrumentationConfig = {}) {
@@ -175,7 +171,6 @@ export class RedisInstrumentation extends InstrumentationBase<
           ),
         ]
       ),
-
     ];
   }
 
@@ -277,7 +272,7 @@ export class RedisInstrumentation extends InstrumentationBase<
     return function execPatchWrapper(original: Function) {
       return function execPatch(this: any) {
         const execRes = original.apply(this, arguments);
-        if (typeof(execRes?.then) !== 'function') {
+        if (typeof execRes?.then !== 'function') {
           this._diag(
             'got non promise result when patching RedisClientMultiCommand.exec'
           );
@@ -353,5 +348,4 @@ export class RedisInstrumentation extends InstrumentationBase<
     }
     span.end();
   }
-
 }
