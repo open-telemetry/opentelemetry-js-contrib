@@ -227,7 +227,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
           );
 
           const res = origExecutor.apply(this, arguments);
-          if (res.then) {
+          if (typeof(res?.then) === 'function') {
             res.then(
               (redisRes: unknown) => {
                 plugin._endSpanWithResponse(
@@ -273,7 +273,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       return function execPatch(this: any) {
         const execRes = original.apply(this, arguments);
         if (typeof execRes?.then !== 'function') {
-          this._diag(
+          this._diag.error(
             'got non promise result when patching RedisClientMultiCommand.exec'
           );
           return execRes;
