@@ -42,20 +42,21 @@ instrumentation.disable();
 
 import * as redisTypes from 'redis';
 import { RedisResponseCustomAttributeFunction } from '../src/types';
-import {
-  redisTestConfig,
-  redisTestUrl,
-  shouldTest,
-  shouldTestLocal,
-} from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
 
+const CONFIG = {
+  host: process.env.OPENTELEMETRY_REDIS_HOST || 'localhost',
+  port: process.env.OPENTELEMETRY_REDIS_PORT || '63790',
+};
+
+const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
+
 const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-  [SemanticAttributes.NET_PEER_NAME]: redisTestConfig.host,
-  [SemanticAttributes.NET_PEER_PORT]: redisTestConfig.port,
-  [SemanticAttributes.DB_CONNECTION_STRING]: redisTestUrl,
+  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
+  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+  [SemanticAttributes.DB_CONNECTION_STRING]: URL,
 };
 
 const unsetStatus: SpanStatus = {
@@ -66,6 +67,8 @@ describe('redis@2.x', () => {
   const provider = new NodeTracerProvider();
   const tracer = provider.getTracer('external');
   let redis: typeof redisTypes;
+  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
+  const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
 
   let contextManager: AsyncHooksContextManager;
   beforeEach(() => {
@@ -116,7 +119,7 @@ describe('redis@2.x', () => {
       };
 
       context.with(trace.setSpan(context.active(), span), () => {
-        client = redis.createClient(redisTestUrl);
+        client = redis.createClient(URL);
         client.on('ready', readyHandler);
         client.on('error', errorHandler);
       });
@@ -155,7 +158,7 @@ describe('redis@2.x', () => {
     ];
 
     before(done => {
-      client = redis.createClient(redisTestUrl);
+      client = redis.createClient(URL);
       client.on('error', err => {
         done(err);
       });
@@ -248,10 +251,7 @@ describe('redis@2.x', () => {
     });
 
     describe('dbStatementSerializer config', () => {
-      const dbStatementSerializer = (
-        cmdName: string,
-        cmdArgs: Array<string | Buffer>
-      ) => {
+      const dbStatementSerializer = (cmdName: string, cmdArgs: string[]) => {
         return Array.isArray(cmdArgs) && cmdArgs.length
           ? `${cmdName} ${cmdArgs.join(' ')}`
           : cmdName;
@@ -294,7 +294,7 @@ describe('redis@2.x', () => {
         const responseHook: RedisResponseCustomAttributeFunction = (
           span: Span,
           _cmdName: string,
-          _cmdArgs: Array<string | Buffer>,
+          _cmdArgs: string[],
           response: unknown
         ) => {
           span.setAttribute(dataFieldName, new String(response).toString());
@@ -325,7 +325,7 @@ describe('redis@2.x', () => {
         const badResponseHook: RedisResponseCustomAttributeFunction = (
           _span: Span,
           _cmdName: string,
-          _cmdArgs: Array<string | Buffer>,
+          _cmdArgs: string[],
           _response: unknown
         ) => {
           throw 'Some kind of error';

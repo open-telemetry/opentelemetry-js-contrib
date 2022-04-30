@@ -45,8 +45,8 @@ export interface RedisPluginClientTypes {
  * @returns serialized string that will be used as the db.statement attribute.
  */
 export type DbStatementSerializer = (
-  cmdName: string,
-  cmdArgs: Array<string | Buffer>
+  cmdName: RedisCommand['command'],
+  cmdArgs: RedisCommand['args']
 ) => string;
 
 /**
@@ -61,8 +61,8 @@ export type DbStatementSerializer = (
 export interface RedisResponseCustomAttributeFunction {
   (
     span: Span,
-    cmdName: string,
-    cmdArgs: Array<string | Buffer>,
+    cmdName: RedisCommand['command'],
+    cmdArgs: RedisCommand['args'],
     response: unknown
   ): void;
 }
