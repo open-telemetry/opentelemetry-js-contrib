@@ -87,58 +87,79 @@ describe('redis@^4.0.0', () => {
       const spans = getTestSpans();
       assert.strictEqual(spans.length, 2);
 
-      const redisSetSpan = spans.find(s => s.name.includes('SET'));
-      assert.ok(redisSetSpan);
-      assert.strictEqual(redisSetSpan?.kind, SpanKind.CLIENT);
-      assert.strictEqual(redisSetSpan?.name, 'redis-SET');
+      const setSpan = spans.find(s => s.name.includes('SET'));
+      assert.ok(setSpan);
+      assert.strictEqual(setSpan?.kind, SpanKind.CLIENT);
+      assert.strictEqual(setSpan?.name, 'redis-SET');
       assert.strictEqual(
-        redisSetSpan?.attributes[SemanticAttributes.DB_SYSTEM],
+        setSpan?.attributes[SemanticAttributes.DB_SYSTEM],
         'redis'
       );
       assert.strictEqual(
-        redisSetSpan?.attributes[SemanticAttributes.DB_STATEMENT],
+        setSpan?.attributes[SemanticAttributes.DB_STATEMENT],
         'SET'
       );
       assert.strictEqual(
-        redisSetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        setSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        redisSetSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        setSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
-        redisSetSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        setSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
         redisTestUrl
       );
 
-      const redisGetSpan = spans.find(s => s.name.includes('GET'));
-      assert.ok(redisGetSpan);
-      assert.strictEqual(redisGetSpan?.kind, SpanKind.CLIENT);
-      assert.strictEqual(redisGetSpan?.name, 'redis-GET');
+      const getSpan = spans.find(s => s.name.includes('GET'));
+      assert.ok(getSpan);
+      assert.strictEqual(getSpan?.kind, SpanKind.CLIENT);
+      assert.strictEqual(getSpan?.name, 'redis-GET');
       assert.strictEqual(
-        redisGetSpan?.attributes[SemanticAttributes.DB_SYSTEM],
+        getSpan?.attributes[SemanticAttributes.DB_SYSTEM],
         'redis'
       );
       assert.strictEqual(
-        redisGetSpan?.attributes[SemanticAttributes.DB_STATEMENT],
+        getSpan?.attributes[SemanticAttributes.DB_STATEMENT],
         'GET'
       );
       assert.strictEqual(
-        redisGetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        getSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
         redisTestConfig.host
       );
       assert.strictEqual(
-        redisGetSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        getSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
         redisTestConfig.port
       );
       assert.strictEqual(
-        redisGetSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        getSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
         redisTestUrl
       );
     });
 
-    it('span with error', async () => {
+    it('send general command', async () => {
+      const res = await client.sendCommand(['SET', 'key', 'value']);
+      assert.strictEqual(res, 'OK'); // verify we did not screw up the normal functionality
+
+      const [setSpan] = getTestSpans();
+
+      assert.ok(setSpan);
+      assert.strictEqual(
+        setSpan?.attributes[SemanticAttributes.DB_STATEMENT],
+        'SET'
+      );
+      assert.strictEqual(
+        setSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        setSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        redisTestConfig.port
+      );
+    });
+
+    it('command with error', async () => {
       await client.set('string-key', 'string-value');
       await assert.rejects(async () => await client.incr('string-key'));
 
@@ -217,6 +238,33 @@ describe('redis@^4.0.0', () => {
       );
       assert.strictEqual(
         multiGetSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        redisTestUrl
+      );
+    });
+
+    it('multi command with generic command', async () => {
+      const [setReply] = await client
+        .multi()
+        .addCommand(['SET', 'key', 'value'])
+        .exec();
+      assert.strictEqual(setReply, 'OK'); // verify we did not screw up the normal functionality
+
+      const [multiSetSpan] = getTestSpans();
+      assert.ok(multiSetSpan);
+      assert.strictEqual(
+        multiSetSpan.attributes[SemanticAttributes.DB_STATEMENT],
+        'SET'
+      );
+      assert.strictEqual(
+        multiSetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        multiSetSpan?.attributes[SemanticAttributes.NET_PEER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(
+        multiSetSpan?.attributes[SemanticAttributes.DB_CONNECTION_STRING],
         redisTestUrl
       );
     });

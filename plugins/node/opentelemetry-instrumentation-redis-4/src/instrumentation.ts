@@ -123,6 +123,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
               this._diag.debug('Patching redis multi commands executor');
               const redisClientMultiCommandPrototype =
                 moduleExports?.default?.prototype;
+
               if (isWrapped(redisClientMultiCommandPrototype?.exec)) {
                 this._unwrap(redisClientMultiCommandPrototype, 'exec');
               }
@@ -130,6 +131,15 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
                 redisClientMultiCommandPrototype,
                 'exec',
                 this._getPatchMultiCommandsExec()
+              );
+
+              if (isWrapped(redisClientMultiCommandPrototype?.addCommand)) {
+                this._unwrap(redisClientMultiCommandPrototype, 'addCommand');
+              }
+              this._wrap(
+                redisClientMultiCommandPrototype,
+                'addCommand',
+                this._getPatchMultiCommandsAddCommand()
               );
 
               return moduleExports;
@@ -140,6 +150,9 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
                 moduleExports?.default?.prototype;
               if (isWrapped(redisClientMultiCommandPrototype?.exec)) {
                 this._unwrap(redisClientMultiCommandPrototype, 'exec');
+              }
+              if (isWrapped(redisClientMultiCommandPrototype?.addCommand)) {
+                this._unwrap(redisClientMultiCommandPrototype, 'addCommand');
               }
             }
           ),
@@ -159,6 +172,15 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
                 this._getPatchRedisClientMulti()
               );
 
+              if (isWrapped(redisClientPrototype?.sendCommand)) {
+                this._unwrap(redisClientPrototype, 'sendCommand');
+              }
+              this._wrap(
+                redisClientPrototype,
+                'sendCommand',
+                this._getPatchRedisClientSendCommand()
+              );
+
               return moduleExports;
             },
             (moduleExports: any) => {
@@ -166,6 +188,9 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
               const redisClientPrototype = moduleExports?.default?.prototype;
               if (isWrapped(redisClientPrototype?.multi)) {
                 this._unwrap(redisClientPrototype, 'multi');
+              }
+              if (isWrapped(redisClientPrototype?.sendCommand)) {
+                this._unwrap(redisClientPrototype, 'sendCommand');
               }
             }
           ),
@@ -178,89 +203,26 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     const plugin = this;
     return function extendWithCommandsPatchWrapper(original: Function) {
       return function extendWithCommandsPatch(this: any, config: any) {
+        if (config?.BaseClass?.name !== 'RedisClient') {
+          return original.apply(this, arguments);
+        }
+
         const origExecutor = config.executor;
         config.executor = function (
           this: any,
           command: any,
           args: Array<string | Buffer>
         ) {
-          const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
-          if (hasNoParentSpan && plugin._config?.requireParentSpan) {
-            return origExecutor.apply(this, arguments);
-          }
-
           const redisCommandArguments = transformCommandArguments(
             command,
             args
           ).args;
-          const clientOptions = this.options || this[MULTI_COMMAND_OPTIONS];
-
-          const commandName = redisCommandArguments[0] as string; // types also allows it to be a Buffer, but in practice it only string
-          const commandArgs = redisCommandArguments.slice(1);
-
-          const dbStatementSerializer =
-            plugin._config?.dbStatementSerializer ||
-            defaultDbStatementSerializer;
-
-          const attributes = {
-            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-            [SemanticAttributes.NET_PEER_NAME]: clientOptions?.socket?.host,
-            [SemanticAttributes.NET_PEER_PORT]: clientOptions?.socket?.port,
-            [SemanticAttributes.DB_CONNECTION_STRING]: clientOptions?.url,
-          };
-
-          try {
-            const dbStatement = dbStatementSerializer(commandName, commandArgs);
-            if (dbStatement != null) {
-              attributes[SemanticAttributes.DB_STATEMENT] = dbStatement;
-            }
-          } catch (e) {
-            plugin._diag.error('dbStatementSerializer throw an exception', e);
-          }
-
-          const span = plugin.tracer.startSpan(
-            `${RedisInstrumentation.COMPONENT}-${commandName}`,
-            {
-              kind: SpanKind.CLIENT,
-              attributes,
-            }
+          return plugin._traceClientCommand(
+            origExecutor,
+            this,
+            arguments,
+            redisCommandArguments
           );
-
-          const res = origExecutor.apply(this, arguments);
-          if (typeof(res?.then) === 'function') {
-            res.then(
-              (redisRes: unknown) => {
-                plugin._endSpanWithResponse(
-                  span,
-                  commandName,
-                  commandArgs,
-                  redisRes,
-                  undefined
-                );
-              },
-              (err: any) => {
-                plugin._endSpanWithResponse(
-                  span,
-                  commandName,
-                  commandArgs,
-                  null,
-                  err
-                );
-              }
-            );
-          } else {
-            const redisClientMultiCommand = res as {
-              [OTEL_OPEN_SPANS]?: Array<MutliCommandInfo>;
-            };
-            redisClientMultiCommand[OTEL_OPEN_SPANS] =
-              redisClientMultiCommand[OTEL_OPEN_SPANS] || [];
-            redisClientMultiCommand[OTEL_OPEN_SPANS]!.push({
-              span,
-              commandName,
-              commandArgs,
-            });
-          }
-          return res;
         };
         return original.apply(this, arguments);
       };
@@ -318,6 +280,15 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     };
   }
 
+  private _getPatchMultiCommandsAddCommand() {
+    const plugin = this;
+    return function addCommandWrapper(original: Function) {
+      return function addCommandPatch(this: any, args: Array<string | Buffer>) {
+        return plugin._traceClientCommand(original, this, arguments, args);
+      };
+    };
+  }
+
   private _getPatchRedisClientMulti() {
     return function multiPatchWrapper(original: Function) {
       return function multiPatch(this: any) {
@@ -328,10 +299,96 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     };
   }
 
+  private _getPatchRedisClientSendCommand() {
+    const plugin = this;
+    return function sendCommandWrapper(original: Function) {
+      return function sendCommandPatch(
+        this: any,
+        args: Array<string | Buffer>
+      ) {
+        return plugin._traceClientCommand(original, this, arguments, args);
+      };
+    };
+  }
+
+  private _traceClientCommand(
+    origFunction: Function,
+    origThis: any,
+    origArguments: IArguments,
+    redisCommandArguments: Array<string | Buffer>
+  ) {
+    const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
+    if (hasNoParentSpan && this._config?.requireParentSpan) {
+      return origFunction.apply(origThis, origArguments);
+    }
+
+    const clientOptions = origThis.options || origThis[MULTI_COMMAND_OPTIONS];
+
+    const commandName = redisCommandArguments[0] as string; // types also allows it to be a Buffer, but in practice it only string
+    const commandArgs = redisCommandArguments.slice(1);
+
+    const dbStatementSerializer =
+      this._config?.dbStatementSerializer || defaultDbStatementSerializer;
+
+    const attributes = {
+      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
+      [SemanticAttributes.NET_PEER_NAME]: clientOptions?.socket?.host,
+      [SemanticAttributes.NET_PEER_PORT]: clientOptions?.socket?.port,
+      [SemanticAttributes.DB_CONNECTION_STRING]: clientOptions?.url,
+    };
+
+    try {
+      const dbStatement = dbStatementSerializer(commandName, commandArgs);
+      if (dbStatement != null) {
+        attributes[SemanticAttributes.DB_STATEMENT] = dbStatement;
+      }
+    } catch (e) {
+      this._diag.error('dbStatementSerializer throw an exception', e);
+    }
+
+    const span = this.tracer.startSpan(
+      `${RedisInstrumentation.COMPONENT}-${commandName}`,
+      {
+        kind: SpanKind.CLIENT,
+        attributes,
+      }
+    );
+
+    const res = origFunction.apply(origThis, origArguments);
+    if (typeof res?.then === 'function') {
+      res.then(
+        (redisRes: unknown) => {
+          this._endSpanWithResponse(
+            span,
+            commandName,
+            commandArgs,
+            redisRes,
+            undefined
+          );
+        },
+        (err: any) => {
+          this._endSpanWithResponse(span, commandName, commandArgs, null, err);
+        }
+      );
+    } else {
+      const redisClientMultiCommand = res as {
+        [OTEL_OPEN_SPANS]?: Array<MutliCommandInfo>;
+      };
+      redisClientMultiCommand[OTEL_OPEN_SPANS] =
+        redisClientMultiCommand[OTEL_OPEN_SPANS] || [];
+      redisClientMultiCommand[OTEL_OPEN_SPANS]!.push({
+        span,
+        commandName,
+        commandArgs,
+      });
+    }
+    return res;
+  }
+
   private _endSpanWithResponse(
     span: Span,
     commandName: string,
-    commandArgs: string[],
+    commandArgs: Array<string | Buffer>,
     response: unknown,
     error: Error | undefined
   ) {
