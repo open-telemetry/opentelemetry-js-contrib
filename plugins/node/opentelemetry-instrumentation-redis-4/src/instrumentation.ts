@@ -273,7 +273,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       return function execPatch(this: any) {
         const execRes = original.apply(this, arguments);
         if (typeof execRes?.then !== 'function') {
-          this._diag.error(
+          plugin._diag.error(
             'got non promise result when patching RedisClientMultiCommand.exec'
           );
           return execRes;
@@ -282,12 +282,12 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         execRes.then((redisRes: unknown[]) => {
           const openSpans = this[OTEL_OPEN_SPANS];
           if (!openSpans) {
-            return this._diag.error(
+            return plugin._diag.error(
               'cannot find open spans to end for redis multi command'
             );
           }
           if (redisRes.length !== openSpans.length) {
-            return this._diag.error(
+            return plugin._diag.error(
               'number of multi command spans does not match response from redis'
             );
           }
