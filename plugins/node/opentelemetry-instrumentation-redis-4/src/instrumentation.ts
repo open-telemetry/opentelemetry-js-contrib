@@ -343,7 +343,9 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         attributes[SemanticAttributes.DB_STATEMENT] = dbStatement;
       }
     } catch (e) {
-      this._diag.error('dbStatementSerializer throw an exception', e);
+      this._diag.error('dbStatementSerializer throw an exception', e, {
+        commandName,
+      });
     }
 
     const span = this.tracer.startSpan(
