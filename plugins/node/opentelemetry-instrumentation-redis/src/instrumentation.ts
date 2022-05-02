@@ -27,7 +27,7 @@ import {
   getTracedInternalSendCommand,
 } from './utils';
 import { RedisInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { VERSION } from 'RedisInstrumentationV2';
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
