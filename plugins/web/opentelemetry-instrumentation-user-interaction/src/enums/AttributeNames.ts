@@ -16,7 +16,7 @@
 
 export enum AttributeNames {
   // https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions
-  INSTRUMENTATION_NAME = 'otel.scope.version',
+  INSTRUMENTATION_NAME = 'otel.scope.name',
   INSTRUMENTATION_VERSION = 'otel.scope.version',
   HTTP_URL = 'http.url',
   HTTP_USER_AGENT = 'http.user_agent',
