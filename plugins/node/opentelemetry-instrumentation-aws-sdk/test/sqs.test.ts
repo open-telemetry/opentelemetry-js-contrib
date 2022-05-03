@@ -47,7 +47,8 @@ import { AttributeNames } from '../src/enums';
 const responseMockSuccess = {
   requestId: '0000000000000',
   error: null,
-};
+  httpResponse: { statusCode: 200 },
+} as AWS.Response<any, any>;
 
 const extractContextSpy = sinon.spy(
   messageAttributes,
@@ -403,7 +404,7 @@ describe('SQS', () => {
       expect(span.attributes[SemanticAttributes.MESSAGING_MESSAGE_ID]).toEqual(
         response.MessageId
       );
-      // expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(200);
+      expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(200);
     });
 
     it('sqsProcessHook called and add message attribute to span', async () => {
