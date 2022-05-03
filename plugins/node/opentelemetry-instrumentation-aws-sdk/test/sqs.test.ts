@@ -364,7 +364,7 @@ describe('SQS', () => {
   });
 
   describe('hooks', () => {
-    it('sqsResponseHook add messaging attributes', async () => {
+    it('sqsResponseHook for sendMessage should add messaging attributes', async () => {
       const region = 'us-east-1';
       const sqs = new AWS.SQS();
       sqs.config.update({ region });
