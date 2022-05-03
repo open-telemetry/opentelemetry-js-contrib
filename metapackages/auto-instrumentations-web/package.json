@@ -30,7 +30,7 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.2"
+    "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "7.15.0",
@@ -63,10 +63,10 @@
     "webpack-merge": "5.8.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.27.0",
+    "@opentelemetry/instrumentation": "^0.28.0",
     "@opentelemetry/instrumentation-document-load": "^0.27.1",
-    "@opentelemetry/instrumentation-fetch": "^0.27.0",
+    "@opentelemetry/instrumentation-fetch": "^0.28.0",
     "@opentelemetry/instrumentation-user-interaction": "^0.28.1",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.27.0"
+    "@opentelemetry/instrumentation-xml-http-request": "^0.28.0"
   }
 }
