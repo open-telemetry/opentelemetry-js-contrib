@@ -22,7 +22,6 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import type * as NestJS from '@nestjs/core';
 import type { NestFactory } from '@nestjs/core/nest-factory.js';
 import type { RouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
 import type { Controller } from '@nestjs/common/interfaces';
@@ -30,7 +29,7 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
 import { AttributeNames, NestType } from './enums';
 
-export class Instrumentation extends InstrumentationBase<typeof NestJS> {
+export class Instrumentation extends InstrumentationBase<any> {
   static readonly COMPONENT = '@nestjs/core';
   static readonly COMMON_ATTRIBUTES = {
     component: Instrumentation.COMPONENT,
