@@ -1,11 +1,11 @@
-'use strict';
+import { setupTracing } from './tracer'
 
-// eslint-disable-next-line
-require('./tracer')('example-express-server');
+setupTracing('example-express-server');
 
 // Require in rest of modules
-const express = require('express');
-const axios = require('axios').default;
+import * as express from 'express';
+import { default as axios } from 'axios';
+import { RequestHandler } from "express";
 
 // Setup express
 const app = express();
@@ -13,7 +13,7 @@ const PORT = 8080;
 
 const getCrudController = () => {
   const router = express.Router();
-  const resources = [];
+  const resources: any[] = [];
   router.get('/', (req, res) => res.send(resources));
   router.post('/', (req, res) => {
     resources.push(req.body);
@@ -22,7 +22,7 @@ const getCrudController = () => {
   return router;
 };
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware: RequestHandler = (req, res, next) => {
   const { authorization } = req.headers;
   if (authorization && authorization.includes('secret_token')) {
     next();

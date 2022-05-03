@@ -4,7 +4,9 @@
     "packages/*",
     "metapackages/*",
     "plugins/node/*",
+    "plugins/node/*/examples",
     "plugins/web/*",
+    "plugins/web/*/examples",
     "propagators/*",
     "detectors/node/*"
   ],
