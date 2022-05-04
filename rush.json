@@ -176,7 +176,7 @@
    * and set projectFolderMaxDepth to a large number.
    */
   "projectFolderMinDepth": 2,
-  "projectFolderMaxDepth": 3,
+  "projectFolderMaxDepth": 4,
 
   /**
    * Today the npmjs.com registry enforces fairly strict naming rules for packages, but in the early
@@ -461,6 +461,11 @@
     //   "packageName": "@opentelemetry/browser-extension-autoinjection",
     //   "projectFolder": "packages/opentelemetry-browser-extension-autoinjection"
     // }
+    {
+      "packageName": "express-example",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-express/examples",
+      "versionPolicyName": "experimentalPlugin"
+    },
     {
       "packageName": "@opentelemetry/host-metrics",
       "projectFolder": "packages/opentelemetry-host-metrics",
