@@ -293,7 +293,7 @@ describe('instrumentation-aws-sdk-v3', () => {
             'https://sqs.us-east-1.amazonaws.com/731241200085/otel-demo-aws-sdk',
           MessageBody: 'payload example from v3 without batch',
         };
-        await sqsClient.sendMessage(params);
+        const response = await sqsClient.sendMessage(params);
         expect(getTestSpans().length).toBe(1);
         const [span] = getTestSpans();
 
@@ -320,6 +320,9 @@ describe('instrumentation-aws-sdk-v3', () => {
         expect(span.attributes[SemanticAttributes.MESSAGING_URL]).toEqual(
           params.QueueUrl
         );
+        expect(
+          span.attributes[SemanticAttributes.MESSAGING_MESSAGE_ID]
+        ).toEqual(response.MessageId);
         expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(
           200
         );
