@@ -38,3 +38,5 @@ LICENSE*                text
 .gitignore              text
 .gitmodules             text
 .gitattributes          text
+
+pnpm-lock.yaml          binary merge=text

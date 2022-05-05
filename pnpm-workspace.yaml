@@ -1,0 +1,8 @@
+packages:
+  - 'detectors/node/*'
+  - 'metapackages/*'
+  - 'packages/*'
+  - 'plugins/node/*'
+  - 'plugins/node/*/examples'
+  - 'plugins/web/*'
+  - 'propagators/*'
