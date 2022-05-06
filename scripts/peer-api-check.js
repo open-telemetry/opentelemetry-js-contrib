@@ -34,12 +34,6 @@ if (pjson.dependencies && pjson.dependencies['@opentelemetry/api']) {
 const peerVersion = pjson.peerDependencies && pjson.peerDependencies['@opentelemetry/api'];
 const devVersion = pjson.devDependencies && pjson.devDependencies['@opentelemetry/api'];
 if (peerVersion) {
-  // error if not pinned
-  if (!/^[0-9]/.test(devVersion)) {
-    throw new Error(
-      `Package ${pjson.name} does't have API version pinned in dev dependencies: ${devVersion}`
-    );
-  }
   if (!semver.satisfies(devVersion, peerVersion)) {
     throw new Error(
       `Package ${pjson.name} depends on peer API version ${peerVersion} ` +
