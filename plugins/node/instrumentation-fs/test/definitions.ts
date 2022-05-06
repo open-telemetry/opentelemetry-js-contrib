@@ -32,7 +32,7 @@ export type TestCreator = (
   spans: any[]
 ) => void;
 
-const TEST_CONTENTS = Buffer.from('hello, world\n');
+const TEST_CONTENTS = Buffer.from('hello, world');
 const ENOENT = /ENOENT: no such file or directory, /;
 const tests: TestCase[] = [
   [
