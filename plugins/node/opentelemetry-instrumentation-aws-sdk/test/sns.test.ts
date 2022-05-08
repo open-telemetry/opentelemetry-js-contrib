@@ -179,8 +179,7 @@ describe('SNS - v3', () => {
       .post('/')
       .reply(
         200,
-        fs.readFileSync('./test/mock-responses/sns-publish.xml','utf8'
-        )
+        fs.readFileSync('./test/mock-responses/sns-publish.xml','utf8')
       );
   });
 
