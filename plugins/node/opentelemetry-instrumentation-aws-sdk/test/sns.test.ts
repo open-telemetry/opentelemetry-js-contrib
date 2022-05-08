@@ -165,7 +165,7 @@ describe('SNS - v2', () => {
 });
 
 describe('SNS - v3', () => {
-  let sns: any
+  let sns: any;
   beforeEach(() => {
     sns = new SNS({
       region: 'us-east-1',
@@ -179,9 +179,7 @@ describe('SNS - v3', () => {
       .post('/')
       .reply(
         200,
-        fs.readFileSync(
-          './test/mock-responses/sns-publish.xml',
-          'utf8'
+        fs.readFileSync('./test/mock-responses/sns-publish.xml','utf8'
         )
       );
   });
