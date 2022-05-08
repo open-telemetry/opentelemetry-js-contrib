@@ -18,6 +18,7 @@
     "precompile": "tsc --version && npm run version:update",
     "version:update": "lerna run version:update",
     "compile": "lerna run compile",
+    "compile:examples": "lerna run compile:examples",
     "prewatch": "npm run precompile",
     "test": "lerna run test",
     "test:ci:changed": "lerna run test --since origin/main",

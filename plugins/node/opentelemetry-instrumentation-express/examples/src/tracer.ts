@@ -1,26 +1,28 @@
 'use strict';
 
+import { Sampler, SpanKind } from "@opentelemetry/api";
+
 const opentelemetry = require('@opentelemetry/api');
 
 // Not functionally required but gives some insight what happens behind the scenes
 const { diag, DiagConsoleLogger, DiagLogLevel } = opentelemetry;
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
-const { AlwaysOnSampler } = require('@opentelemetry/core');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
-const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
-const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
-const { Resource } = require('@opentelemetry/resources');
-const { SemanticAttributes, SemanticResourceAttributes: ResourceAttributesSC } = require('@opentelemetry/semantic-conventions');
+import { AlwaysOnSampler } from '@opentelemetry/core';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
+import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticAttributes, SemanticResourceAttributes as ResourceAttributesSC } from '@opentelemetry/semantic-conventions';
+import { SpanAttributes } from "@opentelemetry/api/build/src/trace/attributes";
 
-const Exporter = (process.env.EXPORTER || '')
-  .toLowerCase().startsWith('z') ? ZipkinExporter : JaegerExporter;
-const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
+const Exporter = (process.env.EXPORTER || '').toLowerCase().startsWith('z') ? ZipkinExporter : JaegerExporter;
+import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
-module.exports = (serviceName) => {
+export const setupTracing = (serviceName: string) => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
       [ResourceAttributesSC.SERVICE_NAME]: serviceName,
@@ -45,10 +47,12 @@ module.exports = (serviceName) => {
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
 
-  return opentelemetry.trace.getTracer('express-example');
+  return opentelemetry.trace.getTracer(serviceName);
 };
 
-function filterSampler(filterFn, parent) {
+type FilterFunction = (spanName: string, spanKind: SpanKind, attributes: SpanAttributes) => boolean;
+
+function filterSampler(filterFn: FilterFunction, parent: Sampler): Sampler {
   return {
     shouldSample(ctx, tid, spanName, spanKind, attr, links) {
       if (!filterFn(spanName, spanKind, attr)) {
@@ -62,6 +66,6 @@ function filterSampler(filterFn, parent) {
   }
 }
 
-function ignoreHealthCheck(spanName, spanKind, attributes) {
+function ignoreHealthCheck(spanName: string, spanKind: SpanKind, attributes: SpanAttributes) {
   return spanKind !== opentelemetry.SpanKind.SERVER || attributes[SemanticAttributes.HTTP_ROUTE] !== "/health";
 }
