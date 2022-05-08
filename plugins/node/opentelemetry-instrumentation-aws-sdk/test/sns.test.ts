@@ -22,6 +22,9 @@ const instrumentation = registerInstrumentationTesting(
   new AwsInstrumentation()
 );
 import * as AWS from 'aws-sdk';
+import { SNS } from '@aws-sdk/client-sns';
+import * as fs from 'fs';
+import * as nock from 'nock';
 
 import { mockV2AwsSend } from './testing-utils';
 import * as expect from 'expect';
@@ -41,7 +44,7 @@ const responseMockSuccess = {
 const topicName = 'topic';
 const fakeARN = `arn:aws:sns:region:000000000:${topicName}`;
 
-describe('SNS', () => {
+describe('SNS - v2', () => {
   before(() => {
     AWS.config.credentials = {
       accessKeyId: 'test key id',
@@ -58,7 +61,7 @@ describe('SNS', () => {
     } as AWS.SNS.Types.PublishResponse);
   });
 
-  describe('publish', () => {
+  describe('publish - v2', () => {
     it('topic arn', async () => {
       const sns = new AWS.SNS();
 
@@ -157,6 +160,76 @@ describe('SNS', () => {
         createTopicSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
       ).toBeUndefined();
       expect(createTopicSpan.kind).toBe(SpanKind.CLIENT);
+    });
+  });
+});
+
+describe('SNS - v3', () => {
+  let sns: any
+  beforeEach(() => {
+    sns = new SNS({
+      region: 'us-east-1',
+      credentials: {
+        accessKeyId: 'abcde',
+        secretAccessKey: 'abcde',
+      },
+    });
+
+    nock('https://sns.us-east-1.amazonaws.com/')
+      .post('/')
+      .reply(
+        200,
+        fs.readFileSync(
+          './test/mock-responses/sns-publish.xml',
+          'utf8'
+        )
+      );
+  });
+
+  describe('publish - v3', () => {
+    it('topic arn', async () => {
+      const topicV3Name = 'dummy-sns-v3-topic';
+      await sns.publish({
+        Message: 'sns message',
+        TopicArn: `arn:aws:sns:us-east-1:000000000:${topicV3Name}`,
+      });
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === `${topicV3Name} send`
+      );
+      expect(publishSpans.length).toBe(1);
+
+      const publishSpan = publishSpans[0];
+      expect(
+        publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
+      ).toBe(MessagingDestinationKindValues.TOPIC);
+      expect(
+        publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
+      ).toBe(topicV3Name);
+      expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe(
+        'Publish'
+      );
+      expect(publishSpan.attributes[SemanticAttributes.MESSAGING_SYSTEM]).toBe(
+        'aws.sns'
+      );
+      expect(publishSpan.kind).toBe(SpanKind.PRODUCER);
+    });
+
+    it('phone number', async () => {
+      const PhoneNumber = 'my phone number';
+      await sns.publish({
+        Message: 'sns message',
+        PhoneNumber,
+      });
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'phone_number send'
+      );
+      expect(publishSpans.length).toBe(1);
+      const publishSpan = publishSpans[0];
+      expect(
+        publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
+      ).toBe(PhoneNumber);
     });
   });
 });
