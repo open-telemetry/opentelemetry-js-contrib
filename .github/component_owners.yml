@@ -12,7 +12,7 @@ components:
   metapackages/auto-instrumentations-web:
     - obecny
   packages/opentelemetry-host-metrics:
-    - obecny
+    - legendecas
   packages/opentelemetry-id-generator-aws-xray:
     - NathanielRN
     - willarmiros
