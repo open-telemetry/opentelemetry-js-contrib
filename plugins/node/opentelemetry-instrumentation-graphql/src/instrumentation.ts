@@ -307,8 +307,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
         schema: graphqlTypes.GraphQLSchema,
         documentAST: graphqlTypes.DocumentNode,
         rules?: ReadonlyArray<graphqlTypes.ValidationRule>,
-        typeInfo?: graphqlTypes.TypeInfo,
-        options?: { maxErrors?: number }
+        options?: { maxErrors?: number },
+        typeInfo?: graphqlTypes.TypeInfo
       ): ReadonlyArray<graphqlTypes.GraphQLError> {
         return instrumentation._validate(
           this,
@@ -373,8 +373,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
             schema,
             documentAST,
             rules,
-            typeInfo,
-            options
+            options,
+            typeInfo
           );
         },
         (err, errors) => {

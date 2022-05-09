@@ -96,6 +96,10 @@ const provider = new BasicTracerProvider();
 provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 graphQLInstrumentation.setTracerProvider(provider);
 
+const majorNodeVersion = Number(process.version.substring(1).split('.')[0]);
+const maybeDescribe = majorNodeVersion >= 12 ? describe : describe.skip;
+const itMaybe = majorNodeVersion >= 12 ? it : it.skip;
+
 describe('graphql', () => {
   function create(config: GraphQLInstrumentationConfig = {}) {
     graphQLInstrumentation.setConfig(config);
@@ -976,7 +980,7 @@ describe('graphql', () => {
       assert.deepStrictEqual(spans.length, 1);
     });
 
-    it('should instrument parse with error', () => {
+    itMaybe('should instrument parse with error', () => {
       const parseSpan = spans[0];
       const event = parseSpan.events[0];
 
@@ -992,7 +996,7 @@ describe('graphql', () => {
     });
   });
 
-  describe('when query is correct but cannot be validated', () => {
+  maybeDescribe('when query is correct but cannot be validated', () => {
     let spans: ReadableSpan[];
 
     beforeEach(async () => {
@@ -1043,7 +1047,7 @@ describe('graphql', () => {
 
   describe('responseHook', () => {
     let spans: ReadableSpan[];
-    let graphqlResult: graphqlTypes.ExecutionResult;
+    let graphqlResult: graphqlTypes.ExecutionResult<{ books: unknown[] }>;
     const dataAttributeName = 'graphql_data';
 
     afterEach(() => {

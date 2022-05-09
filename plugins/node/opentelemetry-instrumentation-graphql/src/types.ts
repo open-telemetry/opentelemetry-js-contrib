@@ -120,8 +120,8 @@ export type validateType = (
   schema: graphqlTypes.GraphQLSchema,
   documentAST: graphqlTypes.DocumentNode,
   rules?: ReadonlyArray<graphqlTypes.ValidationRule>,
-  typeInfo?: graphqlTypes.TypeInfo,
-  options?: { maxErrors?: number }
+  options?: { maxErrors?: number },
+  typeInfo?: graphqlTypes.TypeInfo
 ) => ReadonlyArray<graphqlTypes.GraphQLError>;
 
 export interface GraphQLField {
