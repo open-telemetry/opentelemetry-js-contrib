@@ -21,8 +21,8 @@ import {
 const instrumentation = registerInstrumentationTesting(
   new AwsInstrumentation()
 );
-import * as AWS from 'aws-sdk';
-import { SNS } from '@aws-sdk/client-sns';
+import * as AWSv2 from 'aws-sdk';
+import { SNS as SNSv3 } from '@aws-sdk/client-sns';
 import * as fs from 'fs';
 import * as nock from 'nock';
 
@@ -46,7 +46,7 @@ const fakeARN = `arn:aws:sns:region:000000000:${topicName}`;
 
 describe('SNS - v2', () => {
   before(() => {
-    AWS.config.credentials = {
+    AWSv2.config.credentials = {
       accessKeyId: 'test key id',
       expired: false,
       expireTime: new Date(),
@@ -61,9 +61,9 @@ describe('SNS - v2', () => {
     } as AWS.SNS.Types.PublishResponse);
   });
 
-  describe('publish - v2', () => {
+  describe('publish', () => {
     it('topic arn', async () => {
-      const sns = new AWS.SNS();
+      const sns = new AWSv2.SNS();
 
       await sns
         .publish({
@@ -94,7 +94,7 @@ describe('SNS - v2', () => {
     });
 
     it('phone number', async () => {
-      const sns = new AWS.SNS();
+      const sns = new AWSv2.SNS();
       const PhoneNumber = 'my phone number';
       await sns
         .publish({
@@ -114,7 +114,7 @@ describe('SNS - v2', () => {
     });
 
     it('inject context propagation', async () => {
-      const sns = new AWS.SNS();
+      const sns = new AWSv2.SNS();
       const hookSpy = sinon.spy(
         (instrumentation['servicesExtensions'] as any)['services'].get('SNS'),
         'requestPostSpanHook'
@@ -139,7 +139,7 @@ describe('SNS - v2', () => {
 
   describe('createTopic', () => {
     it('basic createTopic creates a valid span', async () => {
-      const sns = new AWS.SNS();
+      const sns = new AWSv2.SNS();
 
       const Name = 'my new topic';
       await sns.createTopic({ Name }).promise();
@@ -167,7 +167,7 @@ describe('SNS - v2', () => {
 describe('SNS - v3', () => {
   let sns: any;
   beforeEach(() => {
-    sns = new SNS({
+    sns = new SNSv3({
       region: 'us-east-1',
       credentials: {
         accessKeyId: 'abcde',
@@ -183,7 +183,7 @@ describe('SNS - v3', () => {
       );
   });
 
-  describe('publish - v3', () => {
+  describe('publish', () => {
     it('topic arn', async () => {
       const topicV3Name = 'dummy-sns-v3-topic';
       await sns.publish({
