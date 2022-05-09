@@ -155,6 +155,8 @@ jobs:
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit tests
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
+      - name: Build examples
+        run: npm run compile:examples
       - name: Report Coverage
         if: matrix.node == '14'
         uses: codecov/codecov-action@v3
