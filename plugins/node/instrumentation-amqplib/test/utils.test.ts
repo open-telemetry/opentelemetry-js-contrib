@@ -21,16 +21,23 @@ import {
 } from '../src/utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as amqp from 'amqplib';
+import { shouldTest } from './utils';
 import { rabbitMqUrl } from './config';
 
 describe('utils', () => {
   describe('getConnectionAttributesFromServer', () => {
     let conn: amqp.Connection;
-    before(async () => {
-      conn = await amqp.connect(rabbitMqUrl);
+    before(async function () {
+      if (!shouldTest) {
+        this.skip();
+      } else {
+        conn = await amqp.connect(rabbitMqUrl);
+      }
     });
     after(async () => {
-      await conn.close();
+      if (shouldTest) {
+        await conn.close();
+      }
     });
 
     it('messaging system attribute', () => {
