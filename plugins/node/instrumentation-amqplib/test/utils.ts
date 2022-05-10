@@ -100,3 +100,5 @@ export const asyncConsume = (
     )
   );
 };
+
+export const shouldTest = !!process.env.RUN_RABBIT_TESTS;
