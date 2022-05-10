@@ -100,6 +100,7 @@ jobs:
       RUN_MSSQL_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
+      RUN_RABBIT_TESTS: 1
       CASSANDRA_HOST: localhost
       MONGODB_DB: opentelemetry-tests
       MONGODB_HOST: 127.0.0.1

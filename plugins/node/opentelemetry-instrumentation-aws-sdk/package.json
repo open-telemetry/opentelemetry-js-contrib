@@ -52,11 +52,12 @@
     "@opentelemetry/propagation-utils": "^0.27.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-dynamodb": "3.37.0",
-    "@aws-sdk/client-lambda": "3.37.0",
-    "@aws-sdk/client-s3": "3.37.0",
-    "@aws-sdk/client-sqs": "3.37.0",
-    "@aws-sdk/types": "3.37.0",
+    "@aws-sdk/client-dynamodb": "3.85.0",
+    "@aws-sdk/client-lambda": "3.85.0",
+    "@aws-sdk/client-s3": "3.85.0",
+    "@aws-sdk/client-sqs": "3.85.0",
+    "@aws-sdk/client-sns": "3.85.0",
+    "@aws-sdk/types": "3.78.0",
     "@opentelemetry/api": "1.0.1",
     "@opentelemetry/contrib-test-utils": "0.29.0",
     "@opentelemetry/sdk-trace-base": "1.2.0",
