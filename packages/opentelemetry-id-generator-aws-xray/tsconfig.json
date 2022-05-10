@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base",
   "compilerOptions": {
+    "typeRoots": ["./node_modules/@types"],
     "rootDir": ".",
     "outDir": "build"
   },

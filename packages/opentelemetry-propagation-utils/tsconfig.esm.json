@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.esm.json",
   "compilerOptions": {
+    "typeRoots": ["./node_modules/@types"],
     "rootDir": "src",
     "outDir": "build/esm",
     "tsBuildInfoFile": "build/esm/tsconfig.esm.tsbuildinfo"
