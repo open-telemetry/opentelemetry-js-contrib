@@ -3,5 +3,9 @@
   "private": true,
   "license": "Apache-2.0",
   "dependencies": {
+    "glob": "^8.0.1",
+    "js-yaml": "^4.1.0",
+    "pacote": "^13.3.0",
+    "semver": "7.3.5"
   }
 }

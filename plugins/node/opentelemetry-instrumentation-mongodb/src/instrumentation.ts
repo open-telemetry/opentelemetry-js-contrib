@@ -48,7 +48,7 @@ import { VERSION } from './version';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<
-  typeof mongodb
+  any
 > {
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
