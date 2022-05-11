@@ -29,7 +29,7 @@ import {
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 import { context, SpanKind } from '@opentelemetry/api';
-import { asyncConfirmSend, asyncConsume } from './utils';
+import { asyncConfirmSend, asyncConsume, shouldTest } from './utils';
 import {
   censoredUrl,
   rabbitMqUrl,
@@ -42,14 +42,22 @@ const queueName = 'queue-name-from-unittest';
 
 describe('amqplib instrumentation callback model', () => {
   let conn: amqpCallback.Connection;
-  before(done => {
-    amqpCallback.connect(rabbitMqUrl, (err, connection) => {
-      conn = connection;
-      done(err);
-    });
+  before(function (done) {
+    if (!shouldTest) {
+      this.skip();
+    } else {
+      amqpCallback.connect(rabbitMqUrl, (err, connection) => {
+        conn = connection;
+        done(err);
+      });
+    }
   });
   after(done => {
-    conn.close(() => done());
+    if (!shouldTest) {
+      done();
+    } else {
+      conn.close(() => done());
+    }
   });
 
   describe('channel', () => {
