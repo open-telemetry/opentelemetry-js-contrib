@@ -47,6 +47,8 @@ export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrum
     const span = this.tracer.startSpan(LONGTASK_PERFORMANCE_TYPE, {
       startTime: hrTime(entry.startTime),
     });
+    span.setAttribute('component', this.component);
+    span.setAttribute('http.url', location.href);
     const { observerCallback } = this.getConfig();
     if (observerCallback) {
       try {
