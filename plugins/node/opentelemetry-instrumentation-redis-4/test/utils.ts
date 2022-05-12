@@ -15,7 +15,7 @@
  */
 export const redisTestConfig = {
   host: process.env.OPENTELEMETRY_REDIS_HOST || 'localhost',
-  port: process.env.OPENTELEMETRY_REDIS_PORT || 63790,
+  port: +(process.env.OPENTELEMETRY_REDIS_PORT || 63790),
 };
 
 export const redisTestUrl = `redis://${redisTestConfig.host}:${redisTestConfig.port}`;
