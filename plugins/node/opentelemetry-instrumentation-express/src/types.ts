@@ -88,6 +88,11 @@ export type SpanNameHook = (
   defaultName: string
 ) => string;
 
+export type SpanAttributesHook = (
+  info: ExpressRequestInfo,
+  baseAttributes: SpanAttributes
+) => SpanAttributes;
+
 /**
  * Options available for the Express Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-Instrumentation-express#express-Instrumentation-options))
  */
@@ -97,4 +102,5 @@ export interface ExpressInstrumentationConfig extends InstrumentationConfig {
   /** Ignore specific layers based on their type */
   ignoreLayersType?: ExpressLayerType[];
   spanNameHook?: SpanNameHook;
+  spanAttributesHook?: SpanAttributesHook;
 }

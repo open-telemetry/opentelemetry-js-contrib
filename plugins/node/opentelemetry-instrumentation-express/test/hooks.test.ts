@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, trace, Span } from '@opentelemetry/api';
+import { context, trace, Span, SpanAttributes } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -24,7 +24,7 @@ import {
 import * as assert from 'assert';
 import type * as http from 'http';
 import { ExpressInstrumentation } from '../src';
-import { SpanNameHook } from '../src/types';
+import { SpanNameHook, SpanAttributesHook } from '../src/types';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
@@ -164,6 +164,142 @@ describe('ExpressInstrumentation hooks', () => {
           assert.notStrictEqual(
             spans.find(span => span.name === 'request handler - *'),
             undefined
+          );
+        }
+      );
+    });
+  });
+
+  describe('span attributes hooks', () => {
+    let server: http.Server;
+    let port: number;
+    let rootSpan: Span;
+
+    beforeEach(async () => {
+      rootSpan = tracer.startSpan('rootSpan');
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.get('*', (req, res) => {
+          res.send('ok');
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+    });
+
+    afterEach(() => {
+      server.close();
+    });
+
+    it('should set span attributes', async () => {
+      instrumentation.setConfig({
+        spanAttributesHook: ({ request, route, layerType }, baseAttributes) => {
+          if (layerType) {
+            return {
+              route,
+            };
+          }
+
+          if (route === '*') {
+            return {
+              method: request.method,
+              url: request.url,
+            };
+          }
+
+          return baseAttributes;
+        },
+      });
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/foo/3`);
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 2);
+
+          assert.deepEqual(
+            spans.find(span => span.name === 'GET *')?.attributes,
+            { method: 'GET', url: '/foo/3' }
+          );
+
+          assert.deepEqual(
+            spans.find(span => span.name === 'request handler - *')?.attributes,
+            {
+              method: 'GET',
+              url: '/foo/3',
+              'express.name': '*',
+              'express.type': 'request_handler',
+            }
+          );
+        }
+      );
+    });
+
+    it('should use the base attributes when hook throws an error', async () => {
+      instrumentation.setConfig({
+        spanAttributesHook: () => {
+          throw new Error();
+        },
+      });
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/foo/3`);
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 2);
+
+          assert.deepEqual(
+            spans.find(span => span.name === 'GET *')?.attributes,
+            {}
+          );
+
+          assert.deepEqual(
+            spans.find(span => span.name === 'request handler - *')?.attributes,
+            {
+              'express.name': '*',
+              'express.type': 'request_handler',
+              'http.route': '*',
+            }
+          );
+        }
+      );
+    });
+
+    it('should use the base attributes when returning undefined from hook', async () => {
+      const spanAttributesHook: SpanAttributesHook = () => {
+        return undefined as unknown as SpanAttributes;
+      };
+      instrumentation.setConfig({
+        spanAttributesHook,
+      });
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/foo/3`);
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 2);
+
+          assert.deepEqual(
+            spans.find(span => span.name === 'GET *')?.attributes,
+            {}
+          );
+
+          assert.deepEqual(
+            spans.find(span => span.name === 'request handler - *')?.attributes,
+            {
+              'express.name': '*',
+              'express.type': 'request_handler',
+              'http.route': '*',
+            }
           );
         }
       );

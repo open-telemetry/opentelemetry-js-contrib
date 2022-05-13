@@ -196,9 +196,15 @@ export class ExpressInstrumentation extends InstrumentationBase<
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
           .join('');
-        const attributes: SpanAttributes = {
-          [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
-        };
+        const attributes: SpanAttributes = instrumentation._getSpanAttributes(
+          {
+            request: req,
+            route,
+          },
+          {
+            [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
+          }
+        );
         const metadata = getLayerMetadata(layer, layerPath);
         const type = metadata.attributes[
           AttributeNames.EXPRESS_TYPE
@@ -220,6 +226,15 @@ export class ExpressInstrumentation extends InstrumentationBase<
             `${req.method} ${route.length > 0 ? route : '/'}`
           );
           rpcMetadata.span.updateName(name);
+          rpcMetadata.span.setAttributes(
+            instrumentation._getSpanAttributes(
+              {
+                request: req,
+                route,
+              },
+              {}
+            )
+          );
         }
 
         // verify against the config if the layer should be ignored
@@ -316,6 +331,24 @@ export class ExpressInstrumentation extends InstrumentationBase<
         err
       );
       return defaultName;
+    }
+  }
+
+  _getSpanAttributes(info: ExpressRequestInfo, baseAttributes: SpanAttributes) {
+    const hook = this.getConfig().spanAttributesHook;
+
+    if (!(hook instanceof Function)) {
+      return baseAttributes;
+    }
+
+    try {
+      return hook(info, baseAttributes) ?? baseAttributes;
+    } catch (err) {
+      diag.error(
+        'express instrumentation: error calling span attributes hook',
+        err
+      );
+      return baseAttributes;
     }
   }
 }
