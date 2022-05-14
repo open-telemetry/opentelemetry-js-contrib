@@ -49,7 +49,7 @@
   "devDependencies": {
     "@babel/core": "7.15.0",
     "@jsdevtools/coverage-istanbul-loader": "3.0.5",
-    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/propagator-b3": "1.2.0",
     "@types/mocha": "7.0.2",
     "@types/node": "16.11.21",
