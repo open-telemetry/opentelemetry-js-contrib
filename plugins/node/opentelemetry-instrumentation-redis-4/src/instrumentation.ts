@@ -65,140 +65,161 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
   }
 
   protected init() {
+    // @node-redis/client is a new package introduced and consumed by 'redis 4.0.x'
+    // on redis@4.1.0 it was changed to @redis/client.
+    // we will instrument both packages
     return [
-      // @node-redis/client is a new package introduced and consumed by 'redis ^4.0.0'
-      new InstrumentationNodeModuleDefinition<unknown>(
-        '@node-redis/client',
-        ['^1.0.0'],
-        (moduleExports: any, moduleVersion?: string) => {
-          diag.debug(
-            `Patching @node-redis/client@${moduleVersion} (redis@^4.x.x)`
-          );
-          return moduleExports;
-        },
-        (_moduleExports: any, moduleVersion?: string) => {
-          diag.debug(
-            `Unpatching @node-redis/client@${moduleVersion} (redis@^4.x.x)`
-          );
-        },
-        [
-          new InstrumentationNodeModuleFile<any>(
-            '@node-redis/client/dist/lib/commander.js',
-            ['^1.0.0'],
-            (moduleExports: any) => {
-              const transformCommandArguments =
-                moduleExports.transformCommandArguments;
-              if (!transformCommandArguments) {
-                this._diag.error(
-                  'internal instrumentation error, missing transformCommandArguments function'
-                );
-                return moduleExports;
-              }
-
-              // this is the function that extend a redis client with a list of commands.
-              // the function patches the commandExecutor to record a span
-              this._diag.debug('Patching redis commands executor');
-              if (isWrapped(moduleExports?.extendWithCommands)) {
-                this._unwrap(moduleExports, 'extendWithCommands');
-              }
-              this._wrap(
-                moduleExports,
-                'extendWithCommands',
-                this._getPatchExtendWithCommands(transformCommandArguments)
-              );
-
-              return moduleExports;
-            },
-            (moduleExports: any) => {
-              this._diag.debug('Unpatching redis commands executor');
-              if (isWrapped(moduleExports?.extendWithCommands)) {
-                this._unwrap(moduleExports, 'extendWithCommands');
-              }
-            }
-          ),
-          new InstrumentationNodeModuleFile<any>(
-            '@node-redis/client/dist/lib/client/multi-command.js',
-            ['^1.0.0'],
-            (moduleExports: any) => {
-              this._diag.debug('Patching redis multi commands executor');
-              const redisClientMultiCommandPrototype =
-                moduleExports?.default?.prototype;
-
-              if (isWrapped(redisClientMultiCommandPrototype?.exec)) {
-                this._unwrap(redisClientMultiCommandPrototype, 'exec');
-              }
-              this._wrap(
-                redisClientMultiCommandPrototype,
-                'exec',
-                this._getPatchMultiCommandsExec()
-              );
-
-              if (isWrapped(redisClientMultiCommandPrototype?.addCommand)) {
-                this._unwrap(redisClientMultiCommandPrototype, 'addCommand');
-              }
-              this._wrap(
-                redisClientMultiCommandPrototype,
-                'addCommand',
-                this._getPatchMultiCommandsAddCommand()
-              );
-
-              return moduleExports;
-            },
-            (moduleExports: any) => {
-              this._diag.debug('Unpatching redis multi commands executor');
-              const redisClientMultiCommandPrototype =
-                moduleExports?.default?.prototype;
-              if (isWrapped(redisClientMultiCommandPrototype?.exec)) {
-                this._unwrap(redisClientMultiCommandPrototype, 'exec');
-              }
-              if (isWrapped(redisClientMultiCommandPrototype?.addCommand)) {
-                this._unwrap(redisClientMultiCommandPrototype, 'addCommand');
-              }
-            }
-          ),
-          new InstrumentationNodeModuleFile<any>(
-            '@node-redis/client/dist/lib/client/index.js',
-            ['^1.0.0'],
-            (moduleExports: any) => {
-              this._diag.debug('Patching redis client');
-              const redisClientPrototype = moduleExports?.default?.prototype;
-
-              if (isWrapped(redisClientPrototype?.multi)) {
-                this._unwrap(redisClientPrototype, 'multi');
-              }
-              this._wrap(
-                redisClientPrototype,
-                'multi',
-                this._getPatchRedisClientMulti()
-              );
-
-              if (isWrapped(redisClientPrototype?.sendCommand)) {
-                this._unwrap(redisClientPrototype, 'sendCommand');
-              }
-              this._wrap(
-                redisClientPrototype,
-                'sendCommand',
-                this._getPatchRedisClientSendCommand()
-              );
-
-              return moduleExports;
-            },
-            (moduleExports: any) => {
-              this._diag.debug('Unpatching redis client');
-              const redisClientPrototype = moduleExports?.default?.prototype;
-              if (isWrapped(redisClientPrototype?.multi)) {
-                this._unwrap(redisClientPrototype, 'multi');
-              }
-              if (isWrapped(redisClientPrototype?.sendCommand)) {
-                this._unwrap(redisClientPrototype, 'sendCommand');
-              }
-            }
-          ),
-        ]
-      ),
+      this._getInstrumentationNodeModuleDefinition('@redis/client'),
+      this._getInstrumentationNodeModuleDefinition('@node-redis/client'),
     ];
   }
 
+  private _getInstrumentationNodeModuleDefinition(
+    basePackageName: string
+  ): InstrumentationNodeModuleDefinition<any> {
+    const commanderModuleFile = new InstrumentationNodeModuleFile<any>(
+      `${basePackageName}/dist/lib/commander.js`,
+      ['^1.0.0'],
+      (moduleExports: any, moduleVersion?: string) => {
+        const transformCommandArguments =
+          moduleExports.transformCommandArguments;
+        if (!transformCommandArguments) {
+          this._diag.error(
+            'internal instrumentation error, missing transformCommandArguments function'
+          );
+          return moduleExports;
+        }
+
+        // function name and signature changed in redis 4.1.0 from 'extendWithCommands' to 'attachCommands'
+        // the matching internal package names starts with 1.0.x (for redis 4.0.x)
+        const functionToPatch = moduleVersion?.startsWith('1.0.')
+          ? 'extendWithCommands'
+          : 'attachCommands';
+        // this is the function that extend a redis client with a list of commands.
+        // the function patches the commandExecutor to record a span
+        this._diag.debug('Patching redis commands executor');
+        if (isWrapped(moduleExports?.[functionToPatch])) {
+          this._unwrap(moduleExports, functionToPatch);
+        }
+        this._wrap(
+          moduleExports,
+          functionToPatch,
+          this._getPatchExtendWithCommands(transformCommandArguments)
+        );
+
+        return moduleExports;
+      },
+      (moduleExports: any) => {
+        this._diag.debug('Unpatching redis commands executor');
+        if (isWrapped(moduleExports?.extendWithCommands)) {
+          this._unwrap(moduleExports, 'extendWithCommands');
+        }
+        if (isWrapped(moduleExports?.attachCommands)) {
+          this._unwrap(moduleExports, 'attachCommands');
+        }
+      }
+    );
+
+    const multiCommanderModule = new InstrumentationNodeModuleFile<any>(
+      `${basePackageName}/dist/lib/client/multi-command.js`,
+      ['^1.0.0'],
+      (moduleExports: any) => {
+        this._diag.debug('Patching redis multi commands executor');
+        const redisClientMultiCommandPrototype =
+          moduleExports?.default?.prototype;
+
+        if (isWrapped(redisClientMultiCommandPrototype?.exec)) {
+          this._unwrap(redisClientMultiCommandPrototype, 'exec');
+        }
+        this._wrap(
+          redisClientMultiCommandPrototype,
+          'exec',
+          this._getPatchMultiCommandsExec()
+        );
+
+        if (isWrapped(redisClientMultiCommandPrototype?.addCommand)) {
+          this._unwrap(redisClientMultiCommandPrototype, 'addCommand');
+        }
+        this._wrap(
+          redisClientMultiCommandPrototype,
+          'addCommand',
+          this._getPatchMultiCommandsAddCommand()
+        );
+
+        return moduleExports;
+      },
+      (moduleExports: any) => {
+        this._diag.debug('Unpatching redis multi commands executor');
+        const redisClientMultiCommandPrototype =
+          moduleExports?.default?.prototype;
+        if (isWrapped(redisClientMultiCommandPrototype?.exec)) {
+          this._unwrap(redisClientMultiCommandPrototype, 'exec');
+        }
+        if (isWrapped(redisClientMultiCommandPrototype?.addCommand)) {
+          this._unwrap(redisClientMultiCommandPrototype, 'addCommand');
+        }
+      }
+    );
+
+    const clientIndexModule = new InstrumentationNodeModuleFile<any>(
+      `${basePackageName}/dist/lib/client/index.js`,
+      ['^1.0.0'],
+      (moduleExports: any) => {
+        this._diag.debug('Patching redis client');
+        const redisClientPrototype = moduleExports?.default?.prototype;
+
+        if (isWrapped(redisClientPrototype?.multi)) {
+          this._unwrap(redisClientPrototype, 'multi');
+        }
+        this._wrap(
+          redisClientPrototype,
+          'multi',
+          this._getPatchRedisClientMulti()
+        );
+
+        if (isWrapped(redisClientPrototype?.sendCommand)) {
+          this._unwrap(redisClientPrototype, 'sendCommand');
+        }
+        this._wrap(
+          redisClientPrototype,
+          'sendCommand',
+          this._getPatchRedisClientSendCommand()
+        );
+
+        return moduleExports;
+      },
+      (moduleExports: any) => {
+        this._diag.debug('Unpatching redis client');
+        const redisClientPrototype = moduleExports?.default?.prototype;
+        if (isWrapped(redisClientPrototype?.multi)) {
+          this._unwrap(redisClientPrototype, 'multi');
+        }
+        if (isWrapped(redisClientPrototype?.sendCommand)) {
+          this._unwrap(redisClientPrototype, 'sendCommand');
+        }
+      }
+    );
+
+    return new InstrumentationNodeModuleDefinition<unknown>(
+      basePackageName,
+      ['^1.0.0'],
+      (moduleExports: any, moduleVersion?: string) => {
+        diag.debug(
+          `Patching ${basePackageName}/client@${moduleVersion} (redis@^4.0.0)`
+        );
+        return moduleExports;
+      },
+      (_moduleExports: any, moduleVersion?: string) => {
+        diag.debug(
+          `Unpatching ${basePackageName}/client@${moduleVersion} (redis@^4.0.0)`
+        );
+      },
+      [commanderModuleFile, multiCommanderModule, clientIndexModule]
+    );
+  }
+
+  // serves both for redis 4.0.x where function name is extendWithCommands
+  // and redis ^4.1.0 where function name is attachCommands
   private _getPatchExtendWithCommands(transformCommandArguments: Function) {
     const plugin = this;
     return function extendWithCommandsPatchWrapper(original: Function) {

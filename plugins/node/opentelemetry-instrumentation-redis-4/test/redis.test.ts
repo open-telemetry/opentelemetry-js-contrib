@@ -177,10 +177,6 @@ describe('redis@^4.0.0', () => {
       );
       assert.strictEqual(exceptions.length, 1);
       assert.strictEqual(
-        exceptions?.[0].attributes?.[SemanticAttributes.EXCEPTION_TYPE],
-        'ReplyError'
-      );
-      assert.strictEqual(
         exceptions?.[0].attributes?.[SemanticAttributes.EXCEPTION_MESSAGE],
         'ERR value is not an integer or out of range'
       );
