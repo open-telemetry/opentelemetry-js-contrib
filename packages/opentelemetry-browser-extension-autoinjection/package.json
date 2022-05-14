@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/browser-extension-autoinjection",
-  "version": "0.27.4",
+  "version": "0.28.0",
   "description": "A browser extension that injects opentelemetry tracers into any website",
   "scripts": {
     "clean": "rimraf build/*",
@@ -71,7 +71,7 @@
     "@opentelemetry/exporter-trace-otlp-http": "^0.28.0",
     "@opentelemetry/exporter-zipkin": "^1.0.0",
     "@opentelemetry/instrumentation": "^0.28.0",
-    "@opentelemetry/instrumentation-document-load": "0.27.1",
+    "@opentelemetry/instrumentation-document-load": "^0.28.0",
     "@opentelemetry/instrumentation-fetch": "0.28.0",
     "@opentelemetry/instrumentation-xml-http-request": "^0.28.0",
     "@opentelemetry/resources": "^1.0.0",
