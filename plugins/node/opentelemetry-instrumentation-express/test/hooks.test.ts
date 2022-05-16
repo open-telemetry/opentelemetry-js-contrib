@@ -142,7 +142,7 @@ describe('ExpressInstrumentation hooks', () => {
 
     it('should use the default name when returning undefined from hook', async () => {
       const spanNameHook: SpanNameHook = () => {
-        return undefined as unknown as string;
+        return undefined as unknown as String;
       };
       instrumentation.setConfig({
         spanNameHook,
@@ -274,7 +274,7 @@ describe('ExpressInstrumentation hooks', () => {
 
     it('should use the base attributes when returning undefined from hook', async () => {
       const spanAttributesHook: SpanAttributesHook = () => {
-        return undefined as unknown as SpanAttributes;
+        return undefined;
       };
       instrumentation.setConfig({
         spanAttributesHook,
