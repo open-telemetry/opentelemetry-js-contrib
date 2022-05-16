@@ -195,6 +195,12 @@ describe('ExpressInstrumentation hooks', () => {
     it('should set span attributes', async () => {
       instrumentation.setConfig({
         spanAttributesHook: ({ request, route, layerType }, baseAttributes) => {
+          if (layerType) {
+            return {
+              [SemanticAttributes.HTTP_ROUTE]: route,
+            }
+          }
+
           if (route === '*') {
             return {
               [SemanticAttributes.HTTP_METHOD]: request.method,
@@ -221,10 +227,7 @@ describe('ExpressInstrumentation hooks', () => {
           assert.deepEqual(
             spans.find(span => span.name === 'request handler - *')?.attributes,
             {
-              'http.method': 'GET',
-              'http.url': '/foo/3',
-              'express.name': '*',
-              'express.type': 'request_handler',
+              'http.route': '*',
             }
           );
         }

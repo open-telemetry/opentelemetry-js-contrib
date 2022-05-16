@@ -196,15 +196,9 @@ export class ExpressInstrumentation extends InstrumentationBase<
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
           .join('');
-        const attributes: SpanAttributes = instrumentation._getSpanAttributes(
-          {
-            request: req,
-            route,
-          },
-          {
-            [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
-          }
-        );
+        const attributes: SpanAttributes = {
+          [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
+        };
         const metadata = getLayerMetadata(layer, layerPath);
         const type = metadata.attributes[
           AttributeNames.EXPRESS_TYPE
@@ -256,8 +250,16 @@ export class ExpressInstrumentation extends InstrumentationBase<
           },
           metadata.name
         );
+        const spanAttributes = instrumentation._getSpanAttributes(
+          {
+            request: req,
+            layerType: type,
+            route,
+          },
+          Object.assign(attributes, metadata.attributes)
+        );
         const span = instrumentation.tracer.startSpan(spanName, {
-          attributes: Object.assign(attributes, metadata.attributes),
+          attributes: spanAttributes,
         });
         const startTime = hrTime();
         let spanHasEnded = false;
