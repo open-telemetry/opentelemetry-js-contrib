@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, trace, Span, SpanAttributes } from '@opentelemetry/api';
+import { context, trace, Span } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -142,7 +142,7 @@ describe('ExpressInstrumentation hooks', () => {
 
     it('should use the default name when returning undefined from hook', async () => {
       const spanNameHook: SpanNameHook = () => {
-        return undefined as unknown as String;
+        return undefined as unknown as string;
       };
       instrumentation.setConfig({
         spanNameHook,
@@ -207,6 +207,8 @@ describe('ExpressInstrumentation hooks', () => {
               [SemanticAttributes.HTTP_URL]: request.url,
             };
           }
+
+          return baseAttributes;
         },
       });
 
