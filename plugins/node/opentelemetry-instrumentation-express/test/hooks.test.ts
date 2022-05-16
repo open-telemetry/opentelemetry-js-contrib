@@ -195,12 +195,6 @@ describe('ExpressInstrumentation hooks', () => {
     it('should set span attributes', async () => {
       instrumentation.setConfig({
         spanAttributesHook: ({ request, route, layerType }, baseAttributes) => {
-          if (layerType) {
-            return {
-              route,
-            };
-          }
-
           if (route === '*') {
             return {
               [SemanticAttributes.HTTP_METHOD]: request.method,
