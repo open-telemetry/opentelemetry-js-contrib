@@ -25,6 +25,7 @@ import * as assert from 'assert';
 import type * as http from 'http';
 import { ExpressInstrumentation } from '../src';
 import { SpanNameHook, SpanAttributesHook } from '../src/types';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
@@ -202,8 +203,8 @@ describe('ExpressInstrumentation hooks', () => {
 
           if (route === '*') {
             return {
-              method: request.method,
-              url: request.url,
+              [SemanticAttributes.HTTP_METHOD]: request.method,
+              [SemanticAttributes.HTTP_URL]: request.url,
             };
           }
 
@@ -222,14 +223,14 @@ describe('ExpressInstrumentation hooks', () => {
 
           assert.deepEqual(
             spans.find(span => span.name === 'GET *')?.attributes,
-            { method: 'GET', url: '/foo/3' }
+            { 'http.method': 'GET', 'http.url': '/foo/3' }
           );
 
           assert.deepEqual(
             spans.find(span => span.name === 'request handler - *')?.attributes,
             {
-              method: 'GET',
-              url: '/foo/3',
+              'http.method': 'GET',
+              'http.url': '/foo/3',
               'express.name': '*',
               'express.type': 'request_handler',
             }
