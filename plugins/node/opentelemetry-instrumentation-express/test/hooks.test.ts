@@ -198,7 +198,7 @@ describe('ExpressInstrumentation hooks', () => {
           if (layerType) {
             return {
               [SemanticAttributes.HTTP_ROUTE]: route,
-            }
+            };
           }
 
           if (route === '*') {
