@@ -207,8 +207,6 @@ describe('ExpressInstrumentation hooks', () => {
               [SemanticAttributes.HTTP_URL]: request.url,
             };
           }
-
-          return baseAttributes;
         },
       });
 
