@@ -105,29 +105,28 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
     // as for aws-sdk v3.13.1, constructStack is exported from @aws-sdk/middleware-stack as
     // getter instead of function, which fails shimmer.
     // so we are patching the MiddlewareStack.js file directly to get around it.
-    const v3MiddlewareStack = new InstrumentationNodeModuleDefinition<any>(
-      '@aws-sdk/middleware-stack',
-      ['^3.1.0'],
-      undefined,
-      undefined,
-      [v3MiddlewareStackFileOldVersions, v3MiddlewareStackFileNewVersions]
-    );
+    const v3MiddlewareStack = new InstrumentationNodeModuleDefinition<
+      typeof AWS
+    >('@aws-sdk/middleware-stack', ['^3.1.0'], undefined, undefined, [
+      v3MiddlewareStackFileOldVersions,
+      v3MiddlewareStackFileNewVersions,
+    ]);
 
-    const v3SmithyClient = new InstrumentationNodeModuleDefinition<any>(
+    const v3SmithyClient = new InstrumentationNodeModuleDefinition<typeof AWS>(
       '@aws-sdk/smithy-client',
       ['^3.1.0'],
       this.patchV3SmithyClient.bind(this),
       this.unpatchV3SmithyClient.bind(this)
     );
 
-    const v2Request = new InstrumentationNodeModuleFile<any>(
+    const v2Request = new InstrumentationNodeModuleFile<typeof AWS>(
       'aws-sdk/lib/core.js',
       ['^2.308.0'],
       this.patchV2.bind(this),
       this.unpatchV2.bind(this)
     );
 
-    const v2Module = new InstrumentationNodeModuleDefinition<any>(
+    const v2Module = new InstrumentationNodeModuleDefinition<typeof AWS>(
       'aws-sdk',
       ['^2.308.0'],
       undefined,
