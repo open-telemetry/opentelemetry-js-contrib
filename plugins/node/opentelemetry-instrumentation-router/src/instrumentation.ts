@@ -60,7 +60,7 @@ export default class RouterInstrumentation extends InstrumentationBase<any> {
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<any>(
+      new InstrumentationNodeModuleFile<typeof Router>(
         'router/lib/layer.js',
         constants.SUPPORTED_VERSIONS,
         (moduleExports, moduleVersion) => {
