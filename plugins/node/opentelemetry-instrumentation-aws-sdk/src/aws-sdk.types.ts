@@ -22,9 +22,11 @@
   require this instrumentation.
 */
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface -- Our lint doesn't like it, but we prefer to keep it the way original source code has it
 interface Blob {}
 type Binary = Buffer | Uint8Array | Blob | string;
 
+// eslint-disable-next-line @typescript-eslint/no-namespace -- Prefer to contain the types copied over in one location
 export namespace SNS {
   interface MessageAttributeValue {
     /**
@@ -44,6 +46,7 @@ export namespace SNS {
   export type MessageAttributeMap = { [key: string]: MessageAttributeValue };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace -- Prefer to contain the types copied over in one location
 export namespace SQS {
   type StringList = string[];
   type BinaryList = Binary[];
