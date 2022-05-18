@@ -72,7 +72,7 @@
     "@opentelemetry/exporter-zipkin": "^1.0.0",
     "@opentelemetry/instrumentation": "^0.28.0",
     "@opentelemetry/instrumentation-document-load": "^0.28.0",
-    "@opentelemetry/instrumentation-fetch": "0.28.0",
+    "@opentelemetry/instrumentation-fetch": "^0.28.0",
     "@opentelemetry/instrumentation-xml-http-request": "^0.28.0",
     "@opentelemetry/resources": "^1.0.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
