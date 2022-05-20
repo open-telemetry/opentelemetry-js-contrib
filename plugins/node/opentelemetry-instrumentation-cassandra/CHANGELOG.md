@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cassandra-driver-v0.27.1...instrumentation-cassandra-driver-v0.28.0) (2022-05-14)
+
+
+### Features
+
+* add supported node versions for all packages ([#973](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/973)) ([baaacbd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/baaacbdd35ca4baab0afae64647aa8c0380ee4b7))
+* use Otel SDK 1.2/0.28 ([#984](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/984)) ([098c2ed](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/098c2ed6f9c5ab7bd865685018c0777245aab3b7))
+
+
+### Bug Fixes
+
+* don't try to shut cassandra client down if it wasn't initialized ([#966](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/966)) ([80e855a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80e855aa39ed10ee42cd3c839dc16a5d0449561a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from 0.29.0 to ^0.30.0
+
 ### [0.27.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cassandra-driver-v0.27.0...instrumentation-cassandra-driver-v0.27.1) (2022-01-24)
 
 
