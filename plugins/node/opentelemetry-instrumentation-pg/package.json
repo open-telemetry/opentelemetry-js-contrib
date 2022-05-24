@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pg",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "description": "OpenTelemetry postgres automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -53,9 +53,9 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/context-async-hooks": "1.2.0",
-    "@opentelemetry/contrib-test-utils": "0.29.0",
+    "@opentelemetry/contrib-test-utils": "^0.30.0",
     "@opentelemetry/sdk-trace-base": "1.2.0",
     "@opentelemetry/sdk-trace-node": "1.2.0",
     "@types/mocha": "7.0.2",

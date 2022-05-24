@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-hapi",
-  "version": "0.27.1",
+  "version": "0.28.0",
   "description": "OpenTelemetry Hapi automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@hapi/hapi": "20.1.5",
-    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/context-async-hooks": "1.2.0",
     "@opentelemetry/sdk-trace-base": "1.2.0",
     "@opentelemetry/sdk-trace-node": "1.2.0",

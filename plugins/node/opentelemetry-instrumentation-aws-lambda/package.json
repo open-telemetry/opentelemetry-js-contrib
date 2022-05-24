@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-lambda",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "description": "OpenTelemetry AWS Lambda automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -45,7 +45,7 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/core": "1.2.0",
     "@opentelemetry/sdk-trace-base": "1.2.0",
     "@opentelemetry/sdk-trace-node": "1.2.0",
@@ -60,7 +60,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.28.0",
-    "@opentelemetry/propagator-aws-xray": "^1.0.1",
+    "@opentelemetry/propagator-aws-xray": "^1.1.0",
     "@opentelemetry/resources": "^1.0.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/aws-lambda": "8.10.81"
