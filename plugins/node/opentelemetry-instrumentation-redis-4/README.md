@@ -3,23 +3,22 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for [`redis@^2.6.0`](https://github.com/NodeRedis/node_redis).
+This module provides automatic instrumentation for the [`redis@^4.0.0`](https://github.com/NodeRedis/node_redis) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
-For automatic instrumentation see the
-[@opentelemetry/sdk-trace-node](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Installation
 
 ```bash
-npm install --save @opentelemetry/instrumentation-redis
+npm install --save @opentelemetry/instrumentation-redis-4
 ```
 
 ### Supported Versions
 
-This package supports `redis@^2.6.0` and `redis@^3.0.0`
-For version `redis@^4.0.0`, please use `@opentelemetry/instrumentation-redis-4`
+This package supports `redis@^4.0.0`
+For versions `redis@^2.6.0` and `redis@^3.0.0`, please use `@opentelemetry/instrumentation-redis`
 
 ## Usage
 
@@ -29,7 +28,7 @@ To load a specific instrumentation (**redis** in this case), specify it in the r
 
 ```javascript
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis');
+const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis-4');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const provider = new NodeTracerProvider();
@@ -42,8 +41,6 @@ registerInstrumentations({
 })
 ```
 
-See [examples/redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/redis) for a short example.
-
 ### Redis Instrumentation Options
 
 Redis instrumentation has a few options available to choose from. You can set the following:
@@ -51,7 +48,7 @@ Redis instrumentation has a few options available to choose from. You can set th
 | Options                 | Type                                              | Description                                                                                                    |
 | ----------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `dbStatementSerializer` | `DbStatementSerializer` (function)                | Redis instrumentation will serialize the command to the `db.statement` attribute using the specified function. |
-| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response. Receives params: `span, moduleVersion, cmdName, cmdArgs` |
+| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response. Receives params: `span, cmdName, cmdArgs, response` |
 | `requireParentSpan`     | `boolean`                                         | Require parent to create redis span, default when unset is false.                                              |
 
 #### Custom `db.statement` Serializer
@@ -67,7 +64,6 @@ Here is a simple example to serialize the command name and arguments:
 
 ```javascript
 const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis');
-
 const redisInstrumentation = new RedisInstrumentation({
   dbStatementSerializer: function (cmdName, cmdArgs) {
     return [cmdName, ...cmdArgs].join(" ");
@@ -88,5 +84,5 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-redis
-[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-redis.svg
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-redis-4
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-redis-4.svg
