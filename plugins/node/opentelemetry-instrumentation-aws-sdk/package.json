@@ -8,7 +8,7 @@
     "nodejs",
     "opentelemetry"
   ],
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-aws-sdk#readme",
   "license": "Apache-2.0",
   "author": "OpenTelemetry Authors",
   "bugs": {

@@ -62,5 +62,6 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.28.0",
     "graphql": "^15.5.1"
-  }
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-graphql#readme"
 }

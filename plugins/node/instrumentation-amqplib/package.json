@@ -8,7 +8,7 @@
     "rabbitmq",
     "AMQP 0-9-1"
   ],
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-amqplib#readme",
   "license": "Apache-2.0",
   "author": "OpenTelemetry Authors",
   "bugs": {
