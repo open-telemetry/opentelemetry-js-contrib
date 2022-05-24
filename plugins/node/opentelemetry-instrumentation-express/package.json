@@ -52,7 +52,7 @@
     "@opentelemetry/context-async-hooks": "1.2.0",
     "@opentelemetry/sdk-trace-base": "1.2.0",
     "@opentelemetry/sdk-trace-node": "1.2.0",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "9.1.1",
     "@types/node": "16.11.21",
     "express": "4.17.1",
     "gts": "3.1.0",
