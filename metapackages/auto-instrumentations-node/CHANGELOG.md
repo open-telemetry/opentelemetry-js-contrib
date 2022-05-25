@@ -14,6 +14,21 @@
     * @opentelemetry/instrumentation-redis bumped from ^0.28.0 to ^0.29.0
     * @opentelemetry/instrumentation-winston bumped from ^0.27.0 to ^0.27.2
 
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.29.0...auto-instrumentations-node-v0.30.0) (2022-05-25)
+
+
+### Features
+
+* **instrumentation-redis:** add support for redis@^4.0.0 ([#982](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/982)) ([1da0216](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1da0216180de694c15ec356d476f465811757ae4))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-redis bumped from ^0.30.0 to ^0.31.0
+    * @opentelemetry/instrumentation-redis-4 bumped from ^0.29.0 to ^0.30.0
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.28.0...auto-instrumentations-node-v0.29.0) (2022-05-14)
 
 
