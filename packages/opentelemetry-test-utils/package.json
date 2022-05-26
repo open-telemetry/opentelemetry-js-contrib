@@ -36,7 +36,7 @@
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/opentelemetry-test-utils#readme",
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.0"
   },
