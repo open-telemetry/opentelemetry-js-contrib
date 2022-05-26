@@ -64,5 +64,6 @@
     "@opentelemetry/instrumentation": "^0.28.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/restify": "4.3.8"
-  }
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify#readme"
 }

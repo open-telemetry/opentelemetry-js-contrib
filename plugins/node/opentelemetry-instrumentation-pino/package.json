@@ -68,5 +68,6 @@
     "@opentelemetry/instrumentation": "^0.28.0",
     "pino": "7.10.0",
     "semver": "^7.3.5"
-  }
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pino#readme"
 }
