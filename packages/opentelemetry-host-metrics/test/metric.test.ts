@@ -17,6 +17,7 @@
 const SI = require('systeminformation');
 import { MetricAttributes } from '@opentelemetry/api-metrics';
 import {
+  AggregationTemporality,
   DataPoint,
   Histogram,
   MeterProvider,
@@ -32,6 +33,9 @@ const cpuJson = require('./mocks/cpu.json');
 const networkJson = require('./mocks/network.json');
 
 class TestMetricReader extends MetricReader {
+  selectAggregationTemporality(): AggregationTemporality {
+    throw new Error('Method not implemented.');
+  }
   protected async onForceFlush(): Promise<void> {}
   protected async onShutdown(): Promise<void> {}
 }
@@ -214,12 +218,11 @@ async function getRecords(
   metricReader: MetricReader,
   name: string
 ): Promise<MetricData> {
-  const resourceMetrics = await metricReader.collect();
-  assert(resourceMetrics != null);
-  assert.strictEqual(resourceMetrics.instrumentationLibraryMetrics.length, 1);
-  const instrumentationLibraryMetrics =
-    resourceMetrics.instrumentationLibraryMetrics[0];
-  const metricDataList = instrumentationLibraryMetrics.metrics.filter(
+  const collectionResult = await metricReader.collect();
+  assert(collectionResult != null);
+  assert.strictEqual(collectionResult.resourceMetrics.scopeMetrics.length, 1);
+  const scopeMetrics = collectionResult.resourceMetrics.scopeMetrics[0];
+  const metricDataList = scopeMetrics.metrics.filter(
     metric => metric.descriptor.name === name
   );
   assert.strictEqual(metricDataList.length, 1);
