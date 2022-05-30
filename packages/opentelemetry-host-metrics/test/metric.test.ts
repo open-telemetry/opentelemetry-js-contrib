@@ -33,8 +33,8 @@ const cpuJson = require('./mocks/cpu.json');
 const networkJson = require('./mocks/network.json');
 
 class TestMetricReader extends MetricReader {
-  selectAggregationTemporality(): AggregationTemporality {
-    throw new Error('Method not implemented.');
+  public selectAggregationTemporality(): AggregationTemporality {
+    return AggregationTemporality.CUMULATIVE;
   }
   protected async onForceFlush(): Promise<void> {}
   protected async onShutdown(): Promise<void> {}
