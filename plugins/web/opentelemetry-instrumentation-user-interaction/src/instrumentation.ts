@@ -288,7 +288,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         }
 
         // filter out null (typeof null === 'object')
-        const once = useCapture && typeof useCapture === 'object' && useCapture.once;
+        const once =
+          useCapture && typeof useCapture === 'object' && useCapture.once;
         const patchedListener = function (this: HTMLElement, ...args: any[]) {
           let parentSpan: api.Span | undefined;
           const event: Event | undefined = args[0];
