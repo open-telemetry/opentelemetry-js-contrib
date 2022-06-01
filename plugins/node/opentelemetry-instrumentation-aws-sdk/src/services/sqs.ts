@@ -67,7 +67,12 @@ export class SqsServiceExtension implements ServiceExtension {
           spanAttributes[SemanticAttributes.MESSAGING_OPERATION] =
             MessagingOperationValues.RECEIVE;
 
-          request.commandInput.MessageAttributeNames = Array.from(new Set([ ...(request.commandInput.MessageAttributeNames ?? []), ...propagation.fields()]));
+          request.commandInput.MessageAttributeNames = Array.from(
+            new Set([
+              ...(request.commandInput.MessageAttributeNames ?? []),
+              ...propagation.fields(),
+            ])
+          );
         }
         break;
 
