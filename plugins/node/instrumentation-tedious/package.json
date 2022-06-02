@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-tedious",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenTelemetry instrumentation for `tedious`",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -33,7 +33,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.5.0"
+    "node": ">=10.0.0"
   },
   "files": [
     "build/src/**/*.js",
@@ -44,13 +44,13 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.2"
+    "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.2",
-    "@opentelemetry/context-async-hooks": "1.0.1",
-    "@opentelemetry/contrib-test-utils": "^0.29.0",
-    "@opentelemetry/sdk-trace-base": "1.0.1",
+    "@opentelemetry/api": "^1.0.0",
+    "@opentelemetry/context-async-hooks": "1.2.0",
+    "@opentelemetry/contrib-test-utils": "^0.30.0",
+    "@opentelemetry/sdk-trace-base": "1.2.0",
     "@types/mocha": "7.0.2",
     "@types/node": "16.11.21",
     "gts": "3.1.0",
@@ -63,8 +63,9 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.27.0",
+    "@opentelemetry/instrumentation": "^0.28.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/tedious": "^4.0.6"
-  }
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-tedious#readme"
 }

@@ -15,7 +15,6 @@
  */
 
 const path = require('path');
-const semver = require('semver');
 
 const appRoot = process.cwd();
 const packageJsonUrl = path.resolve(`${appRoot}/package.json`);
@@ -34,16 +33,10 @@ if (pjson.dependencies && pjson.dependencies['@opentelemetry/api']) {
 const peerVersion = pjson.peerDependencies && pjson.peerDependencies['@opentelemetry/api'];
 const devVersion = pjson.devDependencies && pjson.devDependencies['@opentelemetry/api'];
 if (peerVersion) {
-  // error if not pinned
-  if (!/^[0-9]/.test(devVersion)) {
-    throw new Error(
-      `Package ${pjson.name} does't have API version pinned in dev dependencies: ${devVersion}`
-    );
-  }
-  if (!semver.satisfies(devVersion, peerVersion)) {
+  if (devVersion !== peerVersion) {
     throw new Error(
       `Package ${pjson.name} depends on peer API version ${peerVersion} ` +
-      `but version ${devVersion} in development which doesn't satisfy the peer API version`
+      `but version ${devVersion} in development which doesn't match the peer API version`
     );
   }
   console.log(`${pjson.name} OK`);

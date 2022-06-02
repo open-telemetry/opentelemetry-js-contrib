@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/id-generator-aws-xray",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "AWS X-Ray ID generator for OpenTelemetry",
   "main": "build/src/index.js",
   "publishConfig": {
@@ -37,7 +37,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.5.0"
+    "node": ">=8.12.0"
   },
   "files": [
     "build/esm/**/*.js",
@@ -51,11 +51,11 @@
     "README.md"
   ],
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.2"
+    "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
     "@jsdevtools/coverage-istanbul-loader": "3.0.5",
-    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/api": "^1.0.0",
     "@types/mocha": "8.2.3",
     "@types/node": "16.11.21",
     "@types/sinon": "10.0.2",
@@ -80,5 +80,6 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.0.0"
-  }
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/opentelemetry-id-generator-aws-xray#readme"
 }

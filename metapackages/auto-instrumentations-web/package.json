@@ -1,10 +1,13 @@
 {
   "name": "@opentelemetry/auto-instrumentations-web",
-  "version": "0.27.2",
+  "version": "0.28.0",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-web#readme",
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=8.12.0"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -27,12 +30,12 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.2"
+    "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "7.15.0",
     "@jsdevtools/coverage-istanbul-loader": "3.0.5",
-    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/api": "^1.0.0",
     "@types/mocha": "8.2.3",
     "@types/node": "16.11.21",
     "@types/sinon": "10.0.2",
@@ -60,10 +63,10 @@
     "webpack-merge": "5.8.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.27.0",
-    "@opentelemetry/instrumentation-document-load": "^0.27.1",
-    "@opentelemetry/instrumentation-fetch": "^0.27.0",
-    "@opentelemetry/instrumentation-user-interaction": "^0.28.1",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.27.0"
+    "@opentelemetry/instrumentation": "^0.28.0",
+    "@opentelemetry/instrumentation-document-load": "^0.28.0",
+    "@opentelemetry/instrumentation-fetch": "^0.28.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.29.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.28.0"
   }
 }

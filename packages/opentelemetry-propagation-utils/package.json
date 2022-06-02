@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagation-utils",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "description": "Propagation utilities for opentelemetry instrumentations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -31,15 +31,18 @@
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=8.12.0"
+  },
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/opentelemetry-propagation-utils#readme",
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.1"
+    "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.1",
+    "@opentelemetry/api": "^1.0.0",
     "@types/node": "16.11.21",
     "gts": "3.1.0",
     "typescript": "4.3.5"

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-restify",
-  "version": "0.27.2",
+  "version": "0.28.0",
   "description": "OpenTelemetry restify automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -28,7 +28,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.5.0"
+    "node": ">=8.12.0"
   },
   "files": [
     "build/src/**/*.js",
@@ -42,13 +42,13 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.2"
+    "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.2",
-    "@opentelemetry/context-async-hooks": "1.0.1",
-    "@opentelemetry/sdk-trace-base": "1.0.1",
-    "@opentelemetry/sdk-trace-node": "1.0.1",
+    "@opentelemetry/api": "^1.0.0",
+    "@opentelemetry/context-async-hooks": "1.2.0",
+    "@opentelemetry/sdk-trace-base": "1.2.0",
+    "@opentelemetry/sdk-trace-node": "1.2.0",
     "@types/mocha": "7.0.2",
     "@types/node": "16.11.21",
     "gts": "3.1.0",
@@ -61,8 +61,9 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.0.0",
-    "@opentelemetry/instrumentation": "^0.27.0",
+    "@opentelemetry/instrumentation": "^0.28.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/restify": "4.3.8"
-  }
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify#readme"
 }

@@ -101,9 +101,10 @@ export class ExpressInstrumentation extends InstrumentationBase<
         (moduleExports, moduleVersion) => {
           if (moduleExports === undefined) return;
           diag.debug(`Removing patch for express@${moduleVersion}`);
-          this._unwrap(moduleExports.Router.prototype, 'route');
-          this._unwrap(moduleExports.Router.prototype, 'use');
-          this._unwrap(moduleExports.application.prototype, 'use');
+          const routerProto = moduleExports.Router as unknown as express.Router;
+          this._unwrap(routerProto, 'route');
+          this._unwrap(routerProto, 'use');
+          this._unwrap(moduleExports.application, 'use');
         }
       ),
     ];
