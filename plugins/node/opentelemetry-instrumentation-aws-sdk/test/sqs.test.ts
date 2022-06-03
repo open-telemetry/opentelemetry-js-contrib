@@ -372,7 +372,12 @@ describe('SQS', () => {
     });
 
     it('should have the custom added message attributes', async () => {
-      expect(receivedMessages[0].MessageAttributes?.TestMessageAttribute?.StringValue).toEqual('test value');
+      receivedMessages.
+        forEach(msg => {
+          expect(msg.MessageAttributes?.TestMessageAttribute?.StringValue).toEqual(
+            'test value'
+          );
+        })
     });
   });
 
