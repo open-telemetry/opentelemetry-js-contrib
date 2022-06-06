@@ -90,5 +90,6 @@
     "@opentelemetry/api": "^1.0.0",
     "zone.js": "0.11.4"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-user-interaction#readme"
 }

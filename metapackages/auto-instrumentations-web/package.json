@@ -3,7 +3,7 @@
   "version": "0.28.0",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-web#readme",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=8.12.0"

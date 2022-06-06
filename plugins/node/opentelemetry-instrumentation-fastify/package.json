@@ -66,5 +66,6 @@
     "@opentelemetry/instrumentation": "^0.28.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "fastify": "^3.19.2"
-  }
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-fastify#readme"
 }

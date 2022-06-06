@@ -17,7 +17,8 @@ npm install --save @opentelemetry/instrumentation-redis
 
 ### Supported Versions
 
-- `^2.6.0 || ^3.0.0` (version `4` is not yet supported)
+This package supports `redis@^2.6.0` and `redis@^3.0.0`
+For version `redis@^4.0.0`, please use `@opentelemetry/instrumentation-redis-4`
 
 ## Usage
 
@@ -41,6 +42,37 @@ registerInstrumentations({
 ```
 
 See [examples/redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/redis) for a short example.
+
+### Redis Instrumentation Options
+
+Redis instrumentation has a few options available to choose from. You can set the following:
+
+| Options                 | Type                                              | Description                                                                                                    |
+| ----------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `dbStatementSerializer` | `DbStatementSerializer` (function)                | Redis instrumentation will serialize the command to the `db.statement` attribute using the specified function. |
+| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response. Receives params: `span, moduleVersion, cmdName, cmdArgs` |
+| `requireParentSpan`     | `boolean`                                         | Require parent to create redis span, default when unset is false.                                              |
+
+#### Custom `db.statement` Serializer
+
+The instrumentation serializes the command into a Span attribute called
+`db.statement`. The default serialization sets the attribute to the command
+name, without the command arguments.
+
+It is also possible to define a custom serialization function. The function
+will receive the command name and arguments and must return a string.
+
+Here is a simple example to serialize the command name and arguments:
+
+```javascript
+const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis');
+
+const redisInstrumentation = new RedisInstrumentation({
+  dbStatementSerializer: function (cmdName, cmdArgs) {
+    return [cmdName, ...cmdArgs].join(" ");
+  },
+});
+```
 
 ## Useful links
 
