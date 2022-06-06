@@ -67,17 +67,8 @@ describe('SQS', () => {
   });
 
   beforeEach(() => {
-    const customMessageAttribute = {
-      TestMessageAttribute: {
-        DataType: 'String',
-        StringValue: 'test value',
-      },
-    };
-
     mockV2AwsSend(responseMockSuccess, {
-      Messages: [
-        { Body: 'msg 1 payload', MessageAttributes: customMessageAttribute },
-        { Body: 'msg 2 payload', MessageAttributes: customMessageAttribute }],
+      Messages: [{ Body: 'msg 1 payload' }, { Body: 'msg 2 payload' }],
     } as AWS.SQS.Types.ReceiveMessageResult);
   });
 
@@ -369,15 +360,6 @@ describe('SQS', () => {
           contextValueFromTest
         );
       });
-    });
-
-    it('should have the custom added message attributes', async () => {
-      receivedMessages.
-        forEach(msg => {
-          expect(msg.MessageAttributes?.TestMessageAttribute?.StringValue).toEqual(
-            'test value'
-          );
-        })
     });
   });
 

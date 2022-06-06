@@ -106,3 +106,9 @@ export const extractPropagationContext = (
   }
   return undefined;
 };
+
+export const deduplicateMessageAttributeNames = (messageAttributeNames: string[]) => {
+  return Array.from(
+    new Set(messageAttributeNames)
+  );
+};
