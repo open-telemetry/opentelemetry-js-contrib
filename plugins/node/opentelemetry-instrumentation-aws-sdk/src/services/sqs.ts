@@ -39,7 +39,7 @@ import {
   contextGetter,
   extractPropagationContext,
   injectPropagationContext,
-  deduplicateMessageAttributeNames
+  deduplicateMessageAttributeNames,
 } from './MessageAttributes';
 
 export class SqsServiceExtension implements ServiceExtension {
@@ -68,12 +68,16 @@ export class SqsServiceExtension implements ServiceExtension {
           spanAttributes[SemanticAttributes.MESSAGING_OPERATION] =
             MessagingOperationValues.RECEIVE;
 
-          const messageAttributeNames = request.commandInput.MessageAttributeNames ?
-          deduplicateMessageAttributeNames(request.commandInput.MessageAttributeNames) : [];
+          const messageAttributeNames = request.commandInput
+            .MessageAttributeNames
+            ? deduplicateMessageAttributeNames(
+              request.commandInput.MessageAttributeNames
+            )
+            : [];
 
           request.commandInput.MessageAttributeNames = [
             ...messageAttributeNames,
-            ...propagation.fields()
+            ...propagation.fields(),
           ];
         }
         break;

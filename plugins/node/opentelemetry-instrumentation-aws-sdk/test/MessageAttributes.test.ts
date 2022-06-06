@@ -19,7 +19,7 @@ import {
   MAX_MESSAGE_ATTRIBUTES,
   contextSetter,
   injectPropagationContext,
-  deduplicateMessageAttributeNames
+  deduplicateMessageAttributeNames,
 } from '../src/services/MessageAttributes';
 
 describe('MessageAttributes', () => {
@@ -78,10 +78,13 @@ describe('MessageAttributes', () => {
     });
   });
 
-  describe.only('deduplicateMessageAttributeNames', () => {
+  describe('deduplicateMessageAttributeNames', () => {
     it('should remove duplicate message attribute names', () => {
-      const messageAttributeNames = ["name 1", "name 2", "name 1"];
-      expect(deduplicateMessageAttributeNames(messageAttributeNames)).toEqual(["name 1", "name 2"]);
-    })
+      const messageAttributeNames = ['name 1', 'name 2', 'name 1'];
+      expect(deduplicateMessageAttributeNames(messageAttributeNames)).toEqual([
+        'name 1',
+        'name 2',
+      ]);
+    });
   });
 });
