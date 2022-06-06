@@ -71,8 +71,8 @@ export class SqsServiceExtension implements ServiceExtension {
           const messageAttributeNames = request.commandInput
             .MessageAttributeNames
             ? deduplicateMessageAttributeNames(
-              request.commandInput.MessageAttributeNames
-            )
+                request.commandInput.MessageAttributeNames
+              )
             : [];
 
           request.commandInput.MessageAttributeNames = [
