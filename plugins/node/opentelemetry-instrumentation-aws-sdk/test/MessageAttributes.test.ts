@@ -81,7 +81,6 @@ describe('MessageAttributes', () => {
   describe.only('deduplicateMessageAttributeNames', () => {
     it('should remove duplicate message attribute names', () => {
       const messageAttributeNames = ["name 1", "name 2", "name 1"];
-
       expect(deduplicateMessageAttributeNames(messageAttributeNames)).toEqual(["name 1", "name 2"]);
     })
   });
