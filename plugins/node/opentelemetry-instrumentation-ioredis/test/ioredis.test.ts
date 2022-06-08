@@ -241,9 +241,7 @@ describe('ioredis', () => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `${
-              command.name
-            } ${command.args.join(' ')}`,
+            [SemanticAttributes.DB_STATEMENT]: `${command.name} ${command.args[0]}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -273,7 +271,7 @@ describe('ioredis', () => {
       it('should create a child span for hset promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `hset ${hashKeyName} random random`,
+          [SemanticAttributes.DB_STATEMENT]: `hset ${hashKeyName}`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -335,7 +333,7 @@ describe('ioredis', () => {
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: 'scan 0 MATCH test-* COUNT 1000',
+          [SemanticAttributes.DB_STATEMENT]: 'scan 0',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -411,7 +409,7 @@ describe('ioredis', () => {
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
-              [SemanticAttributes.DB_STATEMENT]: 'subscribe news music',
+              [SemanticAttributes.DB_STATEMENT]: 'subscribe news',
             };
             testUtils.assertSpan(
               endedSpans[4],
@@ -466,7 +464,7 @@ describe('ioredis', () => {
       it('should create a child span for pipeline', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: 'set foo bar',
+          [SemanticAttributes.DB_STATEMENT]: 'set foo',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -563,7 +561,8 @@ describe('ioredis', () => {
 
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
+          [SemanticAttributes.DB_STATEMENT]:
+            'evalsha bfbf458525d6a0b19200bfd6db3af481156b367b',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -663,7 +662,7 @@ describe('ioredis', () => {
           SpanKind.CLIENT,
           {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `set ${testKeyName} data`,
+            [SemanticAttributes.DB_STATEMENT]: `set ${testKeyName}`,
           },
           [],
           unsetStatus

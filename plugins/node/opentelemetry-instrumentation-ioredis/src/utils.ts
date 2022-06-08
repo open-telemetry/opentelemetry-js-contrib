@@ -34,7 +34,9 @@ export const endSpan = (
 export const defaultDbStatementSerializer: DbStatementSerializer = (
   cmdName,
   cmdArgs
-) =>
-  Array.isArray(cmdArgs) && cmdArgs.length
-    ? `${cmdName} ${cmdArgs.join(' ')}`
-    : cmdName;
+) => {
+  if (Array.isArray(cmdArgs) && cmdArgs.length) {
+    return `${cmdName} ${cmdArgs[0]}`;
+  }
+  return cmdName;
+};
