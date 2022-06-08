@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.30.0...instrumentation-mysql2-v0.31.0) (2022-06-08)
+
+
+### Features
+
+* **mysql2:** support Connection.execute ([#1028](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1028)) ([3e2f9c5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3e2f9c56f4a748a5e63f2f054ec67d5db4b646ab))
+* update core dependencies stable ^1.3.1 experimental ^0.29.2 ([141b155](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/141b155e344980b51264e26b26c117b2113bcef6))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.30.0 to ^0.31.0
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.29.0...instrumentation-mysql2-v0.30.0) (2022-05-14)
 
 
