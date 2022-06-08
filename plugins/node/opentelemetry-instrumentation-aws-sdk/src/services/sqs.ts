@@ -68,17 +68,11 @@ export class SqsServiceExtension implements ServiceExtension {
           spanAttributes[SemanticAttributes.MESSAGING_OPERATION] =
             MessagingOperationValues.RECEIVE;
 
-          const messageAttributeNames = request.commandInput
-            .MessageAttributeNames
-            ? deduplicateMessageAttributeNames(
-                request.commandInput.MessageAttributeNames
-              )
-            : [];
-
-          request.commandInput.MessageAttributeNames = [
-            ...messageAttributeNames,
-            ...propagation.fields(),
-          ];
+          request.commandInput.MessageAttributeNames =
+            deduplicateMessageAttributeNames(
+              request.commandInput.MessageAttributeNames,
+              propagation.fields()
+            );
         }
         break;
 
