@@ -176,7 +176,7 @@ describe('mysql@2.x', () => {
     });
   });
 
-  describe('#Connection', () => {
+  describe('#Connection.query', () => {
     it('should intercept connection.query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       context.with(trace.setSpan(context.active(), span), () => {
@@ -301,7 +301,132 @@ describe('mysql@2.x', () => {
     });
   });
 
-  describe('#Pool', () => {
+  describe('#Connection.execute', () => {
+    it('should intercept connection.execute(text: string)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        const query = connection.execute<Result[]>(sql);
+        let rows = 0;
+
+        query.on('result', (row: mysqlTypes.RowDataPacket) => {
+          assert.strictEqual(row.solution, 2);
+          rows += 1;
+        });
+
+        query.on('end', () => {
+          assert.strictEqual(rows, 1);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql);
+          done();
+        });
+      });
+    });
+
+    it('should intercept connection.execute(text: string, callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        connection.execute(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+          assert.ifError(err);
+          assert.ok(res);
+          assert.strictEqual(res[0].solution, 2);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql);
+          done();
+        });
+      });
+    });
+
+    it('should intercept connection.execute(text: options, callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+? as solution';
+        connection.execute(
+          { sql, values: [1] },
+          (err, res: mysqlTypes.RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql, [1]);
+            done();
+          }
+        );
+      });
+    });
+
+    it('should intercept connection.execute(text: options, values: [], callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+? as solution';
+        connection.execute(
+          { sql },
+          [1],
+          (err, res: mysqlTypes.RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql, [1]);
+            done();
+          }
+        );
+      });
+    });
+
+    it('should intercept connection.execute(text: string, values: [], callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT ? as solution';
+        connection.execute(sql, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          assert.ifError(err);
+          assert.ok(res);
+          assert.strictEqual(res[0].solution, 1);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql, [1]);
+          done();
+        });
+      });
+    });
+
+    it('should intercept connection.execute(text: string, value: any, callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT ? as solution';
+        connection.execute(sql, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          assert.ifError(err);
+          assert.ok(res);
+          assert.strictEqual(res[0].solution, 1);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql, [1]);
+          done();
+        });
+      });
+    });
+
+    it('should attach error messages to spans', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT ? as solution';
+        connection.execute(sql, (err, res) => {
+          assert.ok(err);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql, undefined, err!.message);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('#Pool.query', () => {
     it('should intercept pool.query(text: string)', done => {
       const span = provider.getTracer('default').startSpan('test span');
       context.with(trace.setSpan(context.active(), span), () => {
@@ -454,6 +579,162 @@ describe('mysql@2.x', () => {
       context.with(trace.setSpan(context.active(), span), () => {
         const sql = 'SELECT ? as solution';
         pool.query(sql, (err, res) => {
+          assert.ok(err);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql, undefined, err!.message);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('#Pool.execute', () => {
+    it('should intercept pool.execute(text: string)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        pool.execute(sql, (err, row: mysqlTypes.RowDataPacket[]) => {
+          assert(!err);
+          assert.strictEqual(row[0].solution, 2);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql);
+          done();
+        });
+      });
+    });
+
+    it('should intercept pool.getConnection().execute(text: string)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        pool.getConnection((err, conn) => {
+          const query = conn.execute(sql);
+          let rows = 0;
+
+          query.on('result', (row: mysqlTypes.RowDataPacket) => {
+            assert.strictEqual(row.solution, 2);
+            rows += 1;
+          });
+
+          query.on('end', () => {
+            assert.strictEqual(rows, 1);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should intercept pool.execute(text: string, callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        pool.execute(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+          assert.ifError(err);
+          assert.ok(res);
+          assert.strictEqual(res[0].solution, 2);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql);
+          done();
+        });
+      });
+    });
+
+    it('should intercept pool.getConnection().execute(text: string, callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+1 as solution';
+        pool.getConnection((err, conn) => {
+          conn.execute(sql, (err, res: mysqlTypes.RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should intercept pool.execute(text: options, callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+? as solution';
+        pool.execute(
+          { sql, values: [1] },
+          (err, res: mysqlTypes.RowDataPacket[]) => {
+            assert.ifError(err);
+            assert.ok(res);
+            assert.strictEqual(res[0].solution, 2);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            assertSpan(spans[0], sql);
+            done();
+          }
+        );
+      });
+    });
+
+    it('should intercept pool.execute(text: options, values: [], callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT 1+? as solution';
+        pool.execute({ sql }, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          assert.ifError(err);
+          assert.ok(res);
+          assert.strictEqual(res[0].solution, 2);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql, [1]);
+          done();
+        });
+      });
+    });
+
+    it('should intercept pool.execute(text: string, values: [], callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT ? as solution';
+        pool.execute(sql, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          assert.ifError(err);
+          assert.ok(res);
+          assert.strictEqual(res[0].solution, 1);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql, [1]);
+          done();
+        });
+      });
+    });
+
+    it('should intercept pool.execute(text: string, value: any, callback)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT ? as solution';
+        pool.execute(sql, [1], (err, res: mysqlTypes.RowDataPacket[]) => {
+          assert.ifError(err);
+          assert.ok(res);
+          assert.strictEqual(res[0].solution, 1);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assertSpan(spans[0], sql, [1]);
+          done();
+        });
+      });
+    });
+
+    it('should attach error messages to spans', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT ? as solution';
+        pool.execute(sql, (err, res) => {
           assert.ok(err);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
