@@ -107,7 +107,7 @@ export const extractPropagationContext = (
   return undefined;
 };
 
-export const deduplicateMessageAttributeNames = (
+export const addPropagationFieldsToAttributeNames = (
   messageAttributeNames: string[] = [],
   propagationFields: string[]
 ) => {

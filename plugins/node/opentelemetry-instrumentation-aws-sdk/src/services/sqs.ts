@@ -39,7 +39,7 @@ import {
   contextGetter,
   extractPropagationContext,
   injectPropagationContext,
-  deduplicateMessageAttributeNames,
+  addPropagationFieldsToAttributeNames,
 } from './MessageAttributes';
 
 export class SqsServiceExtension implements ServiceExtension {
@@ -69,7 +69,7 @@ export class SqsServiceExtension implements ServiceExtension {
             MessagingOperationValues.RECEIVE;
 
           request.commandInput.MessageAttributeNames =
-            deduplicateMessageAttributeNames(
+            addPropagationFieldsToAttributeNames(
               request.commandInput.MessageAttributeNames,
               propagation.fields()
             );
