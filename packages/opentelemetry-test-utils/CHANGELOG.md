@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.30.0...contrib-test-utils-v0.31.0) (2022-06-08)
+
+
+### Features
+
+* update core dependencies stable ^1.3.1 experimental ^0.29.2 ([141b155](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/141b155e344980b51264e26b26c117b2113bcef6))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.29.0...contrib-test-utils-v0.30.0) (2022-05-14)
 
 
