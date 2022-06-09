@@ -187,12 +187,14 @@ describe('ioredis', () => {
       description: string;
       name: string;
       args: Array<string>;
+      serializedArgs: Array<string>;
       method: (cb: ioredisTypes.CallbackFunction<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         name: 'hset',
         args: [hashKeyName, 'testField', 'testValue'],
+        serializedArgs: [hashKeyName, 'testField', '[1 other arguments]'],
         method: (cb: ioredisTypes.CallbackFunction<number>) =>
           client.hset(hashKeyName, 'testField', 'testValue', cb),
       },
@@ -200,6 +202,7 @@ describe('ioredis', () => {
         description: 'get',
         name: 'get',
         args: [testKeyName],
+        serializedArgs: [testKeyName],
         method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
           client.get(testKeyName, cb),
       },
@@ -241,7 +244,9 @@ describe('ioredis', () => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `${command.name} ${command.args[0]}`,
+            [SemanticAttributes.DB_STATEMENT]: `${
+              command.name
+            } ${command.serializedArgs.join(' ')}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -271,7 +276,7 @@ describe('ioredis', () => {
       it('should create a child span for hset promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `hset ${hashKeyName}`,
+          [SemanticAttributes.DB_STATEMENT]: `hset ${hashKeyName} random [1 other arguments]`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -333,7 +338,7 @@ describe('ioredis', () => {
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: 'scan 0',
+          [SemanticAttributes.DB_STATEMENT]: 'scan 0 MATCH test-* COUNT 1000',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -409,7 +414,7 @@ describe('ioredis', () => {
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
-              [SemanticAttributes.DB_STATEMENT]: 'subscribe news',
+              [SemanticAttributes.DB_STATEMENT]: 'subscribe news music',
             };
             testUtils.assertSpan(
               endedSpans[4],
@@ -464,7 +469,7 @@ describe('ioredis', () => {
       it('should create a child span for pipeline', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: 'set foo',
+          [SemanticAttributes.DB_STATEMENT]: 'set foo [1 other arguments]',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -561,8 +566,7 @@ describe('ioredis', () => {
 
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]:
-            'evalsha bfbf458525d6a0b19200bfd6db3af481156b367b',
+          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -662,7 +666,7 @@ describe('ioredis', () => {
           SpanKind.CLIENT,
           {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `set ${testKeyName}`,
+            [SemanticAttributes.DB_STATEMENT]: `set ${testKeyName} [1 other arguments]`,
           },
           [],
           unsetStatus
