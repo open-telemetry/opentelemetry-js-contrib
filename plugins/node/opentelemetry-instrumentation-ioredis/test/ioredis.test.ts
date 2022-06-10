@@ -202,7 +202,7 @@ describe('ioredis', () => {
         description: 'get',
         name: 'get',
         args: [testKeyName],
-        serializedArgs: [testKeyName],
+        serializedArgs: [testKeyName, '[0 other arguments]'],
         method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
           client.get(testKeyName, cb),
       },
@@ -338,7 +338,8 @@ describe('ioredis', () => {
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: 'scan 0 MATCH test-* COUNT 1000',
+          [SemanticAttributes.DB_STATEMENT]:
+            'scan 0 MATCH test-* COUNT 1000 [0 other arguments]',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -414,7 +415,8 @@ describe('ioredis', () => {
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
-              [SemanticAttributes.DB_STATEMENT]: 'subscribe news music',
+              [SemanticAttributes.DB_STATEMENT]:
+                'subscribe news music [0 other arguments]',
             };
             testUtils.assertSpan(
               endedSpans[4],
@@ -503,7 +505,7 @@ describe('ioredis', () => {
       it('should create a child span for get promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `get ${testKeyName}`,
+          [SemanticAttributes.DB_STATEMENT]: `get ${testKeyName} [0 other arguments]`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -532,7 +534,7 @@ describe('ioredis', () => {
       it('should create a child span for del', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `del ${testKeyName}`,
+          [SemanticAttributes.DB_STATEMENT]: `del ${testKeyName} [0 other arguments]`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -566,7 +568,7 @@ describe('ioredis', () => {
 
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
+          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName} [0 other arguments]`,
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');

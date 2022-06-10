@@ -18,45 +18,32 @@ import { Span, SpanStatusCode } from '@opentelemetry/api';
 import { DbStatementSerializer } from './types';
 
 /**
- * Map of command names to the number of arguments that should be serialized.
- * For example, SET should serialize which key it's operating on, but not its value.
- * Commands not listed will have all their arguments serialized.
+ * List of regexes and the number of arguments that should be serialized for matching commands.
+ * For example, HSET should serialize which key and field it's operating on, but not its value.
+ * Setting the subset to -1 will serialize all arguments.
+ * Commands without a match will have their first argument serialized.
  *
  * Refer to https://redis.io/commands/ for the full list.
  */
-const SerializationSubsets: { [name: string]: number } = {
-  APPEND: 1,
-  'FUNCTION LOAD': 0,
-  GETSET: 1,
-  HMSET: 2,
-  HSET: 2,
-  HSETNX: 2,
-  LINSERT: 3,
-  LPUSH: 1,
-  LPUSHX: 1,
-  LSET: 2,
-
-  // MSET and MSETNX have repeating argument lists, so this serialization is likely to be incomplete.
-  MSET: 1,
-  MSETNX: 1,
-
-  PDFADD: 1,
-  PSETEX: 2,
-  PUBLISH: 1,
-  RESTORE: 2,
-  RPUSH: 1,
-  RPUSHX: 1,
-  SADD: 1,
-  'SCRIPT LOAD': 0,
-  SET: 1,
-  SETEX: 2,
-  SETNX: 1,
-  SISMEMBER: 1,
-  SMISMEMBER: 1,
-  SPUBLISH: 1,
-  XADD: 3,
-  ZADD: 2,
-};
+const SerializationSubsets = [
+  {
+    regex: /^(LPUSH|MSET|SET|PFA|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
+    args: 1,
+  },
+  {
+    regex: /^(HSET|HMSET|LSET)/i,
+    args: 2,
+  },
+  {
+    regex: /^(LINSERT)/i,
+    args: 3,
+  },
+  {
+    regex:
+      /^(ACL|BIT|B[LRZ]|CLIENT|CLUSTER|CONFIG|COMMAND|DECR|DEL|EVAL|EX|FUNCTION|GEO|GET|HINCR|HMGET|HSCAN|INCR|L[TRLM]|MEMORY|P[EFISTU]|RPOP|S[CDIMORSU]|XACK|X[CDGILPRT]|Z[CDILMPRS])/i,
+    args: -1,
+  },
+];
 
 export const endSpan = (
   span: Span,
@@ -77,15 +64,14 @@ export const defaultDbStatementSerializer: DbStatementSerializer = (
   cmdArgs
 ) => {
   if (Array.isArray(cmdArgs) && cmdArgs.length) {
-    const argsSubset = SerializationSubsets[cmdName.toUpperCase()];
-    if (argsSubset) {
-      const args = cmdArgs.slice(0, argsSubset);
-      const remainder = cmdArgs.slice(argsSubset);
-      return `${cmdName} ${args.join(' ')} [${
-        remainder.length
-      } other arguments]`;
-    }
-    return `${cmdName} ${cmdArgs.join(' ')}`;
+    const argsSubset =
+      SerializationSubsets.find(({ regex }) => {
+        return regex.test(cmdName);
+      })?.args || 1;
+    const args = argsSubset > 0 ? cmdArgs.slice(0, argsSubset) : cmdArgs;
+    return `${cmdName} ${args.join(' ')} [${
+      args.length !== cmdArgs.length ? cmdArgs.length - argsSubset : 0
+    } other arguments]`;
   }
   return cmdName;
 };
