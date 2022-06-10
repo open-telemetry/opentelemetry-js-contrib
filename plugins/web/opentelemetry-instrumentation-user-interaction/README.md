@@ -3,13 +3,14 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides auto instrumentation of user interaction for web.
-This module can work either with [zone-js] or without it.
-With [zone-js] and ZoneContextManager it will fully support the async operations.
-If you use Angular you already have the [zone-js]. It will be the same if you use [@opentelemetry/context-zone].
-Without [zone-js] it will still work but with limited support.
+This module provides automatic instrumentation for *user interactions* for Web applications, which may be loaded using the [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) package.
+
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-web](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
+This module can work either with [zone-js] or without it, with [zone-js] and ZoneContextManager it will fully support the async operations. Without [zone-js] it will still work but with limited support.
+If you use Angular or [@opentelemetry/context-zone] you will have [zone-js] included.
 
 ## Installation
 
