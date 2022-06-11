@@ -105,7 +105,7 @@ const patchArrayFunction = (
           }
           return result;
         } finally {
-          if (!result || !isPromise(result)) {
+          if (!isPromise(result)) {
             message[END_SPAN_FUNCTION]?.();
           }
         }
