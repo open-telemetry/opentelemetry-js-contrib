@@ -22,13 +22,13 @@ import {
   context,
   trace,
   diag,
-  SpanAttributes,
-} from '@opentelemetry/api';
+  Attributes,
+} from "@opentelemetry/api";
 
 const START_SPAN_FUNCTION = Symbol(
-  'opentelemetry.pubsub-propagation.start_span'
+  "opentelemetry.pubsub-propagation.start_span"
 );
-const END_SPAN_FUNCTION = Symbol('opentelemetry.pubsub-propagation.end_span');
+const END_SPAN_FUNCTION = Symbol("opentelemetry.pubsub-propagation.end_span");
 
 interface OtelProcessedMessage {
   [START_SPAN_FUNCTION]?: () => Span;
@@ -50,15 +50,26 @@ const patchArrayFilter = (
     return newArray;
   };
 
-  Object.defineProperty(messages, 'filter', {
+  Object.defineProperty(messages, "filter", {
     enumerable: false,
     value: patchedFunc,
   });
 };
 
+function isPromise(value: unknown): value is Promise<unknown> {
+  return value != null && typeof (value as any).then == "function";
+}
+
+function Promise_finally<T>(p: Promise<T>, onFinally: () => any): Promise<T> {
+  return p.then(
+    (x) => Promise.resolve(onFinally()).then(() => x),
+    (x) => Promise.resolve(onFinally()).then(() => Promise.reject(x))
+  );
+}
+
 const patchArrayFunction = (
   messages: OtelProcessedMessage[],
-  functionName: 'forEach' | 'map',
+  functionName: "forEach" | "map",
   tracer: Tracer,
   loopContext: Context
 ) => {
@@ -77,14 +88,30 @@ const patchArrayFunction = (
       if (!messageSpan) return callback.apply(this, callbackArgs);
 
       const res = context.with(trace.setSpan(loopContext, messageSpan), () => {
+        let result: Promise<unknown> | unknown;
         try {
-          return callback.apply(this, callbackArgs);
+          result = callback.apply(this, callbackArgs);
+          if (isPromise(result)) {
+            return result.then(
+              (x) => {
+                message[END_SPAN_FUNCTION]?.();
+                return x;
+              },
+              (err) => {
+                message[END_SPAN_FUNCTION]?.();
+                throw err;
+              }
+            );
+          }
+          return result;
         } finally {
-          message[END_SPAN_FUNCTION]?.();
+          if (!result || !isPromise(result)) {
+            message[END_SPAN_FUNCTION]?.();
+          }
         }
       });
 
-      if (typeof res === 'object') {
+      if (typeof res === "object") {
         const startSpanFunction = Object.getOwnPropertyDescriptor(
           message,
           START_SPAN_FUNCTION
@@ -121,13 +148,13 @@ const patchArrayForProcessSpans = (
 ) => {
   patchArrayFunction(
     messages as OtelProcessedMessage[],
-    'forEach',
+    "forEach",
     tracer,
     loopContext
   );
   patchArrayFunction(
     messages as OtelProcessedMessage[],
-    'map',
+    "map",
     tracer,
     loopContext
   );
@@ -158,7 +185,7 @@ const startMessagingProcessSpan = <T>(
       kind: SpanKind.CONSUMER,
       attributes: {
         ...attributes,
-        ['messaging.operation']: 'process',
+        ["messaging.operation"]: "process",
       },
       links,
     },
@@ -187,14 +214,14 @@ const startMessagingProcessSpan = <T>(
   try {
     processHook?.(processSpan, message);
   } catch (err) {
-    diag.error('opentelemetry-pubsub-propagation: process hook error', err);
+    diag.error("opentelemetry-pubsub-propagation: process hook error", err);
   }
 
   return processSpan;
 };
 
 interface SpanDetails {
-  attributes: SpanAttributes;
+  attributes: Attributes;
   parentContext: Context;
   name: string;
 }
@@ -216,7 +243,7 @@ const patchMessagesArrayToStartProcessSpans = <T>({
   messageToSpanDetails,
   processHook,
 }: PatchForProcessingPayload<T>) => {
-  messages.forEach(message => {
+  messages.forEach((message) => {
     const {
       attributes,
       name,
