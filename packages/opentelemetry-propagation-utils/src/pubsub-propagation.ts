@@ -57,7 +57,7 @@ const patchArrayFilter = (
 };
 
 function isPromise(value: unknown): value is Promise<unknown> {
-  return typeof (value as any)?.then == 'function';
+  return typeof (value as any)?.then === 'function';
 }
 
 const patchArrayFunction = (
