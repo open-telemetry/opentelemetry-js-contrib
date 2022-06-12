@@ -25,18 +25,18 @@ import { DbStatementSerializer } from './types';
  *
  * Refer to https://redis.io/commands/ for the full list.
  */
-const SerializationSubsets = [
+const serializationSubsets = [
+  {
+    regex: /^ECHO/i,
+    args: 0,
+  },
   {
     regex: /^(LPUSH|MSET|SET|PFA|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
     args: 1,
   },
   {
-    regex: /^(HSET|HMSET|LSET)/i,
+    regex: /^(HSET|HMSET|LSET|LINSERT)/i,
     args: 2,
-  },
-  {
-    regex: /^(LINSERT)/i,
-    args: 3,
   },
   {
     regex:
@@ -64,14 +64,18 @@ export const defaultDbStatementSerializer: DbStatementSerializer = (
   cmdArgs
 ) => {
   if (Array.isArray(cmdArgs) && cmdArgs.length) {
-    const argsSubset =
-      SerializationSubsets.find(({ regex }) => {
+    const nArgsToSerialize =
+      serializationSubsets.find(({ regex }) => {
         return regex.test(cmdName);
-      })?.args || 1;
-    const args = argsSubset > 0 ? cmdArgs.slice(0, argsSubset) : cmdArgs;
-    return `${cmdName} ${args.join(' ')} [${
-      args.length !== cmdArgs.length ? cmdArgs.length - argsSubset : 0
-    } other arguments]`;
+      })?.args ?? 1;
+    const argsToSerialize =
+      nArgsToSerialize >= 0 ? cmdArgs.slice(0, nArgsToSerialize) : cmdArgs;
+    if (cmdArgs.length > argsToSerialize.length) {
+      argsToSerialize.push(
+        `[${cmdArgs.length - nArgsToSerialize} other arguments]`
+      );
+    }
+    return `${cmdName} ${argsToSerialize.join(' ')}`;
   }
   return cmdName;
 };

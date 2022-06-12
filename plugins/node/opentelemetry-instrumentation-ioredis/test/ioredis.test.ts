@@ -43,6 +43,7 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
+import { defaultDbStatementSerializer } from '../src/utils';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -202,7 +203,7 @@ describe('ioredis', () => {
         description: 'get',
         name: 'get',
         args: [testKeyName],
-        serializedArgs: [testKeyName, '[0 other arguments]'],
+        serializedArgs: [testKeyName],
         method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
           client.get(testKeyName, cb),
       },
@@ -338,8 +339,7 @@ describe('ioredis', () => {
       it('should create a child span for streamify scanning', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]:
-            'scan 0 MATCH test-* COUNT 1000 [0 other arguments]',
+          [SemanticAttributes.DB_STATEMENT]: 'scan 0 MATCH test-* COUNT 1000',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -415,8 +415,7 @@ describe('ioredis', () => {
 
             const attributes = {
               ...DEFAULT_ATTRIBUTES,
-              [SemanticAttributes.DB_STATEMENT]:
-                'subscribe news music [0 other arguments]',
+              [SemanticAttributes.DB_STATEMENT]: 'subscribe news music',
             };
             testUtils.assertSpan(
               endedSpans[4],
@@ -505,7 +504,7 @@ describe('ioredis', () => {
       it('should create a child span for get promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `get ${testKeyName} [0 other arguments]`,
+          [SemanticAttributes.DB_STATEMENT]: `get ${testKeyName}`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -534,7 +533,7 @@ describe('ioredis', () => {
       it('should create a child span for del', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `del ${testKeyName} [0 other arguments]`,
+          [SemanticAttributes.DB_STATEMENT]: `del ${testKeyName}`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -568,7 +567,7 @@ describe('ioredis', () => {
 
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName} [0 other arguments]`,
+          [SemanticAttributes.DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -953,6 +952,38 @@ describe('ioredis', () => {
             });
           });
         });
+      });
+    });
+  });
+
+  describe('#defaultDbStatementSerializer()', () => {
+    [
+      {
+        cmdName: 'ECHO',
+        cmdArgs: ['echo'],
+        expected: 'ECHO [1 other arguments]',
+      },
+      {
+        cmdName: 'LPUSH',
+        cmdArgs: ['list', 'value'],
+        expected: 'LPUSH list [1 other arguments]',
+      },
+      {
+        cmdName: 'HSET',
+        cmdArgs: ['hash', 'field', 'value'],
+        expected: 'HSET hash field [1 other arguments]',
+      },
+      {
+        cmdName: 'INCRBY',
+        cmdArgs: ['key', 5],
+        expected: 'INCRBY key 5',
+      },
+    ].forEach(({ cmdName, cmdArgs, expected }) => {
+      it(`should serialize the correct number of arguments for ${cmdName}`, () => {
+        assert.strictEqual(
+          defaultDbStatementSerializer(cmdName, cmdArgs),
+          expected
+        );
       });
     });
   });
