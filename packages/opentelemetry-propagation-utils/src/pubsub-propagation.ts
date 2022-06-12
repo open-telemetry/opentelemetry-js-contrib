@@ -57,6 +57,7 @@ const patchArrayFilter = (
 };
 
 function isPromise(value: unknown): value is Promise<unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return typeof (value as any)?.then === 'function';
 }
 
@@ -85,7 +86,7 @@ const patchArrayFunction = (
         try {
           result = callback.apply(this, callbackArgs);
           if (isPromise(result)) {
-            const endSpan = ()=> message[END_SPAN_FUNCTION]?.();
+            const endSpan = () => message[END_SPAN_FUNCTION]?.();
             result.then(endSpan, endSpan);
           }
           return result;
