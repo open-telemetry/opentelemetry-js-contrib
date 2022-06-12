@@ -17,7 +17,6 @@
     "prewatch": "npm run precompile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
-    "test-all-versions": "tav",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -55,7 +54,6 @@
     "mocha": "^10.0.0",
     "nyc": "^15.1.0",
     "sinon": "^14.0.0",
-    "test-all-versions": "^5.0.1",
     "ts-mocha": "^10.0.0",
     "typescript": "4.3.5"
   }
