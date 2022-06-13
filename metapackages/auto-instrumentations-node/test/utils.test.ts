@@ -42,6 +42,7 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-ioredis',
         '@opentelemetry/instrumentation-knex',
         '@opentelemetry/instrumentation-koa',
+        '@opentelemetry/instrumentation-lru-memoizer',
         '@opentelemetry/instrumentation-memcached',
         '@opentelemetry/instrumentation-mongodb',
         '@opentelemetry/instrumentation-mysql2',
