@@ -36,11 +36,11 @@ export default class LruMemoizerInstrumentation extends InstrumentationBase {
           this._diag.debug('applying patch for lru-memoizer');
 
           // moduleExports is a function which receives an options object,
-          // and return a "memoizer" function upon invocation
-          // we want to patch this "memoizer" internal function
+          // and returns a "memoizer" function upon invocation.
+          // We want to patch this "memoizer's" internal function
           const asyncMemoizer = function (this: unknown) {
-            // this function is invoked every time the user want to read something from the cache
-            // we replace it with another function which bind the current context to the last argument (callback)
+            // This function is invoked every time the user wants to get a (possible) memoized value
+            // We replace it with another function in which we bind the current context to the last argument (callback)
             const origMemoizer = moduleExports.apply(this, arguments);
             return function (this: unknown) {
               const modifiedArguments = [...arguments];
@@ -53,7 +53,7 @@ export default class LruMemoizerInstrumentation extends InstrumentationBase {
             };
           };
 
-          // sync function preserve context, but we still need to export it
+          // sync function preserves context, but we still need to export it
           // as the instrumented package does
           asyncMemoizer.sync = moduleExports.sync;
           return asyncMemoizer;

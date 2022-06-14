@@ -21,7 +21,7 @@ npm install --save @opentelemetry/instrumentation-lru-memoizer
 
 ## Usage
 
-This instrumentation does not produce any telemetry data. It only bind the caller context to callbacks so downstream operations are recorded with the right context (traceId / parentSpanId / baggadge / etc). This package is a dependency for other popular packages such as [jwks-rsa](https://www.npmjs.com/package/jwks-rsa)
+This instrumentation does not produce any telemetry data. It only bind the caller context to callbacks so downstream operations are recorded with the right context (traceId / parentSpanId / baggage / etc). This package is a dependency for other popular packages such as [jwks-rsa](https://www.npmjs.com/package/jwks-rsa)
 
 To load a specific plugin, specify it in the registerInstrumentations's configuration:
 
