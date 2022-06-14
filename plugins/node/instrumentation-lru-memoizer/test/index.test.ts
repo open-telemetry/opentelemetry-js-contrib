@@ -23,7 +23,7 @@ registerInstrumentationTesting(new LruMemoizerInstrumentation());
 
 import * as memoizer from 'lru-memoizer';
 
-type MemoizerTestCallback = (err: Error | null, result: string) => void;
+type MemoizerTestCallback = (err: Error, result: string) => void;
 
 describe('lru-memoizer instrumentation', () => {
   describe('async', () => {
@@ -34,11 +34,11 @@ describe('lru-memoizer instrumentation', () => {
 
       let memoizerLoadCallback: MemoizerTestCallback;
       const memoizedFoo = memoizer({
-        load: (_params: any, callback: MemoizerTestCallback) => {
+        load: (_param: unknown, callback: MemoizerTestCallback) => {
           memoizerLoadCallback = callback;
         },
         hash: () => 'bar',
-      });
+      } as any);
 
       testTracer.startActiveSpan('memoized invocation', () => {
         const firstSpanContext = context.active();
@@ -50,7 +50,7 @@ describe('lru-memoizer instrumentation', () => {
 
       // we invoke the callback from outside of the above span's context.
       // however, we expect that the callback is called with the context of the original invocation
-      memoizerLoadCallback!(null, 'result');
+      memoizerLoadCallback!(null as any, 'result');
     });
 
     it('should invoke callback with right context when serving 2 parallel async requestes', () => {
@@ -61,13 +61,13 @@ describe('lru-memoizer instrumentation', () => {
       const ongoingMemoizerLoads: Function[] = [];
 
       const memoizedFoo = memoizer({
-        load: (options: any, callback) => {
+        load: (_param: unknown, callback: MemoizerTestCallback) => {
           // don't call the cb yet, first invoke another call,
           // to let it go into the internal "pendingLoad" queue
           ongoingMemoizerLoads.push(callback);
         },
         hash: () => 'bar',
-      });
+      } as any);
 
       testTracer.startActiveSpan('first request', () => {
         const firstSpanContext = context.active();
@@ -89,14 +89,14 @@ describe('lru-memoizer instrumentation', () => {
 
     it('should not throw when last argument is not callback', () => {
       const memoizedFoo = memoizer({
-        load: (options: any, callback) => {
+        load: (callback: MemoizerTestCallback) => {
           return 'foo';
         },
         hash: () => 'bar',
-      });
+      } as any);
 
       // this is not valid but we want to make sure it does not throw or act badly
-      memoizedFoo({ foo: 'bar' }, null as unknown);
+      memoizedFoo({ foo: 'bar' }, null as any);
     });
   });
 
@@ -105,7 +105,7 @@ describe('lru-memoizer instrumentation', () => {
       const memoizedFoo = memoizer.sync({
         load: (_params: any) => 'foo',
         hash: () => 'bar',
-      });
+      } as any);
 
       const res = memoizedFoo({ foo: 'bar' });
       expect(res).toMatch('foo');
@@ -119,11 +119,11 @@ describe('lru-memoizer instrumentation', () => {
       const memoizedFoo = memoizer.sync({
         load: (_params: any) => Promise.resolve('foo'),
         hash: () => 'bar',
-      });
+      } as any);
 
       testTracer.startActiveSpan('first request', () => {
         const memoizerInvokeContext = context.active();
-        const res = memoizedFoo({ foo: 'bar' });
+        const res = memoizedFoo({ foo: 'bar' }) as Promise<string>;
         res.then(val => {
           expect(context.active()).toBe(memoizerInvokeContext);
           expect(val).toMatch('foo'); // make sure it still works after patch

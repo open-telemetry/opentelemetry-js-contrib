@@ -38,8 +38,8 @@ export default class LruMemoizerInstrumentation extends InstrumentationBase {
           // moduleExports is a function which receives an options object,
           // and return a "memoizer" function upon invocation
           // we want to patch this "memoizer" internal function
-          const asyncMemoizer = function (this: unknown, options: any) {
-            // this function is invoked everytime the user want to read something from the cache
+          const asyncMemoizer = function (this: unknown) {
+            // this function is invoked every time the user want to read something from the cache
             // we replace it with another function which bind the current context to the last argument (callback)
             const origMemoizer = moduleExports.apply(this, arguments);
             return function (this: unknown) {
