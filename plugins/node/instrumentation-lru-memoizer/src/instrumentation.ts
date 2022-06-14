@@ -31,7 +31,7 @@ export default class LruMemoizerInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition<any>(
         'lru-memoizer',
-        ['>1.2 <=2'],
+        ['>=1.3 <3'],
         moduleExports => {
           this._diag.debug('applying patch for lru-memoizer');
 
