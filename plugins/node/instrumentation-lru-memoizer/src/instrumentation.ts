@@ -39,7 +39,7 @@ export default class LruMemoizerInstrumentation extends InstrumentationBase {
           // and returns a "memoizer" function upon invocation.
           // We want to patch this "memoizer's" internal function
           const asyncMemoizer = function (this: unknown) {
-            // This function is invoked every time the user wants to get a (possible) memoized value
+            // This following function is invoked every time the user wants to get a (possible) memoized value
             // We replace it with another function in which we bind the current context to the last argument (callback)
             const origMemoizer = moduleExports.apply(this, arguments);
             return function (this: unknown) {
@@ -54,7 +54,7 @@ export default class LruMemoizerInstrumentation extends InstrumentationBase {
           };
 
           // sync function preserves context, but we still need to export it
-          // as the instrumented package does
+          // as the lru-memoizer package does
           asyncMemoizer.sync = moduleExports.sync;
           return asyncMemoizer;
         },
