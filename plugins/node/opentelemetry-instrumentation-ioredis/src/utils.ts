@@ -31,7 +31,7 @@ const serializationSubsets = [
     args: 0,
   },
   {
-    regex: /^(LPUSH|MSET|SET|PFA|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
+    regex: /^(LPUSH|MSET|PFA|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
     args: 1,
   },
   {
@@ -67,7 +67,7 @@ export const defaultDbStatementSerializer: DbStatementSerializer = (
     const nArgsToSerialize =
       serializationSubsets.find(({ regex }) => {
         return regex.test(cmdName);
-      })?.args ?? 1;
+      })?.args ?? 0;
     const argsToSerialize =
       nArgsToSerialize >= 0 ? cmdArgs.slice(0, nArgsToSerialize) : cmdArgs;
     if (cmdArgs.length > argsToSerialize.length) {

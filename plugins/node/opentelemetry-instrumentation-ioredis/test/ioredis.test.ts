@@ -959,6 +959,11 @@ describe('ioredis', () => {
   describe('#defaultDbStatementSerializer()', () => {
     [
       {
+        cmdName: 'UNKNOWN',
+        cmdArgs: ['something'],
+        expected: 'UNKNOWN [1 other arguments]',
+      },
+      {
         cmdName: 'ECHO',
         cmdArgs: ['echo'],
         expected: 'ECHO [1 other arguments]',
