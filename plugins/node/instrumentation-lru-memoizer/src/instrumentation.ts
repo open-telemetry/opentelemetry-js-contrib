@@ -46,9 +46,11 @@ export default class LruMemoizerInstrumentation extends InstrumentationBase {
               const modifiedArguments = [...arguments];
               // last argument is the callback
               const origCallback = modifiedArguments.pop();
-              modifiedArguments.push(
-                context.bind(context.active(), origCallback)
-              );
+              const callbackWithContext =
+                typeof origCallback === 'function'
+                  ? context.bind(context.active(), origCallback)
+                  : origCallback;
+              modifiedArguments.push(callbackWithContext);
               return origMemoizer.apply(this, modifiedArguments);
             };
           };
