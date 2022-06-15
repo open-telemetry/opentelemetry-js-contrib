@@ -43,6 +43,7 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
+import { defaultDbStatementSerializer } from '../src/utils';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -187,12 +188,14 @@ describe('ioredis', () => {
       description: string;
       name: string;
       args: Array<string>;
+      serializedArgs: Array<string>;
       method: (cb: ioredisTypes.CallbackFunction<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         name: 'hset',
         args: [hashKeyName, 'testField', 'testValue'],
+        serializedArgs: [hashKeyName, 'testField', '[1 other arguments]'],
         method: (cb: ioredisTypes.CallbackFunction<number>) =>
           client.hset(hashKeyName, 'testField', 'testValue', cb),
       },
@@ -200,6 +203,7 @@ describe('ioredis', () => {
         description: 'get',
         name: 'get',
         args: [testKeyName],
+        serializedArgs: [testKeyName],
         method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
           client.get(testKeyName, cb),
       },
@@ -243,7 +247,7 @@ describe('ioredis', () => {
             ...DEFAULT_ATTRIBUTES,
             [SemanticAttributes.DB_STATEMENT]: `${
               command.name
-            } ${command.args.join(' ')}`,
+            } ${command.serializedArgs.join(' ')}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -273,7 +277,7 @@ describe('ioredis', () => {
       it('should create a child span for hset promise', async () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: `hset ${hashKeyName} random random`,
+          [SemanticAttributes.DB_STATEMENT]: `hset ${hashKeyName} random [1 other arguments]`,
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -466,7 +470,7 @@ describe('ioredis', () => {
       it('should create a child span for pipeline', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: 'set foo bar',
+          [SemanticAttributes.DB_STATEMENT]: 'set foo [1 other arguments]',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -663,7 +667,7 @@ describe('ioredis', () => {
           SpanKind.CLIENT,
           {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `set ${testKeyName} data`,
+            [SemanticAttributes.DB_STATEMENT]: `set ${testKeyName} [1 other arguments]`,
           },
           [],
           unsetStatus
@@ -948,6 +952,43 @@ describe('ioredis', () => {
             });
           });
         });
+      });
+    });
+  });
+
+  describe('#defaultDbStatementSerializer()', () => {
+    [
+      {
+        cmdName: 'UNKNOWN',
+        cmdArgs: ['something'],
+        expected: 'UNKNOWN [1 other arguments]',
+      },
+      {
+        cmdName: 'ECHO',
+        cmdArgs: ['echo'],
+        expected: 'ECHO [1 other arguments]',
+      },
+      {
+        cmdName: 'LPUSH',
+        cmdArgs: ['list', 'value'],
+        expected: 'LPUSH list [1 other arguments]',
+      },
+      {
+        cmdName: 'HSET',
+        cmdArgs: ['hash', 'field', 'value'],
+        expected: 'HSET hash field [1 other arguments]',
+      },
+      {
+        cmdName: 'INCRBY',
+        cmdArgs: ['key', 5],
+        expected: 'INCRBY key 5',
+      },
+    ].forEach(({ cmdName, cmdArgs, expected }) => {
+      it(`should serialize the correct number of arguments for ${cmdName}`, () => {
+        assert.strictEqual(
+          defaultDbStatementSerializer(cmdName, cmdArgs),
+          expected
+        );
       });
     });
   });
