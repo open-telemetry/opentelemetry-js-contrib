@@ -652,6 +652,11 @@
       "versionPolicyName": "experimentalPlugin"
     },
     {
+      "packageName": "@opentelemetry/instrumentation-redis-4",
+      "projectFolder": "plugins/node/opentelemetry-instrumentation-redis-4",
+      "versionPolicyName": "experimentalPlugin"
+    },
+    {
       "packageName": "@opentelemetry/instrumentation-restify",
       "projectFolder": "plugins/node/opentelemetry-instrumentation-restify",
       "versionPolicyName": "experimentalPlugin"
