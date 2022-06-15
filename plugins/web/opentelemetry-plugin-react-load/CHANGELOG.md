@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/plugin-react-load-v0.27.0...plugin-react-load-v0.28.0) (2022-06-08)
+
+
+### Features
+
+* update core dependencies stable ^1.3.1 experimental ^0.29.2 ([141b155](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/141b155e344980b51264e26b26c117b2113bcef6))
+
 ## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/plugin-react-load-v0.26.1...plugin-react-load-v0.27.0) (2022-05-14)
 
 
