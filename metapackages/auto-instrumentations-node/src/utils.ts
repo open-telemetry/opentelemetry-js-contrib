@@ -33,6 +33,7 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
 import { KnexInstrumentation } from '@opentelemetry/instrumentation-knex';
 import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
+import { LruMemoizerInstrumentation } from '@opentelemetry/instrumentation-lru-memoizer';
 import { MemcachedInstrumentation } from '@opentelemetry/instrumentation-memcached';
 import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { MySQL2Instrumentation } from '@opentelemetry/instrumentation-mysql2';
@@ -65,6 +66,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
   '@opentelemetry/instrumentation-knex': KnexInstrumentation,
   '@opentelemetry/instrumentation-koa': KoaInstrumentation,
+  '@opentelemetry/instrumentation-lru-memoizer': LruMemoizerInstrumentation,
   '@opentelemetry/instrumentation-memcached': MemcachedInstrumentation,
   '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
   '@opentelemetry/instrumentation-mysql2': MySQL2Instrumentation,
