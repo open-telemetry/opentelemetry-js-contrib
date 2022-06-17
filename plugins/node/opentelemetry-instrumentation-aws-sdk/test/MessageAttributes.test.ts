@@ -19,6 +19,7 @@ import {
   MAX_MESSAGE_ATTRIBUTES,
   contextSetter,
   injectPropagationContext,
+  addPropagationFieldsToAttributeNames,
 } from '../src/services/MessageAttributes';
 
 describe('MessageAttributes', () => {
@@ -74,6 +75,26 @@ describe('MessageAttributes', () => {
       expect(Object.keys(contextAttributes).length).toBe(10);
       injectPropagationContext(contextAttributes);
       expect(Object.keys(contextAttributes).length).toBe(10);
+    });
+  });
+
+  describe('addPropagationFieldsToAttributeNames', () => {
+    const messageAttributeNames = ['name 1', 'name 2', 'name 1'];
+    const propagationFields = ['traceparent'];
+
+    it('should remove duplicate message attribute names and add propagation fields', () => {
+      expect(
+        addPropagationFieldsToAttributeNames(
+          messageAttributeNames,
+          propagationFields
+        )
+      ).toEqual(['name 1', 'name 2', 'traceparent']);
+    });
+
+    it('should return propagation fields if no message attribute names are set', () => {
+      expect(
+        addPropagationFieldsToAttributeNames(undefined, propagationFields)
+      ).toEqual(['traceparent']);
     });
   });
 });
