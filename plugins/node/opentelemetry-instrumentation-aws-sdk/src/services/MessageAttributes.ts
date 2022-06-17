@@ -106,3 +106,12 @@ export const extractPropagationContext = (
   }
   return undefined;
 };
+
+export const addPropagationFieldsToAttributeNames = (
+  messageAttributeNames: string[] = [],
+  propagationFields: string[]
+) => {
+  return messageAttributeNames.length
+    ? Array.from(new Set([...messageAttributeNames, ...propagationFields]))
+    : propagationFields;
+};
