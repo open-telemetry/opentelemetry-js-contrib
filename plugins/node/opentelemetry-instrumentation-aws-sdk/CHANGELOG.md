@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.8.0...instrumentation-aws-sdk-v0.8.1) (2022-06-17)
+
+
+### Bug Fixes
+
+* **aws-sdk:** avoid repeating MessageAttributeNames in sqs receiveMessage ([#1044](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1044)) ([4b4ded6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4b4ded6e5b781b9a9cb2c55102ec0949da062511))
+
 ## [0.8.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.7.0...instrumentation-aws-sdk-v0.8.0) (2022-06-08)
 
 
