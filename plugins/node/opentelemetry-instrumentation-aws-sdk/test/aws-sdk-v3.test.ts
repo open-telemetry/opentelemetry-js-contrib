@@ -328,6 +328,60 @@ describe('instrumentation-aws-sdk-v3', () => {
         );
       });
 
+      it('sqs send message batch attributes', async () => {
+        nock(`https://sqs.${region}.amazonaws.com/`)
+          .post('/')
+          .reply(
+            200,
+            fs.readFileSync('./test/mock-responses/sqs-send-batch.xml', 'utf8')
+          );
+        const params = {
+          QueueUrl:
+            'https://sqs.us-east-1.amazonaws.com/731241200085/otel-demo-aws-sdk',
+          MessageBody: 'payload example from v3 without batch',
+          Entries: [
+            {
+              Id: '1000',
+              MessageBody: 'msg body for 1000',
+            },
+            {
+              Id: '1001',
+              MessageBody: 'msg body for 1001',
+            },
+          ],
+        };
+        const response = await sqsClient.sendMessageBatch(params);
+        expect(getTestSpans().length).toBe(1);
+        const [span] = getTestSpans();
+
+        // make sure we have the general aws attributes:
+        expect(span.attributes[SemanticAttributes.RPC_SYSTEM]).toEqual(
+          'aws-api'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_METHOD]).toEqual(
+          'SendMessageBatch'
+        );
+        expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual('SQS');
+        expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+
+        // custom messaging attributes
+        expect(span.attributes[SemanticAttributes.MESSAGING_SYSTEM]).toEqual(
+          'aws.sqs'
+        );
+        expect(
+          span.attributes[SemanticAttributes.MESSAGING_DESTINATION_KIND]
+        ).toEqual(MessagingDestinationKindValues.QUEUE);
+        expect(
+          span.attributes[SemanticAttributes.MESSAGING_DESTINATION]
+        ).toEqual('otel-demo-aws-sdk');
+        expect(span.attributes[SemanticAttributes.MESSAGING_URL]).toEqual(
+          params.QueueUrl
+        );
+        expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(
+          200
+        );
+      });
+
       it('sqs receive add messaging attributes and context', done => {
         nock(`https://sqs.${region}.amazonaws.com/`)
           .post('/')
