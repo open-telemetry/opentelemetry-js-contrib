@@ -38,6 +38,8 @@ components:
     - naseemkullah
   plugins/node/opentelemetry-instrumentation-knex:
     - rauno56
+  plugins/node/opentelemetry-instrumentation-lru-memoizer:
+    - blumamir
   plugins/node/opentelemetry-instrumentation-memcached:
     - rauno56
   plugins/node/opentelemetry-instrumentation-nestjs-core:
