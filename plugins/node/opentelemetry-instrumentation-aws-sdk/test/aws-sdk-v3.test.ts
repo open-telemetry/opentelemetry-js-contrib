@@ -350,7 +350,7 @@ describe('instrumentation-aws-sdk-v3', () => {
             },
           ],
         };
-        const response = await sqsClient.sendMessageBatch(params);
+        await sqsClient.sendMessageBatch(params);
         expect(getTestSpans().length).toBe(1);
         const [span] = getTestSpans();
 
