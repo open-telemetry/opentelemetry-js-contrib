@@ -97,4 +97,5 @@ export interface ExpressInstrumentationConfig extends InstrumentationConfig {
   /** Ignore specific layers based on their type */
   ignoreLayersType?: ExpressLayerType[];
   spanNameHook?: SpanNameHook;
+  requestBodyAsAttribute?: Boolean;
 }

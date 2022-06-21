@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file. Do not remo
   * [#588](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/588) chore: adding instrumentation for connect ([@obecny](https://github.com/obecny))
 * `opentelemetry-test-utils`
   * [#593](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/593) feat: move aws/gcp detectors from opentelemetry-js repo ([@legendecas](https://github.com/legendecas))
+  * [#1072](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/1072) feat(express): add the ability to set request body as a root span attribute ([@luismiramirez](https://github.com/luismiramirez))
 
 #### :house: Internal
 * `opentelemetry-test-utils`

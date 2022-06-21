@@ -16,4 +16,5 @@
 export enum AttributeNames {
   EXPRESS_TYPE = 'express.type',
   EXPRESS_NAME = 'express.name',
+  EXPRESS_REQUEST_BODY = 'express.request_body',
 }

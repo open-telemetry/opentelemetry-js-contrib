@@ -220,6 +220,20 @@ export class ExpressInstrumentation extends InstrumentationBase<
             `${req.method} ${route.length > 0 ? route : '/'}`
           );
           rpcMetadata.span.updateName(name);
+
+          // Add request body if present and if configured in
+          // the request handler span attributes.
+          if (
+            instrumentation.getConfig().requestBodyAsAttribute &&
+            typeof req.body === 'object' &&
+            req.body !== null &&
+            !(req.body instanceof Buffer)
+          ) {
+            rpcMetadata.span.setAttribute(
+              AttributeNames.EXPRESS_REQUEST_BODY,
+              JSON.stringify(req.body)
+            );
+          }
         }
 
         // verify against the config if the layer should be ignored

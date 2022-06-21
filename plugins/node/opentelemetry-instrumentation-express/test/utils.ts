@@ -37,6 +37,37 @@ export const httpRequest = {
       });
     });
   },
+  post: (port: number, body: string) => {
+    const options = {
+      method: 'POST',
+      path: '/form',
+      hostname: 'localhost',
+      port: port,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': body.length,
+      },
+    };
+    return new Promise((resolve, reject) => {
+      const req = http.request(options, resp => {
+        let data = '';
+
+        resp.on('data', chunk => {
+          data += chunk;
+        });
+
+        resp.on('end', () => {
+          resolve(data);
+        });
+        resp.on('error', err => {
+          reject(err);
+        });
+      });
+
+      req.write(body);
+      req.end();
+    });
+  },
 };
 
 export async function createServer(app: express.Express) {

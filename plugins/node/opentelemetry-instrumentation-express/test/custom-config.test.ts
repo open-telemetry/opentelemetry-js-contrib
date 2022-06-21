@@ -37,6 +37,7 @@ instrumentation.disable();
 
 import * as express from 'express';
 import * as http from 'http';
+import * as semver from 'semver';
 
 describe('ExpressInstrumentation', () => {
   const provider = new NodeTracerProvider();
@@ -209,6 +210,110 @@ describe('ExpressInstrumentation', () => {
           );
           const exportedRootSpan = spans.find(span => span.name === 'GET /');
           assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
+    it('should add request body to attributes based on config if json body parser is enabled', async () => {
+      instrumentation.setConfig({
+        requestBodyAsAttribute: true,
+      } as ExpressInstrumentationConfig);
+
+      const rootSpan = tracer.startSpan('rootSpan');
+
+      app.use((req, res, next) => {
+        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
+
+      app.use(express.json());
+
+      app.use('/form', (req, res, next) => {
+        next();
+      });
+
+      app.post('/form', (req, res) => {
+        res.send('ok');
+      });
+
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      const requestBody = {
+        foo: 'bar',
+        baz: { foo: 'qux' },
+      };
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.post(port, JSON.stringify(requestBody));
+          rootSpan.end();
+
+          const httpRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'POST /form');
+          assert.notStrictEqual(httpRootSpan, undefined);
+          assert.strictEqual(
+            httpRootSpan?.attributes[AttributeNames.EXPRESS_REQUEST_BODY],
+            '{"foo":"bar","baz":{"foo":"qux"}}'
+          );
+        }
+      );
+    });
+
+    it('should not add request body to attributes based on config if no parser is enabled', async () => {
+      instrumentation.setConfig({
+        requestBodyAsAttribute: true,
+      } as ExpressInstrumentationConfig);
+
+      const rootSpan = tracer.startSpan('rootSpan');
+
+      app.use((req, res, next) => {
+        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
+
+      app.use('/form', (req, res, next) => {
+        next();
+      });
+
+      app.post('/form', (req, res) => {
+        res.send('ok');
+      });
+
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      const requestBody = {
+        foo: 'bar',
+        baz: { foo: 'qux' },
+      };
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.post(port, JSON.stringify(requestBody));
+          rootSpan.end();
+
+          const httpRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'POST /form');
+          assert.notStrictEqual(httpRootSpan, undefined);
+          assert.strictEqual(
+            httpRootSpan?.attributes[AttributeNames.EXPRESS_REQUEST_BODY],
+            undefined
+          );
         }
       );
     });
