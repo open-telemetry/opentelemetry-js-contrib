@@ -36,7 +36,7 @@ export interface MetricsCollectorConfig {
   url?: string;
 }
 
-const DEFAULT_MAX_TIMEOUT_UPDATE_MS = 500;
+export const DEFAULT_MAX_TIMEOUT_UPDATE_MS = 500;
 const DEFAULT_NAME = 'opentelemetry-host-metrics';
 
 /**
@@ -45,7 +45,7 @@ const DEFAULT_NAME = 'opentelemetry-host-metrics';
 export abstract class BaseMetrics {
   protected _logger = api.diag;
   protected _maxTimeoutUpdateMS: number;
-  protected _meter: metrics.Meter;
+  protected _meter: apiMetrics.Meter;
   private _name: string;
 
   constructor(config: MetricsCollectorConfig) {

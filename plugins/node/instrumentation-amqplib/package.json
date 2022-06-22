@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-amqplib",
-  "version": "0.28.0",
+  "version": "0.30.0",
   "description": "OpenTelemetry automatic instrumentation for the `amqplib` package",
   "keywords": [
     "amqplib",
@@ -8,7 +8,7 @@
     "rabbitmq",
     "AMQP 0-9-1"
   ],
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-amqplib#readme",
   "license": "Apache-2.0",
   "author": "OpenTelemetry Authors",
   "bugs": {
@@ -43,16 +43,17 @@
     "test:docker:run": "docker run -d --hostname demo-amqplib-rabbit --name amqplib-unittests -p 22221:5672 --env RABBITMQ_DEFAULT_USER=username --env RABBITMQ_DEFAULT_PASS=password rabbitmq:3"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.1"
+    "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.0.0",
-    "@opentelemetry/instrumentation": "^0.27.0",
+    "@opentelemetry/instrumentation": "^0.29.2",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/amqplib": "^0.5.17"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.1",
+    "@opentelemetry/api": "^1.0.0",
+    "@opentelemetry/contrib-test-utils": "^0.31.0",
     "@types/lodash": "4.14.178",
     "@types/mocha": "8.2.3",
     "@types/sinon": "10.0.2",
@@ -61,11 +62,10 @@
     "expect": "27.4.2",
     "lodash": "4.17.21",
     "mocha": "7.2.0",
-    "ts-mocha": "8.0.0",
+    "ts-mocha": "10.0.0",
     "nyc": "15.1.0",
     "gts": "3.1.0",
-    "@opentelemetry/contrib-test-utils": "^0.28.0",
-    "sinon": "13.0.1",
+    "sinon": "14.0.0",
     "test-all-versions": "5.0.1",
     "typescript": "4.3.5"
   },

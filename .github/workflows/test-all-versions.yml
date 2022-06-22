@@ -24,11 +24,15 @@ jobs:
               --ignore @opentelemetry/instrumentation-tedious
               --ignore @opentelemetry/instrumentation-amqplib
               --ignore @opentelemetry/instrumentation-mongodb
+              --ignore @opentelemetry/instrumentation-redis-4
+              --ignore @opentelemetry/instrumentation-hapi
           - node: "10"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-aws-sdk
               --ignore @opentelemetry/instrumentation-pino
               --ignore @opentelemetry/instrumentation-mongodb
+              --ignore @opentelemetry/instrumentation-redis-4
+              --ignore @opentelemetry/instrumentation-hapi
     runs-on: ubuntu-latest
     services:
       memcached:

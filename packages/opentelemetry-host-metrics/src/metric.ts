@@ -164,89 +164,70 @@ export class HostMetrics extends BaseMetrics {
    * Creates metrics
    */
   protected _createMetrics(): void {
-    this._meter.createObservableCounter(
-      enums.METRIC_NAMES.CPU_TIME,
-      {
+    this._meter
+      .createObservableCounter(enums.METRIC_NAMES.CPU_TIME, {
         description: 'Cpu time in seconds',
         unit: 's',
-      },
-      observableResult => {
+      })
+      .addCallback(observableResult => {
         const cpuUsageData = this._getCpuUsageData();
         this._updateCpuTime(observableResult, cpuUsageData);
-      }
-    );
-    this._meter.createObservableGauge(
-      enums.METRIC_NAMES.CPU_UTILIZATION,
-      {
+      });
+    this._meter
+      .createObservableGauge(enums.METRIC_NAMES.CPU_UTILIZATION, {
         description: 'Cpu usage time 0-1',
-      },
-      observableResult => {
+      })
+      .addCallback(observableResult => {
         const cpuUsageData = this._getCpuUsageData();
         this._updateCpuUtilisation(observableResult, cpuUsageData);
-      }
-    );
-    this._meter.createObservableUpDownCounter(
-      enums.METRIC_NAMES.MEMORY_USAGE,
-      {
+      });
+    this._meter
+      .createObservableGauge(enums.METRIC_NAMES.MEMORY_USAGE, {
         description: 'Memory usage in bytes',
-      },
-      observableResult => {
+      })
+      .addCallback(observableResult => {
         const memoryUsageData = this._getMemoryData();
         this._updateMemUsage(observableResult, memoryUsageData);
-      }
-    );
-    this._meter.createObservableGauge(
-      enums.METRIC_NAMES.MEMORY_UTILIZATION,
-      {
+      });
+    this._meter
+      .createObservableGauge(enums.METRIC_NAMES.MEMORY_UTILIZATION, {
         description: 'Memory usage 0-1',
-      },
-      observableResult => {
+      })
+      .addCallback(observableResult => {
         const memoryUsageData = this._getMemoryData();
         this._updateMemUtilization(observableResult, memoryUsageData);
-      }
-    );
-    this._meter.createObservableCounter(
-      enums.METRIC_NAMES.NETWORK_DROPPED,
-      {
+      });
+    this._meter
+      .createObservableCounter(enums.METRIC_NAMES.NETWORK_DROPPED, {
         description: 'Network dropped packets',
-      },
-      async observableResult => {
+      })
+      .addCallback(async observableResult => {
         const networkData = await this._getNetworkData();
         this._updateNetworkDropped(observableResult, networkData);
-      }
-    );
-    this._meter.createObservableCounter(
-      enums.METRIC_NAMES.NETWORK_ERRORS,
-      {
+      });
+    this._meter
+      .createObservableCounter(enums.METRIC_NAMES.NETWORK_ERRORS, {
         description: 'Network errors counter',
-      },
-      async observableResult => {
+      })
+      .addCallback(async observableResult => {
         const networkData = await this._getNetworkData();
         this._updateNetworkErrors(observableResult, networkData);
-      }
-    );
-    this._meter.createObservableCounter(
-      enums.METRIC_NAMES.NETWORK_IO,
-      {
+      });
+    this._meter
+      .createObservableCounter(enums.METRIC_NAMES.NETWORK_IO, {
         description: 'Network transmit and received bytes',
-      },
-      async observableResult => {
+      })
+      .addCallback(async observableResult => {
         const networkData = await this._getNetworkData();
         this._updateNetworkIO(observableResult, networkData);
-      }
-    );
+      });
   }
 
   /**
    * Starts collecting metrics
    */
   start() {
-    // initial collection
-    Promise.all([getMemoryData(), getCpuUsageData(), getNetworkData()]).then(
-      () => {
-        this._createMetrics();
-      }
-    );
+    this._createMetrics();
   }
 
   private _getMemoryData = throttle(getMemoryData, this._maxTimeoutUpdateMS);

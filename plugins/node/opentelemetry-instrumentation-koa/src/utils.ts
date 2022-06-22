@@ -39,7 +39,7 @@ export const getMiddlewareMetadata = (
         [AttributeNames.KOA_TYPE]: KoaLayerType.ROUTER,
         [SemanticAttributes.HTTP_ROUTE]: layerPath,
       },
-      name: `router - ${layerPath}`,
+      name: context._matchedRouteName || `router - ${layerPath}`,
     };
   } else {
     return {

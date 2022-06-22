@@ -41,6 +41,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { asyncConfirmPublish, asyncConfirmSend, asyncConsume } from './utils';
+import { shouldTest } from './utils';
 import {
   censoredUrl,
   rabbitMqUrl,
@@ -60,11 +61,17 @@ const CHANNEL_CLOSED_IN_TEST = Symbol(
 
 describe('amqplib instrumentation promise model', () => {
   let conn: amqp.Connection;
-  before(async () => {
-    conn = await amqp.connect(rabbitMqUrl);
+  before(async function () {
+    if (!shouldTest) {
+      this.skip();
+    } else {
+      conn = await amqp.connect(rabbitMqUrl);
+    }
   });
   after(async () => {
-    await conn.close();
+    if (shouldTest) {
+      await conn.close();
+    }
   });
 
   let endHookSpy: SinonSpy;

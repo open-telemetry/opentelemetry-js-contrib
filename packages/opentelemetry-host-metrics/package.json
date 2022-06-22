@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/host-metrics",
-  "version": "0.27.1",
+  "version": "0.29.0",
   "description": "OpenTelemetry Host Metrics for Node.js",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -43,10 +43,10 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.2"
+    "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "1.0.2",
+    "@opentelemetry/api": "^1.0.0",
     "@types/mocha": "8.2.3",
     "@types/node": "16.11.21",
     "@types/sinon": "10.0.2",
@@ -54,14 +54,15 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "13.0.1",
-    "ts-mocha": "8.0.0",
+    "sinon": "14.0.0",
+    "ts-mocha": "10.0.0",
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/api-metrics": "^0.27.0",
+    "@opentelemetry/api-metrics": "^0.29.2",
     "@opentelemetry/core": "^1.0.0",
-    "@opentelemetry/sdk-metrics-base": "^0.27.0",
+    "@opentelemetry/sdk-metrics-base": "^0.29.2",
     "systeminformation": "^5.0.0"
-  }
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/opentelemetry-host-metrics#readme"
 }
