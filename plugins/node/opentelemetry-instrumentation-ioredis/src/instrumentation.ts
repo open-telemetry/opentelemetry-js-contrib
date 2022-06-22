@@ -37,6 +37,8 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
 export class IORedisInstrumentation extends InstrumentationBase<
   typeof ioredisTypes
 > {
+  static readonly COMPONENT = 'ioredis';
+
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-ioredis',
@@ -111,16 +113,19 @@ export class IORedisInstrumentation extends InstrumentationBase<
         return original.apply(this, arguments);
       }
 
-      const span = instrumentation.tracer.startSpan(cmd.name, {
-        kind: SpanKind.CLIENT,
-        attributes: {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
-            cmd.name,
-            cmd.args
-          ),
-        },
-      });
+      const span = instrumentation.tracer.startSpan(
+        `${IORedisInstrumentation.COMPONENT}.${cmd.name}`,
+        {
+          kind: SpanKind.CLIENT,
+          attributes: {
+            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
+            [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
+              cmd.name,
+              cmd.args
+            ),
+          },
+        }
+      );
 
       if (config?.requestHook) {
         safeExecuteInTheMiddle(
@@ -184,13 +189,16 @@ export class IORedisInstrumentation extends InstrumentationBase<
   private traceConnection = (original: Function) => {
     const instrumentation = this;
     return function (this: ioredisTypes.Redis) {
-      const span = instrumentation.tracer.startSpan('connect', {
-        kind: SpanKind.CLIENT,
-        attributes: {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.DB_STATEMENT]: 'connect',
-        },
-      });
+      const span = instrumentation.tracer.startSpan(
+        `${IORedisInstrumentation.COMPONENT}.connect`,
+        {
+          kind: SpanKind.CLIENT,
+          attributes: {
+            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
+            [SemanticAttributes.DB_STATEMENT]: 'connect',
+          },
+        }
+      );
       const { host, port } = this.options;
 
       span.setAttributes({

@@ -142,8 +142,8 @@ describe('ioredis', () => {
 
         assert.strictEqual(trace.getSpan(context.active()), span);
         assert.strictEqual(endedSpans.length, 2);
-        assert.strictEqual(endedSpans[0].name, 'connect');
-        assert.strictEqual(endedSpans[1].name, 'info');
+        assert.strictEqual(endedSpans[0].name, 'ioredis.connect');
+        assert.strictEqual(endedSpans[1].name, 'ioredis.info');
         testUtils.assertPropagation(endedSpans[0], span);
 
         testUtils.assertSpan(
@@ -159,7 +159,7 @@ describe('ioredis', () => {
 
         client.quit(() => {
           assert.strictEqual(endedSpans.length, 4);
-          assert.strictEqual(endedSpans[3].name, 'quit');
+          assert.strictEqual(endedSpans[3].name, 'ioredis.quit');
           done();
         });
       };
@@ -259,7 +259,7 @@ describe('ioredis', () => {
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
               assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[0].name, command.name);
+              assert.strictEqual(endedSpans[0].name, `ioredis.${command.name}`);
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -287,7 +287,7 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, 'hset');
+            assert.strictEqual(endedSpans[0].name, 'ioredis.hset');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -353,7 +353,7 @@ describe('ioredis', () => {
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
               assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[0].name, 'scan');
+              assert.strictEqual(endedSpans[0].name, 'ioredis.scan');
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -394,16 +394,16 @@ describe('ioredis', () => {
             span.end();
             assert.strictEqual(endedSpans.length, 11);
             const expectedSpanNames = [
-              'connect',
-              'info',
-              'connect',
-              'info',
-              'subscribe',
-              'publish',
-              'publish',
-              'unsubscribe',
-              'quit',
-              'quit',
+              'ioredis.connect',
+              'ioredis.info',
+              'ioredis.connect',
+              'ioredis.info',
+              'ioredis.subscribe',
+              'ioredis.publish',
+              'ioredis.publish',
+              'ioredis.unsubscribe',
+              'ioredis.quit',
+              'ioredis.quit',
               'test span',
             ];
 
@@ -450,10 +450,10 @@ describe('ioredis', () => {
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
               assert.strictEqual(endedSpans.length, 5);
-              assert.strictEqual(endedSpans[0].name, 'multi');
-              assert.strictEqual(endedSpans[1].name, 'set');
-              assert.strictEqual(endedSpans[2].name, 'get');
-              assert.strictEqual(endedSpans[3].name, 'exec');
+              assert.strictEqual(endedSpans[0].name, 'ioredis.multi');
+              assert.strictEqual(endedSpans[1].name, 'ioredis.set');
+              assert.strictEqual(endedSpans[2].name, 'ioredis.get');
+              assert.strictEqual(endedSpans[3].name, 'ioredis.exec');
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -485,8 +485,8 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 3);
-            assert.strictEqual(endedSpans[0].name, 'set');
-            assert.strictEqual(endedSpans[1].name, 'del');
+            assert.strictEqual(endedSpans[0].name, 'ioredis.set');
+            assert.strictEqual(endedSpans[1].name, 'ioredis.del');
             assert.strictEqual(endedSpans[2].name, 'test span');
             testUtils.assertSpan(
               endedSpans[0],
@@ -515,7 +515,7 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, 'get');
+            assert.strictEqual(endedSpans[0].name, 'ioredis.get');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -544,7 +544,7 @@ describe('ioredis', () => {
             span.end();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, 'del');
+            assert.strictEqual(endedSpans[0].name, 'ioredis.del');
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -588,8 +588,8 @@ describe('ioredis', () => {
             // the script may be already cached on server therefore we get either 2 or 3 spans
             if (endedSpans.length === 3) {
               assert.strictEqual(endedSpans[2].name, 'test span');
-              assert.strictEqual(endedSpans[1].name, 'eval');
-              assert.strictEqual(endedSpans[0].name, 'evalsha');
+              assert.strictEqual(endedSpans[1].name, 'ioredis.eval');
+              assert.strictEqual(endedSpans[0].name, 'ioredis.evalsha');
               // in this case, server returns NOSCRIPT error for evalsha,
               // telling the client to use EVAL instead
               sanitizeEventForAssertion(evalshaSpan);
@@ -717,7 +717,7 @@ describe('ioredis', () => {
               span.end();
               const endedSpans = memoryExporter.getFinishedSpans();
               assert.strictEqual(endedSpans.length, 2);
-              assert.strictEqual(endedSpans[0].name, command.name);
+              assert.strictEqual(endedSpans[0].name, `ioredis.${command.name}`);
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
