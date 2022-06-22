@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.29.0...instrumentation-nestjs-core-v0.30.0) (2022-06-08)
+
+
+### Features
+
+* update core dependencies stable ^1.3.1 experimental ^0.29.2 ([141b155](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/141b155e344980b51264e26b26c117b2113bcef6))
+
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.28.3...instrumentation-nestjs-core-v0.29.0) (2022-05-14)
+
+
+### Features
+
+* add supported node versions for all packages ([#973](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/973)) ([baaacbd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/baaacbdd35ca4baab0afae64647aa8c0380ee4b7))
+* use Otel SDK 1.2/0.28 ([#984](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/984)) ([098c2ed](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/098c2ed6f9c5ab7bd865685018c0777245aab3b7))
+
+
+### Bug Fixes
+
+* **nestjs:** remove nestjs type from exported Instrumentation ([#992](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/992)) ([eba9531](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/eba9531477233a1cbe9d5bdeff40ee6274adb452))
+
 ### [0.28.3](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.28.2...instrumentation-nestjs-core-v0.28.3) (2022-02-06)
 
 

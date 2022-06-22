@@ -39,6 +39,7 @@ import {
   contextGetter,
   extractPropagationContext,
   injectPropagationContext,
+  addPropagationFieldsToAttributeNames,
 } from './MessageAttributes';
 
 export class SqsServiceExtension implements ServiceExtension {
@@ -67,9 +68,11 @@ export class SqsServiceExtension implements ServiceExtension {
           spanAttributes[SemanticAttributes.MESSAGING_OPERATION] =
             MessagingOperationValues.RECEIVE;
 
-          request.commandInput.MessageAttributeNames = (
-            request.commandInput.MessageAttributeNames ?? []
-          ).concat(propagation.fields());
+          request.commandInput.MessageAttributeNames =
+            addPropagationFieldsToAttributeNames(
+              request.commandInput.MessageAttributeNames,
+              propagation.fields()
+            );
         }
         break;
 
@@ -121,45 +124,61 @@ export class SqsServiceExtension implements ServiceExtension {
     tracer: Tracer,
     config: AwsSdkInstrumentationConfig
   ) => {
-    const messages: SQS.Message[] = response?.data?.Messages;
-    if (messages) {
-      const queueUrl = this.extractQueueUrl(response.request.commandInput);
-      const queueName = this.extractQueueNameFromUrl(queueUrl);
+    switch (response.request.commandName) {
+      case 'SendMessage':
+        span.setAttribute(
+          SemanticAttributes.MESSAGING_MESSAGE_ID,
+          response?.data?.MessageId
+        );
+        break;
 
-      pubsubPropagation.patchMessagesArrayToStartProcessSpans<SQS.Message>({
-        messages,
-        parentContext: trace.setSpan(context.active(), span),
-        tracer,
-        messageToSpanDetails: (message: SQS.Message) => ({
-          name: queueName ?? 'unknown',
-          parentContext: propagation.extract(
-            ROOT_CONTEXT,
-            extractPropagationContext(
-              message,
-              config.sqsExtractContextPropagationFromPayload
-            ),
-            contextGetter
-          ),
-          attributes: {
-            [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sqs',
-            [SemanticAttributes.MESSAGING_DESTINATION]: queueName,
-            [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
-              MessagingDestinationKindValues.QUEUE,
-            [SemanticAttributes.MESSAGING_MESSAGE_ID]: message.MessageId,
-            [SemanticAttributes.MESSAGING_URL]: queueUrl,
-            [SemanticAttributes.MESSAGING_OPERATION]:
-              MessagingOperationValues.PROCESS,
-          },
-        }),
-        processHook: (span: Span, message: SQS.Message) =>
-          config.sqsProcessHook?.(span, { message }),
-      });
+      case 'SendMessageBatch':
+        // TODO: How should this be handled?
+        break;
 
-      pubsubPropagation.patchArrayForProcessSpans(
-        messages,
-        tracer,
-        context.active()
-      );
+      case 'ReceiveMessage': {
+        const messages: SQS.Message[] = response?.data?.Messages;
+        if (messages) {
+          const queueUrl = this.extractQueueUrl(response.request.commandInput);
+          const queueName = this.extractQueueNameFromUrl(queueUrl);
+
+          pubsubPropagation.patchMessagesArrayToStartProcessSpans<SQS.Message>({
+            messages,
+            parentContext: trace.setSpan(context.active(), span),
+            tracer,
+            messageToSpanDetails: (message: SQS.Message) => ({
+              name: queueName ?? 'unknown',
+              parentContext: propagation.extract(
+                ROOT_CONTEXT,
+                extractPropagationContext(
+                  message,
+                  config.sqsExtractContextPropagationFromPayload
+                ),
+                contextGetter
+              ),
+              attributes: {
+                [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sqs',
+                [SemanticAttributes.MESSAGING_DESTINATION]: queueName,
+                [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
+                  MessagingDestinationKindValues.QUEUE,
+                [SemanticAttributes.MESSAGING_MESSAGE_ID]: message.MessageId,
+                [SemanticAttributes.MESSAGING_URL]: queueUrl,
+                [SemanticAttributes.MESSAGING_OPERATION]:
+                  MessagingOperationValues.PROCESS,
+              },
+            }),
+            processHook: (span: Span, message: SQS.Message) =>
+              config.sqsProcessHook?.(span, { message }),
+          });
+
+          pubsubPropagation.patchArrayForProcessSpans(
+            messages,
+            tracer,
+            context.active()
+          );
+        }
+        break;
+      }
     }
   };
 
