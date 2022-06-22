@@ -9,22 +9,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["8", "10", "12", "14", "16"]
+        node: ["12", "14", "16"]
         include:
-          - node: "8"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/instrumentation-aws-sdk
-              --ignore @opentelemetry/instrumentation-pino
-              --ignore @opentelemetry/instrumentation-tedious
-              --ignore @opentelemetry/instrumentation-amqplib
-              --ignore @opentelemetry/instrumentation-redis-4
-              --ignore @opentelemetry/instrumentation-hapi
-          - node: "10"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/instrumentation-aws-sdk
-              --ignore @opentelemetry/instrumentation-pino
-              --ignore @opentelemetry/instrumentation-redis-4
-              --ignore @opentelemetry/instrumentation-hapi
           - node: "12"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-redis-4
