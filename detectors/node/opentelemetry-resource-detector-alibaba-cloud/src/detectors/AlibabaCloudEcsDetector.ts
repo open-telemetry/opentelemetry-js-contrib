@@ -114,7 +114,7 @@ class AlibabaCloudEcsDetector implements Detector {
           typeof statusCode !== 'number' ||
           !(statusCode >= 200 && statusCode < 300)
         ) {
-          res.destroy();
+          res.socket.destroy();
           return reject(
             new Error(`Failed to load page, status code: ${statusCode}`)
           );
