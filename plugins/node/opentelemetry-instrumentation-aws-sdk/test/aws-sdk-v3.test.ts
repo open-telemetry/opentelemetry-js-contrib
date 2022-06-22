@@ -364,7 +364,7 @@ describe('instrumentation-aws-sdk-v3', () => {
         expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual('SQS');
         expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
 
-        // custom messaging attributes
+        // messaging semantic attributes
         expect(span.attributes[SemanticAttributes.MESSAGING_SYSTEM]).toEqual(
           'aws.sqs'
         );
