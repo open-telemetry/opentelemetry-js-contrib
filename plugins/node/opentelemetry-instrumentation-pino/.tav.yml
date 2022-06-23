@@ -1,5 +1,5 @@
 pino:
-  versions: ">=5.14.0 < 8"
+  versions: "^8 || ^7.11.0 || 7.8.0 || 7.2.0 || ^6.13.1 || 5.17.0 || 5.14.0"
   commands: npm run test
 
   # Fix missing `contrib-test-utils` package
