@@ -171,6 +171,56 @@ describe('Koa Instrumentation', () => {
       );
     });
 
+    it('should create a named child span for middlewares', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      app.use((ctx, next) =>
+        context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        )
+      );
+
+      const router = new KoaRouter();
+      router.get('retrievePost', '/post/:id', ctx => {
+        ctx.body = `Post id: ${ctx.params.id}`;
+      });
+
+      app.use(router.routes());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/post/0`);
+          rootSpan.end();
+
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'retrievePost');
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.ROUTER
+          );
+
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/post/:id'
+          );
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'GET /post/:id');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
     it('should correctly instrument nested routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };

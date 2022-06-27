@@ -16,7 +16,6 @@
 
 import * as constants from './constants';
 import * as types from './types';
-import * as Router from 'router';
 
 // Detect whether a function is a router package internal plumming handler
 export const isInternal = (fn: Function) => {
@@ -29,9 +28,6 @@ export const isInternal = (fn: Function) => {
   }
   return false;
 };
-
-export const getRoute = (req: Router.RoutedRequest) =>
-  req.baseUrl + (req.route?.path ?? '') || '/';
 
 export const renameHttpSpan = (
   span?: types.InstrumentationSpan,
