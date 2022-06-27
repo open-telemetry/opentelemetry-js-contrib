@@ -34,7 +34,7 @@ const DEFAULT_CONFIG: types.KnexInstrumentationConfig = {
   maxQueryLength: 1022,
 };
 
-export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
+export class KnexInstrumentation extends InstrumentationBase<any> {
   constructor(config: types.KnexInstrumentationConfig = {}) {
     super(
       `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
@@ -44,7 +44,7 @@ export class KnexInstrumentation extends InstrumentationBase<typeof knex> {
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<typeof knex>(
+    const module = new InstrumentationNodeModuleDefinition<any>(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS
     );

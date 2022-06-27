@@ -46,7 +46,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    return new InstrumentationNodeModuleDefinition<typeof CassandraDriver>(
+    return new InstrumentationNodeModuleDefinition<any>(
       'cassandra-driver',
       supportedVersions,
       driverModule => {
@@ -290,7 +290,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
     };
   }
 
-  public startSpan(
+  private startSpan(
     { op, query }: { op: string; query?: unknown },
     client: CassandraDriver.Client
   ): Span {
