@@ -41,7 +41,7 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
-    "sinon": "13.0.1",
+    "sinon": "14.0.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.3.5"
   },
@@ -64,6 +64,7 @@
     "@opentelemetry/instrumentation-ioredis": "^0.31.0",
     "@opentelemetry/instrumentation-knex": "^0.29.0",
     "@opentelemetry/instrumentation-koa": "^0.30.0",
+    "@opentelemetry/instrumentation-lru-memoizer": "^0.29.0",
     "@opentelemetry/instrumentation-memcached": "^0.29.0",
     "@opentelemetry/instrumentation-mongodb": "^0.31.0",
     "@opentelemetry/instrumentation-mysql": "^0.30.0",

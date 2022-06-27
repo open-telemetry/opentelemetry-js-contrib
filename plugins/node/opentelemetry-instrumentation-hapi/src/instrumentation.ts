@@ -154,7 +154,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         }
       } else {
         instrumentation._wrapRegisterHandler(
-          pluginInput.plugin?.plugin ?? pluginInput.plugin
+          pluginInput.plugin?.plugin ?? pluginInput.plugin ?? pluginInput
         );
       }
       return original.apply(this, [pluginInput, options]);

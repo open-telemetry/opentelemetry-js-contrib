@@ -35,6 +35,7 @@
     "plugins/node/opentelemetry-instrumentation-ioredis": {},
     "plugins/node/opentelemetry-instrumentation-knex": {},
     "plugins/node/opentelemetry-instrumentation-koa": {},
+    "plugins/node/opentelemetry-instrumentation-lru-memoizer": {},
     "plugins/node/opentelemetry-instrumentation-memcached": {},
     "plugins/node/opentelemetry-instrumentation-mongodb": {},
     "plugins/node/opentelemetry-instrumentation-mysql": {},

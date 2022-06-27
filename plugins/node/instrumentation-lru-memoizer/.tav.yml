@@ -1,0 +1,7 @@
+'lru-memoizer':
+  versions: ">=1.3 <3"
+  commands:
+    - npm test
+
+  # Fix missing `contrib-test-utils` package
+  pretest: npm run --prefix ../../../ lerna:link

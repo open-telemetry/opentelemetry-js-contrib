@@ -1,6 +1,6 @@
 ioredis:
   # Ignoring v4.19.0. Tests never ends. Caused by https://github.com/luin/ioredis/pull/1219
-  versions: "^2.5.0 || ^3.2.2 || 4.14.0 || 4.14.1 || 4.16.3 || 4.17.3 || 4.18.0 || 4.19.2 || 4.19.4 || 4.22.0 || 4.24.5 || 4.26.0 || 4.27.2 || 4.27.3 || ^4.27.6"
+  versions: "^2.5.0 || ^3.2.2 || 4.14.1 || 4.16.3 || 4.17.3 || 4.18.0 || 4.19.2 || 4.19.4 || 4.22.0 || 4.24.5 || 4.26.0 || 4.27.2 || ^4.27.6"
   commands: npm run test
 
   # Fix missing `contrib-test-utils` package
