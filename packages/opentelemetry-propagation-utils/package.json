@@ -16,7 +16,7 @@
     "prepare": "npm run compile",
     "prewatch": "npm run precompile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "repository": "open-telemetry/opentelemetry-js-contrib",
