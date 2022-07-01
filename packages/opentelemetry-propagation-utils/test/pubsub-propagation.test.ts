@@ -22,7 +22,7 @@ import {
 import { ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import expect from 'expect';
 
-const instrumentation = registerInstrumentationTestingProvider();
+registerInstrumentationTestingProvider();
 
 const tracer = trace.getTracer('test');
 
@@ -80,7 +80,46 @@ describe('Pubsub propagation', () => {
 
     expect(getTestSpans().length).toBe(0);
 
+    // @ts-expect-error Typescript thinks this value is used before assignment
     resolve(undefined);
+
+    // We use setTimeout here to make sure our assertations run
+    // after the promise resolves
+    return new Promise(res => setTimeout(res, 0)).then(() => {
+      expect(getTestSpans().length).toBe(1);
+      expect(getTestSpans()[0]).toMatchObject({ name: 'test process' });
+    });
+  });
+
+  it('Span ends on promise-rejection', () => {
+    const messages = [{}];
+    utils.patchMessagesArrayToStartProcessSpans({
+      messages,
+      tracer,
+      parentContext: ROOT_CONTEXT,
+      messageToSpanDetails: () => ({
+        name: 'test',
+        parentContext: ROOT_CONTEXT,
+        attributes: {},
+      }),
+    });
+    utils.patchArrayForProcessSpans(messages, tracer, ROOT_CONTEXT);
+
+    expect(getTestSpans().length).toBe(0);
+
+    let reject: (value: unknown) => void;
+
+    messages.map(
+      () =>
+        new Promise((_, rej) => {
+          reject = rej;
+        })
+    );
+
+    expect(getTestSpans().length).toBe(0);
+
+    // @ts-expect-error Typescript thinks this value is used before assignment
+    reject(new Error('Failed'));
 
     // We use setTimeout here to make sure our assertations run
     // after the promise resolves
