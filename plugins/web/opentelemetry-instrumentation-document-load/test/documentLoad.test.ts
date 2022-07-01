@@ -124,6 +124,32 @@ const resourcesNoSecureConnectionStart = [
     serverTiming: [],
   },
 ];
+const resourcesFetchAfterEnd = [
+  {
+    name: 'http://localhost:8090/bundle.js',
+    entryType: 'resource',
+    startTime: 20.985000010114163,
+    duration: 90.94999998342246,
+    initiatorType: 'script',
+    nextHopProtocol: 'http/1.1',
+    workerStart: 0,
+    redirectStart: 0,
+    redirectEnd: 0,
+    fetchStart: 120.985000010114163,
+    domainLookupStart: 20.985000010114163,
+    domainLookupEnd: 20.985000010114163,
+    connectStart: 20.985000010114163,
+    connectEnd: 20.985000010114163,
+    secureConnectionStart: 0,
+    requestStart: 29.28999997675419,
+    responseStart: 31.88999998383224,
+    responseEnd: 32.93499999353662,
+    transferSize: 1446645,
+    encodedBodySize: 1446396,
+    decodedBodySize: 1446396,
+    serverTiming: [],
+  },
+];
 const entries = {
   name: 'http://localhost:8090/',
   entryType: 'navigation',
@@ -316,6 +342,29 @@ describe('DocumentLoad Instrumentation', () => {
       );
       setTimeout(() => {
         assert.strictEqual(spyEntries.callCount, 3);
+        done();
+      });
+    });
+  });
+
+  describe('when navigation entries have bad timings', () => {
+    let spyEntries: sinon.SinonStub;
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resourcesFetchAfterEnd);
+      spyEntries.withArgs('paint').returns(paintEntries);
+    });
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should never have negative duration', done => {
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
+        assert.deepEqual(fetchSpan.duration, [0,0]);
         done();
       });
     });

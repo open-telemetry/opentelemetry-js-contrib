@@ -112,7 +112,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
         if (fetchSpan) {
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(fetchSpan, entries);
-            this._endSpan(fetchSpan, PTN.RESPONSE_END, entries);
+            this._endSpan(fetchSpan, PTN.RESPONSE_END, PTN.FETCH_START, entries);
           });
         }
       });
@@ -141,7 +141,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
 
       addSpanPerformancePaintEvents(rootSpan);
 
-      this._endSpan(rootSpan, PTN.LOAD_EVENT_END, entries);
+      this._endSpan(rootSpan, PTN.LOAD_EVENT_END, PTN.FETCH_START, entries);
     });
   }
 
@@ -149,17 +149,24 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    * Helper function for ending span
    * @param span
    * @param performanceName name of performance entry for time end
+   * @param startPerformanceName name of the performance entry that has the time start.
    * @param entries
    */
   private _endSpan(
     span: Span | undefined,
     performanceName: string,
+    startPerformanceName: string,
     entries: PerformanceEntries
   ) {
     // span can be undefined when entries are missing the certain performance - the span will not be created
     if (span) {
       if (hasKey(entries, performanceName)) {
-        span.end(entries[performanceName]);
+        // @ts-ignore: Object is possibly 'null'.
+        if(hasKey(entries, startPerformanceName) && entries[startPerformanceName] >  entries[performanceName]) {
+          span.end(entries[startPerformanceName]);
+        } else {
+          span.end(entries[performanceName]);
+        }
       } else {
         // just end span
         span.end();
@@ -185,7 +192,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
     if (span) {
       span.setAttribute(SemanticAttributes.HTTP_URL, resource.name);
       addSpanNetworkEvents(span, resource);
-      this._endSpan(span, PTN.RESPONSE_END, resource);
+      this._endSpan(span, PTN.RESPONSE_END, PTN.FETCH_START, resource);
     }
   }
 
