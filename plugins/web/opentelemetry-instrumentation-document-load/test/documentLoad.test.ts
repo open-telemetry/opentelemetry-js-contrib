@@ -44,6 +44,7 @@ import { EventNames } from '../src/enums/EventNames';
 const exporter = new InMemorySpanExporter();
 const provider = new BasicTracerProvider();
 const spanProcessor = new SimpleSpanProcessor(exporter);
+const tracer = provider.getTracer('default');
 
 provider.addSpanProcessor(spanProcessor);
 provider.register();
@@ -647,6 +648,60 @@ describe('DocumentLoad Instrumentation', () => {
       sandbox.restore();
     });
     shouldExportCorrectSpan();
+  });
+
+  describe('when custom root span is passed', () => {
+    let spyEntries: any;
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resources);
+      spyEntries.withArgs('paint').returns([]);
+    });
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should add child spans to the custom root span', done => {
+      const customRootSpan = tracer.startSpan('customRootSpan');
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        rootSpan: customRootSpan,
+      });
+      plugin.setTracerProvider(provider);
+      plugin.enable();
+      setTimeout(() => {
+        const spanResource1 = exporter.getFinishedSpans()[1] as ReadableSpan;
+        const spanResource2 = exporter.getFinishedSpans()[2] as ReadableSpan;
+
+        const srEvents1 = spanResource1.events;
+        const srEvents2 = spanResource2.events;
+
+        assert.strictEqual(
+          spanResource1.parentSpanId,
+          customRootSpan.spanContext().spanId
+        );
+        assert.strictEqual(
+          spanResource2.parentSpanId,
+          customRootSpan.spanContext().spanId
+        );
+
+        assert.strictEqual(
+          spanResource1.attributes[SemanticAttributes.HTTP_URL],
+          'http://localhost:8090/bundle.js'
+        );
+        assert.strictEqual(
+          spanResource2.attributes[SemanticAttributes.HTTP_URL],
+          'http://localhost:8090/sockjs-node/info?t=1572620894466'
+        );
+
+        ensureNetworkEventsExists(srEvents1);
+        ensureNetworkEventsExists(srEvents2);
+
+        assert.strictEqual(exporter.getFinishedSpans().length, 3);
+        done();
+      });
+    });
   });
 });
 
