@@ -158,7 +158,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
-          this._unwrap(moduleExports, 'command');
+          this._unwrap(moduleExports.Connection.prototype, 'command');
         }
 
         this._wrap(
