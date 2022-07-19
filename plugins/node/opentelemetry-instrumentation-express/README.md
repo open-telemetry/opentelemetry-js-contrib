@@ -78,6 +78,31 @@ Express instrumentation has few options available to choose from. You can set th
 - `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer or undefined when renaming the root HTTP instrumentation span.
 - `defaultName: string` - original name proposed by the instrumentation.
 
+Note: In order to ignore whole traces that represent a given Express route, use
+the `ignoreIncomingRequestHook` option from
+`@opentelemetry/instrumentation-http` against the route path. Ideally, this
+shouldn't be necessary since spans should a have low cardinality and minimize
+interaction between instrumentation libraies but
+`@opentelemetry/instrumentation-express` renames the root span from
+`@opentelemetry/instrumentation-http` in order to get things in order.
+
+```js
+registerInstrumentations({
+  instrumentations: [
+    // Express instrumentation expects HTTP layer to be instrumented
+    new HttpInstrumentation({
+      ignoreIncomingRequestHook(req) {
+        // Ignore spans from static assets.
+        const isStaticAsset = !!req.url.match(/^\/static\/.*$/);
+        return isStaticAsset;
+      }
+    }),
+    new ExpressInstrumentation(),
+  ],
+});
+```
+
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
