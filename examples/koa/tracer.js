@@ -9,8 +9,8 @@ const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
-const { Resource } = require("@opentelemetry/resources")
-const { SemanticResourceAttributes } = require("@opentelemetry/semantic-conventions")
+const { Resource } = require('@opentelemetry/resources')
+const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions')
 
 const EXPORTER = process.env.EXPORTER || '';
 
