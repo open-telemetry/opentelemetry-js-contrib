@@ -15,4 +15,4 @@
  */
 
 export * from './instrumentation';
-export { GraphQLInstrumentationConfig } from './types';
+export * from './types';
