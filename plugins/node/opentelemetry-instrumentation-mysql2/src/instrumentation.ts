@@ -37,9 +37,7 @@ import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
-export class MySQL2Instrumentation extends InstrumentationBase<
-  typeof mysqlTypes
-> {
+export class MySQL2Instrumentation extends InstrumentationBase<any> {
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
@@ -50,7 +48,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof mysqlTypes>(
+      new InstrumentationNodeModuleDefinition<any>(
         'mysql2',
         ['>= 1.4.2 < 3.0'],
         (moduleExports: any, moduleVersion) => {
