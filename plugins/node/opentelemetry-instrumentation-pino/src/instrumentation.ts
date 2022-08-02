@@ -41,7 +41,7 @@ export class PinoInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition<any>(
         'pino',
         pinoVersions,
-        pinoModule => {
+        (pinoModule) => {
           const instrumentation = this;
           const patchedPino = Object.assign((...args: unknown[]) => {
             if (args.length == 0) {
@@ -69,6 +69,13 @@ export class PinoInstrumentation extends InstrumentationBase {
             return pinoModule(...args);
           }, pinoModule);
 
+          if (typeof patchedPino.pino === 'function') {
+            patchedPino.pino = patchedPino;
+          }
+          if (typeof patchedPino.default === 'function') {
+            patchedPino.default = patchedPino;
+          }
+
           return patchedPino;
         }
       ),
@@ -92,7 +99,7 @@ export class PinoInstrumentation extends InstrumentationBase {
 
     safeExecuteInTheMiddle(
       () => hook(span, record, level),
-      err => {
+      (err) => {
         if (err) {
           diag.error('pino instrumentation: error calling logHook', err);
         }
