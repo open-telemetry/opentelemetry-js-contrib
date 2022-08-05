@@ -1,5 +1,10 @@
 # OpenTelemetry Browser Extension
 
+## :warning: ARCHIVED PROJECT
+
+> This project has been archived by the maintainers on August 3 2022 because it was causing a failure in the CI and does not have any maintainer.
+> Anyone who would like to maintain this project should open a PR to move it back into the lerna project and add themselves to the component owners file.
+
 This browser extension allows you to inject [OpenTelemetry](https://opentelemetry.io/) instrumentation in any web page. It uses the [Web SDK](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-web) and can export data to Zipkin or an OpenTelemetry Collector.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
