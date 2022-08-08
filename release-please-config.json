@@ -11,6 +11,7 @@
     "detectors/node/opentelemetry-resource-detector-docker": {},
     "detectors/node/opentelemetry-resource-detector-gcp": {},
     "detectors/node/opentelemetry-resource-detector-github": {},
+    "detectors/node/opentelemetry-resource-detector-instana": {},
     "metapackages/auto-instrumentations-node": {},
     "metapackages/auto-instrumentations-web": {},
     "packages/opentelemetry-host-metrics": {},
