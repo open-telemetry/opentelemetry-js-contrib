@@ -13,10 +13,10 @@ function makeRequest() {
   api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), async () => {
     try {
       const res = await axios.get('http://localhost:8081/run_test');
-      span.setStatus({ code: api.StatusCode.OK });
+      span.setStatus({ code: api.SpanStatusCode.OK });
       console.log(res.statusText);
     } catch (e) {
-      span.setStatus({ code: api.StatusCode.ERROR, message: e.message });
+      span.setStatus({ code: api.SpanStatusCode.ERROR, message: e.message });
     }
     span.end();
     console.log('Sleeping 5 seconds before shutdown to ensure all records are flushed.');
