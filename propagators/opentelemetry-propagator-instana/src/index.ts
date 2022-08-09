@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export * from "./InstanaPropagator";
+export * from './InstanaPropagator';
