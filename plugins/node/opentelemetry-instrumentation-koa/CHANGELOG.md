@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.30.0...instrumentation-koa-v0.31.0) (2022-08-09)
+
+
+### Features
+
+* use Koa router name as span name if available ([#976](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/976)) ([fa4fe9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fa4fe9c9137e198aef897a2c4e01c932c62faabf))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.29.0...instrumentation-koa-v0.30.0) (2022-06-08)
 
 
