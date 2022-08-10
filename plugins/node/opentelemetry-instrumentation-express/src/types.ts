@@ -92,7 +92,7 @@ export type SpanNameHook = (
  * Function that can be used to add custom attributes to the current span or the root span on
  * a Express request
  * @param span - The Express middleware layer span.
- * @param info: - An instance of ExpressRequestInfo that contains info about the request such as the route, and the layer type.
+ * @param info - An instance of ExpressRequestInfo that contains info about the request such as the route, and the layer type.
  */
 export interface ExpressRequestCustomAttributeFunction {
   (span: Span, info: ExpressRequestInfo): void;
