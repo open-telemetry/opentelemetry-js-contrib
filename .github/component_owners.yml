@@ -64,6 +64,9 @@ components:
   propagators/opentelemetry-propagator-aws-xray:
     - NathanielRN
     - willarmiros
+  propagators/opentelemetry-propagator-instana:
+    - basti1302
+    - kirrg001
 
 ignored-authors:
   - renovate-bot
