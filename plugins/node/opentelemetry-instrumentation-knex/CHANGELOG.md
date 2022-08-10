@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.29.0...instrumentation-knex-v0.29.1) (2022-08-09)
+
+
+### Bug Fixes
+
+* avoid type imports of the instrumented package in the built assets ([#1017](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1017)) ([e265723](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e2657232c9007a77ddc873a93e8247f99087b9c1))
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.28.0...instrumentation-knex-v0.29.0) (2022-06-08)
 
 
