@@ -45,11 +45,29 @@ See [`examples/koa`](https://github.com/open-telemetry/opentelemetry-js-contrib/
 | Options | Type | Example | Description |
 | ------- | ---- | ------- | ----------- |
 | `ignoreLayersType`| `KoaLayerType[]` | `['middleware']` | Ignore layers of specified type. |
+| `requestHook` | `KoaRequestCustomAttributeFunction` | `(span, info) => {}` | Function for adding custom attributes to Koa middleware layers. Receives params: `Span, KoaRequestInfo`. |
 
 `ignoreLayersType` accepts an array of `KoaLayerType` which can take the following string values:
 
 - `router`,
 - `middleware`.
+
+#### Using `requestHook`
+
+Instrumentation configuration accepts a custom "hook" function which will be called for every instrumented Koa middleware layer involved in a request. Custom attributes can be set on the span or run any custom logic per layer.
+
+```javascript
+import { KoaInstrumentation } from "@opentelemetry/instrumentation-koa"
+
+const koaInstrumentation = new KoaInstrumentation({
+  requestHook: function (span: Span, info: KoaRequestInfo) {
+    span.setAttribute(
+      'http.method',
+      info.context.request.method
+    )
+  }
+});
+```
 
 ## Koa Packages
 
