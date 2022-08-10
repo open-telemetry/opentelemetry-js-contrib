@@ -38,6 +38,7 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -244,6 +245,24 @@ export class ExpressInstrumentation extends InstrumentationBase<
         const span = instrumentation.tracer.startSpan(spanName, {
           attributes: Object.assign(attributes, metadata.attributes),
         });
+
+        if (instrumentation.getConfig().requestHook) {
+          safeExecuteInTheMiddle(
+            () =>
+              instrumentation.getConfig().requestHook!(span, {
+                request: req,
+                layerType: type,
+                route,
+              }),
+            e => {
+              if (e) {
+                diag.error('express instrumentation: request hook failed', e);
+              }
+            },
+            true
+          );
+        }
+
         const startTime = hrTime();
         let spanHasEnded = false;
         // If we found anything that isnt a middleware, there no point of measuring
