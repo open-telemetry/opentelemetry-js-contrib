@@ -40,7 +40,7 @@ export type KoaRequestInfo = {
 /**
  * Function that can be used to add custom attributes to the current span
  * @param span - The Express middleware layer span.
- * @param context: - The current KoaContext.
+ * @param context - The current KoaContext.
  */
 export interface KoaRequestCustomAttributeFunction {
   (span: Span, info: KoaRequestInfo): void;
