@@ -60,6 +60,7 @@ Express instrumentation has few options available to choose from. You can set th
 | `ignoreLayers` | `IgnoreMatcher[]` | `[/^\/_internal\//]` | Ignore layers that by match. |
 | `ignoreLayersType`| `ExpressLayerType[]` | `['request_handler']` | Ignore layers of specified type. |
 | `spanNameHook` | `SpanNameHook` | `() => 'my-span-name'` | Can be used to customize span names by returning a new name from the hook. |
+| `requestHook` | `ExpressRequestCustomAttributeFunction (function)` | `(span, info) => {}` | Function for adding custom attributes on Express request. Receives params: `Span, ExpressRequestInfo`. |
 
 `ignoreLayers` accepts an array of elements of types:
 
@@ -77,6 +78,36 @@ Express instrumentation has few options available to choose from. You can set th
 
 - `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer or undefined when renaming the root HTTP instrumentation span.
 - `defaultName: string` - original name proposed by the instrumentation.
+
+#### Using `requestHook`
+
+Instrumentation configuration accepts a custom "hook" function which will be called for every instrumented Express layer involved in a request. Custom attributes can be set on the span or run any custom logic per layer.
+
+Here is a simple example that adds to the request handler span some attributes based on the Express request attributes:
+
+```javascript
+import { ExpressInstrumentation, ExpressLayerType } from "@opentelemetry/instrumentation-express"
+
+const expressInstrumentation = new ExpressInstrumentation({
+  requestHook: function (
+    span: Span,
+    info: ExpressRequestInfo,
+  ) {
+
+    if (info.layerType === ExpressLayerType.REQUEST_HANDLER) {
+      span.setAttribute(
+        'http.method',
+        info.request.method
+      );
+
+      span.setAttribute(
+        'express.base_url',
+        info.request.baseUrl
+      );
+    }
+  }
+});
+```
 
 ## Useful links
 
