@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.30.0...instrumentation-ioredis-v0.31.0) (2022-06-17)
+
+
+### Features
+
+* **ioredis:** only serialize non sensitive arguments in db statement attribute ([#1052](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1052)) ([375dfe0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/375dfe07bcd88b8cfb0e6dc291dcc9fd3fba2f9e))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.29.0...instrumentation-ioredis-v0.30.0) (2022-06-08)
 
 
