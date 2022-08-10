@@ -267,6 +267,57 @@ describe('Hapi Instrumentation - Core Tests', () => {
       );
     });
 
+    it('should start a new context for the handler', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      server.route([
+        {
+          method: 'GET',
+          path: '/route',
+          handler: (request, h) => {
+            const span = tracer.startSpan('handler');
+            span.end();
+            return 'ok';
+          },
+        },
+      ]);
+
+      await server.start();
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/route',
+          });
+
+          assert.strictEqual(res.statusCode, 200);
+
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+
+          const routeSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'route - /route');
+          assert.notStrictEqual(routeSpan, undefined);
+          assert.strictEqual(
+            routeSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.ROUTER
+          );
+
+          const handlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'handler');
+          assert.notStrictEqual(routeSpan, undefined);
+          assert.strictEqual(
+            handlerSpan?.parentSpanId,
+            routeSpan?.spanContext().spanId
+          );
+        }
+      );
+    });
+
     it('should access route parameters and add to span', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       server.route({
