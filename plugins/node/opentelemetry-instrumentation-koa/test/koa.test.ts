@@ -475,7 +475,7 @@ describe('Koa Instrumentation', () => {
       );
 
       const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
-        span.setAttribute('http.method', info.context.request.method);
+        span.setAttribute(SemanticAttributes.HTTP_METHOD, info.context.request.method);
 
         throw Error('error thrown in requestHook');
       });
