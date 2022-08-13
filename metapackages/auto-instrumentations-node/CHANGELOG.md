@@ -21,6 +21,17 @@
     * @opentelemetry/instrumentation-aws-sdk bumped from ^0.8.0 to ^0.8.1
     * @opentelemetry/instrumentation-ioredis bumped from ^0.30.0 to ^0.31.0
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-cassandra-driver bumped from ^0.29.0 to ^0.29.1
+    * @opentelemetry/instrumentation-knex bumped from ^0.29.0 to ^0.29.1
+    * @opentelemetry/instrumentation-koa bumped from ^0.30.0 to ^0.31.0
+    * @opentelemetry/instrumentation-lru-memoizer bumped from ^0.29.0 to ^0.30.0
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.31.0 to ^0.31.1
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.31.0 to ^0.31.1
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.30.0...auto-instrumentations-node-v0.31.0) (2022-06-08)
 
 

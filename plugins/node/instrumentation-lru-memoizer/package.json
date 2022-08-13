@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-lru-memoizer",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "description": "OpenTelemetry automatic instrumentation package for lru-memoizer",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -58,7 +58,7 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.29.2"
+    "@opentelemetry/instrumentation": "^0.31.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-lru-memoizer#readme"
 }
