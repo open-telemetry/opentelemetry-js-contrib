@@ -2,11 +2,14 @@
 
 const api = require('@opentelemetry/api');
 
-require('./tracer')('example-koa-server');
+// require('./tracer')('example-koa-server');
+import { setupTracing } from './tracer'
+setupTracing('example-koa-server');
 
 // Adding Koa router (if desired)
 const router = require('@koa/router')();
-const Koa = require('koa');
+import * as Koa from "koa"
+
 
 // Setup koa
 const app = new Koa();
@@ -27,7 +30,7 @@ async function setUp() {
 */
 const posts = ['post 0', 'post 1', 'post 2'];
 
-function addPost(ctx) {
+function addPost(ctx: Koa.Context) {
   posts.push(`post ${posts.length}`);
   const currentSpan = api.trace.getSpan(api.context.active());
   currentSpan.addEvent('Added post');
@@ -36,7 +39,7 @@ function addPost(ctx) {
   ctx.redirect('/post/3');
 }
 
-async function showNewPost(ctx) {
+async function showNewPost(ctx: Koa.Context) {
   const { id } = ctx.params;
   console.log(`showNewPost with id: ${id}`);
   const post = posts[id];
@@ -46,7 +49,7 @@ async function showNewPost(ctx) {
   ctx.body = post;
 }
 
-function runTest(ctx) {
+function runTest(ctx: Koa.Context) {
   console.log('runTest');
   const currentSpan = api.trace.getSpan(api.context.active());
   const { traceId } = currentSpan.spanContext();
@@ -57,7 +60,7 @@ function runTest(ctx) {
   ctx.redirect('/post/new');
 }
 
-async function noOp(ctx, next) {
+async function noOp(ctx: Koa.Context, next: Koa.Next) {
   console.log('Sample basic koa middleware');
   const syntheticDelay = 100;
   await new Promise((r) => setTimeout(r, syntheticDelay));

@@ -1,9 +1,13 @@
 'use strict';
 
 // eslint-disable-next-line import/order
-const tracer = require('./tracer')('example-koa-client');
-const api = require('@opentelemetry/api');
-const axios = require('axios').default;
+// const tracer = require('../tracer')('example-koa-client');
+import { setupTracing } from "./tracer";
+const tracer = setupTracing('example-express-client');
+// const api = require('@opentelemetry/api');
+import * as api from '@opentelemetry/api';
+// const axios = require('axios').default;
+import { default as axios } from 'axios';
 
 function makeRequest() {
   const span = tracer.startSpan('client.makeRequest()', {
@@ -16,7 +20,9 @@ function makeRequest() {
       span.setStatus({ code: api.SpanStatusCode.OK });
       console.log(res.statusText);
     } catch (e) {
-      span.setStatus({ code: api.SpanStatusCode.ERROR, message: e.message });
+      if(e instanceof Error) {
+        span.setStatus({ code: api.SpanStatusCode.ERROR, message: e.message });
+      }
     }
     span.end();
     console.log('Sleeping 5 seconds before shutdown to ensure all records are flushed.');
