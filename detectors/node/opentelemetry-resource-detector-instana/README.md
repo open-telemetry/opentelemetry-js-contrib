@@ -16,7 +16,7 @@ npm install --save @opentelemetry/resource-detector-instana
 - INSTANA_AGENT_HOST: The Instana agent hostname.
 - INSTANA_AGENT_PORT: The Instana agent port.
 - INSTANA_RETRY_TIMEOUT_MS: The resource detector does three retries to connect to the Instana agent. This is the timeout between the retries.
-- INSTANA_RETRY_TIMEOUT_MS: The client timeout when connecting the Instana agent.
+- INSTANA_AGENT_TIMEOUT_MS: The client timeout when connecting the Instana agent.
 
 ## Usage
 
