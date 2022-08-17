@@ -101,6 +101,36 @@ describe('connect', () => {
     });
   });
   describe('when connect is enabled', () => {
+    it('should invoke error middleware properly', async () => {
+      const errorHandler = (
+        err: any,
+        req: connect.IncomingMessage,
+        res: http.ServerResponse,
+        next: connect.NextFunction
+      ) => {
+        res.end('recovered');
+      };
+
+      const middlewareGeneratingError = (
+        req: connect.IncomingMessage,
+        res: http.ServerResponse,
+        next: connect.NextFunction
+      ) => {
+        next(new Error('boom!'));
+      };
+
+      app.use(middlewareGeneratingError);
+      app.use(errorHandler);
+
+      const response = await httpRequest.get(`http://localhost:${PORT}/`);
+
+      const errorExpression = new RegExp('.*error.*', 'ig');
+      assert(!errorExpression.test(response as string));
+
+      const recoverExpression = new RegExp('.*recovered.*', 'ig');
+      assert(recoverExpression.test(response as string));
+    });
+
     it('should generate span for anonymous middleware', async () => {
       app.use((req, res, next) => {
         next();
