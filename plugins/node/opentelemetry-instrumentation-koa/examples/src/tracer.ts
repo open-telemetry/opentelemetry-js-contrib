@@ -1,7 +1,7 @@
 'use strict';
 
-const { KoaInstrumentation } = require('@opentelemetry/instrumentation-koa');
-// import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
+// const { KoaInstrumentation } = require('@opentelemetry/instrumentation-koa');
+import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 // const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 
