@@ -52,12 +52,14 @@ async function showNewPost(ctx: Koa.Context) {
 function runTest(ctx: Koa.Context) {
   console.log('runTest');
   const currentSpan = api.trace.getSpan(api.context.active());
-  const { traceId } = currentSpan.spanContext();
-  console.log(`traceid: ${traceId}`);
-  console.log(`Jaeger URL: http://localhost:16686/trace/${traceId}`);
-  console.log(`Zipkin URL: http://localhost:9411/zipkin/traces/${traceId}`);
-  ctx.body = `All posts: ${posts}`;
-  ctx.redirect('/post/new');
+  if (currentSpan){
+    const { traceId } = currentSpan.spanContext();
+    console.log(`traceid: ${traceId}`);
+    console.log(`Jaeger URL: http://localhost:16686/trace/${traceId}`);
+    console.log(`Zipkin URL: http://localhost:9411/zipkin/traces/${traceId}`);
+    ctx.body = `All posts: ${posts}`;
+    ctx.redirect('/post/new');
+  }
 }
 
 async function noOp(ctx: Koa.Context, next: Koa.Next) {
