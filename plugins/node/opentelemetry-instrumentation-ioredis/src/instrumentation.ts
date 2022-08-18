@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-import { diag, trace, context, SpanKind } from '@opentelemetry/api';
-import type * as ioredisTypes from 'ioredis';
+import { diag, trace, context, SpanKind } from "@opentelemetry/api";
+import type * as ioredisTypes from "ioredis";
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
-} from '@opentelemetry/instrumentation';
-import { IORedisInstrumentationConfig, IORedisCommand } from './types';
+} from "@opentelemetry/instrumentation";
+import { IORedisInstrumentationConfig } from "./types";
 import {
   DbSystemValues,
   SemanticAttributes,
-} from '@opentelemetry/semantic-conventions';
-import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import { endSpan, defaultDbStatementSerializer } from './utils';
-import { VERSION } from './version';
+} from "@opentelemetry/semantic-conventions";
+import { safeExecuteInTheMiddle } from "@opentelemetry/instrumentation";
+import { endSpan, defaultDbStatementSerializer } from "./utils";
+import { VERSION } from "./version";
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
@@ -39,7 +39,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
 > {
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
-      '@opentelemetry/instrumentation-ioredis',
+      "@opentelemetry/instrumentation-ioredis",
       VERSION,
       Object.assign({}, DEFAULT_CONFIG, _config)
     );
@@ -48,33 +48,33 @@ export class IORedisInstrumentation extends InstrumentationBase<
   init(): InstrumentationNodeModuleDefinition<typeof ioredisTypes>[] {
     return [
       new InstrumentationNodeModuleDefinition<typeof ioredisTypes>(
-        'ioredis',
-        ['>1 <5'],
+        "ioredis",
+        [">=5"],
         (moduleExports, moduleVersion?: string) => {
-          diag.debug('Applying patch for ioredis');
-          if (isWrapped(moduleExports.prototype.sendCommand)) {
-            this._unwrap(moduleExports.prototype, 'sendCommand');
+          diag.debug("Applying patch for ioredis");
+          if (isWrapped(moduleExports.default.prototype.sendCommand)) {
+            this._unwrap(moduleExports.default.prototype, "sendCommand");
           }
           this._wrap(
-            moduleExports.prototype,
-            'sendCommand',
+            moduleExports.default.prototype,
+            "sendCommand",
             this._patchSendCommand(moduleVersion)
           );
-          if (isWrapped(moduleExports.prototype.connect)) {
-            this._unwrap(moduleExports.prototype, 'connect');
+          if (isWrapped(moduleExports.default.prototype.connect)) {
+            this._unwrap(moduleExports.default.prototype, "connect");
           }
           this._wrap(
-            moduleExports.prototype,
-            'connect',
+            moduleExports.default.prototype,
+            "connect",
             this._patchConnection()
           );
           return moduleExports;
         },
-        moduleExports => {
+        (moduleExports) => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch for ioredis');
-          this._unwrap(moduleExports.prototype, 'sendCommand');
-          this._unwrap(moduleExports.prototype, 'connect');
+          diag.debug("Removing patch for ioredis");
+          this._unwrap(moduleExports.default.prototype, "sendCommand");
+          this._unwrap(moduleExports.default.prototype, "connect");
         }
       ),
     ];
@@ -97,8 +97,8 @@ export class IORedisInstrumentation extends InstrumentationBase<
 
   private traceSendCommand = (original: Function, moduleVersion?: string) => {
     const instrumentation = this;
-    return function (this: ioredisTypes.Redis, cmd?: IORedisCommand) {
-      if (arguments.length < 1 || typeof cmd !== 'object') {
+    return function (this: ioredisTypes.Redis, cmd?: ioredisTypes.Command) {
+      if (arguments.length < 1 || typeof cmd !== "object") {
         return original.apply(this, arguments);
       }
       const config =
@@ -130,9 +130,9 @@ export class IORedisInstrumentation extends InstrumentationBase<
               cmdName: cmd.name,
               cmdArgs: cmd.args,
             }),
-          e => {
+          (e) => {
             if (e) {
-              diag.error('ioredis instrumentation: request hook failed', e);
+              diag.error("ioredis instrumentation: request hook failed", e);
             }
           },
           true
@@ -155,9 +155,9 @@ export class IORedisInstrumentation extends InstrumentationBase<
         cmd.resolve = function (result: any) {
           safeExecuteInTheMiddle(
             () => config?.responseHook?.(span, cmd.name, cmd.args, result),
-            e => {
+            (e) => {
               if (e) {
-                diag.error('ioredis instrumentation: response hook failed', e);
+                diag.error("ioredis instrumentation: response hook failed", e);
               }
             },
             true
@@ -174,8 +174,8 @@ export class IORedisInstrumentation extends InstrumentationBase<
         };
 
         return result;
-      } catch (error) {
-        endSpan(span, error);
+      } catch (error: unknown) {
+        endSpan(span, error as Error);
         throw error;
       }
     };
@@ -184,11 +184,11 @@ export class IORedisInstrumentation extends InstrumentationBase<
   private traceConnection = (original: Function) => {
     const instrumentation = this;
     return function (this: ioredisTypes.Redis) {
-      const span = instrumentation.tracer.startSpan('connect', {
+      const span = instrumentation.tracer.startSpan("connect", {
         kind: SpanKind.CLIENT,
         attributes: {
           [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.DB_STATEMENT]: 'connect',
+          [SemanticAttributes.DB_STATEMENT]: "connect",
         },
       });
       const { host, port } = this.options;
@@ -202,8 +202,8 @@ export class IORedisInstrumentation extends InstrumentationBase<
         const client = original.apply(this, arguments);
         endSpan(span, null);
         return client;
-      } catch (error) {
-        endSpan(span, error);
+      } catch (error: unknown) {
+        endSpan(span, error as Error);
         throw error;
       }
     };
