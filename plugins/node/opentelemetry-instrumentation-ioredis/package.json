@@ -60,7 +60,7 @@
     "@types/node": "18.11.7",
     "cross-env": "7.0.3",
     "gts": "3.1.0",
-    "ioredis": "4.27.7",
+    "ioredis": "5.2.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
@@ -72,8 +72,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.34.0",
     "@opentelemetry/redis-common": "^0.34.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/ioredis": "4.26.6"
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis#readme"
 }
