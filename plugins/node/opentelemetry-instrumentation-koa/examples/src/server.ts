@@ -2,7 +2,6 @@
 
 const api = require('@opentelemetry/api');
 
-// require('./tracer')('example-koa-server');
 import { setupTracing } from './tracer'
 setupTracing('example-koa-server');
 

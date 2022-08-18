@@ -1,12 +1,8 @@
 'use strict';
 
-// eslint-disable-next-line import/order
-// const tracer = require('../tracer')('example-koa-client');
 import { setupTracing } from "./tracer";
-const tracer = setupTracing('example-express-client');
-// const api = require('@opentelemetry/api');
+const tracer = setupTracing('example-koa-client');
 import * as api from '@opentelemetry/api';
-// const axios = require('axios').default;
 import { default as axios } from 'axios';
 
 function makeRequest() {
