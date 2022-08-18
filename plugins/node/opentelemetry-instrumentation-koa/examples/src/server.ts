@@ -1,18 +1,18 @@
 'use strict';
 
-const api = require('@opentelemetry/api');
-
+import * as api from '@opentelemetry/api';
 import { setupTracing } from './tracer'
 setupTracing('example-koa-server');
 
 // Adding Koa router (if desired)
-const router = require('@koa/router')();
+import * as Router from "@koa/router";
 import * as Koa from "koa"
 
 
 // Setup koa
 const app = new Koa();
 const PORT = 8081;
+const router = new Router();
 
 // route definitions
 router.get('/run_test', runTest)
@@ -30,10 +30,11 @@ async function setUp() {
 const posts = ['post 0', 'post 1', 'post 2'];
 
 function addPost(ctx: Koa.Context) {
-  posts.push(`post ${posts.length}`);
+  const newPostId = posts.length;
+  posts.push(`post ${newPostId}`);
   const currentSpan = api.trace.getSpan(api.context.active());
-  currentSpan.addEvent('Added post');
-  currentSpan.setAttribute('Date', new Date());
+  currentSpan?.addEvent('Added post');
+  currentSpan?.setAttribute('post.id', newPostId)
   ctx.body = `Added post: ${posts[posts.length - 1]}`;
   ctx.redirect('/post/3');
 }

@@ -38,7 +38,7 @@ registerInstrumentations({
 });
 ```
 
-See [`plugins/node/opentelemetry-instrumentation-koa/examples`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa/examples) for a short example using both Koa and @koa/router
+See [`examples`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa/examples) for a short example using both Koa and @koa/router
 
 ### Koa Instrumentation Options
 
