@@ -31,6 +31,7 @@ import * as pgTypes from 'pg';
 import * as pgPoolTypes from 'pg-pool';
 import {
   PgClientExtended,
+  PgErrorCallback,
   NormalizedQueryConfig,
   PostgresCallback,
   PgPoolExtended,
@@ -67,11 +68,23 @@ export class PgInstrumentation extends InstrumentationBase {
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
+
+        if (isWrapped(moduleExports.Client.prototype.connect)) {
+          this._unwrap(moduleExports.Client.prototype, 'connect');
+        }
+
         this._wrap(
           moduleExports.Client.prototype,
           'query',
           this._getClientQueryPatch() as never
         );
+
+        this._wrap(
+          moduleExports.Client.prototype,
+          'connect',
+          this._getClientConnectPatch() as never
+        );
+
         return moduleExports;
       },
       moduleExports => {
@@ -105,6 +118,74 @@ export class PgInstrumentation extends InstrumentationBase {
     );
 
     return [modulePG, modulePGPool];
+  }
+
+  private _getClientConnectPatch() {
+    const plugin = this;
+    return (original: typeof pgTypes.Client.prototype.connect) => {
+      return function connect(
+        this: pgTypes.Client,
+        callback?: PgErrorCallback
+      ) {
+        const span = plugin.tracer.startSpan(
+          `${PgInstrumentation.COMPONENT}.connect`,
+          {
+            kind: SpanKind.CLIENT,
+            attributes: {
+              [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+              [SemanticAttributes.DB_NAME]: this.database,
+              [SemanticAttributes.NET_PEER_NAME]: this.host,
+              [SemanticAttributes.DB_CONNECTION_STRING]:
+                utils.getConnectionString(this),
+              [SemanticAttributes.NET_PEER_PORT]: this.port,
+              [SemanticAttributes.DB_USER]: this.user,
+            },
+          }
+        );
+
+        if (callback) {
+          const parentSpan = trace.getSpan(context.active());
+          callback = utils.patchConnectErrorCallback(span, callback);
+          if (parentSpan) {
+            callback = context.bind(context.active(), callback);
+          }
+        }
+
+        const connectResult: unknown = context.with(
+          trace.setSpan(context.active(), span),
+          () => {
+            return original.call(this, callback as never);
+          }
+        );
+
+        if (!(connectResult instanceof Promise)) {
+          return connectResult;
+        }
+
+        const connectResultPromise = connectResult as Promise<unknown>;
+        return context.bind(
+          context.active(),
+          connectResultPromise
+            .then(
+              result =>
+                new Promise(resolve => {
+                  span.end();
+                  resolve(result);
+                })
+            )
+            .catch((error: Error) => {
+              return new Promise((_, reject) => {
+                span.setStatus({
+                  code: SpanStatusCode.ERROR,
+                  message: error.message,
+                });
+                span.end();
+                reject(error);
+              });
+            })
+        );
+      };
+    };
   }
 
   private _getClientQueryPatch() {
@@ -225,7 +306,7 @@ export class PgInstrumentation extends InstrumentationBase {
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
-        const jdbcString = utils.getJDBCString(this.options);
+        const connString = utils.getConnectionString(this.options);
         // setup span
         const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {
           kind: SpanKind.CLIENT,
@@ -233,7 +314,7 @@ export class PgInstrumentation extends InstrumentationBase {
             [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
             [SemanticAttributes.DB_NAME]: this.options.database, // required
             [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
-            [SemanticAttributes.DB_CONNECTION_STRING]: jdbcString, // required
+            [SemanticAttributes.DB_CONNECTION_STRING]: connString, // required
             [SemanticAttributes.NET_PEER_PORT]: this.options.port,
             [SemanticAttributes.DB_USER]: this.options.user,
             [AttributeNames.IDLE_TIMEOUT_MILLIS]:
@@ -254,9 +335,11 @@ export class PgInstrumentation extends InstrumentationBase {
           }
         }
 
-        const connectResult: unknown = originalConnect.call(
-          this,
-          callback as never
+        const connectResult: unknown = context.with(
+          trace.setSpan(context.active(), span),
+          () => {
+            return originalConnect.call(this, callback as never);
+          }
         );
 
         // No callback was provided, return a promise instead

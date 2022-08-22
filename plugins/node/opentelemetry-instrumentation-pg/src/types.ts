@@ -69,6 +69,8 @@ export type PgPoolCallback = (
   done: (release?: any) => void
 ) => void;
 
+export type PgErrorCallback = (err: Error) => void;
+
 export interface PgPoolOptionsParams {
   database: string;
   host: string;
