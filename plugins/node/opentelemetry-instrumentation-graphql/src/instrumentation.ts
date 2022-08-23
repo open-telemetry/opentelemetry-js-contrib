@@ -445,7 +445,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     variableValues: Maybe<{ [key: string]: any }>,
     operationName: Maybe<string>,
     fieldResolver: Maybe<graphqlTypes.GraphQLFieldResolver<any, any>>,
-    typeResolver: Maybe<graphqlTypes.GraphQLTypeResolver<any, any>>
+    typeResolver: Maybe<graphqlTypes.GraphQLTypeResolver<any, any>>,
+    subscribeFieldResolver?: Maybe<graphqlTypes.GraphQLFieldResolver<any, any>>
   ): OtelExecutionArgs {
     if (!contextValue) {
       contextValue = {};
@@ -460,6 +461,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
         operationName,
         fieldResolver,
         typeResolver,
+        subscribeFieldResolver,
       };
     }
     fieldResolver = wrapFieldResolver(
