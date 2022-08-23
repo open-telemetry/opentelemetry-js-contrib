@@ -79,6 +79,19 @@ export const addSpanPerformancePaintEvents = (span: Span, callback: () => void) 
     document.removeEventListener('visibilitychange', endSpan);
     globalThis.removeEventListener('pagehide', endSpan);
     if (!spanIsEnded) {
+      // collect first-paint as it's not a part of web-vitals
+      const performancePaintTiming = (
+        otperformance as unknown as Performance
+      ).getEntriesByType?.('paint');
+
+      if (performancePaintTiming) {
+        performancePaintTiming.forEach(({ name, startTime }) => {
+          if (hasKey(performancePaintNames, name)) {
+            metrics[performancePaintNames[name]] = startTime;
+          }
+        });
+      }
+
       spanIsEnded = true;
       Object.entries(metrics).forEach(([metric, value]) => {
         span[vitalsMetricAsAttributes.has(metric as EventNames) ? 'setAttribute' : 'addEvent'](metric, value);
@@ -103,18 +116,6 @@ export const addSpanPerformancePaintEvents = (span: Span, callback: () => void) 
   getFID(handleNewMetric);
   getLCP(handleNewMetric);
   getTTFB(handleNewMetric);
-
-  // collect first-paint because it's not a part of web-vitals
-  const performancePaintTiming = (
-    otperformance as unknown as Performance
-  ).getEntriesByType?.('paint');
-  if (performancePaintTiming) {
-    performancePaintTiming.forEach(({ name, startTime }) => {
-      if (hasKey(performancePaintNames, name)) {
-        metrics[performancePaintNames[name]] = startTime;
-      }
-    });
-  }
 
   // collect largest-contentful-paint manually because web-vitals returns it
   // after user interaction and it may not work in synthetic monitoring;
