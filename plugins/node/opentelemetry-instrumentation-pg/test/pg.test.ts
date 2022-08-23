@@ -207,8 +207,18 @@ describe('pg', () => {
   });
 
   describe('#client.connect(...)', () => {
+    let connClient: pg.Client;
+
+    beforeEach(() => {
+      connClient = new postgres.Client(CONFIG);
+    });
+
+    afterEach(async () => {
+      await connClient.end();
+    });
+
     it('should not return a promise when callback is provided', done => {
-      const res = new postgres.Client(CONFIG).connect(err => {
+      const res = connClient.connect(err => {
         assert.strictEqual(err, null);
         done();
       });
@@ -216,7 +226,7 @@ describe('pg', () => {
     });
 
     it('should return a promise if callback is not provided', done => {
-      const resPromise = new postgres.Client(CONFIG).connect();
+      const resPromise = connClient.connect();
       resPromise
         .then(res => {
           assert.equal(res, undefined);
@@ -231,22 +241,11 @@ describe('pg', () => {
         });
     });
 
-    it('should return a promise if callback is not provided', done => {
-      const resPromise = new postgres.Client(CONFIG).connect();
-      resPromise
-        .then(res => {
-          assert.equal(res, undefined);
-          done();
-        })
-        .catch((err: Error) => {
-          assert.ok(false, err.message);
-        });
-    });
-
     it('should throw on failure', done => {
-      new postgres.Client({ ...CONFIG, port: 59999 })
+      connClient = new postgres.Client({ ...CONFIG, port: 59999 });
+      connClient
         .connect()
-        .then(assert.fail('expected connect to throw'))
+        .then(() => assert.fail('expected connect to throw'))
         .catch(err => {
           assert(err instanceof Error);
           done();
@@ -254,7 +253,8 @@ describe('pg', () => {
     });
 
     it('should call back with an error', done => {
-      new postgres.Client({ ...CONFIG, port: 59999 }).connect(err => {
+      connClient = new postgres.Client({ ...CONFIG, port: 59999 });
+      connClient.connect(err => {
         assert(err instanceof Error);
         done();
       });
@@ -263,7 +263,7 @@ describe('pg', () => {
     it('should intercept connect', async () => {
       const span = tracer.startSpan('test span');
       context.with(trace.setSpan(context.active(), span), async () => {
-        await new postgres.Client(CONFIG).connect();
+        await connClient.connect();
         const spans = memoryExporter.getFinishedSpans();
         assert.strictEqual(spans.length, 1);
         const connectSpan = spans[0];
