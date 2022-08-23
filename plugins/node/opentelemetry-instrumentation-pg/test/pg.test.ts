@@ -243,8 +243,14 @@ describe('pg', () => {
         });
     });
 
-    it('should throw on failure', () => {
-      assert.rejects(new postgres.Client({ ...CONFIG, port: 59999 }).connect());
+    it('should throw on failure', done => {
+      new postgres.Client({ ...CONFIG, port: 59999 })
+        .connect()
+        .then(assert.fail('expected connect to throw'))
+        .catch(err => {
+          assert(err instanceof Error);
+          done();
+        });
     });
 
     it('should call back with an error', done => {
