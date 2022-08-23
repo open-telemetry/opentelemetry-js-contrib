@@ -186,6 +186,12 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
           this._getPatchRedisClientSendCommand()
         );
 
+        this._wrap(
+          redisClientPrototype,
+          'connect',
+          this._getPatchedClientConnect()
+        );
+
         return moduleExports;
       },
       (moduleExports: any) => {
@@ -332,6 +338,52 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     };
   }
 
+  private _getPatchedClientConnect() {
+    const plugin = this;
+    return function connectWrapper(original: Function) {
+      return function patchedConnect(this: any): Promise<void> {
+        const options = this.options;
+
+        const attributes = {
+          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
+          [SemanticAttributes.NET_PEER_NAME]: options?.socket?.host,
+          [SemanticAttributes.NET_PEER_PORT]: options?.socket?.port,
+          [SemanticAttributes.DB_CONNECTION_STRING]: options?.url,
+        };
+
+        const span = plugin.tracer.startSpan(
+          `${RedisInstrumentation.COMPONENT}.connect`,
+          {
+            kind: SpanKind.CLIENT,
+            attributes,
+          }
+        );
+
+        const res = context.with(trace.setSpan(context.active(), span), () => {
+          return original.apply(this);
+        });
+
+        return res
+          .then((result: unknown) => {
+            return new Promise(resolve => {
+              span.end();
+              resolve(result);
+            });
+          })
+          .catch((error: Error) => {
+            return new Promise((_, reject) => {
+              span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: error.message,
+              });
+              span.end();
+              reject(error);
+            });
+          });
+      };
+    };
+  }
+
   private _traceClientCommand(
     origFunction: Function,
     origThis: any,
@@ -377,7 +429,9 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       }
     );
 
-    const res = origFunction.apply(origThis, origArguments);
+    const res = context.with(trace.setSpan(context.active(), span), () => {
+      return origFunction.apply(origThis, origArguments);
+    });
     if (typeof res?.then === 'function') {
       res.then(
         (redisRes: unknown) => {
