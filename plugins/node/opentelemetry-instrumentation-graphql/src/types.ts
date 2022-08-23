@@ -107,6 +107,7 @@ export interface OtelExecutionArgs {
   operationName?: Maybe<string>;
   fieldResolver?: Maybe<GraphQLFieldResolver<any, any> & OtelPatched>;
   typeResolver?: Maybe<GraphQLTypeResolver<any, any>>;
+  subscribeFieldResolver?: Maybe<graphqlTypes.GraphQLFieldResolver<any, any>>;
 }
 
 export type executeType = executeFunctionWithObj | executeFunctionWithArgs;
