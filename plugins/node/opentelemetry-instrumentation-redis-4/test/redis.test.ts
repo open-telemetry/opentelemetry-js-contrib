@@ -219,7 +219,7 @@ describe('redis@^4.0.0', () => {
       );
     });
 
-    it('sets error status on conneciton failure', async () => {
+    it('sets error status on connection failure', async () => {
       const client = createClient({
         url: `redis://${redisTestConfig.host}:${redisTestConfig.port + 1}`,
       });
