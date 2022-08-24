@@ -1,0 +1,4 @@
+.nyc_coverage
+bin/
+pkg/
+dist/
