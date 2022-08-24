@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+
+  fastly:
+    build:
+      context: ../
+      dockerfile: Dockerfile.fastly
+    ports:
+      - "80:80"
+    healthcheck:
+      test: curl --fail http://localhost || exit 1
+      interval: 5s
+      retries: 12
+      start_period: 0s
+      timeout: 10s
+
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.51.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    environment:
+      - BASIC_AUTH_USERNAME=o11y
+      - BASIC_AUTH_PASSWORD=o11y
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4318"        # OTLP HTTP receiver
+    depends_on:
+      fastly:
+        condition: service_healthy
+      jaeger-all-in-one:
+        condition: service_started

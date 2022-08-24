@@ -1,0 +1,33 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        auth:
+          authenticator: basicauth
+
+exporters:
+  logging:
+    loglevel: debug
+    sampling_initial: 5
+    sampling_thereafter: 200
+  jaeger:
+    endpoint: "jaeger-all-in-one:14250"
+    tls:
+      insecure: true
+
+processors:
+  batch:
+
+extensions:
+  health_check:
+  basicauth:
+    htpasswd: 
+      inline: |
+        ${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD}
+service:
+  extensions: [health_check, basicauth]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [logging, jaeger]

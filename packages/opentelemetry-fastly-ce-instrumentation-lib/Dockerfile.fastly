@@ -1,0 +1,54 @@
+FROM ubuntu:20.04
+
+RUN apt-get update \
+    && apt-get -y upgrade
+
+RUN apt-get -y install curl wget
+
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get -y install nodejs \
+    && apt-get -y install build-essential
+
+ENV DEBIAN_FRONTEND="noninteractive" TZ="Etc/UTC"
+RUN apt-get -y install nginx
+
+RUN echo "user www-data;\n\
+worker_processes auto;\n\
+pid /run/nginx.pid;\n\
+include /etc/nginx/modules-enabled/*.conf;\n\
+events {\n\
+  worker_connections 768;\n\
+}\n\  
+http {\n\
+  server {\n\
+    listen 80;\n\
+    location / {\n\
+      proxy_pass http://127.0.0.1:7676;\n\
+    }\n\
+  }\n\
+}\
+" > /etc/nginx/nginx.conf
+
+
+RUN wget -nv https://github.com/fastly/cli/releases/download/v3.2.5/fastly_3.2.5_linux_amd64.deb \
+    && apt-get install ./fastly_*_linux_amd64.deb
+
+WORKDIR /opt/fastly/example
+
+RUN echo "#!/bin/bash\n\
+nginx &\n\
+fastly compute serve\n\
+" > start.sh
+
+RUN chmod +x start.sh
+
+COPY examples /opt/fastly/example
+COPY examples/secrets-docker.json /opt/fastly/example/secrets.json
+COPY src/opentelemetry-fastly-ec.js /opt/fastly/src/
+
+RUN npm install
+
+EXPOSE 80
+
+CMD ./start.sh
+   

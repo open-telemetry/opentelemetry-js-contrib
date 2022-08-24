@@ -1,0 +1,35 @@
+{
+    "name": "compute-starter-kit-javascript-default",
+    "version": "0.2.0",
+    "main": "src/index.js",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/fastly/compute-starter-kit-js-proto.git"
+    },
+    "author": "oss@fastly.com",
+    "license": "MIT",
+    "bugs": {
+      "url": "https://github.com/fastly/compute-starter-kit-js-proto/issues"
+    },
+    "homepage": "https://developer.fastly.com/solutions/starters/compute-starter-kit-javascript-default",
+    "devDependencies": {
+      "core-js": "^3.15.2",
+      "webpack": "^5.10.0",
+      "webpack-cli": "^4.2.0",
+      "chai": "^4.3.6",
+      "mocha": "^9.2.2",
+      "node-fetch": "^2.6.7" 
+    },
+    "dependencies": {
+      "@fastly/js-compute": "^0.2.0",
+      "opentelemetry-fastly-ce-instrumentation-lib": "file:../src/opentelemetry-fastly-ec.js"
+    },
+    "scripts": {
+      "prebuild": "webpack",
+      "build": "js-compute-runtime --skip-pkg bin/index.js bin/main.wasm",
+      "deploy": "npm run build && fastly compute deploy",
+      "test": "./int-test.sh",
+      "integration-test": "mocha --reporter spec ./test/int-test.js"
+    }
+  }
+  
