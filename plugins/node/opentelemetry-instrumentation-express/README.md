@@ -79,7 +79,6 @@ Express instrumentation has few options available to choose from. You can set th
 - `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer or undefined when renaming the root HTTP instrumentation span.
 - `defaultName: string` - original name proposed by the instrumentation.
 
-
 #### Ignore a whole Express route
 
 In order to ignore whole traces that represent a given Express route, use
