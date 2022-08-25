@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-ot-trace-v0.26.0...propagator-ot-trace-v0.26.1) (2022-08-09)
+
+
+### Bug Fixes
+
+* **propagator-ot-trace:** read sampled flag correctly from span context ([#1077](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1077)) ([69740ab](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/69740aba848486908e924376e3ca093ab88720b6))
+
 ## [0.26.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-ot-trace-v0.25.1...propagator-ot-trace-v0.26.0) (2022-05-14)
 
 

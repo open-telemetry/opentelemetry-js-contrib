@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.31.0...instrumentation-mongodb-v0.31.1) (2022-08-09)
+
+
+### Bug Fixes
+
+* mongodb unwrapping ([#1089](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1089)) ([1db1fec](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1db1fecc16ecb3dbad530de530418260e54c087a))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.30.0...instrumentation-mongodb-v0.31.0) (2022-06-08)
 
 
