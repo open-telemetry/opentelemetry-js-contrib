@@ -67,6 +67,7 @@
     "@opentelemetry/instrumentation-lru-memoizer": "^0.30.0",
     "@opentelemetry/instrumentation-memcached": "^0.29.0",
     "@opentelemetry/instrumentation-mongodb": "^0.31.1",
+    "@opentelemetry/instrumentation-mongoose": "^0.30.0",
     "@opentelemetry/instrumentation-mysql": "^0.30.0",
     "@opentelemetry/instrumentation-mysql2": "^0.31.1",
     "@opentelemetry/instrumentation-nestjs-core": "^0.30.0",

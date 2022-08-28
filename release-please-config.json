@@ -19,6 +19,7 @@
     "packages/opentelemetry-propagation-utils": {},
     "packages/opentelemetry-test-utils": {},
     "plugins/node/instrumentation-lru-memoizer": {},
+    "plugins/node/instrumentation-mongoose": {},
     "plugins/node/instrumentation-amqplib": {},
     "plugins/node/instrumentation-fs": {},
     "plugins/node/instrumentation-tedious": {},
