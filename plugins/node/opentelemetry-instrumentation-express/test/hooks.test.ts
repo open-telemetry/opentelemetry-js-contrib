@@ -23,8 +23,11 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import type * as http from 'http';
+import * as sinon from 'sinon';
 import { ExpressInstrumentation } from '../src';
-import { SpanNameHook } from '../src/types';
+import { ExpressRequestInfo, SpanNameHook } from '../src/types';
+import { ExpressLayerType } from '../src/enums/ExpressLayerType';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
@@ -165,6 +168,99 @@ describe('ExpressInstrumentation hooks', () => {
             spans.find(span => span.name === 'request handler - *'),
             undefined
           );
+        }
+      );
+    });
+  });
+
+  describe('request hooks', () => {
+    let server: http.Server;
+    let port: number;
+    let rootSpan: Span;
+
+    beforeEach(async () => {
+      rootSpan = tracer.startSpan('rootSpan');
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.get('*', (req, res) => {
+          res.send('ok');
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+    });
+
+    afterEach(() => {
+      server.close();
+    });
+
+    it('should call requestHook when set in config', async () => {
+      const requestHook = sinon.spy((span: Span, info: ExpressRequestInfo) => {
+        span.setAttribute(SemanticAttributes.HTTP_METHOD, info.request.method);
+
+        if (info.layerType) {
+          span.setAttribute('express.layer_type', info.layerType);
+        }
+      });
+
+      instrumentation.setConfig({
+        requestHook,
+      });
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/foo/3`);
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+          const requestHandlerSpan = spans.find(
+            span => span.name === 'request handler - *'
+          );
+
+          assert.strictEqual(spans.length, 2);
+          sinon.assert.calledOnce(requestHook);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes['http.method'],
+            'GET'
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes['express.layer_type'],
+            ExpressLayerType.REQUEST_HANDLER
+          );
+        }
+      );
+    });
+
+    it('should ignore requestHook which throws exception', async () => {
+      const requestHook = sinon.spy((span: Span, info: ExpressRequestInfo) => {
+        // This is added before the exception is thrown thus we can expect it
+        span.setAttribute('http.method', info.request.method);
+        throw Error('error thrown in requestHook');
+      });
+
+      instrumentation.setConfig({
+        requestHook,
+      });
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/foo/3`);
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+          const requestHandlerSpan = spans.find(
+            span => span.name === 'request handler - *'
+          );
+
+          assert.strictEqual(spans.length, 2);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes['http.method'],
+            'GET'
+          );
+
+          sinon.assert.threw(requestHook);
         }
       );
     });

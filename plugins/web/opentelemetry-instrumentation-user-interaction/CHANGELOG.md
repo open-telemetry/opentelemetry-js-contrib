@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.30.0...instrumentation-user-interaction-v0.30.1) (2022-08-09)
+
+
+### Bug Fixes
+
+* **instrumentation-user-interaction:** addEventListener throws when calling with useCapture = null ([#1045](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1045)) ([893a9fc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/893a9fc2410d45eed68db06c9d3705f43edb75dd))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.29.0...instrumentation-user-interaction-v0.30.0) (2022-06-08)
 
 

@@ -63,7 +63,6 @@ The `opentelemetry-js-contrib` project is written in TypeScript.
 
 - `npm install` to install dependencies.
 - `npm run compile` compiles the code, checking for type errors.
-- `npm run bootstrap` Bootstrap the packages in the current Lerna repo. Installs all of their dependencies and links any cross-dependencies.
 - `npm test` tests code the same way that our CI will test it.
 - `npm run lint:fix` lint (and maybe fix) any changes.
 

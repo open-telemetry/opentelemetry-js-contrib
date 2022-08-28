@@ -15,7 +15,7 @@
  */
 
 import * as KoaRouter from '@koa/router';
-import { context, trace } from '@opentelemetry/api';
+import { context, trace, Span } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -30,8 +30,9 @@ const plugin = new KoaInstrumentation();
 import * as assert from 'assert';
 import * as koa from 'koa';
 import * as http from 'http';
+import * as sinon from 'sinon';
 import { AddressInfo } from 'net';
-import { KoaLayerType } from '../src/types';
+import { KoaLayerType, KoaRequestInfo } from '../src/types';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 
@@ -455,6 +456,115 @@ describe('Koa Instrumentation', () => {
       assert.deepStrictEqual(
         exceptionEvent.attributes![SemanticAttributes.EXCEPTION_MESSAGE],
         'I failed!'
+      );
+    });
+  });
+
+  describe('Using requestHook', () => {
+    it('should ignore requestHook which throws exception', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      app.use((ctx, next) =>
+        context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        )
+      );
+
+      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
+        span.setAttribute(
+          SemanticAttributes.HTTP_METHOD,
+          info.context.request.method
+        );
+
+        throw Error('error thrown in requestHook');
+      });
+
+      plugin.setConfig({
+        requestHook,
+      });
+
+      const router = new KoaRouter();
+      router.get('/post/:id', ctx => {
+        ctx.body = `Post id: ${ctx.params.id}`;
+      });
+
+      app.use(router.routes());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/post/0`);
+          rootSpan.end();
+
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('router - /post/:id'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes['http.method'],
+            'GET'
+          );
+
+          sinon.assert.threw(requestHook);
+        }
+      );
+    });
+
+    it('should call requestHook when set in config', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      app.use((ctx, next) =>
+        context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        )
+      );
+
+      const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
+        span.setAttribute('http.method', info.context.request.method);
+        span.setAttribute('app.env', info.context.app.env);
+      });
+
+      plugin.setConfig({
+        requestHook,
+      });
+
+      const router = new KoaRouter();
+      router.get('/post/:id', ctx => {
+        ctx.body = `Post id: ${ctx.params.id}`;
+      });
+
+      app.use(router.routes());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/post/0`);
+          rootSpan.end();
+
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('router - /post/:id'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          sinon.assert.calledOnce(requestHook);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes['http.method'],
+            'GET'
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes['app.env'],
+            'development'
+          );
+        }
       );
     });
   });
