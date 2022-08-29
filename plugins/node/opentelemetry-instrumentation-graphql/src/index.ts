@@ -15,4 +15,7 @@
  */
 
 export * from './instrumentation';
-export * from './types';
+export {
+  GraphQLInstrumentationExecutionResponseHook,
+  GraphQLInstrumentationConfig,
+} from './types';
