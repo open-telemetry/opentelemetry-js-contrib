@@ -40,7 +40,7 @@ registerInstrumentations({
 
 ## Migration From opentelemetry-instrumentation-mongoose
 
-This instrumentation was originally published and maintained under the name `"opentelemetry-instrumentation-mongoose"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js). 
+This instrumentation was originally published and maintained under the name `"opentelemetry-instrumentation-mongoose"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js).
 
 Few breaking changes were made during porting to the contrib repo to align with conventions:
 
