@@ -111,7 +111,7 @@ describe('dns.promises.lookup()', () => {
       assertSpan(span, { addresses: [{ address, family }], hostname });
     });
 
-    describe("extended timeout", function () {
+    describe('extended timeout', function () {
       // Extending the default timeout as some environments are taking longer than 2 seconds to fail
       // So rather than fail the test -- just take a little longer
       this.timeout(10000);
