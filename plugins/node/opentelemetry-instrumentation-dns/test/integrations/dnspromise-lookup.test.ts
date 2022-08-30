@@ -111,25 +111,31 @@ describe('dns.promises.lookup()', () => {
       assertSpan(span, { addresses: [{ address, family }], hostname });
     });
 
-    it('should export a valid span with error NOT_FOUND', async () => {
-      const hostname = 'ᚕ';
-      try {
-        await lookupPromise(hostname);
-        assert.fail();
-      } catch (error) {
-        const spans = memoryExporter.getFinishedSpans();
-        const [span] = spans;
+    describe("extended timeout", function () {
+      // Extending the default timeout as some environments are taking longer than 2 seconds to fail
+      // So rather than fail the test -- just take a little longer
+      this.timeout(10000);
 
-        assert.strictEqual(spans.length, 1);
-        assertSpan(span, {
-          addresses: [],
-          hostname,
-          forceStatus: {
-            code: SpanStatusCode.ERROR,
-            message: error!.message,
-          },
-        });
-      }
+      it('should export a valid span with error NOT_FOUND', async () => {
+        const hostname = 'ᚕ';
+        try {
+          await lookupPromise(hostname);
+          assert.fail();
+        } catch (error) {
+          const spans = memoryExporter.getFinishedSpans();
+          const [span] = spans;
+
+          assert.strictEqual(spans.length, 1);
+          assertSpan(span, {
+            addresses: [],
+            hostname,
+            forceStatus: {
+              code: SpanStatusCode.ERROR,
+              message: error!.message,
+            },
+          });
+        }
+      });
     });
 
     it('should export a valid span with error INVALID_ARGUMENT when "family" param is equal to -1', async () => {
