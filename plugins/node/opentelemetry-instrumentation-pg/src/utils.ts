@@ -241,11 +241,11 @@ export function patchCallbackPGPool(
   };
 }
 
-export function patchConnectErrorCallback(
+export function patchClientConnectCallback(
   span: Span,
   cb: PgErrorCallback
 ): PgErrorCallback {
-  return function patchedConnectErrorCallback(
+  return function patchedClientConnectCallback(
     this: pgTypes.Client,
     err: Error
   ) {

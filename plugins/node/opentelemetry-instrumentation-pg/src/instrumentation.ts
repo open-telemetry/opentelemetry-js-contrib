@@ -145,7 +145,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
-          callback = utils.patchConnectErrorCallback(span, callback);
+          callback = utils.patchClientConnectCallback(span, callback);
           if (parentSpan) {
             callback = context.bind(context.active(), callback);
           }
@@ -158,32 +158,7 @@ export class PgInstrumentation extends InstrumentationBase {
           }
         );
 
-        if (!(connectResult instanceof Promise)) {
-          return connectResult;
-        }
-
-        const connectResultPromise = connectResult as Promise<unknown>;
-        return context.bind(
-          context.active(),
-          connectResultPromise
-            .then(
-              result =>
-                new Promise(resolve => {
-                  span.end();
-                  resolve(result);
-                })
-            )
-            .catch((error: Error) => {
-              return new Promise((_, reject) => {
-                span.setStatus({
-                  code: SpanStatusCode.ERROR,
-                  message: error.message,
-                });
-                span.end();
-                reject(error);
-              });
-            })
-        );
+        return handleConnectResult(span, connectResult);
       };
     };
   }
@@ -342,35 +317,37 @@ export class PgInstrumentation extends InstrumentationBase {
           }
         );
 
-        // No callback was provided, return a promise instead
-        if (connectResult instanceof Promise) {
-          const connectResultPromise = connectResult as Promise<unknown>;
-          return context.bind(
-            context.active(),
-            connectResultPromise
-              .then(result => {
-                // Return a pass-along promise which ends the span and then goes to user's orig resolvers
-                return new Promise(resolve => {
-                  span.end();
-                  resolve(result);
-                });
-              })
-              .catch((error: Error) => {
-                return new Promise((_, reject) => {
-                  span.setStatus({
-                    code: SpanStatusCode.ERROR,
-                    message: error.message,
-                  });
-                  span.end();
-                  reject(error);
-                });
-              })
-          );
-        }
-
-        // Else a callback was provided, so just return the result
-        return connectResult;
+        return handleConnectResult(span, connectResult);
       };
     };
   }
+}
+
+function handleConnectResult(span: Span, connectResult: unknown) {
+  if (!(connectResult instanceof Promise)) {
+    return connectResult;
+  }
+
+  const connectResultPromise = connectResult as Promise<unknown>;
+  return context.bind(
+    context.active(),
+    connectResultPromise
+      .then(
+        result =>
+          new Promise(resolve => {
+            span.end();
+            resolve(result);
+          })
+      )
+      .catch((error: Error) => {
+        return new Promise((_, reject) => {
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: error.message,
+          });
+          span.end();
+          reject(error);
+        });
+      })
+  );
 }
