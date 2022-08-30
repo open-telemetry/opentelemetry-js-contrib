@@ -56,7 +56,12 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   mergeItems?: boolean;
-
+  /**
+   * Where to ignore array of items.
+   * 
+   * @default []
+   */
+  ignoreFields?: Array<string>;
   /**
    * Hook that allows adding custom span attributes based on the data
    * returned from "execute" GraphQL action.

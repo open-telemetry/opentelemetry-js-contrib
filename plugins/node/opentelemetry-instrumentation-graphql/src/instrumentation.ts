@@ -58,6 +58,7 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
   mergeItems: false,
   depth: -1,
   allowValues: false,
+  ignoreFields: [],
 };
 
 const supportedVersions = ['>=14'];

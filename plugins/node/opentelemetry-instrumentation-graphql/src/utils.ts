@@ -296,9 +296,11 @@ export function wrapFields(
   tracer: api.Tracer,
   getConfig: () => GraphQLInstrumentationParsedConfig
 ): void {
+  const config = getConfig();
   if (
     !type ||
     typeof type.getFields !== 'function' ||
+    config.ignoreFields.includes(type.name) ||
     type[OTEL_PATCHED_SYMBOL]
   ) {
     return;
@@ -310,7 +312,8 @@ export function wrapFields(
   Object.keys(fields).forEach(key => {
     const field = fields[key];
 
-    if (!field) {
+    if (!field ||
+         config.ignoreFields.includes(key)) {
       return;
     }
 
