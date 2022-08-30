@@ -30,6 +30,7 @@ import {
   PgClientExtended,
   NormalizedQueryConfig,
   PostgresCallback,
+  PgClientConnectionParams,
   PgErrorCallback,
   PgPoolCallback,
   PgPoolExtended,
@@ -50,11 +51,7 @@ function getCommandFromText(text?: string): string {
   return words[0].length > 0 ? words[0] : 'unknown';
 }
 
-export function getConnectionString(params: {
-  host?: string;
-  port?: number;
-  database?: string;
-}) {
+export function getConnectionString(params: PgClientConnectionParams) {
   const host = params.host || 'localhost';
   const port = params.port || 5432;
   const database = params.database || '';

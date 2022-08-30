@@ -47,10 +47,10 @@ export type PostgresCallback = (err: Error, res: object) => unknown;
 // These are not included in @types/pg, so manually define them.
 // https://github.com/brianc/node-postgres/blob/fde5ec586e49258dfc4a2fcd861fcdecb4794fc3/lib/client.js#L25
 export interface PgClientConnectionParams {
-  database: string;
-  host: string;
-  port: number;
-  user: string;
+  database?: string;
+  host?: string;
+  port?: number;
+  user?: string;
 }
 
 export interface PgClientExtended extends pgTypes.Client {
