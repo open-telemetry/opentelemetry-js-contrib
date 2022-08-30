@@ -187,19 +187,19 @@ describe('redis@^4.0.0', () => {
 
   describe('client connect', () => {
     it('produces a span', async () => {
-      const client = createClient({
+      const newClient = createClient({
         url: redisTestUrl,
       });
 
       after(async () => {
-        await client.disconnect();
+        await newClient.disconnect();
       });
 
-      await client.connect();
+      await newClient.connect();
 
       const [span] = getTestSpans();
 
-      assert.strictEqual(span.name, 'redis.connect');
+      assert.strictEqual(span.name, 'redis-connect');
 
       assert.strictEqual(
         span.attributes[SemanticAttributes.DB_SYSTEM],
@@ -220,15 +220,15 @@ describe('redis@^4.0.0', () => {
     });
 
     it('sets error status on connection failure', async () => {
-      const client = createClient({
+      const newClient = createClient({
         url: `redis://${redisTestConfig.host}:${redisTestConfig.port + 1}`,
       });
 
-      await assert.rejects(client.connect());
+      await assert.rejects(newClient.connect());
 
       const [span] = getTestSpans();
 
-      assert.strictEqual(span.name, 'redis.connect');
+      assert.strictEqual(span.name, 'redis-connect');
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
     });
   });

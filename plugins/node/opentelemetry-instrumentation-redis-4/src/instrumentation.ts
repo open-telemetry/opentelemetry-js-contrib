@@ -28,13 +28,10 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
-import { defaultDbStatementSerializer } from './utils';
+import { defaultDbStatementSerializer, getClientAttributes } from './utils';
 import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
-import {
-  DbSystemValues,
-  SemanticAttributes,
-} from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const OTEL_OPEN_SPANS = Symbol(
   'opentelemetry.instruemntation.redis.open_spans'
@@ -344,15 +341,10 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       return function patchedConnect(this: any): Promise<void> {
         const options = this.options;
 
-        const attributes = {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.NET_PEER_NAME]: options?.socket?.host,
-          [SemanticAttributes.NET_PEER_PORT]: options?.socket?.port,
-          [SemanticAttributes.DB_CONNECTION_STRING]: options?.url,
-        };
+        const attributes = getClientAttributes(options);
 
         const span = plugin.tracer.startSpan(
-          `${RedisInstrumentation.COMPONENT}.connect`,
+          `${RedisInstrumentation.COMPONENT}-connect`,
           {
             kind: SpanKind.CLIENT,
             attributes,
@@ -372,6 +364,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
           })
           .catch((error: Error) => {
             return new Promise((_, reject) => {
+              span.recordException(error);
               span.setStatus({
                 code: SpanStatusCode.ERROR,
                 message: error.message,
@@ -403,12 +396,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     const dbStatementSerializer =
       this._config?.dbStatementSerializer || defaultDbStatementSerializer;
 
-    const attributes = {
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-      [SemanticAttributes.NET_PEER_NAME]: clientOptions?.socket?.host,
-      [SemanticAttributes.NET_PEER_PORT]: clientOptions?.socket?.port,
-      [SemanticAttributes.DB_CONNECTION_STRING]: clientOptions?.url,
-    };
+    const attributes = getClientAttributes(clientOptions);
 
     try {
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
