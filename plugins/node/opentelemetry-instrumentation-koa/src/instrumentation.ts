@@ -147,7 +147,17 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       isLayerIgnored(layerType, this.getConfig())
     )
       return middlewareLayer;
+
+    if (
+      middlewareLayer.constructor.name === 'GeneratorFunction' ||
+      middlewareLayer.constructor.name === 'AsyncGeneratorFunction'
+    ) {
+      api.diag.debug('ignoring generator-based Koa middleware layer');
+      return middlewareLayer;
+    }
+
     middlewareLayer[kLayerPatched] = true;
+
     api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
       const parent = api.trace.getSpan(api.context.active());
