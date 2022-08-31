@@ -17,8 +17,7 @@
     "strictNullChecks": true,
     "target": "es2017",
     "incremental": true,
-    "newLine": "LF",
-    "skipLibCheck": true
+    "newLine": "LF"
   },
   "exclude": [
     "node_modules"
