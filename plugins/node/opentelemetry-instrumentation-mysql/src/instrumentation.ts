@@ -16,6 +16,7 @@
 
 import {
   context,
+  Context,
   diag,
   trace,
   Span,
@@ -285,7 +286,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
         const cbIndex = Array.from(arguments).findIndex(
           arg => typeof arg === 'function'
         );
-
         if (cbIndex === -1) {
           const streamableQuery: mysqlTypes.Query = context.with(
             trace.setSpan(context.active(), span),
@@ -305,10 +305,12 @@ export class MySQLInstrumentation extends InstrumentationBase<
               span.end();
             });
         } else {
+          const parentContext = context.active();
+
           thisPlugin._wrap(
             arguments,
             cbIndex,
-            thisPlugin._patchCallbackQuery(span)
+            thisPlugin._patchCallbackQuery(span, parentContext)
           );
 
           return context.with(trace.setSpan(context.active(), span), () => {
@@ -319,7 +321,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     };
   }
 
-  private _patchCallbackQuery(span: Span) {
+  private _patchCallbackQuery(span: Span, parentContext: Context) {
     return (originalCallback: Function) => {
       return function (
         err: mysqlTypes.MysqlError | null,
@@ -333,7 +335,9 @@ export class MySQLInstrumentation extends InstrumentationBase<
           });
         }
         span.end();
-        return originalCallback(...arguments);
+        return context.with(parentContext, () =>
+          originalCallback(...arguments)
+        );
       };
     };
   }
