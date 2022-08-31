@@ -571,6 +571,99 @@ describe('graphql', () => {
     });
   });
 
+  describe('when ignoreFields has a property', () => {
+    describe('AND source is query with param', () => {
+      let spans: ReadableSpan[];
+
+      beforeEach(async () => {
+        create({
+          ignoreFields: ['name'],
+        });
+        await graphql(schema, sourceBookById);
+        spans = exporter.getFinishedSpans();
+      });
+
+      afterEach(() => {
+        exporter.reset();
+        graphQLInstrumentation.disable();
+        spans = [];
+      });
+
+      it('should have 4 spans', () => {
+        assert.deepStrictEqual(spans.length, 4);
+      });
+
+      it('should instrument parse', () => {
+        const parseSpan = spans[0];
+        assert.deepStrictEqual(
+          parseSpan.attributes[AttributeNames.SOURCE],
+          '\n' +
+            '  query {\n' +
+            '    book(id: *) {\n' +
+            '      name\n' +
+            '    }\n' +
+            '  }\n'
+        );
+        assert.deepStrictEqual(parseSpan.name, SpanNames.PARSE);
+      });
+
+      it('should instrument validate', () => {
+        const validateSpan = spans[1];
+
+        assert.deepStrictEqual(validateSpan.name, SpanNames.VALIDATE);
+        assert.deepStrictEqual(validateSpan.parentSpanId, undefined);
+      });
+
+      it('should instrument execute', () => {
+        const executeSpan = spans[3];
+
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.SOURCE],
+          '\n' +
+            '  query {\n' +
+            '    book(id: *) {\n' +
+            '      name\n' +
+            '    }\n' +
+            '  }\n'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_TYPE],
+          'query'
+        );
+        assert.deepStrictEqual(
+          executeSpan.attributes[AttributeNames.OPERATION_NAME],
+          undefined
+        );
+        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+        assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+      });
+
+      it('should instrument resolvers', () => {
+        const executeSpan = spans[3];
+        const resolveParentSpan = spans[2];
+        const span1 = spans[2];
+
+        assertResolveSpan(
+          resolveParentSpan,
+          'book',
+          'book',
+          'Book',
+          'book(id: *) {\n' + '      name\n' + '    }',
+          executeSpan.spanContext().spanId
+        );
+
+        assertResolveSpan(
+          span1,
+          'book',
+          'book',
+          'Book',
+          'book(id: *) {\n' + '      name\n' + '    }',
+          executeSpan.spanContext().spanId
+        );
+      });
+    });
+  });
+
   describe('when allowValues is set to true', () => {
     describe('AND source is query with param', () => {
       let spans: ReadableSpan[];

@@ -312,8 +312,7 @@ export function wrapFields(
   Object.keys(fields).forEach(key => {
     const field = fields[key];
 
-    if (!field ||
-         config.ignoreFields.includes(key)) {
+    if (!field || config.ignoreFields.includes(key)) {
       return;
     }
 
@@ -366,7 +365,10 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
 
     let field: any;
     let shouldEndSpan = false;
-    if (config.depth >= 0 && config.depth < depth) {
+    if (
+      (config.depth >= 0 && config.depth < depth) ||
+      config.ignoreFields.includes(path[path.length - 1])
+    ) {
       field = getParentField(contextValue, path);
     } else {
       const newField = createFieldIfNotExists(

@@ -57,8 +57,8 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
    */
   mergeItems?: boolean;
   /**
-   * Where to ignore array of items.
-   * 
+   * List of fields to not add spans to.
+   *
    * @default []
    */
   ignoreFields?: Array<string>;
