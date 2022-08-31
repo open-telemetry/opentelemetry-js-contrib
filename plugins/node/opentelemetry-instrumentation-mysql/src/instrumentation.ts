@@ -17,6 +17,7 @@
 import {
   context,
   diag,
+  trace,
   Span,
   SpanKind,
   SpanStatusCode,
@@ -286,9 +287,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
         );
 
         if (cbIndex === -1) {
-          const streamableQuery: mysqlTypes.Query = originalQuery.apply(
-            connection,
-            arguments
+          const streamableQuery: mysqlTypes.Query = context.with(
+            trace.setSpan(context.active(), span),
+            () => {
+              return originalQuery.apply(connection, arguments);
+            }
           );
 
           return streamableQuery
@@ -308,7 +311,9 @@ export class MySQLInstrumentation extends InstrumentationBase<
             thisPlugin._patchCallbackQuery(span)
           );
 
-          return originalQuery.apply(connection, arguments);
+          return context.with(trace.setSpan(context.active(), span), () => {
+            return originalQuery.apply(connection, arguments);
+          });
         }
       };
     };
