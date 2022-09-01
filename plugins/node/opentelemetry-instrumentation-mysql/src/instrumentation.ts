@@ -286,6 +286,9 @@ export class MySQLInstrumentation extends InstrumentationBase<
         const cbIndex = Array.from(arguments).findIndex(
           arg => typeof arg === 'function'
         );
+
+        const parentContext = context.active();
+
         if (cbIndex === -1) {
           const streamableQuery: mysqlTypes.Query = context.with(
             trace.setSpan(context.active(), span),
@@ -293,6 +296,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
               return originalQuery.apply(connection, arguments);
             }
           );
+          context.bind(parentContext, streamableQuery);
 
           return streamableQuery
             .on('error', err =>
@@ -305,8 +309,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
               span.end();
             });
         } else {
-          const parentContext = context.active();
-
           thisPlugin._wrap(
             arguments,
             cbIndex,
