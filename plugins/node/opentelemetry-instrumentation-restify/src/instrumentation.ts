@@ -119,11 +119,7 @@ export class RestifyInstrumentation extends InstrumentationBase<unknown> {
 
   private _methodPatcher(original: Function, methodName?: string) {
     const instrumentation = this;
-    return function (
-      this: Server,
-      path: any,
-      ...handler: any
-    ) {
+    return function (this: Server, path: any, ...handler: any) {
       return original.call(
         this,
         path,
@@ -136,19 +132,12 @@ export class RestifyInstrumentation extends InstrumentationBase<unknown> {
   }
 
   // will return the same type as `handler`, but all functions recusively patched
-  private _handlerPatcher(
-    metadata: types.Metadata,
-    handler: any
-  ): any {
+  private _handlerPatcher(metadata: types.Metadata, handler: any): any {
     if (Array.isArray(handler)) {
       return handler.map(handler => this._handlerPatcher(metadata, handler));
     }
     if (typeof handler === 'function') {
-      return (
-        req: any,
-        res: any,
-        next: any
-      ) => {
+      return (req: any, res: any, next: any) => {
         if (this._isDisabled) {
           return handler(req, res, next);
         }
