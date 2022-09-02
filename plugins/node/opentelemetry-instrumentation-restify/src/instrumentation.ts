@@ -15,7 +15,6 @@
  */
 
 import * as api from '@opentelemetry/api';
-import * as restify from 'restify';
 import { Server } from 'restify';
 import * as types from './types';
 import * as AttributeNames from './enums/AttributeNames';
@@ -34,9 +33,7 @@ import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 
 const { diag } = api;
 
-export class RestifyInstrumentation extends InstrumentationBase<
-  typeof restify
-> {
+export class RestifyInstrumentation extends InstrumentationBase<unknown> {
   constructor(config: InstrumentationConfig = {}) {
     super(`@opentelemetry/instrumentation-${constants.MODULE_NAME}`, VERSION);
   }
@@ -45,7 +42,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
   private _isDisabled = false;
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<typeof restify>(
+    const module = new InstrumentationNodeModuleDefinition<unknown>(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
@@ -55,7 +52,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<typeof restify>(
+      new InstrumentationNodeModuleFile<unknown>(
         'restify/lib/server.js',
         constants.SUPPORTED_VERSIONS,
         (moduleExports, moduleVersion) => {
@@ -109,7 +106,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
 
   private _middlewarePatcher(original: Function, methodName?: string) {
     const instrumentation = this;
-    return function (this: Server, ...handler: types.NestedRequestHandlers) {
+    return function (this: Server, ...handler: any) {
       return original.call(
         this,
         instrumentation._handlerPatcher(
@@ -125,7 +122,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
     return function (
       this: Server,
       path: any,
-      ...handler: types.NestedRequestHandlers
+      ...handler: any
     ) {
       return original.call(
         this,
@@ -141,16 +138,16 @@ export class RestifyInstrumentation extends InstrumentationBase<
   // will return the same type as `handler`, but all functions recusively patched
   private _handlerPatcher(
     metadata: types.Metadata,
-    handler: restify.RequestHandler | types.NestedRequestHandlers
+    handler: any
   ): any {
     if (Array.isArray(handler)) {
       return handler.map(handler => this._handlerPatcher(metadata, handler));
     }
     if (typeof handler === 'function') {
       return (
-        req: types.Request,
-        res: restify.Response,
-        next: restify.Next
+        req: any,
+        res: any,
+        next: any
       ) => {
         if (this._isDisabled) {
           return handler(req, res, next);
@@ -213,7 +210,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
         }
         return api.context.with(
           newContext,
-          (req: types.Request, res: restify.Response, next: restify.Next) => {
+          (req: unknown, res: unknown, next: unknown) => {
             if (isAsyncFunction(handler)) {
               return wrapPromise(handler(req, res, next));
             }
