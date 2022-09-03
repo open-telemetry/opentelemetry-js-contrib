@@ -294,13 +294,15 @@ export function getSourceFromLocation(
 export function wrapFields(
   type: Maybe<graphqlTypes.GraphQLObjectType & OtelPatched>,
   tracer: api.Tracer,
-  getConfig: () => GraphQLInstrumentationParsedConfig
+  getConfig: () => GraphQLInstrumentationParsedConfig,
+  getIgnoreMap: () => Map<string, boolean>
 ): void {
-  const config = getConfig();
+  const ignoreMap = getIgnoreMap();
+  console.log('IGNORE MAP', ignoreMap);
   if (
     !type ||
     typeof type.getFields !== 'function' ||
-    config.ignoreFields.includes(type.name) ||
+    ignoreMap.has(type.name) ||
     type[OTEL_PATCHED_SYMBOL]
   ) {
     return;
@@ -312,7 +314,7 @@ export function wrapFields(
   Object.keys(fields).forEach(key => {
     const field = fields[key];
 
-    if (!field || config.ignoreFields.includes(key)) {
+    if (!field || ignoreMap.has(key)) {
       return;
     }
 
@@ -326,7 +328,7 @@ export function wrapFields(
       while (unwrappedType.ofType) {
         unwrappedType = unwrappedType.ofType;
       }
-      wrapFields(unwrappedType, tracer, getConfig);
+      wrapFields(unwrappedType, tracer, getConfig, getIgnoreMap);
     }
   });
 }

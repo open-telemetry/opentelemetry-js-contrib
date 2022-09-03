@@ -64,6 +64,8 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
 const supportedVersions = ['>=14'];
 
 export class GraphQLInstrumentation extends InstrumentationBase {
+  private _ignoreMap = new Map();
+
   constructor(
     config: GraphQLInstrumentationConfig & InstrumentationConfig = {}
   ) {
@@ -72,6 +74,17 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
+    const ignoreMap = new Map();
+    config.ignoreFields?.map(item => ignoreMap.set(item, true));
+    this._setIgnoreMap(ignoreMap);
+  }
+
+  private _getIgnoreMap(): Map<string, boolean> {
+    return this._ignoreMap;
+  }
+
+  private _setIgnoreMap(map: Map<string, boolean> = new Map()) {
+    this._ignoreMap = map;
   }
 
   private _getConfig(): GraphQLInstrumentationParsedConfig {
@@ -473,12 +486,14 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       wrapFields(
         schema.getQueryType(),
         this.tracer,
-        this._getConfig.bind(this)
+        this._getConfig.bind(this),
+        this._getIgnoreMap.bind(this)
       );
       wrapFields(
         schema.getMutationType(),
         this.tracer,
-        this._getConfig.bind(this)
+        this._getConfig.bind(this),
+        this._getIgnoreMap.bind(this)
       );
     }
 
