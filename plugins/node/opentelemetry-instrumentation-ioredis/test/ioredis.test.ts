@@ -650,8 +650,9 @@ describe('ioredis', () => {
       it('should not create child span for connect', async () => {
         const lazyClient = new ioredis(URL, { lazyConnect: true });
         await lazyClient.connect();
+        const spans = memoryExporter.getFinishedSpans();
         await lazyClient.quit();
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+        assert.strictEqual(spans.length, 0);
       });
     });
 
