@@ -14,9 +14,24 @@
  * limitations under the License.
  */
 
-import type * as ioredisTypes from 'ioredis';
+// import Redis from "ioredis";
+import type { Redis, Command } from 'ioredis';
+import type * as LegacyIORedis from 'ioredis4';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Span } from '@opentelemetry/api';
+
+interface LegacyIORedisCommand {
+  reject: (err: Error) => void;
+  resolve: (result: {}) => void;
+  promise: Promise<{}>;
+  args: Array<string | Buffer | number>;
+  callback: LegacyIORedis.CallbackFunction<unknown>;
+  name: string;
+}
+
+export type IORedisT = typeof Redis | typeof LegacyIORedis;
+export type RedisInterface = Redis | LegacyIORedis.Redis;
+export type IORedisCommand = Command | LegacyIORedisCommand;
 
 /**
  * Function that can be used to serialize db.statement tag
@@ -26,14 +41,14 @@ import { Span } from '@opentelemetry/api';
  * @returns serialized string that will be used as the db.statement attribute.
  */
 export type DbStatementSerializer = (
-  cmdName: ioredisTypes.Command['name'],
-  cmdArgs: ioredisTypes.Command['args']
+  cmdName: IORedisCommand['name'],
+  cmdArgs: IORedisCommand['args']
 ) => string;
 
 export interface IORedisRequestHookInformation {
   moduleVersion?: string;
-  cmdName: ioredisTypes.Command['name'];
-  cmdArgs: ioredisTypes.Command['args'];
+  cmdName: IORedisCommand['name'];
+  cmdArgs: IORedisCommand['args'];
 }
 
 export interface RedisRequestCustomAttributeFunction {
@@ -52,8 +67,8 @@ export interface RedisRequestCustomAttributeFunction {
 export interface RedisResponseCustomAttributeFunction {
   (
     span: Span,
-    cmdName: ioredisTypes.Command['name'],
-    cmdArgs: ioredisTypes.Command['args'],
+    cmdName: IORedisCommand['name'],
+    cmdArgs: IORedisCommand['args'],
     response: unknown
   ): void;
 }

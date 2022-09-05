@@ -15,13 +15,17 @@
  */
 
 import { diag, trace, context, SpanKind } from '@opentelemetry/api';
-import type * as ioredisTypes from 'ioredis';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { IORedisInstrumentationConfig } from './types';
+import {
+  IORedisInstrumentationConfig,
+  IORedisCommand,
+  IORedisT,
+  RedisInterface,
+} from './types';
 import {
   DbSystemValues,
   SemanticAttributes,
@@ -34,9 +38,7 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
 };
 
-export class IORedisInstrumentation extends InstrumentationBase<
-  typeof ioredisTypes
-> {
+export class IORedisInstrumentation extends InstrumentationBase<IORedisT> {
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-ioredis',
@@ -45,26 +47,26 @@ export class IORedisInstrumentation extends InstrumentationBase<
     );
   }
 
-  init(): InstrumentationNodeModuleDefinition<typeof ioredisTypes>[] {
+  init(): InstrumentationNodeModuleDefinition<IORedisT>[] {
     return [
-      new InstrumentationNodeModuleDefinition<typeof ioredisTypes>(
+      new InstrumentationNodeModuleDefinition<IORedisT>(
         'ioredis',
-        ['>=5'],
+        ['>1'],
         (moduleExports, moduleVersion?: string) => {
           diag.debug('Applying patch for ioredis');
-          if (isWrapped(moduleExports.default.prototype.sendCommand)) {
-            this._unwrap(moduleExports.default.prototype, 'sendCommand');
+          if (isWrapped(moduleExports.prototype.sendCommand)) {
+            this._unwrap(moduleExports.prototype, 'sendCommand');
           }
           this._wrap(
-            moduleExports.default.prototype,
+            moduleExports.prototype,
             'sendCommand',
             this._patchSendCommand(moduleVersion)
           );
-          if (isWrapped(moduleExports.default.prototype.connect)) {
-            this._unwrap(moduleExports.default.prototype, 'connect');
+          if (isWrapped(moduleExports.prototype.connect)) {
+            this._unwrap(moduleExports.prototype, 'connect');
           }
           this._wrap(
-            moduleExports.default.prototype,
+            moduleExports.prototype,
             'connect',
             this._patchConnection()
           );
@@ -73,8 +75,8 @@ export class IORedisInstrumentation extends InstrumentationBase<
         moduleExports => {
           if (moduleExports === undefined) return;
           diag.debug('Removing patch for ioredis');
-          this._unwrap(moduleExports.default.prototype, 'sendCommand');
-          this._unwrap(moduleExports.default.prototype, 'connect');
+          this._unwrap(moduleExports.prototype, 'sendCommand');
+          this._unwrap(moduleExports.prototype, 'connect');
         }
       ),
     ];
@@ -97,7 +99,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
 
   private traceSendCommand = (original: Function, moduleVersion?: string) => {
     const instrumentation = this;
-    return function (this: ioredisTypes.Redis, cmd?: ioredisTypes.Command) {
+    return function (this: RedisInterface, cmd?: IORedisCommand) {
       if (arguments.length < 1 || typeof cmd !== 'object') {
         return original.apply(this, arguments);
       }
@@ -183,7 +185,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
 
   private traceConnection = (original: Function) => {
     const instrumentation = this;
-    return function (this: ioredisTypes.Redis) {
+    return function (this: RedisInterface) {
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
         attributes: {
