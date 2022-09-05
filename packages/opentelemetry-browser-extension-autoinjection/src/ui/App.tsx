@@ -80,7 +80,7 @@ export class App extends React.Component<AppProps, AppState> {
   }
 
   handleUrlChange(
-    name: ExporterType.ZIPKIN | ExporterType.COLLECTOR_TRACE,
+    name: ExporterType.ZIPKIN | ExporterType.TRACE_OTLP_HTTP,
     value: string
   ) {
     this.setState(state => {
@@ -244,13 +244,13 @@ export class App extends React.Component<AppProps, AppState> {
                 value={exporters[ExporterType.ZIPKIN].url}
               />
               <ExporterOption
-                for={ExporterType.COLLECTOR_TRACE}
-                isEnabled={exporters[ExporterType.COLLECTOR_TRACE].enabled}
+                for={ExporterType.TRACE_OTLP_HTTP}
+                isEnabled={exporters[ExporterType.TRACE_OTLP_HTTP].enabled}
                 onToggle={this.toggleExporter}
                 onValueChange={this.handleUrlChange}
-                placeholderValue={PlaceholderValues.COLLECTOR_TRACE_URL}
-                exporterPackageUrl="https://www.npmjs.com/package/@opentelemetry/exporter-otlp-http"
-                value={exporters[ExporterType.COLLECTOR_TRACE].url}
+                placeholderValue={PlaceholderValues.TRACE_OTLP_HTTP_URL}
+                exporterPackageUrl="https://www.npmjs.com/package/@opentelemetry/exporter-trace-otlp-http"
+                value={exporters[ExporterType.TRACE_OTLP_HTTP].url}
               />
             </Grid>
           </Paper>

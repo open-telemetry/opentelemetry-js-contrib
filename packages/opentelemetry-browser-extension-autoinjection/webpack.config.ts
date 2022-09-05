@@ -25,6 +25,7 @@ import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 module.exports = (env: { MV?: string; WEBPACK_BUILD: boolean }) => {
   // Build the extension for "Manifest Version 2" (Chromium, Firefox & others.)
   const baseConfig = {
+    devtool: 'source-map',
     entry: {
       background: './src/background/index.ts',
       contentScript: './src/contentScript/index.ts',

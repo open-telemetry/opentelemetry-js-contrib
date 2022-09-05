@@ -25,7 +25,7 @@ export interface Exporters {
     enabled: boolean;
     url: string;
   };
-  [ExporterType.COLLECTOR_TRACE]: {
+  [ExporterType.TRACE_OTLP_HTTP]: {
     enabled: boolean;
     url: string;
   };
@@ -41,6 +41,9 @@ export interface InstrumentationConfiguration {
       enabled: boolean;
     };
     [InstrumentationType.XML_HTTP_REQUEST]: {
+      enabled: boolean;
+    };
+    [InstrumentationType.USER_INTERACTION]: {
       enabled: boolean;
     };
   };
@@ -81,7 +84,7 @@ export interface ExporterOptionProps {
   isEnabled: boolean;
   onToggle: (exporter: ExporterType) => void;
   onValueChange?: (
-    name: ExporterType.ZIPKIN | ExporterType.COLLECTOR_TRACE,
+    name: ExporterType.ZIPKIN | ExporterType.TRACE_OTLP_HTTP,
     newValue: string
   ) => void;
   exporterPackageUrl: string;
@@ -117,13 +120,14 @@ export enum AppType {
 export enum ExporterType {
   CONSOLE = 'Console',
   ZIPKIN = 'Zipkin',
-  COLLECTOR_TRACE = 'CollectorTrace',
+  TRACE_OTLP_HTTP = 'OTLP HTTP',
 }
 
 export enum InstrumentationType {
   DOCUMENT_LOAD = 'DocumentLoad',
   FETCH = 'Fetch',
   XML_HTTP_REQUEST = 'XMLHttpRequest',
+  USER_INTERACTION = 'UserInteraction',
 }
 
 export enum DomElements {
@@ -136,7 +140,7 @@ export enum DomAttributes {
 
 export enum PlaceholderValues {
   ZIPKIN_URL = 'http://localhost:9411/api/v2/spans',
-  COLLECTOR_TRACE_URL = 'http://localhost:4318/v1/trace',
+  TRACE_OTLP_HTTP_URL = 'http://localhost:4318/v1/traces',
 }
 
 export enum Labels {

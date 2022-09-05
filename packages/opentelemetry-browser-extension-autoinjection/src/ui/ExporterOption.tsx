@@ -52,7 +52,7 @@ export class ExporterOption extends React.Component<ExporterOptionProps> {
             </FormHelperText>
           </FormGroup>
         </Grid>
-        {this.props.value !== undefined ? (
+        { (this.props.value !== undefined && this.props.isEnabled) ? (
           <Grid item xs={12} md={9}>
             <TextField
               label={`${this.props.for} URL`}
@@ -67,7 +67,7 @@ export class ExporterOption extends React.Component<ExporterOptionProps> {
                   ? this.props.onValueChange(
                       this.props.for as
                         | ExporterType.ZIPKIN
-                        | ExporterType.COLLECTOR_TRACE,
+                        | ExporterType.TRACE_OTLP_HTTP,
                       event.target.value
                     )
                   : () => {}

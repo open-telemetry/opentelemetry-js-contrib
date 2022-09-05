@@ -31,7 +31,7 @@ export function loadFromStorage(): Promise<Storage> {
               enabled: false,
               url: '',
             },
-            [ExporterType.COLLECTOR_TRACE]: {
+            [ExporterType.TRACE_OTLP_HTTP]: {
               enabled: false,
               url: '',
             },

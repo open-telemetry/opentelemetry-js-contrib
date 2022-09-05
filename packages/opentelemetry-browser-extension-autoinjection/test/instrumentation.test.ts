@@ -62,9 +62,9 @@ describe('WebInstrumentation', () => {
             enabled: true,
             url: PlaceholderValues.ZIPKIN_URL,
           },
-          [ExporterType.COLLECTOR_TRACE]: {
+          [ExporterType.TRACE_OTLP_HTTP]: {
             enabled: true,
-            url: PlaceholderValues.COLLECTOR_TRACE_URL,
+            url: PlaceholderValues.TRACE_OTLP_HTTP_URL,
           },
         },
         instrumentations: {
@@ -77,10 +77,15 @@ describe('WebInstrumentation', () => {
           [InstrumentationType.XML_HTTP_REQUEST]: {
             enabled: true,
           },
+          [InstrumentationType.USER_INTERACTION]: {
+            // disabled, throws "ReferenceError: history is not defined"
+            enabled: false,
+          },
         },
         withZoneContextManager: true,
       },
-      provider
+      provider,
+      console
     );
     instrumentation.register();
     assert.ok(addSpanProcessorSpy.callCount === 3);

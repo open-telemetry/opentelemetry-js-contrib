@@ -1,0 +1,31 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        include_metadata: true
+processors:
+  resource:
+    attributes:
+      - key: browser.user_agent
+        from_context: User-Agent
+        action: upsert
+  attributes:
+    actions:
+      - key: http.client_ip
+        from_context: X-Forwarded-For
+        action: upsert
+
+exporters:
+  otlp:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+  logging:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resource,attributes]
+      exporters: [logging, otlp]
