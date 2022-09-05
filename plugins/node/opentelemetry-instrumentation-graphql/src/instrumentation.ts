@@ -64,7 +64,7 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
 const supportedVersions = ['>=14'];
 
 export class GraphQLInstrumentation extends InstrumentationBase {
-  private _ignoreMap = new Map();
+  private _ignoreMap!: Map<string, boolean>;
 
   constructor(
     config: GraphQLInstrumentationConfig & InstrumentationConfig = {}
