@@ -74,17 +74,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
-    const ignoreMap = new Map();
-    config.ignoreFields?.map(item => ignoreMap.set(item, true));
-    this._setIgnoreMap(ignoreMap);
-  }
-
-  private _getIgnoreMap(): Map<string, boolean> {
-    return this._ignoreMap;
-  }
-
-  private _setIgnoreMap(map: Map<string, boolean> = new Map()) {
-    this._ignoreMap = map;
+    this._setIgnoreMap(config.ignoreFields);
   }
 
   private _getConfig(): GraphQLInstrumentationParsedConfig {
@@ -93,6 +83,16 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
   override setConfig(config: GraphQLInstrumentationConfig = {}) {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    this._setIgnoreMap(config.ignoreFields);
+  }
+
+  private _setIgnoreMap(vals?: Array<string>) {
+    this._ignoreMap = new Map();
+    vals?.forEach(item => this._ignoreMap.set(item, true));
+  }
+
+  private _getIgnoreMap(): Map<string, boolean> {
+    return this._ignoreMap;
   }
 
   protected init() {
@@ -479,6 +479,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     fieldResolver = wrapFieldResolver(
       this.tracer,
       this._getConfig.bind(this),
+      this._getIgnoreMap.bind(this),
       fieldResolver
     );
 

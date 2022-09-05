@@ -295,14 +295,12 @@ export function wrapFields(
   type: Maybe<graphqlTypes.GraphQLObjectType & OtelPatched>,
   tracer: api.Tracer,
   getConfig: () => GraphQLInstrumentationParsedConfig,
-  getIgnoreMap: () => Map<string, boolean>
+  ignoreMap: () => Map<string, boolean>
 ): void {
-  const ignoreMap = getIgnoreMap();
-  console.log('IGNORE MAP', ignoreMap);
   if (
     !type ||
     typeof type.getFields !== 'function' ||
-    ignoreMap.has(type.name) ||
+    ignoreMap().has(type.name) ||
     type[OTEL_PATCHED_SYMBOL]
   ) {
     return;
@@ -314,12 +312,17 @@ export function wrapFields(
   Object.keys(fields).forEach(key => {
     const field = fields[key];
 
-    if (!field || ignoreMap.has(key)) {
+    if (!field || ignoreMap().has(key)) {
       return;
     }
 
     if (field.resolve) {
-      field.resolve = wrapFieldResolver(tracer, getConfig, field.resolve);
+      field.resolve = wrapFieldResolver(
+        tracer,
+        getConfig,
+        ignoreMap,
+        field.resolve
+      );
     }
 
     if (field.type) {
@@ -328,7 +331,7 @@ export function wrapFields(
       while (unwrappedType.ofType) {
         unwrappedType = unwrappedType.ofType;
       }
-      wrapFields(unwrappedType, tracer, getConfig, getIgnoreMap);
+      wrapFields(unwrappedType, tracer, getConfig, ignoreMap);
     }
   });
 }
@@ -336,6 +339,7 @@ export function wrapFields(
 export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
   tracer: api.Tracer,
   getConfig: () => Required<GraphQLInstrumentationConfig>,
+  ignoreMap: () => Map<string, boolean>,
   fieldResolver: Maybe<
     graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched
   >
@@ -369,7 +373,7 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
     let shouldEndSpan = false;
     if (
       (config.depth >= 0 && config.depth < depth) ||
-      config.ignoreFields.includes(path[path.length - 1])
+      ignoreMap().has(path[path.length - 1])
     ) {
       field = getParentField(contextValue, path);
     } else {
