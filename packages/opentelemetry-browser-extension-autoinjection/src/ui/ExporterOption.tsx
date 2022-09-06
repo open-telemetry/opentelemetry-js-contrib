@@ -52,7 +52,7 @@ export class ExporterOption extends React.Component<ExporterOptionProps> {
             </FormHelperText>
           </FormGroup>
         </Grid>
-        { (this.props.value !== undefined && this.props.isEnabled) ? (
+        {this.props.value !== undefined && this.props.isEnabled ? (
           <Grid item xs={12} md={9}>
             <TextField
               label={`${this.props.for} URL`}
