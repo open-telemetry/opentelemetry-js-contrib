@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/browser-extension-autoinjection",
-  "version": "0.32.0",
+  "version": "0.29.0",
   "description": "A browser extension that injects opentelemetry tracers into any website",
   "scripts": {
     "clean": "rimraf build/*",
