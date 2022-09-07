@@ -9,7 +9,7 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { MongoDBInstrumentation } = require('@opentelemetry/instrumentation-mongodb');
 
-module.exports = (serviceName) => {
+module.exports = (serviceName: any) => {
   const provider = new NodeTracerProvider();
 
   provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter({
