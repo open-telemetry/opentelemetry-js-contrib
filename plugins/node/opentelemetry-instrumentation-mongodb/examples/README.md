@@ -23,14 +23,21 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
 
 ### Zipkin
 
+- Start redis via docker
+
+   ```sh
+   # from this directory
+   npm run docker:start
+   ```
+
 - Run the server
 
    ```sh
    # from this directory
-   npm run server
+   npm run zipkin:server
    ```
 
-- Run the client
+- Run the zipkin:client
 
    ```sh
    # from this directory

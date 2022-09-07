@@ -1,14 +1,16 @@
 {
   "name": "mongodb-example",
   "private": true,
-  "version": "0.23.0",
+  "version": "0.28.0",
   "description": "Example of mongodb integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
-    "zipkin:server": "cross-env EXPORTER=zipkin node ./server.js",
-    "zipkin:client": "cross-env EXPORTER=zipkin node ./client.js",
-    "jaeger:server": "cross-env EXPORTER=jaeger node ./server.js",
-    "jaeger:client": "cross-env EXPORTER=jaeger node ./client.js"
+    "docker:start": "docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=127.0.0.1 -p 27017:27017 --rm mongo",
+    "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",
+    "zipkin:client": "cross-env EXPORTER=zipkin ts-node src/client.ts",
+    "jaeger:server": "cross-env EXPORTER=jaeger ts-node src/server.ts",
+    "jaeger:client": "cross-env EXPORTER=jaeger ts-node src/client.ts",
+    "compile": "tsc -p ."
   },
   "repository": {
     "type": "git",
@@ -20,7 +22,7 @@
     "tracing"
   ],
   "engines": {
-    "node": ">=8.5.0"
+    "node": ">=8.12.0"
   },
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -28,18 +30,20 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.0.2",
-    "@opentelemetry/exporter-jaeger": "^0.25.0",
-    "@opentelemetry/exporter-zipkin": "^0.25.0",
-    "@opentelemetry/instrumentation": "^0.25.0",
-    "@opentelemetry/instrumentation-http": "^0.25.0",
-    "@opentelemetry/instrumentation-mongodb": "^0.23.0",
-    "@opentelemetry/sdk-trace-node": "^0.25.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@opentelemetry/api": "^1.0.0",
+    "@opentelemetry/exporter-jaeger": "^1.0.0",
+    "@opentelemetry/exporter-zipkin": "^1.0.0",
+    "@opentelemetry/instrumentation": "^0.32.0",
+    "@opentelemetry/instrumentation-http": "^0.32.0",
+    "@opentelemetry/instrumentation-mongodb": "^0.32.0",
+    "@opentelemetry/sdk-trace-node": "^1.0.0",
+    "@opentelemetry/sdk-trace-base": "^1.0.0",
     "mongodb": "^3.5.7"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
   "devDependencies": {
-    "cross-env": "^6.0.0"
+    "cross-env": "^7.0.3",
+    "ts-node": "^10.6.0",
+    "typescript": "4.3.5"
   }
 }

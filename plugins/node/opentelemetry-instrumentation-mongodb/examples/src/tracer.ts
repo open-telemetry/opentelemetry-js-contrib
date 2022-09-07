@@ -1,23 +1,26 @@
-'use strict';
+import { Tracer } from "@opentelemetry/api";
 
 const opentelemetry = require('@opentelemetry/api');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { Resource } = require('@opentelemetry/resources');
 const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { MongoDBInstrumentation } = require('@opentelemetry/instrumentation-mongodb');
+const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 
-module.exports = (serviceName: any) => {
-  const provider = new NodeTracerProvider();
 
-  provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter({
-    serviceName,
-  })));
-  provider.addSpanProcessor(new SimpleSpanProcessor(new JaegerExporter({
-    serviceName,
-  })));
+export const setupTracing = (serviceName: string): Tracer => {
+  const provider = new NodeTracerProvider({
+    resource: new Resource({
+      [SemanticResourceAttributes.SERVICE_NAME]: serviceName
+    })
+  });
+
+  provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter()));
+  provider.addSpanProcessor(new SimpleSpanProcessor(new JaegerExporter()));
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
@@ -27,6 +30,7 @@ module.exports = (serviceName: any) => {
       new HttpInstrumentation(),
       new MongoDBInstrumentation({
         enhancedDatabaseReporting: true,
+
       }),
     ],
     tracerProvider: provider,
