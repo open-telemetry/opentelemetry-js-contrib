@@ -93,7 +93,7 @@ const runCallbackTest = (
   }
 };
 
-describe('pg', () => {
+const testClientModule = (moduleName: string) => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
     instrumentation.enable();
@@ -140,8 +140,8 @@ describe('pg', () => {
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
 
-    const pg = require('pg');
-    client = new pg.Client(CONFIG);
+    const mod = require(moduleName);
+    client = new mod.Client(CONFIG);
     await client.connect();
   });
 
@@ -565,3 +565,11 @@ describe('pg', () => {
     });
   });
 });
+
+describe("pg", () => {
+  testClientModule("pg")
+})
+
+describe("pg-native", () => {
+  testClientModule("pg-native")
+})

@@ -17,7 +17,9 @@ npm install --save @opentelemetry/instrumentation-pg
 
 ### Supported Versions
 
-- `>=7 <9`
+- `pg` module `7.*`, `8.*`
+- `pg-pool` module `2.*`, `3.*`
+- `pg-native` module `3.*`
 
 ## Usage
 
@@ -36,7 +38,7 @@ registerInstrumentations({
 });
 ```
 
-PgInstrumentation contains both pg and [`pg.Pool`](https://node-postgres.com/api/pool) so it will be instrumented automatically.
+PgInstrumentation contains instrumentations for the `pg` client module, the [`pg.Pool`](https://node-postgres.com/api/pool) pooling system, and the [`pg-native`](https://www.npmjs.com/package/pg-native) drop-in extension for `pg`. Each will be instrumented automatically when required.
 
 See [examples/postgres](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/postgres) for a short example.
 

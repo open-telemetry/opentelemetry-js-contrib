@@ -81,6 +81,27 @@ export class PgInstrumentation extends InstrumentationBase {
       }
     );
 
+    const modulePGNative = new InstrumentationNodeModuleDefinition<typeof pgTypes>(
+      'pg-native',
+      ['3.*'],
+      moduleExports => {
+        if (isWrapped(moduleExports.Client.prototype.query)) {
+          this._unwrap(moduleExports.Client.prototype, 'query');
+        }
+        this._wrap(
+          moduleExports.Client.prototype,
+          'query',
+          this._getClientQueryPatch() as never
+        );
+        return moduleExports;
+      },
+      moduleExports => {
+        if (isWrapped(moduleExports.Client.prototype.query)) {
+          this._unwrap(moduleExports.Client.prototype, 'query');
+        }
+      }
+    );
+
     const modulePGPool = new InstrumentationNodeModuleDefinition<
       typeof pgPoolTypes
     >(
@@ -104,7 +125,7 @@ export class PgInstrumentation extends InstrumentationBase {
       }
     );
 
-    return [modulePG, modulePGPool];
+    return [modulePG, modulePGNative, modulePGPool];
   }
 
   private _getClientQueryPatch() {
