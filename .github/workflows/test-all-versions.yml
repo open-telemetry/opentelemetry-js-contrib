@@ -26,6 +26,7 @@ jobs:
               --ignore @opentelemetry/instrumentation-mongodb
               --ignore @opentelemetry/instrumentation-redis-4
               --ignore @opentelemetry/instrumentation-hapi
+              --ignore @opentelemetry/instrumentation-nestjs-core
           - node: "10"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-aws-sdk
