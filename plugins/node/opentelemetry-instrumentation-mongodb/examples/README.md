@@ -64,14 +64,14 @@ Go to Zipkin with your browser <http://localhost:9411/zipkin/traces/(your-trace-
 
    ```sh
    # from this directory
-   npm run server
+   npm run jaeger:server
    ```
 
 - Run the client
 
    ```sh
    # from this directory
-   npm run client
+   npm run jaeger:client
    ```
 
 #### Jaeger UI
