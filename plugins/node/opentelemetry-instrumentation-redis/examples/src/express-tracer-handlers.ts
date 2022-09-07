@@ -22,7 +22,6 @@ function getMiddlewareTracer(tracer: api.Tracer) {
 function getErrorTracer(tracer: api.Tracer) {
   return (err: any, _req: any, res: any, _next: any) => {
     console.error('Caught error', err.message);
-    // const span = tracer.getCurrentSpan();
     const span = api.trace.getSpan(api.context.active())
 
     if (span) {
