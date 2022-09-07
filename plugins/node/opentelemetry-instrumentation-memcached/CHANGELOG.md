@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.29.0...instrumentation-memcached-v0.30.0) (2022-09-02)
+
+
+### Features
+
+* update experimental Otel deps to ^0.31.0 ([#1096](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1096)) ([4c8843b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4c8843be14896d1159a622c07eb3a049401ccba1))
+* update experimental Otel deps to ^0.32.0 ([#1143](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1143)) ([6fb1911](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6fb191139aed2ca763300dcf9adb51121a88f97e))
+
+
+### Bug Fixes
+
+* **memcached:** low cardinality span name ([#1104](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1104)) ([cff4e77](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cff4e775354e162d1f703590bee9483858b3c4b8))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.32.0
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.28.0...instrumentation-memcached-v0.29.0) (2022-06-08)
 
 

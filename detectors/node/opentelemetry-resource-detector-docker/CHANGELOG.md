@@ -6,6 +6,20 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.30.0 to ^0.31.0
 
+## [0.1.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-docker-v0.1.1...resource-detector-docker-v0.1.2) (2022-09-02)
+
+
+### Bug Fixes
+
+* mongodb types fails to compile with latest tsc v4.8 ([#1141](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1141)) ([ec9ee13](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ec9ee131635dc2db88deea4f2efb887ff6f60577))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.32.0
+
 ## 1.0.0 (2022-05-14)
 
 
