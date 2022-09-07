@@ -23,7 +23,7 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
 
 ### Zipkin
 
-- Start redis via docker
+- Start MongoDB server via docker
 
    ```sh
    # from this directory
@@ -52,6 +52,13 @@ Go to Zipkin with your browser <http://localhost:9411/zipkin/traces/(your-trace-
 <p align="center"><img src="./images/zipkin.png?raw=true"/></p>
 
 ### Jaeger
+
+- Start MongoDB server via docker
+
+   ```sh
+   # from this directory
+   npm run docker:start
+   ```
 
 - Run the server
 
