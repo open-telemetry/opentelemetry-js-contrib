@@ -1,18 +1,17 @@
-import { Tracer } from "@opentelemetry/api";
+import * as api from "@opentelemetry/api";
 
-const opentelemetry = require('@opentelemetry/api');
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { Resource } = require('@opentelemetry/resources');
-const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
-const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
-const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-const { MongoDBInstrumentation } = require('@opentelemetry/instrumentation-mongodb');
-const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { Resource } from '@opentelemetry/resources';
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
+import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 
-export const setupTracing = (serviceName: string): Tracer => {
+export const setupTracing = (serviceName: string): api.Tracer => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
       [SemanticResourceAttributes.SERVICE_NAME]: serviceName
@@ -36,5 +35,5 @@ export const setupTracing = (serviceName: string): Tracer => {
     tracerProvider: provider,
   });
 
-  return opentelemetry.trace.getTracer('mysql-example');
+  return api.trace.getTracer('mysql-example');
 };
