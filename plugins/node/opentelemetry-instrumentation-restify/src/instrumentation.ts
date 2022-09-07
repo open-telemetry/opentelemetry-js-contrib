@@ -56,7 +56,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
 
     module.files.push(
       new InstrumentationNodeModuleFile<typeof restify>(
-        'restify/lib/server.ts',
+        'restify/lib/server.js',
         constants.SUPPORTED_VERSIONS,
         (moduleExports, moduleVersion) => {
           diag.debug(
