@@ -44,16 +44,20 @@ import {
   V4Connection,
 } from './types';
 import { VERSION } from './version';
+import { UpDownCounter } from '@opentelemetry/api-metrics';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase {
+  private _connectionsUsage: UpDownCounter;
+
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
   }
 
   init() {
-    const { v3Patch, v3Unpatch } = this._getV3Patches();
-    const { v4Patch, v4Unpatch } = this._getV4Patches();
+    this._connectionsUsage = this.meter.createUpDownCounter('fuckme');
+    const { v3Patch: v3PatchConnection, v3Unpatch: v3UnpatchConnection } = this._getV3Patches();
+    const { v4PatchConnection, v4UnpatchConnection } = this._getV4Patches();
 
     return [
       new InstrumentationNodeModuleDefinition<any>(
@@ -65,8 +69,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile<WireProtocolInternal>(
             'mongodb/lib/core/wireprotocol/index.js',
             ['>=3.3 <4'],
-            v3Patch,
-            v3Unpatch
+            v3PatchConnection,
+            v3UnpatchConnection
           ),
         ]
       ),
@@ -79,8 +83,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile<V4Connection>(
             'mongodb/lib/cmap/connection.js',
             ['4.*'],
-            v4Patch,
-            v4Unpatch
+            v4PatchConnection,
+            v4UnpatchConnection
           ),
         ]
       ),
@@ -151,7 +155,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private _getV4Patches<T extends V4Connection>() {
     return {
-      v4Patch: (moduleExports: any, moduleVersion?: string) => {
+      v4PatchConnection: (moduleExports: any, moduleVersion?: string) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
@@ -165,7 +169,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4Unpatch: (moduleExports?: any, moduleVersion?: string) => {
+      v4UnpatchConnection: (moduleExports?: any, moduleVersion?: string) => {
         if (moduleExports === undefined) return;
         diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         this._unwrap(moduleExports.Connection.prototype, 'command');
@@ -176,6 +180,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   /** Creates spans for common operations */
   private _getV3PatchOperation(operationName: 'insert' | 'update' | 'remove') {
     const instrumentation = this;
+
     return (original: WireProtocolInternal[typeof operationName]) => {
       return function patchedServerCommand(
         this: unknown,
