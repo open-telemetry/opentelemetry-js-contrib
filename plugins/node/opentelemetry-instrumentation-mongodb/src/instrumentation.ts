@@ -108,11 +108,12 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4ConnectionPoolPatches<T extends V4ConnectionPool>() {
     return {
       v4PatchConnectionPool: (moduleExports: T, moduleVersion?: string) => {
-        diag.debug(`Fuck my ass@${moduleVersion}`);
+        this._connectionsUsage.add(1, { me: 1 });
+        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         return moduleExports;
       },
-      v4UnPatchConnectionPool: (moduleExports: T, moduleVersion?: string) => {
-        diag.debug(`Fuck my ass@${moduleVersion}`);
+      v4UnPatchConnectionPool: (moduleExports?: T, moduleVersion?: string) => {
+        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         if (moduleExports === undefined) return;
       },
     };
