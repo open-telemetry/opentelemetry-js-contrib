@@ -1,6 +1,5 @@
 'use strict';
 
-// eslint-disable-next-line import/order
 import { setupTracing } from "./tracer";
 const tracer = setupTracing('example-redis-client');
 import * as api from '@opentelemetry/api';
