@@ -49,7 +49,7 @@ import { UpDownCounter } from '@opentelemetry/api-metrics';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase {
-  private _connectionsUsage: UpDownCounter;
+  private _connectionsUsage?: UpDownCounter;
 
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
@@ -108,7 +108,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4ConnectionPoolPatches<T extends V4ConnectionPool>() {
     return {
       v4PatchConnectionPool: (moduleExports: T, moduleVersion?: string) => {
-        this._connectionsUsage.add(1, { me: 1 });
+        this._connectionsUsage?.add(1, { me: 1 });
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         return moduleExports;
       },
