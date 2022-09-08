@@ -22,11 +22,96 @@ import {
 } from '../../src/detectors/AwsEcsDetector';
 import {
   assertEmptyResource,
+  assertCloudResource,
   assertContainerResource,
 } from '@opentelemetry/contrib-test-utils';
+import { Resource } from '@opentelemetry/resources';
+import {
+  CloudProviderValues,
+  CloudPlatformValues,
+  SemanticResourceAttributes,
+} from '@opentelemetry/semantic-conventions';
+import { readFileSync } from 'fs';
 import * as os from 'os';
+import { join } from 'path';
 
-describe('BeanstalkResourceDetector', () => {
+interface EcsResourceAttributes {
+  readonly clusterArn?: string;
+  readonly containerArn?: string;
+  readonly launchType?: 'ec2' | 'fargate';
+  readonly taskArn?: string;
+  readonly taskFamily?: string;
+  readonly taskRevision?: string;
+  readonly logGroupNames?: Array<string>;
+  readonly logGroupArns?: Array<string>;
+  readonly logStreamNames?: Array<string>;
+  readonly logStreamArns?: Array<string>;
+}
+
+const assertEcsResource = (
+  resource: Resource,
+  validations: EcsResourceAttributes
+) => {
+  assertCloudResource(resource, {
+    provider: CloudProviderValues.AWS,
+  });
+  assert.strictEqual(
+    resource.attributes[SemanticResourceAttributes.CLOUD_PLATFORM],
+    CloudPlatformValues.AWS_ECS
+  );
+  if (validations.containerArn)
+    assert.strictEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_ECS_CONTAINER_ARN],
+      validations.containerArn
+    );
+  if (validations.clusterArn)
+    assert.strictEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_ECS_CLUSTER_ARN],
+      validations.clusterArn
+    );
+  if (validations.launchType)
+    assert.strictEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_ECS_LAUNCHTYPE],
+      validations.launchType
+    );
+  if (validations.taskArn)
+    assert.strictEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_ECS_TASK_ARN],
+      validations.taskArn
+    );
+  if (validations.taskFamily)
+    assert.strictEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_ECS_TASK_FAMILY],
+      validations.taskFamily
+    );
+  if (validations.taskRevision)
+    assert.strictEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_ECS_TASK_REVISION],
+      validations.taskRevision
+    );
+  if (validations.logGroupNames)
+    assert.deepEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_LOG_GROUP_NAMES],
+      validations.logGroupNames
+    );
+  if (validations.logGroupArns)
+    assert.deepEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_LOG_GROUP_ARNS],
+      validations.logGroupArns
+    );
+  if (validations.logStreamNames)
+    assert.deepEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_LOG_STREAM_NAMES],
+      validations.logStreamNames
+    );
+  if (validations.logStreamArns)
+    assert.deepEqual(
+      resource.attributes[SemanticResourceAttributes.AWS_LOG_STREAM_ARNS],
+      validations.logStreamArns
+    );
+};
+
+describe('AwsEcsResourceDetector', () => {
   const errorMsg = {
     fileNotFoundError: new Error('cannot find cgroup file'),
   };
@@ -50,23 +135,6 @@ describe('BeanstalkResourceDetector', () => {
     sinon.restore();
   });
 
-  it('should successfully return resource data', async () => {
-    process.env.ECS_CONTAINER_METADATA_URI_V4 = 'ecs_metadata_v4_uri';
-    sinon.stub(os, 'hostname').returns(hostNameData);
-    readStub = sinon
-      .stub(AwsEcsDetector, 'readFileAsync' as any)
-      .resolves(correctCgroupData);
-
-    const resource = await awsEcsDetector.detect();
-
-    sinon.assert.calledOnce(readStub);
-    assert.ok(resource);
-    assertContainerResource(resource, {
-      name: 'abcd.test.testing.com',
-      id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
-    });
-  });
-
   it('should successfully return resource data with noisy cgroup file', async () => {
     process.env.ECS_CONTAINER_METADATA_URI = 'ecs_metadata_v3_uri';
     sinon.stub(os, 'hostname').returns(hostNameData);
@@ -78,6 +146,7 @@ describe('BeanstalkResourceDetector', () => {
 
     sinon.assert.calledOnce(readStub);
     assert.ok(resource);
+    assertEcsResource(resource, {});
     assertContainerResource(resource, {
       name: 'abcd.test.testing.com',
       id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
@@ -95,6 +164,7 @@ describe('BeanstalkResourceDetector', () => {
 
     sinon.assert.calledOnce(readStub);
     assert.ok(resource);
+    assertEcsResource(resource, {});
     assertContainerResource(resource, {
       name: 'abcd.test.testing.com',
       id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
@@ -114,63 +184,176 @@ describe('BeanstalkResourceDetector', () => {
     assertEmptyResource(resource);
   });
 
-  it('should return resource only with hostname attribute without cgroup file', async () => {
-    process.env.ECS_CONTAINER_METADATA_URI_V4 = 'ecs_metadata_v4_uri';
-    sinon.stub(os, 'hostname').returns(hostNameData);
-    readStub = sinon
-      .stub(AwsEcsDetector, 'readFileAsync' as any)
-      .rejects(errorMsg.fileNotFoundError);
+  describe('with Metadata URI v4 available', () => {
+    const ECS_CONTAINER_METADATA_URI_V4 = 'ecs_metadata_v4_uri';
 
-    const resource = await awsEcsDetector.detect();
-
-    sinon.assert.calledOnce(readStub);
-    assert.ok(resource);
-    assertContainerResource(resource, {
-      name: 'abcd.test.testing.com',
+    beforeEach(() => {
+      process.env.ECS_CONTAINER_METADATA_URI_V4 = ECS_CONTAINER_METADATA_URI_V4;
     });
-  });
 
-  it('should return resource only with hostname attribute when cgroup file does not contain valid container ID', async () => {
-    process.env.ECS_CONTAINER_METADATA_URI_V4 = 'ecs_metadata_v4_uri';
-    sinon.stub(os, 'hostname').returns(hostNameData);
-    readStub = sinon.stub(AwsEcsDetector, 'readFileAsync' as any).resolves('');
+    describe('when succesfully retrieving the data', () => {
+      function generateLaunchTypeTests(
+        resourceAttributes: EcsResourceAttributes
+      ) {
+        beforeEach(() => {
+          sinon.stub(AwsEcsDetector, '_getUrlAsJson' as any).callsFake(url => {
+            let testFileName = '';
+            if (url == ECS_CONTAINER_METADATA_URI_V4) {
+              testFileName = `metadatav4-response-container-${resourceAttributes.launchType!}.json`;
+            } else if (url == `${ECS_CONTAINER_METADATA_URI_V4}/task`) {
+              testFileName = `metadatav4-response-task-${resourceAttributes.launchType!}.json`;
+            } else {
+              throw new Error(`Unexpected URL ${url}`);
+            }
 
-    const resource = await awsEcsDetector.detect();
+            const testResource = join(
+              __dirname,
+              `test-resources/${testFileName}`
+            );
 
-    sinon.assert.calledOnce(readStub);
-    assert.ok(resource);
-    assertContainerResource(resource, {
-      name: 'abcd.test.testing.com',
+            return Promise.resolve(
+              JSON.parse(readFileSync(testResource, 'utf-8'))
+            );
+          });
+        });
+
+        it('should successfully return resource data', async () => {
+          sinon.stub(os, 'hostname').returns(hostNameData);
+          readStub = sinon
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
+            .resolves(correctCgroupData);
+
+          const resource = await awsEcsDetector.detect();
+
+          sinon.assert.calledOnce(readStub);
+          assert.ok(resource);
+          assertEcsResource(resource, resourceAttributes);
+          assertContainerResource(resource, {
+            name: 'abcd.test.testing.com',
+            id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
+          });
+        });
+
+        it('should return resource only with hostname attribute without cgroup file', async () => {
+          sinon.stub(os, 'hostname').returns(hostNameData);
+          readStub = sinon
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
+            .rejects(errorMsg.fileNotFoundError);
+
+          const resource = await awsEcsDetector.detect();
+
+          sinon.assert.calledOnce(readStub);
+          assert.ok(resource);
+          assertEcsResource(resource, resourceAttributes);
+          assertContainerResource(resource, {
+            name: 'abcd.test.testing.com',
+          });
+        });
+
+        it('should return resource only with hostname attribute when cgroup file does not contain valid container ID', async () => {
+          sinon.stub(os, 'hostname').returns(hostNameData);
+          readStub = sinon
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
+            .resolves('');
+
+          const resource = await awsEcsDetector.detect();
+
+          sinon.assert.calledOnce(readStub);
+          assert.ok(resource);
+          assertEcsResource(resource, resourceAttributes);
+          assertContainerResource(resource, {
+            name: 'abcd.test.testing.com',
+          });
+        });
+
+        it('should return resource only with container ID attribute without hostname', async () => {
+          sinon.stub(os, 'hostname').returns('');
+          readStub = sinon
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
+            .resolves(correctCgroupData);
+
+          const resource = await awsEcsDetector.detect();
+
+          sinon.assert.calledOnce(readStub);
+          assert.ok(resource);
+          assertEcsResource(resource, resourceAttributes);
+          assertContainerResource(resource, {
+            id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
+          });
+        });
+
+        it('should return metadata v4 resource attributes when both hostname and container ID are invalid', async () => {
+          sinon.stub(os, 'hostname').returns('');
+          readStub = sinon
+            .stub(AwsEcsDetector, 'readFileAsync' as any)
+            .rejects(errorMsg.fileNotFoundError);
+
+          const resource = await awsEcsDetector.detect();
+
+          sinon.assert.calledOnce(readStub);
+          assert.ok(resource);
+          assertEcsResource(resource, resourceAttributes);
+        });
+      }
+
+      describe('on Ec2', () => {
+        generateLaunchTypeTests({
+          clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
+          containerArn:
+            'arn:aws:ecs:us-west-2:111122223333:container/0206b271-b33f-47ab-86c6-a0ba208a70a9',
+          launchType: 'ec2',
+          taskArn:
+            'arn:aws:ecs:us-west-2:111122223333:task/default/158d1c8083dd49d6b527399fd6414f5c',
+          taskFamily: 'curltest',
+          taskRevision: '26',
+          logGroupNames: ['/ecs/metadata'],
+          logGroupArns: [
+            'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/metadata',
+          ],
+          logStreamNames: ['ecs/curl/8f03e41243824aea923aca126495f665'],
+          logStreamArns: [
+            'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/metadata:log-stream:ecs/curl/8f03e41243824aea923aca126495f665',
+          ],
+        });
+      });
+
+      describe('on Fargate', () => {
+        generateLaunchTypeTests({
+          clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
+          containerArn:
+            'arn:aws:ecs:us-west-2:111122223333:container/05966557-f16c-49cb-9352-24b3a0dcd0e1',
+          launchType: 'fargate',
+          taskArn:
+            'arn:aws:ecs:us-west-2:111122223333:task/default/e9028f8d5d8e4f258373e7b93ce9a3c3',
+          taskFamily: 'curltest',
+          taskRevision: '3',
+          logGroupNames: ['/ecs/containerlogs'],
+          logGroupArns: [
+            'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/containerlogs',
+          ],
+          logStreamNames: ['ecs/curl/cd189a933e5849daa93386466019ab50'],
+          logStreamArns: [
+            'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/containerlogs:log-stream:ecs/curl/cd189a933e5849daa93386466019ab50',
+          ],
+        });
+      });
     });
-  });
 
-  it('should return resource only with container ID attribute without hostname', async () => {
-    process.env.ECS_CONTAINER_METADATA_URI_V4 = 'ecs_metadata_v4_uri';
-    sinon.stub(os, 'hostname').returns('');
-    readStub = sinon
-      .stub(AwsEcsDetector, 'readFileAsync' as any)
-      .resolves(correctCgroupData);
+    describe('when failing to fetch metadata', async () => {
+      const error = new Error('ERROR');
 
-    const resource = await awsEcsDetector.detect();
+      beforeEach(() => {
+        sinon.stub(AwsEcsDetector, '_getUrlAsJson' as any).rejects(error);
+      });
 
-    sinon.assert.calledOnce(readStub);
-    assert.ok(resource);
-    assertContainerResource(resource, {
-      id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
+      it('should reject with an error', async () => {
+        try {
+          await awsEcsDetector.detect();
+          throw new Error('Should not have reached here');
+        } catch (err) {
+          assert.strictEqual(err, error);
+        }
+      });
     });
-  });
-
-  it('should return empty resource when both hostname and container ID are invalid', async () => {
-    process.env.ECS_CONTAINER_METADATA_URI_V4 = 'ecs_metadata_v4_uri';
-    sinon.stub(os, 'hostname').returns('');
-    readStub = sinon
-      .stub(AwsEcsDetector, 'readFileAsync' as any)
-      .rejects(errorMsg.fileNotFoundError);
-
-    const resource = await awsEcsDetector.detect();
-
-    sinon.assert.calledOnce(readStub);
-    assert.ok(resource);
-    assertEmptyResource(resource);
   });
 });
