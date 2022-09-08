@@ -42,6 +42,7 @@ import {
   WireProtocolInternal,
   CommandResult,
   V4Connection,
+  V4ConnectionPool,
 } from './types';
 import { VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api-metrics';
@@ -56,7 +57,14 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   init() {
     this._connectionsUsage = this.meter.createUpDownCounter('fuckme');
-    const { v3Patch: v3PatchConnection, v3Unpatch: v3UnpatchConnection } = this._getV3Patches();
+    const {
+      v3PatchConnection: v3PatchConnection,
+      v3UnpatchConnection: v3UnpatchConnection,
+    } = this._getV3Patches();
+
+    const { v4PatchConnectionPool, v4UnPatchConnectionPool } =
+      this._getV4ConnectionPoolPatches();
+
     const { v4PatchConnection, v4UnpatchConnection } = this._getV4Patches();
 
     return [
@@ -86,14 +94,33 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             v4PatchConnection,
             v4UnpatchConnection
           ),
+          new InstrumentationNodeModuleFile<V4ConnectionPool>(
+            'mongodb/lib/cmap/connection_pool.js',
+            ['4.*'],
+            v4PatchConnectionPool,
+            v4UnPatchConnectionPool
+          ),
         ]
       ),
     ];
   }
 
+  private _getV4ConnectionPoolPatches<T extends V4ConnectionPool>() {
+    return {
+      v4PatchConnectionPool: (moduleExports: T, moduleVersion?: string) => {
+        diag.debug(`Fuck my ass@${moduleVersion}`);
+        return moduleExports;
+      },
+      v4UnPatchConnectionPool: (moduleExports: T, moduleVersion?: string) => {
+        diag.debug(`Fuck my ass@${moduleVersion}`);
+        if (moduleExports === undefined) return;
+      },
+    };
+  }
+
   private _getV3Patches<T extends WireProtocolInternal>() {
     return {
-      v3Patch: (moduleExports: T, moduleVersion?: string) => {
+      v3PatchConnection: (moduleExports: T, moduleVersion?: string) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.insert)) {
@@ -139,7 +166,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         this._wrap(moduleExports, 'getMore', this._getV3PatchCursor());
         return moduleExports;
       },
-      v3Unpatch: (moduleExports?: T, moduleVersion?: string) => {
+      v3UnpatchConnection: (moduleExports?: T, moduleVersion?: string) => {
         if (moduleExports === undefined) return;
         diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         this._unwrap(moduleExports, 'insert');
