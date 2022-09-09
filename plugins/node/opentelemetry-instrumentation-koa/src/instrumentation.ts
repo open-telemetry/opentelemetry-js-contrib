@@ -19,6 +19,7 @@ import {
   isWrapped,
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 
 import type * as koa from 'koa';
@@ -38,9 +39,22 @@ import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   static readonly component = KoaComponentName;
-  constructor(config?: KoaInstrumentationConfig) {
-    super('@opentelemetry/instrumentation-koa', VERSION, config);
+  constructor(config: KoaInstrumentationConfig = {}) {
+    super(
+      '@opentelemetry/instrumentation-koa',
+      VERSION,
+      Object.assign({}, config)
+    );
   }
+
+  override setConfig(config: KoaInstrumentationConfig = {}) {
+    this._config = Object.assign({}, config);
+  }
+
+  override getConfig(): KoaInstrumentationConfig {
+    return this._config as KoaInstrumentationConfig;
+  }
+
   protected init() {
     return new InstrumentationNodeModuleDefinition<typeof koa>(
       'koa',
@@ -130,10 +144,20 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
     // Skip patching layer if its ignored in the config
     if (
       middlewareLayer[kLayerPatched] === true ||
-      isLayerIgnored(layerType, this._config)
+      isLayerIgnored(layerType, this.getConfig())
     )
       return middlewareLayer;
+
+    if (
+      middlewareLayer.constructor.name === 'GeneratorFunction' ||
+      middlewareLayer.constructor.name === 'AsyncGeneratorFunction'
+    ) {
+      api.diag.debug('ignoring generator-based Koa middleware layer');
+      return middlewareLayer;
+    }
+
     middlewareLayer[kLayerPatched] = true;
+
     api.diag.debug('patching Koa middleware layer');
     return async (context: KoaContext, next: koa.Next) => {
       const parent = api.trace.getSpan(api.context.active());
@@ -168,6 +192,20 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
           Object.assign(rpcMetadata, { route: context._matchedRoute })
         );
       }
+
+      if (this.getConfig().requestHook) {
+        safeExecuteInTheMiddle(
+          () =>
+            this.getConfig().requestHook!(span, { context, middlewareLayer }),
+          e => {
+            if (e) {
+              api.diag.error('koa instrumentation: request hook failed', e);
+            }
+          },
+          true
+        );
+      }
+
       return api.context.with(newContext, async () => {
         try {
           return await middlewareLayer(context, next);

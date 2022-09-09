@@ -9,6 +9,7 @@ For instance, examples of using `express` instrumentation have moved from this d
 * [ ] Move the files
   * [ ] Choose an instrumentation package to migrate examples for.
   * [ ] Move the examples from `./examples/[name]` to `./plugins/[node or web]]/opentelemetry-instrumentation-[name]/examples`.
+  * [ ] Update the `./plugins/[node or web]]/opentelemetry-instrumentation-[name]/README.md` and replace the path `examples/[name]` with the new path of the examples.
 * [ ] Update the `package.json` in the examples folder
   * [ ] Remove the `@opentelemetry/instrumentation-[name]` dependency.
   * [ ] Install `typescript` and `ts-node` in the examples directory.

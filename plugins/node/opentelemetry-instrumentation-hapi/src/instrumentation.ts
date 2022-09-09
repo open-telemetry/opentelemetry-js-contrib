@@ -154,7 +154,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         }
       } else {
         instrumentation._wrapRegisterHandler(
-          pluginInput.plugin?.plugin ?? pluginInput.plugin
+          pluginInput.plugin?.plugin ?? pluginInput.plugin ?? pluginInput
         );
       }
       return original.apply(this, [pluginInput, options]);
@@ -380,12 +380,10 @@ export class HapiInstrumentation extends InstrumentationBase {
     const oldHandler = route.options?.handler ?? route.handler;
     if (typeof oldHandler === 'function') {
       const newHandler: Hapi.Lifecycle.Method = async function (
-        request: Hapi.Request,
-        h: Hapi.ResponseToolkit,
-        err?: Error
+        ...params: Parameters<Hapi.Lifecycle.Method>
       ) {
         if (api.trace.getSpan(api.context.active()) === undefined) {
-          return await oldHandler(request, h, err);
+          return await oldHandler(...params);
         }
         const rpcMetadata = getRPCMetadata(api.context.active());
         if (rpcMetadata?.type === RPCType.HTTP) {
@@ -398,7 +396,10 @@ export class HapiInstrumentation extends InstrumentationBase {
           attributes: metadata.attributes,
         });
         try {
-          return await oldHandler(request, h, err);
+          return await api.context.with(
+            api.trace.setSpan(api.context.active(), span),
+            () => oldHandler(...params)
+          );
         } catch (err) {
           span.recordException(err);
           span.setStatus({

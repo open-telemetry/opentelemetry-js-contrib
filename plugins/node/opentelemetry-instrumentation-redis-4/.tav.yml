@@ -1,0 +1,8 @@
+redis:
+
+  jobs:
+    - versions: "^4.0.0"
+      commands: npm run test
+
+  # Fix missing `contrib-test-utils` package
+  pretest: npm run --prefix ../../../ lerna:link

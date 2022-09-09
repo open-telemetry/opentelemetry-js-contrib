@@ -37,9 +37,7 @@ import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
-export class MySQL2Instrumentation extends InstrumentationBase<
-  typeof mysqlTypes
-> {
+export class MySQL2Instrumentation extends InstrumentationBase<any> {
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
@@ -50,7 +48,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof mysqlTypes>(
+      new InstrumentationNodeModuleDefinition<any>(
         'mysql2',
         ['>= 1.4.2 < 3.0'],
         (moduleExports: any, moduleVersion) => {
@@ -68,6 +66,15 @@ export class MySQL2Instrumentation extends InstrumentationBase<
             this._patchQuery(moduleExports.format) as any
           );
 
+          if (isWrapped(ConnectionPrototype.execute)) {
+            this._unwrap(ConnectionPrototype, 'execute');
+          }
+          this._wrap(
+            ConnectionPrototype,
+            'execute',
+            this._patchQuery(moduleExports.format) as any
+          );
+
           return moduleExports;
         },
         (moduleExports: any) => {
@@ -75,6 +82,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<
           const ConnectionPrototype: mysqlTypes.Connection =
             moduleExports.Connection.prototype;
           this._unwrap(ConnectionPrototype, 'query');
+          this._unwrap(ConnectionPrototype, 'execute');
         }
       ),
     ];
@@ -83,7 +91,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<
   private _patchQuery(format: formatType) {
     return (originalQuery: Function): Function => {
       const thisPlugin = this;
-      api.diag.debug('MySQL2Instrumentation: patched mysql query');
+      api.diag.debug('MySQL2Instrumentation: patched mysql query/execute');
 
       return function query(
         this: mysqlTypes.Connection,

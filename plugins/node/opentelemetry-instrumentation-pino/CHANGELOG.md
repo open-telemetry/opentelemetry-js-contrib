@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.30.0...instrumentation-pino-v0.31.0) (2022-09-02)
+
+
+### Features
+
+* update experimental Otel deps to ^0.31.0 ([#1096](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1096)) ([4c8843b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4c8843be14896d1159a622c07eb3a049401ccba1))
+* update experimental Otel deps to ^0.32.0 ([#1143](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1143)) ([6fb1911](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6fb191139aed2ca763300dcf9adb51121a88f97e))
+
+
+### Bug Fixes
+
+* **pino:** removed the tav for versions ^8 ([#1146](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1146)) ([078ab2d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/078ab2d3869452e48d9c6cd7d47ba8f66f2fb370))
+
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.29.0...instrumentation-pino-v0.30.0) (2022-06-08)
+
+
+### Features
+
+* update core dependencies stable ^1.3.1 experimental ^0.29.2 ([141b155](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/141b155e344980b51264e26b26c117b2113bcef6))
+
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.28.1...instrumentation-pino-v0.29.0) (2022-05-14)
+
+
+### Features
+
+* add supported node versions for all packages ([#973](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/973)) ([baaacbd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/baaacbdd35ca4baab0afae64647aa8c0380ee4b7))
+* send log level to pino hook ([#967](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/967)) ([cfb0b7a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfb0b7a4ffe508563e383b7a186d438186b5c518))
+* use Otel SDK 1.2/0.28 ([#984](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/984)) ([098c2ed](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/098c2ed6f9c5ab7bd865685018c0777245aab3b7))
+
 ### [0.28.1](https://www.github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.28.0...instrumentation-pino-v0.28.1) (2022-01-24)
 
 

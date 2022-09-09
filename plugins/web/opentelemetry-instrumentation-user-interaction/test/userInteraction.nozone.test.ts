@@ -654,6 +654,15 @@ describe('UserInteractionInstrumentation', () => {
       document.removeEventListener('click', null);
     });
 
+    it('should handle null useCapture', () => {
+      const listener = () => {};
+      // @ts-expect-error Typescript typings report null useCapture as error
+      // which follows the spec but that doesn't stop users
+      document.addEventListener('click', listener, null);
+      // @ts-expect-error see above
+      document.removeEventListener('click', listener, null);
+    });
+
     it('should handle disable', () => {
       assert.strictEqual(
         isWrapped(HTMLElement.prototype.addEventListener),

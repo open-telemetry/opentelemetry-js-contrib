@@ -393,5 +393,49 @@ describe('Hapi Instrumentation - Hapi.Plugin Tests', () => {
         );
       });
     });
+
+    describe('when plugin is declared in attribute  level', () => {
+      it('should instrument package-based plugins', async () => {
+        const rootSpan = tracer.startSpan('rootSpan');
+        // Suppress this ts error due the Hapi plugin type definition is incomplete. server.register can accept nested plugin. See reference https://hapi.dev/api/?v=20.0.0#-routeoptionshandler
+        await server.register(packagePlugin);
+        await server.start();
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+        await context.with(
+          trace.setSpan(context.active(), rootSpan),
+          async () => {
+            const res = await server.inject({
+              method: 'GET',
+              url: '/package',
+            });
+            assert.strictEqual(res.statusCode, 200);
+
+            rootSpan.end();
+            assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+            const requestHandlerSpan = memoryExporter
+              .getFinishedSpans()
+              .find(
+                span => span.name === 'plugin-by-package: route - /package'
+              );
+            assert.notStrictEqual(requestHandlerSpan, undefined);
+            assert.strictEqual(
+              requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+              HapiLayerType.PLUGIN
+            );
+            assert.strictEqual(
+              requestHandlerSpan?.attributes[AttributeNames.PLUGIN_NAME],
+              'plugin-by-package'
+            );
+
+            const exportedRootSpan = memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name === 'rootSpan');
+            assert.notStrictEqual(exportedRootSpan, undefined);
+          }
+        );
+      });
+    });
   });
 });

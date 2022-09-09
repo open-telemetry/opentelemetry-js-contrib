@@ -3,8 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This instrumentation creates spans from tasks that take more than 50 milliseconds using the [Long Task API][mdn-long-task].
-All of the data reported via [`PerformanceLongTaskTiming`][mdn-performance-long-task-timing] is included as span attributes.
+This module provides automatic instrumentation for [Long Task API][mdn-long-task] which may be loaded using the [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) package. It creates spans from tasks that take more than 50 milliseconds, all of the data reported via [`PerformanceLongTaskTiming`][mdn-performance-long-task-timing] is included as span attributes.
+
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-web`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 

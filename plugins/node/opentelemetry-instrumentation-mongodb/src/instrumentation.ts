@@ -33,7 +33,6 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import type * as mongodb from 'mongodb';
 import {
   CursorState,
   MongodbCommandType,
@@ -47,9 +46,7 @@ import {
 import { VERSION } from './version';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
-export class MongoDBInstrumentation extends InstrumentationBase<
-  typeof mongodb
-> {
+export class MongoDBInstrumentation extends InstrumentationBase {
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
   }
@@ -59,7 +56,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     const { v4Patch, v4Unpatch } = this._getV4Patches();
 
     return [
-      new InstrumentationNodeModuleDefinition<typeof mongodb>(
+      new InstrumentationNodeModuleDefinition<any>(
         'mongodb',
         ['>=3.3 <4'],
         undefined,
@@ -73,7 +70,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           ),
         ]
       ),
-      new InstrumentationNodeModuleDefinition<typeof mongodb>(
+      new InstrumentationNodeModuleDefinition<any>(
         'mongodb',
         ['4.*'],
         undefined,
@@ -158,7 +155,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
-          this._unwrap(moduleExports, 'command');
+          this._unwrap(moduleExports.Connection.prototype, 'command');
         }
 
         this._wrap(
