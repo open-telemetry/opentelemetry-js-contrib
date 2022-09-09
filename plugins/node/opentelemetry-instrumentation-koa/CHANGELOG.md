@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.31.0...instrumentation-koa-v0.32.0) (2022-09-02)
+
+
+### Features
+
+* **koa:** add requestHook support ([#1099](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1099)) ([99279d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/99279d5085e94c0f6b99d4ffe2858d6d0ff96019))
+* update experimental Otel deps to ^0.31.0 ([#1096](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1096)) ([4c8843b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4c8843be14896d1159a622c07eb3a049401ccba1))
+* update experimental Otel deps to ^0.32.0 ([#1143](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1143)) ([6fb1911](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6fb191139aed2ca763300dcf9adb51121a88f97e))
+
+
+### Bug Fixes
+
+* **koa:** ignore generator-based Koa middleware ([#1119](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1119)) ([6684b56](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6684b56b8043f094b95fc3c1ce5e5599e694bad4))
+* mongodb types fails to compile with latest tsc v4.8 ([#1141](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1141)) ([ec9ee13](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ec9ee131635dc2db88deea4f2efb887ff6f60577))
+
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.30.0...instrumentation-koa-v0.31.0) (2022-08-09)
+
+
+### Features
+
+* use Koa router name as span name if available ([#976](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/976)) ([fa4fe9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fa4fe9c9137e198aef897a2c4e01c932c62faabf))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.29.0...instrumentation-koa-v0.30.0) (2022-06-08)
 
 

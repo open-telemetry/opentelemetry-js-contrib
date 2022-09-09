@@ -280,7 +280,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.notStrictEqual(span, undefined);
       assert.notStrictEqual(expected, undefined);
       assertMatch(span.name, new RegExp(expected.op));
-      assertMatch(span.name, new RegExp(expected.key));
+      assertMatch(span.name, new RegExp('memcached'));
       assert.strictEqual(span.kind, SpanKind.CLIENT);
       assert.strictEqual(span.attributes['db.statement'], expected.statement);
       for (const attr in DEFAULT_ATTRIBUTES) {
