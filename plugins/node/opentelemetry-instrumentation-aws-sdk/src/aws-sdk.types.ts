@@ -15,6 +15,14 @@
  */
 
 /*
+ * AWS SDK for JavaScript
+ * Copyright 2012-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * This product includes software developed at
+ * Amazon Web Services, Inc. (http://aws.amazon.com/).
+ */
+
+/*
   These are slightly modified and simplified versions of the actual SQS types included
   in the official distribution:
   https://github.com/aws/aws-sdk-js/blob/master/clients/sqs.d.ts
