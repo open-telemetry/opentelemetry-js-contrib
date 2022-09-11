@@ -26,11 +26,10 @@ import {
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { Pino, PinoInstrumentationConfig } from './types';
+import { PinoInstrumentationConfig } from './types';
 import { VERSION } from './version';
-import type { pino } from 'pino';
 
-const pinoVersions = ['>=5.14.0 <8'];
+const pinoVersions = ['>=5.14.0 <9'];
 
 export class PinoInstrumentation extends InstrumentationBase {
   constructor(config: PinoInstrumentationConfig = {}) {
@@ -39,7 +38,7 @@ export class PinoInstrumentation extends InstrumentationBase {
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<Pino>(
+      new InstrumentationNodeModuleDefinition<any>(
         'pino',
         pinoVersions,
         pinoModule => {
@@ -61,16 +60,21 @@ export class PinoInstrumentation extends InstrumentationBase {
                 args.splice(0, 0, {
                   mixin: instrumentation._getMixinFunction(),
                 });
-                return pinoModule(...(args as Parameters<Pino>));
+                return pinoModule(...args);
               }
             }
 
-            args[0] = instrumentation._combineOptions(
-              args[0] as pino.LoggerOptions
-            );
+            args[0] = instrumentation._combineOptions(args[0]);
 
-            return pinoModule(...(args as Parameters<Pino>));
+            return pinoModule(...args);
           }, pinoModule);
+
+          if (typeof patchedPino.pino === 'function') {
+            patchedPino.pino = patchedPino;
+          }
+          if (typeof patchedPino.default === 'function') {
+            patchedPino.default = patchedPino;
+          }
 
           return patchedPino;
         }
@@ -135,7 +139,7 @@ export class PinoInstrumentation extends InstrumentationBase {
     };
   }
 
-  private _combineOptions(options?: pino.LoggerOptions) {
+  private _combineOptions(options?: any) {
     if (options === undefined) {
       return { mixin: this._getMixinFunction() };
     }
