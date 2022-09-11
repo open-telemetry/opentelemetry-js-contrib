@@ -96,5 +96,9 @@ export type LookupCallbackSignature = LookupSimpleCallback &
   ) => void);
 
 export interface DnsInstrumentationConfig extends InstrumentationConfig {
+  /** List of hostname matchers used to decide whether to skip creating a span */
   ignoreHostnames?: IgnoreMatcher[];
+
+  /** Add target of dns lookup as span attribute in dns.lookup, default is false */
+  addHostnameAttribute?: boolean;
 }

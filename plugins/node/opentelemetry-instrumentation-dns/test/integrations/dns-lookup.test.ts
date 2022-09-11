@@ -20,7 +20,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { DnsInstrumentation } from '../../src';
+import { DnsInstrumentation, DnsInstrumentationConfig } from '../../src';
 import * as dns from 'dns';
 import * as utils from '../utils/utils';
 import { assertSpan } from '../utils/assertSpan';
@@ -46,7 +46,7 @@ describe('dns.lookup()', () => {
     utils.checkInternet(isConnected => {
       if (!isConnected) {
         this.skip();
-        // don't disturbe people
+        // don't disturb people
       }
       done();
     });
@@ -75,7 +75,7 @@ describe('dns.lookup()', () => {
           const spans = memoryExporter.getFinishedSpans();
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
-          assertSpan(span, { addresses: [{ address, family }], hostname });
+          assertSpan(span, { addresses: [{ address, family }] });
           done();
         });
       });
@@ -93,7 +93,7 @@ describe('dns.lookup()', () => {
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
-        assertSpan(span, { addresses: [{ address, family }], hostname });
+        assertSpan(span, { addresses: [{ address, family }] });
         done();
       });
     });
@@ -136,7 +136,6 @@ describe('dns.lookup()', () => {
         assert.strictEqual(spans.length, 1);
         assertSpan(span, {
           addresses: [],
-          hostname,
           forceStatus: {
             code: SpanStatusCode.ERROR,
             message: error!.message,
@@ -157,8 +156,6 @@ describe('dns.lookup()', () => {
         assert.strictEqual(spans.length, 1);
         assertSpan(span, {
           addresses: [],
-          // tslint:disable-next-line:no-any
-          hostname: hostname as any,
           forceStatus: {
             code: SpanStatusCode.ERROR,
             message: error!.message,
@@ -166,7 +163,46 @@ describe('dns.lookup()', () => {
         });
       }
     });
+
+    it('should omit dns.hostname attribute by default', done => {
+      const hostname = 'google.com';
+      const config: DnsInstrumentationConfig = {};
+      instrumentation.setConfig(config);
+
+      dns.lookup(hostname, (err, address, family) => {
+        assert.strictEqual(err, null);
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1);
+        const [span] = spans;
+        assertSpan(span, {
+          addresses: [{ address, family }],
+          hostname: undefined,
+        });
+        done();
+      });
+    });
+
+    it('should include dns.hostname attribute if requested', done => {
+      const hostname = 'google.com';
+      const config: DnsInstrumentationConfig = {
+        addHostnameAttribute: true,
+      };
+      instrumentation.setConfig(config);
+
+      dns.lookup(hostname, (err, address, family) => {
+        assert.strictEqual(err, null);
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1);
+        const [span] = spans;
+        assertSpan(span, {
+          addresses: [{ address, family }],
+          hostname,
+        });
+        done();
+      });
+    });
   });
+
   describe('with options param', () => {
     [4, 6].forEach(family => {
       it(`should export a valid span with "family" to ${family}`, done => {
@@ -180,7 +216,7 @@ describe('dns.lookup()', () => {
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
 
-          assertSpan(span, { addresses: [{ address, family }], hostname });
+          assertSpan(span, { addresses: [{ address, family }] });
           done();
         });
       });
@@ -199,7 +235,7 @@ describe('dns.lookup()', () => {
             const [span] = spans;
             assert.strictEqual(spans.length, 1);
 
-            assertSpan(span, { addresses: [{ address, family }], hostname });
+            assertSpan(span, { addresses: [{ address, family }] });
             done();
           }
         );
@@ -218,7 +254,7 @@ describe('dns.lookup()', () => {
           const spans = memoryExporter.getFinishedSpans();
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
-          assertSpan(span, { addresses, hostname });
+          assertSpan(span, { addresses });
           done();
         }
       );

@@ -26,7 +26,7 @@ export const assertSpan = (
   span: ReadableSpan,
   validations: {
     addresses: LookupAddress[];
-    hostname: string;
+    hostname?: string;
     forceStatus?: SpanStatus;
   }
 ) => {
@@ -50,6 +50,13 @@ export const assertSpan = (
       _.address
     );
   });
+
+  if (validations.hostname !== undefined) {
+    assert.strictEqual(
+      span.attributes[AttributeNames.DNS_HOSTNAME],
+      validations.hostname
+    );
+  }
 
   assert.ok(span.endTime);
   assert.strictEqual(span.links.length, 0);

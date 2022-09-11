@@ -32,6 +32,7 @@ import {
 } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
+import { AttributeNames } from './enums/AttributeNames';
 
 /**
  * Dns instrumentation for Opentelemetry
@@ -110,9 +111,23 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
       const argsCount = args.length;
       diag.debug('wrap lookup callback function and starts span');
       const name = utils.getOperationName('lookup');
-      const span = plugin.tracer.startSpan(name, {
-        kind: SpanKind.CLIENT,
-      });
+      let opts = null;
+      if (plugin._config?.addHostnameAttribute) {
+        opts = {
+          attributes: {
+            [AttributeNames.DNS_HOSTNAME]: hostname,
+          },
+        };
+      }
+      const span = plugin.tracer.startSpan(
+        name,
+        Object.assign(
+          {
+            kind: SpanKind.CLIENT,
+          },
+          opts
+        )
+      );
 
       const originalCallback = args[argsCount - 1];
       if (typeof originalCallback === 'function') {
