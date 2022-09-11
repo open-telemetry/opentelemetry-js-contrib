@@ -42,21 +42,22 @@ import {
   WireProtocolInternal,
   CommandResult,
   V4Connection,
-  V4ConnectionPool,
+  V4Connect,
 } from './types';
 import { VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api-metrics';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase {
-  private _connectionsUsage?: UpDownCounter;
+  private _connectionsUsage: UpDownCounter;
 
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
+
+    this._connectionsUsage = this.meter.createUpDownCounter('fuckme');
   }
 
   init() {
-    this._connectionsUsage = this.meter.createUpDownCounter('fuckme');
     const {
       v3PatchConnection: v3PatchConnection,
       v3UnpatchConnection: v3UnpatchConnection,
@@ -94,8 +95,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             v4PatchConnection,
             v4UnpatchConnection
           ),
-          new InstrumentationNodeModuleFile<V4ConnectionPool>(
-            'mongodb/lib/cmap/connection_pool.js',
+          new InstrumentationNodeModuleFile<V4Connect>(
+            'mongodb/lib/cmap/connect.js',
             ['4.*'],
             v4PatchConnectionPool,
             v4UnPatchConnectionPool
@@ -105,17 +106,41 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     ];
   }
 
-  private _getV4ConnectionPoolPatches<T extends V4ConnectionPool>() {
+  private _getV4ConnectionPoolPatches<T extends V4Connect>() {
     return {
-      v4PatchConnectionPool: (moduleExports: T, moduleVersion?: string) => {
+      v4PatchConnectionPool: (moduleExports: any, moduleVersion?: string) => {
         this._connectionsUsage?.add(1, { me: 1 });
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+        this._wrap(moduleExports, 'connect', this._getV4CheckInCommand());
         return moduleExports;
       },
       v4UnPatchConnectionPool: (moduleExports?: T, moduleVersion?: string) => {
         diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         if (moduleExports === undefined) return;
       },
+    };
+  }
+
+  private _getV4CheckInCommand() {
+    const instrumentation = this;
+
+    return (original: V4Connect['connect']) => {
+      return function patchedCheckInCommand(
+        this: unknown,
+        options: any,
+        callback: any
+      ) {
+        instrumentation._connectionsUsage.add(1, { me: 1 });
+        const patchedCallback = function (err: any, conn: any) {
+          instrumentation._connectionsUsage.add(1, {
+            'db.client.connection.usage.state': 'idle',
+            'db.client.connection.usage.name': conn.id,
+          });
+
+          callback(err, conn);
+        };
+        return original.call(this, options, patchedCallback);
+      };
     };
   }
 
@@ -306,7 +331,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const instrumentation = this;
     return (original: V4Connection['command']) => {
       return function patchedV4ServerCommand(
-        this: unknown,
+        this: any,
         ns: any,
         cmd: any,
         options: undefined | unknown,
@@ -314,6 +339,12 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ) {
         const currentSpan = trace.getSpan(context.active());
         const resultHandler = callback;
+
+        instrumentation._connectionsUsage.add(1, {
+          'db.client.connection.usage.state': 'used',
+          'db.client.connection.usage.name': this.id,
+        });
+
         if (
           !currentSpan ||
           typeof resultHandler !== 'function' ||
@@ -331,7 +362,12 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           }
         );
         instrumentation._populateV4Attributes(span, this, ns, cmd);
-        const patchedCallback = instrumentation._patchEnd(span, resultHandler);
+        const patchedCallback = instrumentation._patchEnd(
+          span,
+          resultHandler,
+          this.id
+        );
+
         return original.call(this, ns, cmd, options, patchedCallback);
       };
     };
@@ -664,8 +700,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
    * Ends a created span.
    * @param span The created span to end.
    * @param resultHandler A callback function.
+   * @param connectionId: The connection ID of the Command response.
    */
-  private _patchEnd(span: Span, resultHandler: Function): Function {
+  private _patchEnd(
+    span: Span,
+    resultHandler: Function,
+    connectionId?: number
+  ): Function {
     // mongodb is using "tick" when calling a callback, this way the context
     // in final callback (resultHandler) is lost
     const activeContext = context.active();
@@ -681,6 +722,14 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         const result = args[1] as CommandResult;
         instrumentation._handleExecutionResult(span, result);
       }
+
+      if (connectionId) {
+        instrumentation._connectionsUsage.add(-1, {
+          'db.client.connection.usage.state': 'idle',
+          'db.client.connection.usage.name': connectionId,
+        });
+      }
+
       span.end();
 
       return context.with(activeContext, () => {

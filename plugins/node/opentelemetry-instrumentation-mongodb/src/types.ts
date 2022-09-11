@@ -164,6 +164,7 @@ export enum MongodbCommandType {
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
 export type V4Connection = {
+  id: number | '<monitor>';
   command(
     ns: any,
     cmd: Document,
@@ -176,4 +177,8 @@ export type V4Connection = {
 export type V4ConnectionPool = {
   checkIn(connection: V4Connection): void;
   checkOut(connection: V4Connection): void;
+};
+
+export type V4Connect = {
+  connect: (options: any, callback: any) => void;
 };
