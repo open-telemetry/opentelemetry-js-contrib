@@ -26,13 +26,54 @@ import {
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
 
+// TODO: use test-utils after the new package has released.
+import {
+  AggregationTemporality,
+  InMemoryMetricExporter,
+  MeterProvider,
+  PeriodicExportingMetricReader,
+  ResourceMetrics,
+} from '@opentelemetry/sdk-metrics';
+
+const otelTestingMeterProvider = new MeterProvider();
+const inMemoryMetricsExporter = new InMemoryMetricExporter(
+  AggregationTemporality.CUMULATIVE
+);
+const metricReader = new PeriodicExportingMetricReader({
+  exporter: inMemoryMetricsExporter,
+  exportIntervalMillis: 100,
+  exportTimeoutMillis: 100,
+});
+
+otelTestingMeterProvider.addMetricReader(metricReader);
+
 const instrumentation = registerInstrumentationTesting(
   new MongoDBInstrumentation()
 );
 
+instrumentation.setMeterProvider(otelTestingMeterProvider);
+
 import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+
+async function waitForNumberOfExports(
+  exporter: InMemoryMetricExporter,
+  numberOfExports: number
+): Promise<ResourceMetrics[]> {
+  if (numberOfExports <= 0) {
+    throw new Error('numberOfExports must be greater than or equal to 0');
+  }
+
+  let totalExports = 0;
+  while (totalExports < numberOfExports) {
+    await new Promise(resolve => setTimeout(resolve, 20));
+    const exportedMetrics = exporter.getMetrics();
+    totalExports = exportedMetrics.length;
+  }
+
+  return exporter.getMetrics();
+}
 
 describe('MongoDBInstrumentation', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -99,6 +140,58 @@ describe('MongoDBInstrumentation', () => {
     if (client) {
       client.close();
     }
+  });
+
+  describe('Metrics', () => {
+    let metricsClient: mongodb.MongoClient;
+    let metricsCollection: mongodb.Collection;
+
+    beforeEach(done => {
+      inMemoryMetricsExporter.reset();
+      accessCollection(URL, DB_NAME, COLLECTION_NAME)
+        .then(result => {
+          metricsClient = result.client;
+          metricsCollection = result.collection;
+          done();
+        })
+        .catch((err: Error) => {
+          console.log(
+            'Skipping test-mongodb. Could not connect. Run MongoDB to test'
+          );
+          done();
+        });
+    });
+
+    afterEach(() => {
+      if (metricsClient) {
+        metricsClient.close();
+      }
+    });
+
+    it('Should add connection usage metrics', async () => {
+      const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+      const exportedMetrics = await waitForNumberOfExports(
+        inMemoryMetricsExporter,
+        1
+      );
+      console.log('fuckkkk: ' + exportedMetrics.length);
+      console.log(
+        'fuckkkk: ' + exportedMetrics[0].scopeMetrics[0].metrics.length
+      );
+
+      metricsCollection
+        .insertMany(insertData)
+        .then(async () => {
+          const exportedMetrics = await waitForNumberOfExports(
+            inMemoryMetricsExporter,
+            1
+          );
+          console.log('fuckkkk 2: ' + exportedMetrics.length);
+        })
+        .catch(err => {
+          assert.ifError(err);
+        });
+    });
   });
 
   /** Should intercept query */

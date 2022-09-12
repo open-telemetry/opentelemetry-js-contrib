@@ -46,15 +46,30 @@ import {
 } from './types';
 import { VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api-metrics';
+import { MeterProvider } from '@opentelemetry/sdk-metrics';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase {
-  private _connectionsUsage: UpDownCounter;
+  private _connectionsUsage!: UpDownCounter;
 
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
+    this._updateMetricInstruments();
+  }
 
-    this._connectionsUsage = this.meter.createUpDownCounter('fuckme');
+  override setMeterProvider(meterProvider: MeterProvider) {
+    super.setMeterProvider(meterProvider);
+    this._updateMetricInstruments();
+  }
+
+  private _updateMetricInstruments() {
+    this._connectionsUsage = this.meter.createUpDownCounter(
+      'active_connections',
+      {
+        description:
+          'The number of connections that are currently in state described by the state attribute.',
+      }
+    );
   }
 
   init() {
@@ -134,7 +149,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         const patchedCallback = function (err: any, conn: any) {
           instrumentation._connectionsUsage.add(1, {
             'db.client.connection.usage.state': 'idle',
-            'db.client.connection.usage.name': conn.id,
+            'db.client.connection.usage.name': conn?.id,
           });
 
           callback(err, conn);
