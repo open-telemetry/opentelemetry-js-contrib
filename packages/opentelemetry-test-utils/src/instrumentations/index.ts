@@ -17,7 +17,7 @@ import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { getInstrumentation } from './instrumentation-singelton';
 import { registerInstrumentationTestingProvider } from './otel-default-provider';
-import { resetMemoryExporter } from './otel-provider-api';
+import { resetTracingMemoryExporter } from './otel-provider-api';
 
 export * from './instrumentation-singelton';
 export * from './otel-provider-api';
@@ -48,7 +48,7 @@ export const mochaHooks = {
   },
 
   beforeEach(done: Function) {
-    resetMemoryExporter();
+    resetTracingMemoryExporter();
     // reset the config before each test, so that we don't leak state from one test to another
     getInstrumentation()?.setConfig({});
     done();

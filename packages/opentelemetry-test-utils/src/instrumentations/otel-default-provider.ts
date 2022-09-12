@@ -15,34 +15,69 @@
  */
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import {
-  NodeTracerProvider,
   NodeTracerConfig,
+  NodeTracerProvider,
 } from '@opentelemetry/sdk-trace-node';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
-  getTestMemoryExporter,
-  setTestMemoryExporter,
+  getMetricsTestMemoryExporter,
+  getTracingTestMemoryExporter, setMetricsTestMemoryExporter,
+  setTracingTestMemoryExporter,
 } from './otel-provider-api';
 
-export const registerInstrumentationTestingProvider = (
-  config?: NodeTracerConfig
-): NodeTracerProvider => {
-  const otelTestingProvider = new NodeTracerProvider(config);
+import {
+  AggregationTemporality,
+  InMemoryMetricExporter,
+  MeterProvider,
+  MeterProviderOptions,
+  PeriodicExportingMetricReader,
+} from '@opentelemetry/sdk-metrics';
 
-  setTestMemoryExporter(new InMemorySpanExporter());
-  otelTestingProvider.addSpanProcessor(
-    new SimpleSpanProcessor(getTestMemoryExporter()!)
+import { metrics } from '@opentelemetry/api-metrics';
+
+export type OTelProviders = {
+  traceProvider: NodeTracerProvider;
+  meterProvider?: MeterProvider;
+};
+
+export const registerInstrumentationTestingProvider = (
+  tracerConfig?: NodeTracerConfig,
+  meterConfig?: MeterProviderOptions
+): OTelProviders => {
+  const otelTestingTraceProvider = new NodeTracerProvider(tracerConfig);
+  const otelTestingMeterProvider = new MeterProvider(meterConfig);
+
+  setTracingTestMemoryExporter(new InMemorySpanExporter());
+  setMetricsTestMemoryExporter(
+    new InMemoryMetricExporter(AggregationTemporality.CUMULATIVE)
   );
 
+  otelTestingTraceProvider.addSpanProcessor(
+    new SimpleSpanProcessor(getTracingTestMemoryExporter()!)
+  );
+
+  const meterReader = new PeriodicExportingMetricReader({
+    exporter: getMetricsTestMemoryExporter()!,
+    exportIntervalMillis: 100,
+    exportTimeoutMillis: 100,
+  });
+
+  otelTestingMeterProvider.addMetricReader(meterReader);
+
   if (process.env.OTEL_EXPORTER_JAEGER_AGENT_HOST) {
-    otelTestingProvider.addSpanProcessor(
+    otelTestingTraceProvider.addSpanProcessor(
       new SimpleSpanProcessor(new JaegerExporter())
     );
   }
 
-  otelTestingProvider.register();
-  return otelTestingProvider;
+  otelTestingTraceProvider.register();
+  metrics.setGlobalMeterProvider(otelTestingMeterProvider);
+
+  return {
+    traceProvider: otelTestingTraceProvider,
+    meterProvider: otelTestingMeterProvider,
+  };
 };

@@ -18,27 +18,55 @@ import {
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-base';
 
-const OTEL_TESTING_MEMORY_EXPORTER = Symbol.for(
-  'opentelemetry.testing.memory_exporter'
+import { InMemoryMetricExporter } from '@opentelemetry/sdk-metrics';
+
+const OTEL_TRACING_TESTING_MEMORY_EXPORTER = Symbol.for(
+  'opentelemetry.tracing.testing.memory_exporter'
 );
 
-type OTelProviderApiGlobal = {
-  [OTEL_TESTING_MEMORY_EXPORTER]?: InMemorySpanExporter;
-};
-const _global = global as OTelProviderApiGlobal;
+const OTEL_METRICS_TESTING_MEMORY_EXPORTER = Symbol.for(
+  'opentelemetry.metrics.testing.memory_exporter'
+);
 
-export const getTestMemoryExporter = (): InMemorySpanExporter | undefined => {
-  return _global[OTEL_TESTING_MEMORY_EXPORTER];
+type OTelProvidersApiGlobal = {
+  [OTEL_TRACING_TESTING_MEMORY_EXPORTER]?: InMemorySpanExporter;
+  [OTEL_METRICS_TESTING_MEMORY_EXPORTER]?: InMemoryMetricExporter;
 };
 
-export const setTestMemoryExporter = (memoryExporter: InMemorySpanExporter) => {
-  _global[OTEL_TESTING_MEMORY_EXPORTER] = memoryExporter;
+const _global = global as OTelProvidersApiGlobal;
+
+export const getTracingTestMemoryExporter = ():
+  | InMemorySpanExporter
+  | undefined => {
+  return _global[OTEL_TRACING_TESTING_MEMORY_EXPORTER];
+};
+
+export const getMetricsTestMemoryExporter = ():
+  | InMemoryMetricExporter
+  | undefined => {
+  return _global[OTEL_METRICS_TESTING_MEMORY_EXPORTER];
+};
+
+export const setMetricsTestMemoryExporter = (
+  memoryExporter: InMemoryMetricExporter
+) => {
+  _global[OTEL_METRICS_TESTING_MEMORY_EXPORTER] = memoryExporter;
+};
+
+export const setTracingTestMemoryExporter = (
+  memoryExporter: InMemorySpanExporter
+) => {
+  _global[OTEL_TRACING_TESTING_MEMORY_EXPORTER] = memoryExporter;
 };
 
 export const getTestSpans = (): ReadableSpan[] => {
-  return getTestMemoryExporter()!.getFinishedSpans();
+  return getTracingTestMemoryExporter()!.getFinishedSpans();
 };
 
-export const resetMemoryExporter = () => {
-  getTestMemoryExporter()?.reset();
+export const resetTracingMemoryExporter = () => {
+  getTracingTestMemoryExporter()?.reset();
+};
+
+export const resetMetricsMemoryExporter = () => {
+  getMetricsTestMemoryExporter()?.reset();
 };
