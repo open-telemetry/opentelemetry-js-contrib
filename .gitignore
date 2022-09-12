@@ -84,3 +84,4 @@ package.json.lerna_backup
 
 # version.ts file is automatically generated at compile time
 version.ts
+/.vs
