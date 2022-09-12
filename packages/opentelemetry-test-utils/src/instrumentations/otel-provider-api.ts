@@ -18,7 +18,7 @@ import {
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-base';
 
-import { InMemoryMetricExporter } from '@opentelemetry/sdk-metrics';
+import {InMemoryMetricExporter, ResourceMetrics} from '@opentelemetry/sdk-metrics';
 
 const OTEL_TRACING_TESTING_MEMORY_EXPORTER = Symbol.for(
   'opentelemetry.tracing.testing.memory_exporter'
@@ -61,6 +61,10 @@ export const setTracingTestMemoryExporter = (
 
 export const getTestSpans = (): ReadableSpan[] => {
   return getTracingTestMemoryExporter()!.getFinishedSpans();
+};
+
+export const getTestMetrics = (): ResourceMetrics[] => {
+  return getMetricsTestMemoryExporter()!.getMetrics();
 };
 
 export const resetTracingMemoryExporter = () => {

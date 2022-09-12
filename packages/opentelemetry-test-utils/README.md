@@ -11,10 +11,10 @@ This package exports a mocha [root hook plugin](https://mochajs.org/#root-hook-p
 
 This package:
 
-- Initializes and registers a global trace provider for tests.
-- Registers a global memory exporter which can be referenced in test to access span.
+- Initializes and registers a global trace, metric provider for tests.
+- Registers a global memory exporters which (for both metricsm traces) can be referenced in test to access span.
 - Make sure there is only a single instance of an instrumentation class that is used across different `.spec.ts` files so patching is consistent, deterministic and idiomatic.
-- Reset the memory exporter before each test, so spans do not leak from one test to another.
+- Reset the memory exporters before each test, so spans do not leak from one test to another.
 - Optionally - export the test traces to Jaeger for convenience while debugging and developing.
 
 By using this package, testing instrumentation code can be shorter, and good practices for writing tests are more easily applied.
@@ -49,16 +49,21 @@ Or by using config file / package.json config:
     }
 ```
 
-1. In your `.spec` file, import `registerInstrumentationTesting` and `getTestSpans` functions and use them to create instrumentation class instance and make assertions in the test:
+1. In your `.spec` file, import `registerInstrumentationTesting`, `getTestSpans` and `getTestMetrics` functions and use them to create instrumentation class instance and make assertions in the test:
 
 ```js
-import { getTestSpans, registerInstrumentationTesting } from '@opentelemetry/test-utils';
+import {
+  getTestSpans,
+  getTestMetrics,
+  registerInstrumentationTesting,
+} from '@opentelemetry/test-utils';
 
 const instrumentation = registerInstrumentationTesting(new MyAwesomeInstrumentation());
 
 it('some test', () => {
     // your code that generate spans for this test
     const spans: ReadableSpan[] = getTestSpans();
+    const metrics: ResourceMetrics[] = getTestMetrics();
     // your code doing assertions with the spans array
 });
 ```
