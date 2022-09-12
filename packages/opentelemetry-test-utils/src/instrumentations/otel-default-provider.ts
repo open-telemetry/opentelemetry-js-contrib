@@ -24,7 +24,8 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import {
   getMetricsTestMemoryExporter,
-  getTracingTestMemoryExporter, setMetricsTestMemoryExporter,
+  getTracingTestMemoryExporter,
+  setMetricsTestMemoryExporter,
   setTracingTestMemoryExporter,
 } from './otel-provider-api';
 
