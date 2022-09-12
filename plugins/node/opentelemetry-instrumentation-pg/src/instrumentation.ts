@@ -30,6 +30,7 @@ import {
 import * as pgTypes from 'pg';
 import * as pgPoolTypes from 'pg-pool';
 import {
+  PgClientConnect,
   PgClientExtended,
   PgErrorCallback,
   NormalizedQueryConfig,
@@ -47,6 +48,7 @@ import {
 import { VERSION } from './version';
 
 const PG_POOL_COMPONENT = 'pg-pool';
+
 export class PgInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'pg';
 
@@ -76,13 +78,13 @@ export class PgInstrumentation extends InstrumentationBase {
         this._wrap(
           moduleExports.Client.prototype,
           'query',
-          this._getClientQueryPatch() as never
+          this._getClientQueryPatch() as any
         );
 
         this._wrap(
           moduleExports.Client.prototype,
           'connect',
-          this._getClientConnectPatch() as never
+          this._getClientConnectPatch() as any
         );
 
         return moduleExports;
@@ -106,7 +108,7 @@ export class PgInstrumentation extends InstrumentationBase {
         this._wrap(
           moduleExports.prototype,
           'connect',
-          this._getPoolConnectPatch() as never
+          this._getPoolConnectPatch() as any
         );
         return moduleExports;
       },
@@ -122,7 +124,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
   private _getClientConnectPatch() {
     const plugin = this;
-    return (original: typeof pgTypes.Client.prototype.connect) => {
+    return (original: PgClientConnect) => {
       return function connect(
         this: pgTypes.Client,
         callback?: PgErrorCallback
@@ -154,7 +156,7 @@ export class PgInstrumentation extends InstrumentationBase {
         const connectResult: unknown = context.with(
           trace.setSpan(context.active(), span),
           () => {
-            return original.call(this, callback as never);
+            return original.call(this, callback);
           }
         );
 
@@ -242,7 +244,7 @@ export class PgInstrumentation extends InstrumentationBase {
         }
 
         // Perform the original query
-        const result: unknown = original.apply(this, args as never);
+        const result: unknown = original.apply(this, args as any);
 
         // Bind promise to parent span and end the span
         if (result instanceof Promise) {
@@ -313,7 +315,7 @@ export class PgInstrumentation extends InstrumentationBase {
         const connectResult: unknown = context.with(
           trace.setSpan(context.active(), span),
           () => {
-            return originalConnect.call(this, callback as never);
+            return originalConnect.call(this, callback as any);
           }
         );
 
@@ -332,22 +334,17 @@ function handleConnectResult(span: Span, connectResult: unknown) {
   return context.bind(
     context.active(),
     connectResultPromise
-      .then(
-        result =>
-          new Promise(resolve => {
-            span.end();
-            resolve(result);
-          })
-      )
+      .then(result => {
+        span.end();
+        return result;
+      })
       .catch((error: Error) => {
-        return new Promise((_, reject) => {
-          span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: error.message,
-          });
-          span.end();
-          reject(error);
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error.message,
         });
+        span.end();
+        return Promise.reject(error);
       })
   );
 }

@@ -83,3 +83,7 @@ export interface PgPoolOptionsParams {
 export interface PgPoolExtended extends pgPoolTypes<pgTypes.Client> {
   options: PgPoolOptionsParams;
 }
+
+export type PgClientConnect = (
+  callback?: (err: Error) => void
+) => Promise<void> | void;
