@@ -40,7 +40,7 @@ import { metrics } from '@opentelemetry/api-metrics';
 
 export type OTelProviders = {
   traceProvider: NodeTracerProvider;
-  meterProvider?: MeterProvider;
+  meterProvider: MeterProvider;
 };
 
 export const registerInstrumentationTestingProvider = (
