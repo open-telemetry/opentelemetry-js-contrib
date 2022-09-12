@@ -357,21 +357,17 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
 
         return res
           .then((result: unknown) => {
-            return new Promise(resolve => {
-              span.end();
-              resolve(result);
-            });
+            span.end();
+            return result;
           })
           .catch((error: Error) => {
-            return new Promise((_, reject) => {
-              span.recordException(error);
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: error.message,
-              });
-              span.end();
-              reject(error);
+            span.recordException(error);
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: error.message,
             });
+            span.end();
+            return Promise.reject(error);
           });
       };
     };
