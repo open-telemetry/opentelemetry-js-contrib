@@ -18,9 +18,6 @@ export const setupTracing = (serviceName: string): api.Tracer => {
     })
   });
 
-  provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter()));
-  provider.addSpanProcessor(new SimpleSpanProcessor(new JaegerExporter()));
-
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();
 
@@ -29,11 +26,13 @@ export const setupTracing = (serviceName: string): api.Tracer => {
       new HttpInstrumentation(),
       new MongoDBInstrumentation({
         enhancedDatabaseReporting: true,
-
       }),
     ],
     tracerProvider: provider,
   });
 
-  return api.trace.getTracer('mysql-example');
+  provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter()));
+  provider.addSpanProcessor(new SimpleSpanProcessor(new JaegerExporter()));
+
+  return api.trace.getTracer('mongodb-example');
 };
