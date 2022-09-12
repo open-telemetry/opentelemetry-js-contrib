@@ -66,9 +66,23 @@ export const getTestSpans = (): ReadableSpan[] => {
   return getTracingTestMemoryExporter()!.getFinishedSpans();
 };
 
-export const getTestMetrics = (): ResourceMetrics[] => {
-  return getMetricsTestMemoryExporter()!.getMetrics();
-};
+export async function getTestMetrics(
+  numberOfExports: number
+): Promise<ResourceMetrics[]> {
+  if (numberOfExports <= 0) {
+    throw new Error('numberOfExports must be greater than or equal to 0');
+  }
+
+  const exporter = getMetricsTestMemoryExporter()!;
+  let totalExports = 0;
+  while (totalExports < numberOfExports) {
+    await new Promise(resolve => setTimeout(resolve, 20));
+    const exportedMetrics = exporter.getMetrics();
+    totalExports = exportedMetrics.length;
+  }
+
+  return exporter.getMetrics();
+}
 
 export const resetTracingMemoryExporter = () => {
   getTracingTestMemoryExporter()?.reset();
