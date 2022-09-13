@@ -88,6 +88,23 @@ describe('ioredis', () => {
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
 
   let contextManager: AsyncHooksContextManager;
+  let openedClients: ioredisTypes.Redis[] = [];
+
+  const getClient = async (options: any = {}) => {
+    // use lazyConnect so we can call the `connect` function and await it.
+    // this ensures that all operations are sequential and predictable.
+    const client = new ioredis(URL, { lazyConnect: true, ...options });
+    openedClients.push(client);
+    await client.connect();
+    return client;
+  };
+
+  afterEach(async () => {
+    const allClosed = Promise.all(openedClients.map(client => client.quit()));
+    openedClients = [];
+    return allClosed;
+  });
+
   beforeEach(() => {
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
@@ -377,18 +394,12 @@ describe('ioredis', () => {
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
           try {
-            // use lazyConnect so we can call the `connect` function and await it.
-            // this ensures that all operations are sequential and predictable.
-            const pub = new ioredis(URL, { lazyConnect: true });
-            await pub.connect();
-            const sub = new ioredis(URL, { lazyConnect: true });
-            await sub.connect();
+            const pub = await getClient();
+            const sub = await getClient();
             await sub.subscribe('news', 'music');
             await pub.publish('news', 'Hello world!');
             await pub.publish('music', 'Hello again!');
             await sub.unsubscribe('news', 'music');
-            await sub.quit();
-            await pub.quit();
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 10);
             span.end();
@@ -648,10 +659,8 @@ describe('ioredis', () => {
       });
 
       it('should not create child span for connect', async () => {
-        const lazyClient = new ioredis(URL, { lazyConnect: true });
-        await lazyClient.connect();
+        await getClient();
         const spans = memoryExporter.getFinishedSpans();
-        await lazyClient.quit();
         assert.strictEqual(spans.length, 0);
       });
     });
@@ -687,14 +696,12 @@ describe('ioredis', () => {
         };
         instrumentation.setConfig(config);
 
-        const lazyClient = new ioredis(URL, { lazyConnect: true });
-        await lazyClient.connect();
+        await getClient();
         const endedSpans = memoryExporter.getFinishedSpans();
         assert.strictEqual(endedSpans.length, 2);
         assert.strictEqual(endedSpans[0].name, 'connect');
         assert.strictEqual(endedSpans[1].name, 'info');
 
-        await lazyClient.quit();
         testUtils.assertSpan(
           endedSpans[0],
           SpanKind.CLIENT,
@@ -726,12 +733,9 @@ describe('ioredis', () => {
         };
         instrumentation.setConfig(config);
 
-        const lazyClient = new ioredis(URL, { lazyConnect: true });
-        await lazyClient.connect();
+        await getClient();
         const endedSpans = memoryExporter.getFinishedSpans();
         assert.strictEqual(endedSpans.length, 0);
-
-        await lazyClient.quit();
       });
     });
 
