@@ -42,7 +42,7 @@ import {
 } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { RedisResponseCustomAttributeFunction } from '../src/types';
-import { hrTimeToMilliseconds } from '@opentelemetry/core';
+import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
 
 describe('redis@^4.0.0', () => {
   before(function () {
@@ -71,7 +71,9 @@ describe('redis@^4.0.0', () => {
     client = createClient({
       url: redisTestUrl,
     });
-    await client.connect();
+    context.with(suppressTracing(context.active()), async () => {
+      await client.connect();
+    });
   });
 
   afterEach(async () => {
@@ -180,6 +182,54 @@ describe('redis@^4.0.0', () => {
         exceptions?.[0].attributes?.[SemanticAttributes.EXCEPTION_MESSAGE],
         'ERR value is not an integer or out of range'
       );
+    });
+  });
+
+  describe('client connect', () => {
+    it('produces a span', async () => {
+      const newClient = createClient({
+        url: redisTestUrl,
+      });
+
+      after(async () => {
+        await newClient.disconnect();
+      });
+
+      await newClient.connect();
+
+      const [span] = getTestSpans();
+
+      assert.strictEqual(span.name, 'redis-connect');
+
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_SYSTEM],
+        'redis'
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.NET_PEER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        redisTestUrl
+      );
+    });
+
+    it('sets error status on connection failure', async () => {
+      const newClient = createClient({
+        url: `redis://${redisTestConfig.host}:${redisTestConfig.port + 1}`,
+      });
+
+      await assert.rejects(newClient.connect());
+
+      const [span] = getTestSpans();
+
+      assert.strictEqual(span.name, 'redis-connect');
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
     });
   });
 
