@@ -124,7 +124,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4ConnectionPoolPatches<T extends V4Connect>() {
     return {
       v4PatchConnectionPool: (moduleExports: any, moduleVersion?: string) => {
-        this._connectionsUsage?.add(1, { me: 1 });
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         this._wrap(moduleExports, 'connect', this._getV4CheckInCommand());
         return moduleExports;
@@ -145,11 +144,18 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         options: any,
         callback: any
       ) {
-        instrumentation._connectionsUsage.add(1, { me: 1 });
         const patchedCallback = function (err: any, conn: any) {
           instrumentation._connectionsUsage.add(1, {
             'db.client.connection.usage.state': 'idle',
             'db.client.connection.usage.name': conn?.id,
+          });
+
+          conn.prependListener('close', () => {
+            console.log('closed: ' + conn.id);
+            instrumentation._connectionsUsage.add(-1, {
+              'db.client.connection.usage.state': 'idle',
+              'db.client.connection.usage.name': conn?.id,
+            });
           });
 
           callback(err, conn);

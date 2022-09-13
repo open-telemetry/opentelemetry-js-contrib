@@ -162,12 +162,12 @@ describe('MongoDBInstrumentation', () => {
         'fuckkkk: ' + exportedMetrics[0].scopeMetrics[0].metrics.length
       );
       await metricsCollection.insertMany(insertData);
+      await metricsClient.close();
       exportedMetrics = await waitForNumberOfExports(
         inMemoryMetricsExporter,
-        1
+        2
       );
-      await metricsClient.close();
-      console.log('fuckkkk: 2' + exportedMetrics.length);
+      console.log('fuckkkk2: ' + exportedMetrics.length);
       console.log(
         'fuckkkk2: ' + exportedMetrics[0].scopeMetrics[0].metrics.length
       );
