@@ -78,6 +78,25 @@ describe('OTTracePropagator', () => {
       assert.strictEqual(carrier[OT_SAMPLED_HEADER], 'true');
     });
 
+    it('correctly reads the sampled flag even if other flags are set', () => {
+      const spanContext: SpanContext = {
+        traceId: '80f198ee56343ba864fe8b2a57d3eff7',
+        spanId: 'e457b5a2e4d86bd1',
+        // 81 = 1000 0001, so this sets the sampled flag (rightmost bit) and one other flag (leftmost bit, semantics unspecified at the time of writing)
+        traceFlags: 81,
+      };
+
+      propagator.inject(
+        trace.setSpan(ROOT_CONTEXT, trace.wrapSpanContext(spanContext)),
+        carrier,
+        defaultTextMapSetter
+      );
+
+      assert.strictEqual(carrier[OT_TRACE_ID_HEADER], '64fe8b2a57d3eff7');
+      assert.strictEqual(carrier[OT_SPAN_ID_HEADER], 'e457b5a2e4d86bd1');
+      assert.strictEqual(carrier[OT_SAMPLED_HEADER], 'true');
+    });
+
     it('injects context with unspecified trace flags', () => {
       const spanContext: SpanContext = {
         traceId: '80f198ee56343ba864fe8b2a57d3eff7',
