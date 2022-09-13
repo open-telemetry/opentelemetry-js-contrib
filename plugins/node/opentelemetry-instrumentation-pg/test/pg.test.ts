@@ -64,7 +64,7 @@ const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
   [SemanticAttributes.DB_NAME]: CONFIG.database,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.DB_CONNECTION_STRING]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SemanticAttributes.DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
   [SemanticAttributes.DB_USER]: CONFIG.user,
 };
@@ -99,6 +99,7 @@ const testClientModule = (moduleName: string) => {
     instrumentation.enable();
   }
 
+  let postgres: typeof pg;
   let client: pg.Client;
   let instrumentation: PgInstrumentation;
   let contextManager: AsyncHooksContextManager;
@@ -142,6 +143,7 @@ const testClientModule = (moduleName: string) => {
 
     const mod = require(moduleName);
     client = new mod.Client(CONFIG);
+
     await client.connect();
   });
 
@@ -203,6 +205,81 @@ const testClientModule = (moduleName: string) => {
         }),
       'pg should not throw when invalid config args are provided'
     );
+  });
+
+  describe('#client.connect(...)', () => {
+    let connClient: pg.Client;
+
+    beforeEach(() => {
+      connClient = new postgres.Client(CONFIG);
+    });
+
+    afterEach(async () => {
+      await connClient.end();
+    });
+
+    it('should not return a promise when callback is provided', done => {
+      const res = connClient.connect(err => {
+        assert.strictEqual(err, null);
+        done();
+      });
+      assert.strictEqual(res, undefined, 'No promise is returned');
+    });
+
+    it('should return a promise if callback is not provided', done => {
+      const resPromise = connClient.connect();
+      resPromise
+        .then(res => {
+          assert.equal(res, undefined);
+          assert.deepStrictEqual(
+            memoryExporter.getFinishedSpans()[0].name,
+            'pg.connect'
+          );
+          done();
+        })
+        .catch((err: Error) => {
+          assert.ok(false, err.message);
+        });
+    });
+
+    it('should throw on failure', done => {
+      connClient = new postgres.Client({ ...CONFIG, port: 59999 });
+      connClient
+        .connect()
+        .then(() => assert.fail('expected connect to throw'))
+        .catch(err => {
+          assert(err instanceof Error);
+          done();
+        });
+    });
+
+    it('should call back with an error', done => {
+      connClient = new postgres.Client({ ...CONFIG, port: 59999 });
+      connClient.connect(err => {
+        assert(err instanceof Error);
+        done();
+      });
+    });
+
+    it('should intercept connect', async () => {
+      const span = tracer.startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), async () => {
+        await connClient.connect();
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1);
+        const connectSpan = spans[0];
+        assert.deepStrictEqual(connectSpan.name, 'pg.connect');
+        testUtils.assertSpan(
+          connectSpan,
+          SpanKind.CLIENT,
+          DEFAULT_ATTRIBUTES,
+          [],
+          { code: SpanStatusCode.UNSET }
+        );
+
+        testUtils.assertPropagation(connectSpan, span);
+      });
+    });
   });
 
   describe('#client.query(...)', () => {
@@ -566,10 +643,10 @@ const testClientModule = (moduleName: string) => {
   });
 });
 
-describe("pg", () => {
-  testClientModule("pg")
+describe('pg', () => {
+  testClientModule('pg');
 })
 
-describe("pg-native", () => {
-  testClientModule("pg-native")
+describe('pg-native', () => {
+  testClientModule('pg-native');
 })
