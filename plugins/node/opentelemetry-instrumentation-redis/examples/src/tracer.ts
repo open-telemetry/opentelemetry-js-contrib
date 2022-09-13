@@ -8,21 +8,22 @@ import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 const EXPORTER = process.env.EXPORTER || '';
 
 export const setupTracing = (serviceName: string) => {
-  const provider = new NodeTracerProvider();
+  const provider = new NodeTracerProvider({
+    resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+  }),});
 
   let exporter;
   if (EXPORTER.toLowerCase().startsWith('z')) {
-    exporter = new ZipkinExporter({
-      serviceName,
-    });
+    exporter = new ZipkinExporter();
   } else {
-    exporter = new JaegerExporter({
-      // serviceName,
-    });
+    exporter = new JaegerExporter();
   }
 
   provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
