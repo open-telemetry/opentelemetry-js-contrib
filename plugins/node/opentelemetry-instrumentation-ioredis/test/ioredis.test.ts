@@ -181,8 +181,7 @@ describe('ioredis', () => {
         });
       };
       const errorHandler = (err: Error) => {
-        assert.ifError(err);
-        client.quit(done);
+        client.quit(quitErr => done(err || quitErr));
       };
 
       context.with(trace.setSpan(context.active(), span), () => {
@@ -298,24 +297,20 @@ describe('ioredis', () => {
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
-          try {
-            await client.hset(hashKeyName, 'random', 'random');
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-            span.end();
-            const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, 'hset');
-            testUtils.assertSpan(
-              endedSpans[0],
-              SpanKind.CLIENT,
-              attributes,
-              [],
-              unsetStatus
-            );
-            testUtils.assertPropagation(endedSpans[0], span);
-          } catch (error) {
-            assert.ifError(error);
-          }
+          await client.hset(hashKeyName, 'random', 'random');
+          assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+          span.end();
+          const endedSpans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(endedSpans.length, 2);
+          assert.strictEqual(endedSpans[0].name, 'hset');
+          testUtils.assertSpan(
+            endedSpans[0],
+            SpanKind.CLIENT,
+            attributes,
+            [],
+            unsetStatus
+          );
+          testUtils.assertPropagation(endedSpans[0], span);
         });
       });
 
@@ -393,52 +388,48 @@ describe('ioredis', () => {
       it('should create a child span for pubsub', async () => {
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
-          try {
-            const pub = await getClient();
-            const sub = await getClient();
-            await sub.subscribe('news', 'music');
-            await pub.publish('news', 'Hello world!');
-            await pub.publish('music', 'Hello again!');
-            await sub.unsubscribe('news', 'music');
-            const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 10);
-            span.end();
-            assert.strictEqual(endedSpans.length, 11);
-            const expectedSpanNames = [
-              'connect',
-              'info',
-              'connect',
-              'info',
-              'subscribe',
-              'publish',
-              'publish',
-              'unsubscribe',
-              'quit',
-              'quit',
-              'test span',
-            ];
+          const pub = await getClient();
+          const sub = await getClient();
+          await sub.subscribe('news', 'music');
+          await pub.publish('news', 'Hello world!');
+          await pub.publish('music', 'Hello again!');
+          await sub.unsubscribe('news', 'music');
+          const endedSpans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(endedSpans.length, 10);
+          span.end();
+          assert.strictEqual(endedSpans.length, 11);
+          const expectedSpanNames = [
+            'connect',
+            'info',
+            'connect',
+            'info',
+            'subscribe',
+            'publish',
+            'publish',
+            'unsubscribe',
+            'quit',
+            'quit',
+            'test span',
+          ];
 
-            const actualSpanNames = endedSpans.map(s => s.name);
-            assert.deepStrictEqual(
-              actualSpanNames.sort(),
-              expectedSpanNames.sort()
-            );
+          const actualSpanNames = endedSpans.map(s => s.name);
+          assert.deepStrictEqual(
+            actualSpanNames.sort(),
+            expectedSpanNames.sort()
+          );
 
-            const attributes = {
-              ...DEFAULT_ATTRIBUTES,
-              [SemanticAttributes.DB_STATEMENT]: 'subscribe news music',
-            };
-            testUtils.assertSpan(
-              endedSpans[4],
-              SpanKind.CLIENT,
-              attributes,
-              [],
-              unsetStatus
-            );
-            testUtils.assertPropagation(endedSpans[0], span);
-          } catch (error) {
-            assert.ifError(error);
-          }
+          const attributes = {
+            ...DEFAULT_ATTRIBUTES,
+            [SemanticAttributes.DB_STATEMENT]: 'subscribe news music',
+          };
+          testUtils.assertSpan(
+            endedSpans[4],
+            SpanKind.CLIENT,
+            attributes,
+            [],
+            unsetStatus
+          );
+          testUtils.assertPropagation(endedSpans[0], span);
         });
       });
 
@@ -519,25 +510,21 @@ describe('ioredis', () => {
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
-          try {
-            const value = await client.get(testKeyName);
-            assert.strictEqual(value, 'data');
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-            span.end();
-            const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, 'get');
-            testUtils.assertSpan(
-              endedSpans[0],
-              SpanKind.CLIENT,
-              attributes,
-              [],
-              unsetStatus
-            );
-            testUtils.assertPropagation(endedSpans[0], span);
-          } catch (error) {
-            assert.ifError(error);
-          }
+          const value = await client.get(testKeyName);
+          assert.strictEqual(value, 'data');
+          assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+          span.end();
+          const endedSpans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(endedSpans.length, 2);
+          assert.strictEqual(endedSpans[0].name, 'get');
+          testUtils.assertSpan(
+            endedSpans[0],
+            SpanKind.CLIENT,
+            attributes,
+            [],
+            unsetStatus
+          );
+          testUtils.assertPropagation(endedSpans[0], span);
         });
       });
 
@@ -548,25 +535,21 @@ describe('ioredis', () => {
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
-          try {
-            const result = await client.del(testKeyName);
-            assert.strictEqual(result, 1);
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
-            span.end();
-            const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 2);
-            assert.strictEqual(endedSpans[0].name, 'del');
-            testUtils.assertSpan(
-              endedSpans[0],
-              SpanKind.CLIENT,
-              attributes,
-              [],
-              unsetStatus
-            );
-            testUtils.assertPropagation(endedSpans[0], span);
-          } catch (error) {
-            assert.ifError(error);
-          }
+          const result = await client.del(testKeyName);
+          assert.strictEqual(result, 1);
+          assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+          span.end();
+          const endedSpans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(endedSpans.length, 2);
+          assert.strictEqual(endedSpans[0].name, 'del');
+          testUtils.assertSpan(
+            endedSpans[0],
+            SpanKind.CLIENT,
+            attributes,
+            [],
+            unsetStatus
+          );
+          testUtils.assertPropagation(endedSpans[0], span);
         });
       });
 
@@ -811,16 +794,12 @@ describe('ioredis', () => {
       it('should not create a child span for hset promise upon error', async () => {
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
-          try {
-            await client.hset(hashKeyName, 'random', 'random');
-            assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-            span.end();
-            const endedSpans = memoryExporter.getFinishedSpans();
-            assert.strictEqual(endedSpans.length, 1);
-            assert.strictEqual(endedSpans[0].name, 'test span');
-          } catch (error) {
-            assert.ifError(error);
-          }
+          await client.hset(hashKeyName, 'random', 'random');
+          assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+          span.end();
+          const endedSpans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(endedSpans.length, 1);
+          assert.strictEqual(endedSpans[0].name, 'test span');
         });
       });
     });
