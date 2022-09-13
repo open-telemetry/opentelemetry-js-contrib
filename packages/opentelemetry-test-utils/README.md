@@ -60,7 +60,7 @@ import {
 
 const instrumentation = registerInstrumentationTesting(new MyAwesomeInstrumentation());
 
-it('some test', () => {
+it('some test', async () => {
     // your code that generate spans for this test
     const spans: ReadableSpan[] = getTestSpans();
     const metrics: ResourceMetrics[] = await getTestMetrics();
