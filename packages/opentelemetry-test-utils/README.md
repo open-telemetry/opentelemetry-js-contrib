@@ -63,7 +63,7 @@ const instrumentation = registerInstrumentationTesting(new MyAwesomeInstrumentat
 it('some test', () => {
     // your code that generate spans for this test
     const spans: ReadableSpan[] = getTestSpans();
-    const metrics: ResourceMetrics[] = getTestMetrics();
+    const metrics: ResourceMetrics[] = await getTestMetrics();
     // your code doing assertions with the spans array
 });
 ```
