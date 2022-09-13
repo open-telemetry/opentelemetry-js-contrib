@@ -641,7 +641,7 @@ const testClientModule = (moduleName: string) => {
       });
     });
   });
-});
+};
 
 describe('pg', () => {
   testClientModule('pg');
