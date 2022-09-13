@@ -143,34 +143,17 @@ describe('MongoDBInstrumentation', () => {
   });
 
   describe('Metrics', () => {
-    let metricsClient: mongodb.MongoClient;
-    let metricsCollection: mongodb.Collection;
-
-    beforeEach(done => {
+    beforeEach(() => {
       inMemoryMetricsExporter.reset();
-      accessCollection(URL, DB_NAME, COLLECTION_NAME)
-        .then(result => {
-          metricsClient = result.client;
-          metricsCollection = result.collection;
-          done();
-        })
-        .catch((err: Error) => {
-          console.log(
-            'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-          );
-          done();
-        });
-    });
-
-    afterEach(() => {
-      if (metricsClient) {
-        metricsClient.close();
-      }
     });
 
     it('Should add connection usage metrics', async () => {
+      const result = await accessCollection(URL, DB_NAME, COLLECTION_NAME);
+      const metricsClient = result.client;
+      const metricsCollection = result.collection;
+
       const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-      const exportedMetrics = await waitForNumberOfExports(
+      let exportedMetrics = await waitForNumberOfExports(
         inMemoryMetricsExporter,
         1
       );
@@ -178,19 +161,16 @@ describe('MongoDBInstrumentation', () => {
       console.log(
         'fuckkkk: ' + exportedMetrics[0].scopeMetrics[0].metrics.length
       );
-
-      metricsCollection
-        .insertMany(insertData)
-        .then(async () => {
-          const exportedMetrics = await waitForNumberOfExports(
-            inMemoryMetricsExporter,
-            1
-          );
-          console.log('fuckkkk 2: ' + exportedMetrics.length);
-        })
-        .catch(err => {
-          assert.ifError(err);
-        });
+      await metricsCollection.insertMany(insertData);
+      exportedMetrics = await waitForNumberOfExports(
+        inMemoryMetricsExporter,
+        1
+      );
+      await metricsClient.close();
+      console.log('fuckkkk: 2' + exportedMetrics.length);
+      console.log(
+        'fuckkkk2: ' + exportedMetrics[0].scopeMetrics[0].metrics.length
+      );
     });
   });
 
