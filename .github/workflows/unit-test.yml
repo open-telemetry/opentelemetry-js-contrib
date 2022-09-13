@@ -19,12 +19,14 @@ jobs:
               --ignore @opentelemetry/instrumentation-amqplib
               --ignore @opentelemetry/instrumentation-redis-4
               --ignore @opentelemetry/instrumentation-hapi
+              --ignore @opentelemetry/instrumentation-mongoose
           - node: "10"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-aws-sdk
               --ignore @opentelemetry/instrumentation-pino
               --ignore @opentelemetry/instrumentation-redis-4
               --ignore @opentelemetry/instrumentation-hapi
+              --ignore @opentelemetry/instrumentation-mongoose
           - node: "12"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-redis-4
