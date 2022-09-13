@@ -45,7 +45,7 @@ registerInstrumentations({
 });
 ```
 
-See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express/examples) for a short example.
+See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express/examples) for a short example.
 
 ### Caveats
 
@@ -60,6 +60,7 @@ Express instrumentation has few options available to choose from. You can set th
 | `ignoreLayers` | `IgnoreMatcher[]` | `[/^\/_internal\//]` | Ignore layers that by match. |
 | `ignoreLayersType`| `ExpressLayerType[]` | `['request_handler']` | Ignore layers of specified type. |
 | `spanNameHook` | `SpanNameHook` | `() => 'my-span-name'` | Can be used to customize span names by returning a new name from the hook. |
+| `requestHook` | `ExpressRequestCustomAttributeFunction (function)` | `(span, info) => {}` | Function for adding custom attributes on Express request. Receives params: `Span, ExpressRequestInfo`. |
 
 `ignoreLayers` accepts an array of elements of types:
 
@@ -78,6 +79,62 @@ Express instrumentation has few options available to choose from. You can set th
 - `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer or undefined when renaming the root HTTP instrumentation span.
 - `defaultName: string` - original name proposed by the instrumentation.
 
+#### Ignore a whole Express route
+
+In order to ignore whole traces that represent a given Express route, use
+the `ignoreIncomingRequestHook` option from
+`@opentelemetry/instrumentation-http` against the route path. Ideally, this
+shouldn't be necessary since spans should a have low cardinality and minimize
+interaction between instrumentation libraies but
+`@opentelemetry/instrumentation-express` renames the root span from
+`@opentelemetry/instrumentation-http` in order to get things in order.
+
+```js
+registerInstrumentations({
+  instrumentations: [
+    // Express instrumentation expects HTTP layer to be instrumented
+    new HttpInstrumentation({
+      ignoreIncomingRequestHook(req) {
+        // Ignore spans from static assets.
+        const isStaticAsset = !!req.url.match(/^\/static\/.*$/);
+        return isStaticAsset;
+      }
+    }),
+    new ExpressInstrumentation(),
+  ],
+});
+```
+
+#### Using `requestHook`
+
+Instrumentation configuration accepts a custom "hook" function which will be called for every instrumented Express layer involved in a request. Custom attributes can be set on the span or run any custom logic per layer.
+
+Here is a simple example that adds to the request handler span some attributes based on the Express request attributes:
+
+```javascript
+import { ExpressInstrumentation, ExpressLayerType } from "@opentelemetry/instrumentation-express"
+
+const expressInstrumentation = new ExpressInstrumentation({
+  requestHook: function (
+    span: Span,
+    info: ExpressRequestInfo,
+  ) {
+
+    if (info.layerType === ExpressLayerType.REQUEST_HANDLER) {
+      span.setAttribute(
+        'http.method',
+        info.request.method
+      );
+
+      span.setAttribute(
+        'express.base_url',
+        info.request.baseUrl
+      );
+    }
+  }
+});
+```
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
@@ -91,5 +148,5 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-dns
-[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-dns.svg
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-express
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-express.svg

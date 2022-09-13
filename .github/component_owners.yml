@@ -42,6 +42,8 @@ components:
     - blumamir
   plugins/node/opentelemetry-instrumentation-memcached:
     - rauno56
+  plugins/node/opentelemetry-instrumentation-mongodb:
+    - osherv
   plugins/node/opentelemetry-instrumentation-nestjs-core:
     - rauno56
   plugins/node/opentelemetry-instrumentation-redis:
@@ -64,6 +66,9 @@ components:
   propagators/opentelemetry-propagator-aws-xray:
     - NathanielRN
     - willarmiros
+  propagators/opentelemetry-propagator-instana:
+    - basti1302
+    - kirrg001
 
 ignored-authors:
   - renovate-bot
