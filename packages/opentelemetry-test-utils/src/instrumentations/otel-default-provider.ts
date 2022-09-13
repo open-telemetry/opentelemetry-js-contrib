@@ -34,10 +34,10 @@ import {
   InMemoryMetricExporter,
   MeterProvider,
   MeterProviderOptions,
-  PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 
 import { metrics } from '@opentelemetry/api-metrics';
+import { TestMetricReader } from '../TestMetricReader';
 
 export type OTelProviders = {
   traceProvider: NodeTracerProvider;
@@ -60,12 +60,7 @@ export const registerInstrumentationTestingProvider = (
     new SimpleSpanProcessor(getTracingTestMemoryExporter()!)
   );
 
-  // TODO: Use TestMetricReader once it released!
-  const meterReader = new PeriodicExportingMetricReader({
-    exporter: getMetricsTestMemoryExporter()!,
-    exportIntervalMillis: 100,
-    exportTimeoutMillis: 100,
-  });
+  const meterReader = new TestMetricReader(getMetricsTestMemoryExporter()!);
 
   otelTestingMeterProvider.addMetricReader(meterReader);
 
