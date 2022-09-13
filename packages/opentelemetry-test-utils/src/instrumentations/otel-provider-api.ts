@@ -67,8 +67,9 @@ export const getTestSpans = (): ReadableSpan[] => {
 };
 
 export async function getTestMetrics(
-  numberOfExports: number
+  numberOfExports?: number
 ): Promise<ResourceMetrics[]> {
+  numberOfExports = numberOfExports ?? 1;
   if (numberOfExports <= 0) {
     throw new Error('numberOfExports must be greater than or equal to 0');
   }

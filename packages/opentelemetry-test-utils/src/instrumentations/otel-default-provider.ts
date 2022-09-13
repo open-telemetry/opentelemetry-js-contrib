@@ -60,6 +60,7 @@ export const registerInstrumentationTestingProvider = (
     new SimpleSpanProcessor(getTracingTestMemoryExporter()!)
   );
 
+  // TODO: Use TestMetricReader once it released!
   const meterReader = new PeriodicExportingMetricReader({
     exporter: getMetricsTestMemoryExporter()!,
     exportIntervalMillis: 100,
