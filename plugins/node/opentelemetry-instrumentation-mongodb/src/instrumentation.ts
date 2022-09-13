@@ -68,6 +68,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
+        unit: '1',
       }
     );
   }
@@ -145,12 +146,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         callback: any
       ) {
         const patchedCallback = function (err: any, conn: any) {
+          console.log('adding connection: ' + conn.id);
           instrumentation._connectionsUsage.add(1, {
             'db.client.connection.usage.state': 'idle',
             'db.client.connection.usage.name': conn?.id,
           });
 
-          conn.prependListener('close', () => {
+          conn.on('close', () => {
             console.log('closed: ' + conn.id);
             instrumentation._connectionsUsage.add(-1, {
               'db.client.connection.usage.state': 'idle',
@@ -361,13 +363,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         const currentSpan = trace.getSpan(context.active());
         const resultHandler = callback;
 
-        instrumentation._connectionsUsage.add(1, {
-          'db.client.connection.usage.state': 'used',
-          'db.client.connection.usage.name': this.id,
-        });
-
         if (
-          !currentSpan ||
           typeof resultHandler !== 'function' ||
           typeof cmd !== 'object' ||
           cmd.ismaster ||
@@ -375,21 +371,41 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         ) {
           return original.call(this, ns, cmd, options, callback);
         }
-        const commandType = Object.keys(cmd)[0];
-        const span = instrumentation.tracer.startSpan(
-          `mongodb.${commandType}`,
-          {
-            kind: SpanKind.CLIENT,
-          }
-        );
-        instrumentation._populateV4Attributes(span, this, ns, cmd);
-        const patchedCallback = instrumentation._patchEnd(
-          span,
-          resultHandler,
-          this.id
-        );
+        console.log('command start: ' + this.id);
+        instrumentation._connectionsUsage.add(-1, {
+          'db.client.connection.usage.state': 'idle',
+          'db.client.connection.usage.name': this.id,
+        });
+        instrumentation._connectionsUsage.add(1, {
+          'db.client.connection.usage.state': 'used',
+          'db.client.connection.usage.name': this.id,
+        });
 
-        return original.call(this, ns, cmd, options, patchedCallback);
+        if (!currentSpan) {
+          const patchedCallback = instrumentation._patchEnd(
+            undefined,
+            resultHandler,
+            this.id
+          );
+
+          return original.call(this, ns, cmd, options, patchedCallback);
+        } else {
+          const commandType = Object.keys(cmd)[0];
+          const span = instrumentation.tracer.startSpan(
+            `mongodb.${commandType}`,
+            {
+              kind: SpanKind.CLIENT,
+            }
+          );
+          instrumentation._populateV4Attributes(span, this, ns, cmd);
+          const patchedCallback = instrumentation._patchEnd(
+            span,
+            resultHandler,
+            this.id
+          );
+
+          return original.call(this, ns, cmd, options, patchedCallback);
+        }
       };
     };
   }
@@ -724,7 +740,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
    * @param connectionId: The connection ID of the Command response.
    */
   private _patchEnd(
-    span: Span,
+    span: Span | undefined,
     resultHandler: Function,
     connectionId?: number
   ): Function {
@@ -734,24 +750,32 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const instrumentation = this;
     return function patchedEnd(this: {}, ...args: unknown[]) {
       const error = args[0];
-      if (error instanceof Error) {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: error.message,
-        });
-      } else {
-        const result = args[1] as CommandResult;
-        instrumentation._handleExecutionResult(span, result);
+      if (span) {
+        if (error instanceof Error) {
+          span?.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: error.message,
+          });
+        } else {
+          const result = args[1] as CommandResult;
+          instrumentation._handleExecutionResult(span, result);
+        }
+        span.end();
       }
 
       if (connectionId) {
+        console.log('command end: ' + connectionId);
         instrumentation._connectionsUsage.add(-1, {
+          'db.client.connection.usage.state': 'used',
+          'db.client.connection.usage.name': connectionId,
+        });
+        instrumentation._connectionsUsage.add(1, {
           'db.client.connection.usage.state': 'idle',
           'db.client.connection.usage.name': connectionId,
         });
+      } else {
+        console.log('command end no connection');
       }
-
-      span.end();
 
       return context.with(activeContext, () => {
         return resultHandler.apply(this, args);

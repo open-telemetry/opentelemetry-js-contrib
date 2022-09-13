@@ -148,11 +148,7 @@ describe('MongoDBInstrumentation', () => {
     });
 
     it('Should add connection usage metrics', async () => {
-      const result = await accessCollection(URL, DB_NAME, COLLECTION_NAME);
-      const metricsClient = result.client;
-      const metricsCollection = result.collection;
-
-      const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+      await inMemoryMetricsExporter.reset();
       let exportedMetrics = await waitForNumberOfExports(
         inMemoryMetricsExporter,
         1
@@ -161,11 +157,16 @@ describe('MongoDBInstrumentation', () => {
       console.log(
         'fuckkkk: ' + exportedMetrics[0].scopeMetrics[0].metrics.length
       );
-      await metricsCollection.insertMany(insertData);
+      const result = await accessCollection(URL, DB_NAME, COLLECTION_NAME);
+      const metricsClient = result.client;
+      //  const metricsCollection = result.collection;
+
+      // const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+      // await metricsCollection.insertMany(insertData);
       await metricsClient.close();
       exportedMetrics = await waitForNumberOfExports(
         inMemoryMetricsExporter,
-        2
+        1
       );
       console.log('fuckkkk2: ' + exportedMetrics.length);
       console.log(
