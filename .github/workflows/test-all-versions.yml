@@ -34,6 +34,7 @@ jobs:
               --ignore @opentelemetry/instrumentation-mongodb
               --ignore @opentelemetry/instrumentation-redis-4
               --ignore @opentelemetry/instrumentation-hapi
+              --ignore @opentelemetry/instrumentation-nestjs-core
     runs-on: ubuntu-latest
     services:
       memcached:
