@@ -64,7 +64,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   private _updateMetricInstruments() {
     this._connectionsUsage = this.meter.createUpDownCounter(
-      'active_connections',
+      'db.client.connections.usage',
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
@@ -146,14 +146,12 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         callback: any
       ) {
         const patchedCallback = function (err: any, conn: any) {
-          console.log('adding connection: ' + conn.id);
           instrumentation._connectionsUsage.add(1, {
             'db.client.connection.usage.state': 'idle',
             'db.client.connection.usage.name': conn?.id,
           });
 
           conn.on('close', () => {
-            console.log('closed: ' + conn.id);
             instrumentation._connectionsUsage.add(-1, {
               'db.client.connection.usage.state': 'idle',
               'db.client.connection.usage.name': conn?.id,
@@ -371,7 +369,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         ) {
           return original.call(this, ns, cmd, options, callback);
         }
-        console.log('command start: ' + this.id);
         instrumentation._connectionsUsage.add(-1, {
           'db.client.connection.usage.state': 'idle',
           'db.client.connection.usage.name': this.id,
@@ -764,7 +761,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       }
 
       if (connectionId) {
-        console.log('command end: ' + connectionId);
         instrumentation._connectionsUsage.add(-1, {
           'db.client.connection.usage.state': 'used',
           'db.client.connection.usage.name': connectionId,
@@ -773,8 +769,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           'db.client.connection.usage.state': 'idle',
           'db.client.connection.usage.name': connectionId,
         });
-      } else {
-        console.log('command end no connection');
       }
 
       return context.with(activeContext, () => {

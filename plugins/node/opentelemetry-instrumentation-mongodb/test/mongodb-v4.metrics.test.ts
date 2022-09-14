@@ -20,12 +20,14 @@ import { MongoDBInstrumentation } from '../src';
 
 // TODO: use test-utils after the new package has released.
 import {
-  AggregationTemporality,
+  AggregationTemporality, DataPointType,
   InMemoryMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
   ResourceMetrics,
 } from '@opentelemetry/sdk-metrics';
+
+import * as mongodb from 'mongodb';
 
 const otelTestingMeterProvider = new MeterProvider();
 const inMemoryMetricsExporter = new InMemoryMetricExporter(
@@ -45,6 +47,8 @@ instrumentation.enable();
 instrumentation.setMeterProvider(otelTestingMeterProvider);
 
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
+
+import * as assert from 'assert';
 
 async function waitForNumberOfExports(
   exporter: InMemoryMetricExporter,
@@ -69,9 +73,6 @@ describe('MongoDBInstrumentation', () => {
   // these tests.
   const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
   let shouldTest = true;
-  if (shouldTest) {
-    console.log('running');
-  }
   if (!RUN_MONGODB_TESTS) {
     console.log('Skipping test-mongodb. Run MongoDB to test');
     shouldTest = false;
@@ -83,24 +84,89 @@ describe('MongoDBInstrumentation', () => {
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
   const COLLECTION_NAME = 'test';
 
-  describe('Metrics', () => {
-    beforeEach(() => {
-      inMemoryMetricsExporter.reset();
-    });
+  let client: mongodb.MongoClient;
+  let collection: mongodb.Collection;
 
-    it('Should add connection usage metrics', async () => {
-      const result = await accessCollection(URL, DB_NAME, COLLECTION_NAME);
-      const metricsClient = result.client;
-      const metricsCollection = result.collection;
-      waitForNumberOfExports(inMemoryMetricsExporter, 1).then(
-        (exportedMetrics: ResourceMetrics[]) => {
-          console.log(exportedMetrics);
-        }
-      );
+  beforeEach(function mongoBeforeEach(done) {
+    // Skipping all tests in beforeEach() is a workaround. Mocha does not work
+    // properly when skipping tests in before() on nested describe() calls.
+    // https://github.com/mochajs/mocha/issues/2819
+    if (!shouldTest) {
+      this.skip();
+    }
+    inMemoryMetricsExporter.reset();
+    done();
+  });
 
-      const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-      await metricsCollection.insertMany(insertData);
-      await metricsClient.close();
-    });
+  it('Should add connection usage metrics', async () => {
+    const result = await accessCollection(URL, DB_NAME, COLLECTION_NAME);
+    client = result.client;
+    collection = result.collection;
+    const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+    await collection.insertMany(insertData);
+    await collection.deleteMany({});
+    let exportedMetrics = await waitForNumberOfExports(
+      inMemoryMetricsExporter,
+      1
+    );
+
+    assert.strictEqual(exportedMetrics.length, 1);
+    let metrics = exportedMetrics[0].scopeMetrics[0].metrics;
+    assert.strictEqual(metrics.length, 1);
+    assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+
+    assert.strictEqual(
+      metrics[0].descriptor.description,
+      'The number of connections that are currently in state described by the state attribute.'
+    );
+    assert.strictEqual(metrics[0].descriptor.unit, '1');
+    assert.strictEqual(
+      metrics[0].descriptor.name,
+      'db.client.connections.usage'
+    );
+    assert.strictEqual(metrics[0].dataPoints.length, 3);
+    assert.strictEqual(metrics[0].dataPoints[0].value, 1);
+    assert.strictEqual(
+      metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
+      'idle'
+    );
+    assert.strictEqual(metrics[0].dataPoints[1].value, 1);
+    assert.strictEqual(
+      metrics[0].dataPoints[1].attributes['db.client.connection.usage.state'],
+      'idle'
+    );
+    assert.strictEqual(metrics[0].dataPoints[2].value, 0);
+    assert.strictEqual(
+      metrics[0].dataPoints[2].attributes['db.client.connection.usage.state'],
+      'used'
+    );
+    await client.close();
+
+    exportedMetrics = await waitForNumberOfExports(inMemoryMetricsExporter, 2);
+    assert.strictEqual(exportedMetrics.length, 2);
+    metrics = exportedMetrics[1].scopeMetrics[0].metrics;
+    assert.strictEqual(metrics.length, 1);
+    assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+
+    assert.strictEqual(
+      metrics[0].descriptor.description,
+      'The number of connections that are currently in state described by the state attribute.'
+    );
+    assert.strictEqual(metrics[0].dataPoints.length, 3);
+    assert.strictEqual(metrics[0].dataPoints[0].value, 0);
+    assert.strictEqual(
+      metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
+      'idle'
+    );
+    assert.strictEqual(metrics[0].dataPoints[1].value, 0);
+    assert.strictEqual(
+      metrics[0].dataPoints[1].attributes['db.client.connection.usage.state'],
+      'idle'
+    );
+    assert.strictEqual(metrics[0].dataPoints[2].value, 0);
+    assert.strictEqual(
+      metrics[0].dataPoints[2].attributes['db.client.connection.usage.state'],
+      'used'
+    );
   });
 });
