@@ -148,6 +148,13 @@ describe('NetInstrumentation', () => {
       });
     });
 
+    it('should create a tcp span when port is given as string', done => {
+      socket = socket.connect(String(PORT) as unknown as number, HOST, () => {
+        assertTcpSpan(getSpan(), socket);
+        done();
+      });
+    });
+
     it('should produce a span given options', done => {
       socket.connect(
         {
