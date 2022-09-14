@@ -79,10 +79,9 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       v3UnpatchConnection: v3UnpatchConnection,
     } = this._getV3Patches();
 
-    const { v4PatchConnectionPool, v4UnPatchConnectionPool } =
-      this._getV4ConnectionPoolPatches();
-
-    const { v4PatchConnection, v4UnpatchConnection } = this._getV4Patches();
+    const { v4PatchConnect, v4UnPatchConnect } = this._getV4ConnectPatches();
+    const { v4PatchConnection, v4UnpatchConnection } =
+      this._getV4ConnectionPatches();
 
     return [
       new InstrumentationNodeModuleDefinition<any>(
@@ -114,33 +113,39 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile<V4Connect>(
             'mongodb/lib/cmap/connect.js',
             ['4.*'],
-            v4PatchConnectionPool,
-            v4UnPatchConnectionPool
+            v4PatchConnect,
+            v4UnPatchConnect
           ),
         ]
       ),
     ];
   }
 
-  private _getV4ConnectionPoolPatches<T extends V4Connect>() {
+  private _getV4ConnectPatches<T extends V4Connect>() {
     return {
-      v4PatchConnectionPool: (moduleExports: any, moduleVersion?: string) => {
+      v4PatchConnect: (moduleExports: any, moduleVersion?: string) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
-        this._wrap(moduleExports, 'connect', this._getV4CheckInCommand());
+        if (isWrapped(moduleExports.connect)) {
+          this._unwrap(moduleExports, 'connect');
+        }
+
+        this._wrap(moduleExports, 'connect', this._getV4ConnectCommand());
         return moduleExports;
       },
-      v4UnPatchConnectionPool: (moduleExports?: T, moduleVersion?: string) => {
+      v4UnPatchConnect: (moduleExports?: T, moduleVersion?: string) => {
         diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         if (moduleExports === undefined) return;
+
+        this._unwrap(moduleExports, 'connect');
       },
     };
   }
 
-  private _getV4CheckInCommand() {
+  private _getV4ConnectCommand() {
     const instrumentation = this;
 
     return (original: V4Connect['connect']) => {
-      return function patchedCheckInCommand(
+      return function patchedConnect(
         this: unknown,
         options: any,
         callback: any
@@ -227,7 +232,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private _getV4Patches<T extends V4Connection>() {
+  private _getV4ConnectionPatches<T extends V4Connection>() {
     return {
       v4PatchConnection: (moduleExports: any, moduleVersion?: string) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);

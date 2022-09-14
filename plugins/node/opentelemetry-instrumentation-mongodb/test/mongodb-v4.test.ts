@@ -511,7 +511,8 @@ describe('MongoDBInstrumentation', () => {
         .createIndex({ a: 1 })
         .then(() => {
           span.end();
-          assert.strictEqual(getTestSpans().length, 1);
+          const x = getTestSpans();
+          assert.strictEqual(x.length, 1);
           done();
         })
         .catch(err => {
