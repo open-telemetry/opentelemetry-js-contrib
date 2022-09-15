@@ -62,10 +62,6 @@ export class AwsEcsDetector implements Detector {
     const metadataResource =
       containerAndHostnameResource.merge(metadatav4Resource);
 
-    // if (!metadataResource.attributes) {
-    //   return Resource.empty();
-    // }
-
     /*
      * We return the Cloud Provider and Platform only when some other more detailed
      * attributes are available
