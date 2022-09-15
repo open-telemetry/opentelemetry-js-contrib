@@ -74,6 +74,20 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     ];
   }
 
+  override getConfig(): DataloaderInstrumentationConfig {
+    return this._config;
+  }
+
+  override setConfig(config: DataloaderInstrumentationConfig) {
+    this._config = config;
+  }
+
+  private shouldCreateSpans(): boolean {
+    const config = this.getConfig();
+    const hasParentSpan = trace.getSpan(context.active()) !== undefined;
+    return hasParentSpan || !config.requireParentSpan;
+  }
+
   private _getPatchedConstructor(
     constructor: typeof Dataloader
   ): typeof Dataloader {
@@ -98,7 +112,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
           this: DataloaderInternal,
           ...args: Parameters<Dataloader.BatchLoadFn<unknown, unknown>>
         ) {
-          if (!self.isEnabled()) {
+          if (!self.isEnabled() || !self.shouldCreateSpans()) {
             return original.call(this, ...args);
           }
 
@@ -152,6 +166,10 @@ export class DataloaderInstrumentation extends InstrumentationBase {
       this: typeof Dataloader.prototype,
       ...args: Parameters<typeof original>
     ) {
+      if (!instrumentation.shouldCreateSpans()) {
+        return original.call(this, ...args);
+      }
+
       const parent = context.active();
       const span = instrumentation.tracer.startSpan(
         `${MODULE_NAME}.load`,
@@ -206,6 +224,10 @@ export class DataloaderInstrumentation extends InstrumentationBase {
       this: typeof Dataloader.prototype,
       ...args: Parameters<typeof original>
     ) {
+      if (!instrumentation.shouldCreateSpans()) {
+        return original.call(this, ...args);
+      }
+
       const parent = context.active();
       const span = instrumentation.tracer.startSpan(
         `${MODULE_NAME}.loadMany`,

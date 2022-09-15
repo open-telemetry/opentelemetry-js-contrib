@@ -57,6 +57,7 @@ describe('DataloaderInstrumentation', () => {
   afterEach(() => {
     memoryExporter.reset();
     context.disable();
+    instrumentation.setConfig({});
     instrumentation.disable();
     extraInstrumentation.disable();
   });
@@ -81,6 +82,24 @@ describe('DataloaderInstrumentation', () => {
     });
 
     it('attaches span to parent', async () => {
+      const rootSpan: any = tracer.startSpan('root');
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          assert.strictEqual(await dataloader.load('test'), 0);
+
+          const [_, loadSpan] = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            loadSpan.parentSpanId,
+            rootSpan.spanContext().spanId
+          );
+        }
+      );
+    });
+
+    it('attaches span to parent with required parent', async () => {
+      instrumentation.setConfig({ requireParentSpan: true });
       const rootSpan: any = tracer.startSpan('root');
 
       await context.with(
@@ -167,6 +186,24 @@ describe('DataloaderInstrumentation', () => {
       );
     });
 
+    it('attaches span to parent with required parent', async () => {
+      instrumentation.setConfig({ requireParentSpan: true });
+      const rootSpan: any = tracer.startSpan('root');
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          assert.deepStrictEqual(await dataloader.loadMany(['test']), [0]);
+
+          const [, , loadManySpan] = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            loadManySpan.parentSpanId,
+            rootSpan.spanContext().spanId
+          );
+        }
+      );
+    });
+
     it('never errors, even if underlying load fails', async () => {
       const failingDataloader = new Dataloader(async keys => {
         throw new Error('Error message');
@@ -214,6 +251,14 @@ describe('DataloaderInstrumentation', () => {
     );
     assert.strictEqual(await alternativeDataloader.load('test'), 1);
     assert.deepStrictEqual(await alternativeDataloader.loadMany(['test']), [1]);
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+  });
+
+  it('should not create anything if parent span is required, but missing', async () => {
+    instrumentation.setConfig({ requireParentSpan: true });
+
+    assert.strictEqual(await dataloader.load('test'), 0);
+    assert.deepStrictEqual(await dataloader.loadMany(['test']), [0]);
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 

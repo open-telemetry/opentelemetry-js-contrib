@@ -39,6 +39,14 @@ registerInstrumentations({
 });
 ```
 
+### Dataloader Instrumentation Options
+
+Dataloader instrumentation has some configuration options
+
+| Options             | Type      | Description                                                                             |
+| ------------------- | --------- | --------------------------------------------------------------------------------------- |
+| `requireParentSpan` | `boolean` | Require a parent span in order to create dataloader spans, default when unset is false. |
+
 ### Spans created
 
 Each call to `.load` or `.loadMany` will create a child span for the current active span.
