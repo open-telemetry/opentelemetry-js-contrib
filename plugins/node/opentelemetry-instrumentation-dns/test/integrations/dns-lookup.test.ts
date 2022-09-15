@@ -185,7 +185,7 @@ describe('dns.lookup()', () => {
     it('should include dns.hostname attribute if requested', done => {
       const hostname = 'google.com';
       const config: DnsInstrumentationConfig = {
-        addHostnameAttribute: true,
+        includeHostname: true,
       };
       instrumentation.setConfig(config);
 

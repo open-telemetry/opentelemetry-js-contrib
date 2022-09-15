@@ -201,7 +201,7 @@ describe('dns.promises.lookup()', () => {
     it('should include dns.hostname attribute if configured', async () => {
       const hostname = 'google.com';
       const config: DnsInstrumentationConfig = {
-        addHostnameAttribute: true,
+        includeHostname: true,
       };
       instrumentation.setConfig(config);
 

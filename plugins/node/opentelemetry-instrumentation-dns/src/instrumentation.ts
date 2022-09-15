@@ -112,7 +112,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
       diag.debug('wrap lookup callback function and starts span');
       const name = utils.getOperationName('lookup');
       let opts = null;
-      if (plugin._config?.addHostnameAttribute) {
+      if (plugin._config?.includeHostname) {
         opts = {
           attributes: {
             [AttributeNames.DNS_HOSTNAME]: hostname,

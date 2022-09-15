@@ -100,5 +100,5 @@ export interface DnsInstrumentationConfig extends InstrumentationConfig {
   ignoreHostnames?: IgnoreMatcher[];
 
   /** Add target of dns lookup as span attribute in dns.lookup, default is false */
-  addHostnameAttribute?: boolean;
+  includeHostname?: boolean;
 }
