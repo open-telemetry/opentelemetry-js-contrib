@@ -20,6 +20,7 @@
     "packages/opentelemetry-test-utils": {},
     "plugins/node/instrumentation-lru-memoizer": {},
     "plugins/node/instrumentation-amqplib": {},
+    "plugins/node/instrumentation-dataloader": {},
     "plugins/node/instrumentation-fs": {},
     "plugins/node/instrumentation-tedious": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},
