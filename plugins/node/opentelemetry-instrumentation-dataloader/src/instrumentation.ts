@@ -87,41 +87,50 @@ export class DataloaderInstrumentation extends InstrumentationBase<
     ) {
       const inst = new constructor(...args) as DataloaderInternal;
 
-      const originalBatchLoadFn = inst._batchLoadFn;
+      if (!self.isEnabled()) {
+        return inst;
+      }
 
-      inst._batchLoadFn = function patchedBatchLoadFn(
-        ...args: Parameters<Dataloader.BatchLoadFn<unknown, unknown>>
-      ) {
-        if (!self.isEnabled()) {
-          return originalBatchLoadFn.call(this, ...args);
-        }
+      if (isWrapped(inst._batchLoadFn)) {
+        self._unwrap(inst, '_batchLoadFn');
+      }
 
-        const parent = context.active();
-        const span = self.tracer.startSpan(
-          `${MODULE_NAME}.batch`,
-          {
-            links: inst._batch?.spanLinks as Link[] | undefined,
-          },
-          parent
-        );
+      self._wrap(inst, '_batchLoadFn', (original) => {
+        return function patchedBatchLoadFn(
+          this: DataloaderInternal,
+          ...args: Parameters<Dataloader.BatchLoadFn<unknown, unknown>>
+        ) {
+          if (!self.isEnabled()) {
+            return original.call(this, ...args);
+          }
 
-        return context.with(trace.setSpan(parent, span), () => {
-          return (originalBatchLoadFn.apply(inst, args) as Promise<unknown[]>)
-            .then(value => {
-              span.end();
-              return value;
-            })
-            .catch(err => {
-              span.recordException(err);
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: err.message,
+          const parent = context.active();
+          const span = self.tracer.startSpan(
+            `${MODULE_NAME}.batch`,
+            {
+              links: this._batch?.spanLinks as Link[] | undefined,
+            },
+            parent
+          );
+
+          return context.with(trace.setSpan(parent, span), () => {
+            return (original.apply(this, args) as Promise<unknown[]>)
+              .then(value => {
+                span.end();
+                return value;
+              })
+              .catch(err => {
+                span.recordException(err);
+                span.setStatus({
+                  code: SpanStatusCode.ERROR,
+                  message: err.message,
+                });
+                span.end();
+                throw err;
               });
-              span.end();
-              throw err;
-            });
-        });
-      };
+          });
+        }
+      });
 
       return inst;
     }
@@ -145,10 +154,6 @@ export class DataloaderInstrumentation extends InstrumentationBase<
       this: typeof Dataloader.prototype,
       ...args: Parameters<typeof original>
     ) {
-      if (!instrumentation.isEnabled()) {
-        return original.call(this, ...args);
-      }
-
       const parent = context.active();
       const span = instrumentation.tracer.startSpan(
         `${MODULE_NAME}.load`,
@@ -203,10 +208,6 @@ export class DataloaderInstrumentation extends InstrumentationBase<
       this: typeof Dataloader.prototype,
       ...args: Parameters<typeof original>
     ) {
-      if (!instrumentation.isEnabled()) {
-        return original.call(this, ...args);
-      }
-
       const parent = context.active();
       const span = instrumentation.tracer.startSpan(
         `${MODULE_NAME}.loadMany`,
