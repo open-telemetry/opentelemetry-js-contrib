@@ -20,7 +20,8 @@ import { MongoDBInstrumentation } from '../src';
 
 // TODO: use test-utils after the new package has released.
 import {
-  AggregationTemporality, DataPointType,
+  AggregationTemporality,
+  DataPointType,
   InMemoryMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
@@ -81,8 +82,8 @@ describe('MongoDBInstrumentation', () => {
   const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
     process.env.MONGODB_PORT || '27017'
   }`;
-  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
-  const COLLECTION_NAME = 'test';
+  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics';
+  const COLLECTION_NAME = 'test-metrics';
 
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
@@ -119,7 +120,7 @@ describe('MongoDBInstrumentation', () => {
       metrics[0].descriptor.description,
       'The number of connections that are currently in state described by the state attribute.'
     );
-    assert.strictEqual(metrics[0].descriptor.unit, '1');
+    assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
     assert.strictEqual(
       metrics[0].descriptor.name,
       'db.client.connections.usage'

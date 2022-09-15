@@ -42,6 +42,7 @@ describe('MongoDBInstrumentation', () => {
   // these tests.
   const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
   let shouldTest = true;
+  console.log('hey you')
   if (!RUN_MONGODB_TESTS) {
     console.log('Skipping test-mongodb. Run MongoDB to test');
     shouldTest = false;
@@ -50,8 +51,8 @@ describe('MongoDBInstrumentation', () => {
   const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
     process.env.MONGODB_PORT || '27017'
   }`;
-  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
-  const COLLECTION_NAME = 'test';
+  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-traces';
+  const COLLECTION_NAME = 'test-traces';
 
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
@@ -511,8 +512,7 @@ describe('MongoDBInstrumentation', () => {
         .createIndex({ a: 1 })
         .then(() => {
           span.end();
-          const x = getTestSpans();
-          assert.strictEqual(x.length, 1);
+          assert.strictEqual(getTestSpans().length, 1);
           done();
         })
         .catch(err => {
