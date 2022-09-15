@@ -62,6 +62,7 @@ export class DockerDetector implements Detector {
           return str.substring(str.length - this.CONTAINER_ID_LENGTH);
         }
       }
+
       // If this code is reached - we then check for the V2_PATH
       rawData = await DockerDetector.readFileAsync(
         this.DEFAULT_CGROUP_V2_PATH,
@@ -69,12 +70,12 @@ export class DockerDetector implements Detector {
       );
 
       splitData = rawData.trim().split('\n');
-      for (const str of splitData) {
-        if (str.length >= this.CONTAINER_ID_LENGTH) {
-          return str.substring(str.length - this.CONTAINER_ID_LENGTH);
-        }
+      for (let str of splitData) {
+        str = str
+          .split('/')
+          .filter(s => s.length >= this.CONTAINER_ID_LENGTH)[0];
+        return str.substring(str.length - this.CONTAINER_ID_LENGTH);
       }
-
     } catch (e) {
       if (e instanceof Error) {
         const errorMessage = e.message;
