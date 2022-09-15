@@ -29,7 +29,7 @@ import {
 } from '@opentelemetry/api';
 import { DataloaderInstrumentationConfig } from './types';
 import { VERSION } from './version';
-import * as Dataloader from 'dataloader';
+import type * as Dataloader from 'dataloader';
 
 const MODULE_NAME = 'dataloader';
 
@@ -41,9 +41,7 @@ type DataloaderInternal = typeof Dataloader.prototype & {
 type LoadFn = typeof Dataloader.prototype['load'];
 type LoadManyFn = typeof Dataloader.prototype['loadMany'];
 
-export class DataloaderInstrumentation extends InstrumentationBase<
-  typeof Dataloader
-> {
+export class DataloaderInstrumentation extends InstrumentationBase {
   constructor(config: DataloaderInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-dataloader', VERSION, config);
   }
@@ -95,7 +93,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<
         self._unwrap(inst, '_batchLoadFn');
       }
 
-      self._wrap(inst, '_batchLoadFn', (original) => {
+      self._wrap(inst, '_batchLoadFn', original => {
         return function patchedBatchLoadFn(
           this: DataloaderInternal,
           ...args: Parameters<Dataloader.BatchLoadFn<unknown, unknown>>
@@ -129,7 +127,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<
                 throw err;
               });
           });
-        }
+        };
       });
 
       return inst;

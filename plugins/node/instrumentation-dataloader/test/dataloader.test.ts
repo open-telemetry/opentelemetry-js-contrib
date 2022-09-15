@@ -48,7 +48,9 @@ describe('DataloaderInstrumentation', () => {
     instrumentation.enable();
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
-    dataloader = new Dataloader(async keys => keys.map((_, idx) => idx), { cache: false });
+    dataloader = new Dataloader(async keys => keys.map((_, idx) => idx), {
+      cache: false,
+    });
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
@@ -206,7 +208,10 @@ describe('DataloaderInstrumentation', () => {
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
     // Same goes for any new dataloaders that are created while the instrumentation is disabled
-    const alternativeDataloader = new Dataloader(async (keys) => keys.map(() => 1), { cache: false });
+    const alternativeDataloader = new Dataloader(
+      async keys => keys.map(() => 1),
+      { cache: false }
+    );
     assert.strictEqual(await alternativeDataloader.load('test'), 1);
     assert.deepStrictEqual(await alternativeDataloader.loadMany(['test']), [1]);
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
@@ -224,7 +229,10 @@ describe('DataloaderInstrumentation', () => {
     memoryExporter.reset();
 
     // Same goes for any new dataloaders that are created after the extra instrumentation is added
-    const alternativeDataloader = new Dataloader(async (keys) => keys.map(() => 1), { cache: false });
+    const alternativeDataloader = new Dataloader(
+      async keys => keys.map(() => 1),
+      { cache: false }
+    );
     assert.strictEqual(await alternativeDataloader.load('test'), 1);
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
 

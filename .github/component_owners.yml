@@ -18,6 +18,8 @@ components:
     - willarmiros
   plugins/node/instrumentation-amqplib:
     - blumamir
+  plugins/node/instrumentation-dataloader:
+    - henrinormak
   plugins/node/instrumentation-fs:
     - rauno56
   plugins/node/instrumentation-tedious:
@@ -29,8 +31,6 @@ components:
     - NathanielRN
     - willarmiros
     - blumamir
-  plugins/node/opentelemetry-instrumentation-dataloader:
-    - henrinormak
   plugins/node/opentelemetry-instrumentation-generic-pool:
     - rauno56
   plugins/node/opentelemetry-instrumentation-graphql:
