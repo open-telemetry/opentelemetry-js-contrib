@@ -62,9 +62,9 @@ export class AwsEcsDetector implements Detector {
     const metadataResource =
       containerAndHostnameResource.merge(metadatav4Resource);
 
-    if (!metadataResource.attributes) {
-      return Resource.empty();
-    }
+    // if (!metadataResource.attributes) {
+    //   return Resource.empty();
+    // }
 
     /*
      * We return the Cloud Provider and Platform only when some other more detailed
@@ -163,20 +163,8 @@ export class AwsEcsDetector implements Detector {
     const logsRegion =
       logOptions['awslogs-region'] ||
       AwsEcsDetector._getRegionFromArn(containerArn);
-    if (!logsRegion) {
-      diag.warn(
-        `Cannot retrieve AWS region from container ARN: ${containerArn}`
-      );
-      return Resource.EMPTY;
-    }
 
     const awsAccount = AwsEcsDetector._getAccountFromArn(containerArn);
-    if (!awsAccount) {
-      diag.warn(
-        `Cannot retrieve AWS account from container ARN: ${containerArn}`
-      );
-      return Resource.EMPTY;
-    }
 
     const logsGroupName = logOptions['awslogs-group']!;
     const logsGroupArn = `arn:aws:logs:${logsRegion}:${awsAccount}:log-group:${logsGroupName}`;
@@ -191,14 +179,14 @@ export class AwsEcsDetector implements Detector {
     });
   }
 
-  private static _getAccountFromArn(containerArn: string): string | undefined {
+  private static _getAccountFromArn(containerArn: string): string {
     const match = /arn:aws:ecs:[^:]+:([^:]+):.*/.exec(containerArn);
-    return match ? match[1] : undefined;
+    return match![1];
   }
 
-  private static _getRegionFromArn(containerArn: string): string | undefined {
+  private static _getRegionFromArn(containerArn: string): string {
     const match = /arn:aws:ecs:([^:]+):.*/.exec(containerArn);
-    return match ? match[1] : undefined;
+    return match![1];
   }
 
   private static _getUrlAsJson(url: string): Promise<any> {

@@ -15,6 +15,7 @@
  */
 
 import * as assert from 'assert';
+import * as nock from 'nock';
 import * as sinon from 'sinon';
 import {
   awsEcsDetector,
@@ -185,7 +186,7 @@ describe('AwsEcsResourceDetector', () => {
   });
 
   describe('with Metadata URI v4 available', () => {
-    const ECS_CONTAINER_METADATA_URI_V4 = 'ecs_metadata_v4_uri';
+    const ECS_CONTAINER_METADATA_URI_V4 = 'http://169.254.170.2/v4/96d36db6cf2942269b2c2c0c9540c444-4190541037';
 
     beforeEach(() => {
       process.env.ECS_CONTAINER_METADATA_URI_V4 = ECS_CONTAINER_METADATA_URI_V4;
@@ -193,28 +194,40 @@ describe('AwsEcsResourceDetector', () => {
 
     describe('when succesfully retrieving the data', () => {
       function generateLaunchTypeTests(
-        resourceAttributes: EcsResourceAttributes
+        resourceAttributes: EcsResourceAttributes,
+        suffix: String = '',
       ) {
-        beforeEach(() => {
-          sinon.stub(AwsEcsDetector, '_getUrlAsJson' as any).callsFake(url => {
-            let testFileName = '';
-            if (url == ECS_CONTAINER_METADATA_URI_V4) {
-              testFileName = `metadatav4-response-container-${resourceAttributes.launchType!}.json`;
-            } else if (url == `${ECS_CONTAINER_METADATA_URI_V4}/task`) {
-              testFileName = `metadatav4-response-task-${resourceAttributes.launchType!}.json`;
-            } else {
-              throw new Error(`Unexpected URL ${url}`);
-            }
+        let nockScope: nock.Scope;
 
+        beforeEach(() => {
+          function readTestFileName(testFileName: string) {
             const testResource = join(
               __dirname,
               `test-resources/${testFileName}`
             );
 
-            return Promise.resolve(
-              JSON.parse(readFileSync(testResource, 'utf-8'))
-            );
-          });
+            return readFileSync(testResource, 'utf-8');
+          }
+
+          const containerResponseBody = readTestFileName(
+            `metadatav4-response-container-${resourceAttributes.launchType!}${suffix}.json`
+          );
+          const taskResponseBody = readTestFileName(
+            `metadatav4-response-task-${resourceAttributes.launchType!}${suffix}.json`
+          );
+
+          nockScope = nock('http://169.254.170.2:80')
+            .persist(false)
+            .get('/v4/96d36db6cf2942269b2c2c0c9540c444-4190541037')
+            .reply(200, () => containerResponseBody)
+            .get('/v4/96d36db6cf2942269b2c2c0c9540c444-4190541037/task')
+            .reply(200, () => taskResponseBody);
+        });
+
+        afterEach(() => {
+          if (nockScope) {
+            nockScope.done();
+          }
         });
 
         it('should successfully return resource data', async () => {
@@ -297,44 +310,65 @@ describe('AwsEcsResourceDetector', () => {
       }
 
       describe('on Ec2', () => {
-        generateLaunchTypeTests({
-          clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
-          containerArn:
-            'arn:aws:ecs:us-west-2:111122223333:container/0206b271-b33f-47ab-86c6-a0ba208a70a9',
-          launchType: 'ec2',
-          taskArn:
-            'arn:aws:ecs:us-west-2:111122223333:task/default/158d1c8083dd49d6b527399fd6414f5c',
-          taskFamily: 'curltest',
-          taskRevision: '26',
-          logGroupNames: ['/ecs/metadata'],
-          logGroupArns: [
-            'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/metadata',
-          ],
-          logStreamNames: ['ecs/curl/8f03e41243824aea923aca126495f665'],
-          logStreamArns: [
-            'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/metadata:log-stream:ecs/curl/8f03e41243824aea923aca126495f665',
-          ],
+        describe('with AWS CloudWatch as log driver', () => {
+          generateLaunchTypeTests({
+            clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
+            containerArn:
+              'arn:aws:ecs:us-west-2:111122223333:container/0206b271-b33f-47ab-86c6-a0ba208a70a9',
+            launchType: 'ec2',
+            taskArn:
+              'arn:aws:ecs:us-west-2:111122223333:task/default/158d1c8083dd49d6b527399fd6414f5c',
+            taskFamily: 'curltest',
+            taskRevision: '26',
+            logGroupNames: ['/ecs/metadata'],
+            logGroupArns: [
+              'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/metadata',
+            ],
+            logStreamNames: ['ecs/curl/8f03e41243824aea923aca126495f665'],
+            logStreamArns: [
+              'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/metadata:log-stream:ecs/curl/8f03e41243824aea923aca126495f665',
+            ],
+          });
         });
       });
 
       describe('on Fargate', () => {
-        generateLaunchTypeTests({
-          clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
-          containerArn:
-            'arn:aws:ecs:us-west-2:111122223333:container/05966557-f16c-49cb-9352-24b3a0dcd0e1',
-          launchType: 'fargate',
-          taskArn:
-            'arn:aws:ecs:us-west-2:111122223333:task/default/e9028f8d5d8e4f258373e7b93ce9a3c3',
-          taskFamily: 'curltest',
-          taskRevision: '3',
-          logGroupNames: ['/ecs/containerlogs'],
-          logGroupArns: [
-            'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/containerlogs',
-          ],
-          logStreamNames: ['ecs/curl/cd189a933e5849daa93386466019ab50'],
-          logStreamArns: [
-            'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/containerlogs:log-stream:ecs/curl/cd189a933e5849daa93386466019ab50',
-          ],
+        describe('with AWS CloudWatch as log driver', () => {
+          generateLaunchTypeTests({
+            clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
+            containerArn:
+              'arn:aws:ecs:us-west-2:111122223333:container/05966557-f16c-49cb-9352-24b3a0dcd0e1',
+            launchType: 'fargate',
+            taskArn:
+              'arn:aws:ecs:us-west-2:111122223333:task/default/e9028f8d5d8e4f258373e7b93ce9a3c3',
+            taskFamily: 'curltest',
+            taskRevision: '3',
+            logGroupNames: ['/ecs/containerlogs'],
+            logGroupArns: [
+              'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/containerlogs',
+            ],
+            logStreamNames: ['ecs/curl/cd189a933e5849daa93386466019ab50'],
+            logStreamArns: [
+              'arn:aws:logs:us-west-2:111122223333:log-group:/ecs/containerlogs:log-stream:ecs/curl/cd189a933e5849daa93386466019ab50',
+            ],
+          });
+        });
+
+        describe('with AWS Firelens as log driver', () => {
+          generateLaunchTypeTests({
+            clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
+            containerArn:
+              'arn:aws:ecs:us-west-2:111122223333:container/05966557-f16c-49cb-9352-24b3a0dcd0e1',
+            launchType: 'fargate',
+            taskArn:
+              'arn:aws:ecs:us-west-2:111122223333:task/default/e9028f8d5d8e4f258373e7b93ce9a3c3',
+            taskFamily: 'curltest',
+            taskRevision: '3',
+            logGroupNames: undefined,
+            logGroupArns: undefined,
+            logStreamNames: undefined,
+            logStreamArns: undefined,
+          }, '-logsfirelens');
         });
       });
     });
