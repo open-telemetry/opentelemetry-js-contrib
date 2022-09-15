@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.31.0...instrumentation-mysql-v0.31.1) (2022-09-15)
+
+
+### Bug Fixes
+
+* **mysql:** set proper context for outgoing queries ([#1140](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1140)) ([59f7bce](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59f7bce383a754bd5f08ae4e5a75e27de6d3d6e2))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.30.0...instrumentation-mysql-v0.31.0) (2022-09-02)
 
 
