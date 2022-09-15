@@ -25,26 +25,30 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { DataloaderInstrumentation } from '../src';
 const instrumentation = new DataloaderInstrumentation();
 
+// For testing that double shimming/wrapping does not occur
+const extraInstrumentation = new DataloaderInstrumentation();
+extraInstrumentation.disable();
+
 import * as assert from 'assert';
 import * as Dataloader from 'dataloader';
 
 describe('DataloaderInstrumentation', () => {
   let dataloader: Dataloader<string, number>;
+  let contextManager: AsyncHooksContextManager;
 
   const memoryExporter = new InMemorySpanExporter();
   const provider = new NodeTracerProvider();
   const tracer = provider.getTracer('default');
-  let contextManager: AsyncHooksContextManager;
 
   instrumentation.setTracerProvider(provider);
+  extraInstrumentation.setTracerProvider(provider);
   provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-  context.setGlobalContextManager(new AsyncHooksContextManager());
 
   beforeEach(async () => {
     instrumentation.enable();
-    dataloader = new Dataloader(async keys => keys.map((_, idx) => idx));
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
+    dataloader = new Dataloader(async keys => keys.map((_, idx) => idx), { cache: false });
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
@@ -52,6 +56,7 @@ describe('DataloaderInstrumentation', () => {
     memoryExporter.reset();
     context.disable();
     instrumentation.disable();
+    extraInstrumentation.disable();
   });
 
   describe('load', () => {
@@ -195,8 +200,35 @@ describe('DataloaderInstrumentation', () => {
 
   it('should not create anything if disabled', async () => {
     instrumentation.disable();
+
     assert.strictEqual(await dataloader.load('test'), 0);
     assert.deepStrictEqual(await dataloader.loadMany(['test']), [0]);
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+    // Same goes for any new dataloaders that are created while the instrumentation is disabled
+    const alternativeDataloader = new Dataloader(async (keys) => keys.map(() => 1), { cache: false });
+    assert.strictEqual(await alternativeDataloader.load('test'), 1);
+    assert.deepStrictEqual(await alternativeDataloader.loadMany(['test']), [1]);
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+  });
+
+  it('should avoid double shimming of functions', async () => {
+    extraInstrumentation.enable();
+
+    // Dataloader created prior to the extra instrumentation
+    assert.strictEqual(await dataloader.load('test'), 0);
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+    assert.deepStrictEqual(await dataloader.loadMany(['test']), [0]);
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 5);
+    memoryExporter.reset();
+
+    // Same goes for any new dataloaders that are created after the extra instrumentation is added
+    const alternativeDataloader = new Dataloader(async (keys) => keys.map(() => 1), { cache: false });
+    assert.strictEqual(await alternativeDataloader.load('test'), 1);
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+    assert.deepStrictEqual(await alternativeDataloader.loadMany(['test']), [1]);
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 5);
   });
 });
