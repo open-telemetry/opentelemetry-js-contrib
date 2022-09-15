@@ -42,8 +42,10 @@ const metricReader = new PeriodicExportingMetricReader({
 
 otelTestingMeterProvider.addMetricReader(metricReader);
 
-const instrumentation = new MongoDBInstrumentation();
-instrumentation.enable();
+import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
+const instrumentation = registerInstrumentationTesting(
+  new MongoDBInstrumentation()
+);
 
 instrumentation.setMeterProvider(otelTestingMeterProvider);
 
@@ -69,7 +71,7 @@ async function waitForNumberOfExports(
   return exporter.getMetrics();
 }
 
-describe('MongoDBInstrumentation', () => {
+describe('MongoDBInstrumentation-Metrics', () => {
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
   // these tests.
   const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
@@ -87,7 +89,6 @@ describe('MongoDBInstrumentation', () => {
 
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
-
   beforeEach(function mongoBeforeEach(done) {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work
     // properly when skipping tests in before() on nested describe() calls.

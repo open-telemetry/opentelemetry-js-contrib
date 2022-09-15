@@ -151,6 +151,11 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         callback: any
       ) {
         const patchedCallback = function (err: any, conn: any) {
+          if (err || !conn) {
+            callback(err, conn);
+            return;
+          }
+
           instrumentation._connectionsUsage.add(1, {
             'db.client.connection.usage.state': 'idle',
             'db.client.connection.usage.name': conn?.id,

@@ -34,7 +34,7 @@ import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
-describe('MongoDBInstrumentation', () => {
+describe('MongoDBInstrumentation-Tracing', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
   }
@@ -42,7 +42,6 @@ describe('MongoDBInstrumentation', () => {
   // these tests.
   const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
   let shouldTest = true;
-  console.log('hey you')
   if (!RUN_MONGODB_TESTS) {
     console.log('Skipping test-mongodb. Run MongoDB to test');
     shouldTest = false;
@@ -58,7 +57,6 @@ describe('MongoDBInstrumentation', () => {
   let collection: mongodb.Collection;
 
   before(done => {
-    shouldTest = true;
     accessCollection(URL, DB_NAME, COLLECTION_NAME)
       .then(result => {
         client = result.client;
