@@ -28,6 +28,7 @@ jobs:
           - node: "12"
             lerna-extra-args: >-
               --ignore @opentelemetry/instrumentation-redis-4
+              --ignore @opentelemetry/instrumentation-pino
     runs-on: ubuntu-latest
     services:
       memcached:

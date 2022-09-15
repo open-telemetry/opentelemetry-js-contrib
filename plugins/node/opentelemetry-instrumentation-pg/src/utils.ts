@@ -31,6 +31,7 @@ import {
   NormalizedQueryConfig,
   PostgresCallback,
   PgClientConnectionParams,
+  PgErrorCallback,
   PgPoolCallback,
   PgPoolExtended,
   PgInstrumentationConfig,
@@ -50,16 +51,16 @@ function getCommandFromText(text?: string): string {
   return words[0].length > 0 ? words[0] : 'unknown';
 }
 
-export function getJDBCString(params: PgClientConnectionParams) {
-  const host = params.host || 'localhost'; // postgres defaults to localhost
-  const port = params.port || 5432; // postgres defaults to port 5432
+export function getConnectionString(params: PgClientConnectionParams) {
+  const host = params.host || 'localhost';
+  const port = params.port || 5432;
   const database = params.database || '';
-  return `jdbc:postgresql://${host}:${port}/${database}`;
+  return `postgresql://${host}:${port}/${database}`;
 }
 
 // Private helper function to start a span
 function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
-  const jdbcString = getJDBCString(client.connectionParameters);
+  const jdbcString = getConnectionString(client.connectionParameters);
   return tracer.startSpan(name, {
     kind: SpanKind.CLIENT,
     attributes: {
@@ -234,5 +235,24 @@ export function patchCallbackPGPool(
     }
     span.end();
     cb.call(this, err, res, done);
+  };
+}
+
+export function patchClientConnectCallback(
+  span: Span,
+  cb: PgErrorCallback
+): PgErrorCallback {
+  return function patchedClientConnectCallback(
+    this: pgTypes.Client,
+    err: Error
+  ) {
+    if (err) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: err.message,
+      });
+    }
+    span.end();
+    cb.call(this, err);
   };
 }
