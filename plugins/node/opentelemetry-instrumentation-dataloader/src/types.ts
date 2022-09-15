@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { InstrumentationConfig } from "@opentelemetry/instrumentation";
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export interface DataloaderInstrumentationConfig
-  extends InstrumentationConfig {}
+export type DataloaderInstrumentationConfig = InstrumentationConfig;

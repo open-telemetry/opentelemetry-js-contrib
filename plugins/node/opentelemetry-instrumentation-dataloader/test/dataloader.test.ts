@@ -17,23 +17,23 @@
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
-import { context, SpanKind, SpanStatusCode, trace } from "@opentelemetry/api";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { AsyncHooksContextManager } from "@opentelemetry/context-async-hooks";
+} from '@opentelemetry/sdk-trace-base';
+import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 
-import { DataloaderInstrumentation } from "../src";
+import { DataloaderInstrumentation } from '../src';
 const instrumentation = new DataloaderInstrumentation();
 
-import * as assert from "assert";
-import * as Dataloader from "dataloader";
+import * as assert from 'assert';
+import * as Dataloader from 'dataloader';
 
-describe("DataloaderInstrumentation", () => {
+describe('DataloaderInstrumentation', () => {
   let dataloader: Dataloader<string, number>;
 
   const memoryExporter = new InMemorySpanExporter();
   const provider = new NodeTracerProvider();
-  const tracer = provider.getTracer("default");
+  const tracer = provider.getTracer('default');
   let contextManager: AsyncHooksContextManager;
 
   instrumentation.setTracerProvider(provider);
@@ -42,7 +42,7 @@ describe("DataloaderInstrumentation", () => {
 
   beforeEach(async () => {
     instrumentation.enable();
-    dataloader = new Dataloader(async (keys) => keys.map((_, idx) => idx));
+    dataloader = new Dataloader(async keys => keys.map((_, idx) => idx));
     contextManager = new AsyncHooksContextManager();
     context.setGlobalContextManager(contextManager.enable());
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
@@ -54,32 +54,32 @@ describe("DataloaderInstrumentation", () => {
     instrumentation.disable();
   });
 
-  describe("load", () => {
-    it("creates a span", async () => {
-      assert.strictEqual(await dataloader.load("test"), 0);
+  describe('load', () => {
+    it('creates a span', async () => {
+      assert.strictEqual(await dataloader.load('test'), 0);
 
       // We should have exactly two spans (one for .load and one for the following batch)
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
       const [batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
 
-      assert.strictEqual(loadSpan.name, "dataloader.load");
+      assert.strictEqual(loadSpan.name, 'dataloader.load');
       assert.strictEqual(loadSpan.kind, SpanKind.CLIENT);
 
       // Batch span should also be linked to load span
-      assert.strictEqual(batchSpan.name, "dataloader.batch");
+      assert.strictEqual(batchSpan.name, 'dataloader.batch');
       assert.strictEqual(batchSpan.kind, SpanKind.INTERNAL);
       assert.deepStrictEqual(batchSpan.links, [
         { context: loadSpan.spanContext(), attributes: {} },
       ]);
     });
 
-    it("attaches span to parent", async () => {
-      const rootSpan: any = tracer.startSpan("root");
+    it('attaches span to parent', async () => {
+      const rootSpan: any = tracer.startSpan('root');
 
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
-          assert.strictEqual(await dataloader.load("test"), 0);
+          assert.strictEqual(await dataloader.load('test'), 0);
 
           const [_, loadSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
@@ -90,14 +90,14 @@ describe("DataloaderInstrumentation", () => {
       );
     });
 
-    it("correctly catches exceptions", async () => {
-      const failingDataloader = new Dataloader(async (keys) => {
-        throw new Error("Error message");
+    it('correctly catches exceptions', async () => {
+      const failingDataloader = new Dataloader(async keys => {
+        throw new Error('Error message');
       });
 
       try {
-        await failingDataloader.load("test");
-        assert.fail(".load should throw");
+        await failingDataloader.load('test');
+        assert.fail('.load should throw');
       } catch (e) {}
 
       // All spans should be finished, both load as well as the batch ones should have errored
@@ -106,19 +106,19 @@ describe("DataloaderInstrumentation", () => {
 
       assert.deepStrictEqual(loadSpan.status, {
         code: SpanStatusCode.ERROR,
-        message: "Error message",
+        message: 'Error message',
       });
 
       assert.deepStrictEqual(batchSpan.status, {
         code: SpanStatusCode.ERROR,
-        message: "Error message",
+        message: 'Error message',
       });
     });
   });
 
-  describe("loadMany", () => {
-    it("creates an additional span", async () => {
-      assert.deepStrictEqual(await dataloader.loadMany(["test"]), [0]);
+  describe('loadMany', () => {
+    it('creates an additional span', async () => {
+      assert.deepStrictEqual(await dataloader.loadMany(['test']), [0]);
 
       // We should have exactly three spans (one for .loadMany, one for the underlying .load
       // and one for the following batch)
@@ -126,16 +126,16 @@ describe("DataloaderInstrumentation", () => {
       const [batchSpan, loadSpan, loadManySpan] =
         memoryExporter.getFinishedSpans();
 
-      assert.strictEqual(batchSpan.name, "dataloader.batch");
+      assert.strictEqual(batchSpan.name, 'dataloader.batch');
       assert.strictEqual(batchSpan.kind, SpanKind.INTERNAL);
       assert.deepStrictEqual(batchSpan.links, [
         { context: loadSpan.spanContext(), attributes: {} },
       ]);
 
-      assert.strictEqual(loadManySpan.name, "dataloader.loadMany");
+      assert.strictEqual(loadManySpan.name, 'dataloader.loadMany');
       assert.strictEqual(loadManySpan.kind, SpanKind.CLIENT);
 
-      assert.strictEqual(loadSpan.name, "dataloader.load");
+      assert.strictEqual(loadSpan.name, 'dataloader.load');
       assert.strictEqual(loadSpan.kind, SpanKind.CLIENT);
       assert.strictEqual(
         loadSpan.parentSpanId,
@@ -143,13 +143,13 @@ describe("DataloaderInstrumentation", () => {
       );
     });
 
-    it("attaches span to parent", async () => {
-      const rootSpan: any = tracer.startSpan("root");
+    it('attaches span to parent', async () => {
+      const rootSpan: any = tracer.startSpan('root');
 
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
-          assert.deepStrictEqual(await dataloader.loadMany(["test"]), [0]);
+          assert.deepStrictEqual(await dataloader.loadMany(['test']), [0]);
 
           const [, , loadManySpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(
@@ -160,15 +160,15 @@ describe("DataloaderInstrumentation", () => {
       );
     });
 
-    it("never errors, even if underlying load fails", async () => {
-      const failingDataloader = new Dataloader(async (keys) => {
-        throw new Error("Error message");
+    it('never errors, even if underlying load fails', async () => {
+      const failingDataloader = new Dataloader(async keys => {
+        throw new Error('Error message');
       });
 
       try {
-        await failingDataloader.loadMany(["test"]);
+        await failingDataloader.loadMany(['test']);
       } catch (e) {
-        assert.fail(".loadMany should never throw");
+        assert.fail('.loadMany should never throw');
       }
 
       // All spans should be finished, both load as well as the batch ones should have errored
@@ -179,12 +179,12 @@ describe("DataloaderInstrumentation", () => {
 
       assert.deepStrictEqual(loadSpan.status, {
         code: SpanStatusCode.ERROR,
-        message: "Error message",
+        message: 'Error message',
       });
 
       assert.deepStrictEqual(batchSpan.status, {
         code: SpanStatusCode.ERROR,
-        message: "Error message",
+        message: 'Error message',
       });
 
       assert.deepStrictEqual(loadManySpan.status, {
@@ -193,10 +193,10 @@ describe("DataloaderInstrumentation", () => {
     });
   });
 
-  it("should not create anything if disabled", async () => {
+  it('should not create anything if disabled', async () => {
     instrumentation.disable();
-    assert.strictEqual(await dataloader.load("test"), 0);
-    assert.deepStrictEqual(await dataloader.loadMany(["test"]), [0]);
+    assert.strictEqual(await dataloader.load('test'), 0);
+    assert.deepStrictEqual(await dataloader.loadMany(['test']), [0]);
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 });
