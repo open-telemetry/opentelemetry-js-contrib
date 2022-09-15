@@ -15,6 +15,7 @@ jobs:
           - node: "18"
             lerna-extra-args: >-
               --ignore @opentelemetry/resource-detector-alibaba-cloud
+              --ignore @opentelemetry/instrumentation-fastify
     runs-on: ubuntu-latest
     services:
       memcached:
