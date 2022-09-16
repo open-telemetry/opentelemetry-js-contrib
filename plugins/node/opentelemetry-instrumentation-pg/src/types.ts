@@ -40,6 +40,9 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * @default undefined
    */
   responseHook?: PgInstrumentationExecutionResponseHook;
+
+  /** Require that is a parent span to create new spans. Defaults to false. */
+  requireParentSpan?: boolean;
 }
 
 export type PostgresCallback = (err: Error, res: object) => unknown;

@@ -24,7 +24,6 @@ import {
   diag,
   trace,
   Span,
-  SpanKind,
   SpanStatusCode,
 } from '@opentelemetry/api';
 import * as pgTypes from 'pg';
@@ -46,6 +45,7 @@ import {
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
+import { startSpan } from './utils';
 
 const PG_POOL_COMPONENT = 'pg-pool';
 
@@ -129,21 +129,15 @@ export class PgInstrumentation extends InstrumentationBase {
         this: pgTypes.Client,
         callback?: PgErrorCallback
       ) {
-        const span = plugin.tracer.startSpan(
-          `${PgInstrumentation.COMPONENT}.connect`,
-          {
-            kind: SpanKind.CLIENT,
-            attributes: {
-              [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-              [SemanticAttributes.DB_NAME]: this.database,
-              [SemanticAttributes.NET_PEER_NAME]: this.host,
-              [SemanticAttributes.DB_CONNECTION_STRING]:
-                utils.getConnectionString(this),
-              [SemanticAttributes.NET_PEER_PORT]: this.port,
-              [SemanticAttributes.DB_USER]: this.user,
-            },
-          }
-        );
+        const span = startSpan(plugin.tracer, plugin.getConfig(), `${PgInstrumentation.COMPONENT}.connect`, {
+          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+          [SemanticAttributes.DB_NAME]: this.database,
+          [SemanticAttributes.NET_PEER_NAME]: this.host,
+          [SemanticAttributes.DB_CONNECTION_STRING]:
+            utils.getConnectionString(this),
+          [SemanticAttributes.NET_PEER_PORT]: this.port,
+          [SemanticAttributes.DB_USER]: this.user,
+        });
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
@@ -187,7 +181,12 @@ export class PgInstrumentation extends InstrumentationBase {
               params
             );
           } else {
-            span = utils.handleTextQuery.call(this, plugin.tracer, query);
+            span = utils.handleTextQuery.call(
+              this,
+              plugin.tracer,
+              plugin.getConfig() as PgInstrumentationConfig,
+              query
+            );
           }
         } else if (typeof args[0] === 'object') {
           const queryConfig = args[0] as NormalizedQueryConfig;
@@ -201,6 +200,7 @@ export class PgInstrumentation extends InstrumentationBase {
           return utils.handleInvalidQuery.call(
             this,
             plugin.tracer,
+            plugin.getConfig() as PgInstrumentationConfig,
             original,
             ...args
           );
@@ -285,19 +285,16 @@ export class PgInstrumentation extends InstrumentationBase {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
         const connString = utils.getConnectionString(this.options);
         // setup span
-        const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-            [SemanticAttributes.DB_NAME]: this.options.database, // required
-            [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
-            [SemanticAttributes.DB_CONNECTION_STRING]: connString, // required
-            [SemanticAttributes.NET_PEER_PORT]: this.options.port,
-            [SemanticAttributes.DB_USER]: this.options.user,
-            [AttributeNames.IDLE_TIMEOUT_MILLIS]:
-              this.options.idleTimeoutMillis,
-            [AttributeNames.MAX_CLIENT]: this.options.maxClient,
-          },
+        const span = startSpan(plugin.tracer, plugin.getConfig(), `${PG_POOL_COMPONENT}.connect`, {
+          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+          [SemanticAttributes.DB_NAME]: this.options.database, // required
+          [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
+          [SemanticAttributes.DB_CONNECTION_STRING]: connString, // required
+          [SemanticAttributes.NET_PEER_PORT]: this.options.port,
+          [SemanticAttributes.DB_USER]: this.options.user,
+          [AttributeNames.IDLE_TIMEOUT_MILLIS]:
+            this.options.idleTimeoutMillis,
+          [AttributeNames.MAX_CLIENT]: this.options.maxClient,
         });
 
         if (callback) {

@@ -640,4 +640,33 @@ describe('pg', () => {
       });
     });
   });
+
+  describe('Instrumentation with requireParentSpan', () => {
+    beforeEach(() => {
+      const config: PgInstrumentationConfig = {
+        requireParentSpan: true,
+      };
+      instrumentation.setConfig(config);
+      memoryExporter.reset();
+    });
+
+    it('should not generate traces for connect() when requireParentSpan=true', async () => {
+      const connClient = new postgres.Client(CONFIG);
+      await connClient.connect();
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+      await connClient.end();
+    });
+
+    it('should not generate traces for client.query(text, callback) when requireParentSpan=true', done => {
+      client.query('SELECT NOW()', (err, res) => {
+        assert.strictEqual(err, null);
+        assert.ok(res);
+        const spans = memoryExporter.getFinishedSpans();
+        console.log(spans);
+        assert.strictEqual(spans.length, 0);
+        done();
+      });
+    });
+  });
 });
