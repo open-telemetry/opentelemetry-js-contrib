@@ -24,7 +24,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.12.0"
+    "node": ">=14"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.2.0"
