@@ -30,6 +30,7 @@ export class DockerDetector implements Detector {
   readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
   readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
   readonly UTF8_UNICODE = 'utf8';
+  readonly HOSTNAME = "hostname";
 
   private static readFileAsync = util.promisify(fs.readFile);
 
@@ -71,9 +72,9 @@ export class DockerDetector implements Detector {
 
       splitData = rawData.trim().split('\n');
       for (let str of splitData) {
-        str = str
+        str = str.includes(this.HOSTNAME) ? str
           .split('/')
-          .filter(s => s.length >= this.CONTAINER_ID_LENGTH)[0];
+          .filter(s => s.length >= this.CONTAINER_ID_LENGTH)[0] : "";
         return str.substring(str.length - this.CONTAINER_ID_LENGTH);
       }
     } catch (e) {
