@@ -40,8 +40,8 @@ export class DockerDetector implements Detector {
       return !containerId
         ? Resource.empty()
         : new Resource({
-            [SemanticResourceAttributes.CONTAINER_ID]: containerId,
-          });
+          [SemanticResourceAttributes.CONTAINER_ID]: containerId,
+        });
     } catch (e) {
       diag.info(
         'Docker Detector did not identify running inside a supported docker container, no docker attributes will be added to resource: ',
@@ -72,10 +72,12 @@ export class DockerDetector implements Detector {
 
       splitData = rawData.trim().split('\n');
       for (let str of splitData) {
-        str = str.includes(this.HOSTNAME) ? str
-          .split('/')
-          .filter(s => s.length >= this.CONTAINER_ID_LENGTH)[0] : "";
-        return str.substring(str.length - this.CONTAINER_ID_LENGTH);
+        if (str.includes(this.HOSTNAME)) {
+          str
+            .split('/')
+            .filter(s => s.length >= this.CONTAINER_ID_LENGTH)[0];
+          return str.substring(str.length - this.CONTAINER_ID_LENGTH);
+        }
       }
     } catch (e) {
       if (e instanceof Error) {
