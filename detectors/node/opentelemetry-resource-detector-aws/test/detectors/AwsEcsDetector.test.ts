@@ -186,7 +186,8 @@ describe('AwsEcsResourceDetector', () => {
   });
 
   describe('with Metadata URI v4 available', () => {
-    const ECS_CONTAINER_METADATA_URI_V4 = 'http://169.254.170.2/v4/96d36db6cf2942269b2c2c0c9540c444-4190541037';
+    const ECS_CONTAINER_METADATA_URI_V4 =
+      'http://169.254.170.2/v4/96d36db6cf2942269b2c2c0c9540c444-4190541037';
 
     beforeEach(() => {
       process.env.ECS_CONTAINER_METADATA_URI_V4 = ECS_CONTAINER_METADATA_URI_V4;
@@ -195,7 +196,7 @@ describe('AwsEcsResourceDetector', () => {
     describe('when succesfully retrieving the data', () => {
       function generateLaunchTypeTests(
         resourceAttributes: EcsResourceAttributes,
-        suffix: String = '',
+        suffix: String = ''
       ) {
         let nockScope: nock.Scope;
 
@@ -355,20 +356,23 @@ describe('AwsEcsResourceDetector', () => {
         });
 
         describe('with AWS Firelens as log driver', () => {
-          generateLaunchTypeTests({
-            clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
-            containerArn:
-              'arn:aws:ecs:us-west-2:111122223333:container/05966557-f16c-49cb-9352-24b3a0dcd0e1',
-            launchType: 'fargate',
-            taskArn:
-              'arn:aws:ecs:us-west-2:111122223333:task/default/e9028f8d5d8e4f258373e7b93ce9a3c3',
-            taskFamily: 'curltest',
-            taskRevision: '3',
-            logGroupNames: undefined,
-            logGroupArns: undefined,
-            logStreamNames: undefined,
-            logStreamArns: undefined,
-          }, '-logsfirelens');
+          generateLaunchTypeTests(
+            {
+              clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
+              containerArn:
+                'arn:aws:ecs:us-west-2:111122223333:container/05966557-f16c-49cb-9352-24b3a0dcd0e1',
+              launchType: 'fargate',
+              taskArn:
+                'arn:aws:ecs:us-west-2:111122223333:task/default/e9028f8d5d8e4f258373e7b93ce9a3c3',
+              taskFamily: 'curltest',
+              taskRevision: '3',
+              logGroupNames: undefined,
+              logGroupArns: undefined,
+              logStreamNames: undefined,
+              logStreamArns: undefined,
+            },
+            '-logsfirelens'
+          );
         });
       });
     });
