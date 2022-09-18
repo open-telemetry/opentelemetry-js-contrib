@@ -1,9 +1,9 @@
 'use strict';
 
-const api = require('@opentelemetry/api');
-const tracer = require('./tracer')('example-mysql-http-client');
-// eslint-disable-next-line import/order
-const http = require('http');
+import * as api from '@opentelemetry/api';
+import { setupTracing } from "./tracer";
+const tracer = setupTracing('example-mysql-client');
+import * as http from 'http';
 
 /** A function which makes requests and handles response. */
 function makeRequest() {
@@ -22,7 +22,7 @@ function makeRequest() {
       port: 8080,
       path: '/connection/query',
     }, (response) => {
-      const body = [];
+      const body: any[] = [];
       response.on('data', (chunk) => body.push(chunk));
       response.on('end', () => {
         responses += 1;
@@ -38,7 +38,7 @@ function makeRequest() {
       port: 8080,
       path: '/pool/query',
     }, (response) => {
-      const body = [];
+      const body: any[] = [];
       response.on('data', (chunk) => body.push(chunk));
       response.on('end', () => {
         responses += 1;
@@ -54,7 +54,7 @@ function makeRequest() {
       port: 8080,
       path: '/cluster/query',
     }, (response) => {
-      const body = [];
+      const body: any[] = [];
       response.on('data', (chunk) => body.push(chunk));
       response.on('end', () => {
         responses += 1;
