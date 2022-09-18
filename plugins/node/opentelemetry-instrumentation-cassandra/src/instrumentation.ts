@@ -45,6 +45,14 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-cassandra-driver', VERSION, config);
   }
 
+  private _getConfig(): CassandraDriverInstrumentationConfig {
+    return this._config;
+  }
+
+  override setConfig(config?: CassandraDriverInstrumentationConfig): void {
+    super.setConfig(config);
+  }
+
   protected init() {
     return new InstrumentationNodeModuleDefinition<any>(
       'cassandra-driver',
@@ -147,7 +155,15 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
           }
         );
 
-        const wrappedPromise = wrapPromise(span, execPromise);
+        const wrappedPromise = wrapPromise(
+          span,
+          execPromise,
+          (span, result) => {
+            if (plugin._getConfig().responseHook) {
+              plugin._callResponseHook(span, result);
+            }
+          }
+        );
 
         return context.bind(execContext, wrappedPromise);
       };
@@ -319,6 +335,14 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
       attributes,
     });
   }
+
+  private _callResponseHook(span: Span, response: any) {
+    safeExecuteInTheMiddle(
+      () => this._getConfig().responseHook!(span, response),
+      () => {},
+      true
+    );
+  }
 }
 
 function failSpan(span: Span, error: Error) {
@@ -336,10 +360,17 @@ function combineQueries(queries: Array<string | { query: string }>) {
     .join('\n');
 }
 
-function wrapPromise<T>(span: Span, promise: Promise<T>): Promise<T> {
+function wrapPromise<T>(
+  span: Span,
+  promise: Promise<T>,
+  successCallback?: (span: Span, result: any) => void
+): Promise<T> {
   return promise
     .then(result => {
       return new Promise<T>(resolve => {
+        if (successCallback) {
+          successCallback(span, result);
+        }
         span.end();
         resolve(result);
       });

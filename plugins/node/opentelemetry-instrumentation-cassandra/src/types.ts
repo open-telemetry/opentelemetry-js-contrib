@@ -15,6 +15,12 @@
  */
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { Span } from '@opentelemetry/api';
+import type * as CassandraDriver from 'cassandra-driver';
+
+export interface CassandraDriverResponseCustomAttributeFunction {
+  (span: Span, response: CassandraDriver.types.ResultSet): void;
+}
 
 export interface CassandraDriverInstrumentationConfig
   extends InstrumentationConfig {
@@ -29,4 +35,6 @@ export interface CassandraDriverInstrumentationConfig
    * @default 65536
    */
   maxQueryLength?: number;
+  /** Function for adding custom attributes before response is handled */
+  responseHook?: CassandraDriverResponseCustomAttributeFunction;
 }

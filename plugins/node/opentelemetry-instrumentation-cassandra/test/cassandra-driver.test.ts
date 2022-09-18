@@ -53,7 +53,11 @@ function assertSpan(
   span: ReadableSpan,
   name: string,
   query?: string,
-  status?: SpanStatus
+  status?: SpanStatus,
+  attributeValidation?: {
+    attributeName: string;
+    attributeValue: string;
+  }
 ) {
   const attributes = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
@@ -62,6 +66,11 @@ function assertSpan(
 
   if (query !== undefined) {
     attributes[SemanticAttributes.DB_STATEMENT] = query;
+  }
+
+  if (attributeValidation) {
+    attributes[attributeValidation.attributeName] =
+      attributeValidation.attributeValue;
   }
 
   const spanStatus =
@@ -74,6 +83,21 @@ function assertSingleSpan(name: string, query?: string, status?: SpanStatus) {
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
   assertSpan(span, name, query, status);
+}
+
+function assertAttributeInSpan(
+  name: string,
+  attribute?: {
+    attributeName: string;
+    attributeValue: string;
+  },
+  query?: string,
+  status?: SpanStatus
+) {
+  const spans = memoryExporter.getFinishedSpans();
+  assert.strictEqual(spans.length, 1);
+  const [span] = spans;
+  assertSpan(span, name, query, status, attribute);
 }
 
 function assertErrorSpan(
@@ -131,6 +155,7 @@ describe('CassandraDriverInstrumentation', () => {
     }
 
     instrumentation = new CassandraDriverInstrumentation();
+
     instrumentation.setTracerProvider(provider);
 
     const cassandra = require('cassandra-driver');
@@ -226,6 +251,38 @@ describe('CassandraDriverInstrumentation', () => {
         const query = 'select userid, count from ot.test';
         await client.execute(query);
         assertSingleSpan('cassandra-driver.execute', query.substr(0, 25));
+      });
+    });
+
+    describe('responseHook', () => {
+      const customAttribute = {
+        attributeName: 'custom-attribute',
+        attributeValue: 'response-value',
+      };
+
+      before(() => {
+        const config: CassandraDriverInstrumentationConfig = {
+          responseHook: (span, response) => {
+            span.setAttribute(
+              customAttribute.attributeName,
+              customAttribute.attributeValue
+            );
+          },
+        };
+        instrumentation.setConfig(config);
+      });
+
+      after(() => {
+        const config: CassandraDriverInstrumentationConfig = {
+          responseHook: () => {},
+        };
+        instrumentation.setConfig(config);
+      });
+
+      it('adds custom attribute to span', async () => {
+        await client.execute('select * from ot.test');
+
+        assertAttributeInSpan('cassandra-driver.execute', customAttribute);
       });
     });
   });
