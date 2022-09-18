@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.31.0...instrumentation-express-v0.31.1) (2022-09-15)
+
+
+### Bug Fixes
+
+* **readme:** Correct urls to npm ([#1144](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1144)) ([d8767a9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d8767a9032dd7fb78b7fdd82f50c1f76e939d33e))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.30.0...instrumentation-express-v0.31.0) (2022-09-02)
 
 

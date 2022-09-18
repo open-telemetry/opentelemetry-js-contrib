@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.9.0...instrumentation-aws-sdk-v0.9.1) (2022-09-15)
+
+
+### Bug Fixes
+
+* avoid type imports of the aws-sdk package in the built assets ([#1066](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1066)) ([457be50](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/457be5035b9ba87211fe3553c901b7408dd2d593))
+
 ## [0.9.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.8.1...instrumentation-aws-sdk-v0.9.0) (2022-09-02)
 
 
