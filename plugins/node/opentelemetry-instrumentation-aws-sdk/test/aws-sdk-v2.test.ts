@@ -123,7 +123,7 @@ describe('instrumentation-aws-sdk-v2', () => {
         ).toBe(200);
 
         expect(spanCreateBucket.name).toBe('S3.CreateBucket');
-        expect(spanCreateBucket.kind).toEqual(SpanKind.CLIENT)
+        expect(spanCreateBucket.kind).toEqual(SpanKind.CLIENT);
         expect(spanPutObject.attributes[AttributeNames.AWS_OPERATION]).toBe(
           'putObject'
         );

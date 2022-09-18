@@ -79,7 +79,7 @@ describe('instrumentation-aws-sdk-v3', () => {
       expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual('S3');
       expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
-      expect(span.kind).toEqual(SpanKind.CLIENT)
+      expect(span.kind).toEqual(SpanKind.CLIENT);
       expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(200);
     });
 
