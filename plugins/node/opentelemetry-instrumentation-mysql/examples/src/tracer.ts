@@ -11,6 +11,7 @@ import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
+const EXPORTER = process.env.EXPORTER || '';
 
 export const setupTracing = (serviceName: string) => {
   const provider = new NodeTracerProvider({
@@ -18,8 +19,11 @@ export const setupTracing = (serviceName: string) => {
     [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
   }),});
 
-  provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter()));
-  provider.addSpanProcessor(new SimpleSpanProcessor(new JaegerExporter()));
+  if (EXPORTER.toLowerCase().startsWith('z')) {
+    provider.addSpanProcessor(new SimpleSpanProcessor(new ZipkinExporter()));
+  } else {
+    provider.addSpanProcessor(new SimpleSpanProcessor(new JaegerExporter()));
+  }
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register();

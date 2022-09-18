@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
   "devDependencies": {
-    "@types/mysql": "*",
+    "@types/mysql": "^2.15.21",
     "cross-env": "^6.0.0",
     "ts-node": "^10.6.0",
     "typescript": "4.3.5"
