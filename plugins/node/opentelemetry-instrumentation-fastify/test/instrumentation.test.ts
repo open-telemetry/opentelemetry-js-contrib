@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import { context, ROOT_CONTEXT, SpanStatusCode } from '@opentelemetry/api';
+import { context, SpanStatusCode } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -71,6 +71,14 @@ import 'fastify-express';
 import { FastifyInstance } from 'fastify/types/instance';
 
 const Fastify = require('fastify');
+
+const assertRootContextActive = () => {
+  // Asserting the context.active() to strictly equal ROOT_CONTEXT doesn't
+  // always work because of the linking and dep resolution.
+  // Specially in our CI environment there can be multiple instances to
+  // different @opentelemetry/api and thus ROOT_CONTEXTs in the tree.
+  assert.strictEqual((context.active() as any)['_currentContext'].size, 0);
+};
 
 function getSpans(): ReadableSpan[] {
   const spans = memoryExporter.getFinishedSpans().filter(s => {
@@ -367,9 +375,14 @@ describe('fastify', () => {
     });
 
     describe('application hooks', () => {
+      afterEach(() => {
+        const spans = getSpans();
+        assert.strictEqual(spans.length, 0);
+      });
+
       it('onRoute not instrumented', async () => {
         app.addHook('onRoute', () => {
-          assert.strictEqual(context.active(), ROOT_CONTEXT);
+          assertRootContextActive();
         });
         // add a route to trigger the 'onRoute' hook
         app.get('/test', (_req: FastifyRequest, reply: FastifyReply) => {
@@ -381,7 +394,7 @@ describe('fastify', () => {
 
       it('onRegister is not instrumented', async () => {
         app.addHook('onRegister', () => {
-          assert.strictEqual(context.active(), ROOT_CONTEXT);
+          assertRootContextActive();
         });
         // register a plugin to trigger 'onRegister' hook
         app.register((fastify, options, done) => {
@@ -393,7 +406,7 @@ describe('fastify', () => {
 
       it('onReady is not instrumented', async () => {
         app.addHook('onReady', () => {
-          assert.strictEqual(context.active(), ROOT_CONTEXT);
+          assertRootContextActive();
         });
 
         await startServer();
@@ -401,11 +414,10 @@ describe('fastify', () => {
 
       it('onClose is not instrumented', async () => {
         app.addHook('onClose', () => {
-          assert.strictEqual(context.active(), ROOT_CONTEXT);
+          assertRootContextActive();
         });
 
         await startServer();
-        await app.close();
       });
     });
   });

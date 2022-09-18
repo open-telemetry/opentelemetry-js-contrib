@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.30.0...instrumentation-net-v0.30.1) (2022-09-15)
+
+
+### Bug Fixes
+
+* handle string ports for Socket.connect ([#1172](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1172)) ([aa6a0dd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aa6a0ddee67730b41630a56d94545ce91c586b14))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.29.0...instrumentation-net-v0.30.0) (2022-09-02)
 
 
