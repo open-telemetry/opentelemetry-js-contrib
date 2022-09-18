@@ -4,8 +4,8 @@ import { setupTracing } from './tracer'
 const tracer = setupTracing('example-redis-server');
 
 // Require in rest of modules
-const express = require('express');
-import { default as axios } from 'axios';
+import * as express from 'express';
+import axios from 'axios';
 import * as tracerHandlers from './express-tracer-handlers';
 const redisPromise = require('./setup-redis').redis;
 
@@ -19,7 +19,7 @@ const PORT = 8080;
 async function setupRoutes() {
   const redis = await redisPromise;
 
-  app.get('/run_test', async (req: any, res: any) => {
+  app.get('/run_test', async (req: express.Request, res: express.Response) => {
     const uuid = Math.random()
       .toString(36)
       .substring(2, 15)

@@ -2,7 +2,7 @@
 
 import * as api from '@opentelemetry/api';
 
-function getMiddlewareTracer(tracer: api.Tracer) {
+export function getMiddlewareTracer(tracer: api.Tracer) {
   return (req: any, res: any, next: any) => {
     const span = tracer.startSpan(`express.middleware.tracer(${req.method} ${req.path})`, {
       kind: api.SpanKind.SERVER,
@@ -19,7 +19,7 @@ function getMiddlewareTracer(tracer: api.Tracer) {
   };
 }
 
-function getErrorTracer(tracer: api.Tracer) {
+export function getErrorTracer(tracer: api.Tracer) {
   return (err: any, _req: any, res: any, _next: any) => {
     console.error('Caught error', err.message);
     const span = api.trace.getSpan(api.context.active())
@@ -30,6 +30,4 @@ function getErrorTracer(tracer: api.Tracer) {
     res.status(500).send(err.message);
   };
 }
-
-export { getMiddlewareTracer, getErrorTracer };
 
