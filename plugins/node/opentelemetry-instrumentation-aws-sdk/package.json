@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-sdk",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "OpenTelemetry automatic instrumentation for the `aws-sdk` package",
   "keywords": [
     "aws",
@@ -78,6 +78,6 @@
     "typescript": "4.3.4"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14"
   }
 }
