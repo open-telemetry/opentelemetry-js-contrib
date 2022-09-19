@@ -59,7 +59,7 @@
     "@types/node": "16.11.21",
     "gts": "3.1.0",
     "mocha": "7.2.0",
-    "mongodb": "4.9.1",
+    "mongodb": "3.7.3",
     "@types/mongodb": "3.6.20",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",

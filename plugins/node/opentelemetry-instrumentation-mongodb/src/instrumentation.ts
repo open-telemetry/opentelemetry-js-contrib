@@ -43,6 +43,8 @@ import {
   CommandResult,
   V4Connection,
   V4Connect,
+  V3Connect,
+  V3Connection,
 } from './types';
 import { VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api-metrics';
@@ -77,9 +79,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const {
       v3PatchConnection: v3PatchConnection,
       v3UnpatchConnection: v3UnpatchConnection,
-    } = this._getV3Patches();
+    } = this._getV3ConnectionPatches();
+    const { v3PatchConnect, v3UnpatchConnect } = this._getV3ConnectPatches();
 
-    const { v4PatchConnect, v4UnPatchConnect } = this._getV4ConnectPatches();
+    const { v4PatchConnect, v4UnpatchConnect } = this._getV4ConnectPatches();
     const { v4PatchConnection, v4UnpatchConnection } =
       this._getV4ConnectionPatches();
 
@@ -95,6 +98,12 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             ['>=3.3 <4'],
             v3PatchConnection,
             v3UnpatchConnection
+          ),
+          new InstrumentationNodeModuleFile<V3Connect>(
+            'mongodb/lib/mongo_client.js',
+            ['>=3.3 <4'],
+            v3PatchConnect,
+            v3UnpatchConnect
           ),
         ]
       ),
@@ -114,68 +123,45 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             'mongodb/lib/cmap/connect.js',
             ['4.*'],
             v4PatchConnect,
-            v4UnPatchConnect
+            v4UnpatchConnect
           ),
         ]
       ),
     ];
   }
 
-  private _getV4ConnectPatches<T extends V4Connect>() {
+  private _getV3ConnectPatches<T extends any>() {
     return {
-      v4PatchConnect: (moduleExports: any, moduleVersion?: string) => {
+      v3PatchConnect: (moduleExports: any, moduleVersion?: string) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
-        if (isWrapped(moduleExports.connect)) {
-          this._unwrap(moduleExports, 'connect');
-        }
-
-        this._wrap(moduleExports, 'connect', this._getV4ConnectCommand());
+        this._wrap(
+          moduleExports.MongoClient.connect,
+          'connect',
+          this._getV3ConnectCommand()
+        );
         return moduleExports;
       },
-      v4UnPatchConnect: (moduleExports?: T, moduleVersion?: string) => {
+      v3UnpatchConnect: (moduleExports?: T, moduleVersion?: string) => {
         diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         if (moduleExports === undefined) return;
 
-        this._unwrap(moduleExports, 'connect');
+        this._unwrap(moduleExports, 'constructor');
       },
     };
   }
 
-  private _getV4ConnectCommand() {
+  private _getV3ConnectCommand() {
     const instrumentation = this;
 
-    return (original: V4Connect['connect']) => {
-      return function patchedConnect(
-        this: unknown,
-        options: any,
-        callback: any
-      ) {
-        const patchedCallback = function (err: any, conn: any) {
-          if (err || !conn) {
-            callback(err, conn);
-            return;
-          }
-
-          instrumentation._connectionsUsage.add(1, {
-            'db.client.connection.usage.state': 'idle',
-            'db.client.connection.usage.name': conn?.id,
-          });
-
-          conn.on('close', () => {
-            instrumentation._connectionsUsage.add(-1, {
-              'db.client.connection.usage.state': 'idle',
-              'db.client.connection.usage.name': conn?.id,
-            });
-          });
-
-          callback(err, conn);
-        };
-        return original.call(this, options, patchedCallback);
+    return (original: any) => {
+      return function patchedConnect(...args: any) {
+        console.log('here baby' + instrumentation);
+        return original.call(args);
       };
     };
   }
 
-  private _getV3Patches<T extends WireProtocolInternal>() {
+  private _getV3ConnectionPatches<T extends WireProtocolInternal>() {
     return {
       v3PatchConnection: (moduleExports: T, moduleVersion?: string) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
@@ -233,6 +219,60 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         this._unwrap(moduleExports, 'query');
         this._unwrap(moduleExports, 'getMore');
       },
+    };
+  }
+
+  private _getV4ConnectPatches<T extends V4Connect>() {
+    return {
+      v4PatchConnect: (moduleExports: any, moduleVersion?: string) => {
+        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+        if (isWrapped(moduleExports.connect)) {
+          this._unwrap(moduleExports, 'connect');
+        }
+
+        this._wrap(moduleExports, 'connect', this._getV4ConnectCommand());
+        return moduleExports;
+      },
+      v4UnpatchConnect: (moduleExports?: T, moduleVersion?: string) => {
+        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
+        if (moduleExports === undefined) return;
+
+        this._unwrap(moduleExports, 'connect');
+      },
+    };
+  }
+
+  private _getV4ConnectCommand() {
+    const instrumentation = this;
+
+    return (original: V4Connect['connect']) => {
+      return function patchedConnect(
+        this: unknown,
+        options: any,
+        callback: any
+      ) {
+        const patchedCallback = function (err: any, conn: any) {
+          if (err || !conn) {
+            callback(err, conn);
+            return;
+          }
+
+          instrumentation._connectionsUsage.add(1, {
+            'db.client.connection.usage.state': 'idle',
+            'db.client.connection.usage.name': conn?.id,
+          });
+
+          conn.on('close', () => {
+            instrumentation._connectionsUsage.add(-1, {
+              'db.client.connection.usage.state': 'idle',
+              'db.client.connection.usage.name': conn?.id,
+            });
+          });
+
+          callback(err, conn);
+        };
+        return original.call(this, options, patchedCallback);
+      };
     };
   }
 

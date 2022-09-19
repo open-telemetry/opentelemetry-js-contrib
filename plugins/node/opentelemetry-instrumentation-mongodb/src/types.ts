@@ -173,6 +173,11 @@ export type V4Connection = {
   ): void;
 };
 
+// https://github.com/mongodb/node-mongodb-native/blob/3.7/lib/core/connection/connection.js
+export type V3Connection = {
+  constructor: (socket: any, options: any) => void;
+};
+
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connect.ts
 export type V4Connect = {
   connect: (options: any, callback: any) => void;
