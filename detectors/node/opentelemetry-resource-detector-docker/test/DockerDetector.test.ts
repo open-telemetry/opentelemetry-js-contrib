@@ -29,6 +29,11 @@ describe('dockerCGroupV1Detector', () => {
   let readStub;
   const correctCgroupData =
     'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
+  const correctCgroupV2Data =
+    'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/hostname';
+
+  const wrongCgroupV2Data =
+    'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/host';
 
   afterEach(() => {
     sinon.restore();
@@ -59,6 +64,33 @@ describe('dockerCGroupV1Detector', () => {
       assertContainerResource(resource, {
         id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
       });
+    });
+
+    it('should return a resource with container ID with a valid container ID present for v2', async () => {
+      readStub = sinon.stub(DockerDetector, 'readFileAsync' as any);
+
+      readStub.onFirstCall().resolves('');
+      readStub.onSecondCall().resolves(correctCgroupV2Data);
+
+      const resource: Resource = await dockerDetector.detect();
+      sinon.assert.calledTwice(readStub);
+
+      assert.ok(resource);
+      assertContainerResource(resource, {
+        id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
+      });
+    });
+
+    it('should return a empty resource with failed hostname check for v2', async () => {
+      readStub = sinon.stub(DockerDetector, 'readFileAsync' as any);
+
+      readStub.onFirstCall().resolves('');
+      readStub.onSecondCall().resolves(wrongCgroupV2Data);
+
+      const resource: Resource = await dockerDetector.detect();
+      sinon.assert.calledTwice(readStub);
+
+      assert.ok(resource);
     });
 
     it('should return a resource without attribute container.id when cgroup file does not contain valid Container ID', async () => {
