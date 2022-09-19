@@ -76,7 +76,9 @@ export class DockerDetector implements Detector {
           str = str
             .split('/')
             .filter(s => s.length >= this.CONTAINER_ID_LENGTH)[0];
-          return str.substring(str.length - this.CONTAINER_ID_LENGTH);
+          if (str.length >= this.CONTAINER_ID_LENGTH) {
+            return str.substring(str.length - this.CONTAINER_ID_LENGTH);
+          }
         }
       }
     } catch (e) {
