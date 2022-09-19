@@ -22,6 +22,7 @@ import {
   InMemoryMetricExporter,
   ResourceMetrics,
 } from '@opentelemetry/sdk-metrics';
+import { TestMetricReader } from '../TestMetricReader';
 
 const OTEL_TRACING_TESTING_MEMORY_EXPORTER = Symbol.for(
   'opentelemetry.tracing.testing.memory_exporter'
@@ -31,12 +32,17 @@ const OTEL_METRICS_TESTING_MEMORY_EXPORTER = Symbol.for(
   'opentelemetry.metrics.testing.memory_exporter'
 );
 
-type OTelProvidersApiGlobal = {
+const OTEL_METRICS_TESTING_READER = Symbol.for(
+  'opentelemetry.metrics.testing.reader'
+);
+
+type OTelExportersApiGlobal = {
   [OTEL_TRACING_TESTING_MEMORY_EXPORTER]?: InMemorySpanExporter;
   [OTEL_METRICS_TESTING_MEMORY_EXPORTER]?: InMemoryMetricExporter;
+  [OTEL_METRICS_TESTING_READER]?: TestMetricReader;
 };
 
-const _global = global as OTelProvidersApiGlobal;
+const _global = global as OTelExportersApiGlobal;
 
 export const getTracingTestMemoryExporter = ():
   | InMemorySpanExporter
@@ -48,6 +54,10 @@ export const getMetricsTestMemoryExporter = ():
   | InMemoryMetricExporter
   | undefined => {
   return _global[OTEL_METRICS_TESTING_MEMORY_EXPORTER];
+};
+
+export const getMetricsTestReader = (): TestMetricReader | undefined => {
+  return _global[OTEL_METRICS_TESTING_READER];
 };
 
 export const setMetricsTestMemoryExporter = (
@@ -75,9 +85,10 @@ export async function getTestMetrics(
   }
 
   const exporter = getMetricsTestMemoryExporter()!;
+  const reader = getMetricsTestReader()!;
   let totalExports = 0;
   while (totalExports < numberOfExports) {
-    await new Promise(resolve => setTimeout(resolve, 20));
+    await reader.collectAndExport();
     const exportedMetrics = exporter.getMetrics();
     totalExports = exportedMetrics.length;
   }
