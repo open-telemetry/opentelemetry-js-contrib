@@ -30,7 +30,7 @@ export class DockerDetector implements Detector {
   readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
   readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
   readonly UTF8_UNICODE = 'utf8';
-  readonly HOSTNAME = "hostname";
+  readonly HOSTNAME = 'hostname';
 
   private static readFileAsync = util.promisify(fs.readFile);
 
@@ -40,8 +40,8 @@ export class DockerDetector implements Detector {
       return !containerId
         ? Resource.empty()
         : new Resource({
-          [SemanticResourceAttributes.CONTAINER_ID]: containerId,
-        });
+            [SemanticResourceAttributes.CONTAINER_ID]: containerId,
+          });
     } catch (e) {
       diag.info(
         'Docker Detector did not identify running inside a supported docker container, no docker attributes will be added to resource: ',
@@ -73,7 +73,7 @@ export class DockerDetector implements Detector {
       splitData = rawData.trim().split('\n');
       for (let str of splitData) {
         if (str.includes(this.HOSTNAME)) {
-          str
+          str = str
             .split('/')
             .filter(s => s.length >= this.CONTAINER_ID_LENGTH)[0];
           return str.substring(str.length - this.CONTAINER_ID_LENGTH);

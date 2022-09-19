@@ -69,7 +69,7 @@ describe('dockerCGroupV1Detector', () => {
       const resource: Resource = await dockerDetector.detect();
       assert.deepStrictEqual(resource.attributes, {});
 
-      sinon.assert.calledOnce(readStub);
+      sinon.assert.calledTwice(readStub);
       assert.ok(resource);
     });
 
