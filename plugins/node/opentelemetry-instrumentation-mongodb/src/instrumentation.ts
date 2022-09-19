@@ -43,8 +43,6 @@ import {
   CommandResult,
   V4Connection,
   V4Connect,
-  V3Connect,
-  V3Connection,
 } from './types';
 import { VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api-metrics';
@@ -56,15 +54,15 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
-    this._updateMetricInstruments();
+    this._setMetricInstruments();
   }
 
   override setMeterProvider(meterProvider: MeterProvider) {
     super.setMeterProvider(meterProvider);
-    this._updateMetricInstruments();
+    this._setMetricInstruments();
   }
 
-  private _updateMetricInstruments() {
+  private _setMetricInstruments() {
     this._connectionsUsage = this.meter.createUpDownCounter(
       'db.client.connections.usage',
       {
@@ -80,7 +78,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       v3PatchConnection: v3PatchConnection,
       v3UnpatchConnection: v3UnpatchConnection,
     } = this._getV3ConnectionPatches();
-    const { v3PatchConnect, v3UnpatchConnect } = this._getV3ConnectPatches();
 
     const { v4PatchConnect, v4UnpatchConnect } = this._getV4ConnectPatches();
     const { v4PatchConnection, v4UnpatchConnection } =
@@ -98,12 +95,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             ['>=3.3 <4'],
             v3PatchConnection,
             v3UnpatchConnection
-          ),
-          new InstrumentationNodeModuleFile<V3Connect>(
-            'mongodb/lib/mongo_client.js',
-            ['>=3.3 <4'],
-            v3PatchConnect,
-            v3UnpatchConnect
           ),
         ]
       ),
@@ -128,37 +119,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         ]
       ),
     ];
-  }
-
-  private _getV3ConnectPatches<T extends any>() {
-    return {
-      v3PatchConnect: (moduleExports: any, moduleVersion?: string) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
-        this._wrap(
-          moduleExports.MongoClient.connect,
-          'connect',
-          this._getV3ConnectCommand()
-        );
-        return moduleExports;
-      },
-      v3UnpatchConnect: (moduleExports?: T, moduleVersion?: string) => {
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
-        if (moduleExports === undefined) return;
-
-        this._unwrap(moduleExports, 'constructor');
-      },
-    };
-  }
-
-  private _getV3ConnectCommand() {
-    const instrumentation = this;
-
-    return (original: any) => {
-      return function patchedConnect(...args: any) {
-        console.log('here baby' + instrumentation);
-        return original.call(args);
-      };
-    };
   }
 
   private _getV3ConnectionPatches<T extends WireProtocolInternal>() {
