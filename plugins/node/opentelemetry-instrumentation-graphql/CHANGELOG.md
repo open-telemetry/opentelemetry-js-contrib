@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.30.0...instrumentation-graphql-v0.31.0) (2022-09-15)
+
+
+### Features
+
+* **graphql:** exported all graphql types ([#1097](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1097)) ([710103b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/710103b4d9486fc2e5a9fa567ea1982f218ab4bf))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.29.0...instrumentation-graphql-v0.30.0) (2022-09-02)
 
 
