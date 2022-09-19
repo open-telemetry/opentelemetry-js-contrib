@@ -6,7 +6,7 @@
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-web#readme",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.12.0"
+    "node": ">=14"
   },
   "publishConfig": {
     "access": "public"

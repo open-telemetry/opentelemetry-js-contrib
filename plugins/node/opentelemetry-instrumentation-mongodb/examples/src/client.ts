@@ -1,9 +1,11 @@
 'use strict';
 
-const api = require('@opentelemetry/api');
-const tracer = require('./tracer')('example-mongodb-http-client');
-// eslint-disable-next-line import/order
-const http = require('http');
+import * as api  from '@opentelemetry/api';
+import { setupTracing } from './tracer';
+
+const tracer = setupTracing('example-mongodb-http-client')
+import * as http from 'http';
+
 
 /** A function which makes requests and handles response. */
 function makeRequest() {
@@ -22,7 +24,7 @@ function makeRequest() {
       port: 8080,
       path: '/collection/',
     }, (response) => {
-      const body = [];
+      const body: any = [];
       response.on('data', (chunk) => body.push(chunk));
       response.on('end', () => {
         responses += 1;
@@ -38,7 +40,7 @@ function makeRequest() {
       port: 8080,
       path: '/insert/',
     }, (response) => {
-      const body = [];
+      const body: any = [];
       response.on('data', (chunk) => body.push(chunk));
       response.on('end', () => {
         responses += 1;
@@ -54,7 +56,7 @@ function makeRequest() {
       port: 8080,
       path: '/get/',
     }, (response) => {
-      const body = [];
+      const body: any = [];
       response.on('data', (chunk) => body.push(chunk));
       response.on('end', () => {
         responses += 1;
