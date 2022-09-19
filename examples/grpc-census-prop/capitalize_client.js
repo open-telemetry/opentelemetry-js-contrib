@@ -25,8 +25,10 @@ const { Fetch } = grpc.load(PROTO_PATH).rpc;
  * Creates a gRPC client, makes a gRPC call and waits before shutting down
  */
 function main() {
-  const client = new Fetch('localhost:50051',
-    grpc.credentials.createInsecure());
+  const client = new Fetch(
+    'localhost:50051',
+    grpc.credentials.createInsecure(),
+  );
   const data = process.argv[2] || 'opentelemetry';
   console.log('> ', data);
 
