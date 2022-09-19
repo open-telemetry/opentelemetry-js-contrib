@@ -17,18 +17,23 @@
 import * as sinon from 'sinon';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
-import { dockerCGroupV1Detector } from '../src';
+import { dockerDetector } from '../src';
 import {
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
 
-import { DockerCGroupV1Detector } from '../src';
+import { DockerDetector } from '../src';
 
 describe('dockerCGroupV1Detector', () => {
   let readStub;
   const correctCgroupData =
     'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
+  const correctCgroupV2Data =
+    'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/hostname';
+
+  const wrongCgroupV2Data =
+    'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/host';
 
   afterEach(() => {
     sinon.restore();
@@ -37,10 +42,10 @@ describe('dockerCGroupV1Detector', () => {
   describe('Supported docker - Container ID ', () => {
     it('should return a resource attributes without container id - docker cgroup v1 detector', async () => {
       readStub = sinon
-        .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
+        .stub(DockerDetector, 'readFileAsync' as any)
         .resolves(undefined);
 
-      const resource: Resource = await dockerCGroupV1Detector.detect();
+      const resource: Resource = await dockerDetector.detect();
 
       assert.deepStrictEqual(resource.attributes, {});
       assert.ok(resource);
@@ -48,10 +53,10 @@ describe('dockerCGroupV1Detector', () => {
 
     it('should return a resource with container ID with a valid container ID present', async () => {
       readStub = sinon
-        .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
+        .stub(DockerDetector, 'readFileAsync' as any)
         .resolves(correctCgroupData);
 
-      const resource: Resource = await dockerCGroupV1Detector.detect();
+      const resource: Resource = await dockerDetector.detect();
 
       sinon.assert.calledOnce(readStub);
 
@@ -61,15 +66,42 @@ describe('dockerCGroupV1Detector', () => {
       });
     });
 
+    it('should return a resource with container ID with a valid container ID present for v2', async () => {
+      readStub = sinon.stub(DockerDetector, 'readFileAsync' as any);
+
+      readStub.onFirstCall().resolves('');
+      readStub.onSecondCall().resolves(correctCgroupV2Data);
+
+      const resource: Resource = await dockerDetector.detect();
+      sinon.assert.calledTwice(readStub);
+
+      assert.ok(resource);
+      assertContainerResource(resource, {
+        id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
+      });
+    });
+
+    it('should return a empty resource with failed hostname check for v2', async () => {
+      readStub = sinon.stub(DockerDetector, 'readFileAsync' as any);
+
+      readStub.onFirstCall().resolves('');
+      readStub.onSecondCall().resolves(wrongCgroupV2Data);
+
+      const resource: Resource = await dockerDetector.detect();
+      sinon.assert.calledTwice(readStub);
+
+      assert.ok(resource);
+    });
+
     it('should return a resource without attribute container.id when cgroup file does not contain valid Container ID', async () => {
       readStub = sinon
-        .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
+        .stub(DockerDetector, 'readFileAsync' as any)
         .resolves('');
 
-      const resource: Resource = await dockerCGroupV1Detector.detect();
+      const resource: Resource = await dockerDetector.detect();
       assert.deepStrictEqual(resource.attributes, {});
 
-      sinon.assert.calledOnce(readStub);
+      sinon.assert.calledTwice(readStub);
       assert.ok(resource);
     });
 
@@ -79,11 +111,27 @@ describe('dockerCGroupV1Detector', () => {
       };
 
       readStub = sinon
-        .stub(DockerCGroupV1Detector, 'readFileAsync' as any)
+        .stub(DockerDetector, 'readFileAsync' as any)
         .rejects(errorMsg.fileNotFoundError);
 
-      const resource: Resource = await dockerCGroupV1Detector.detect();
+      const resource: Resource = await dockerDetector.detect();
 
+      sinon.assert.calledOnce(readStub);
+      assertEmptyResource(resource);
+    });
+
+    //cgroup v2 and containerd test
+
+    it('should return an empty resource when containerId is not valid', async () => {
+      const errorMsg = {
+        fileNotFoundError: new Error('cannot find file in path'),
+      };
+
+      readStub = sinon
+        .stub(DockerDetector, 'readFileAsync' as any)
+        .rejects(errorMsg.fileNotFoundError);
+
+      const resource: Resource = await dockerDetector.detect();
       sinon.assert.calledOnce(readStub);
       assertEmptyResource(resource);
     });
