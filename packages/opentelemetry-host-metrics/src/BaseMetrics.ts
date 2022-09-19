@@ -16,7 +16,7 @@
 
 import * as api from '@opentelemetry/api';
 import * as apiMetrics from '@opentelemetry/api-metrics';
-import * as metrics from '@opentelemetry/sdk-metrics-base';
+import * as metrics from '@opentelemetry/sdk-metrics';
 
 import { VERSION } from './version';
 
