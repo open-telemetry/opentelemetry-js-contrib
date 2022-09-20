@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  Aggregation,
-  AggregationTemporality,
-  InstrumentType,
-  MetricReader,
-  PushMetricExporter,
-} from '@opentelemetry/sdk-metrics';
+import { MetricReader, PushMetricExporter } from '@opentelemetry/sdk-metrics';
 
 export class TestMetricReader extends MetricReader {
   constructor(private _exporter: PushMetricExporter) {
@@ -46,15 +40,5 @@ export class TestMetricReader extends MetricReader {
         }
       });
     });
-  }
-
-  selectAggregation(instrumentType: InstrumentType): Aggregation {
-    return Aggregation.Default();
-  }
-
-  selectAggregationTemporality(
-    instrumentType: InstrumentType
-  ): AggregationTemporality {
-    return this._exporter.selectAggregationTemporality(instrumentType);
   }
 }
