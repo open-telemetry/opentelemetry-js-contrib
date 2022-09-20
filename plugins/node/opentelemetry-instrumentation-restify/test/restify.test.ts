@@ -70,6 +70,12 @@ const defer = (): {
   return { promise, resolve, reject };
 };
 
+class AppError extends Error {
+  toJSON() {
+    return { message: this.message };
+  }
+}
+
 const useHandler: restify.RequestHandler = (req, res, next) => {
   // only run if route was found
   next();
@@ -78,10 +84,10 @@ const getHandler: restify.RequestHandler = (req, res, next) => {
   res.send({ route: req?.params?.param });
 };
 const throwError: restify.RequestHandler = (req, res, next) => {
-  throw new Error('NOK');
+  throw new AppError('NOK');
 };
 const returnError: restify.RequestHandler = (req, res, next) => {
-  next(new Error('NOK'));
+  next(new AppError('NOK'));
 };
 
 const createServer = async (setupRoutes?: Function) => {
