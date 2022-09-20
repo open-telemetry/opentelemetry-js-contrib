@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as restify from 'restify';
+import type * as restify from 'restify';
 import { context, trace } from '@opentelemetry/api';
 import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -31,6 +31,11 @@ const plugin = new RestifyInstrumentation();
 import * as assert from 'assert';
 import * as http from 'http';
 import { AddressInfo } from 'net';
+
+const assertIsVersion = (str: any) => {
+  assert.strictEqual(typeof str, 'string');
+  assert(/^[0-9]+\.[0-9]+\.[0-9]+$/.test(str));
+};
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
@@ -77,6 +82,7 @@ const throwError: restify.RequestHandler = (req, res, next) => {
 };
 
 const createServer = async (setupRoutes?: Function) => {
+  const restify = require('restify');
   const server = restify.createServer();
 
   if (typeof setupRoutes === 'function') {
@@ -150,7 +156,7 @@ describe('Restify Instrumentation', () => {
             assert.strictEqual(span.attributes['restify.method'], 'pre');
             assert.strictEqual(span.attributes['restify.type'], 'middleware');
             assert.strictEqual(span.attributes['restify.name'], undefined);
-            assert.strictEqual(span.attributes['restify.version'], 'n/a');
+            assertIsVersion(span.attributes['restify.version']);
           }
           {
             // span from use
@@ -160,7 +166,7 @@ describe('Restify Instrumentation', () => {
             assert.strictEqual(span.attributes['restify.method'], 'use');
             assert.strictEqual(span.attributes['restify.type'], 'middleware');
             assert.strictEqual(span.attributes['restify.name'], 'useHandler');
-            assert.strictEqual(span.attributes['restify.version'], 'n/a');
+            assertIsVersion(span.attributes['restify.version']);
           }
           {
             // span from get
@@ -173,7 +179,7 @@ describe('Restify Instrumentation', () => {
               'request_handler'
             );
             assert.strictEqual(span.attributes['restify.name'], 'getHandler');
-            assert.strictEqual(span.attributes['restify.version'], 'n/a');
+            assertIsVersion(span.attributes['restify.version']);
           }
         }
       );
@@ -199,7 +205,7 @@ describe('Restify Instrumentation', () => {
             assert.strictEqual(span.attributes['restify.method'], 'pre');
             assert.strictEqual(span.attributes['restify.type'], 'middleware');
             assert.strictEqual(span.attributes['restify.name'], undefined);
-            assert.strictEqual(span.attributes['restify.version'], 'n/a');
+            assertIsVersion(span.attributes['restify.version']);
           }
           assert.strictEqual(
             res,
@@ -227,7 +233,7 @@ describe('Restify Instrumentation', () => {
             assert.strictEqual(span.attributes['restify.method'], 'pre');
             assert.strictEqual(span.attributes['restify.type'], 'middleware');
             assert.strictEqual(span.attributes['restify.name'], undefined);
-            assert.strictEqual(span.attributes['restify.version'], 'n/a');
+            assertIsVersion(span.attributes['restify.version']);
           }
           {
             // span from use
@@ -237,7 +243,7 @@ describe('Restify Instrumentation', () => {
             assert.strictEqual(span.attributes['restify.method'], 'use');
             assert.strictEqual(span.attributes['restify.type'], 'middleware');
             assert.strictEqual(span.attributes['restify.name'], 'useHandler');
-            assert.strictEqual(span.attributes['restify.version'], 'n/a');
+            assertIsVersion(span.attributes['restify.version']);
           }
           {
             // span from get
@@ -250,7 +256,7 @@ describe('Restify Instrumentation', () => {
               'request_handler'
             );
             assert.strictEqual(span.attributes['restify.name'], 'throwError');
-            assert.strictEqual(span.attributes['restify.version'], 'n/a');
+            assertIsVersion(span.attributes['restify.version']);
           }
         }
       );
@@ -318,7 +324,7 @@ describe('Restify Instrumentation', () => {
             'request_handler'
           );
           assert.strictEqual(span.attributes['restify.name'], 'getHandler');
-          assert.strictEqual(span.attributes['restify.version'], 'n/a');
+          assertIsVersion(span.attributes['restify.version']);
         }
         assert.strictEqual(res, '{"route":"hello"}');
       } finally {
@@ -376,7 +382,7 @@ describe('Restify Instrumentation', () => {
             'request_handler'
           );
           assert.strictEqual(span.attributes['restify.name'], 'asyncHandler');
-          assert.strictEqual(span.attributes['restify.version'], 'n/a');
+          assertIsVersion(span.attributes['restify.version']);
         }
       } finally {
         testLocalServer.close();
@@ -441,7 +447,7 @@ describe('Restify Instrumentation', () => {
             span.attributes['restify.name'],
             'promiseReturningHandler'
           );
-          assert.strictEqual(span.attributes['restify.version'], 'n/a');
+          assertIsVersion(span.attributes['restify.version']);
         }
       } finally {
         testLocalServer.close();
