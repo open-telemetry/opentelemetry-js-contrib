@@ -289,7 +289,12 @@ describe('Restify Instrumentation', () => {
           rootSpan.end();
           assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
 
-          if (semver.satisfies(LIB_VERSION, '>=7 <8')) {
+          if (semver.satisfies(LIB_VERSION, '>=8')) {
+            assert.deepEqual(
+              result,
+              '{"code":"Internal","message":"Error: NOK"}'
+            );
+          } else if (semver.satisfies(LIB_VERSION, '>=7 <8')) {
             assert.deepEqual(
               result,
               '{"code":"Internal","message":"caused by Error: NOK"}'
