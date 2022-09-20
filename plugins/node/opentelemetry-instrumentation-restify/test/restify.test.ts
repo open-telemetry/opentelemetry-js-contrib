@@ -225,7 +225,7 @@ describe('Restify Instrumentation', () => {
       );
     });
 
-    it('should create a span for an endpoint that threw', async () => {
+    it.skip('should create a span for an endpoint that threw', async () => {
       const rootSpan = tracer.startSpan('clientSpan');
 
       await context.with(
