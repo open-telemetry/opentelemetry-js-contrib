@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import type * as restify from 'restify';
 import { context, trace } from '@opentelemetry/api';
 import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -33,6 +32,7 @@ import * as assert from 'assert';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 
+import * as restify from 'restify';
 const LIB_VERSION = require('restify/package.json').version;
 
 const assertIsVersion = (str: any) => {
@@ -94,7 +94,6 @@ const returnError: restify.RequestHandler = (req, res, next) => {
 };
 
 const createServer = async (setupRoutes?: Function) => {
-  const restify = require('restify');
   const server = restify.createServer();
 
   if (typeof setupRoutes === 'function') {
