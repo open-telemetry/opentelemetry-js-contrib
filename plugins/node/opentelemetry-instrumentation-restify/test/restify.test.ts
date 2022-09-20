@@ -101,7 +101,7 @@ const createServer = async (setupRoutes?: Function) => {
     setupRoutes(server);
   } else {
     // to force an anonymous fn for testing
-    server.pre((req, res, next) => {
+    server.pre((res: any, req: any, next: any) => {
       // run before routing
       next();
     });
