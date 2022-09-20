@@ -66,7 +66,7 @@ export const setMetricsTestMemoryExporter = (
   _global[OTEL_METRICS_TESTING_MEMORY_EXPORTER] = memoryExporter;
 };
 
-export const setTracingTestMemoryExporter = (
+export const setTestMemorySpanExporter = (
   memoryExporter: InMemorySpanExporter
 ) => {
   _global[OTEL_TRACING_TESTING_MEMORY_EXPORTER] = memoryExporter;
