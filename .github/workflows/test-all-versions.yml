@@ -1,13 +1,16 @@
 name: Test All Versions
 on:
-  push:
-    branches:
-      - "main"
-      - "release/**"
-      - "release-please/**"
   schedule:
     - cron: "30 4 * * *"
   workflow_dispatch:
+    inputs:
+      lerna-args:
+        type: string
+  workflow_call:
+    inputs:
+      lerna-args:
+        required: true
+        type: string
 
 jobs:
   tav:
@@ -153,4 +156,4 @@ jobs:
       - name: Bootstrap Dependencies
         run: lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Run test-all-versions
-        run: lerna run test-all-versions ${{ matrix.lerna-extra-args }} --stream --concurrency 1
+        run: lerna run test-all-versions ${{ inputs.lerna-args }} ${{ matrix.lerna-extra-args }} --stream --concurrency 1
