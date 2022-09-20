@@ -23,7 +23,7 @@ import { MongoResponseHookInformation } from '../src';
 import {
   registerInstrumentationTesting,
   getTestSpans,
-  resetTracingMemoryExporter,
+  resetTestMemorySpanExporter,
 } from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = registerInstrumentationTesting(
@@ -83,7 +83,7 @@ describe('MongoDBInstrumentation', () => {
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
     collection.insertMany(insertData, (err, result) => {
-      resetTracingMemoryExporter();
+      resetTestMemorySpanExporter();
       done();
     });
   });
@@ -440,7 +440,7 @@ describe('MongoDBInstrumentation', () => {
             const spans = getTestSpans();
             const mainSpan = spans[spans.length - 1];
             assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
-            resetTracingMemoryExporter();
+            resetTestMemorySpanExporter();
 
             collection
               .find({ a: 1 })

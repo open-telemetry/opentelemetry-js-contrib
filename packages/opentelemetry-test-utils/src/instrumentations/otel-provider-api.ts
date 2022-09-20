@@ -44,7 +44,7 @@ type OTelExportersApiGlobal = {
 
 const _global = global as OTelExportersApiGlobal;
 
-export const getTracingTestMemoryExporter = ():
+export const getTestMemorySpanExporter = ():
   | InMemorySpanExporter
   | undefined => {
   return _global[OTEL_TRACING_TESTING_MEMORY_EXPORTER];
@@ -60,7 +60,7 @@ export const getMetricsTestReader = (): TestMetricReader | undefined => {
   return _global[OTEL_METRICS_TESTING_READER];
 };
 
-export const setMetricsTestMemoryExporter = (
+export const setTestMetricsMemoryExporter = (
   memoryExporter: InMemoryMetricExporter
 ) => {
   _global[OTEL_METRICS_TESTING_MEMORY_EXPORTER] = memoryExporter;
@@ -73,7 +73,7 @@ export const setTestMemorySpanExporter = (
 };
 
 export const getTestSpans = (): ReadableSpan[] => {
-  return getTracingTestMemoryExporter()!.getFinishedSpans();
+  return getTestMemorySpanExporter()!.getFinishedSpans();
 };
 
 export async function getTestMetrics(
@@ -84,7 +84,7 @@ export async function getTestMetrics(
     throw new Error('numberOfExports must be greater than or equal to 0');
   }
 
-  const exporter = getMetricsTestMemoryExporter()!;
+  const exporter = getTestMemoryMetricsExporter()!;
   const reader = getMetricsTestReader()!;
   let totalExports = 0;
   while (totalExports < numberOfExports) {
@@ -96,10 +96,10 @@ export async function getTestMetrics(
   return exporter.getMetrics();
 }
 
-export const resetTracingMemoryExporter = () => {
-  getTracingTestMemoryExporter()?.reset();
+export const resetTestMemorySpanExporter = () => {
+  getTestMemorySpanExporter()?.reset();
 };
 
-export const resetMetricsMemoryExporter = () => {
-  getMetricsTestMemoryExporter()?.reset();
+export const resetTestMemoryMetricsExporter = () => {
+  getTestMemoryMetricsExporter()?.reset();
 };

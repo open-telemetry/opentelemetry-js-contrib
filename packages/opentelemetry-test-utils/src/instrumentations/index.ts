@@ -19,7 +19,7 @@ import { getInstrumentation } from './instrumentation-singelton';
 import { registerInstrumentationTestingProvider } from './otel-default-provider';
 import {
   resetMetricsMemoryExporter,
-  resetTracingMemoryExporter,
+  resetTestMemorySpanExporter,
 } from './otel-provider-api';
 
 export * from './instrumentation-singelton';
@@ -60,7 +60,7 @@ export const mochaHooks = {
   },
 
   beforeEach(done: Function) {
-    resetTracingMemoryExporter();
+    resetTestMemorySpanExporter();
     resetMetricsMemoryExporter();
     // reset the config before each test, so that we don't leak state from one test to another
     getInstrumentation()?.setConfig({});

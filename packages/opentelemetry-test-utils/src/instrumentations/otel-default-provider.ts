@@ -23,10 +23,10 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
-  getMetricsTestMemoryExporter,
-  getTracingTestMemoryExporter,
-  setMetricsTestMemoryExporter,
-  setTracingTestMemoryExporter,
+  getTestMemoryMetricsExporter,
+  getTestMemorySpanExporter,
+  setTestMetricsMemoryExporter,
+  setTestMemorySpanExporter,
 } from './otel-provider-api';
 
 import {
@@ -51,16 +51,16 @@ export const registerInstrumentationTestingProvider = (
   const otelTestingTraceProvider = new NodeTracerProvider(tracerConfig);
   const otelTestingMeterProvider = new MeterProvider(meterConfig);
 
-  setTracingTestMemoryExporter(new InMemorySpanExporter());
-  setMetricsTestMemoryExporter(
+  setTestMemorySpanExporter(new InMemorySpanExporter());
+  setTestMetricsMemoryExporter(
     new InMemoryMetricExporter(AggregationTemporality.CUMULATIVE)
   );
 
   otelTestingTraceProvider.addSpanProcessor(
-    new SimpleSpanProcessor(getTracingTestMemoryExporter()!)
+    new SimpleSpanProcessor(getTestMemorySpanExporter()!)
   );
 
-  const meterReader = new TestMetricReader(getMetricsTestMemoryExporter()!);
+  const meterReader = new TestMetricReader(getTestMemoryMetricsExporter()!);
 
   otelTestingMeterProvider.addMetricReader(meterReader);
 
