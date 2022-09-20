@@ -44,7 +44,7 @@ export class ContainerDetector implements Detector {
           });
     } catch (e) {
       diag.info(
-        'Docker Detector did not identify running inside a supported docker container, no docker attributes will be added to resource: ',
+        'Container Detector did not identify running inside a supported container, no container attributes will be added to resource: ',
         e
       );
       return Resource.empty();

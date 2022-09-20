@@ -39,7 +39,7 @@ describe('ContainerDetector', () => {
     sinon.restore();
   });
 
-  describe('Supported docker - Container ID ', () => {
+  describe('Supported container - Container ID ', () => {
     it('should return a resource attributes without container id - docker cgroup v1 detector', async () => {
       readStub = sinon
         .stub(ContainerDetector, 'readFileAsync' as any)
