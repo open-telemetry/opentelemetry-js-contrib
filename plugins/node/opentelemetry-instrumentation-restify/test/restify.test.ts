@@ -228,55 +228,6 @@ describe('Restify Instrumentation', () => {
       );
     });
 
-    it.skip('should create a span for an endpoint that threw', async () => {
-      const rootSpan = tracer.startSpan('clientSpan');
-
-      await context.with(
-        trace.setSpan(context.active(), rootSpan),
-        async () => {
-          const result = await httpRequest.get(`http://localhost:${port}/thowing`);
-          rootSpan.end();
-          assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
-
-          assert.deepEqual(result, '{"code":"InternalError","message":"NOK"}');
-
-          {
-            // span from pre
-            const span = memoryExporter.getFinishedSpans()[0];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], undefined);
-            assert.strictEqual(span.attributes['restify.method'], 'pre');
-            assert.strictEqual(span.attributes['restify.type'], 'middleware');
-            assert.strictEqual(span.attributes['restify.name'], undefined);
-            assertIsVersion(span.attributes['restify.version']);
-          }
-          {
-            // span from use
-            const span = memoryExporter.getFinishedSpans()[1];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], '/thowing');
-            assert.strictEqual(span.attributes['restify.method'], 'use');
-            assert.strictEqual(span.attributes['restify.type'], 'middleware');
-            assert.strictEqual(span.attributes['restify.name'], 'useHandler');
-            assertIsVersion(span.attributes['restify.version']);
-          }
-          {
-            // span from get
-            const span = memoryExporter.getFinishedSpans()[2];
-            assert.notStrictEqual(span, undefined);
-            assert.strictEqual(span.attributes['http.route'], '/thowing');
-            assert.strictEqual(span.attributes['restify.method'], 'get');
-            assert.strictEqual(
-              span.attributes['restify.type'],
-              'request_handler'
-            );
-            assert.strictEqual(span.attributes['restify.name'], 'throwError');
-            assertIsVersion(span.attributes['restify.version']);
-          }
-        }
-      );
-    });
-
     it('should create a span for an endpoint that called done(error)', async () => {
       const rootSpan = tracer.startSpan('clientSpan');
 
