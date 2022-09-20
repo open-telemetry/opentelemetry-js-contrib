@@ -28,9 +28,12 @@ import RestifyInstrumentation from '../src';
 import * as types from '../src/types';
 const plugin = new RestifyInstrumentation();
 
+import * as semver from 'semver';
 import * as assert from 'assert';
 import * as http from 'http';
 import { AddressInfo } from 'net';
+
+const LIB_VERSION = require('restify/package.json').version;
 
 const assertIsVersion = (str: any) => {
   assert.strictEqual(typeof str, 'string');
@@ -280,11 +283,20 @@ describe('Restify Instrumentation', () => {
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
-          const result = await httpRequest.get(`http://localhost:${port}/erroring`);
+          const result = await httpRequest.get(
+            `http://localhost:${port}/erroring`
+          );
           rootSpan.end();
           assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
 
-          assert.deepEqual(result, '{"message":"NOK"}');
+          if (semver.satisfies(LIB_VERSION, '>=7 <8')) {
+            assert.deepEqual(
+              result,
+              '{"code":"Internal","message":"caused by Error: NOK"}'
+            );
+          } else {
+            assert.deepEqual(result, '{"message":"NOK"}');
+          }
 
           {
             // span from pre
