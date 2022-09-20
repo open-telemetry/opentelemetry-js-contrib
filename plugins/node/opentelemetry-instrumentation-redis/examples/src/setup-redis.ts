@@ -1,8 +1,8 @@
 'use strict';
 
-const redis = require('redis');
+import {createClient} from 'redis';
 
-const client = redis.createClient('redis://localhost:6379');
+const client = createClient('redis://localhost:6379');
 const redisPromise = new Promise(((resolve, reject) => {
   client.once('ready', () => {
     resolve(client);

@@ -32,6 +32,20 @@
     * @opentelemetry/instrumentation-mongodb bumped from ^0.31.0 to ^0.31.1
     * @opentelemetry/instrumentation-mysql2 bumped from ^0.31.0 to ^0.31.1
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.9.0 to ^0.9.1
+    * @opentelemetry/instrumentation-express bumped from ^0.31.0 to ^0.31.1
+    * @opentelemetry/instrumentation-graphql bumped from ^0.30.0 to ^0.31.0
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.32.0 to ^0.32.1
+    * @opentelemetry/instrumentation-mysql bumped from ^0.31.0 to ^0.31.1
+    * @opentelemetry/instrumentation-net bumped from ^0.30.0 to ^0.30.1
+    * @opentelemetry/instrumentation-pg bumped from ^0.31.0 to ^0.31.1
+    * @opentelemetry/instrumentation-pino bumped from ^0.31.0 to ^0.32.0
+    * @opentelemetry/instrumentation-redis-4 bumped from ^0.32.0 to ^0.33.0
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.31.2...auto-instrumentations-node-v0.32.0) (2022-09-02)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pino",
-  "version": "0.31.0",
+  "version": "0.32.0",
   "description": "OpenTelemetry instrumentation for pino",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -30,7 +30,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14"
   },
   "files": [
     "build/src/**/*.js",
