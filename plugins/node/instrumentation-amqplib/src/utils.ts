@@ -23,7 +23,6 @@ import {
   SpanAttributeValue,
 } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { URL } from 'url';
 import type * as amqp from 'amqplib';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(

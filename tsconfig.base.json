@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "lib": [ "ES2017" ],
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "declaration": true,
