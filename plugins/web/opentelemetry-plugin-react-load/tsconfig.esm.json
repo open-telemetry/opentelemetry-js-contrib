@@ -1,6 +1,7 @@
 {
   "extends": "../../../tsconfig.base.esm.json",
   "compilerOptions": {
+    "lib": ["ES2017", "DOM"],
     "rootDir": "src",
     "outDir": "build/esm",
     "jsx": "react",
