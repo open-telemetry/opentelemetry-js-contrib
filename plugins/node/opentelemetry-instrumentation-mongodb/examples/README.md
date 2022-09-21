@@ -23,14 +23,21 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
 
 ### Zipkin
 
+- Start MongoDB server via docker
+
+   ```sh
+   # from this directory
+   npm run docker:start
+   ```
+
 - Run the server
 
    ```sh
    # from this directory
-   npm run server
+   npm run zipkin:server
    ```
 
-- Run the client
+- Run the zipkin:client
 
    ```sh
    # from this directory
@@ -42,22 +49,29 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
 `server` script should output the `traceid` in the terminal (e.g `traceid: 4815c3d576d930189725f1f1d1bdfcc6`).
 Go to Zipkin with your browser <http://localhost:9411/zipkin/traces/(your-trace-id)> (e.g <http://localhost:9411/zipkin/traces/4815c3d576d930189725f1f1d1bdfcc6>)
 
-<p align="center"><img src="./images/zipkin-ui.png?raw=true"/></p>
+<p align="center"><img src="./images/zipkin.png?raw=true"/></p>
 
 ### Jaeger
+
+- Start MongoDB server via docker
+
+   ```sh
+   # from this directory
+   npm run docker:start
+   ```
 
 - Run the server
 
    ```sh
    # from this directory
-   npm run server
+   npm run jaeger:server
    ```
 
 - Run the client
 
    ```sh
    # from this directory
-   npm run client
+   npm run jaeger:client
    ```
 
 #### Jaeger UI

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-express",
-  "version": "0.31.0",
+  "version": "0.31.1",
   "description": "OpenTelemetry express automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -31,7 +31,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.12.0"
+    "node": ">=14"
   },
   "files": [
     "build/src/**/*.js",
