@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.30.0...instrumentation-graphql-v0.31.0) (2022-09-15)
+
+
+### Features
+
+* **graphql:** exported all graphql types ([#1097](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1097)) ([710103b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/710103b4d9486fc2e5a9fa567ea1982f218ab4bf))
+
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.29.0...instrumentation-graphql-v0.30.0) (2022-09-02)
+
+
+### Features
+
+* update experimental Otel deps to ^0.31.0 ([#1096](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1096)) ([4c8843b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4c8843be14896d1159a622c07eb3a049401ccba1))
+* update experimental Otel deps to ^0.32.0 ([#1143](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1143)) ([6fb1911](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6fb191139aed2ca763300dcf9adb51121a88f97e))
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.28.0...instrumentation-graphql-v0.29.0) (2022-06-08)
 
 
