@@ -41,7 +41,7 @@ registerInstrumentations({
 })
 ```
 
-See [examples/redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/redis) for a short example.
+See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis/examples) for a short example.
 
 ### Redis Instrumentation Options
 
