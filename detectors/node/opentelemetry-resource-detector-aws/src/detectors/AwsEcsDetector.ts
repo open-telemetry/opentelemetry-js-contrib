@@ -41,8 +41,8 @@ interface AwsLogOptions {
  * plugins of AWS X-Ray. Returns an empty Resource if detection fails.
  */
 export class AwsEcsDetector implements Detector {
-  readonly CONTAINER_ID_LENGTH = 64;
-  readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
+  static readonly CONTAINER_ID_LENGTH = 64;
+  static readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
 
   private static readFileAsync = util.promisify(fs.readFile);
 
@@ -53,23 +53,30 @@ export class AwsEcsDetector implements Detector {
       return Resource.empty();
     }
 
-    const [containerAndHostnameResource, metadatav4Resource] =
-      await Promise.all([
-        this._getContainerIdAndHostnameResource(),
-        this._getMetadataV4Resource(),
-      ]);
-
-    const metadataResource =
-      containerAndHostnameResource.merge(metadatav4Resource);
-
-    /*
-     * We return the Cloud Provider and Platform only when some other more detailed
-     * attributes are available
-     */
-    return new Resource({
+    let resource = new Resource({
       [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AWS,
       [SemanticResourceAttributes.CLOUD_PLATFORM]: CloudPlatformValues.AWS_ECS,
-    }).merge(metadataResource);
+    }).merge(await AwsEcsDetector._getContainerIdAndHostnameResource());
+
+    const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;
+    if (metadataUrl) {
+      const [containerMetadata, taskMetadata] = await Promise.all([
+        AwsEcsDetector._getUrlAsJson(metadataUrl),
+        AwsEcsDetector._getUrlAsJson(`${metadataUrl}/task`),
+      ]);
+
+      const metadatav4Resource = await AwsEcsDetector._getMetadataV4Resource(
+        containerMetadata,
+        taskMetadata
+      );
+      const logsResource = await AwsEcsDetector._getLogResource(
+        containerMetadata
+      );
+
+      resource = resource.merge(metadatav4Resource).merge(logsResource);
+    }
+
+    return resource;
   }
 
   /**
@@ -79,19 +86,21 @@ export class AwsEcsDetector implements Detector {
    * we do not throw an error but throw warning message
    * and then return null string
    */
-  private async _getContainerIdAndHostnameResource(): Promise<Resource> {
+  private static async _getContainerIdAndHostnameResource(): Promise<Resource> {
     const hostName = os.hostname();
 
     let containerId = '';
     try {
       const rawData = await AwsEcsDetector.readFileAsync(
-        this.DEFAULT_CGROUP_PATH,
+        AwsEcsDetector.DEFAULT_CGROUP_PATH,
         'utf8'
       );
       const splitData = rawData.trim().split('\n');
       for (const str of splitData) {
-        if (str.length > this.CONTAINER_ID_LENGTH) {
-          containerId = str.substring(str.length - this.CONTAINER_ID_LENGTH);
+        if (str.length > AwsEcsDetector.CONTAINER_ID_LENGTH) {
+          containerId = str.substring(
+            str.length - AwsEcsDetector.CONTAINER_ID_LENGTH
+          );
           break;
         }
       }
@@ -109,28 +118,21 @@ export class AwsEcsDetector implements Detector {
     return Resource.empty();
   }
 
-  private async _getMetadataV4Resource(): Promise<Resource> {
-    const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;
-
-    if (!metadataUrl) {
-      return Resource.empty();
-    }
-
-    const [responseContainer, responseTask] = await Promise.all([
-      AwsEcsDetector._getUrlAsJson(metadataUrl),
-      AwsEcsDetector._getUrlAsJson(`${metadataUrl}/task`),
-    ]);
-
-    const launchType: string = responseTask['LaunchType'];
-    const taskArn: string = responseTask['TaskARN'];
+  private static async _getMetadataV4Resource(
+    containerMetadata: any,
+    taskMetadata: any
+  ): Promise<Resource> {
+    const launchType: string = taskMetadata['LaunchType'];
+    const taskArn: string = taskMetadata['TaskARN'];
 
     const baseArn: string = taskArn.substring(0, taskArn.lastIndexOf(':'));
-    const cluster: string = responseTask['Cluster'];
+    const cluster: string = taskMetadata['Cluster'];
 
-    const clusterArn =
-      cluster.indexOf('arn:') == 0 ? cluster : `${baseArn}:cluster/${cluster}`;
+    const clusterArn = cluster.startsWith('arn:')
+      ? cluster
+      : `${baseArn}:cluster/${cluster}`;
 
-    const containerArn: string = responseContainer['ContainerARN'];
+    const containerArn: string = containerMetadata['ContainerARN'];
 
     // https://github.com/open-telemetry/opentelemetry-specification/blob/main/semantic_conventions/resource/cloud_provider/aws/ecs.yaml
     return new Resource({
@@ -139,15 +141,17 @@ export class AwsEcsDetector implements Detector {
       [SemanticResourceAttributes.AWS_ECS_LAUNCHTYPE]:
         launchType?.toLowerCase(),
       [SemanticResourceAttributes.AWS_ECS_TASK_ARN]: taskArn,
-      [SemanticResourceAttributes.AWS_ECS_TASK_FAMILY]: responseTask['Family'],
+      [SemanticResourceAttributes.AWS_ECS_TASK_FAMILY]: taskMetadata['Family'],
       [SemanticResourceAttributes.AWS_ECS_TASK_REVISION]:
-        responseTask['Revision'],
-    }).merge(AwsEcsDetector._getLogResource(responseContainer));
+        taskMetadata['Revision'],
+    });
   }
 
-  private static _getLogResource(containerMetadata: any): Resource {
+  private static async _getLogResource(
+    containerMetadata: any
+  ): Promise<Resource> {
     if (
-      containerMetadata['LogDriver'] != 'awslogs' ||
+      containerMetadata['LogDriver'] !== 'awslogs' ||
       !containerMetadata['LogOptions']
     ) {
       return Resource.EMPTY;
