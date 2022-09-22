@@ -18,8 +18,12 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Span } from '@opentelemetry/api';
 import type * as CassandraDriver from 'cassandra-driver';
 
+export interface ResponseInfo {
+  response: CassandraDriver.types.ResultSet;
+}
+
 export interface CassandraDriverResponseCustomAttributeFunction {
-  (span: Span, response: CassandraDriver.types.ResultSet): void;
+  (span: Span, ResponseInfo: ResponseInfo): void;
 }
 
 export interface CassandraDriverInstrumentationConfig
