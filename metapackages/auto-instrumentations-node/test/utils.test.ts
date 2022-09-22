@@ -46,6 +46,7 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-lru-memoizer',
         '@opentelemetry/instrumentation-memcached',
         '@opentelemetry/instrumentation-mongodb',
+        '@opentelemetry/instrumentation-mongoose',
         '@opentelemetry/instrumentation-mysql2',
         '@opentelemetry/instrumentation-mysql',
         '@opentelemetry/instrumentation-nestjs-core',

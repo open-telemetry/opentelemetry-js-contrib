@@ -37,6 +37,7 @@ import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 import { LruMemoizerInstrumentation } from '@opentelemetry/instrumentation-lru-memoizer';
 import { MemcachedInstrumentation } from '@opentelemetry/instrumentation-memcached';
 import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
+import { MongooseInstrumentation } from '@opentelemetry/instrumentation-mongoose';
 import { MySQL2Instrumentation } from '@opentelemetry/instrumentation-mysql2';
 import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
@@ -71,6 +72,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-lru-memoizer': LruMemoizerInstrumentation,
   '@opentelemetry/instrumentation-memcached': MemcachedInstrumentation,
   '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
+  '@opentelemetry/instrumentation-mongoose': MongooseInstrumentation,
   '@opentelemetry/instrumentation-mysql2': MySQL2Instrumentation,
   '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
   '@opentelemetry/instrumentation-nestjs-core': NestInstrumentation,
