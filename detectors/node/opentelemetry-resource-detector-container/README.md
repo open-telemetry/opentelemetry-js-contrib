@@ -1,14 +1,11 @@
-# OpenTelemetry Resource Detector for Docker
+# OpenTelemetry Resource Detector for Container
 
 [![NPM Published Version][npm-img]][npm-url]
-[![dependencies][dependencies-image]][dependencies-url]
-[![devDependencies][devDependencies-image]][devDependencies-url]
 [![Apache License][license-image]][license-image]
 
 [component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @abhee11
 
 Resource detector for container id.
-
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Installation
@@ -31,7 +28,7 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 ## Available detectors
 
-- `containerDetector`: Populates `container.id` for processes running on docker cgroup v1 or v2 or with containerd
+- `containerDetector`: Populates `container.id` for processes running on contianers supporting : docker( cgroup v1 or v2 ) or with containerd
 
 ## Useful links
 

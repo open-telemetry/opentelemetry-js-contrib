@@ -74,16 +74,19 @@ export class ContainerDetector implements Detector {
       .trim()
       .split('\n')
       .find(s => s.includes(this.HOSTNAME));
-    const containerIdStr =
-      str && str.split('/').find(s => s.length >= this.CONTAINER_ID_LENGTH);
-    if (containerIdStr) {
-      return containerIdStr.substring(
-        containerIdStr.length - this.CONTAINER_ID_LENGTH
-      );
-    }
-    return undefined;
+    const containerIdStr = str
+      ?.split('/')
+      .find(s => s.length >= this.CONTAINER_ID_LENGTH);
+    return containerIdStr?.substring(
+      containerIdStr.length - this.CONTAINER_ID_LENGTH
+    );
   }
 
+  /*
+    cgroupv1 path would still exist in case of container running on v2
+    but the cgroupv1 path would no longer have the container id and would
+    fallback on the cgroupv2 implementation.
+  */
   private async _getContainerId(): Promise<string | undefined> {
     try {
       return (

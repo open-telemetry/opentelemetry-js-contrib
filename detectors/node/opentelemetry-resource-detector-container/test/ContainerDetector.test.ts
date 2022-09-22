@@ -27,13 +27,13 @@ import { ContainerDetector } from '../src';
 
 describe('ContainerDetector', () => {
   let readStub;
-  const correctCgroupData =
+  const correctCgroupV1Data =
     'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
   const correctCgroupV2Data =
     'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/hostname';
 
   const wrongCgroupV2Data =
-    'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/host';
+    'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/wrongkeyword';
 
   afterEach(() => {
     sinon.restore();
@@ -54,7 +54,7 @@ describe('ContainerDetector', () => {
     it('should return a resource with container ID with a valid container ID present', async () => {
       readStub = sinon
         .stub(ContainerDetector, 'readFileAsync' as any)
-        .resolves(correctCgroupData);
+        .resolves(correctCgroupV1Data);
 
       const resource: Resource = await containerDetector.detect();
 
