@@ -339,7 +339,14 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
   private _callResponseHook(span: Span, response: any) {
     safeExecuteInTheMiddle(
       () => this._getConfig().responseHook!(span, response),
-      () => {},
+      e => {
+        if (e) {
+          this._diag.error(
+            'cassandra-driver instrumentation: responseHook error',
+            e
+          );
+        }
+      },
       true
     );
   }
