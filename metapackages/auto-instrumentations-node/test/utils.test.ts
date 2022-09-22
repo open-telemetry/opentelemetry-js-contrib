@@ -45,6 +45,7 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-lru-memoizer',
         '@opentelemetry/instrumentation-memcached',
         '@opentelemetry/instrumentation-mongodb',
+        '@opentelemetry/instrumentation-mongoose',
         '@opentelemetry/instrumentation-mysql2',
         '@opentelemetry/instrumentation-mysql',
         '@opentelemetry/instrumentation-nestjs-core',
@@ -56,7 +57,7 @@ describe('utils', () => {
         '@opentelemetry/instrumentation-restify',
         '@opentelemetry/instrumentation-winston',
       ];
-      assert.strictEqual(instrumentations.length, 30);
+      assert.strictEqual(instrumentations.length, 31);
       for (let i = 0, j = instrumentations.length; i < j; i++) {
         assert.strictEqual(
           instrumentations[i].instrumentationName,
