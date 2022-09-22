@@ -1,12 +1,12 @@
 'use strict';
 
-// eslint-disable-next-line import/order
-const tracer = require('./tracer')('example-redis-server');
+import { setupTracing } from './tracer'
+const tracer = setupTracing('example-redis-server');
 
 // Require in rest of modules
-const express = require('express');
-const axios = require('axios').default;
-const tracerHandlers = require('./express-tracer-handlers');
+import * as express from 'express';
+import axios from 'axios';
+import * as tracerHandlers from './express-tracer-handlers';
 const redisPromise = require('./setup-redis').redis;
 
 // Setup express
@@ -19,7 +19,7 @@ const PORT = 8080;
 async function setupRoutes() {
   const redis = await redisPromise;
 
-  app.get('/run_test', async (req, res) => {
+  app.get('/run_test', async (req: express.Request, res: express.Response) => {
     const uuid = Math.random()
       .toString(36)
       .substring(2, 15)
@@ -36,7 +36,7 @@ async function setupRoutes() {
     }
   });
 
-  app.get('/:cmd', (req, res) => {
+  app.get('/:cmd', (req: any , res: any) => {
     if (!req.query.args) {
       res.status(400).send('No args provided');
       return;
@@ -44,7 +44,7 @@ async function setupRoutes() {
 
     const { cmd } = req.params;
     const args = req.query.args.split(',');
-    redis[cmd].call(redis, ...args, (err, result) => {
+    redis[cmd].call(redis, ...args, (err: any, result: any) => {
       if (err) {
         res.sendStatus(400);
       } else if (result) {
