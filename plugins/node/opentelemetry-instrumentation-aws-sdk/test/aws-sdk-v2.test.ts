@@ -28,7 +28,7 @@ const instrumentation = registerInstrumentationTesting(
 import * as AWS from 'aws-sdk';
 
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
-import { SpanStatusCode, Span } from '@opentelemetry/api';
+import { SpanStatusCode, Span, SpanKind } from '@opentelemetry/api';
 import { AttributeNames } from '../src/enums';
 import { mockV2AwsSend } from './testing-utils';
 import * as expect from 'expect';
@@ -123,7 +123,7 @@ describe('instrumentation-aws-sdk-v2', () => {
         ).toBe(200);
 
         expect(spanCreateBucket.name).toBe('S3.CreateBucket');
-
+        expect(spanCreateBucket.kind).toEqual(SpanKind.CLIENT);
         expect(spanPutObject.attributes[AttributeNames.AWS_OPERATION]).toBe(
           'putObject'
         );
