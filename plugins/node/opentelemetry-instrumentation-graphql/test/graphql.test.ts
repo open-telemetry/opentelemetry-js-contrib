@@ -208,7 +208,7 @@ describe('graphql', () => {
         );
       });
 
-      it('should execute with correct timing', async () => {
+      it.skip('should execute with correct timing', async () => {
         const PARSE = 0;
         const VALIDATE = 1;
         const RESOLVE = 2;

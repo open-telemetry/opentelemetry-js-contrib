@@ -5,6 +5,9 @@
   ],
   "bump-minor-pre-major": true,
   "sequential-calls": true,
+  "release-paused": {
+    "plugins/node/opentelemetry-instrumentation-graphql": {}
+  },
   "packages": {
     "detectors/node/opentelemetry-resource-detector-alibaba-cloud": {},
     "detectors/node/opentelemetry-resource-detector-aws": {},
@@ -32,7 +35,6 @@
     "plugins/node/opentelemetry-instrumentation-express": {},
     "plugins/node/opentelemetry-instrumentation-fastify": {},
     "plugins/node/opentelemetry-instrumentation-generic-pool": {},
-    "plugins/node/opentelemetry-instrumentation-graphql": {},
     "plugins/node/opentelemetry-instrumentation-hapi": {},
     "plugins/node/opentelemetry-instrumentation-ioredis": {},
     "plugins/node/opentelemetry-instrumentation-knex": {},
