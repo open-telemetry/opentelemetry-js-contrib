@@ -70,6 +70,13 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3
+        ports:
+        - 22221:5672
+        env:
+          RABBITMQ_DEFAULT_USER: username
+          RABBITMQ_DEFAULT_PASS: password
       redis:
         image: redis
         ports:
@@ -79,19 +86,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      rabbitmq:
-        image: rabbitmq:3
-        ports:
-        - 22221:5672
-        env:
-          RABBITMQ_DEFAULT_USER: username
-          RABBITMQ_DEFAULT_PASS: password
     env:
-      RUN_MONGODB_TESTS: 1
-      RUN_MYSQL_TESTS: 1
-      RUN_MSSQL_TESTS: 1
-      RUN_POSTGRES_TESTS: 1
-      RUN_REDIS_TESTS: 1
       MONGODB_DB: opentelemetry-tests
       MONGODB_HOST: 127.0.0.1
       MONGODB_PORT: 27017
@@ -107,6 +102,11 @@ jobs:
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
+      RUN_MONGODB_TESTS: 1
+      RUN_MSSQL_TESTS: 1
+      RUN_MYSQL_TESTS: 1
+      RUN_POSTGRES_TESTS: 1
+      RUN_REDIS_TESTS: 1
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout
