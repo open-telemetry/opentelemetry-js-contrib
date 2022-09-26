@@ -1,5 +1,7 @@
 # OpenTelemetry ioredis Instrumentation for Node.js
 
+:bangbang: Releases for this package are paused until tests pass on all supported versions. Check out [open issues](https://github.com/open-telemetry/opentelemetry-js-contrib/labels/pkg%3Ainstrumentation-ioredis) to help.
+
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 

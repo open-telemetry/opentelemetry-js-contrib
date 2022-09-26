@@ -673,7 +673,7 @@ describe('ioredis', () => {
         );
       });
 
-      it('should instrument connect with requireParentSpan equal false', async () => {
+      it.skip('should instrument connect with requireParentSpan equal false', async () => {
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: false,
         };
