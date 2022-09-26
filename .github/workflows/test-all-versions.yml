@@ -27,10 +27,6 @@ jobs:
               --ignore @opentelemetry/resource-detector-alibaba-cloud
     runs-on: ubuntu-latest
     services:
-      memcached:
-        image: memcached:1.6.9-alpine
-        ports:
-        - 11211:11211
       mongo:
         image: mongo
         ports:
@@ -83,10 +79,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      cassandra:
-        image: bitnami/cassandra:3
-        ports:
-        - 9042:9042
       rabbitmq:
         image: rabbitmq:3
         ports:
@@ -95,14 +87,11 @@ jobs:
           RABBITMQ_DEFAULT_USER: username
           RABBITMQ_DEFAULT_PASS: password
     env:
-      RUN_CASSANDRA_TESTS: 1
-      RUN_MEMCACHED_TESTS: 1
       RUN_MONGODB_TESTS: 1
       RUN_MYSQL_TESTS: 1
       RUN_MSSQL_TESTS: 1
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
-      CASSANDRA_HOST: localhost
       MONGODB_DB: opentelemetry-tests
       MONGODB_HOST: 127.0.0.1
       MONGODB_PORT: 27017
@@ -112,8 +101,6 @@ jobs:
       MYSQL_PASSWORD: secret
       MYSQL_PORT: 3306
       MYSQL_USER: otel
-      OPENTELEMETRY_MEMCACHED_HOST: localhost
-      OPENTELEMETRY_MEMCACHED_PORT: 11211
       OPENTELEMETRY_REDIS_HOST: localhost
       OPENTELEMETRY_REDIS_PORT: 6379
       POSTGRES_DB: circle_database
