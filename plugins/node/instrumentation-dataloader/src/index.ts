@@ -14,4 +14,5 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
+export { DataloaderInstrumentationConfig } from './types';
+export { DataloaderInstrumentation } from './instrumentation';
