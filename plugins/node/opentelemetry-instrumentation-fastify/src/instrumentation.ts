@@ -62,7 +62,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition<any>(
         'fastify',
-        ['^3.0.0'],
+        ['^3.0.0', '^4.0.0'],
         (moduleExports, moduleVersion) => {
           this._diag.debug(`Applying patch for fastify@${moduleVersion}`);
           return this._patchConstructor(moduleExports);
@@ -100,6 +100,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
     syncFunctionWithDone: boolean
   ): () => Promise<unknown> {
     const instrumentation = this;
+    this._diag.debug('Patching fastify route.handler function');
+
     return function (this: any, ...args: unknown[]): Promise<unknown> {
       if (!instrumentation.isEnabled()) {
         return original.apply(this, args);
@@ -156,6 +158,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
     original: FastifyInstance['addHook']
   ) => () => FastifyInstance {
     const instrumentation = this;
+    this._diag.debug('Patching fastify server.addHook function');
+
     return function (
       original: FastifyInstance['addHook']
     ): () => FastifyInstance {
@@ -188,6 +192,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
     original: () => FastifyInstance
   ): () => FastifyInstance {
     const instrumentation = this;
+    this._diag.debug('Patching fastify constructor function');
 
     function fastify(this: FastifyInstance, ...args: any) {
       const app: FastifyInstance = original.apply(this, args);
@@ -206,6 +211,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
 
   public _patchSend() {
     const instrumentation = this;
+    this._diag.debug('Patching fastify reply.send function');
+
     return function patchSend(
       original: () => FastifyReply
     ): () => FastifyReply {
@@ -233,6 +240,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
 
   public _hookPreHandler() {
     const instrumentation = this;
+    this._diag.debug('Patching fastify preHandler function');
+
     return function preHandler(
       this: any,
       request: FastifyRequest,
