@@ -54,10 +54,7 @@ function assertSpan(
   name: string,
   query?: string,
   status?: SpanStatus,
-  attributeValidation?: {
-    attributeName: string;
-    attributeValue: string;
-  }
+  customAttributes?: { attributeName: string; attributeValue: string }[]
 ) {
   const attributes = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
@@ -68,9 +65,11 @@ function assertSpan(
     attributes[SemanticAttributes.DB_STATEMENT] = query;
   }
 
-  if (attributeValidation) {
-    attributes[attributeValidation.attributeName] =
-      attributeValidation.attributeValue;
+  if (customAttributes) {
+    customAttributes.forEach(customAttribute => {
+      attributes[customAttribute.attributeName] =
+        customAttribute.attributeValue;
+    });
   }
 
   const spanStatus =
@@ -87,17 +86,14 @@ function assertSingleSpan(name: string, query?: string, status?: SpanStatus) {
 
 function assertAttributeInSpan(
   name: string,
-  attribute?: {
-    attributeName: string;
-    attributeValue: string;
-  },
+  attributes?: { attributeName: string; attributeValue: string }[],
   query?: string,
   status?: SpanStatus
 ) {
   const spans = memoryExporter.getFinishedSpans();
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
-  assertSpan(span, name, query, status, attribute);
+  assertSpan(span, name, query, status, attributes);
 }
 
 function assertErrorSpan(
@@ -255,6 +251,7 @@ describe('CassandraDriverInstrumentation', () => {
     });
 
     describe('responseHook', () => {
+      const responseAttributeName = 'response-attribute';
       const customAttribute = {
         attributeName: 'custom-attribute',
         attributeValue: 'response-value',
@@ -262,7 +259,9 @@ describe('CassandraDriverInstrumentation', () => {
 
       before(() => {
         const config: CassandraDriverInstrumentationConfig = {
-          responseHook: (span, response) => {
+          responseHook: (span, responseInfo) => {
+            const row = responseInfo.response.first();
+            span.setAttribute(responseAttributeName, row.count.toString());
             span.setAttribute(
               customAttribute.attributeName,
               customAttribute.attributeValue
@@ -280,9 +279,14 @@ describe('CassandraDriverInstrumentation', () => {
       });
 
       it('adds custom attribute to span', async () => {
-        await client.execute('select * from ot.test');
+        await client.execute(
+          "SELECT count(*) FROM system_schema.columns WHERE keyspace_name = 'ot' AND table_name = 'test';"
+        );
 
-        assertAttributeInSpan('cassandra-driver.execute', customAttribute);
+        assertAttributeInSpan('cassandra-driver.execute', [
+          customAttribute,
+          { attributeName: responseAttributeName, attributeValue: '2' },
+        ]);
       });
     });
   });
