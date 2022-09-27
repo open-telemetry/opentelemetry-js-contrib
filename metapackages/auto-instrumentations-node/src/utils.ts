@@ -22,6 +22,7 @@ import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
 import { CassandraDriverInstrumentation } from '@opentelemetry/instrumentation-cassandra-driver';
 import { ConnectInstrumentation } from '@opentelemetry/instrumentation-connect';
+import { DataloaderInstrumentation } from '@opentelemetry/instrumentation-dataloader';
 import { DnsInstrumentation } from '@opentelemetry/instrumentation-dns';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { FastifyInstrumentation } from '@opentelemetry/instrumentation-fastify';
@@ -56,6 +57,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-cassandra-driver':
     CassandraDriverInstrumentation,
   '@opentelemetry/instrumentation-connect': ConnectInstrumentation,
+  '@opentelemetry/instrumentation-dataloader': DataloaderInstrumentation,
   '@opentelemetry/instrumentation-dns': DnsInstrumentation,
   '@opentelemetry/instrumentation-express': ExpressInstrumentation,
   '@opentelemetry/instrumentation-fastify': FastifyInstrumentation,
