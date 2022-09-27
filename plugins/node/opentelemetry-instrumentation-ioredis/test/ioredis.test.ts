@@ -385,7 +385,7 @@ describe('ioredis', () => {
         });
       });
 
-      it('should create a child span for pubsub', async () => {
+      it.skip('should create a child span for pubsub', async () => {
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
           const pub = await getClient();
