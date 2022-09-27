@@ -53,6 +53,7 @@
     "@opentelemetry/instrumentation-bunyan": "^0.30.0",
     "@opentelemetry/instrumentation-cassandra-driver": "^0.30.0",
     "@opentelemetry/instrumentation-connect": "^0.30.0",
+    "@opentelemetry/instrumentation-dataloader": "^0.1.0",
     "@opentelemetry/instrumentation-dns": "^0.30.0",
     "@opentelemetry/instrumentation-express": "^0.31.1",
     "@opentelemetry/instrumentation-fastify": "^0.29.0",
