@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const RESTIFY_MW_METHODS = ['use', 'pre'];
-export const RESTIFY_METHODS = [
-  'del',
-  'get',
-  'head',
-  'opts',
-  'post',
-  'put',
-  'patch',
-];
-export const MODULE_NAME = 'restify';
-export const SUPPORTED_VERSIONS = ['>=4.0.0 <9'];
+
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+
+export interface DataloaderInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * Whether the instrumentation requires a parent span, if set to true
+   * and there is no parent span, no additional spans are created
+   * (default: true)
+   */
+  requireParentSpan?: boolean;
+}
