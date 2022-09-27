@@ -21,6 +21,7 @@
     "plugins/node/instrumentation-lru-memoizer": {},
     "plugins/node/instrumentation-mongoose": {},
     "plugins/node/instrumentation-amqplib": {},
+    "plugins/node/instrumentation-dataloader": {},
     "plugins/node/instrumentation-fs": {},
     "plugins/node/instrumentation-tedious": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},
