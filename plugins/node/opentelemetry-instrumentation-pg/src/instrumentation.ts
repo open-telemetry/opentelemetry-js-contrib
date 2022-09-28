@@ -129,6 +129,12 @@ export class PgInstrumentation extends InstrumentationBase {
         this: pgTypes.Client,
         callback?: PgErrorCallback
       ) {
+        const pluginConfig = plugin.getConfig() as PgInstrumentationConfig;
+
+        if (!utils.shouldStartSpan(pluginConfig)) {
+          return original.call(this, callback);
+        }
+
         const span = plugin.tracer.startSpan(
           `${PgInstrumentation.COMPONENT}.connect`,
           {
@@ -173,6 +179,12 @@ export class PgInstrumentation extends InstrumentationBase {
       );
       return function query(this: PgClientExtended, ...args: unknown[]) {
         let span: Span;
+        const pluginConfig = plugin.getConfig() as PgInstrumentationConfig;
+
+        // Ignore if we should not start a span
+        if (!utils.shouldStartSpan(pluginConfig)) {
+          return original.apply(this, args as any);
+        }
 
         // Handle different client.query(...) signatures
         if (typeof args[0] === 'string') {
@@ -182,7 +194,7 @@ export class PgInstrumentation extends InstrumentationBase {
             span = utils.handleParameterizedQuery.call(
               this,
               plugin.tracer,
-              plugin.getConfig() as PgInstrumentationConfig,
+              pluginConfig,
               query,
               params
             );
@@ -194,7 +206,7 @@ export class PgInstrumentation extends InstrumentationBase {
           span = utils.handleConfigQuery.call(
             this,
             plugin.tracer,
-            plugin.getConfig() as PgInstrumentationConfig,
+            pluginConfig,
             queryConfig
           );
         } else {
@@ -212,7 +224,7 @@ export class PgInstrumentation extends InstrumentationBase {
           if (typeof args[args.length - 1] === 'function') {
             // Patch ParameterQuery callback
             args[args.length - 1] = utils.patchCallback(
-              plugin.getConfig() as PgInstrumentationConfig,
+              pluginConfig,
               span,
               args[args.length - 1] as PostgresCallback
             );
@@ -228,7 +240,7 @@ export class PgInstrumentation extends InstrumentationBase {
           ) {
             // Patch ConfigQuery callback
             let callback = utils.patchCallback(
-              plugin.getConfig() as PgInstrumentationConfig,
+              pluginConfig,
               span,
               (args[0] as NormalizedQueryConfig).callback!
             );
@@ -252,11 +264,7 @@ export class PgInstrumentation extends InstrumentationBase {
             .then((result: unknown) => {
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
-                utils.handleExecutionResult(
-                  plugin.getConfig() as PgInstrumentationConfig,
-                  span,
-                  result
-                );
+                utils.handleExecutionResult(pluginConfig, span, result);
                 span.end();
                 resolve(result);
               });
@@ -283,6 +291,12 @@ export class PgInstrumentation extends InstrumentationBase {
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
+        const pluginConfig = plugin.getConfig() as PgInstrumentationConfig;
+
+        if (!utils.shouldStartSpan(pluginConfig)) {
+          return originalConnect.call(this, callback as any);
+        }
+
         const connString = utils.getConnectionString(this.options);
         // setup span
         const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {

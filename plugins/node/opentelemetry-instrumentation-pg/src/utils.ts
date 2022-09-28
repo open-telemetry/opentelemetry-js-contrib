@@ -20,6 +20,8 @@ import {
   Tracer,
   SpanKind,
   diag,
+  trace,
+  context,
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
@@ -72,6 +74,16 @@ function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
       [SemanticAttributes.DB_USER]: client.connectionParameters.user,
     },
   });
+}
+
+// Helper for determining whether a span should be started
+export function shouldStartSpan(
+  instrumentationConfig: PgInstrumentationConfig
+) {
+  const parentSpan = trace.getSpan(context.active());
+  return (
+    parentSpan !== undefined || instrumentationConfig.requireParentSpan !== true
+  );
 }
 
 // Queries where args[0] is a QueryConfig

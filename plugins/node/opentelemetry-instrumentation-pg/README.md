@@ -48,6 +48,7 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 | ------- | ---- | ----------- |
 | [`enhancedDatabaseReporting`](./src/types.ts#L30) | `boolean` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
 | `responseHook` | `PgInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
+| `requireParentSpan` | `boolean` | If true, spans are created only if there is an active span to act as the parent (default false) |
 
 ## Useful links
 
