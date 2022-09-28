@@ -93,6 +93,10 @@ const runCallbackTest = (
   }
 };
 
+const assertNoSpans = () => {
+  assert.equal(memoryExporter.getFinishedSpans().length, 0);
+};
+
 describe('pg', () => {
   function create(config: PgInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
@@ -277,6 +281,31 @@ describe('pg', () => {
         );
 
         testUtils.assertPropagation(connectSpan, span);
+      });
+    });
+
+    describe('when specifying requireParentSpan configuration', () => {
+      beforeEach(async () => {
+        const config: PgInstrumentationConfig = { requireParentSpan: true };
+        create(config);
+      });
+
+      describe('AND there is no parent span', () => {
+        it('should not create span on connect', async () => {
+          await connClient.connect();
+          assertNoSpans();
+        });
+      });
+
+      describe('AND there is a parent span', () => {
+        it('should create span on connect', async () => {
+          const span = tracer.startSpan('parent');
+          context.with(trace.setSpan(context.active(), span), async () => {
+            await connClient.connect();
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+          });
+        });
       });
     });
   });
@@ -563,6 +592,257 @@ describe('pg', () => {
             });
             assert.strictEqual(res, undefined, 'No promise is returned');
           });
+        });
+      });
+    });
+
+    describe('when specifying requireParentSpan configuration', () => {
+      beforeEach(async () => {
+        const config: PgInstrumentationConfig = { requireParentSpan: true };
+        create(config);
+      });
+
+      describe('AND there is no parent span', () => {
+        it('should not intercept client.query(text, callback)', done => {
+          const res = client.query('SELECT NOW()', (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            assertNoSpans();
+            done();
+          });
+          assert.strictEqual(res, undefined, 'No promise is returned');
+        });
+
+        it('should not intercept client.query(text, values, callback)', done => {
+          const query = 'SELECT $1::text';
+          const values = ['0'];
+          const res = client.query(query, values, (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            assertNoSpans();
+            done();
+          });
+          assert.strictEqual(res, undefined, 'No promise is returned');
+        });
+
+        it('should not intercept client.query({text, callback})', done => {
+          const query = 'SELECT NOW()';
+          const res = client.query({
+            text: query,
+            callback: (err: Error, res: pg.QueryResult) => {
+              assert.strictEqual(err, null);
+              assert.ok(res);
+              assertNoSpans();
+              done();
+            },
+          } as pg.QueryConfig);
+          assert.strictEqual(res, undefined, 'No promise is returned');
+        });
+
+        it('should not intercept client.query({text}, callback)', done => {
+          const query = 'SELECT NOW()';
+          const res = client.query({ text: query }, (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            assertNoSpans();
+            done();
+          });
+          assert.strictEqual(res, undefined, 'No promise is returned');
+        });
+
+        it('should not intercept client.query(text, values)', async () => {
+          const query = 'SELECT $1::text';
+          const values = ['0'];
+          try {
+            const res = await client.query(query, values);
+            assert.ok(res);
+            assertNoSpans();
+          } catch (e) {
+            assert.ok(false, e.message);
+          }
+        });
+
+        it('should not intercept client.query({text, values})', async () => {
+          const query = 'SELECT $1::text';
+          const values = ['0'];
+          try {
+            const res = await client.query({
+              text: query,
+              values: values,
+            });
+            assert.ok(res);
+            assertNoSpans();
+          } catch (e) {
+            assert.ok(false, e.message);
+          }
+        });
+
+        it('should not intercept client.query(plan)', async () => {
+          const name = 'fetch-text';
+          const query = 'SELECT $1::text';
+          const values = ['0'];
+          try {
+            const res = await client.query({
+              name: name,
+              text: query,
+              values: values,
+            });
+            assert.strictEqual(res.command, 'SELECT');
+            assertNoSpans();
+          } catch (e) {
+            assert.ok(false, e.message);
+          }
+        });
+
+        it('should not intercept client.query(text)', async () => {
+          const query = 'SELECT NOW()';
+          try {
+            const res = await client.query(query);
+            assert.ok(res);
+            assertNoSpans();
+          } catch (e) {
+            assert.ok(false, e.message);
+          }
+        });
+      });
+
+      describe('AND there is a parent span', () => {
+        it('should intercept client.query(text, callback)', done => {
+          const span = tracer.startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            const res = client.query('SELECT NOW()', (err, res) => {
+              assert.strictEqual(err, null);
+              assert.ok(res);
+              assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              done();
+            });
+            assert.strictEqual(res, undefined, 'No promise is returned');
+          });
+        });
+
+        it('should intercept client.query(text, values, callback)', done => {
+          const span = tracer.startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            const query = 'SELECT $1::text';
+            const values = ['0'];
+            const res = client.query(query, values, (err, res) => {
+              assert.strictEqual(err, null);
+              assert.ok(res);
+              assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              done();
+            });
+            assert.strictEqual(res, undefined, 'No promise is returned');
+          });
+        });
+
+        it('should intercept client.query({text, callback})', done => {
+          const span = tracer.startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            const query = 'SELECT NOW()';
+            const res = client.query({
+              text: query,
+              callback: (err: Error, res: pg.QueryResult) => {
+                assert.strictEqual(err, null);
+                assert.ok(res);
+                assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+                done();
+              },
+            } as pg.QueryConfig);
+            assert.strictEqual(res, undefined, 'No promise is returned');
+          });
+        });
+
+        it('should intercept client.query({text}, callback)', done => {
+          const span = tracer.startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            const query = 'SELECT NOW()';
+            const res = client.query({ text: query }, (err, res) => {
+              assert.strictEqual(err, null);
+              assert.ok(res);
+              assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              done();
+            });
+            assert.strictEqual(res, undefined, 'No promise is returned');
+          });
+        });
+
+        it('should intercept client.query(text, values)', async () => {
+          const span = tracer.startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async () => {
+              const query = 'SELECT $1::text';
+              const values = ['0'];
+              try {
+                const res = await client.query(query, values);
+                assert.ok(res);
+                assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              } catch (e) {
+                assert.ok(false, e.message);
+              }
+            }
+          );
+        });
+
+        it('should intercept client.query({text, values})', async () => {
+          const span = tracer.startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async () => {
+              const query = 'SELECT $1::text';
+              const values = ['0'];
+              try {
+                const res = await client.query({
+                  text: query,
+                  values: values,
+                });
+                assert.ok(res);
+                assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              } catch (e) {
+                assert.ok(false, e.message);
+              }
+            }
+          );
+        });
+
+        it('should intercept client.query(plan)', async () => {
+          const span = tracer.startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async () => {
+              const name = 'fetch-text';
+              const query = 'SELECT $1::text';
+              const values = ['0'];
+              try {
+                const res = await client.query({
+                  name: name,
+                  text: query,
+                  values: values,
+                });
+                assert.strictEqual(res.command, 'SELECT');
+                assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              } catch (e) {
+                assert.ok(false, e.message);
+              }
+            }
+          );
+        });
+
+        it('should intercept client.query(text)', async () => {
+          const span = tracer.startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async () => {
+              const query = 'SELECT NOW()';
+              try {
+                const res = await client.query(query);
+                assert.ok(res);
+                assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              } catch (e) {
+                assert.ok(false, e.message);
+              }
+            }
+          );
         });
       });
     });

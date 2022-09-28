@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import {
@@ -66,6 +66,44 @@ describe('utils.ts', () => {
   afterEach(() => {
     memoryExporter.reset();
     context.disable();
+  });
+
+  describe('.shouldStartSpan()', () => {
+    it('returns false when config requires parent span, but one does not exist', () => {
+      assert.strictEqual(
+        utils.shouldStartSpan({ requireParentSpan: true }),
+        false
+      );
+    });
+
+    it('returns true when config requires parent span and one exists', () => {
+      const parent = tracer.startSpan('parent');
+      context.with(trace.setSpan(context.active(), parent), () => {
+        assert.strictEqual(
+          utils.shouldStartSpan({ requireParentSpan: true }),
+          true
+        );
+      });
+    });
+
+    it('returns true when config does not require a parent span', () => {
+      assert.strictEqual(
+        utils.shouldStartSpan({ requireParentSpan: false }),
+        true
+      );
+      assert.strictEqual(utils.shouldStartSpan({}), true);
+    });
+
+    it('returns true when config does not require a parent span, even if one exists', () => {
+      const parent = tracer.startSpan('parent');
+      context.with(trace.setSpan(context.active(), parent), () => {
+        assert.strictEqual(
+          utils.shouldStartSpan({ requireParentSpan: false }),
+          true
+        );
+        assert.strictEqual(utils.shouldStartSpan({}), true);
+      });
+    });
   });
 
   describe('.handleConfigQuery()', () => {

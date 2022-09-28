@@ -269,6 +269,91 @@ describe('pg-pool', () => {
         assert.strictEqual(resNoPromise, undefined, 'No promise is returned');
       });
     });
+
+    describe('when specifying requireParentSpan configuration', () => {
+      beforeEach(async () => {
+        const config: PgInstrumentationConfig = { requireParentSpan: true };
+        create(config);
+      });
+
+      describe('AND there is no paren span', () => {
+        it('should create a span on pool.connect() (promise)', async () => {
+          const parentSpan = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+
+          await context.with(
+            trace.setSpan(context.active(), parentSpan),
+            async () => {
+              try {
+                const client = await pool.connect();
+                client.release();
+                assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+              } catch (e) {
+                assert.equal(false, e.message);
+              }
+            }
+          );
+        });
+
+        it('should create a span on pool.connect() (callback)', done => {
+          const parentSpan = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+
+          context.with(
+            trace.setSpan(context.active(), parentSpan),
+            async () => {
+              const res = pool.connect((err, _, release) => {
+                if (!release) {
+                  throw new Error('Did not receive release function');
+                }
+
+                release();
+
+                if (err) {
+                  return done(err);
+                }
+
+                assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+                done();
+              });
+              assert.strictEqual(res, undefined, 'No promise is returned');
+            }
+          );
+        });
+      });
+
+      describe('AND there is no parent span', () => {
+        it('should not create a span on pool.connect() (promise)', async () => {
+          try {
+            const client = await pool.connect();
+            client.release();
+            assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+          } catch (e) {
+            assert.equal(false, e.message);
+          }
+        });
+
+        it('should not create a span on pool.connect() (callback)', done => {
+          const res = pool.connect((err, _, release) => {
+            if (!release) {
+              throw new Error('Did not receive release function');
+            }
+
+            release();
+
+            if (err) {
+              return done(err);
+            }
+
+            assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+            done();
+          });
+          assert.strictEqual(res, undefined, 'No promise is returned');
+        });
+      });
+    });
   });
 
   describe('#pool.query()', () => {
@@ -321,6 +406,74 @@ describe('pg-pool', () => {
           done();
         });
         assert.strictEqual(resNoPromise, undefined, 'No promise is returned');
+      });
+    });
+
+    describe('when specifying requireParentSpan configuration', () => {
+      beforeEach(async () => {
+        const config: PgInstrumentationConfig = { requireParentSpan: true };
+        create(config);
+      });
+
+      describe('AND there is no parent span', () => {
+        it('should not create a span on client.query() (promise)', async () => {
+          try {
+            await pool.query('SELECT NOW()');
+            assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+          } catch (e) {
+            assert.equal(false, e.message);
+          }
+        });
+
+        it('should not create a span on client.query() (callback)', done => {
+          const res = pool.query('SELECT NOW()', err => {
+            if (err) {
+              return done(err);
+            }
+            assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+            done();
+          });
+          assert.strictEqual(res, undefined, 'No promise is returned');
+        });
+      });
+
+      describe('AND there is a parent span', () => {
+        it('should create a span on client.query() (promise)', async () => {
+          const parentSpan = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+
+          await context.with(
+            trace.setSpan(context.active(), parentSpan),
+            async () => {
+              try {
+                await pool.query('SELECT NOW()');
+                // Two as there is also one for connection
+                assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+              } catch (e) {
+                assert.equal(false, e.message);
+              }
+            }
+          );
+        });
+
+        it('should create a span on client.query() (callback)', done => {
+          const parentSpan = provider
+            .getTracer('test-pg-pool')
+            .startSpan('test span');
+
+          context.with(trace.setSpan(context.active(), parentSpan), () => {
+            const res = pool.query('SELECT NOW()', err => {
+              if (err) {
+                return done(err);
+              }
+              // Two as there is also one for connection
+              assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+              done();
+            });
+            assert.strictEqual(res, undefined, 'No promise is returned');
+          });
+        });
       });
     });
 
