@@ -110,6 +110,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
           entries
         );
         if (fetchSpan) {
+          fetchSpan.setAttribute(SemanticAttributes.HTTP_URL, location.href);
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(fetchSpan, entries);
             this._endSpan(fetchSpan, PTN.RESPONSE_END, entries);
