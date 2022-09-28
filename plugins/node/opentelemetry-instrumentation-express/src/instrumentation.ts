@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  setRPCMetadata,
-  getRPCMetadata,
-  RPCType,
-} from '@opentelemetry/core';
+import { setRPCMetadata, getRPCMetadata, RPCType } from '@opentelemetry/core';
 import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
 import type * as express from 'express';
 import {
