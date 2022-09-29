@@ -78,4 +78,6 @@ if (errors.length) {
 	console.error('Errors occured:\n');
 	console.error(errors.join('\n\n'));
 	process.exit(1);
+} else {
+	console.error('OK');
 }
