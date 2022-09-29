@@ -341,10 +341,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
       () => this._getConfig().responseHook!(span, { response }),
       e => {
         if (e) {
-          this._diag.error(
-            'cassandra-driver instrumentation: responseHook error',
-            e
-          );
+          this._diag.error('responseHook error', e);
         }
       },
       true
