@@ -663,7 +663,6 @@ describe('pg', () => {
         assert.strictEqual(err, null);
         assert.ok(res);
         const spans = memoryExporter.getFinishedSpans();
-        console.log(spans);
         assert.strictEqual(spans.length, 0);
         done();
       });
