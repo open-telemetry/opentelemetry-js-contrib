@@ -222,6 +222,7 @@ describe('graphql', () => {
         });
 
         assert.ok(times[PARSE].start <= times[PARSE].end);
+        // This next line is flaky. Parse sometimes ends after Validate starts.
         assert.ok(times[PARSE].end <= times[VALIDATE].start);
         assert.ok(times[VALIDATE].start <= times[VALIDATE].end);
         assert.ok(times[VALIDATE].end <= times[EXECUTE].start);
