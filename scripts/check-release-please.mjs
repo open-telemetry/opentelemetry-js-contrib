@@ -20,8 +20,8 @@ const logErrorIf = (condition, errorMessage) => {
 	}
 };
 const PROJECT_ROOT = process.cwd();
-const readJson = (path) => {
-	return JSON.parse(readFileSync(path));
+const readJson = (filePath) => {
+	return JSON.parse(readFileSync(filePath));
 };
 const getProcessOutput = (cmd, args) => {
 	const result = childProcess.spawnSync(cmd, args);
