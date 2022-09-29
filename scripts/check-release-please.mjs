@@ -19,7 +19,7 @@ const logErrorIf = (condition, errorMessage) => {
 		errors.push(errorMessage);
 	}
 };
-const PROJECT_ROOT = path.resolve();
+const PROJECT_ROOT = process.cwd();
 const readJson = (path) => {
 	return JSON.parse(readFileSync(path));
 };
