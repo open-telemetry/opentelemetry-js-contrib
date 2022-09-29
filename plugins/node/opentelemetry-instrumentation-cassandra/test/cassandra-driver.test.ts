@@ -20,6 +20,7 @@ import {
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-base';
 import {
+  Attributes,
   context,
   Span,
   SpanKind,
@@ -56,9 +57,9 @@ function assertSpan(
   name: string,
   query?: string,
   status?: SpanStatus,
-  customAttributes?: { attributeName: string; attributeValue: string }[]
+  customAttributes?: Attributes
 ) {
-  const attributes = {
+  const attributes: any = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
     [SemanticAttributes.DB_USER]: 'cassandra',
   };
@@ -68,10 +69,9 @@ function assertSpan(
   }
 
   if (customAttributes) {
-    customAttributes.forEach(customAttribute => {
-      attributes[customAttribute.attributeName] =
-        customAttribute.attributeValue;
-    });
+    for (const [k, v] of Object.entries(customAttributes)) {
+      attributes[k] = v;
+    }
   }
 
   const spanStatus =
@@ -88,7 +88,7 @@ function assertSingleSpan(name: string, query?: string, status?: SpanStatus) {
 
 function assertAttributeInSpan(
   name: string,
-  attributes?: { attributeName: string; attributeValue: string }[],
+  attributes?: Attributes,
   query?: string,
   status?: SpanStatus
 ) {
@@ -276,16 +276,10 @@ describe('CassandraDriverInstrumentation', () => {
           "SELECT count(*) FROM system_schema.columns WHERE keyspace_name = 'ot' AND table_name = 'test';"
         );
 
-        assertAttributeInSpan('cassandra-driver.execute', [
-          {
-            attributeName: customAttributeName,
-            attributeValue: customAttributeValue,
-          },
-          {
-            attributeName: responseAttributeName,
-            attributeValue: '2',
-          },
-        ]);
+        assertAttributeInSpan('cassandra-driver.execute', {
+          [customAttributeName]: customAttributeValue,
+          [responseAttributeName]: '2',
+        });
       });
 
       it('throws and should not affect user flow or span creation', async () => {
@@ -301,12 +295,9 @@ describe('CassandraDriverInstrumentation', () => {
         const query = 'select * from ot.test';
         await client.execute(query);
 
-        assertAttributeInSpan('cassandra-driver.execute', [
-          {
-            attributeName: hookAttributeName,
-            attributeValue: hookAttributeValue,
-          },
-        ]);
+        assertAttributeInSpan('cassandra-driver.execute', {
+          [hookAttributeName]: hookAttributeValue,
+        });
       });
     });
   });
