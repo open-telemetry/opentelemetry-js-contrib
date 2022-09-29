@@ -70,12 +70,9 @@ describe('utils.ts', () => {
 
   describe('.startSpan()', () => {
     it('starts real span when requireParentSpan=false', async () => {
-      const span = utils.startSpan(
-        tracer,
-        instrumentationConfig,
-        'spanName',
-        { key: 'value' },
-      );
+      const span = utils.startSpan(tracer, instrumentationConfig, 'spanName', {
+        key: 'value',
+      });
       span.end();
 
       const readableSpan = getLatestSpan();
@@ -95,14 +92,17 @@ describe('utils.ts', () => {
             requireParentSpan: true,
           },
           'childSpan',
-          { key: 'value' },
+          { key: 'value' }
         );
         childSpan.end();
 
         const readableSpan = getLatestSpan();
         assert.strictEqual(readableSpan.name, 'childSpan');
         assert.strictEqual(readableSpan.attributes['key'], 'value');
-        assert.notDeepStrictEqual(readableSpan.spanContext, INVALID_SPAN_CONTEXT);
+        assert.notDeepStrictEqual(
+          readableSpan.spanContext,
+          INVALID_SPAN_CONTEXT
+        );
       });
     });
 
@@ -114,7 +114,7 @@ describe('utils.ts', () => {
           requireParentSpan: true,
         },
         'spanName',
-        { key: 'value' },
+        { key: 'value' }
       );
       span.end();
 

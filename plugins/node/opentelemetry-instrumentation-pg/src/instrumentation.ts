@@ -19,13 +19,7 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
-import {
-  context,
-  diag,
-  trace,
-  Span,
-  SpanStatusCode,
-} from '@opentelemetry/api';
+import { context, diag, trace, Span, SpanStatusCode } from '@opentelemetry/api';
 import * as pgTypes from 'pg';
 import * as pgPoolTypes from 'pg-pool';
 import {
@@ -137,15 +131,20 @@ export class PgInstrumentation extends InstrumentationBase {
         this: pgTypes.Client,
         callback?: PgErrorCallback
       ) {
-        const span = startSpan(plugin.tracer, plugin.getConfig(), `${PgInstrumentation.COMPONENT}.connect`, {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-          [SemanticAttributes.DB_NAME]: this.database,
-          [SemanticAttributes.NET_PEER_NAME]: this.host,
-          [SemanticAttributes.DB_CONNECTION_STRING]:
-            utils.getConnectionString(this),
-          [SemanticAttributes.NET_PEER_PORT]: this.port,
-          [SemanticAttributes.DB_USER]: this.user,
-        });
+        const span = startSpan(
+          plugin.tracer,
+          plugin.getConfig(),
+          `${PgInstrumentation.COMPONENT}.connect`,
+          {
+            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+            [SemanticAttributes.DB_NAME]: this.database,
+            [SemanticAttributes.NET_PEER_NAME]: this.host,
+            [SemanticAttributes.DB_CONNECTION_STRING]:
+              utils.getConnectionString(this),
+            [SemanticAttributes.NET_PEER_PORT]: this.port,
+            [SemanticAttributes.DB_USER]: this.user,
+          }
+        );
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
@@ -260,11 +259,7 @@ export class PgInstrumentation extends InstrumentationBase {
             .then((result: unknown) => {
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
-                utils.handleExecutionResult(
-                  plugin.getConfig(),
-                  span,
-                  result
-                );
+                utils.handleExecutionResult(plugin.getConfig(), span, result);
                 span.end();
                 resolve(result);
               });
@@ -293,17 +288,22 @@ export class PgInstrumentation extends InstrumentationBase {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
         const connString = utils.getConnectionString(this.options);
         // setup span
-        const span = startSpan(plugin.tracer, plugin.getConfig(), `${PG_POOL_COMPONENT}.connect`, {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-          [SemanticAttributes.DB_NAME]: this.options.database, // required
-          [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
-          [SemanticAttributes.DB_CONNECTION_STRING]: connString, // required
-          [SemanticAttributes.NET_PEER_PORT]: this.options.port,
-          [SemanticAttributes.DB_USER]: this.options.user,
-          [AttributeNames.IDLE_TIMEOUT_MILLIS]:
-            this.options.idleTimeoutMillis,
-          [AttributeNames.MAX_CLIENT]: this.options.maxClient,
-        });
+        const span = startSpan(
+          plugin.tracer,
+          plugin.getConfig(),
+          `${PG_POOL_COMPONENT}.connect`,
+          {
+            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+            [SemanticAttributes.DB_NAME]: this.options.database, // required
+            [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
+            [SemanticAttributes.DB_CONNECTION_STRING]: connString, // required
+            [SemanticAttributes.NET_PEER_PORT]: this.options.port,
+            [SemanticAttributes.DB_USER]: this.options.user,
+            [AttributeNames.IDLE_TIMEOUT_MILLIS]:
+              this.options.idleTimeoutMillis,
+            [AttributeNames.MAX_CLIENT]: this.options.maxClient,
+          }
+        );
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

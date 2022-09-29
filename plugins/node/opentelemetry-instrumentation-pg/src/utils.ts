@@ -66,7 +66,7 @@ export function startSpan(
   tracer: Tracer,
   instrumentationConfig: PgInstrumentationConfig,
   name: string,
-  attributes: Attributes,
+  attributes: Attributes
 ): Span {
   // If a parent span is required but not present, use a noop span to propagate
   // context without recording it. Adapted from opentelemetry-instrumentation-http:
@@ -87,7 +87,7 @@ function startQuerySpan(
   client: PgClientExtended,
   tracer: Tracer,
   instrumentationConfig: PgInstrumentationConfig,
-  name: string,
+  name: string
 ) {
   const jdbcString = getConnectionString(client.connectionParameters);
   return startSpan(tracer, instrumentationConfig, name, {
@@ -185,7 +185,12 @@ export function handleInvalidQuery(
   ...args: unknown[]
 ) {
   let result;
-  const span = startQuerySpan(this, tracer, instrumentationConfig, PgInstrumentation.BASE_SPAN_NAME);
+  const span = startQuerySpan(
+    this,
+    tracer,
+    instrumentationConfig,
+    PgInstrumentation.BASE_SPAN_NAME
+  );
   try {
     result = originalQuery.apply(this, args as never);
   } catch (e) {
