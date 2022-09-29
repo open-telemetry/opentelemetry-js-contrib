@@ -267,7 +267,9 @@ describe('CassandraDriverInstrumentation', () => {
         instrumentation.setConfig({
           responseHook: (span: Span, responseInfo: ResponseInfo) => {
             const row = responseInfo.response.first();
-            span.setAttribute(responseAttributeName, row.count.toString());
+            const responseValue = parseInt(row.count);
+
+            span.setAttribute(responseAttributeName, responseValue);
             span.setAttribute(customAttributeName, customAttributeValue);
           },
         });
@@ -278,7 +280,7 @@ describe('CassandraDriverInstrumentation', () => {
 
         assertAttributeInSpan('cassandra-driver.execute', {
           [customAttributeName]: customAttributeValue,
-          [responseAttributeName]: '2',
+          [responseAttributeName]: 2,
         });
       });
 
