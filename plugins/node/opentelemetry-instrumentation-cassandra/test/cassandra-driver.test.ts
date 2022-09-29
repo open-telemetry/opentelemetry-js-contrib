@@ -86,7 +86,7 @@ function assertSingleSpan(name: string, query?: string, status?: SpanStatus) {
   assertSpan(span, name, query, status);
 }
 
-function assertAttributeInSpan(
+function assertAttributeInSingleSpan(
   name: string,
   attributes?: Attributes,
   query?: string,
@@ -278,7 +278,7 @@ describe('CassandraDriverInstrumentation', () => {
           "SELECT count(*) FROM system_schema.columns WHERE keyspace_name = 'ot' AND table_name = 'test';"
         );
 
-        assertAttributeInSpan('cassandra-driver.execute', {
+        assertAttributeInSingleSpan('cassandra-driver.execute', {
           [customAttributeName]: customAttributeValue,
           [responseAttributeName]: 2,
         });
@@ -297,7 +297,7 @@ describe('CassandraDriverInstrumentation', () => {
         const query = 'select * from ot.test';
         await client.execute(query);
 
-        assertAttributeInSpan('cassandra-driver.execute', {
+        assertAttributeInSingleSpan('cassandra-driver.execute', {
           [hookAttributeName]: hookAttributeValue,
         });
       });
