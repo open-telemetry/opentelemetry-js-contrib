@@ -279,6 +279,16 @@ describe('pg', () => {
         testUtils.assertPropagation(connectSpan, span);
       });
     });
+
+    it('should not generate traces when requireParentSpan=true is specified', async () => {
+      instrumentation.setConfig({
+        requireParentSpan: true,
+      });
+      memoryExporter.reset();
+      await connClient.connect();
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+    });
   });
 
   describe('#client.query(...)', () => {
@@ -638,25 +648,12 @@ describe('pg', () => {
         client.query('SELECT NOW()').then(queryHandler);
       });
     });
-  });
 
-  describe('Instrumentation with requireParentSpan', () => {
-    beforeEach(() => {
+    it('should not generate traces for client.query() when requireParentSpan=true is specified', done => {
       instrumentation.setConfig({
         requireParentSpan: true,
       });
       memoryExporter.reset();
-    });
-
-    it('should not generate traces for connect() when requireParentSpan=true', async () => {
-      const connClient = new postgres.Client(CONFIG);
-      await connClient.connect();
-      const spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 0);
-      await connClient.end();
-    });
-
-    it('should not generate traces for client.query(text, callback) when requireParentSpan=true', done => {
       client.query('SELECT NOW()', (err, res) => {
         assert.strictEqual(err, null);
         assert.ok(res);
