@@ -41,7 +41,11 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    */
   responseHook?: PgInstrumentationExecutionResponseHook;
 
-  /** Require that is a parent span to create new spans. Defaults to false. */
+  /**
+   * If true, requires a parent span to create new spans.
+   *
+   * @default false
+   */
   requireParentSpan?: boolean;
 }
 
