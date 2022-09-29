@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  hrTime,
-  setRPCMetadata,
-  getRPCMetadata,
-  RPCType,
-} from '@opentelemetry/core';
+import { setRPCMetadata, getRPCMetadata, RPCType } from '@opentelemetry/core';
 import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
 import type * as express from 'express';
 import {
@@ -263,22 +258,19 @@ export class ExpressInstrumentation extends InstrumentationBase<
           );
         }
 
-        const startTime = hrTime();
         let spanHasEnded = false;
-        // If we found anything that isnt a middleware, there no point of measuring
-        // their time since they dont have callback.
         if (
           metadata.attributes[AttributeNames.EXPRESS_TYPE] !==
           ExpressLayerType.MIDDLEWARE
         ) {
-          span.end(startTime);
+          span.end();
           spanHasEnded = true;
         }
         // listener for response.on('finish')
         const onResponseFinish = () => {
           if (spanHasEnded === false) {
             spanHasEnded = true;
-            span.end(startTime);
+            span.end();
           }
         };
         // verify we have a callback

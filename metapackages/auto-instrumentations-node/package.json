@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-node",
-  "version": "0.33.0",
+  "version": "0.33.1",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-node#readme",
@@ -55,7 +55,7 @@
     "@opentelemetry/instrumentation-connect": "^0.30.0",
     "@opentelemetry/instrumentation-dataloader": "^0.2.0",
     "@opentelemetry/instrumentation-dns": "^0.30.0",
-    "@opentelemetry/instrumentation-express": "^0.31.1",
+    "@opentelemetry/instrumentation-express": "^0.31.2",
     "@opentelemetry/instrumentation-fastify": "^0.30.0",
     "@opentelemetry/instrumentation-generic-pool": "^0.30.0",
     "@opentelemetry/instrumentation-graphql": "^0.31.0",
