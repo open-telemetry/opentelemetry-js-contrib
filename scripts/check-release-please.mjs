@@ -30,25 +30,24 @@ const getProcessOutput = (cmd, args) => {
 }
 
 const lernaList = JSON.parse(
-getProcessOutput('lerna', ['list', '--json'])
-);
-const packageList = new Map(
-	lernaList.map((pkg) => {
-		const relativeLocation = path.relative(PROJECT_ROOT, pkg.location);
-		return [relativeLocation, { ...pkg, relativeLocation: path.relative(PROJECT_ROOT, pkg.location) }];
-	})
+	getProcessOutput('lerna', ['list', '--json'])
 );
 const manifest = readJson('.release-please-manifest.json');
 const config = readJson('release-please-config.json');
 
+const lernaPackages = new Set(
+	lernaList.map((pkg) => {
+		return path.relative(PROJECT_ROOT, pkg.location);
+	})
+);
 const manifestPackages = new Set(Object.keys(manifest));
 const configPackages = new Set(Object.keys(config.packages));
 
-console.log('lerna packages', );
+console.log('lerna packages', lernaPackages);
 console.log('manifest packages', manifestPackages);
 console.log('config packages', configPackages);
 
-packageList.forEach(({ relativeLocation }) => {
+lernaPackages.forEach((relativeLocation) => {
 	logErrorIf(
 		!manifestPackages.has(relativeLocation),
 		`Could not find ${relativeLocation} from manifest. If you are adding a new package. Add following to .release-please-manifest.json
@@ -63,14 +62,14 @@ packageList.forEach(({ relativeLocation }) => {
 
 manifestPackages.forEach((relativeLocation) => {
 	logErrorIf(
-		!packageList.has(relativeLocation),
+		!lernaPackages.has(relativeLocation),
 		`Extraneous path ${relativeLocation} in .release-please-manifest.json`
 	);
 });
 
 configPackages.forEach((relativeLocation) => {
 	logErrorIf(
-		!packageList.has(relativeLocation),
+		!lernaPackages.has(relativeLocation),
 		`Extraneous path ${relativeLocation} in release-please-config.json`
 	);
 });
