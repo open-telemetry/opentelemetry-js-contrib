@@ -82,8 +82,8 @@ export function startSpan(
   });
 }
 
-// Private helper function to start a span
-function pgStartSpan(
+// Private helper function to start a span after a connection has been established
+function startQuerySpan(
   client: PgClientExtended,
   tracer: Tracer,
   instrumentationConfig: PgInstrumentationConfig,
@@ -110,7 +110,7 @@ export function handleConfigQuery(
   // Set child span name
   const queryCommand = getCommandFromText(queryConfig.name || queryConfig.text);
   const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = pgStartSpan(this, tracer, instrumentationConfig, name);
+  const span = startQuerySpan(this, tracer, instrumentationConfig, name);
 
   // Set attributes
   if (queryConfig.text) {
@@ -144,7 +144,7 @@ export function handleParameterizedQuery(
   // Set child span name
   const queryCommand = getCommandFromText(query);
   const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = pgStartSpan(this, tracer, instrumentationConfig, name);
+  const span = startQuerySpan(this, tracer, instrumentationConfig, name);
 
   // Set attributes
   span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
@@ -165,7 +165,7 @@ export function handleTextQuery(
   // Set child span name
   const queryCommand = getCommandFromText(query);
   const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = pgStartSpan(this, tracer, instrumentationConfig, name);
+  const span = startQuerySpan(this, tracer, instrumentationConfig, name);
 
   // Set attributes
   span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
@@ -185,7 +185,7 @@ export function handleInvalidQuery(
   ...args: unknown[]
 ) {
   let result;
-  const span = pgStartSpan(this, tracer, instrumentationConfig, PgInstrumentation.BASE_SPAN_NAME);
+  const span = startQuerySpan(this, tracer, instrumentationConfig, PgInstrumentation.BASE_SPAN_NAME);
   try {
     result = originalQuery.apply(this, args as never);
   } catch (e) {
