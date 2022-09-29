@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.32.0...instrumentation-ioredis-v0.32.1) (2022-09-15)
+
+
+### Bug Fixes
+
+* **ioredis:** requireParentSpan not applied to connect spans ([#1151](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1151)) ([d3cb60d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3cb60d28e186b42f0c17ab48df8757555bbe6e0))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.31.0...instrumentation-ioredis-v0.32.0) (2022-09-02)
 
 
