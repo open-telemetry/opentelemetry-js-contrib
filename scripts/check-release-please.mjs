@@ -50,12 +50,12 @@ console.log('config packages', configPackages);
 lernaPackages.forEach((relativeLocation) => {
 	logErrorIf(
 		!manifestPackages.has(relativeLocation),
-		`Could not find ${relativeLocation} from manifest. If you are adding a new package. Add following to .release-please-manifest.json
+		`Could not find ${relativeLocation} in .release-please-manifest.json. If you are adding a new package. Add following
   "${relativeLocation}": "0.0.1",`);
 
 	logErrorIf(
 		!configPackages.has(relativeLocation),
-		`Could not find ${relativeLocation} from config. If you are adding a new package. Add following to release-please-config.json under packages
+		`Could not find ${relativeLocation} in release-please-config.json. If you are adding a new package. Add following to "packages" object
   "${relativeLocation}": {},`);
 
 });
@@ -75,7 +75,7 @@ configPackages.forEach((relativeLocation) => {
 });
 
 if (errors.length) {
-	console.error('Errors occured:');
+	console.error('Errors occured:\n');
 	console.error(errors.join('\n\n'));
 	process.exit(1);
 }
