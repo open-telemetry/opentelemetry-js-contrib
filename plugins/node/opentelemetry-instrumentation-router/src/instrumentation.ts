@@ -16,6 +16,7 @@
 
 import * as api from '@opentelemetry/api';
 import {
+  InstrumentationConfig,
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
@@ -34,8 +35,12 @@ import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
 export default class RouterInstrumentation extends InstrumentationBase<any> {
-  constructor() {
-    super(`@opentelemetry/instrumentation-${constants.MODULE_NAME}`, VERSION);
+  constructor(config?: InstrumentationConfig) {
+    super(
+      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
+      VERSION,
+      config
+    );
   }
 
   private _moduleVersion?: string;

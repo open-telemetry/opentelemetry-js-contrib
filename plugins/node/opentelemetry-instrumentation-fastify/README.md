@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 
 ### Supported Versions
 
-- `^3.0.0`
+- fastify: `^3.0.0 || ^4.0.0`
 
 ## Usage
 
