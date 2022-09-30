@@ -545,6 +545,11 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentLoad');
 
         assert.strictEqual(
+          fetchSpan.attributes['http.url'],
+          'http://localhost:9876/context.html'
+        );
+
+        assert.strictEqual(
           rootSpan.attributes['http.url'],
           'http://localhost:9876/context.html'
         );

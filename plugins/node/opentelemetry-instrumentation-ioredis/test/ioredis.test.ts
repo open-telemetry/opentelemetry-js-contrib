@@ -373,7 +373,7 @@ describe('ioredis', () => {
         });
       });
 
-      it('should create a child span for pubsub', async () => {
+      it.skip('should create a child span for pubsub', async () => {
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
           try {
@@ -681,7 +681,7 @@ describe('ioredis', () => {
         );
       });
 
-      it('should instrument connect with requireParentSpan equal false', async () => {
+      it.skip('should instrument connect with requireParentSpan equal false', async () => {
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: false,
         };

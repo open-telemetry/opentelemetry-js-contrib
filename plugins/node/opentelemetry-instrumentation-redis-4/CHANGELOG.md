@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.32.0...instrumentation-redis-4-v0.33.0) (2022-09-15)
+
+
+### Features
+
+* add redis 4 connect span ([#1125](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1125)) ([dbf37fb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/dbf37fb99b9168ebd0febc0da0ec21c0082e9967))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.31.0...instrumentation-redis-4-v0.32.0) (2022-09-02)
 
 

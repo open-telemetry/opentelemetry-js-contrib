@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.9.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.9.1...instrumentation-aws-sdk-v0.9.2) (2022-09-27)
+
+
+### Bug Fixes
+
+* **aws-sdk:** set spanKind to CLIENT by default in v3 ([#1177](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1177)) ([d463695](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d463695f5258875f1da0c7b17c20f7df93494d4e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.28.0 to ^0.29.0
+
+## [0.9.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.9.0...instrumentation-aws-sdk-v0.9.1) (2022-09-15)
+
+
+### Bug Fixes
+
+* avoid type imports of the aws-sdk package in the built assets ([#1066](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1066)) ([457be50](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/457be5035b9ba87211fe3553c901b7408dd2d593))
+
 ## [0.9.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.8.1...instrumentation-aws-sdk-v0.9.0) (2022-09-02)
 
 
