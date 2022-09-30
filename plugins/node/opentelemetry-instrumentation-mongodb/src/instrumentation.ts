@@ -33,16 +33,15 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
+import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
   CursorState,
   MongodbCommandType,
-  MongoDBInstrumentationConfig,
   MongoInternalCommand,
   MongoInternalTopology,
   WireProtocolInternal,
-  CommandResult,
   V4Connection,
-} from './types';
+} from './internal-types';
 import { VERSION } from './version';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
