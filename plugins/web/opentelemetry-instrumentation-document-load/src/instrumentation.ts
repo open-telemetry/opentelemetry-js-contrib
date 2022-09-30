@@ -127,7 +127,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       this._instrumentRootSpan(rootSpan, entries);
       this._endSpan(rootSpan, PTN.LOAD_EVENT_END, entries);
     }
-
   }
 
   /**
