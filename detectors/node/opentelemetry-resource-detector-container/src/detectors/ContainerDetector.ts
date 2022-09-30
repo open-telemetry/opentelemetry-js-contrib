@@ -76,10 +76,8 @@ export class ContainerDetector implements Detector {
       .find(s => s.includes(this.HOSTNAME));
     const containerIdStr = str
       ?.split('/')
-      .find(s => s.length >= this.CONTAINER_ID_LENGTH);
-    return containerIdStr?.substring(
-      containerIdStr.length - this.CONTAINER_ID_LENGTH
-    );
+      .find(s => s.length === this.CONTAINER_ID_LENGTH);
+    return containerIdStr || '';
   }
 
   /*
