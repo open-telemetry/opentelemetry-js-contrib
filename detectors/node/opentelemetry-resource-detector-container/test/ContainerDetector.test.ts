@@ -28,12 +28,13 @@ import { ContainerDetector } from '../src';
 describe('ContainerDetector', () => {
   let readStub;
   const correctCgroupV1Data =
-    'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
-  const correctCgroupV2Data =
-    'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/hostname';
+    'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
+  const correctCgroupV2Data = `tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl/hostname
+    fhkjdshgfhsdfjhdsfkjhfkdshkjhfd/host
+    sahfhfjkhjhfhjdhfjkdhfkjdhfjkhhdsjfhdfhjdhfkj/somethingelse`;
 
   const wrongCgroupV2Data =
-    'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/wrongkeyword';
+    'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/wrongkeyword';
 
   afterEach(() => {
     sinon.restore();
@@ -77,7 +78,7 @@ describe('ContainerDetector', () => {
 
       assert.ok(resource);
       assertContainerResource(resource, {
-        id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
+        id: 'tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl',
       });
     });
 
