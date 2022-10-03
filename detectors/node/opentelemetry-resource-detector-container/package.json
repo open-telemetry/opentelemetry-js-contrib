@@ -1,7 +1,7 @@
 {
-  "name": "@opentelemetry/resource-detector-docker",
+  "name": "@opentelemetry/resource-detector-container",
   "version": "0.1.2",
-  "description": "Opentelemetry resource detector to get docker resource attributes",
+  "description": "Opentelemetry resource detector to get container resource attributes",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -11,7 +11,7 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-docker --include-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-container --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
@@ -57,5 +57,5 @@
     "@opentelemetry/resources": "^1.0.0",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-docker#readme"
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-container#readme"
 }
