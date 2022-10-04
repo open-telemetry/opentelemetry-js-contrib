@@ -40,7 +40,7 @@ graphQLInstrumentation.disable();
 // now graphql can be required
 
 import { buildSchema } from './schema';
-import { graphql } from 'graphql';
+import { graphql } from './graphql-adaptor';
 // Construct a schema, using GraphQL schema language
 const schema = buildSchema();
 
@@ -107,7 +107,7 @@ describe('graphql', () => {
       let spans: ReadableSpan[];
       beforeEach(async () => {
         create({});
-        await graphql(schema, sourceList1);
+        await graphql({ schema, source: sourceList1 });
         spans = exporter.getFinishedSpans();
       });
 
@@ -235,7 +235,7 @@ describe('graphql', () => {
 
       beforeEach(async () => {
         create({});
-        await graphql(schema, sourceBookById);
+        await graphql({ schema, source: sourceBookById });
         spans = exporter.getFinishedSpans();
       });
 
@@ -323,8 +323,12 @@ describe('graphql', () => {
 
       beforeEach(async () => {
         create({});
-        await graphql(schema, sourceFindUsingVariable, null, null, {
-          id: 2,
+        await graphql({
+          schema,
+          source: sourceFindUsingVariable,
+          variableValues: {
+            id: 2,
+          },
         });
         spans = exporter.getFinishedSpans();
       });
@@ -421,7 +425,7 @@ describe('graphql', () => {
         create({
           depth: 0,
         });
-        await graphql(schema, sourceList1);
+        await graphql({ schema, source: sourceList1 });
         spans = exporter.getFinishedSpans();
       });
 
@@ -489,7 +493,7 @@ describe('graphql', () => {
         create({
           mergeItems: true,
         });
-        await graphql(schema, sourceList1);
+        await graphql({ schema, source: sourceList1 });
         spans = exporter.getFinishedSpans();
       });
 
@@ -556,7 +560,7 @@ describe('graphql', () => {
           mergeItems: true,
           depth: 0,
         });
-        await graphql(schema, sourceList1);
+        await graphql({ schema, source: sourceList1 });
         spans = exporter.getFinishedSpans();
       });
 
@@ -580,7 +584,7 @@ describe('graphql', () => {
         create({
           allowValues: true,
         });
-        await graphql(schema, sourceBookById);
+        await graphql({ schema, source: sourceBookById });
         spans = exporter.getFinishedSpans();
       });
 
@@ -670,7 +674,7 @@ describe('graphql', () => {
         create({
           allowValues: true,
         });
-        await graphql(schema, sourceAddBook);
+        await graphql({ schema, source: sourceAddBook });
         spans = exporter.getFinishedSpans();
       });
 
@@ -764,8 +768,12 @@ describe('graphql', () => {
         create({
           allowValues: true,
         });
-        await graphql(schema, sourceFindUsingVariable, null, null, {
-          id: 2,
+        await graphql({
+          schema,
+          source: sourceFindUsingVariable,
+          variableValues: {
+            id: 2,
+          },
         });
         spans = exporter.getFinishedSpans();
       });
@@ -862,7 +870,7 @@ describe('graphql', () => {
       create({
         // allowValues: true
       });
-      await graphql(schema, sourceAddBook);
+      await graphql({ schema, source: sourceAddBook });
       spans = exporter.getFinishedSpans();
     });
 
@@ -955,7 +963,7 @@ describe('graphql', () => {
 
     beforeEach(async () => {
       create({});
-      await graphql(schema, badQuery);
+      await graphql({ schema, source: badQuery });
       spans = exporter.getFinishedSpans();
     });
 
@@ -990,7 +998,7 @@ describe('graphql', () => {
 
     beforeEach(async () => {
       create({});
-      await graphql(schema, queryInvalid);
+      await graphql({ schema, source: queryInvalid });
       spans = exporter.getFinishedSpans();
     });
 
@@ -1036,7 +1044,7 @@ describe('graphql', () => {
 
   describe('responseHook', () => {
     let spans: ReadableSpan[];
-    let graphqlResult: graphqlTypes.ExecutionResult;
+    let graphqlResult: graphqlTypes.ExecutionResult<{ books: unknown[] }>;
     const dataAttributeName = 'graphql_data';
 
     afterEach(() => {
@@ -1052,7 +1060,7 @@ describe('graphql', () => {
             span.setAttribute(dataAttributeName, JSON.stringify(data));
           },
         });
-        graphqlResult = await graphql(schema, sourceList1);
+        graphqlResult = await graphql({ schema, source: sourceList1 });
         spans = exporter.getFinishedSpans();
       });
 
@@ -1075,7 +1083,7 @@ describe('graphql', () => {
             throw 'some kind of failure!';
           },
         });
-        graphqlResult = await graphql(schema, sourceList1);
+        graphqlResult = await graphql({ schema, source: sourceList1 });
         spans = exporter.getFinishedSpans();
       });
 
@@ -1092,7 +1100,7 @@ describe('graphql', () => {
           responseHook:
             invalidTypeHook as GraphQLInstrumentationExecutionResponseHook,
         });
-        graphqlResult = await graphql(schema, sourceList1);
+        graphqlResult = await graphql({ schema, source: sourceList1 });
         spans = exporter.getFinishedSpans();
       });
 
