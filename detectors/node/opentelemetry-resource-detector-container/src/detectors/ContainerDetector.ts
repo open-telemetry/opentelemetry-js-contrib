@@ -25,10 +25,12 @@ import * as fs from 'fs';
 import * as util from 'util';
 import { diag } from '@opentelemetry/api';
 
-export class DockerCGroupV1Detector implements Detector {
+export class ContainerDetector implements Detector {
   readonly CONTAINER_ID_LENGTH = 64;
-  readonly DEFAULT_CGROUP_PATH = '/proc/self/cgroup';
+  readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
+  readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
   readonly UTF8_UNICODE = 'utf8';
+  readonly HOSTNAME = 'hostname';
 
   private static readFileAsync = util.promisify(fs.readFile);
 
@@ -42,30 +44,57 @@ export class DockerCGroupV1Detector implements Detector {
           });
     } catch (e) {
       diag.info(
-        'Docker CGROUP V1 Detector did not identify running inside a supported docker container, no docker attributes will be added to resource: ',
+        'Container Detector did not identify running inside a supported container, no container attributes will be added to resource: ',
         e
       );
       return Resource.empty();
     }
   }
 
+  private async _getContainerIdV1() {
+    const rawData = await ContainerDetector.readFileAsync(
+      this.DEFAULT_CGROUP_V1_PATH,
+      this.UTF8_UNICODE
+    );
+    const splitData = rawData.trim().split('\n');
+    for (const str of splitData) {
+      if (str.length >= this.CONTAINER_ID_LENGTH) {
+        return str.substring(str.length - this.CONTAINER_ID_LENGTH);
+      }
+    }
+    return undefined;
+  }
+
+  private async _getContainerIdV2() {
+    const rawData = await ContainerDetector.readFileAsync(
+      this.DEFAULT_CGROUP_V2_PATH,
+      this.UTF8_UNICODE
+    );
+    const str = rawData
+      .trim()
+      .split('\n')
+      .find(s => s.includes(this.HOSTNAME));
+    const containerIdStr = str
+      ?.split('/')
+      .find(s => s.length === this.CONTAINER_ID_LENGTH);
+    return containerIdStr || '';
+  }
+
+  /*
+    cgroupv1 path would still exist in case of container running on v2
+    but the cgroupv1 path would no longer have the container id and would
+    fallback on the cgroupv2 implementation.
+  */
   private async _getContainerId(): Promise<string | undefined> {
     try {
-      const rawData = await DockerCGroupV1Detector.readFileAsync(
-        this.DEFAULT_CGROUP_PATH,
-        this.UTF8_UNICODE
+      return (
+        (await this._getContainerIdV1()) ?? (await this._getContainerIdV2())
       );
-      const splitData = rawData.trim().split('\n');
-      for (const str of splitData) {
-        if (str.length >= this.CONTAINER_ID_LENGTH) {
-          return str.substring(str.length - this.CONTAINER_ID_LENGTH);
-        }
-      }
     } catch (e) {
       if (e instanceof Error) {
         const errorMessage = e.message;
         diag.info(
-          'Docker CGROUP V1 Detector failed to read the Container ID: ',
+          'Container Detector failed to read the Container ID: ',
           errorMessage
         );
       }
@@ -74,4 +103,4 @@ export class DockerCGroupV1Detector implements Detector {
   }
 }
 
-export const dockerCGroupV1Detector = new DockerCGroupV1Detector();
+export const containerDetector = new ContainerDetector();

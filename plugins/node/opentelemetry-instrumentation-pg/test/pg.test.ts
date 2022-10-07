@@ -279,6 +279,16 @@ describe('pg', () => {
         testUtils.assertPropagation(connectSpan, span);
       });
     });
+
+    it('should not generate traces when requireParentSpan=true is specified', async () => {
+      instrumentation.setConfig({
+        requireParentSpan: true,
+      });
+      memoryExporter.reset();
+      await connClient.connect();
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+    });
   });
 
   describe('#client.query(...)', () => {
@@ -482,7 +492,7 @@ describe('pg', () => {
           [dataAttributeName]: '{"rowCount":1}',
         };
         beforeEach(async () => {
-          const config: PgInstrumentationConfig = {
+          create({
             enhancedDatabaseReporting: true,
             responseHook: (
               span: Span,
@@ -492,8 +502,7 @@ describe('pg', () => {
                 dataAttributeName,
                 JSON.stringify({ rowCount: responseInfo?.data.rowCount })
               ),
-          };
-          create(config);
+          });
         });
 
         it('should attach response hook data to resulting spans for query with callback ', done => {
@@ -637,6 +646,20 @@ describe('pg', () => {
       });
       context.with(trace.setSpan(context.active(), spans[1]), () => {
         client.query('SELECT NOW()').then(queryHandler);
+      });
+    });
+
+    it('should not generate traces for client.query() when requireParentSpan=true is specified', done => {
+      instrumentation.setConfig({
+        requireParentSpan: true,
+      });
+      memoryExporter.reset();
+      client.query('SELECT NOW()', (err, res) => {
+        assert.strictEqual(err, null);
+        assert.ok(res);
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 0);
+        done();
       });
     });
   });

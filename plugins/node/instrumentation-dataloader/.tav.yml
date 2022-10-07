@@ -1,0 +1,4 @@
+dataloader:
+  # Testing ^2.0.0 covers about 90% of the downloaded versions
+  versions: "^2.0.0"
+  commands: npm run test
