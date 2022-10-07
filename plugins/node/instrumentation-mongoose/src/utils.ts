@@ -20,8 +20,10 @@ import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 export function getAttributesFromCollection(
-  collection: Collection
+  _collection: unknown
 ): SpanAttributes {
+  // Cast to avoid using mongoose types in the public API
+  const collection = _collection as Collection;
   return {
     [SemanticAttributes.DB_MONGODB_COLLECTION]: collection.name,
     [SemanticAttributes.DB_NAME]: collection.conn.name,
