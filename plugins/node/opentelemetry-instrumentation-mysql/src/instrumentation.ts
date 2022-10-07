@@ -120,7 +120,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           this._unwrap(moduleExports, 'createConnection');
           this._unwrap(moduleExports, 'createPool');
           this._unwrap(moduleExports, 'createPoolCluster');
-        },
+        }
       ),
     ];
   }
@@ -366,8 +366,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
       };
     };
   }
-  private _setPoolcallbacks(pool: mysqlTypes.Pool | mysqlTypes.PoolCluster, thisPlugin: MySQLInstrumentation) {
-    pool.on('connection', function (connection){
+  private _setPoolcallbacks(
+    pool: mysqlTypes.Pool | mysqlTypes.PoolCluster,
+    thisPlugin: MySQLInstrumentation
+  ) {
+    pool.on('connection', connection => {
       thisPlugin._connectionsUsage.add(1, {
         'db.client.connection.usage.state': 'idle',
         'db.client.connection.usage.name': connection?.threadId,
@@ -380,7 +383,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
       });
     });
 
-    pool.on('acquire', function (connection){
+    pool.on('acquire', connection => {
       thisPlugin._connectionsUsage.add(-1, {
         'db.client.connection.usage.state': 'idle',
         'db.client.connection.usage.name': connection?.threadId,
@@ -391,7 +394,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
       });
     });
 
-    pool.on('release', function (connection) {
+    pool.on('release', connection => {
       thisPlugin._connectionsUsage.add(-1, {
         'db.client.connection.usage.state': 'used',
         'db.client.connection.usage.name': connection?.threadId,

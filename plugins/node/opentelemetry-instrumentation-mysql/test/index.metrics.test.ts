@@ -24,7 +24,7 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import { MySQLInstrumentation } from '../src';
-import { MysqlError, PoolConnection } from "mysql";
+import { MysqlError, PoolConnection } from 'mysql';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 
 const otelTestingMeterProvider = new MeterProvider();
@@ -65,7 +65,6 @@ async function waitForNumberOfExports(
 import * as mysqlTypes from 'mysql';
 
 describe('mysql@2.x-Metrics', () => {
-
   let pool: mysqlTypes.Pool;
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
@@ -93,7 +92,7 @@ describe('mysql@2.x-Metrics', () => {
   after(function () {
     if (testMysqlLocally) {
       this.timeout(5000);
-      // testUtils.cleanUpDocker('mysql');
+      testUtils.cleanUpDocker('mysql');
     }
   });
 
@@ -110,7 +109,7 @@ describe('mysql@2.x-Metrics', () => {
       user: 'otel',
       host: '127.0.0.1',
       password: 'secret',
-      database: 'test_db'
+      database: 'test_db',
     });
   });
 
@@ -128,7 +127,7 @@ describe('mysql@2.x-Metrics', () => {
       const sql = 'SELECT 1+1 as solution';
       conn.query(sql, async (err, results) => {
         assert.ifError(err);
-        assert.ok(results)
+        assert.ok(results);
         conn.release();
 
         assert.strictEqual(results[0]?.solution, 2);
@@ -137,7 +136,7 @@ describe('mysql@2.x-Metrics', () => {
           1
         );
         assert.strictEqual(exportedMetrics.length, 1); //originaly was '1'
-        let metrics = exportedMetrics[0].scopeMetrics[0].metrics;
+        const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
         assert.strictEqual(metrics.length, 1);
         assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
