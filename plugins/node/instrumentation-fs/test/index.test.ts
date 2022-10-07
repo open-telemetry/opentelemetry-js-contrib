@@ -71,9 +71,12 @@ describe('fs instrumentation', () => {
     plugin.setTracerProvider(provider);
     plugin.enable();
     fs = require('fs');
-    Object.defineProperty(fs.promises, 'exists', { value: (...args: any[]) => {
-      return Reflect.apply(promisify(fs.exists), fs, args);
-    }, configurable: true });
+    Object.defineProperty(fs.promises, 'exists', {
+      value: (...args: any[]) => {
+        return Reflect.apply(promisify(fs.exists), fs, args);
+      },
+      configurable: true,
+    });
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
@@ -100,7 +103,10 @@ describe('fs instrumentation', () => {
         if (error) {
           assert.throws(() => Reflect.apply(fs[syncName], fs, args), error);
         } else {
-          assert.deepEqual(Reflect.apply(fs[syncName], fs, args), result ?? resultAsError);
+          assert.deepEqual(
+            Reflect.apply(fs[syncName], fs, args),
+            result ?? resultAsError
+          );
         }
       });
       rootSpan.end();
@@ -157,7 +163,11 @@ describe('fs instrumentation', () => {
                     if (actualError instanceof Error) {
                       return done(actualError);
                     } else {
-                      return done(new Error(`Expected callback to be called without an error got: ${actualError}`));
+                      return done(
+                        new Error(
+                          `Expected callback to be called without an error got: ${actualError}`
+                        )
+                      );
                     }
                   }
                 }
@@ -203,7 +213,10 @@ describe('fs instrumentation', () => {
       await context
         .with(trace.setSpan(context.active(), rootSpan), () => {
           // eslint-disable-next-line node/no-unsupported-features/node-builtins
-          assert(typeof fs.promises[name] === 'function', `Expected fs.promises.${name} to be a function`);
+          assert(
+            typeof fs.promises[name] === 'function',
+            `Expected fs.promises.${name} to be a function`
+          );
           return Reflect.apply(fs.promises[name], fs.promises, args);
         })
         .then((actualResult: any) => {
@@ -214,7 +227,10 @@ describe('fs instrumentation', () => {
           }
         })
         .catch((actualError: any) => {
-          assert(actualError instanceof Error, `Expected caugth error to be instance of Error. Got ${actualError}`);
+          assert(
+            actualError instanceof Error,
+            `Expected caugth error to be instance of Error. Got ${actualError}`
+          );
           if (error) {
             assert(
               error.test(actualError?.message ?? ''),

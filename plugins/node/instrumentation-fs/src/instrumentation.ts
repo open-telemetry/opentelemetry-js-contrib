@@ -258,10 +258,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     };
   }
 
-  protected _patchExistsCallbackFunction<T extends (...args: any[]) => ReturnType<T>>(
-    functionName: FMember,
-    original: T
-  ): T {
+  protected _patchExistsCallbackFunction<
+    T extends (...args: any[]) => ReturnType<T>
+  >(functionName: FMember, original: T): T {
     const instrumentation = this;
     const patchedFunction = <any>function (this: any, ...args: any[]) {
       if (isTracingSuppressed(api.context.active())) {
@@ -333,10 +332,12 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     // `exists` has a custom promisify function because of the inconsistent signature
     // replicating that on the patched function
     const promisified = function (path: unknown) {
-      return new Promise((resolve) => patchedFunction(path, resolve));
+      return new Promise(resolve => patchedFunction(path, resolve));
     };
     Object.defineProperty(promisified, 'name', { value: functionName });
-    Object.defineProperty(patchedFunction, promisify.custom, { value: promisified });
+    Object.defineProperty(patchedFunction, promisify.custom, {
+      value: promisified,
+    });
 
     return patchedFunction;
   }

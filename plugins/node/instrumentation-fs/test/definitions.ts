@@ -23,7 +23,7 @@ export type Opts = {
   callback?: boolean;
   promise?: boolean;
 };
-export type Result = { error?: RegExp; result?: any, resultAsError?: any };
+export type Result = { error?: RegExp; result?: any; resultAsError?: any };
 export type TestCase = [FsFunction, any[], Result, any[], Opts?];
 export type TestCreator = (
   name: FsFunction,
