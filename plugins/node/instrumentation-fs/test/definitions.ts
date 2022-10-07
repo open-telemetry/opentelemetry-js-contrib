@@ -23,7 +23,7 @@ export type Opts = {
   callback?: boolean;
   promise?: boolean;
 };
-export type Result = { error?: RegExp; result?: any };
+export type Result = { error?: RegExp; result?: any, resultAsError?: any };
 export type TestCase = [FsFunction, any[], Result, any[], Opts?];
 export type TestCreator = (
   name: FsFunction,
@@ -64,6 +64,20 @@ const tests: TestCase[] = [
     ['./test/fixtures/writetest', TEST_CONTENTS],
     { result: undefined },
     [{ name: 'fs %NAME' }],
+  ],
+  [
+    'exists' as FsFunction, // turning off testing async functions
+    ['./test/fixtures/exists-404'],
+    { resultAsError: false },
+    [{ name: 'fs %NAME' }],
+    { promise: false }
+  ],
+  [
+    'exists' as FsFunction, // turning off testing async functions
+    ['./test/fixtures/readtest'],
+    { resultAsError: true },
+    [{ name: 'fs %NAME' }],
+    { promise: false }
   ],
 ];
 
