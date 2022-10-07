@@ -1,4 +1,4 @@
 graphql:
-  # Taking a sample from the most downloaded versions in the range "14 || 15"
-  versions: "^15.8.0 || 15.7.2 || 15.6.1 || 15.6.0 || 15.5.3 || 15.5.1 || 15.5.0 || 15.4.0 || 15.3.0 || 14.6.0 || 14.5.8 || 14.5.0 || 14.0.0"
+  # Taking a sample from the most downloaded versions in the range "14 || 15 || 16"
+  versions: "16.4.0 || 16.3.0 || 16.2.0 || 16.0.0 || ^15.8.0 || 15.7.2 || 15.6.1 || 15.6.0 || 15.5.3 || 15.5.1 || 15.5.0 || 15.4.0 || 15.3.0 || ^14.7.0 || 14.6.0 || 14.5.8 || 14.0.0"
   commands: npm run test

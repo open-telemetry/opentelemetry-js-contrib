@@ -67,7 +67,7 @@ provider.addSpanProcessor(spanProcessor);
 instrumentation.enable();
 httpInstrumentation.enable();
 
-import 'fastify-express';
+import '@fastify/express';
 import { FastifyInstance } from 'fastify/types/instance';
 
 const Fastify = require('fastify');
@@ -94,7 +94,7 @@ describe('fastify', () => {
   let app: FastifyInstance;
 
   async function startServer(): Promise<void> {
-    const address = await app.listen(0);
+    const address = await app.listen({ port: 0 });
     const url = new URL(address);
     PORT = parseInt(url.port, 10);
   }
@@ -102,7 +102,7 @@ describe('fastify', () => {
   beforeEach(async () => {
     instrumentation.enable();
     app = Fastify();
-    app.register(require('fastify-express'));
+    app.register(require('@fastify/express'));
   });
 
   afterEach(async () => {
@@ -145,7 +145,7 @@ describe('fastify', () => {
       const span = spans[3];
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
-        'plugin.name': 'fastify-express',
+        'plugin.name': 'fastify -> @fastify/express',
         [SemanticAttributes.HTTP_ROUTE]: '/test',
       });
       assert.strictEqual(span.name, `request handler - ${ANONYMOUS_NAME}`);
@@ -168,7 +168,7 @@ describe('fastify', () => {
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
         'fastify.name': 'namedHandler',
-        'plugin.name': 'fastify-express',
+        'plugin.name': 'fastify -> @fastify/express',
         [SemanticAttributes.HTTP_ROUTE]: '/test',
       });
       assert.strictEqual(span.name, 'request handler - namedHandler');
@@ -232,7 +232,7 @@ describe('fastify', () => {
         assert.strictEqual(span.name, 'middleware - runConnect');
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
-          'plugin.name': 'fastify-express',
+          'plugin.name': 'fastify -> @fastify/express',
           'hook.name': 'onRequest',
         });
 
@@ -248,7 +248,7 @@ describe('fastify', () => {
         assert.strictEqual(span.name, 'middleware - enhanceRequest');
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
-          'plugin.name': 'fastify-express',
+          'plugin.name': 'fastify -> @fastify/express',
           'hook.name': 'onRequest',
         });
 
@@ -338,12 +338,16 @@ describe('fastify', () => {
 
           // done was not yet called from the hook, so it should not end the span
           const preDoneSpans = getSpans().filter(
-            s => !s.attributes[AttributeNames.PLUGIN_NAME]
+            s =>
+              !s.attributes[AttributeNames.PLUGIN_NAME] ||
+              s.attributes[AttributeNames.PLUGIN_NAME] === 'fastify'
           );
           assert.strictEqual(preDoneSpans.length, 0);
           hookDone!();
           const postDoneSpans = getSpans().filter(
-            s => !s.attributes[AttributeNames.PLUGIN_NAME]
+            s =>
+              !s.attributes[AttributeNames.PLUGIN_NAME] ||
+              s.attributes[AttributeNames.PLUGIN_NAME] === 'fastify'
           );
           assert.strictEqual(postDoneSpans.length, 1);
         });
@@ -367,7 +371,9 @@ describe('fastify', () => {
           await startServer();
           await httpRequest.get(`http://localhost:${PORT}/test`);
           const spans = getSpans().filter(
-            s => !s.attributes[AttributeNames.PLUGIN_NAME]
+            s =>
+              !s.attributes[AttributeNames.PLUGIN_NAME] ||
+              s.attributes[AttributeNames.PLUGIN_NAME] === 'fastify'
           );
           assert.strictEqual(spans.length, 1);
         });
