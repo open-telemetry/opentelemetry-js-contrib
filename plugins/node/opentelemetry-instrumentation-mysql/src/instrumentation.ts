@@ -121,51 +121,9 @@ export class MySQLInstrumentation extends InstrumentationBase<
           this._unwrap(moduleExports, 'createPool');
           this._unwrap(moduleExports, 'createPoolCluster');
         },
-        // [
-        //   new InstrumentationNodeModuleFile<any>(
-        //     'mysql/lib/connection.js',
-        //     ['2.*'],
-        //     (moduleExports: any, moduleVersion?: string) => {
-        //       diag.debug(`METRICS: Applying patch for mysql@${moduleVersion}`);
-        //       if (isWrapped(moduleExports.connect)) {
-        //         console.log("METRICS: connect isWrapped. unwrap it");
-        //         this._unwrap(moduleExports, 'connect');
-        //       }
-        //       console.log("METRICS: wrap connect function");
-        //       this._wrap(moduleExports, 'connect', this._getConnectCommand());
-        //       return moduleExports;
-        //     },
-        //     (moduleExports?: any, moduleVersion?: string) => {
-        //       diag.debug(`METRICS: Removing internal patch for mysql@${moduleVersion}`);
-        //       if (moduleExports === undefined) return;
-        //       this._unwrap(moduleExports, 'connect');
-        //     }
-        //     ),
-        // ]
       ),
     ];
   }
-
-  // private _getConnectCommand() {
-  //   const instrumentation = this;
-  //   return (original: MysqlConnect['connect']) => {
-  //     return function patchedConnect(
-  //       this: unknown,
-  //       options: any,
-  //       callback: any
-  //     ) {
-  //       const patchedCallback = function(err: any, conn: any) {
-  //         console.log("METRICS: patchedCallback has been called!!!");
-  //         if(err || !conn) {
-  //           callback(err, conn);
-  //           return;
-  //         }
-  //         callback(err, conn);
-  //       }
-  //       return original.call(this, options, patchedCallback);
-  //     };
-  //   };
-  // }
 
   // global export function
   private _patchCreateConnection(format: formatType) {

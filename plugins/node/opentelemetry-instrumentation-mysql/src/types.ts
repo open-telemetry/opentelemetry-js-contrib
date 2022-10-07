@@ -17,7 +17,3 @@
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export type MySQLInstrumentationConfig = InstrumentationConfig;
-
-export type MysqlConnect = {
-  connect: (options: any, callback: any) => void
-}
