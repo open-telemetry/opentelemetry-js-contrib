@@ -36,6 +36,8 @@ import type * as mysqlTypes from 'mysql';
 import { MySQLInstrumentationConfig } from './types';
 import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
 import { VERSION } from './version';
+import { UpDownCounter } from '@opentelemetry/api-metrics';
+import { MeterProvider } from '@opentelemetry/sdk-metrics';
 
 type formatType = typeof mysqlTypes.format;
 
@@ -50,9 +52,27 @@ export class MySQLInstrumentation extends InstrumentationBase<
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
+  private _connectionsUsage!: UpDownCounter;
 
   constructor(config?: MySQLInstrumentationConfig) {
     super('@opentelemetry/instrumentation-mysql', VERSION, config);
+    this._setMetricInstruments();
+  }
+
+  override setMeterProvider(meterProvider: MeterProvider) {
+    super.setMeterProvider(meterProvider);
+    this._setMetricInstruments();
+  }
+
+  private _setMetricInstruments() {
+    this._connectionsUsage = this.meter.createUpDownCounter(
+      'db.client.connections.usage',
+      {
+        description:
+          'The number of connections that are currently in state described by the state attribute.',
+        unit: '{connections}',
+      }
+    );
   }
 
   protected init() {
@@ -100,10 +120,52 @@ export class MySQLInstrumentation extends InstrumentationBase<
           this._unwrap(moduleExports, 'createConnection');
           this._unwrap(moduleExports, 'createPool');
           this._unwrap(moduleExports, 'createPoolCluster');
-        }
+        },
+        // [
+        //   new InstrumentationNodeModuleFile<any>(
+        //     'mysql/lib/connection.js',
+        //     ['2.*'],
+        //     (moduleExports: any, moduleVersion?: string) => {
+        //       diag.debug(`METRICS: Applying patch for mysql@${moduleVersion}`);
+        //       if (isWrapped(moduleExports.connect)) {
+        //         console.log("METRICS: connect isWrapped. unwrap it");
+        //         this._unwrap(moduleExports, 'connect');
+        //       }
+        //       console.log("METRICS: wrap connect function");
+        //       this._wrap(moduleExports, 'connect', this._getConnectCommand());
+        //       return moduleExports;
+        //     },
+        //     (moduleExports?: any, moduleVersion?: string) => {
+        //       diag.debug(`METRICS: Removing internal patch for mysql@${moduleVersion}`);
+        //       if (moduleExports === undefined) return;
+        //       this._unwrap(moduleExports, 'connect');
+        //     }
+        //     ),
+        // ]
       ),
     ];
   }
+
+  // private _getConnectCommand() {
+  //   const instrumentation = this;
+  //   return (original: MysqlConnect['connect']) => {
+  //     return function patchedConnect(
+  //       this: unknown,
+  //       options: any,
+  //       callback: any
+  //     ) {
+  //       const patchedCallback = function(err: any, conn: any) {
+  //         console.log("METRICS: patchedCallback has been called!!!");
+  //         if(err || !conn) {
+  //           callback(err, conn);
+  //           return;
+  //         }
+  //         callback(err, conn);
+  //       }
+  //       return original.call(this, options, patchedCallback);
+  //     };
+  //   };
+  // }
 
   // global export function
   private _patchCreateConnection(format: formatType) {
@@ -194,6 +256,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
             arg1 as getConnectionCallbackType,
             format
           );
+          thisPlugin._setPoolcallbacks(pool, thisPlugin);
           return originalGetConnection.call(pool, patchFn);
         }
         if (arguments.length === 2 && typeof arg2 === 'function') {
@@ -201,6 +264,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
             arg2 as getConnectionCallbackType,
             format
           );
+          thisPlugin._setPoolcallbacks(pool, thisPlugin);
           return originalGetConnection.call(pool, arg1, patchFn);
         }
         if (arguments.length === 3 && typeof arg3 === 'function') {
@@ -208,6 +272,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
             arg3 as getConnectionCallbackType,
             format
           );
+          thisPlugin._setPoolcallbacks(pool, thisPlugin);
           return originalGetConnection.call(pool, arg1, arg2, patchFn);
         }
 
@@ -342,5 +407,41 @@ export class MySQLInstrumentation extends InstrumentationBase<
         );
       };
     };
+  }
+  private _setPoolcallbacks(pool: mysqlTypes.Pool | mysqlTypes.PoolCluster, thisPlugin: MySQLInstrumentation) {
+    pool.on('connection', function (connection){
+      thisPlugin._connectionsUsage.add(1, {
+        'db.client.connection.usage.state': 'idle',
+        'db.client.connection.usage.name': connection?.threadId,
+      });
+      connection.on('end', () => {
+        thisPlugin._connectionsUsage.add(-1, {
+          'db.client.connection.usage.state': 'idle',
+          'db.client.connection.usage.name': connection?.threadId,
+        });
+      });
+    });
+
+    pool.on('acquire', function (connection){
+      thisPlugin._connectionsUsage.add(-1, {
+        'db.client.connection.usage.state': 'idle',
+        'db.client.connection.usage.name': connection?.threadId,
+      });
+      thisPlugin._connectionsUsage.add(1, {
+        'db.client.connection.usage.state': 'used',
+        'db.client.connection.usage.name': connection?.threadId,
+      });
+    });
+
+    pool.on('release', function (connection) {
+      thisPlugin._connectionsUsage.add(-1, {
+        'db.client.connection.usage.state': 'used',
+        'db.client.connection.usage.name': connection?.threadId,
+      });
+      thisPlugin._connectionsUsage.add(1, {
+        'db.client.connection.usage.state': 'idle',
+        'db.client.connection.usage.name': connection?.threadId,
+      });
+    });
   }
 }
