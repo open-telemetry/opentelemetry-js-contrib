@@ -66,18 +66,16 @@ const tests: TestCase[] = [
     [{ name: 'fs %NAME' }],
   ],
   [
-    'exists' as FsFunction, // turning off testing async functions
+    'exists' as FsFunction, // we are defining promisified version of exists in the tests, so this is OK
     ['./test/fixtures/exists-404'],
     { resultAsError: false },
     [{ name: 'fs %NAME' }],
-    { promise: false }
   ],
   [
-    'exists' as FsFunction, // turning off testing async functions
+    'exists' as FsFunction, // we are defining promisified version of exists in the tests, so this is OK
     ['./test/fixtures/readtest'],
     { resultAsError: true },
     [{ name: 'fs %NAME' }],
-    { promise: false }
   ],
 ];
 

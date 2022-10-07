@@ -22,6 +22,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
+import { promisify } from 'util';
 import Instrumentation from '../src';
 import * as sinon from 'sinon';
 import type * as FSType from 'fs';
@@ -70,10 +71,14 @@ describe('fs instrumentation', () => {
     plugin.setTracerProvider(provider);
     plugin.enable();
     fs = require('fs');
+    Object.defineProperty(fs.promises, 'exists', { value: (...args: any[]) => {
+      return Reflect.apply(promisify(fs.exists), fs, args);
+    }, configurable: true });
     assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
 
   afterEach(() => {
+    delete (fs.promises as any)['exists'];
     plugin.disable();
     memoryExporter.reset();
     context.disable();
@@ -187,7 +192,7 @@ describe('fs instrumentation', () => {
   const promiseTest: TestCreator = (
     name: FPMember,
     args,
-    { error, result },
+    { error, result, resultAsError = null },
     spans
   ) => {
     const rootSpanName = `${name} test span`;
@@ -205,10 +210,11 @@ describe('fs instrumentation', () => {
           if (error) {
             assert.fail(`promises.${name} did not reject`);
           } else {
-            assert.deepEqual(actualResult, result);
+            assert.deepEqual(actualResult, result ?? resultAsError);
           }
         })
         .catch((actualError: any) => {
+          assert(actualError instanceof Error, `Expected caugth error to be instance of Error. Got ${actualError}`);
           if (error) {
             assert(
               error.test(actualError?.message ?? ''),
