@@ -15,7 +15,7 @@
  */
 
 import { kLayerPatched } from './';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { Span, SpanAttributes } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { ExpressLayerType } from './enums/ExpressLayerType';

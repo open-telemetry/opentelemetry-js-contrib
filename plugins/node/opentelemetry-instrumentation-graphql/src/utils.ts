@@ -387,7 +387,13 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
             >
         >(
           () => {
-            return fieldResolver.call(this, source, args, contextValue, info);
+            return fieldResolver.call(
+              this,
+              source,
+              args,
+              contextValue,
+              info
+            ) as any;
           },
           err => {
             if (shouldEndSpan) {
@@ -421,7 +427,7 @@ async function safeExecuteInTheMiddleAsync<T>(
   try {
     result = await execute();
   } catch (e) {
-    error = e;
+    error = e as Error;
   } finally {
     onFinish(error, result);
     if (error && !preventThrowingError) {

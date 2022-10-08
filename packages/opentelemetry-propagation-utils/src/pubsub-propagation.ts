@@ -56,6 +56,11 @@ const patchArrayFilter = (
   });
 };
 
+function isPromise(value: unknown): value is Promise<unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return typeof (value as any)?.then === 'function';
+}
+
 const patchArrayFunction = (
   messages: OtelProcessedMessage[],
   functionName: 'forEach' | 'map',
@@ -77,10 +82,18 @@ const patchArrayFunction = (
       if (!messageSpan) return callback.apply(this, callbackArgs);
 
       const res = context.with(trace.setSpan(loopContext, messageSpan), () => {
+        let result: Promise<unknown> | unknown;
         try {
-          return callback.apply(this, callbackArgs);
+          result = callback.apply(this, callbackArgs);
+          if (isPromise(result)) {
+            const endSpan = () => message[END_SPAN_FUNCTION]?.();
+            result.then(endSpan, endSpan);
+          }
+          return result;
         } finally {
-          message[END_SPAN_FUNCTION]?.();
+          if (!isPromise(result)) {
+            message[END_SPAN_FUNCTION]?.();
+          }
         }
       });
 
