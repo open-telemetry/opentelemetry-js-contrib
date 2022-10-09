@@ -86,16 +86,11 @@ function assertSingleSpan(name: string, query?: string, status?: SpanStatus) {
   assertSpan(span, name, query, status);
 }
 
-function assertAttributeInSingleSpan(
-  name: string,
-  attributes?: Attributes,
-  query?: string,
-  status?: SpanStatus
-) {
+function assertAttributeInSingleSpan(name: string, attributes?: Attributes) {
   const spans = memoryExporter.getFinishedSpans();
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
-  assertSpan(span, name, query, status, attributes);
+  assertSpan(span, name, undefined, undefined, attributes);
 }
 
 function assertErrorSpan(
