@@ -19,14 +19,7 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
-import {
-  context,
-  diag,
-  trace,
-  Span,
-  SpanKind,
-  SpanStatusCode,
-} from '@opentelemetry/api';
+import { context, diag, trace, Span, SpanStatusCode } from '@opentelemetry/api';
 import * as pgTypes from 'pg';
 import * as pgPoolTypes from 'pg-pool';
 import {
@@ -46,6 +39,7 @@ import {
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
+import { startSpan } from './utils';
 
 const PG_POOL_COMPONENT = 'pg-pool';
 
@@ -122,6 +116,14 @@ export class PgInstrumentation extends InstrumentationBase {
     return [modulePG, modulePGPool];
   }
 
+  override setConfig(config: PgInstrumentationConfig = {}) {
+    this._config = Object.assign({}, config);
+  }
+
+  override getConfig(): PgInstrumentationConfig {
+    return this._config as PgInstrumentationConfig;
+  }
+
   private _getClientConnectPatch() {
     const plugin = this;
     return (original: PgClientConnect) => {
@@ -129,19 +131,18 @@ export class PgInstrumentation extends InstrumentationBase {
         this: pgTypes.Client,
         callback?: PgErrorCallback
       ) {
-        const span = plugin.tracer.startSpan(
+        const span = startSpan(
+          plugin.tracer,
+          plugin.getConfig(),
           `${PgInstrumentation.COMPONENT}.connect`,
           {
-            kind: SpanKind.CLIENT,
-            attributes: {
-              [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-              [SemanticAttributes.DB_NAME]: this.database,
-              [SemanticAttributes.NET_PEER_NAME]: this.host,
-              [SemanticAttributes.DB_CONNECTION_STRING]:
-                utils.getConnectionString(this),
-              [SemanticAttributes.NET_PEER_PORT]: this.port,
-              [SemanticAttributes.DB_USER]: this.user,
-            },
+            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+            [SemanticAttributes.DB_NAME]: this.database,
+            [SemanticAttributes.NET_PEER_NAME]: this.host,
+            [SemanticAttributes.DB_CONNECTION_STRING]:
+              utils.getConnectionString(this),
+            [SemanticAttributes.NET_PEER_PORT]: this.port,
+            [SemanticAttributes.DB_USER]: this.user,
           }
         );
 
@@ -182,25 +183,31 @@ export class PgInstrumentation extends InstrumentationBase {
             span = utils.handleParameterizedQuery.call(
               this,
               plugin.tracer,
-              plugin.getConfig() as PgInstrumentationConfig,
+              plugin.getConfig(),
               query,
               params
             );
           } else {
-            span = utils.handleTextQuery.call(this, plugin.tracer, query);
+            span = utils.handleTextQuery.call(
+              this,
+              plugin.tracer,
+              plugin.getConfig(),
+              query
+            );
           }
         } else if (typeof args[0] === 'object') {
           const queryConfig = args[0] as NormalizedQueryConfig;
           span = utils.handleConfigQuery.call(
             this,
             plugin.tracer,
-            plugin.getConfig() as PgInstrumentationConfig,
+            plugin.getConfig(),
             queryConfig
           );
         } else {
           return utils.handleInvalidQuery.call(
             this,
             plugin.tracer,
+            plugin.getConfig(),
             original,
             ...args
           );
@@ -212,7 +219,7 @@ export class PgInstrumentation extends InstrumentationBase {
           if (typeof args[args.length - 1] === 'function') {
             // Patch ParameterQuery callback
             args[args.length - 1] = utils.patchCallback(
-              plugin.getConfig() as PgInstrumentationConfig,
+              plugin.getConfig(),
               span,
               args[args.length - 1] as PostgresCallback
             );
@@ -228,7 +235,7 @@ export class PgInstrumentation extends InstrumentationBase {
           ) {
             // Patch ConfigQuery callback
             let callback = utils.patchCallback(
-              plugin.getConfig() as PgInstrumentationConfig,
+              plugin.getConfig(),
               span,
               (args[0] as NormalizedQueryConfig).callback!
             );
@@ -252,11 +259,7 @@ export class PgInstrumentation extends InstrumentationBase {
             .then((result: unknown) => {
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
-                utils.handleExecutionResult(
-                  plugin.getConfig() as PgInstrumentationConfig,
-                  span,
-                  result
-                );
+                utils.handleExecutionResult(plugin.getConfig(), span, result);
                 span.end();
                 resolve(result);
               });
@@ -285,9 +288,11 @@ export class PgInstrumentation extends InstrumentationBase {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
         const connString = utils.getConnectionString(this.options);
         // setup span
-        const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {
-          kind: SpanKind.CLIENT,
-          attributes: {
+        const span = startSpan(
+          plugin.tracer,
+          plugin.getConfig(),
+          `${PG_POOL_COMPONENT}.connect`,
+          {
             [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
             [SemanticAttributes.DB_NAME]: this.options.database, // required
             [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
@@ -297,8 +302,8 @@ export class PgInstrumentation extends InstrumentationBase {
             [AttributeNames.IDLE_TIMEOUT_MILLIS]:
               this.options.idleTimeoutMillis,
             [AttributeNames.MAX_CLIENT]: this.options.maxClient,
-          },
-        });
+          }
+        );
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
