@@ -41,16 +41,10 @@ import type * as CassandraDriver from 'cassandra-driver';
 const supportedVersions = ['>=4.4 <5.0'];
 
 export class CassandraDriverInstrumentation extends InstrumentationBase {
+  protected override _config!: CassandraDriverInstrumentationConfig;
+
   constructor(config: CassandraDriverInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-cassandra-driver', VERSION, config);
-  }
-
-  private _getConfig(): CassandraDriverInstrumentationConfig {
-    return this._config;
-  }
-
-  override setConfig(config?: CassandraDriverInstrumentationConfig): void {
-    super.setConfig(config);
   }
 
   protected init() {
@@ -159,7 +153,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
           span,
           execPromise,
           (span, result) => {
-            if (plugin._getConfig().responseHook) {
+            if (plugin._config.responseHook) {
               plugin._callResponseHook(span, result);
             }
           }
@@ -338,7 +332,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
 
   private _callResponseHook(span: Span, response: any) {
     safeExecuteInTheMiddle(
-      () => this._getConfig().responseHook!(span, { response }),
+      () => this._config.responseHook!(span, { response }),
       e => {
         if (e) {
           this._diag.error('responseHook error', e);

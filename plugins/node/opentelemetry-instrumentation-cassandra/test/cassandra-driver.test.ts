@@ -249,9 +249,7 @@ describe('CassandraDriverInstrumentation', () => {
 
     describe('responseHook', () => {
       after(() => {
-        instrumentation.setConfig({
-          responseHook: () => {},
-        });
+        instrumentation.setConfig({});
       });
 
       it('adds custom attributes to span', async () => {
@@ -259,7 +257,7 @@ describe('CassandraDriverInstrumentation', () => {
         const customAttributeName = 'custom.attribute';
         const customAttributeValue = 'custom attribute value';
 
-        instrumentation.setConfig({
+        const config: CassandraDriverInstrumentationConfig = {
           responseHook: (span: Span, responseInfo: ResponseInfo) => {
             const row = responseInfo.response.first();
             const responseValue = parseInt(row.count);
@@ -267,7 +265,9 @@ describe('CassandraDriverInstrumentation', () => {
             span.setAttribute(responseAttributeName, responseValue);
             span.setAttribute(customAttributeName, customAttributeValue);
           },
-        });
+        };
+
+        instrumentation.setConfig(config);
 
         await client.execute(
           "SELECT count(*) FROM system_schema.columns WHERE keyspace_name = 'ot' AND table_name = 'test';"
@@ -282,12 +282,15 @@ describe('CassandraDriverInstrumentation', () => {
       it('throws and should not affect user flow or span creation', async () => {
         const hookAttributeName = 'hook.attribute';
         const hookAttributeValue = 'hook attribute value';
-        instrumentation.setConfig({
+
+        const config: CassandraDriverInstrumentationConfig = {
           responseHook: (span: Span, responseInfo: ResponseInfo): void => {
             span.setAttribute(hookAttributeName, hookAttributeValue);
             throw new Error('error inside hook');
           },
-        });
+        };
+
+        instrumentation.setConfig(config);
 
         const query = 'select * from ot.test';
         await client.execute(query);
