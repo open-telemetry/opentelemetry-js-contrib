@@ -36,11 +36,12 @@ registerInstrumentations({
 
 ### Dns Instrumentation Options
 
-Dns instrumentation has currently one option. You can set the following:
+Dns instrumentation currently has two options. You can set the following:
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher[]` | Dns instrumentation will not trace all requests that match hostnames |
+| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher[]` | Dns instrumentation will exclude creating spans for requests that match hostnames |
+| [`omitHostnameAttribute`] | `boolean` | Dns instrumentation will exclude the `dns.hostname` attribute from spans, default when unset is false |
 
 ## Useful links
 

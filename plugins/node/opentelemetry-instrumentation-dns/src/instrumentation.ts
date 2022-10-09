@@ -34,12 +34,20 @@ import * as utils from './utils';
 import { VERSION } from './version';
 import { AttributeNames } from './enums/AttributeNames';
 
+const DEFAULT_CONFIG: DnsInstrumentationConfig = {
+  omitHostnameAttribute: false,
+};
+
 /**
  * Dns instrumentation for Opentelemetry
  */
 export class DnsInstrumentation extends InstrumentationBase<Dns> {
   constructor(protected override _config: DnsInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-dns', VERSION, _config);
+    super(
+      '@opentelemetry/instrumentation-dns',
+      VERSION,
+      Object.assign({}, DEFAULT_CONFIG, _config)
+    );
   }
 
   init(): InstrumentationNodeModuleDefinition<Dns>[] {
@@ -112,22 +120,17 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
       diag.debug('wrap lookup callback function and starts span');
       const name = utils.getOperationName('lookup');
       let opts = null;
-      if (plugin._config?.includeHostname) {
+      if (!plugin._config?.omitHostnameAttribute) {
         opts = {
           attributes: {
             [AttributeNames.DNS_HOSTNAME]: hostname,
           },
         };
       }
-      const span = plugin.tracer.startSpan(
-        name,
-        Object.assign(
-          {
-            kind: SpanKind.CLIENT,
-          },
-          opts
-        )
-      );
+      const span = plugin.tracer.startSpan(name, {
+        kind: SpanKind.CLIENT,
+        ...opts,
+      });
 
       const originalCallback = args[argsCount - 1];
       if (typeof originalCallback === 'function') {

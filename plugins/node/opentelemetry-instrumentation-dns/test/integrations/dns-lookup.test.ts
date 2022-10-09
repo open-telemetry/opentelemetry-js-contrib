@@ -75,7 +75,7 @@ describe('dns.lookup()', () => {
           const spans = memoryExporter.getFinishedSpans();
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
-          assertSpan(span, { addresses: [{ address, family }] });
+          assertSpan(span, { addresses: [{ address, family }], hostname });
           done();
         });
       });
@@ -93,7 +93,7 @@ describe('dns.lookup()', () => {
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
-        assertSpan(span, { addresses: [{ address, family }] });
+        assertSpan(span, { addresses: [{ address, family }], hostname });
         done();
       });
     });
@@ -118,6 +118,7 @@ describe('dns.lookup()', () => {
               code: SpanStatusCode.ERROR,
               message: err!.message,
             },
+            hostname,
           });
           done();
         });
@@ -139,6 +140,7 @@ describe('dns.lookup()', () => {
             code: SpanStatusCode.ERROR,
             message: error!.message,
           },
+          hostname,
         });
       }
     });
@@ -159,6 +161,7 @@ describe('dns.lookup()', () => {
             code: SpanStatusCode.ERROR,
             message: error!.message,
           },
+          hostname: hostname as any,
         });
       }
     });
@@ -168,7 +171,7 @@ describe('dns.lookup()', () => {
         instrumentation.setConfig();
       });
 
-      it('should be omitted by default', done => {
+      it('should be included by default', done => {
         const hostname = 'google.com';
         instrumentation.setConfig();
 
@@ -179,16 +182,16 @@ describe('dns.lookup()', () => {
           const [span] = spans;
           assertSpan(span, {
             addresses: [{ address, family }],
-            hostname: undefined,
+            hostname,
           });
           done();
         });
       });
 
-      it('should be included if includeHostname is true', done => {
+      it('should be excluded if omitHostname is true', done => {
         const hostname = 'google.com';
         instrumentation.setConfig({
-          includeHostname: true,
+          omitHostnameAttribute: true,
         } as DnsInstrumentationConfig);
 
         dns.lookup(hostname, (err, address, family) => {
@@ -198,7 +201,7 @@ describe('dns.lookup()', () => {
           const [span] = spans;
           assertSpan(span, {
             addresses: [{ address, family }],
-            hostname,
+            hostname: undefined,
           });
           done();
         });
@@ -219,7 +222,7 @@ describe('dns.lookup()', () => {
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
 
-          assertSpan(span, { addresses: [{ address, family }] });
+          assertSpan(span, { addresses: [{ address, family }], hostname });
           done();
         });
       });
@@ -238,7 +241,7 @@ describe('dns.lookup()', () => {
             const [span] = spans;
             assert.strictEqual(spans.length, 1);
 
-            assertSpan(span, { addresses: [{ address, family }] });
+            assertSpan(span, { addresses: [{ address, family }], hostname });
             done();
           }
         );
@@ -257,7 +260,7 @@ describe('dns.lookup()', () => {
           const spans = memoryExporter.getFinishedSpans();
           const [span] = spans;
           assert.strictEqual(spans.length, 1);
-          assertSpan(span, { addresses });
+          assertSpan(span, { addresses, hostname });
           done();
         }
       );
