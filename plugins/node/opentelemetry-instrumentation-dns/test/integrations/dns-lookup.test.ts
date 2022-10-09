@@ -114,7 +114,6 @@ describe('dns.lookup()', () => {
           assert.strictEqual(spans.length, 1);
           assertSpan(span, {
             addresses: [{ address, family }],
-            hostname,
             forceStatus: {
               code: SpanStatusCode.ERROR,
               message: err!.message,
@@ -164,41 +163,45 @@ describe('dns.lookup()', () => {
       }
     });
 
-    it('should omit dns.hostname attribute by default', done => {
-      const hostname = 'google.com';
-      const config: DnsInstrumentationConfig = {};
-      instrumentation.setConfig(config);
-
-      dns.lookup(hostname, (err, address, family) => {
-        assert.strictEqual(err, null);
-        const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 1);
-        const [span] = spans;
-        assertSpan(span, {
-          addresses: [{ address, family }],
-          hostname: undefined,
-        });
-        done();
+    describe('dns.hostname attribute', () => {
+      afterEach(() => {
+        instrumentation.setConfig();
       });
-    });
 
-    it('should include dns.hostname attribute if requested', done => {
-      const hostname = 'google.com';
-      const config: DnsInstrumentationConfig = {
-        includeHostname: true,
-      };
-      instrumentation.setConfig(config);
+      it('should be omitted by default', done => {
+        const hostname = 'google.com';
+        instrumentation.setConfig();
 
-      dns.lookup(hostname, (err, address, family) => {
-        assert.strictEqual(err, null);
-        const spans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(spans.length, 1);
-        const [span] = spans;
-        assertSpan(span, {
-          addresses: [{ address, family }],
-          hostname,
+        dns.lookup(hostname, (err, address, family) => {
+          assert.strictEqual(err, null);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          const [span] = spans;
+          assertSpan(span, {
+            addresses: [{ address, family }],
+            hostname: undefined,
+          });
+          done();
         });
-        done();
+      });
+
+      it('should be included if includeHostname is true', done => {
+        const hostname = 'google.com';
+        instrumentation.setConfig({
+          includeHostname: true,
+        } as DnsInstrumentationConfig);
+
+        dns.lookup(hostname, (err, address, family) => {
+          assert.strictEqual(err, null);
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          const [span] = spans;
+          assertSpan(span, {
+            addresses: [{ address, family }],
+            hostname,
+          });
+          done();
+        });
       });
     });
   });

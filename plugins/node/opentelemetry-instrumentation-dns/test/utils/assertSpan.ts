@@ -56,6 +56,8 @@ export const assertSpan = (
       span.attributes[AttributeNames.DNS_HOSTNAME],
       validations.hostname
     );
+  } else {
+    assert.strictEqual(span.attributes[AttributeNames.DNS_HOSTNAME], undefined);
   }
 
   assert.ok(span.endTime);
