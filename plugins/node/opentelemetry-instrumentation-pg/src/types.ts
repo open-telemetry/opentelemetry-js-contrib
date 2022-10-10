@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as pgTypes from 'pg';
-import * as pgPoolTypes from 'pg-pool';
+import type * as pgTypes from 'pg';
+import type * as pgPoolTypes from 'pg-pool';
 import type * as api from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
