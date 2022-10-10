@@ -175,7 +175,7 @@ describe('dns.promises.lookup()', () => {
         instrumentation.setConfig(config);
 
         try {
-          await lookupPromise(hostname as any, { family: 4 });
+          await dns.promises.lookup(hostname as any, { family: 4 });
           assert.fail();
         } catch (error) {
           const spans = memoryExporter.getFinishedSpans();
@@ -196,7 +196,7 @@ describe('dns.promises.lookup()', () => {
         } as DnsInstrumentationConfig);
 
         try {
-          await lookupPromise(hostname as any, { family: 4 });
+          await dns.promises.lookup(hostname as any, { family: 4 });
           assert.fail();
         } catch (error) {
           const spans = memoryExporter.getFinishedSpans();
