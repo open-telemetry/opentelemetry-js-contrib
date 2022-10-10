@@ -64,21 +64,18 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             );
           }
           for (const fName of CALLBACK_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
+            }
             if (fName === 'exists') {
               // handling separately because of the inconsistent cb style:
               // `exists` doesn't have error as the first argument, but the result
-              if (isWrapped(fs[fName])) {
-                this._unwrap(fs, fName);
-              }
               this._wrap(
                 fs,
                 fName,
                 <any>this._patchExistsCallbackFunction.bind(this, fName)
               );
               continue;
-            }
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
             }
             this._wrap(
               fs,
