@@ -277,7 +277,8 @@ export function patchClientConnectCallback(
 ): PgErrorCallback {
   return function patchedClientConnectCallback(
     this: pgTypes.Client,
-    err: Error
+    err: Error,
+    client?: pgTypes.Client
   ) {
     if (err) {
       span.setStatus({
@@ -286,6 +287,6 @@ export function patchClientConnectCallback(
       });
     }
     span.end();
-    cb.call(this, err);
+    cb.call(this, err, client);
   };
 }
