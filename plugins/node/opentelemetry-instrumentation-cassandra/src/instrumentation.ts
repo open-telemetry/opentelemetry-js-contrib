@@ -361,7 +361,7 @@ function combineQueries(queries: Array<string | { query: string }>) {
 function wrapPromise<T>(
   span: Span,
   promise: Promise<T>,
-  successCallback?: (span: Span, result: any) => void
+  successCallback?: (span: Span, result: T) => void
 ): Promise<T> {
   return promise
     .then(result => {
