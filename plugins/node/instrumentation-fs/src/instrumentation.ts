@@ -35,6 +35,7 @@ import type {
   EndHook,
   FsInstrumentationConfig,
 } from './types';
+import { promisify } from 'util';
 
 type FS = typeof fs;
 
@@ -65,6 +66,16 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           for (const fName of CALLBACK_FUNCTIONS) {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
+            }
+            if (fName === 'exists') {
+              // handling separately because of the inconsistent cb style:
+              // `exists` doesn't have error as the first argument, but the result
+              this._wrap(
+                fs,
+                fName,
+                <any>this._patchExistsCallbackFunction.bind(this, fName)
+              );
+              continue;
             }
             this._wrap(
               fs,
@@ -242,6 +253,90 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         return original.apply(this, args);
       }
     };
+  }
+
+  protected _patchExistsCallbackFunction<
+    T extends (...args: any[]) => ReturnType<T>
+  >(functionName: FMember, original: T): T {
+    const instrumentation = this;
+    const patchedFunction = <any>function (this: any, ...args: any[]) {
+      if (isTracingSuppressed(api.context.active())) {
+        // Performance optimization. Avoid creating additional contexts and spans
+        // if we already know that the tracing is being suppressed.
+        return original.apply(this, args);
+      }
+      if (
+        instrumentation._runCreateHook(functionName, {
+          args: args,
+        }) === false
+      ) {
+        return api.context.with(
+          suppressTracing(api.context.active()),
+          original,
+          this,
+          ...args
+        );
+      }
+
+      const lastIdx = args.length - 1;
+      const cb = args[lastIdx];
+      if (typeof cb === 'function') {
+        const span = instrumentation.tracer.startSpan(
+          `fs ${functionName}`
+        ) as api.Span;
+
+        // Return to the context active during the call in the callback
+        args[lastIdx] = api.context.bind(
+          api.context.active(),
+          function (this: unknown) {
+            // `exists` never calls the callback with an error
+            instrumentation._runEndHook(functionName, {
+              args: args,
+              span,
+            });
+            span.end();
+            return cb.apply(this, arguments);
+          }
+        );
+
+        try {
+          // Suppress tracing for internal fs calls
+          return api.context.with(
+            suppressTracing(api.trace.setSpan(api.context.active(), span)),
+            original,
+            this,
+            ...args
+          );
+        } catch (error) {
+          span.recordException(error);
+          span.setStatus({
+            message: error.message,
+            code: api.SpanStatusCode.ERROR,
+          });
+          instrumentation._runEndHook(functionName, {
+            args: args,
+            span,
+            error,
+          });
+          span.end();
+          throw error;
+        }
+      } else {
+        return original.apply(this, args);
+      }
+    };
+
+    // `exists` has a custom promisify function because of the inconsistent signature
+    // replicating that on the patched function
+    const promisified = function (path: unknown) {
+      return new Promise(resolve => patchedFunction(path, resolve));
+    };
+    Object.defineProperty(promisified, 'name', { value: functionName });
+    Object.defineProperty(patchedFunction, promisify.custom, {
+      value: promisified,
+    });
+
+    return patchedFunction;
   }
 
   protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
