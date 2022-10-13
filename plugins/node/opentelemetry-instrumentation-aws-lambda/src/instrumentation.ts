@@ -80,7 +80,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
 
     if (_config.disableAwsContextPropagation == null) {
-      if (typeof env["OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION"] === 'string' && env["OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION"].toLocaleLowerCase() === "true") {
+      if (
+        typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
+          'string' &&
+        env[
+          'OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'
+        ].toLocaleLowerCase() === 'true'
+      ) {
         _config.disableAwsContextPropagation = true;
       }
     }

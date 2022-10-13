@@ -542,7 +542,7 @@ describe('lambda handler', () => {
     });
 
     it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "true"', async () => {
-      process.env["OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION"] = "true";
+      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'true';
       process.env[traceContextEnvironmentKey] = sampledAwsHeader;
       initializeHandler('lambda-test/async.handler', {
         disableAwsContextPropagation: true,
