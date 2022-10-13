@@ -59,6 +59,7 @@ import {
   EventContextExtractor,
 } from './types';
 import { VERSION } from './version';
+import { env } from 'process';
 
 const awsPropagator = new AWSXRayPropagator();
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
@@ -77,6 +78,12 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+
+    if (_config.disableAwsContextPropagation == null) {
+      if (typeof env["OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION"] === 'string' && env["OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION"].toLocaleLowerCase() === "true") {
+        _config.disableAwsContextPropagation = true;
+      }
+    }
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
