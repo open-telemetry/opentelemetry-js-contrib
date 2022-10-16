@@ -45,7 +45,7 @@ jobs:
           --health-start-period 10s
           --health-retries 20
       mysql:
-        image: circleci/mysql:5.7
+        image: mysql:8
         env:
           MYSQL_USER: otel
           MYSQL_PASSWORD: secret
@@ -59,7 +59,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       postgres:
-        image: circleci/postgres:9.6-alpine
+        image: postgres:15-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_DB: circle_database
