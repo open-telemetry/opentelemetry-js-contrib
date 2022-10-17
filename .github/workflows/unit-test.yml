@@ -44,7 +44,7 @@ jobs:
         env:
           MYSQL_USER: otel
           MYSQL_PASSWORD: secret
-          MYSQL_DATABASE: circle_database
+          MYSQL_DATABASE: otel_mysql_database
           MYSQL_ROOT_PASSWORD: rootpw
         ports:
         - 3306:3306
@@ -100,7 +100,7 @@ jobs:
       MONGODB_HOST: 127.0.0.1
       MONGODB_PORT: 27017
       MSSQL_PASSWORD: mssql_passw0rd
-      MYSQL_DATABASE: circle_database
+      MYSQL_DATABASE: otel_mysql_database
       MYSQL_HOST: localhost
       MYSQL_PASSWORD: secret
       MYSQL_PORT: 3306
@@ -113,6 +113,7 @@ jobs:
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout

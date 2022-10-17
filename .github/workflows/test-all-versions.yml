@@ -92,7 +92,7 @@ jobs:
       MONGODB_HOST: 127.0.0.1
       MONGODB_PORT: 27017
       MSSQL_PASSWORD: mssql_passw0rd
-      MYSQL_DATABASE: circle_database
+      MYSQL_DATABASE: otel_mysql_database
       MYSQL_HOST: localhost
       MYSQL_PASSWORD: secret
       MYSQL_PORT: 3306
@@ -103,6 +103,7 @@ jobs:
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       RUN_MONGODB_TESTS: 1
       RUN_MSSQL_TESTS: 1
       RUN_MYSQL_TESTS: 1
