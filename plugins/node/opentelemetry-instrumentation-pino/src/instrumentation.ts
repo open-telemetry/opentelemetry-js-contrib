@@ -41,7 +41,8 @@ export class PinoInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition<any>(
         'pino',
         pinoVersions,
-        pinoModule => {
+        (pinoModule, moduleVersion) => {
+          diag.debug(`Applying patch for pino@${moduleVersion}`);
           const instrumentation = this;
           const patchedPino = Object.assign((...args: unknown[]) => {
             if (args.length == 0) {
