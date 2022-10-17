@@ -9,9 +9,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/open-telemetry/opentelemetry-js-contrib/releases">
-    <img alt="GitHub release (latest by date including pre-releases)" src="https://img.shields.io/github/v/release/open-telemetry/opentelemetry-js?include_prereleases&style=for-the-badge">
-  </a>
   <a href="https://codecov.io/gh/open-telemetry/opentelemetry-js-contrib/branch/main/">
     <img alt="Codecov Status" src="https://img.shields.io/codecov/c/github/open-telemetry/opentelemetry-js-contrib?style=for-the-badge">
   </a>
