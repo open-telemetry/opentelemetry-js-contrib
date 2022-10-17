@@ -57,7 +57,7 @@ jobs:
         image: postgres:15-alpine
         env:
           POSTGRES_USER: postgres
-          POSTGRES_DB: circle_database
+          POSTGRES_DB: otel_pg_database
           POSTGRES_PASSWORD: postgres
         ports:
         - 5432:5432
@@ -109,7 +109,7 @@ jobs:
       OPENTELEMETRY_MEMCACHED_PORT: 11211
       OPENTELEMETRY_REDIS_HOST: localhost
       OPENTELEMETRY_REDIS_PORT: 6379
-      POSTGRES_DB: circle_database
+      POSTGRES_DB: otel_pg_database
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres

@@ -49,7 +49,7 @@ jobs:
         env:
           MYSQL_USER: otel
           MYSQL_PASSWORD: secret
-          MYSQL_DATABASE: circle_database
+          MYSQL_DATABASE: otel_mysql_database
           MYSQL_ROOT_PASSWORD: rootpw
         ports:
         - 3306:3306
@@ -62,7 +62,8 @@ jobs:
         image: postgres:15-alpine
         env:
           POSTGRES_USER: postgres
-          POSTGRES_DB: circle_database
+          POSTGRES_DB: otel_pg_database
+          POSTGRES_PASSWORD: postgres
         ports:
         - 5432:5432
         options: >-
@@ -98,7 +99,7 @@ jobs:
       MYSQL_USER: otel
       OPENTELEMETRY_REDIS_HOST: localhost
       OPENTELEMETRY_REDIS_PORT: 6379
-      POSTGRES_DB: circle_database
+      POSTGRES_DB: otel_pg_database
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
