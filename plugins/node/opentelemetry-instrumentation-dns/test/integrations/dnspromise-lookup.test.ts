@@ -30,22 +30,6 @@ const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
-async function lookupPromise(
-  hostname: string,
-  options: dns.LookupOptions = {}
-): Promise<any> {
-  return new Promise((resolve, reject) => {
-    dns.lookup(hostname, options, (err, address, family) => {
-      if (err) reject(err);
-      if (options.all) {
-        resolve(address);
-      } else {
-        resolve({ address, family });
-      }
-    });
-  });
-}
-
 describe('dns.promises.lookup()', () => {
   let instrumentation: DnsInstrumentation;
 
@@ -83,7 +67,7 @@ describe('dns.promises.lookup()', () => {
     [4, 6].forEach(ipversion => {
       it(`should export a valid span with "family" arg to ${ipversion}`, async () => {
         const hostname = 'google.com';
-        const { address, family } = await lookupPromise(hostname, {
+        const { address, family } = await dns.promises.lookup(hostname, {
           family: ipversion,
         });
         assert.ok(address);
@@ -100,7 +84,7 @@ describe('dns.promises.lookup()', () => {
   describe('with no options param', () => {
     it('should export a valid span', async () => {
       const hostname = 'google.com';
-      const { address, family } = await lookupPromise(hostname);
+      const { address, family } = await dns.promises.lookup(hostname);
 
       assert.ok(address);
       assert.ok(family);
@@ -119,7 +103,7 @@ describe('dns.promises.lookup()', () => {
       it('should export a valid span with error NOT_FOUND', async () => {
         const hostname = 'ᚕ';
         try {
-          await lookupPromise(hostname);
+          await dns.promises.lookup(hostname);
           assert.fail();
         } catch (error) {
           const spans = memoryExporter.getFinishedSpans();
@@ -141,7 +125,7 @@ describe('dns.promises.lookup()', () => {
     it('should export a valid span with error INVALID_ARGUMENT when "family" param is equal to -1', async () => {
       const hostname = 'google.com';
       try {
-        await lookupPromise(hostname, { family: -1 });
+        await dns.promises.lookup(hostname, { family: -1 });
         assert.fail();
       } catch (error) {
         const spans = memoryExporter.getFinishedSpans();
@@ -163,8 +147,7 @@ describe('dns.promises.lookup()', () => {
     it('should export a valid span with error INVALID_ARGUMENT when "hostname" param is a number', async () => {
       const hostname = 1234;
       try {
-        // tslint:disable-next-line:no-any
-        await lookupPromise(hostname as any, { family: 4 });
+        await dns.promises.lookup(hostname as any, { family: 4 });
         assert.fail();
       } catch (error) {
         const spans = memoryExporter.getFinishedSpans();
@@ -187,7 +170,7 @@ describe('dns.promises.lookup()', () => {
     [4, 6].forEach(ipversion => {
       it(`should export a valid span with "family" to ${ipversion}`, async () => {
         const hostname = 'google.com';
-        const { address, family } = await lookupPromise(hostname, {
+        const { address, family } = await dns.promises.lookup(hostname, {
           family: ipversion,
         });
 
@@ -203,7 +186,7 @@ describe('dns.promises.lookup()', () => {
 
       it(`should export a valid span when setting "verbatim" property to true and "family" to ${ipversion}`, async () => {
         const hostname = 'google.com';
-        const { address, family } = await lookupPromise(hostname, {
+        const { address, family } = await dns.promises.lookup(hostname, {
           family: ipversion,
           verbatim: true,
         });
@@ -221,7 +204,7 @@ describe('dns.promises.lookup()', () => {
 
     it('should export a valid span when setting "all" property to true', async () => {
       const hostname = 'montreal.ca';
-      const addresses = await lookupPromise(hostname, { all: true });
+      const addresses = await dns.promises.lookup(hostname, { all: true });
 
       assert.ok(addresses instanceof Array);
 
