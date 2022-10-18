@@ -196,7 +196,11 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       if (this.getConfig().requestHook) {
         safeExecuteInTheMiddle(
           () =>
-            this.getConfig().requestHook!(span, { context, middlewareLayer }),
+            this.getConfig().requestHook!(span, {
+              context,
+              middlewareLayer,
+              layerType,
+            }),
           e => {
             if (e) {
               api.diag.error('koa instrumentation: request hook failed', e);
