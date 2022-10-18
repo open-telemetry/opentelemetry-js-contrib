@@ -59,7 +59,7 @@ function assertSpan(
   status?: SpanStatus,
   customAttributes?: Attributes
 ) {
-  const attributes: any = {
+  const attributes: Attributes = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
     [SemanticAttributes.DB_USER]: 'cassandra',
   };
