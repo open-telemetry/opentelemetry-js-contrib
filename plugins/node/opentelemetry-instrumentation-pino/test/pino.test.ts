@@ -75,11 +75,16 @@ describe('PinoInstrumentation', () => {
     return record;
   }
 
-  function init() {
+  function init(importType: 'global' | 'default' | 'pino' = 'global') {
     stream = new Writable();
     stream._write = () => {};
     writeSpy = sinon.spy(stream, 'write');
-    logger = pino(stream);
+    if (importType === 'global') {
+      logger = pino(stream);
+    } else {
+      // @ts-expect-error the same function reexported
+      logger = pino[importType](stream);
+    }
   }
 
   before(() => {
@@ -94,6 +99,30 @@ describe('PinoInstrumentation', () => {
     });
 
     it('injects span context to records', () => {
+      const span = tracer.startSpan('abc');
+      context.with(trace.setSpan(context.active(), span), () => {
+        testInjection(span);
+      });
+    });
+
+    it('injects span context to records in default export', function () {
+      // @ts-expect-error the same function reexported
+      if (!pino.default) {
+        this.skip();
+      }
+      init('default');
+      const span = tracer.startSpan('abc');
+      context.with(trace.setSpan(context.active(), span), () => {
+        testInjection(span);
+      });
+    });
+
+    it('injects span context to records in named export', function () {
+      // @ts-expect-error the same function reexported
+      if (!pino.pino) {
+        this.skip();
+      }
+      init('pino');
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
         testInjection(span);
@@ -243,7 +272,7 @@ describe('PinoInstrumentation', () => {
       instrumentation.enable();
     });
 
-    beforeEach(init);
+    beforeEach(() => init());
 
     it('does not inject span context', () => {
       const span = tracer.startSpan('abc');

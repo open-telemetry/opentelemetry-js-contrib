@@ -28,13 +28,10 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
-import { defaultDbStatementSerializer } from './utils';
+import { defaultDbStatementSerializer, getClientAttributes } from './utils';
 import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
-import {
-  DbSystemValues,
-  SemanticAttributes,
-} from '@opentelemetry/semantic-conventions';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const OTEL_OPEN_SPANS = Symbol(
   'opentelemetry.instruemntation.redis.open_spans'
@@ -186,6 +183,12 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
           this._getPatchRedisClientSendCommand()
         );
 
+        this._wrap(
+          redisClientPrototype,
+          'connect',
+          this._getPatchedClientConnect()
+        );
+
         return moduleExports;
       },
       (moduleExports: any) => {
@@ -332,6 +335,44 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     };
   }
 
+  private _getPatchedClientConnect() {
+    const plugin = this;
+    return function connectWrapper(original: Function) {
+      return function patchedConnect(this: any): Promise<void> {
+        const options = this.options;
+
+        const attributes = getClientAttributes(options);
+
+        const span = plugin.tracer.startSpan(
+          `${RedisInstrumentation.COMPONENT}-connect`,
+          {
+            kind: SpanKind.CLIENT,
+            attributes,
+          }
+        );
+
+        const res = context.with(trace.setSpan(context.active(), span), () => {
+          return original.apply(this);
+        });
+
+        return res
+          .then((result: unknown) => {
+            span.end();
+            return result;
+          })
+          .catch((error: Error) => {
+            span.recordException(error);
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: error.message,
+            });
+            span.end();
+            return Promise.reject(error);
+          });
+      };
+    };
+  }
+
   private _traceClientCommand(
     origFunction: Function,
     origThis: any,
@@ -351,12 +392,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     const dbStatementSerializer =
       this._config?.dbStatementSerializer || defaultDbStatementSerializer;
 
-    const attributes = {
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-      [SemanticAttributes.NET_PEER_NAME]: clientOptions?.socket?.host,
-      [SemanticAttributes.NET_PEER_PORT]: clientOptions?.socket?.port,
-      [SemanticAttributes.DB_CONNECTION_STRING]: clientOptions?.url,
-    };
+    const attributes = getClientAttributes(clientOptions);
 
     try {
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
@@ -377,7 +413,9 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       }
     );
 
-    const res = origFunction.apply(origThis, origArguments);
+    const res = context.with(trace.setSpan(context.active(), span), () => {
+      return origFunction.apply(origThis, origArguments);
+    });
     if (typeof res?.then === 'function') {
       res.then(
         (redisRes: unknown) => {

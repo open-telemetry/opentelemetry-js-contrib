@@ -16,7 +16,6 @@
 
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import type { pino } from 'pino';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type LogHookFunction = (
@@ -28,5 +27,3 @@ export type LogHookFunction = (
 export interface PinoInstrumentationConfig extends InstrumentationConfig {
   logHook?: LogHookFunction;
 }
-
-export type Pino = typeof pino;

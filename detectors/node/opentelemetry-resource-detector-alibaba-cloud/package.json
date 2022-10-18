@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-alibaba-cloud",
-  "version": "0.27.1",
+  "version": "0.27.2",
   "description": "OpenTelemetry resource detector for Alibaba Cloud",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -28,7 +28,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.12.0"
+    "node": ">=14"
   },
   "files": [
     "build/src/**/*.js",
@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.31.0",
+    "@opentelemetry/contrib-test-utils": "^0.32.0",
     "@types/mocha": "8.2.3",
     "@types/node": "16.11.21",
     "@types/sinon": "10.0.2",

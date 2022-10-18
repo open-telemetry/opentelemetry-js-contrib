@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { Span } from '@opentelemetry/api';
-import * as restify from 'restify';
+import type * as restify from 'restify';
 
 export enum LayerType {
   MIDDLEWARE = 'middleware',

@@ -15,11 +15,15 @@
  */
 
 import {
+  context,
+  trace,
   Span,
   SpanStatusCode,
   Tracer,
   SpanKind,
   diag,
+  INVALID_SPAN_CONTEXT,
+  Attributes,
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
@@ -31,6 +35,7 @@ import {
   NormalizedQueryConfig,
   PostgresCallback,
   PgClientConnectionParams,
+  PgErrorCallback,
   PgPoolCallback,
   PgPoolExtended,
   PgInstrumentationConfig,
@@ -50,26 +55,48 @@ function getCommandFromText(text?: string): string {
   return words[0].length > 0 ? words[0] : 'unknown';
 }
 
-export function getJDBCString(params: PgClientConnectionParams) {
-  const host = params.host || 'localhost'; // postgres defaults to localhost
-  const port = params.port || 5432; // postgres defaults to port 5432
+export function getConnectionString(params: PgClientConnectionParams) {
+  const host = params.host || 'localhost';
+  const port = params.port || 5432;
   const database = params.database || '';
-  return `jdbc:postgresql://${host}:${port}/${database}`;
+  return `postgresql://${host}:${port}/${database}`;
 }
 
-// Private helper function to start a span
-function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
-  const jdbcString = getJDBCString(client.connectionParameters);
+export function startSpan(
+  tracer: Tracer,
+  instrumentationConfig: PgInstrumentationConfig,
+  name: string,
+  attributes: Attributes
+): Span {
+  // If a parent span is required but not present, use a noop span to propagate
+  // context without recording it. Adapted from opentelemetry-instrumentation-http:
+  // https://github.com/open-telemetry/opentelemetry-js/blob/597ea98e58a4f68bcd9aec5fd283852efe444cd6/experimental/packages/opentelemetry-instrumentation-http/src/http.ts#L660
+  const currentSpan = trace.getSpan(context.active());
+  if (instrumentationConfig.requireParentSpan && currentSpan === undefined) {
+    return trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
+  }
+
   return tracer.startSpan(name, {
     kind: SpanKind.CLIENT,
-    attributes: {
-      [SemanticAttributes.DB_NAME]: client.connectionParameters.database, // required
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
-      [SemanticAttributes.DB_CONNECTION_STRING]: jdbcString, // required
-      [SemanticAttributes.NET_PEER_NAME]: client.connectionParameters.host, // required
-      [SemanticAttributes.NET_PEER_PORT]: client.connectionParameters.port,
-      [SemanticAttributes.DB_USER]: client.connectionParameters.user,
-    },
+    attributes,
+  });
+}
+
+// Private helper function to start a span after a connection has been established
+function startQuerySpan(
+  client: PgClientExtended,
+  tracer: Tracer,
+  instrumentationConfig: PgInstrumentationConfig,
+  name: string
+) {
+  const jdbcString = getConnectionString(client.connectionParameters);
+  return startSpan(tracer, instrumentationConfig, name, {
+    [SemanticAttributes.DB_NAME]: client.connectionParameters.database, // required
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
+    [SemanticAttributes.DB_CONNECTION_STRING]: jdbcString, // required
+    [SemanticAttributes.NET_PEER_NAME]: client.connectionParameters.host, // required
+    [SemanticAttributes.NET_PEER_PORT]: client.connectionParameters.port,
+    [SemanticAttributes.DB_USER]: client.connectionParameters.user,
   });
 }
 
@@ -83,7 +110,7 @@ export function handleConfigQuery(
   // Set child span name
   const queryCommand = getCommandFromText(queryConfig.name || queryConfig.text);
   const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = pgStartSpan(tracer, this, name);
+  const span = startQuerySpan(this, tracer, instrumentationConfig, name);
 
   // Set attributes
   if (queryConfig.text) {
@@ -117,7 +144,7 @@ export function handleParameterizedQuery(
   // Set child span name
   const queryCommand = getCommandFromText(query);
   const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = pgStartSpan(tracer, this, name);
+  const span = startQuerySpan(this, tracer, instrumentationConfig, name);
 
   // Set attributes
   span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
@@ -132,12 +159,13 @@ export function handleParameterizedQuery(
 export function handleTextQuery(
   this: PgClientExtended,
   tracer: Tracer,
+  instrumentationConfig: PgInstrumentationConfig,
   query: string
 ) {
   // Set child span name
   const queryCommand = getCommandFromText(query);
   const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = pgStartSpan(tracer, this, name);
+  const span = startQuerySpan(this, tracer, instrumentationConfig, name);
 
   // Set attributes
   span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
@@ -152,11 +180,17 @@ export function handleTextQuery(
 export function handleInvalidQuery(
   this: PgClientExtended,
   tracer: Tracer,
+  instrumentationConfig: PgInstrumentationConfig,
   originalQuery: typeof pgTypes.Client.prototype.query,
   ...args: unknown[]
 ) {
   let result;
-  const span = pgStartSpan(tracer, this, PgInstrumentation.BASE_SPAN_NAME);
+  const span = startQuerySpan(
+    this,
+    tracer,
+    instrumentationConfig,
+    PgInstrumentation.BASE_SPAN_NAME
+  );
   try {
     result = originalQuery.apply(this, args as never);
   } catch (e) {
@@ -234,5 +268,24 @@ export function patchCallbackPGPool(
     }
     span.end();
     cb.call(this, err, res, done);
+  };
+}
+
+export function patchClientConnectCallback(
+  span: Span,
+  cb: PgErrorCallback
+): PgErrorCallback {
+  return function patchedClientConnectCallback(
+    this: pgTypes.Client,
+    err: Error
+  ) {
+    if (err) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: err.message,
+      });
+    }
+    span.end();
+    cb.call(this, err);
   };
 }

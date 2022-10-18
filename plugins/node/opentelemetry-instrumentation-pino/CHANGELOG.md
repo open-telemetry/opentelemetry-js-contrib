@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.31.0...instrumentation-pino-v0.32.0) (2022-09-15)
+
+
+### Features
+
+* improve pino instrumentation by patching additional exports of the same function ([#1108](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1108)) ([4e4d22e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4e4d22eee0e480188b4458b5a859d7cf4b7743d8))
+
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.30.0...instrumentation-pino-v0.31.0) (2022-09-02)
+
+
+### Features
+
+* update experimental Otel deps to ^0.31.0 ([#1096](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1096)) ([4c8843b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4c8843be14896d1159a622c07eb3a049401ccba1))
+* update experimental Otel deps to ^0.32.0 ([#1143](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1143)) ([6fb1911](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6fb191139aed2ca763300dcf9adb51121a88f97e))
+
+
+### Bug Fixes
+
+* **pino:** removed the tav for versions ^8 ([#1146](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1146)) ([078ab2d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/078ab2d3869452e48d9c6cd7d47ba8f66f2fb370))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.29.0...instrumentation-pino-v0.30.0) (2022-06-08)
 
 

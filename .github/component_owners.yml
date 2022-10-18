@@ -18,6 +18,8 @@ components:
     - willarmiros
   plugins/node/instrumentation-amqplib:
     - blumamir
+  plugins/node/instrumentation-dataloader:
+    - henrinormak
   plugins/node/instrumentation-fs:
     - rauno56
   plugins/node/instrumentation-tedious:
@@ -42,6 +44,10 @@ components:
     - blumamir
   plugins/node/opentelemetry-instrumentation-memcached:
     - rauno56
+  plugins/node/opentelemetry-instrumentation-mongodb:
+    - osherv
+  plugins/node/opentelemetry-instrumentation-mongoose:
+    - blumamir
   plugins/node/opentelemetry-instrumentation-nestjs-core:
     - rauno56
   plugins/node/opentelemetry-instrumentation-redis:

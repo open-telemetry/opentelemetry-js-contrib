@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-amqplib",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "description": "OpenTelemetry automatic instrumentation for the `amqplib` package",
   "keywords": [
     "amqplib",
@@ -47,13 +47,13 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.0.0",
-    "@opentelemetry/instrumentation": "^0.31.0",
+    "@opentelemetry/instrumentation": "^0.32.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/amqplib": "^0.5.17"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.31.0",
+    "@opentelemetry/contrib-test-utils": "^0.32.0",
     "@types/lodash": "4.14.178",
     "@types/mocha": "8.2.3",
     "@types/sinon": "10.0.2",
@@ -70,6 +70,6 @@
     "typescript": "4.3.5"
   },
   "engines": {
-    "node": ">=10.0.0"
+    "node": ">=14"
   }
 }

@@ -15,8 +15,10 @@ const definition = protoLoader.loadSync(PROTO_PATH, PROTO_OPTIONS);
 const rpcProto = grpc.loadPackageDefinition(definition).rpc;
 
 function main() {
-  const client = new rpcProto.Fetch('localhost:50051',
-    grpc.credentials.createInsecure());
+  const client = new rpcProto.Fetch(
+    'localhost:50051',
+    grpc.credentials.createInsecure(),
+  );
   const data = process.argv[2] || 'opentelemetry';
   console.log('> ', data);
 

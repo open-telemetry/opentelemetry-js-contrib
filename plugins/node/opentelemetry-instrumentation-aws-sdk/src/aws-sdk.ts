@@ -71,7 +71,7 @@ type V2PluginRequest = AWS.Request<any, any> & {
   [REQUEST_SPAN_KEY]?: Span;
 };
 
-export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
+export class AwsInstrumentation extends InstrumentationBase<any> {
   static readonly component = 'aws-sdk';
   protected override _config!: AwsSdkInstrumentationConfig;
   private servicesExtensions: ServicesExtensions = new ServicesExtensions();
@@ -177,7 +177,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     return moduleExports;
   }
 
-  protected patchV2(moduleExports: typeof AWS, moduleVersion?: string) {
+  protected patchV2(moduleExports: any, moduleVersion?: string) {
     diag.debug(
       `aws-sdk instrumentation: applying patch to ${AwsInstrumentation.component}`
     );
@@ -196,7 +196,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
     return moduleExports;
   }
 
-  protected unpatchV2(moduleExports?: typeof AWS) {
+  protected unpatchV2(moduleExports?: any) {
     if (isWrapped(moduleExports?.Request.prototype.send)) {
       this._unwrap(moduleExports!.Request.prototype, 'send');
     }
@@ -213,7 +213,7 @@ export class AwsInstrumentation extends InstrumentationBase<typeof AWS> {
       metadata.spanName ??
       `${normalizedRequest.serviceName}.${normalizedRequest.commandName}`;
     const newSpan = this.tracer.startSpan(name, {
-      kind: metadata.spanKind,
+      kind: metadata.spanKind ?? SpanKind.CLIENT,
       attributes: {
         ...extractAttributesFromNormalizedRequest(normalizedRequest),
         ...metadata.spanAttributes,

@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.32.0...instrumentation-ioredis-v0.32.1) (2022-09-15)
+
+
+### Bug Fixes
+
+* **ioredis:** requireParentSpan not applied to connect spans ([#1151](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1151)) ([d3cb60d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3cb60d28e186b42f0c17ab48df8757555bbe6e0))
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.31.0...instrumentation-ioredis-v0.32.0) (2022-09-02)
+
+
+### Features
+
+* update experimental Otel deps to ^0.31.0 ([#1096](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1096)) ([4c8843b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4c8843be14896d1159a622c07eb3a049401ccba1))
+* update experimental Otel deps to ^0.32.0 ([#1143](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1143)) ([6fb1911](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6fb191139aed2ca763300dcf9adb51121a88f97e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.32.0
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.30.0...instrumentation-ioredis-v0.31.0) (2022-06-17)
 
 

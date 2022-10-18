@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import { NormalizedRequest } from './types';
-import type { Request } from 'aws-sdk';
 import { Context, SpanAttributes, context } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums';
@@ -32,14 +31,12 @@ export const removeSuffixFromStringIfExists = (
     : str;
 };
 
-export const normalizeV2Request = (
-  awsV2Request: Request<any, any>
-): NormalizedRequest => {
-  const service = (awsV2Request as any)?.service;
+export const normalizeV2Request = (awsV2Request: any): NormalizedRequest => {
+  const service = awsV2Request?.service;
   return {
     serviceName: service?.api?.serviceId?.replace(/\s+/g, ''),
-    commandName: toPascalCase((awsV2Request as any)?.operation),
-    commandInput: (awsV2Request as any).params,
+    commandName: toPascalCase(awsV2Request?.operation),
+    commandInput: awsV2Request.params,
     region: service?.config?.region,
   };
 };

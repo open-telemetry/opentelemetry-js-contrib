@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.32.0...instrumentation-mongodb-v0.32.1) (2022-09-27)
+
+
+### Bug Fixes
+
+* remove unneeded type exports in mongodb instrumentation ([#1194](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1194)) ([6920a55](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6920a554b46bf8af5e00b60073d479feacb18dcd))
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.31.1...instrumentation-mongodb-v0.32.0) (2022-09-02)
+
+
+### Features
+
+* update experimental Otel deps to ^0.31.0 ([#1096](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1096)) ([4c8843b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4c8843be14896d1159a622c07eb3a049401ccba1))
+* update experimental Otel deps to ^0.32.0 ([#1143](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1143)) ([6fb1911](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6fb191139aed2ca763300dcf9adb51121a88f97e))
+
+
+### Bug Fixes
+
+* mongodb types fails to compile with latest tsc v4.8 ([#1141](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1141)) ([ec9ee13](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ec9ee131635dc2db88deea4f2efb887ff6f60577))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.32.0
+
 ## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.31.0...instrumentation-mongodb-v0.31.1) (2022-08-09)
 
 

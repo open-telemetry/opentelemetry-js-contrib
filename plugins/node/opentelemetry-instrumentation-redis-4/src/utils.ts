@@ -14,6 +14,19 @@
  * limitations under the License.
  */
 import { DbStatementSerializer } from './types';
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 
 export const defaultDbStatementSerializer: DbStatementSerializer = cmdName =>
   cmdName;
+
+export function getClientAttributes(options: any) {
+  return {
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
+    [SemanticAttributes.NET_PEER_NAME]: options?.socket?.host,
+    [SemanticAttributes.NET_PEER_PORT]: options?.socket?.port,
+    [SemanticAttributes.DB_CONNECTION_STRING]: options?.url,
+  };
+}
