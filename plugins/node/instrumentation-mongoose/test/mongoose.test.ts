@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import 'mocha';
-import * as expect from 'expect';
+import { expect } from 'expect';
 import { context, ROOT_CONTEXT } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { MongooseInstrumentation } from '../src';

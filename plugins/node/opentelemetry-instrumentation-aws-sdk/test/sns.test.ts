@@ -27,7 +27,7 @@ import * as fs from 'fs';
 import * as nock from 'nock';
 
 import { mockV2AwsSend } from './testing-utils';
-import * as expect from 'expect';
+import { expect } from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as sinon from 'sinon';
 import {
