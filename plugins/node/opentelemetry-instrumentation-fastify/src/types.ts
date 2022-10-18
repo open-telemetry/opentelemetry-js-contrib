@@ -15,7 +15,7 @@
  */
 
 import { Span } from '@opentelemetry/api';
-import { FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
 import { spanRequestSymbol } from './constants';
 
 export type HandlerOriginal = (() => Promise<unknown>) & (() => void);
