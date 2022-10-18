@@ -35,6 +35,7 @@ export type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
 export type KoaRequestInfo = {
   context: KoaContext;
   middlewareLayer: KoaMiddleware;
+  layerType: KoaLayerType;
 };
 
 /**

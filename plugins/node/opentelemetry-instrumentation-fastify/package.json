@@ -55,6 +55,7 @@
     "@types/mocha": "7.0.2",
     "@types/node": "16.11.21",
     "gts": "3.1.0",
+    "fastify": "^4.5.3",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
@@ -64,8 +65,7 @@
   "dependencies": {
     "@opentelemetry/core": "^1.0.0",
     "@opentelemetry/instrumentation": "^0.32.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "fastify": "^4.5.3"
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-fastify#readme"
 }
