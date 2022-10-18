@@ -47,7 +47,7 @@
     "@types/lru-cache": "7.10.9",
     "@types/mocha": "8.2.3",
     "@types/node": "16.11.21",
-    "expect": "25.5.0",
+    "expect": "29.2.0",
     "gts": "3.1.0",
     "lru-memoizer": "2.1.4",
     "mocha": "7.2.0",
