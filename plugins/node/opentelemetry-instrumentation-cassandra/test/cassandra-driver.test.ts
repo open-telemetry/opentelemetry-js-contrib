@@ -62,16 +62,11 @@ function assertSpan(
   const attributes: Attributes = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
     [SemanticAttributes.DB_USER]: 'cassandra',
+    ...customAttributes,
   };
 
   if (query !== undefined) {
     attributes[SemanticAttributes.DB_STATEMENT] = query;
-  }
-
-  if (customAttributes) {
-    for (const [k, v] of Object.entries(customAttributes)) {
-      attributes[k] = v;
-    }
   }
 
   const spanStatus =
@@ -260,7 +255,7 @@ describe('CassandraDriverInstrumentation', () => {
         const config: CassandraDriverInstrumentationConfig = {
           responseHook: (span: Span, responseInfo: ResponseInfo) => {
             const row = responseInfo.response.first();
-            const responseValue = parseInt(row.count);
+            const responseValue = row.count.toNumber();
 
             span.setAttribute(responseAttributeName, responseValue);
             span.setAttribute(customAttributeName, customAttributeValue);
