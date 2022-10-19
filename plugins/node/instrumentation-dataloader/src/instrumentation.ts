@@ -70,7 +70,8 @@ export class DataloaderInstrumentation extends InstrumentationBase {
             this._unwrap(dataloader.prototype, 'loadMany');
           }
         }
-      ),
+        // cast it to module definition of unknown type to avoid exposing Dataloader types on public APIs
+      ) as InstrumentationNodeModuleDefinition<unknown>,
     ];
   }
 
