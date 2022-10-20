@@ -32,6 +32,7 @@ import {
 import {
   InstrumentationBase,
   InstrumentationConfig,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
@@ -40,6 +41,19 @@ import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
 } from './utils';
+
+export interface DocumentLoadCustomAttributeFunction {
+  (span: Span): void;
+}
+
+/**
+ * DocumentLoadPlugin Config
+ */
+export interface DocumentLoadInstrumentationConfig
+  extends InstrumentationConfig {
+  /** Function for adding custom attributes on the span */
+  applyCustomAttributesOnSpan?: DocumentLoadCustomAttributeFunction;
+}
 
 /**
  * This class represents a document load plugin
@@ -53,7 +67,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    *
    * @param config
    */
-  constructor(config: InstrumentationConfig = {}) {
+  constructor(config: DocumentLoadInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-document-load', VERSION, config);
   }
 
@@ -140,7 +154,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_END, entries);
 
       addSpanPerformancePaintEvents(rootSpan);
-
+      this._addCustomAttributes(rootSpan);
       this._endSpan(rootSpan, PTN.LOAD_EVENT_END, entries);
     });
   }
@@ -228,6 +242,30 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
     } else {
       this._onDocumentLoaded = this._onDocumentLoaded.bind(this);
       window.addEventListener('load', this._onDocumentLoaded);
+    }
+  }
+
+  private _getConfig(): DocumentLoadInstrumentationConfig {
+    return this._config;
+  }
+  /**
+   * adds custom attributes to root span if configured
+   */
+  private _addCustomAttributes(span: Span) {
+    const applyCustomAttributesOnSpan =
+      this._getConfig().applyCustomAttributesOnSpan;
+    if (applyCustomAttributesOnSpan) {
+      safeExecuteInTheMiddle(
+        () => applyCustomAttributesOnSpan(span),
+        error => {
+          if (!error) {
+            return;
+          }
+
+          this._diag.error('applyCustomAttributesOnSpan', error);
+        },
+        true
+      );
     }
   }
 
