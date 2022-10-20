@@ -84,7 +84,7 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
     return module;
   }
 
-  protected patch(
+  private patch(
     moduleExports: typeof mongoose,
     moduleVersion: string | undefined
   ) {
@@ -127,7 +127,7 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
     return moduleExports;
   }
 
-  protected unpatch(moduleExports: typeof mongoose): void {
+  private unpatch(moduleExports: typeof mongoose): void {
     this._diag.debug('mongoose instrumentation: unpatch mongoose');
     this._unwrap(moduleExports.Model.prototype, 'save');
     // revert the patch for $save which we applyed by aliasing it to patched `save`
