@@ -38,7 +38,7 @@ import {
   FastifyNames,
   FastifyTypes,
 } from './enums/AttributeNames';
-import type { HandlerOriginal, PluginFastifyReply } from './types';
+import type { HandlerOriginal, PluginFastifyReply } from './internal-types';
 import {
   endSpan,
   safeExecuteInTheMiddleMaybePromise,

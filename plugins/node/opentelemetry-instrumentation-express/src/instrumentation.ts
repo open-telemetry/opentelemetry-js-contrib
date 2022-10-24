@@ -18,10 +18,6 @@ import { setRPCMetadata, getRPCMetadata, RPCType } from '@opentelemetry/core';
 import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
 import type * as express from 'express';
 import {
-  ExpressLayer,
-  ExpressRouter,
-  PatchedRequest,
-  _LAYERS_STORE_PROPERTY,
   ExpressInstrumentationConfig,
   ExpressRequestInfo,
 } from './types';
@@ -36,12 +32,7 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-
-/**
- * This symbol is used to mark express layer as being already instrumented
- * since its possible to use a given layer multiple times (ex: middlewares)
- */
-export const kLayerPatched: unique symbol = Symbol('express-layer-patched');
+import { ExpressLayer, ExpressRouter, kLayerPatched, PatchedRequest, _LAYERS_STORE_PROPERTY } from './internal-types';
 
 /** Express instrumentation for OpenTelemetry */
 export class ExpressInstrumentation extends InstrumentationBase<

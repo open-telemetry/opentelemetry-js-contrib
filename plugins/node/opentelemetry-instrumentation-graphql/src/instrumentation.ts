@@ -34,13 +34,12 @@ import {
   executeType,
   parseType,
   validateType,
-  GraphQLInstrumentationConfig,
   GraphQLInstrumentationParsedConfig,
   OtelExecutionArgs,
   ObjectWithGraphQLData,
   OPERATION_NOT_SUPPORTED,
   Maybe,
-} from './types';
+} from './internal-types';
 import {
   addInputVariableAttributes,
   addSpanSource,
@@ -53,6 +52,7 @@ import {
 import { VERSION } from './version';
 import * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
+import { GraphQLInstrumentationConfig } from './types';
 
 const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
   mergeItems: false,

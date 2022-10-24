@@ -15,4 +15,4 @@
  */
 
 export * from './instrumentation';
-export { DnsInstrumentationConfig } from './types';
+export * from './types';

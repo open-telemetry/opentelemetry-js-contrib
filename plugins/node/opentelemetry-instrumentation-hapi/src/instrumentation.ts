@@ -35,7 +35,7 @@ import {
   RegisterFunction,
   PatchableExtMethod,
   ServerExtDirectInput,
-} from './types';
+} from './internal-types';
 import {
   getRouteMetadata,
   getPluginName,

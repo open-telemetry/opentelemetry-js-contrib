@@ -16,14 +16,12 @@
 
 import { SpanAttributes } from '@opentelemetry/api';
 import {
-  ExpressLayer,
-  PatchedRequest,
-  _LAYERS_STORE_PROPERTY,
   IgnoreMatcher,
   ExpressInstrumentationConfig,
 } from './types';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 import { AttributeNames } from './enums/AttributeNames';
+import { ExpressLayer, PatchedRequest, _LAYERS_STORE_PROPERTY } from './internal-types';
 
 /**
  * Store layers path in the request to be able to construct route later
