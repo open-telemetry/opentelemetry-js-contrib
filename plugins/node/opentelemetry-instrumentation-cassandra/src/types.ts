@@ -16,15 +16,6 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Span } from '@opentelemetry/api';
-import type * as CassandraDriver from 'cassandra-driver';
-
-export interface ResponseInfo {
-  response: CassandraDriver.types.ResultSet;
-}
-
-export interface CassandraDriverResponseCustomAttributeFunction {
-  (span: Span, ResponseInfo: ResponseInfo): void;
-}
 
 export interface CassandraDriverInstrumentationConfig
   extends InstrumentationConfig {
@@ -39,6 +30,35 @@ export interface CassandraDriverInstrumentationConfig
    * @default 65536
    */
   maxQueryLength?: number;
-  /** Function for adding custom attributes before response is handled */
+  /**
+   * Function for adding custom attributes before response is handled.
+   * @param span the current span
+   * @param responseInfo array of the resulting rows
+   */
   responseHook?: CassandraDriverResponseCustomAttributeFunction;
+}
+
+export interface CassandraDriverResponseCustomAttributeFunction {
+  (span: Span, responseInfo: ResponseHookInfo): void;
+}
+
+export interface ResponseHookInfo {
+  response: ResultSet;
+}
+
+// https://github.com/datastax/nodejs-driver/blob/d42176e4baa1cfc3df79699cc3b5d575c86e3cec/lib/types/index.d.ts#L323
+export interface ResultSet {
+  rows: Row[];
+}
+
+export interface Row {
+  get(columnName: string | number): any;
+
+  keys(): string[];
+
+  forEach(callback: (row: Row) => void): void;
+
+  values(): any[];
+
+  [key: string]: any;
 }

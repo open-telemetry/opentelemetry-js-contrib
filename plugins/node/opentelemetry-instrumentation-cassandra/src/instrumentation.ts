@@ -29,7 +29,7 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { CassandraDriverInstrumentationConfig } from './types';
+import { CassandraDriverInstrumentationConfig, ResultSet } from './types';
 import {
   SemanticAttributes,
   DbSystemValues,
@@ -153,7 +153,9 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
           span,
           execPromise,
           (span, result) => {
-            plugin._callResponseHook(span, result);
+            plugin._callResponseHook(span, {
+              rows: result.rows,
+            });
           }
         );
 
@@ -328,10 +330,10 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
     });
   }
 
-  private _callResponseHook(span: Span, response: any) {
+  private _callResponseHook(span: Span, response: ResultSet) {
     if (this._config.responseHook) {
       safeExecuteInTheMiddle(
-        () => this._config.responseHook!(span, { response }),
+        () => this._config.responseHook!(span, { response: response }),
         e => {
           if (e) {
             this._diag.error('responseHook error', e);

@@ -40,7 +40,7 @@ import {
   CassandraDriverInstrumentation,
   CassandraDriverInstrumentationConfig,
 } from '../src';
-import { ResponseInfo } from '../src/types';
+import { ResponseHookInfo } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -253,8 +253,8 @@ describe('CassandraDriverInstrumentation', () => {
         const customAttributeValue = 'custom attribute value';
 
         const config: CassandraDriverInstrumentationConfig = {
-          responseHook: (span: Span, responseInfo: ResponseInfo) => {
-            const row = responseInfo.response.first();
+          responseHook: (span: Span, responseInfo: ResponseHookInfo) => {
+            const row = responseInfo.response.rows[0];
             const responseValue = row.count.toNumber();
 
             span.setAttribute(responseAttributeName, responseValue);
@@ -279,7 +279,7 @@ describe('CassandraDriverInstrumentation', () => {
         const hookAttributeValue = 'hook attribute value';
 
         const config: CassandraDriverInstrumentationConfig = {
-          responseHook: (span: Span, responseInfo: ResponseInfo): void => {
+          responseHook: (span: Span, responseInfo: ResponseHookInfo): void => {
             span.setAttribute(hookAttributeName, hookAttributeValue);
             throw new Error('error inside hook');
           },
