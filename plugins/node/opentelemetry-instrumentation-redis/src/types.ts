@@ -28,7 +28,6 @@ export interface RedisCommand {
   call_on_write: boolean;
 }
 
-
 /**
  * Function that can be used to serialize db.statement tag
  * @param cmdName - The name of the command (eg. set, get, mset)

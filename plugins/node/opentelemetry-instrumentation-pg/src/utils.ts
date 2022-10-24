@@ -40,7 +40,7 @@ import {
   PgPoolExtended,
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
-import * as pgTypes from 'pg';
+import type * as pgTypes from 'pg';
 import { PgInstrumentation } from './';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 

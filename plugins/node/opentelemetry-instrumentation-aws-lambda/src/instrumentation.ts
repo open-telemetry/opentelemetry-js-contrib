@@ -53,10 +53,7 @@ import {
   Handler,
 } from 'aws-lambda';
 
-import {
-  AwsLambdaInstrumentationConfig,
-  EventContextExtractor,
-} from './types';
+import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
 import { LambdaModule } from './internal-types';
 

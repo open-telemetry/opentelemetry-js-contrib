@@ -17,10 +17,7 @@
 import { setRPCMetadata, getRPCMetadata, RPCType } from '@opentelemetry/core';
 import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
 import type * as express from 'express';
-import {
-  ExpressInstrumentationConfig,
-  ExpressRequestInfo,
-} from './types';
+import { ExpressInstrumentationConfig, ExpressRequestInfo } from './types';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 import { AttributeNames } from './enums/AttributeNames';
 import { getLayerMetadata, storeLayerPath, isLayerIgnored } from './utils';
@@ -32,7 +29,13 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { ExpressLayer, ExpressRouter, kLayerPatched, PatchedRequest, _LAYERS_STORE_PROPERTY } from './internal-types';
+import {
+  ExpressLayer,
+  ExpressRouter,
+  kLayerPatched,
+  PatchedRequest,
+  _LAYERS_STORE_PROPERTY,
+} from './internal-types';
 
 /** Express instrumentation for OpenTelemetry */
 export class ExpressInstrumentation extends InstrumentationBase<

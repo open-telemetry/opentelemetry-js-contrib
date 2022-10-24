@@ -18,7 +18,7 @@ import type * as types from './internal-types';
 import type * as restify from 'restify';
 
 import * as api from '@opentelemetry/api';
-import { Server } from 'restify';
+import type { Server } from 'restify';
 import { LayerType } from './internal-types';
 import * as AttributeNames from './enums/AttributeNames';
 import { VERSION } from './version';

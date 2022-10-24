@@ -21,7 +21,7 @@ import { SpanAttributes } from '@opentelemetry/api';
  * This symbol is used to mark express layer as being already instrumented
  * since its possible to use a given layer multiple times (ex: middlewares)
  */
- export const kLayerPatched: unique symbol = Symbol('express-layer-patched');
+export const kLayerPatched: unique symbol = Symbol('express-layer-patched');
 
 /**
  * This const define where on the `request` object the Instrumentation will mount the

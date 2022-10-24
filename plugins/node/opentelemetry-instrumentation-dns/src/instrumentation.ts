@@ -27,7 +27,11 @@ import { AddressFamily } from './enums/AddressFamily';
 import { DnsInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
-import { Dns, LookupCallbackSignature, LookupPromiseSignature } from './internal-types';
+import {
+  Dns,
+  LookupCallbackSignature,
+  LookupPromiseSignature,
+} from './internal-types';
 
 /**
  * Dns instrumentation for Opentelemetry
