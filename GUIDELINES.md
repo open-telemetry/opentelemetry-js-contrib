@@ -6,7 +6,7 @@ This document captures general guidelines for implementing instrumentations in N
 
 ### Public Types
 
-Public types are meant to be consumed by instrumentation users (OpenTelemetry distribution packages or end users implementing OpenTelemetry in their services). These are mostely instrumentation specific config interface (extending `InstrumentationConfig`) and the transitive types used in the config.
+Public types are meant to be consumed by instrumentation users (OpenTelemetry distribution packages or end users implementing OpenTelemetry in their services). These are mostly instrumentation specific config interface (extending `InstrumentationConfig`) and the transitive types used in the config.
 
 #### File Name
 
@@ -22,11 +22,11 @@ Since these types are publicly exported, a breaking change in this file can caus
 
 ### Internal Types
 
-All types and constnats that instrumentation needs internally to implement the instrumentation logic. This can include extentions to instrumented package interfaces (for example - when adding data to existing objects), symbols for patches, enums etc.
+All types and constants that instrumentation needs internally to implement the instrumentation logic. This can include extensions to instrumented package interfaces (for example - when adding data to existing objects), symbols for patches, enums etc.
 
 #### File Name
 
-It is sometimes convinent to place these declrations in a dedicated file which can then be imported from various insturmentation files such as `instrumentation.ts`, `utils.ts` or test files.
+It is sometimes convenient to place these declarations in a dedicated file which can then be imported from various instrumentation files such as `instrumentation.ts`, `utils.ts` or test files.
 
 The file SHOULD be named `internal-types.ts`.
 
