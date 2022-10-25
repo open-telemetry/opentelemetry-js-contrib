@@ -36,6 +36,6 @@ Using this file is optional - when a type is used only in a single file, it is o
 
 This file MUST NOT be exported publicly from instrumentation package, not directly (via `index.ts`) and not transitivly via export of other files.
 
-#### Breaking Changes
+#### Changes
 
-Since the declarations in this file are not exported in the public instrumentation api, it is allowed to apply any breaking change refactors to this file.
+Since the declarations in this file are not exported in the public instrumentation api, it is allowed to apply any refactors to this file, and they will not be breaking changes to users.
