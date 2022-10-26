@@ -46,6 +46,7 @@ import {
   addSpanSource,
   endSpan,
   getOperation,
+  isPromise,
   wrapFieldResolver,
   wrapFields,
 } from './utils';
@@ -249,7 +250,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       return;
     }
 
-    if (result.constructor.name === 'Promise') {
+    if (isPromise(result)) {
       (result as Promise<graphqlTypes.ExecutionResult>).then(resultData => {
         if (typeof config.responseHook !== 'function') {
           endSpan(span);
