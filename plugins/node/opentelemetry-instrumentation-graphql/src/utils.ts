@@ -28,14 +28,13 @@ import {
   OtelPatched,
   Maybe,
 } from './types';
-import { Span } from '@opentelemetry/sdk-trace-base';
 
 const OPERATION_VALUES = Object.values(AllowedOperationTypes);
 
 // https://github.com/graphql/graphql-js/blob/main/src/jsutils/isPromise.ts
 export const isPromise = (value: any): value is Promise<unknown> => {
   return typeof value?.then === 'function';
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function addInputVariableAttribute(span: api.Span, key: string, variable: any) {
@@ -335,22 +334,29 @@ export function wrapFields(
   });
 }
 
-const handleResolveSpanError = (resolveSpan: Span, err: any, shouldEndSpan: boolean) => {
+const handleResolveSpanError = (
+  resolveSpan: api.Span,
+  err: any,
+  shouldEndSpan: boolean
+) => {
   resolveSpan.recordException(err);
   if (shouldEndSpan) {
     resolveSpan.setStatus({
       code: api.SpanStatusCode.ERROR,
       message: err.message,
-    });    
+    });
     resolveSpan.end();
   }
-}
+};
 
-const handleResolveSpanSuccess = (resolveSpan: Span, shouldEndSpan: boolean) => {
+const handleResolveSpanSuccess = (
+  resolveSpan: api.Span,
+  shouldEndSpan: boolean
+) => {
   if (shouldEndSpan) {
     resolveSpan.end();
   }
-}
+};
 
 export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
   tracer: api.Tracer,
@@ -404,15 +410,24 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
       api.trace.setSpan(api.context.active(), field.span),
       () => {
         try {
-          const res = fieldResolver.call(this, source, args, contextValue, info);
-          if(isPromise(res)) {
-            return res.then((r: any) => {
-              handleResolveSpanSuccess(field.span, shouldEndSpan);
-              return r;
-            }, (err: Error) => {
-              handleResolveSpanError(field.span, err, shouldEndSpan);
-              throw err;
-            });
+          const res = fieldResolver.call(
+            this,
+            source,
+            args,
+            contextValue,
+            info
+          );
+          if (isPromise(res)) {
+            return res.then(
+              (r: any) => {
+                handleResolveSpanSuccess(field.span, shouldEndSpan);
+                return r;
+              },
+              (err: Error) => {
+                handleResolveSpanError(field.span, err, shouldEndSpan);
+                throw err;
+              }
+            );
           } else {
             handleResolveSpanSuccess(field.span, shouldEndSpan);
             return res;

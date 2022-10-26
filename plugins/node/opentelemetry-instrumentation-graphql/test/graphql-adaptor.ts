@@ -19,7 +19,11 @@ import type {
   GraphQLTypeResolver,
   Source,
 } from 'graphql';
-import { graphql as origAsyncGraphQl, graphqlSync as origSyncGraphQl, version } from 'graphql';
+import {
+  graphql as origAsyncGraphQl,
+  graphqlSync as origSyncGraphQl,
+  version,
+} from 'graphql';
 import { Maybe } from 'graphql/jsutils/Maybe';
 
 interface GraphQLArgs {
@@ -36,8 +40,9 @@ interface GraphQLArgs {
 }
 
 const executeGraphqlQuery = (queryFunc: Function, args: GraphQLArgs) => {
-  const pre16Version = !version || version.startsWith('14.') || version.startsWith('15.');
-  if(pre16Version) {
+  const pre16Version =
+    !version || version.startsWith('14.') || version.startsWith('15.');
+  if (pre16Version) {
     return queryFunc(
       args.schema,
       args.source,
@@ -51,7 +56,9 @@ const executeGraphqlQuery = (queryFunc: Function, args: GraphQLArgs) => {
   } else {
     return queryFunc(args);
   }
-}
+};
 
-export const graphql = (args: GraphQLArgs) => executeGraphqlQuery(origAsyncGraphQl, args);
-export const graphqlSync = (args: GraphQLArgs) => executeGraphqlQuery(origSyncGraphQl, args);
+export const graphql = (args: GraphQLArgs) =>
+  executeGraphqlQuery(origAsyncGraphQl, args);
+export const graphqlSync = (args: GraphQLArgs) =>
+  executeGraphqlQuery(origSyncGraphQl, args);
