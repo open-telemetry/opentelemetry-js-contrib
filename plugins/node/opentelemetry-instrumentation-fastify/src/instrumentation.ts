@@ -16,6 +16,7 @@
 
 import {
   context,
+  diag,
   SpanAttributes,
   SpanStatusCode,
   trace,
@@ -23,7 +24,6 @@ import {
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
@@ -38,7 +38,11 @@ import {
   FastifyNames,
   FastifyTypes,
 } from './enums/AttributeNames';
-import type { HandlerOriginal, PluginFastifyReply } from './types';
+import type {
+  HandlerOriginal,
+  PluginFastifyReply,
+  FastifyInstrumentationConfig,
+} from './types';
 import {
   endSpan,
   safeExecuteInTheMiddleMaybePromise,
@@ -50,12 +54,20 @@ export const ANONYMOUS_NAME = 'anonymous';
 
 /** Fastify instrumentation for OpenTelemetry */
 export class FastifyInstrumentation extends InstrumentationBase {
-  constructor(config: InstrumentationConfig = {}) {
+  constructor(config: FastifyInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-fastify',
       VERSION,
       Object.assign({}, config)
     );
+  }
+
+  override setConfig(config: FastifyInstrumentationConfig = {}) {
+    this._config = Object.assign({}, config);
+  }
+
+  override getConfig(): FastifyInstrumentationConfig {
+    return this._config as FastifyInstrumentationConfig;
   }
 
   init() {
@@ -271,6 +283,19 @@ export class FastifyInstrumentation extends InstrumentationBase {
         spanName,
         spanAttributes
       );
+
+      if (instrumentation.getConfig().requestHook) {
+        safeExecuteInTheMiddle(
+          () => instrumentation.getConfig().requestHook!(span, request),
+          e => {
+            if (e) {
+              diag.error('fastify instrumentation: request hook failed', e);
+            }
+          },
+          true
+        );
+      }
+
       return context.with(trace.setSpan(context.active(), span), () => {
         done();
       });

@@ -17,9 +17,28 @@
 import { Span } from '@opentelemetry/api';
 import type { FastifyReply } from 'fastify';
 import { spanRequestSymbol } from './constants';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import type { FastifyRequest } from 'fastify/types/request';
 
 export type HandlerOriginal = (() => Promise<unknown>) & (() => void);
 
 export type PluginFastifyReply = FastifyReply & {
   [spanRequestSymbol]?: Span[];
 };
+
+/**
+ * Function that can be used to add custom attributes to the current span
+ * @param span - The Fastify layer span.
+ * @param request - The Fastify request object.
+ */
+export interface FastifyCustomAttributeFunction {
+  (span: Span, request: FastifyRequest): void;
+}
+
+/**
+ * Options available for the Fastify Instrumentation
+ */
+export interface FastifyInstrumentationConfig extends InstrumentationConfig {
+  /** Function for adding custom attributes to each layer span */
+  requestHook?: FastifyCustomAttributeFunction;
+}

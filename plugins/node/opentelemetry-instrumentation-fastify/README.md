@@ -45,6 +45,28 @@ registerInstrumentations({
 
 See [examples/fastify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/fastify) for a short example.
 
+## Fastify Instrumentation Options
+
+| Options | Type | Example | Description |
+| `requestHook` | `FastifyCustomAttributeFunction` | `(span, request) => {}` | Function for adding custom attributes to Fastify layers. Receives params: `Span, FastifyRequest`. |
+
+### Using `requestHook`
+
+Instrumentation configuration accepts a custom "hook" function which will be called for every instrumented Fastify layer involved in a request. Custom attributes can be set on the span or run any custom logic per layer.
+
+```javascript
+import { FastifyInstrumentation } from "@opentelemetry/instrumentation-fastify"
+
+const fastifyInstrumentation = new FastifyInstrumentation({
+  requestHook: function (span: Span, request: FastifyRequest) {
+    span.setAttribute(
+      'http.method',
+      request.method,
+    )
+  }
+});
+```
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
