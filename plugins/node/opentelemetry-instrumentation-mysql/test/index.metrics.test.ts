@@ -70,7 +70,7 @@ async function waitForNumberOfExports(
 
 import * as mysqlTypes from 'mysql';
 
-describe('mysql@2.x-Metrics', () => {
+xdescribe('mysql@2.x-Metrics', () => {
   let pool: mysqlTypes.Pool;
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker

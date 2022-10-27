@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { context, trace } from '@opentelemetry/api';
+import {
+  AggregationTemporality,
+  DataPointType,
+  InMemoryMetricExporter,
+  ResourceMetrics,
+} from '@opentelemetry/sdk-metrics';
+import { context } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
-  SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { MySQLInstrumentation } from '../src';
@@ -31,9 +35,29 @@ const host = process.env.MYSQL_HOST || '127.0.0.1';
 const user = process.env.MYSQL_USER || 'otel';
 const password = process.env.MYSQL_PASSWORD || 'secret';
 
+const inMemoryMetricsExporter = new InMemoryMetricExporter(
+  AggregationTemporality.CUMULATIVE
+);
+
 const instrumentation = new MySQLInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
+
+async function waitForNumberOfExports(
+  exporter: InMemoryMetricExporter,
+  numberOfExports: number
+): Promise<ResourceMetrics[]> {
+  if (numberOfExports <= 0) {
+    throw new Error('numberOfExports must be greater than or equal to 0');
+  }
+  let totalExports = 0;
+  while (totalExports < numberOfExports) {
+    await new Promise(resolve => setTimeout(resolve, 20));
+    const exportedMetrics = exporter.getMetrics();
+    totalExports = exportedMetrics.length;
+  }
+  return exporter.getMetrics();
+}
 
 import * as mysqlTypes from 'mysql';
 
@@ -41,7 +65,6 @@ describe('mysql@2.x-MetricsTake2', () => {
   let contextManager: AsyncHooksContextManager;
   let connection: mysqlTypes.Connection;
   let pool: mysqlTypes.Pool;
-  let poolCluster: mysqlTypes.PoolCluster;
   const provider = new BasicTracerProvider();
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
@@ -55,7 +78,6 @@ describe('mysql@2.x-MetricsTake2', () => {
       this.test!.parent!.pending = true;
       this.skip();
     }
-    provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     if (testMysqlLocally) {
       testUtils.startDocker('mysql');
       // wait 15 seconds for docker container to start
@@ -93,14 +115,6 @@ describe('mysql@2.x-MetricsTake2', () => {
       password,
       database,
     });
-    poolCluster = mysqlTypes.createPoolCluster();
-    poolCluster.add('name', {
-      port,
-      user,
-      host,
-      password,
-      database,
-    });
   });
 
   afterEach(done => {
@@ -109,30 +123,58 @@ describe('mysql@2.x-MetricsTake2', () => {
     instrumentation.disable();
     connection.end(() => {
       pool.end(() => {
-        poolCluster.end(() => {
-          done();
-        });
+        done();
       });
     });
   });
 
-  describe('#Pool-Metrics', () => {
-    it('Metrics-should intercept pool.query(text: string)', done => {
-      const span = provider.getTracer('default').startSpan('test span');
-      context.with(trace.setSpan(context.active(), span), () => {
+  describe('#Pool-MetricsTake2', () => {
+    it('Metrics-Should add connection usage metrics', done => {
+      pool.getConnection((connErr: mysqlTypes.MysqlError, conn: mysqlTypes.PoolConnection) => {
+        assert.ifError(connErr);
+        assert.ok(conn);
         const sql = 'SELECT 1+1 as solution';
-        const query = pool.query(sql);
-        let rows = 0;
+        conn.query(sql, async (err, results) => {
+          assert.ifError(err);
+          assert.ok(results);
+          conn.release();
 
-        query.on('result', row => {
-          assert.strictEqual(row.solution, 2);
-          rows += 1;
-        });
+          assert.strictEqual(results[0]?.solution, 2);
+          let exportedMetrics = await waitForNumberOfExports(
+            inMemoryMetricsExporter,
+            1
+          );
+          assert.strictEqual(exportedMetrics.length, 1); //originaly was '1'
+          const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
+          assert.strictEqual(metrics.length, 1);
+          assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
-        query.on('end', () => {
-          assert.strictEqual(rows, 1);
-          const spans = memoryExporter.getFinishedSpans();
-          assert.strictEqual(spans.length, 1);
+          assert.strictEqual(
+            metrics[0].descriptor.description,
+            'The number of connections that are currently in state described by the state attribute.'
+          );
+          assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
+          assert.strictEqual(
+            metrics[0].descriptor.name,
+            'db.client.connections.usage'
+          );
+          // assert.strictEqual(metrics[0].dataPoints.length, 2);
+          // assert.strictEqual(metrics[0].dataPoints[0].value, 0);
+          // assert.strictEqual(
+          //   metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
+          //   'idle'
+          // );
+          // assert.strictEqual(metrics[0].dataPoints[1].value, 1);
+          // assert.strictEqual(
+          //   metrics[0].dataPoints[1].attributes['db.client.connection.usage.state'],
+          //   'used'
+          // );
+
+          exportedMetrics = await waitForNumberOfExports(
+            inMemoryMetricsExporter,
+            1
+          );
+          // assert.strictEqual(exportedMetrics.length, 2);
           done();
         });
       });
