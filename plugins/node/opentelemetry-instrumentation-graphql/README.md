@@ -56,7 +56,7 @@ registerInstrumentations({
 |  mergeItems | boolean |     false     |                    Whether to merge list items into a single element. example: `users.*.name` instead of `users.0.name`, `users.1.name`                   |   |
 |    depth    |  number |       -1      |                       The maximum depth of fields/resolvers to instrument. When set to 0 it will not instrument fields and resolvers. When set to -1 it will instrument all fields and resolvers.                      |   |
 | allowValues | boolean |     false     | When set to true it will not remove attributes values from schema source.   By default all values that can be sensitive are removed and replaced with "*" |   |
-| ignoreTrivialResolveSpans | boolean | false | Don't create spans for the execution of the default resolver on object peroperties. |
+| ignoreTrivialResolveSpans | boolean | false | Don't create spans for the execution of the default resolver on object properties. |
 | responseHook | GraphQLInstrumentationExecutionResponseHook |     undefined     | Hook that allows adding custom span attributes based on the data returned from "execute" GraphQL action. |   |
 
 ## Verbosity
