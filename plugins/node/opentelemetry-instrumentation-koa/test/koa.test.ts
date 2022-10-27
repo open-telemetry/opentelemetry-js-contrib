@@ -601,6 +601,7 @@ describe('Koa Instrumentation', () => {
       const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
         span.setAttribute('http.method', info.context.request.method);
         span.setAttribute('app.env', info.context.app.env);
+        span.setAttribute('koa.layer', info.layerType);
       });
 
       plugin.setConfig({
@@ -633,6 +634,10 @@ describe('Koa Instrumentation', () => {
           assert.strictEqual(
             requestHandlerSpan?.attributes['app.env'],
             'development'
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes['koa.layer'],
+            'router'
           );
         }
       );

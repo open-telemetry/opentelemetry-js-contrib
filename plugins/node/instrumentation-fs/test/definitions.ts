@@ -23,7 +23,7 @@ export type Opts = {
   callback?: boolean;
   promise?: boolean;
 };
-export type Result = { error?: RegExp; result?: any };
+export type Result = { error?: RegExp; result?: any; resultAsError?: any };
 export type TestCase = [FsFunction, any[], Result, any[], Opts?];
 export type TestCreator = (
   name: FsFunction,
@@ -63,6 +63,18 @@ const tests: TestCase[] = [
     'writeFile',
     ['./test/fixtures/writetest', TEST_CONTENTS],
     { result: undefined },
+    [{ name: 'fs %NAME' }],
+  ],
+  [
+    'exists' as FsFunction, // we are defining promisified version of exists in the tests, so this is OK
+    ['./test/fixtures/exists-404'],
+    { resultAsError: false },
+    [{ name: 'fs %NAME' }],
+  ],
+  [
+    'exists' as FsFunction, // we are defining promisified version of exists in the tests, so this is OK
+    ['./test/fixtures/readtest'],
+    { resultAsError: true },
     [{ name: 'fs %NAME' }],
   ],
 ];
