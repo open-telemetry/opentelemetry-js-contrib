@@ -51,8 +51,10 @@ export interface DocumentLoadCustomAttributeFunction {
  */
 export interface DocumentLoadInstrumentationConfig
   extends InstrumentationConfig {
-  /** Function for adding custom attributes on the span */
-  applyCustomAttributesOnSpan?: DocumentLoadCustomAttributeFunction;
+  /** Functions for adding custom attributes on the spans */
+  applyCustomAttributesOnDocumentLoadSpan?: DocumentLoadCustomAttributeFunction;
+  applyCustomAttributesOnDocumentFetchSpan?: DocumentLoadCustomAttributeFunction;
+  applyCustomAttributesOnResourceFetchSpans?: DocumentLoadCustomAttributeFunction;
 }
 
 /**
@@ -126,6 +128,10 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
         if (fetchSpan) {
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(fetchSpan, entries);
+            this._addCustomAttributesOnSpan(
+              fetchSpan,
+              this._getConfig().applyCustomAttributesOnDocumentFetchSpan
+            );
             this._endSpan(fetchSpan, PTN.RESPONSE_END, entries);
           });
         }
@@ -154,7 +160,10 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_END, entries);
 
       addSpanPerformancePaintEvents(rootSpan);
-      this._addCustomAttributes(rootSpan);
+      this._addCustomAttributesOnSpan(
+        rootSpan,
+        this._getConfig().applyCustomAttributesOnDocumentLoadSpan
+      );
       this._endSpan(rootSpan, PTN.LOAD_EVENT_END, entries);
     });
   }
@@ -199,6 +208,10 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
     if (span) {
       span.setAttribute(SemanticAttributes.HTTP_URL, resource.name);
       addSpanNetworkEvents(span, resource);
+      this._addCustomAttributesOnSpan(
+        span,
+        this._getConfig().applyCustomAttributesOnResourceFetchSpans
+      );
       this._endSpan(span, PTN.RESPONSE_END, resource);
     }
   }
@@ -251,10 +264,11 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   /**
    * adds custom attributes to root span if configured
    */
-  private _addCustomAttributes(span: Span) {
-    const applyCustomAttributesOnSpan =
-      this._getConfig().applyCustomAttributesOnSpan;
-    if (applyCustomAttributesOnSpan) {
+  private _addCustomAttributesOnSpan(
+    span: Span,
+    applyCustomAttributesOnSpan: DocumentLoadCustomAttributeFunction | undefined
+  ) {
+    if (span && applyCustomAttributesOnSpan) {
       safeExecuteInTheMiddle(
         () => applyCustomAttributesOnSpan(span),
         error => {
@@ -262,7 +276,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
             return;
           }
 
-          this._diag.error('applyCustomAttributesOnSpan', error);
+          this._diag.error('addCustomAttributesOnSpan', error);
         },
         true
       );
