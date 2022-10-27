@@ -88,6 +88,7 @@ The depth is the number of nesting levels of the field, and the following is a q
 ```
 
 You can limit the instrumentation to stop recording "resolve" spans after a specific depth is reached.
+
 - `-1` means no limit.
 - `0` means don't record any "resolve" spans.
 - `2` for the example above will record a span for resolving "a" and "b" but not "c".
