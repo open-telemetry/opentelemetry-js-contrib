@@ -27,6 +27,12 @@ import { MySQLInstrumentation } from '../src';
 import { MysqlError, PoolConnection } from 'mysql';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 
+const port = Number(process.env.MYSQL_PORT) || 33306;
+const database = process.env.MYSQL_DATABASE || 'test_db';
+const host = process.env.MYSQL_HOST || '127.0.0.1';
+const user = process.env.MYSQL_USER || 'otel';
+const password = process.env.MYSQL_PASSWORD || 'secret';
+
 const otelTestingMeterProvider = new MeterProvider();
 const inMemoryMetricsExporter = new InMemoryMetricExporter(
   AggregationTemporality.CUMULATIVE
@@ -66,6 +72,7 @@ import * as mysqlTypes from 'mysql';
 
 describe('mysql@2.x-Metrics', () => {
   let pool: mysqlTypes.Pool;
+  let connection: mysqlTypes.Connection;
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
@@ -98,6 +105,13 @@ describe('mysql@2.x-Metrics', () => {
 
   beforeEach(() => {
     inMemoryMetricsExporter.reset();
+    connection = mysqlTypes.createConnection({
+      port,
+      user,
+      host,
+      password,
+      database,
+    });
     // credentials to connect to pool if you run docker locally using 'npm run docker:start' from 'examples' folder
     // pool = mysqlTypes.createPool({
     //   host: 'localhost',
@@ -105,11 +119,11 @@ describe('mysql@2.x-Metrics', () => {
     //   password: 'secret',
     // });
     pool = mysqlTypes.createPool({
-      port: 33306,
-      user: 'otel',
-      host: '127.0.0.1',
-      password: 'secret',
-      database: 'test_db',
+      port,
+      user,
+      host,
+      password,
+      database,
     });
   });
 
