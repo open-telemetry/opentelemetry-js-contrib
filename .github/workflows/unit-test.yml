@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14", "16", "18"]
+        node: ["18"]
         include:
           - node: "18"
             lerna-extra-args: >-
