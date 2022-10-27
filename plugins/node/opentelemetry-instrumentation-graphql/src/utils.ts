@@ -372,7 +372,7 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
       // a function execution is not trivial and should be recorder.
       // property which is not a function is just a value and we don't want a "resolve" span for it
       if (typeof property !== 'function') {
-        return fieldResolver.apply(this, arguments);
+        return fieldResolver.call(this, source, args, contextValue, info);
       }
     }
 
