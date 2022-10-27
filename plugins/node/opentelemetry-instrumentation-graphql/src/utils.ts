@@ -339,23 +339,25 @@ const handleResolveSpanError = (
   err: any,
   shouldEndSpan: boolean
 ) => {
-  resolveSpan.recordException(err);
-  if (shouldEndSpan) {
-    resolveSpan.setStatus({
-      code: api.SpanStatusCode.ERROR,
-      message: err.message,
-    });
-    resolveSpan.end();
+  if (!shouldEndSpan) {
+    return;
   }
+  resolveSpan.recordException(err);
+  resolveSpan.setStatus({
+    code: api.SpanStatusCode.ERROR,
+    message: err.message,
+  });
+  resolveSpan.end();
 };
 
 const handleResolveSpanSuccess = (
   resolveSpan: api.Span,
   shouldEndSpan: boolean
 ) => {
-  if (shouldEndSpan) {
-    resolveSpan.end();
+  if (!shouldEndSpan) {
+    return;
   }
+  resolveSpan.end();
 };
 
 export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
