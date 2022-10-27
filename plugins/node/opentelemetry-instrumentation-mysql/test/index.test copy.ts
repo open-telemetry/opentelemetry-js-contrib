@@ -133,12 +133,9 @@ describe('mysql@2.x-MetricsTake2', () => {
           assert.strictEqual(rows, 1);
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 1);
-          assertSpan(spans[0], sql);
           done();
         });
       });
     });
   });
 });
-
-
