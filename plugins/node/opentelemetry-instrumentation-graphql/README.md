@@ -63,8 +63,7 @@ registerInstrumentations({
 
 The instrumentation will be default create a span for each invocation of a resolver.
 
-A resolver is run by graphql for each field in the query response, which can be a lot of 
-spans for objects with many properties, or when lists are involved.
+A resolver is run by graphql for each field in the query response, which can be a lot of spans for objects with many properties, or when lists are involved.
 
 There are few config options which can be used to reduce the verbosity of the instrumentations.
 
@@ -72,9 +71,7 @@ They are all OFF by default. User can opt in to any combination of them to conto
 
 ### ignoreTrivialResolveSpans
 
-When a resolver function is not defined on the schema for a field, graphql will 
-use the default resolver which just looks for a property with that name on the object.
-If the property is not a function, it's not very interesting to trace.
+When a resolver function is not defined on the schema for a field, graphql will use the default resolver which just looks for a property with that name on the object. If the property is not a function, it's not very interesting to trace.
 
 ### depth
 
