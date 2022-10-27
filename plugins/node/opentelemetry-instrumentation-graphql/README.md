@@ -61,7 +61,7 @@ registerInstrumentations({
 
 ## Verbosity
 
-The instrumentation will be default create a span for each invocation of a resolver.
+The instrumentation by default will create a span for each invocation of a resolver.
 
 A resolver is run by graphql for each field in the query response, which can be a lot of spans for objects with many properties, or when lists are involved.
 
