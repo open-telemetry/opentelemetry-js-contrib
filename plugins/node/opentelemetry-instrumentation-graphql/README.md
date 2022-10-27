@@ -67,7 +67,7 @@ A resolver is run by graphql for each field in the query response, which can be 
 
 There are few config options which can be used to reduce the verbosity of the instrumentations.
 
-They are all OFF by default. User can opt in to any combination of them to contol the amount of spans.
+They are all disabled by default. User can opt in to any combination of them to contol the amount of spans.
 
 ### ignoreTrivialResolveSpans
 
