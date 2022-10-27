@@ -51,15 +51,6 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
   depth?: number;
 
   /**
-   * Whether to merge list items into a single element.
-   *
-   * @example `users.*.name` instead of `users.0.name`, `users.1.name`
-   *
-   * @default false
-   */
-  mergeItems?: boolean;
-
-  /**
    * Don't create spans for the execution of the default resolver on object peroperties.
    *
    * When a resolver function is not defined on the schema for a field, graphql will
@@ -70,6 +61,15 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   ignoreTrivialResolveSpans?: boolean;
+
+  /**
+   * Whether to merge list items into a single element.
+   *
+   * @example `users.*.name` instead of `users.0.name`, `users.1.name`
+   *
+   * @default false
+   */
+  mergeItems?: boolean;
 
   /**
    * Hook that allows adding custom span attributes based on the data
