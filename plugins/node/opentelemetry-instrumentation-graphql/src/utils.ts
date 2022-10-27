@@ -32,12 +32,9 @@ import {
 const OPERATION_VALUES = Object.values(AllowedOperationTypes);
 
 // https://github.com/graphql/graphql-js/blob/main/src/jsutils/isObjectLike.ts
-const isObjectLike = (
-  value: unknown,
-): value is { [key: string]: unknown } => {
+const isObjectLike = (value: unknown): value is { [key: string]: unknown } => {
   return typeof value == 'object' && value !== null;
-}
-
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function addInputVariableAttribute(span: api.Span, key: string, variable: any) {
@@ -343,7 +340,7 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
   fieldResolver: Maybe<
     graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched
   >,
-  isDefaultResolver: boolean = false
+  isDefaultResolver = false
 ): graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched {
   if (
     (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] ||
@@ -366,11 +363,15 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
 
     // follows what graphql is doing to decied if this is a trivial resolver
     // for which we don't need to create a resolve span
-    if(config.ignoreTrivialResolveSpans && isDefaultResolver && (isObjectLike(source) || typeof source === 'function')) {
+    if (
+      config.ignoreTrivialResolveSpans &&
+      isDefaultResolver &&
+      (isObjectLike(source) || typeof source === 'function')
+    ) {
       const property = (source as any)[info.fieldName];
       // a function execution is not trivial and should be recorder.
       // property which is not a function is just a value and we don't want a "resolve" span for it
-      if(typeof property !== 'function') {
+      if (typeof property !== 'function') {
         return fieldResolver.apply(this, arguments);
       }
     }

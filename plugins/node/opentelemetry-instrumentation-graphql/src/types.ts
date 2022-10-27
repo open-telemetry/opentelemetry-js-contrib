@@ -33,7 +33,6 @@ export interface GraphQLInstrumentationExecutionResponseHook {
 }
 
 export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
-  
   /**
    * When set to true it will not remove attributes values from schema source.
    * By default all values that can be sensitive are removed and replaced
@@ -62,12 +61,12 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
 
   /**
    * Don't create spans for the execution of the default resolver on object peroperties.
-   * 
-   * When a resolver function is not defined on the schema for a field, graphql will 
+   *
+   * When a resolver function is not defined on the schema for a field, graphql will
    * use the default resolver which just looks for a property with that name on the object.
    * If the property is not a function, it's not very interesting to trace.
    * This option can reduce noise and number of spans created.
-   * 
+   *
    * @default false
    */
   ignoreTrivialResolveSpans?: boolean;

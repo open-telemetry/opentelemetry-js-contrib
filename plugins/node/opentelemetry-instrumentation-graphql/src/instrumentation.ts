@@ -184,7 +184,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
             args[5],
             args[6],
             args[7],
-            defaultFieldResolved,
+            defaultFieldResolved
           );
         } else {
           const args = arguments[0] as graphqlTypes.ExecutionArgs;
@@ -448,7 +448,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     operationName: Maybe<string>,
     fieldResolver: Maybe<graphqlTypes.GraphQLFieldResolver<any, any>>,
     typeResolver: Maybe<graphqlTypes.GraphQLTypeResolver<any, any>>,
-    defaultFieldResolved: graphqlTypes.GraphQLFieldResolver<any, any>,
+    defaultFieldResolved: graphqlTypes.GraphQLFieldResolver<any, any>
   ): OtelExecutionArgs {
     if (!contextValue) {
       contextValue = {};
@@ -467,7 +467,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     }
 
     const isUsingDefaultResolver = fieldResolver == null;
-    // follows graphql implementation here: 
+    // follows graphql implementation here:
     // https://github.com/graphql/graphql-js/blob/0b7daed9811731362c71900e12e5ea0d1ecc7f1f/src/execution/execute.ts#L494
     const fieldResolverForExecute = fieldResolver ?? defaultFieldResolved;
     fieldResolver = wrapFieldResolver(
@@ -475,7 +475,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       this._getConfig.bind(this),
       fieldResolverForExecute,
       isUsingDefaultResolver
-    );  
+    );
 
     if (schema) {
       wrapFields(
