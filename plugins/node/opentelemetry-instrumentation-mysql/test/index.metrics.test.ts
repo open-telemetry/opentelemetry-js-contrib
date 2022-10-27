@@ -72,7 +72,6 @@ import * as mysqlTypes from 'mysql';
 
 describe('mysql@2.x-Metrics', () => {
   let pool: mysqlTypes.Pool;
-  let connection: mysqlTypes.Connection;
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
@@ -105,13 +104,6 @@ describe('mysql@2.x-Metrics', () => {
 
   beforeEach(() => {
     inMemoryMetricsExporter.reset();
-    connection = mysqlTypes.createConnection({
-      port,
-      user,
-      host,
-      password,
-      database,
-    });
     // credentials to connect to pool if you run docker locally using 'npm run docker:start' from 'examples' folder
     // pool = mysqlTypes.createPool({
     //   host: 'localhost',
