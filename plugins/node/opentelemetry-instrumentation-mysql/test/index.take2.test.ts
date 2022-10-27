@@ -130,54 +130,56 @@ describe('mysql@2.x-MetricsTake2', () => {
 
   describe('#Pool-MetricsTake2', () => {
     it('Metrics-Should add connection usage metrics', done => {
-      pool.getConnection((connErr: mysqlTypes.MysqlError, conn: mysqlTypes.PoolConnection) => {
-        assert.ifError(connErr);
-        assert.ok(conn);
-        const sql = 'SELECT 1+1 as solution';
-        conn.query(sql, async (err, results) => {
-          assert.ifError(err);
-          assert.ok(results);
-          conn.release();
+      pool.getConnection(
+        (connErr: mysqlTypes.MysqlError, conn: mysqlTypes.PoolConnection) => {
+          assert.ifError(connErr);
+          assert.ok(conn);
+          const sql = 'SELECT 1+1 as solution';
+          conn.query(sql, async (err, results) => {
+            assert.ifError(err);
+            assert.ok(results);
+            conn.release();
 
-          assert.strictEqual(results[0]?.solution, 2);
-          let exportedMetrics = await waitForNumberOfExports(
-            inMemoryMetricsExporter,
-            1
-          );
-          assert.strictEqual(exportedMetrics.length, 1); //originaly was '1'
-          const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
-          assert.strictEqual(metrics.length, 1);
-          assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+            assert.strictEqual(results[0]?.solution, 2);
+            let exportedMetrics = await waitForNumberOfExports(
+              inMemoryMetricsExporter,
+              1
+            );
+            assert.strictEqual(exportedMetrics.length, 1); //originaly was '1'
+            const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
+            assert.strictEqual(metrics.length, 1);
+            assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
-          assert.strictEqual(
-            metrics[0].descriptor.description,
-            'The number of connections that are currently in state described by the state attribute.'
-          );
-          assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
-          assert.strictEqual(
-            metrics[0].descriptor.name,
-            'db.client.connections.usage'
-          );
-          // assert.strictEqual(metrics[0].dataPoints.length, 2);
-          // assert.strictEqual(metrics[0].dataPoints[0].value, 0);
-          // assert.strictEqual(
-          //   metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
-          //   'idle'
-          // );
-          // assert.strictEqual(metrics[0].dataPoints[1].value, 1);
-          // assert.strictEqual(
-          //   metrics[0].dataPoints[1].attributes['db.client.connection.usage.state'],
-          //   'used'
-          // );
+            assert.strictEqual(
+              metrics[0].descriptor.description,
+              'The number of connections that are currently in state described by the state attribute.'
+            );
+            assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
+            assert.strictEqual(
+              metrics[0].descriptor.name,
+              'db.client.connections.usage'
+            );
+            // assert.strictEqual(metrics[0].dataPoints.length, 2);
+            // assert.strictEqual(metrics[0].dataPoints[0].value, 0);
+            // assert.strictEqual(
+            //   metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
+            //   'idle'
+            // );
+            // assert.strictEqual(metrics[0].dataPoints[1].value, 1);
+            // assert.strictEqual(
+            //   metrics[0].dataPoints[1].attributes['db.client.connection.usage.state'],
+            //   'used'
+            // );
 
-          exportedMetrics = await waitForNumberOfExports(
-            inMemoryMetricsExporter,
-            1
-          );
-          // assert.strictEqual(exportedMetrics.length, 2);
-          done();
-        });
-      });
+            exportedMetrics = await waitForNumberOfExports(
+              inMemoryMetricsExporter,
+              1
+            );
+            // assert.strictEqual(exportedMetrics.length, 2);
+            done();
+          });
+        }
+      );
     });
   });
 });
