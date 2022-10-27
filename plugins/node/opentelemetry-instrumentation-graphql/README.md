@@ -62,9 +62,12 @@ registerInstrumentations({
 ## Verbosity
 
 The instrumentation will be default create a span for each invocation of a resolver.
+
 A resolver is run by graphql for each field in the query response, which can be a lot of 
 spans for objects with many properties, or when lists are involved.
+
 There are few config options which can be used to reduce the verbosity of the instrumentations.
+
 They are all OFF by default. User can opt in to any combination of them to contol the amount of spans.
 
 ### ignoreTrivialResolveSpans
@@ -77,7 +80,7 @@ If the property is not a function, it's not very interesting to trace.
 
 The depth is the number of nesting levels of the field, and the following is a query with a depth of 3:
 
-```
+```json
 {
   a {
     b {
