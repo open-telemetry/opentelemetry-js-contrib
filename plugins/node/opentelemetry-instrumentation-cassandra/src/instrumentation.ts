@@ -153,9 +153,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
           span,
           execPromise,
           (span, result) => {
-            plugin._callResponseHook(span, {
-              rows: result.rows,
-            });
+            plugin._callResponseHook(span, result);
           }
         );
 
@@ -331,17 +329,19 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
   }
 
   private _callResponseHook(span: Span, response: ResultSet) {
-    if (this._config.responseHook) {
-      safeExecuteInTheMiddle(
-        () => this._config.responseHook!(span, { response: response }),
-        e => {
-          if (e) {
-            this._diag.error('responseHook error', e);
-          }
-        },
-        true
-      );
+    if (!this._config.responseHook) {
+      return;
     }
+
+    safeExecuteInTheMiddle(
+      () => this._config.responseHook!(span, { response: response }),
+      e => {
+        if (e) {
+          this._diag.error('responseHook error', e);
+        }
+      },
+      true
+    );
   }
 }
 
