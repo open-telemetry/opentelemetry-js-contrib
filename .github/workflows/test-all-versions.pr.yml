@@ -1,37 +1,37 @@
-name: TAV for PR
-on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - labeled
-      - unlabeled
+# name: TAV for PR
+# on:
+#   pull_request:
+#     types:
+#       - opened
+#       - synchronize
+#       - reopened
+#       - labeled
+#       - unlabeled
 
-jobs:
-  parse-labels:
-    runs-on: ubuntu-latest
-    container:
-      image: node:16
-    env:
-      PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
-    outputs:
-      args: ${{ steps.lerna-args.outputs.args }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        # Need lerna to list all packages
-      - name: Install lerna
-        run: npm install -g lerna
-      - name: Parse labels into lerna scope arguments
-        id: lerna-args
-        run: |
-          OUTPUT=`node scripts/parse-lerna-scopes.mjs "$PR_LABELS"`
-          echo "::set-output name=args::$OUTPUT"
+# jobs:
+#   parse-labels:
+#     runs-on: ubuntu-latest
+#     container:
+#       image: node:16
+#     env:
+#       PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+#     outputs:
+#       args: ${{ steps.lerna-args.outputs.args }}
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v3
+#         # Need lerna to list all packages
+#       - name: Install lerna
+#         run: npm install -g lerna
+#       - name: Parse labels into lerna scope arguments
+#         id: lerna-args
+#         run: |
+#           OUTPUT=`node scripts/parse-lerna-scopes.mjs "$PR_LABELS"`
+#           echo "::set-output name=args::$OUTPUT"
 
-  tav:
-    uses: ./.github/workflows/test-all-versions.yml
-    needs: parse-labels
-    with:
-      lerna-args: ${{ needs.parse-labels.outputs.args }}
-    if: ${{ needs.parse-labels.outputs.args != '' }}
+#   tav:
+#     uses: ./.github/workflows/test-all-versions.yml
+#     needs: parse-labels
+#     with:
+#       lerna-args: ${{ needs.parse-labels.outputs.args }}
+#     if: ${{ needs.parse-labels.outputs.args != '' }}

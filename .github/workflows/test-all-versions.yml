@@ -1,146 +1,146 @@
-name: Test All Versions
-on:
-  schedule:
-    - cron: "30 4 * * *"
-  workflow_dispatch:
-    inputs:
-      lerna-args:
-        type: string
-  workflow_call:
-    inputs:
-      lerna-args:
-        required: true
-        type: string
+# name: Test All Versions
+# on:
+#   schedule:
+#     - cron: "30 4 * * *"
+#   workflow_dispatch:
+#     inputs:
+#       lerna-args:
+#         type: string
+#   workflow_call:
+#     inputs:
+#       lerna-args:
+#         required: true
+#         type: string
 
-jobs:
-  tav:
-    name: Run test-all-versions
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ["14", "16", "18"]
-        include:
-          - node: "18"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/instrumentation-fastify
-              --ignore @opentelemetry/instrumentation-restify
-              --ignore @opentelemetry/resource-detector-alibaba-cloud
-    runs-on: ubuntu-latest
-    services:
-      mongo:
-        image: mongo
-        ports:
-        - 27017:27017
-      mssql:
-        image: mcr.microsoft.com/mssql/server:2017-latest
-        env:
-          SA_PASSWORD: mssql_passw0rd
-          ACCEPT_EULA: Y
-        ports:
-        - 1433:1433
-        options: >-
-          --health-cmd "/opt/mssql-tools/bin/sqlcmd -U sa -P $SA_PASSWORD -Q 'select 1' -b -o /dev/null"
-          --health-interval 1s
-          --health-timeout 30s
-          --health-start-period 10s
-          --health-retries 20
-      mysql:
-        image: circleci/mysql:5.7
-        env:
-          MYSQL_USER: otel
-          MYSQL_PASSWORD: secret
-          MYSQL_DATABASE: circle_database
-          MYSQL_ROOT_PASSWORD: rootpw
-        ports:
-        - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      postgres:
-        image: circleci/postgres:9.6-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: circle_database
-        ports:
-        - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      rabbitmq:
-        image: rabbitmq:3
-        ports:
-        - 22221:5672
-        env:
-          RABBITMQ_DEFAULT_USER: username
-          RABBITMQ_DEFAULT_PASS: password
-      redis:
-        image: redis
-        ports:
-        - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      MONGODB_DB: opentelemetry-tests
-      MONGODB_HOST: 127.0.0.1
-      MONGODB_PORT: 27017
-      MSSQL_PASSWORD: mssql_passw0rd
-      MYSQL_DATABASE: circle_database
-      MYSQL_HOST: localhost
-      MYSQL_PASSWORD: secret
-      MYSQL_PORT: 3306
-      MYSQL_USER: otel
-      OPENTELEMETRY_REDIS_HOST: localhost
-      OPENTELEMETRY_REDIS_PORT: 6379
-      POSTGRES_DB: circle_database
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: postgres
-      RUN_MONGODB_TESTS: 1
-      RUN_MSSQL_TESTS: 1
-      RUN_MYSQL_TESTS: 1
-      RUN_POSTGRES_TESTS: 1
-      RUN_REDIS_TESTS: 1
-      NPM_CONFIG_UNSAFE_PERM: true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node }}
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            detectors/node/*/node_modules
-            detectors/node/*/package-lock.json
-            metapackages/*/node_modules
-            metapackages/*/package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            plugins/node/*/node_modules
-            plugins/node/*/package-lock.json
-            plugins/web/*/node_modules
-            plugins/web/*/package-lock.json
-            propagators/*/node_modules
-            propagators/*/package-lock.json
-          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
-      - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == '16'
-        run: npm config set legacy-peer-deps=true
-      - name: Install Root Dependencies
-        run: npm install --ignore-scripts
-      - name: Bootstrap Dependencies
-        run: lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
-      - name: Run test-all-versions
-        run: lerna run test-all-versions ${{ inputs.lerna-args }} ${{ matrix.lerna-extra-args }} --stream --concurrency 1
+# jobs:
+#   tav:
+#     name: Run test-all-versions
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         node: ["14", "16", "18"]
+#         include:
+#           - node: "18"
+#             lerna-extra-args: >-
+#               --ignore @opentelemetry/instrumentation-fastify
+#               --ignore @opentelemetry/instrumentation-restify
+#               --ignore @opentelemetry/resource-detector-alibaba-cloud
+#     runs-on: ubuntu-latest
+#     services:
+#       mongo:
+#         image: mongo
+#         ports:
+#         - 27017:27017
+#       mssql:
+#         image: mcr.microsoft.com/mssql/server:2017-latest
+#         env:
+#           SA_PASSWORD: mssql_passw0rd
+#           ACCEPT_EULA: Y
+#         ports:
+#         - 1433:1433
+#         options: >-
+#           --health-cmd "/opt/mssql-tools/bin/sqlcmd -U sa -P $SA_PASSWORD -Q 'select 1' -b -o /dev/null"
+#           --health-interval 1s
+#           --health-timeout 30s
+#           --health-start-period 10s
+#           --health-retries 20
+#       mysql:
+#         image: circleci/mysql:5.7
+#         env:
+#           MYSQL_USER: otel
+#           MYSQL_PASSWORD: secret
+#           MYSQL_DATABASE: circle_database
+#           MYSQL_ROOT_PASSWORD: rootpw
+#         ports:
+#         - 3306:3306
+#         options: >-
+#           --health-cmd="mysqladmin ping"
+#           --health-interval 10s
+#           --health-timeout 5s
+#           --health-retries 5
+#       postgres:
+#         image: circleci/postgres:9.6-alpine
+#         env:
+#           POSTGRES_USER: postgres
+#           POSTGRES_DB: circle_database
+#         ports:
+#         - 5432:5432
+#         options: >-
+#           --health-cmd pg_isready
+#           --health-interval 10s
+#           --health-timeout 5s
+#           --health-retries 5
+#       rabbitmq:
+#         image: rabbitmq:3
+#         ports:
+#         - 22221:5672
+#         env:
+#           RABBITMQ_DEFAULT_USER: username
+#           RABBITMQ_DEFAULT_PASS: password
+#       redis:
+#         image: redis
+#         ports:
+#         - 6379:6379
+#         options: >-
+#           --health-cmd "redis-cli ping"
+#           --health-interval 10s
+#           --health-timeout 5s
+#           --health-retries 5
+#     env:
+#       MONGODB_DB: opentelemetry-tests
+#       MONGODB_HOST: 127.0.0.1
+#       MONGODB_PORT: 27017
+#       MSSQL_PASSWORD: mssql_passw0rd
+#       MYSQL_DATABASE: circle_database
+#       MYSQL_HOST: localhost
+#       MYSQL_PASSWORD: secret
+#       MYSQL_PORT: 3306
+#       MYSQL_USER: otel
+#       OPENTELEMETRY_REDIS_HOST: localhost
+#       OPENTELEMETRY_REDIS_PORT: 6379
+#       POSTGRES_DB: circle_database
+#       POSTGRES_HOST: localhost
+#       POSTGRES_PORT: 5432
+#       POSTGRES_USER: postgres
+#       RUN_MONGODB_TESTS: 1
+#       RUN_MSSQL_TESTS: 1
+#       RUN_MYSQL_TESTS: 1
+#       RUN_POSTGRES_TESTS: 1
+#       RUN_REDIS_TESTS: 1
+#       NPM_CONFIG_UNSAFE_PERM: true
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
+#       - uses: actions/setup-node@v3
+#         with:
+#           node-version: ${{ matrix.node }}
+#       - name: Cache Dependencies
+#         uses: actions/cache@v3
+#         with:
+#           path: |
+#             node_modules
+#             package-lock.json
+#             detectors/node/*/node_modules
+#             detectors/node/*/package-lock.json
+#             metapackages/*/node_modules
+#             metapackages/*/package-lock.json
+#             packages/*/node_modules
+#             packages/*/package-lock.json
+#             plugins/node/*/node_modules
+#             plugins/node/*/package-lock.json
+#             plugins/web/*/node_modules
+#             plugins/web/*/package-lock.json
+#             propagators/*/node_modules
+#             propagators/*/package-lock.json
+#           key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
+#       - name: Legacy Peer Dependencies for npm 7
+#         if: matrix.node == '16'
+#         run: npm config set legacy-peer-deps=true
+#       - name: Install Root Dependencies
+#         run: npm install --ignore-scripts
+#       - name: Bootstrap Dependencies
+#         run: lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
+#       - name: Run test-all-versions
+#         run: lerna run test-all-versions ${{ inputs.lerna-args }} ${{ matrix.lerna-extra-args }} --stream --concurrency 1

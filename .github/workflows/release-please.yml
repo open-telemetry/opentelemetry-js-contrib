@@ -1,55 +1,55 @@
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
-name: Run Release Please
-jobs:
-  release-please:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: google-github-actions/release-please-action@v3
-        id: release
-        with:
-          command: manifest
-          token: ${{secrets.RELEASE_PR_TOKEN}}
-          default-branch: main
+# name: Run Release Please
+# jobs:
+#   release-please:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: google-github-actions/release-please-action@v3
+#         id: release
+#         with:
+#           command: manifest
+#           token: ${{secrets.RELEASE_PR_TOKEN}}
+#           default-branch: main
 
-      # The logic below handles the npm publication:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+#       # The logic below handles the npm publication:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 14
-          registry-url: 'https://registry.npmjs.org'
+#       - name: Setup Node
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: 14
+#           registry-url: 'https://registry.npmjs.org'
 
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            detectors/node/*/node_modules
-            metapackages/*/node_modules
-            packages/*/node_modules
-            plugins/node/*/node_modules
-            plugins/web/*/node_modules
-            propagators/*/node_modules
-          key: release-${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
+#       - name: Cache Dependencies
+#         uses: actions/cache@v3
+#         with:
+#           path: |
+#             node_modules
+#             package-lock.json
+#             detectors/node/*/node_modules
+#             metapackages/*/node_modules
+#             packages/*/node_modules
+#             plugins/node/*/node_modules
+#             plugins/web/*/node_modules
+#             propagators/*/node_modules
+#           key: release-${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
 
-      - name: Build Packages
-        run: |
-          npm install
-          npx lerna bootstrap --no-ci
+#       - name: Build Packages
+#         run: |
+#           npm install
+#           npx lerna bootstrap --no-ci
 
-      # Release Please has already incremented versions and published tags, so we just
-      # need to publish all unpublished versions to npm here
-      # See: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
-      - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        run: npx lerna publish from-package --no-push --no-private --no-git-tag-version --no-verify-access --yes
+#       # Release Please has already incremented versions and published tags, so we just
+#       # need to publish all unpublished versions to npm here
+#       # See: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
+#       - name: Publish to npm
+#         env:
+#           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+#         run: npx lerna publish from-package --no-push --no-private --no-git-tag-version --no-verify-access --yes

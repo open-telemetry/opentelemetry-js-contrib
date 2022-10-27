@@ -1,22 +1,22 @@
-name: Validate Release Please Config
+# name: Validate Release Please Config
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
 
-jobs:
-  rp-validate:
-    runs-on: ubuntu-latest
-    container:
-      image: node:14
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+# jobs:
+#   rp-validate:
+#     runs-on: ubuntu-latest
+#     container:
+#       image: node:14
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v3
 
-      - name: Install lerna
-        run: npm install -g lerna
+#       - name: Install lerna
+#         run: npm install -g lerna
 
-      - name: Ensure Release Please Config and Manifest are in sync with the repository
-        run: node scripts/check-release-please.mjs
+#       - name: Ensure Release Please Config and Manifest are in sync with the repository
+#         run: node scripts/check-release-please.mjs
