@@ -33,7 +33,7 @@ export interface CassandraDriverInstrumentationConfig
   /**
    * Function for adding custom attributes before response is handled.
    * @param span the current span
-   * @param responseInfo array of the resulting rows
+   * @param responseInfo array of the resulting rows. This will only return the first page of results
    */
   responseHook?: CassandraDriverResponseCustomAttributeFunction;
 }
