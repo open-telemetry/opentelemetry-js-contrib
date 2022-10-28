@@ -19,10 +19,12 @@ import type {
   GraphQLTypeResolver,
   Source,
 } from 'graphql';
-import { graphql as origGraphql, version } from 'graphql';
+import {
+  graphql as origAsyncGraphQl,
+  graphqlSync as origSyncGraphQl,
+  version,
+} from 'graphql';
 import { Maybe } from 'graphql/jsutils/Maybe';
-
-const variantGraphql = origGraphql as Function;
 
 interface GraphQLArgs {
   schema: GraphQLSchema;
@@ -37,16 +39,26 @@ interface GraphQLArgs {
   typeResolver?: Maybe<GraphQLTypeResolver<any, any>>;
 }
 
+const executeGraphqlQuery = (queryFunc: Function, args: GraphQLArgs) => {
+  const pre16Version =
+    !version || version.startsWith('14.') || version.startsWith('15.');
+  if (pre16Version) {
+    return queryFunc(
+      args.schema,
+      args.source,
+      args.rootValue,
+      args.contextValue,
+      args.variableValues,
+      args.operationName,
+      args.fieldResolver,
+      args.typeResolver
+    );
+  } else {
+    return queryFunc(args);
+  }
+};
+
 export const graphql = (args: GraphQLArgs) =>
-  !version || version.startsWith('14.') || version.startsWith('15.')
-    ? variantGraphql(
-        args.schema,
-        args.source,
-        args.rootValue,
-        args.contextValue,
-        args.variableValues,
-        args.operationName,
-        args.fieldResolver,
-        args.typeResolver
-      )
-    : variantGraphql(args);
+  executeGraphqlQuery(origAsyncGraphQl, args);
+export const graphqlSync = (args: GraphQLArgs) =>
+  executeGraphqlQuery(origSyncGraphQl, args);

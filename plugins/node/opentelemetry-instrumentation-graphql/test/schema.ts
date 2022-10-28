@@ -97,7 +97,7 @@ function prepareData() {
 
 prepareData();
 
-export function buildSchema() {
+export function buildTestSchema() {
   const Author = new graphql.GraphQLObjectType({
     name: 'Author',
     fields: {
