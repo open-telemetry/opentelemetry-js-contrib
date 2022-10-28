@@ -20,7 +20,8 @@ import {
   ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { Span } from '@opentelemetry/api';
+import { Span, SpanStatusCode } from '@opentelemetry/api';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLInstrumentation } from '../src';
@@ -39,10 +40,11 @@ graphQLInstrumentation.disable();
 
 // now graphql can be required
 
-import { buildSchema } from './schema';
-import { graphql } from './graphql-adaptor';
+import { buildSchema } from 'graphql';
+import { buildTestSchema } from './schema';
+import { graphql, graphqlSync } from './graphql-adaptor';
 // Construct a schema, using GraphQL schema language
-const schema = buildSchema();
+const schema = buildTestSchema();
 
 const sourceList1 = `
   query {
@@ -1175,6 +1177,91 @@ describe('graphql', () => {
       );
       assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
       assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
+    });
+  });
+
+  describe('graphqlSync', () => {
+    const simpleSyncSchema = buildSchema(`
+      type Query {
+        hello: String
+      }
+    `);
+
+    beforeEach(() => {
+      create({});
+    });
+
+    afterEach(() => {
+      exporter.reset();
+    });
+
+    it('should instrument successful graphqlSync', () => {
+      const rootValue = {
+        hello: () => 'Hello world!',
+      };
+      const source = '{ hello }';
+
+      const res = graphqlSync({ schema: simpleSyncSchema, rootValue, source });
+      assert.deepEqual(res.data, { hello: 'Hello world!' });
+
+      // validate execute span is present
+      const spans = exporter.getFinishedSpans();
+      const executeSpans = spans.filter(s => s.name === SpanNames.EXECUTE);
+      assert.deepStrictEqual(executeSpans.length, 1);
+      const [executeSpan] = executeSpans;
+      assert.deepStrictEqual(
+        executeSpan.attributes[AttributeNames.SOURCE],
+        source
+      );
+      assert.deepStrictEqual(
+        executeSpan.attributes[AttributeNames.OPERATION_TYPE],
+        'query'
+      );
+    });
+
+    it('should instrument when sync resolver throws', () => {
+      const rootValue = {
+        hello: () => {
+          throw Error('sync resolver error from tests');
+        },
+      };
+      const source = '{ hello }';
+
+      // graphql will not throw, it will return "errors" in the result and the field will be null
+      const res = graphqlSync({ schema: simpleSyncSchema, rootValue, source });
+      assert.deepEqual(res.data, { hello: null });
+
+      // assert errors are returned correctly
+      assert.deepStrictEqual(res.errors?.length, 1);
+      const resolverError = res.errors?.[0];
+      assert.deepStrictEqual(resolverError.path, ['hello']);
+      assert.deepStrictEqual(
+        resolverError.message,
+        'sync resolver error from tests'
+      );
+
+      // assert relevant spans are still created with error indications
+      const spans = exporter.getFinishedSpans();
+
+      // single resolve span with error and event for exception
+      const resolveSpans = spans.filter(s => s.name === SpanNames.RESOLVE);
+      assert.deepStrictEqual(resolveSpans.length, 1);
+      const resolveSpan = resolveSpans[0];
+      assert.deepStrictEqual(resolveSpan.status.code, SpanStatusCode.ERROR);
+      assert.deepStrictEqual(
+        resolveSpan.status.message,
+        'sync resolver error from tests'
+      );
+      const resolveEvent = resolveSpan.events[0];
+      assert.deepStrictEqual(resolveEvent.name, 'exception');
+      assert.deepStrictEqual(
+        resolveEvent.attributes?.[SemanticAttributes.EXCEPTION_MESSAGE],
+        'sync resolver error from tests'
+      );
+
+      // single execute span
+      const executeSpans = spans.filter(s => s.name === SpanNames.EXECUTE);
+      assert.deepStrictEqual(executeSpans.length, 1);
     });
   });
 });
