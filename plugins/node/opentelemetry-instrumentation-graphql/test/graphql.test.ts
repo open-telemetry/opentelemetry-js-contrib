@@ -39,7 +39,13 @@ graphQLInstrumentation.enable();
 graphQLInstrumentation.disable();
 
 // now graphql can be required
-import { GraphQLSchema, GraphQLObjectType, GraphQLString, buildSchema, graphqlSync } from 'graphql';
+import {
+  GraphQLSchema,
+  GraphQLObjectType,
+  GraphQLString,
+  buildSchema,
+  graphqlSync,
+} from 'graphql';
 import { buildTestSchema } from './schema';
 import { graphql } from './graphql-adaptor';
 // Construct a schema, using GraphQL schema language
