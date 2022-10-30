@@ -46,7 +46,7 @@
     "@opentelemetry/contrib-test-utils": "^0.32.0",
     "@types/lru-cache": "7.10.9",
     "@types/mocha": "8.2.3",
-    "@types/node": "16.11.21",
+    "@types/node": "18.11.7",
     "expect": "25.5.0",
     "gts": "3.1.0",
     "lru-memoizer": "2.1.4",
