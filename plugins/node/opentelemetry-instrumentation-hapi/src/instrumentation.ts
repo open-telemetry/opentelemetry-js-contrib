@@ -150,7 +150,7 @@ export class HapiInstrumentation extends InstrumentationBase {
       if (Array.isArray(pluginInput)) {
         for (const pluginObj of pluginInput) {
           instrumentation._wrapRegisterHandler(
-            pluginObj.plugin?.plugin ?? pluginObj.plugin
+            pluginObj.plugin?.plugin ?? pluginObj.plugin ?? pluginObj
           );
         }
       } else {
