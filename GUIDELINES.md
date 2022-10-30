@@ -44,25 +44,25 @@ Since the declarations in this file are not exported in the public instrumentati
 
 This section refers to the "dependencies" entry in instrumentation's `package.json` file.
 
-Since instrumentations will install all their dependenceis into the end user `node_modules` application, they should be examined to guarantee only small-size-required packages are added.
+Since instrumentations will install all their dependencies into the end user `node_modules` application, they should be examined to guarantee only small-size-required packages are added.
 
 ### OpenTelemetry API
 
-Instrumentation SHOULD NOT add a dependency on `@opentelemetry/api`, as it might install multiple api versions into the user node_modules directory. It SHOULD add an antry in `"peerDependencies"` in `package.json` with the **minimum** api version it requires, as caret range (`^1.0.0`).
+Instrumentation SHOULD NOT add a dependency on `@opentelemetry/api`, as it might install multiple api versions into the user node_modules directory. It SHOULD add an entry in `"peerDependencies"` in `package.json` with the **minimum** api version it requires, as caret range (`^1.0.0`).
 
-Users and distributions need to install a version of `@opentelemetry/api` that is compatible with the instrumentation in order to use it.
+Users and distributions need to install a version of `@opentelemetry/api` that is compatible with the instrumentation to use it.
 
 ### OpenTelemetry Core packages
 
-Most instrumentations will depend on `@opentelemetry/instrumentation` and `@opentelemetry/semantic-conventions`. If needed, instumentation can also depend on `@opentelemetry/core` for use of handy utils.
+Most instrumentations will depend on `@opentelemetry/instrumentation` and `@opentelemetry/semantic-conventions`. If needed, instrumentation can also depend on `@opentelemetry/core` for use of handy utils.
 
-Instrumentation SHOULD specify dependency as caret range (`^1.0.0`), with minimum supported version (and not latest version). If a specific feature or bug fix is required for instrumentation to function correctly, it SHOULD specify the minimum version that include this feature.
+Instrumentation SHOULD specify dependency as caret range (`^1.0.0`), with minimum supported version (and not latest version). If a specific feature or bug fix is required for instrumentation to function correctly, it SHOULD specify the minimum version that includes this feature.
 
 ### Instrumented Package Dependency
 
-Instrumentions SHOULD NOT add a dependency on the package it is instrumenting as it can add large overhead for end users application.
+Instrumentations SHOULD NOT add a dependency on the package it is instrumenting as it can add large overhead for end users' application.
 
-This means that instrumentation code SHOULD NOT `import` anywhere from the instrumented package. e.g. `@opentelemetry/instrumentation-foo` cannot `import 'foo'` as it might fail for applications that installed the instrumentaiton but not the `foo` package itself, which is valid and supported use case for OpenTelemetry distributions and end users.
+This means that the instrumentation code SHOULD NOT `import` anywhere from the instrumented package. e.g. `@opentelemetry/instrumentation-foo` cannot `import 'foo'` as it might fail for applications that installed the instrumentation but not the `foo` package itself, which is a valid and supported use case for OpenTelemetry distributions and end users.
 
 It is allowed, however, to import `types`  from the instrumented package with the [`import type`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax, as long as this type is not used in public api:
 
@@ -71,18 +71,18 @@ It is allowed, however, to import `types`  from the instrumented package with th
 import type { Bar } from 'foo';
 ```
 
-Since the instrumented package is installed as dev dependency, types are available during development. Since they are not part of the public api, typescript removes these imports from the build artifacts during transpilation. 
+Since the instrumented package is installed as a dev dependency, types are available during development. Since they are not part of the public api, typescript removes these imports from the build artifacts during transpilation. 
 
-To verify - `npm run compile` and check your `index.js` and `index.d.ts` files in the build directory. These files, and any transitive files improted by them MUST NOT import the instrumented package.
+To verify - `npm run compile` and check your `index.js` and `index.d.ts` files in the build directory. These files and any transitive files imported by them MUST NOT import the instrumented package.
 
 ### Adding Types in Public API
 
 Sometimes, instrumented package types are needed in instrumentation's public api. These are mostly found in `types.ts` file on instrumentation config hooks that include data from the package and want to type it for consumers.
 
-To support this usecase, you can choose one of the following options:
+To support this use case, you can choose one of the following options:
 
-1. Some packages do not distribute types. The types are alternatively available in the [Definitely Typed Project](https://github.com/DefinitelyTyped/DefinitelyTyped) as `@types/foo` (for a package named `foo`). Since type package is mostly small in size, instrumentaion MAY add depenendcy on the types package, and then use type-only import `import type from 'foo'` in `types.ts`.
+1. Some packages do not distribute types. The types are alternatively available in the [Definitely Typed Project](https://github.com/DefinitelyTyped/DefinitelyTyped) as `@types/foo` (for a package named `foo`). Since @type package is mostly small in size, instrumentation MAY add dependency on the types package, and then use type-only import `import type from 'foo'` in `types.ts`.
 
 2. Copy the relevant type declarations into the instrumentation. You may choose to copy only a subset of the type that is relevant to the need.
 
-3. Use `any` type, and add a comment to guide users on what type they should expect, with a link to it's definition.
+3. Use `any` type, and add a comment to guide users on what type they should expect, with a link to its definition.
