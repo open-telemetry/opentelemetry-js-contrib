@@ -46,7 +46,13 @@ This section refers to the "dependencies" entry in instrumentation's `package.js
 
 Since instrumentations will install all their dependenceis into the end user `node_modules` application, they should be examined to guarantee only small-size-required packages are added.
 
-### OpenTelemetry SDK packages
+### OpenTelemetry API
+
+Instrumentation SHOULD NOT add a dependency on `@opentelemetry/api`, as it might install multiple api versions into the user node_modules directory. It SHOULD add an antry in `"peerDependencies"` in `package.json` with the **minimum** api version it requires, as caret range (`^1.0.0`).
+
+Users and distributions need to install a version of `@opentelemetry/api` that is compatible with the instrumentation in order to use it.
+
+### OpenTelemetry Core packages
 
 Most instrumentations will depend on `@opentelemetry/instrumentation` and `@opentelemetry/semantic-conventions`. If needed, instumentation can also depend on `@opentelemetry/core` for use of handy utils.
 
