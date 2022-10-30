@@ -141,10 +141,8 @@ describe('mysql@2.x-Metrics', () => {
           inMemoryMetricsExporter,
           4
         );
-        console.log("The exportedMetrics: ", exportedMetrics)
-        assert.strictEqual(exportedMetrics.length, 4); //originaly was '1'
+        assert.strictEqual(exportedMetrics.length, 2);
         const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
-        console.log("The metrics: ", metrics);
         assert.strictEqual(metrics.length, 1);
         assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
@@ -158,7 +156,6 @@ describe('mysql@2.x-Metrics', () => {
           'db.client.connections.usage'
         );
         assert.strictEqual(metrics[0].dataPoints.length, 2);
-        console.log("The dataPoints: ", metrics[0].dataPoints);
         assert.strictEqual(metrics[0].dataPoints[0].value, 1);
         assert.strictEqual(
           metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
