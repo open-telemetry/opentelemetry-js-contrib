@@ -70,7 +70,7 @@ async function waitForNumberOfExports(
 
 import * as mysqlTypes from 'mysql';
 
-xdescribe('mysql@2.x-Metrics', () => {
+describe('mysql@2.x-Metrics', () => {
   let pool: mysqlTypes.Pool;
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
@@ -139,7 +139,7 @@ xdescribe('mysql@2.x-Metrics', () => {
         assert.strictEqual(results[0]?.solution, 2);
         let exportedMetrics = await waitForNumberOfExports(
           inMemoryMetricsExporter,
-          1
+          4
         );
         assert.strictEqual(exportedMetrics.length, 1); //originaly was '1'
         const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
@@ -155,7 +155,7 @@ xdescribe('mysql@2.x-Metrics', () => {
           metrics[0].descriptor.name,
           'db.client.connections.usage'
         );
-        // assert.strictEqual(metrics[0].dataPoints.length, 2);
+        assert.strictEqual(metrics[0].dataPoints.length, 2);
         // assert.strictEqual(metrics[0].dataPoints[0].value, 0);
         // assert.strictEqual(
         //   metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
