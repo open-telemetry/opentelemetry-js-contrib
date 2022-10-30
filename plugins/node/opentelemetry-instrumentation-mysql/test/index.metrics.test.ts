@@ -143,7 +143,8 @@ describe('mysql@2.x-Metrics', () => {
         );
         console.log("The exportedMetrics: ", exportedMetrics)
         assert.strictEqual(exportedMetrics.length, 4); //originaly was '1'
-        const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
+        const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
+        console.log("The metrics: ", metrics);
         assert.strictEqual(metrics.length, 1);
         assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
@@ -157,22 +158,16 @@ describe('mysql@2.x-Metrics', () => {
           'db.client.connections.usage'
         );
         assert.strictEqual(metrics[0].dataPoints.length, 2);
-        // assert.strictEqual(metrics[0].dataPoints[0].value, 0);
-        // assert.strictEqual(
-        //   metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
-        //   'idle'
-        // );
-        // assert.strictEqual(metrics[0].dataPoints[1].value, 1);
-        // assert.strictEqual(
-        //   metrics[0].dataPoints[1].attributes['db.client.connection.usage.state'],
-        //   'used'
-        // );
-
-        exportedMetrics = await waitForNumberOfExports(
-          inMemoryMetricsExporter,
-          1
+        assert.strictEqual(metrics[0].dataPoints[0].value, 0);
+        assert.strictEqual(
+          metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
+          'idle'
         );
-        // assert.strictEqual(exportedMetrics.length, 2);
+        assert.strictEqual(metrics[0].dataPoints[1].value, 1);
+        assert.strictEqual(
+          metrics[0].dataPoints[1].attributes['db.client.connection.usage.state'],
+          'used'
+        );
         done();
       });
     });
