@@ -71,7 +71,7 @@ It is allowed, however, to import `types`  from the instrumented package with th
 import type { Bar } from 'foo';
 ```
 
-Since the instrumented package is installed as a dev dependency, types are available during development. Since they are not part of the public api, typescript removes these imports from the build artifacts during transpilation. 
+Since the instrumented package is installed as a dev dependency, types are available during development. Since they are not part of the public api, typescript removes these imports from the build artifacts during transpilation.
 
 To verify - `npm run compile` and check your `index.js` and `index.d.ts` files in the build directory. These files and any transitive files imported by them MUST NOT import the instrumented package.
 
