@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+export interface RedisPluginClientTypes {
+  options?: {
+    host: string;
+    port: string;
+  };
 
-export type IgnoreMatcher = string | RegExp | ((url: string) => boolean);
-export interface DnsInstrumentationConfig extends InstrumentationConfig {
-  ignoreHostnames?: IgnoreMatcher[];
+  address?: string;
 }

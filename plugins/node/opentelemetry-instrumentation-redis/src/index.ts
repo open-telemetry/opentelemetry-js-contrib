@@ -15,4 +15,4 @@
  */
 
 export * from './instrumentation';
-export { RedisInstrumentationConfig } from './types';
+export * from './types';

@@ -20,8 +20,8 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import { context, diag, trace, Span, SpanStatusCode } from '@opentelemetry/api';
-import * as pgTypes from 'pg';
-import * as pgPoolTypes from 'pg-pool';
+import type * as pgTypes from 'pg';
+import type * as pgPoolTypes from 'pg-pool';
 import {
   PgClientConnect,
   PgClientExtended,
@@ -30,8 +30,8 @@ import {
   PostgresCallback,
   PgPoolExtended,
   PgPoolCallback,
-  PgInstrumentationConfig,
-} from './types';
+} from './internal-types';
+import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { AttributeNames } from './enums/AttributeNames';
 import {
