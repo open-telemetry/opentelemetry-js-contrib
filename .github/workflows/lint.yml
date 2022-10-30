@@ -1,46 +1,46 @@
-name: Lint
+# name: Lint
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    container:
-      image: node:14
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     container:
+#       image: node:14
 
-    steps:
-      - uses: actions/checkout@v3
+#     steps:
+#       - uses: actions/checkout@v3
 
-      - name: Lint markdown files
-        uses: avto-dev/markdown-lint@v1
-        with:
-          ignore: "./**/CHANGELOG.md"
-          args: "./**/*.md"
+#       - name: Lint markdown files
+#         uses: avto-dev/markdown-lint@v1
+#         with:
+#           ignore: "./**/CHANGELOG.md"
+#           args: "./**/*.md"
 
-      - name: restore lerna
-        uses: actions/cache@master # must use unreleased master to cache multiple paths
-        id: cache
-        with:
-          path: |
-            ./node_modules
-            ./package-lock.json
-            node_modules
-            detectors/node/*/node_modules
-            metapackages/*/node_modules
-            packages/*/node_modules
-            plugins/node/*/node_modules
-            plugins/web/*/node_modules
-            propagators/*/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
+#       - name: restore lerna
+#         uses: actions/cache@master # must use unreleased master to cache multiple paths
+#         id: cache
+#         with:
+#           path: |
+#             ./node_modules
+#             ./package-lock.json
+#             node_modules
+#             detectors/node/*/node_modules
+#             metapackages/*/node_modules
+#             packages/*/node_modules
+#             plugins/node/*/node_modules
+#             plugins/web/*/node_modules
+#             propagators/*/node_modules
+#           key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
 
-      - name: Bootstrap
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          npm install --only=dev --ignore-scripts
-          npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='gts' --ignore-scripts -- --only=dev
-      - name: Lint
-        run: npm run lint
+#       - name: Bootstrap
+#         if: steps.cache.outputs.cache-hit != 'true'
+#         run: |
+#           npm install --only=dev --ignore-scripts
+#           npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='gts' --ignore-scripts -- --only=dev
+#       - name: Lint
+#         run: npm run lint

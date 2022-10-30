@@ -141,7 +141,8 @@ describe('mysql@2.x-Metrics', () => {
           inMemoryMetricsExporter,
           4
         );
-        assert.strictEqual(exportedMetrics.length, 1); //originaly was '1'
+        console.log("The exportedMetrics: ", exportedMetrics)
+        assert.strictEqual(exportedMetrics.length, 4); //originaly was '1'
         const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
         assert.strictEqual(metrics.length, 1);
         assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
