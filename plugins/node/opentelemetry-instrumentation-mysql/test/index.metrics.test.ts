@@ -139,7 +139,7 @@ describe('mysql@2.x-Metrics', () => {
         assert.strictEqual(results[0]?.solution, 2);
         const exportedMetrics = await waitForNumberOfExports(
           inMemoryMetricsExporter,
-          4
+          2
         );
         assert.strictEqual(exportedMetrics.length, 2);
         const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
