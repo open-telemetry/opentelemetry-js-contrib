@@ -65,7 +65,12 @@ instrumentation.enable();
 httpInstrumentation.enable();
 
 import '@fastify/express';
-import { FastifyInstance, HookHandlerDoneFunction, FastifyReply, FastifyRequest } from 'fastify';
+import {
+  FastifyInstance,
+  HookHandlerDoneFunction,
+  FastifyReply,
+  FastifyRequest,
+} from 'fastify';
 
 const Fastify = require('fastify');
 
