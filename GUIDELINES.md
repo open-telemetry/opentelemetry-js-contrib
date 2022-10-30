@@ -83,6 +83,26 @@ To support this use case, you can choose one of the following options:
 
 1. Some packages do not distribute types. The types are alternatively available in the [Definitely Typed Project](https://github.com/DefinitelyTyped/DefinitelyTyped) as `@types/foo` (for a package named `foo`). Since @type package is mostly small in size, instrumentation MAY add dependency on the types package, and then use type-only import `import type from 'foo'` in `types.ts`.
 
+```js
+// package.json
+{
+    ...
+    "dependencies": {
+        "@types/foo": "1.2.3"
+    },
+    ...
+}
+
+// types.ts
+import type { Bar } from 'foo';
+
+export int4erface FooRequestInfo {
+    bar: Bar;
+}
+
+...
+```
+
 2. Copy the relevant type declarations into the instrumentation. You may choose to copy only a subset of the type that is relevant to the need.
 
 3. Use `any` type, and add a comment to guide users on what type they should expect, with a link to its definition.
