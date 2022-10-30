@@ -53,12 +53,9 @@ import {
   Handler,
 } from 'aws-lambda';
 
-import {
-  LambdaModule,
-  AwsLambdaInstrumentationConfig,
-  EventContextExtractor,
-} from './types';
+import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
+import { LambdaModule } from './internal-types';
 
 const awsPropagator = new AWSXRayPropagator();
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {

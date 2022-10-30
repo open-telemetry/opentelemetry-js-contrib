@@ -20,7 +20,9 @@ import {
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-base';
 import {
+  Attributes,
   context,
+  Span,
   SpanKind,
   SpanStatus,
   SpanStatusCode,
@@ -38,6 +40,7 @@ import {
   CassandraDriverInstrumentation,
   CassandraDriverInstrumentationConfig,
 } from '../src';
+import { ResponseHookInfo } from '../src/types';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -53,11 +56,13 @@ function assertSpan(
   span: ReadableSpan,
   name: string,
   query?: string,
-  status?: SpanStatus
+  status?: SpanStatus,
+  customAttributes?: Attributes
 ) {
-  const attributes = {
+  const attributes: Attributes = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
     [SemanticAttributes.DB_USER]: 'cassandra',
+    ...customAttributes,
   };
 
   if (query !== undefined) {
@@ -74,6 +79,13 @@ function assertSingleSpan(name: string, query?: string, status?: SpanStatus) {
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
   assertSpan(span, name, query, status);
+}
+
+function assertAttributeInSingleSpan(name: string, attributes?: Attributes) {
+  const spans = memoryExporter.getFinishedSpans();
+  assert.strictEqual(spans.length, 1);
+  const [span] = spans;
+  assertSpan(span, name, undefined, undefined, attributes);
 }
 
 function assertErrorSpan(
@@ -131,6 +143,7 @@ describe('CassandraDriverInstrumentation', () => {
     }
 
     instrumentation = new CassandraDriverInstrumentation();
+
     instrumentation.setTracerProvider(provider);
 
     const cassandra = require('cassandra-driver');
@@ -226,6 +239,60 @@ describe('CassandraDriverInstrumentation', () => {
         const query = 'select userid, count from ot.test';
         await client.execute(query);
         assertSingleSpan('cassandra-driver.execute', query.substr(0, 25));
+      });
+    });
+
+    describe('responseHook', () => {
+      after(() => {
+        instrumentation.setConfig({});
+      });
+
+      it('adds custom attributes to span', async () => {
+        const responseAttributeName = 'response.attribute';
+        const customAttributeName = 'custom.attribute';
+        const customAttributeValue = 'custom attribute value';
+
+        const config: CassandraDriverInstrumentationConfig = {
+          responseHook: (span: Span, responseInfo: ResponseHookInfo) => {
+            const row = responseInfo.response.rows[0];
+            const responseValue = row.count.toNumber();
+
+            span.setAttribute(responseAttributeName, responseValue);
+            span.setAttribute(customAttributeName, customAttributeValue);
+          },
+        };
+
+        instrumentation.setConfig(config);
+
+        await client.execute(
+          "SELECT count(*) FROM system_schema.columns WHERE keyspace_name = 'ot' AND table_name = 'test';"
+        );
+
+        assertAttributeInSingleSpan('cassandra-driver.execute', {
+          [customAttributeName]: customAttributeValue,
+          [responseAttributeName]: 2,
+        });
+      });
+
+      it('throws and should not affect user flow or span creation', async () => {
+        const hookAttributeName = 'hook.attribute';
+        const hookAttributeValue = 'hook attribute value';
+
+        const config: CassandraDriverInstrumentationConfig = {
+          responseHook: (span: Span, responseInfo: ResponseHookInfo): void => {
+            span.setAttribute(hookAttributeName, hookAttributeValue);
+            throw new Error('error inside hook');
+          },
+        };
+
+        instrumentation.setConfig(config);
+
+        const query = 'select * from ot.test';
+        await client.execute(query);
+
+        assertAttributeInSingleSpan('cassandra-driver.execute', {
+          [hookAttributeName]: hookAttributeValue,
+        });
       });
     });
   });
