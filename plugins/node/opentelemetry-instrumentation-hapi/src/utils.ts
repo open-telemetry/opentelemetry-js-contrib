@@ -22,7 +22,7 @@ import {
   HapiLifecycleMethodNames,
   PatchableExtMethod,
   ServerExtDirectInput,
-} from './types';
+} from './internal-types';
 import { AttributeNames } from './enums/AttributeNames';
 
 export function getPluginName<T>(plugin: Hapi.Plugin<T>): string {

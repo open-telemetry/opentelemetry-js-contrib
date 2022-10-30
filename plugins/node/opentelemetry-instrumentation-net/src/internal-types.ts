@@ -13,9 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export type IgnoreMatcher = string | RegExp | ((url: string) => boolean);
-export interface DnsInstrumentationConfig extends InstrumentationConfig {
-  ignoreHostnames?: IgnoreMatcher[];
+import type * as net from 'net';
+
+export type Net = typeof net;
+
+export interface NormalizedOptions {
+  host?: string;
+  port?: number;
+  path?: string;
+}
+
+export enum SocketEvent {
+  CLOSE = 'close',
+  CONNECT = 'connect',
+  ERROR = 'error',
+  SECURE_CONNECT = 'secureConnect',
 }

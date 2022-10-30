@@ -13,9 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { KoaMiddleware } from './types';
 
-export type IgnoreMatcher = string | RegExp | ((url: string) => boolean);
-export interface DnsInstrumentationConfig extends InstrumentationConfig {
-  ignoreHostnames?: IgnoreMatcher[];
-}
+/**
+ * This symbol is used to mark a Koa layer as being already instrumented
+ * since its possible to use a given layer multiple times (ex: middlewares)
+ */
+export const kLayerPatched: unique symbol = Symbol('koa-layer-patched');
+
+export type KoaPatchedMiddleware = KoaMiddleware & {
+  [kLayerPatched]?: boolean;
+};
+
+export const KoaComponentName = 'koa';

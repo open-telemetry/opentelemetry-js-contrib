@@ -19,4 +19,4 @@ import { TediousInstrumentation } from './instrumentation';
 export * from './instrumentation';
 export default TediousInstrumentation;
 
-export { TediousInstrumentationConfig } from './types';
+export * from './types';
