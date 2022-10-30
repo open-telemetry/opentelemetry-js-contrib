@@ -24,7 +24,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 
 import RestifyInstrumentation from '../src';
-import * as types from '../src/types';
+import * as types from '../src/internal-types';
 const plugin = new RestifyInstrumentation();
 
 import * as semver from 'semver';

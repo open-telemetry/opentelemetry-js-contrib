@@ -27,10 +27,8 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import 'zone.js';
 import { UserInteractionInstrumentation } from '../src';
-import {
-  UserInteractionInstrumentationConfig,
-  WindowWithZone,
-} from '../src/types';
+import { WindowWithZone } from '../src/internal-types';
+import { UserInteractionInstrumentationConfig } from '../src/types';
 import {
   assertClickSpan,
   assertInteractionSpan,
