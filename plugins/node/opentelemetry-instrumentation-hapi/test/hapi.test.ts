@@ -28,7 +28,7 @@ const plugin = getPlugin();
 
 import * as assert from 'assert';
 import * as hapi from '@hapi/hapi';
-import { HapiLayerType } from '../src/types';
+import { HapiLayerType } from '../src/internal-types';
 import { AttributeNames } from '../src/enums/AttributeNames';
 
 describe('Hapi Instrumentation - Core Tests', () => {
@@ -263,6 +263,57 @@ describe('Hapi Instrumentation - Core Tests', () => {
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
           assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
+    it('should start a new context for the handler', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      server.route([
+        {
+          method: 'GET',
+          path: '/route',
+          handler: (request, h) => {
+            const span = tracer.startSpan('handler');
+            span.end();
+            return 'ok';
+          },
+        },
+      ]);
+
+      await server.start();
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const res = await server.inject({
+            method: 'GET',
+            url: '/route',
+          });
+
+          assert.strictEqual(res.statusCode, 200);
+
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+
+          const routeSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'route - /route');
+          assert.notStrictEqual(routeSpan, undefined);
+          assert.strictEqual(
+            routeSpan?.attributes[AttributeNames.HAPI_TYPE],
+            HapiLayerType.ROUTER
+          );
+
+          const handlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'handler');
+          assert.notStrictEqual(routeSpan, undefined);
+          assert.strictEqual(
+            handlerSpan?.parentSpanId,
+            routeSpan?.spanContext().spanId
+          );
         }
       );
     });

@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+import type * as types from './internal-types';
+import type * as restify from 'restify';
+
 import * as api from '@opentelemetry/api';
-import * as restify from 'restify';
-import { Server } from 'restify';
-import * as types from './types';
+import type { Server } from 'restify';
+import { LayerType } from './internal-types';
 import * as AttributeNames from './enums/AttributeNames';
 import { VERSION } from './version';
 import * as constants from './constants';
@@ -34,9 +36,7 @@ import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 
 const { diag } = api;
 
-export class RestifyInstrumentation extends InstrumentationBase<
-  typeof restify
-> {
+export class RestifyInstrumentation extends InstrumentationBase<any> {
   constructor(config: InstrumentationConfig = {}) {
     super(`@opentelemetry/instrumentation-${constants.MODULE_NAME}`, VERSION);
   }
@@ -45,7 +45,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
   private _isDisabled = false;
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<typeof restify>(
+    const module = new InstrumentationNodeModuleDefinition<any>(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
@@ -55,7 +55,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<typeof restify>(
+      new InstrumentationNodeModuleFile<any>(
         'restify/lib/server.js',
         constants.SUPPORTED_VERSIONS,
         (moduleExports, moduleVersion) => {
@@ -113,7 +113,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
       return original.call(
         this,
         instrumentation._handlerPatcher(
-          { type: types.LayerType.MIDDLEWARE, methodName },
+          { type: LayerType.MIDDLEWARE, methodName },
           handler
         )
       );
@@ -131,7 +131,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
         this,
         path,
         ...instrumentation._handlerPatcher(
-          { type: types.LayerType.REQUEST_HANDLER, path, methodName },
+          { type: LayerType.REQUEST_HANDLER, path, methodName },
           handler
         )
       );
@@ -168,7 +168,7 @@ export class RestifyInstrumentation extends InstrumentationBase<
 
         const fnName = handler.name || undefined;
         const spanName =
-          metadata.type === types.LayerType.REQUEST_HANDLER
+          metadata.type === LayerType.REQUEST_HANDLER
             ? `request handler - ${route}`
             : `middleware - ${fnName || 'anonymous'}`;
         const attributes = {

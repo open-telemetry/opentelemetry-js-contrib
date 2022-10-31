@@ -72,7 +72,9 @@ export class OTTracePropagator implements TextMapPropagator {
     setter.set(
       carrier,
       OT_SAMPLED_HEADER,
-      spanContext.traceFlags === TraceFlags.SAMPLED ? 'true' : 'false'
+      (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
+        ? 'true'
+        : 'false'
     );
 
     const baggage = propagation.getBaggage(context);

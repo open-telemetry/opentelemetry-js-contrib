@@ -16,20 +16,34 @@
 import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
 import type { RouterParamContext } from '@koa/router';
 import type * as Router from '@koa/router';
+import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-/**
- * This symbol is used to mark a Koa layer as being already instrumented
- * since its possible to use a given layer multiple times (ex: middlewares)
- */
-export const kLayerPatched: unique symbol = Symbol('koa-layer-patched');
+export enum KoaLayerType {
+  ROUTER = 'router',
+  MIDDLEWARE = 'middleware',
+}
+
+export type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
 
 export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
-  [kLayerPatched]?: boolean;
   router?: Router;
 };
 
-export type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
+export type KoaRequestInfo = {
+  context: KoaContext;
+  middlewareLayer: Middleware<DefaultState, KoaContext>;
+  layerType: KoaLayerType;
+};
+
+/**
+ * Function that can be used to add custom attributes to the current span
+ * @param span - The Express middleware layer span.
+ * @param context - The current KoaContext.
+ */
+export interface KoaRequestCustomAttributeFunction {
+  (span: Span, info: KoaRequestInfo): void;
+}
 
 /**
  * Options available for the Koa Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-Instrumentation-koa#koa-Instrumentation-options))
@@ -37,11 +51,6 @@ export type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
 export interface KoaInstrumentationConfig extends InstrumentationConfig {
   /** Ignore specific layers based on their type */
   ignoreLayersType?: KoaLayerType[];
+  /** Function for adding custom attributes to each middleware layer span */
+  requestHook?: KoaRequestCustomAttributeFunction;
 }
-
-export enum KoaLayerType {
-  ROUTER = 'router',
-  MIDDLEWARE = 'middleware',
-}
-
-export const KoaComponentName = 'koa';

@@ -84,7 +84,7 @@ export function assertSpans(
     'mongodb'
   );
   assert.strictEqual(
-    mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
+    mongoSpan.attributes[SemanticAttributes.NET_PEER_NAME],
     process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);

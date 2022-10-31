@@ -29,7 +29,7 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { CassandraDriverInstrumentationConfig } from './types';
+import { CassandraDriverInstrumentationConfig, ResultSet } from './types';
 import {
   SemanticAttributes,
   DbSystemValues,
@@ -41,6 +41,8 @@ import type * as CassandraDriver from 'cassandra-driver';
 const supportedVersions = ['>=4.4 <5.0'];
 
 export class CassandraDriverInstrumentation extends InstrumentationBase {
+  protected override _config!: CassandraDriverInstrumentationConfig;
+
   constructor(config: CassandraDriverInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-cassandra-driver', VERSION, config);
   }
@@ -147,7 +149,13 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
           }
         );
 
-        const wrappedPromise = wrapPromise(span, execPromise);
+        const wrappedPromise = wrapPromise(
+          span,
+          execPromise,
+          (span, result) => {
+            plugin._callResponseHook(span, result);
+          }
+        );
 
         return context.bind(execContext, wrappedPromise);
       };
@@ -319,6 +327,22 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
       attributes,
     });
   }
+
+  private _callResponseHook(span: Span, response: ResultSet) {
+    if (!this._config.responseHook) {
+      return;
+    }
+
+    safeExecuteInTheMiddle(
+      () => this._config.responseHook!(span, { response: response }),
+      e => {
+        if (e) {
+          this._diag.error('responseHook error', e);
+        }
+      },
+      true
+    );
+  }
 }
 
 function failSpan(span: Span, error: Error) {
@@ -336,10 +360,17 @@ function combineQueries(queries: Array<string | { query: string }>) {
     .join('\n');
 }
 
-function wrapPromise<T>(span: Span, promise: Promise<T>): Promise<T> {
+function wrapPromise<T>(
+  span: Span,
+  promise: Promise<T>,
+  successCallback?: (span: Span, result: T) => void
+): Promise<T> {
   return promise
     .then(result => {
       return new Promise<T>(resolve => {
+        if (successCallback) {
+          successCallback(span, result);
+        }
         span.end();
         resolve(result);
       });

@@ -22,7 +22,7 @@ import {
 } from '@opentelemetry/api';
 import { spanRequestSymbol } from './constants';
 
-import type { PluginFastifyReply } from './types';
+import type { PluginFastifyReply } from './internal-types';
 
 /**
  * Starts Span

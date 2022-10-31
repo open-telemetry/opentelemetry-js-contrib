@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context } from '@opentelemetry/api';
+import { context, INVALID_SPAN_CONTEXT, trace } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import {
@@ -26,7 +26,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import { PgInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { PgClientExtended, NormalizedQueryConfig } from '../src/types';
+import { PgClientExtended, NormalizedQueryConfig } from '../src/internal-types';
 import * as utils from '../src/utils';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -66,6 +66,61 @@ describe('utils.ts', () => {
   afterEach(() => {
     memoryExporter.reset();
     context.disable();
+  });
+
+  describe('.startSpan()', () => {
+    it('starts real span when requireParentSpan=false', async () => {
+      const span = utils.startSpan(tracer, instrumentationConfig, 'spanName', {
+        key: 'value',
+      });
+      span.end();
+
+      const readableSpan = getLatestSpan();
+
+      assert.strictEqual(readableSpan.name, 'spanName');
+      assert.strictEqual(readableSpan.attributes['key'], 'value');
+      assert.notDeepStrictEqual(readableSpan.spanContext, INVALID_SPAN_CONTEXT);
+    });
+
+    it('starts real span when requireParentSpan=true and there is a parent span', async () => {
+      const parent = tracer.startSpan('parentSpan');
+      context.with(trace.setSpan(context.active(), parent), () => {
+        const childSpan = utils.startSpan(
+          tracer,
+          {
+            ...instrumentationConfig,
+            requireParentSpan: true,
+          },
+          'childSpan',
+          { key: 'value' }
+        );
+        childSpan.end();
+
+        const readableSpan = getLatestSpan();
+        assert.strictEqual(readableSpan.name, 'childSpan');
+        assert.strictEqual(readableSpan.attributes['key'], 'value');
+        assert.notDeepStrictEqual(
+          readableSpan.spanContext,
+          INVALID_SPAN_CONTEXT
+        );
+      });
+    });
+
+    it('creates placeholder span when requireParentSpan=true and there is no parent span', async () => {
+      const span = utils.startSpan(
+        tracer,
+        {
+          ...instrumentationConfig,
+          requireParentSpan: true,
+        },
+        'spanName',
+        { key: 'value' }
+      );
+      span.end();
+
+      const readableSpan = getLatestSpan();
+      assert.strictEqual(readableSpan, undefined);
+    });
   });
 
   describe('.handleConfigQuery()', () => {

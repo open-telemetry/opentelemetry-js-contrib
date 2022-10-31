@@ -1,5 +1,7 @@
 # OpenTelemetry Instrumentation GraphQL
 
+:bangbang: You could be a component owner for this package, and help maintain the quality its users deserve! Check out [open issues](https://github.com/open-telemetry/opentelemetry-js-contrib/labels/pkg%3Ainstrumentation-graphql) on how to help.
+
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 

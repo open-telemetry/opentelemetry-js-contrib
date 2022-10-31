@@ -23,7 +23,7 @@ import {
   ConnectNames,
   ConnectTypes,
 } from './enums/AttributeNames';
-import { Use, UseArgs, UseArgs2 } from './types';
+import { Use, UseArgs, UseArgs2 } from './internal-types';
 import { VERSION } from './version';
 import {
   InstrumentationBase,
@@ -78,7 +78,7 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
 
   public _patchNext(next: NextFunction, finishSpan: () => void): NextFunction {
     return function nextFunction(this: NextFunction, err?: any): void {
-      const result = next.apply(this, err);
+      const result = next.apply(this, [err]);
       finishSpan();
       return result;
     };
@@ -114,13 +114,18 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
     middleWare: HandleFunction
   ): HandleFunction {
     const instrumentation = this;
-    return function (this: Use): void {
+    const isErrorMiddleware = middleWare.length === 4;
+
+    function patchedMiddleware(this: Use): void {
       if (!instrumentation.isEnabled()) {
         return (middleWare as any).apply(this, arguments);
       }
-      const req = arguments[0] as IncomingMessage;
-      const res = arguments[1] as ServerResponse;
-      const next = arguments[2] as NextFunction;
+      const [reqArgIdx, resArgIdx, nextArgIdx] = isErrorMiddleware
+        ? [1, 2, 3]
+        : [0, 1, 2];
+      const req = arguments[reqArgIdx] as IncomingMessage;
+      const res = arguments[resArgIdx] as ServerResponse;
+      const next = arguments[nextArgIdx] as NextFunction;
 
       const rpcMetadata = getRPCMetadata(context.active());
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
@@ -150,10 +155,18 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
       }
 
       res.addListener('close', finishSpan);
-      arguments[2] = instrumentation._patchNext(next, finishSpan);
+      arguments[nextArgIdx] = instrumentation._patchNext(next, finishSpan);
 
       return (middleWare as any).apply(this, arguments);
-    };
+    }
+
+    Object.defineProperty(patchedMiddleware, 'length', {
+      value: middleWare.length,
+      writable: false,
+      configurable: true,
+    });
+
+    return patchedMiddleware;
   }
 
   public _patchUse(original: Server['use']): Use {

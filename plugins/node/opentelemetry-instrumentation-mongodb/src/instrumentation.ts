@@ -33,23 +33,19 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import type * as mongodb from 'mongodb';
+import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
   CursorState,
   MongodbCommandType,
-  MongoDBInstrumentationConfig,
   MongoInternalCommand,
   MongoInternalTopology,
   WireProtocolInternal,
-  CommandResult,
   V4Connection,
-} from './types';
+} from './internal-types';
 import { VERSION } from './version';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
-export class MongoDBInstrumentation extends InstrumentationBase<
-  typeof mongodb
-> {
+export class MongoDBInstrumentation extends InstrumentationBase {
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
   }
@@ -59,7 +55,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
     const { v4Patch, v4Unpatch } = this._getV4Patches();
 
     return [
-      new InstrumentationNodeModuleDefinition<typeof mongodb>(
+      new InstrumentationNodeModuleDefinition<any>(
         'mongodb',
         ['>=3.3 <4'],
         undefined,
@@ -73,7 +69,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<
           ),
         ]
       ),
-      new InstrumentationNodeModuleDefinition<typeof mongodb>(
+      new InstrumentationNodeModuleDefinition<any>(
         'mongodb',
         ['4.*'],
         undefined,
@@ -573,8 +569,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<
 
     if (host && port) {
       span.setAttributes({
-        [SemanticAttributes.NET_HOST_NAME]: host,
-        [SemanticAttributes.NET_HOST_PORT]: port,
+        [SemanticAttributes.NET_PEER_NAME]: host,
+        [SemanticAttributes.NET_PEER_PORT]: port,
       });
     }
     if (!commandObj) return;

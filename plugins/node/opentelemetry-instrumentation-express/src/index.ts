@@ -15,5 +15,6 @@
  */
 
 export * from './instrumentation';
-export { ExpressLayerType } from './enums/ExpressLayerType';
-export { ExpressInstrumentationConfig } from './types';
+export * from './enums/ExpressLayerType';
+export * from './enums/AttributeNames';
+export * from './types';

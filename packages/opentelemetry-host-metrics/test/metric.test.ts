@@ -23,7 +23,7 @@ import {
   MeterProvider,
   MetricData,
   MetricReader,
-} from '@opentelemetry/sdk-metrics-base';
+} from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';

@@ -138,7 +138,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
       const query = original.apply(this, arguments as any);
       const callback = query.callback;
 
-      span.updateName(`${query.type} ${query.key}`);
+      span.updateName(`memcached ${query.type}`);
       span.setAttributes({
         'db.memcached.key': query.key,
         'db.memcached.lifetime': query.lifetime,

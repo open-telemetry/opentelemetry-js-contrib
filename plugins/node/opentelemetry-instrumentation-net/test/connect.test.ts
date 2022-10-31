@@ -24,7 +24,7 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as net from 'net';
 import * as assert from 'assert';
 import { NetInstrumentation } from '../src';
-import { SocketEvent } from '../src/types';
+import { SocketEvent } from '../src/internal-types';
 import { assertIpcSpan, assertTcpSpan, IPC_PATH, HOST, PORT } from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -144,6 +144,13 @@ describe('NetInstrumentation', () => {
     it('should produce a span for IPC', done => {
       socket.connect(IPC_PATH, () => {
         assertIpcSpan(getSpan());
+        done();
+      });
+    });
+
+    it('should create a tcp span when port is given as string', done => {
+      socket = socket.connect(String(PORT) as unknown as number, HOST, () => {
+        assertTcpSpan(getSpan(), socket);
         done();
       });
     });
