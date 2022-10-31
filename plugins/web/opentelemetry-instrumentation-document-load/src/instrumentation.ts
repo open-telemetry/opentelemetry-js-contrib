@@ -31,7 +31,6 @@ import {
 } from '@opentelemetry/sdk-trace-web';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { AttributeNames } from './enums/AttributeNames';
@@ -41,21 +40,10 @@ import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
 } from './utils';
-
-export interface DocumentLoadCustomAttributeFunction {
-  (span: Span): void;
-}
-
-/**
- * DocumentLoadPlugin Config
- */
-export interface DocumentLoadInstrumentationConfig
-  extends InstrumentationConfig {
-  /** Functions for adding custom attributes on the spans */
-  applyCustomAttributesOnDocumentLoadSpan?: DocumentLoadCustomAttributeFunction;
-  applyCustomAttributesOnDocumentFetchSpan?: DocumentLoadCustomAttributeFunction;
-  applyCustomAttributesOnResourceFetchSpans?: DocumentLoadCustomAttributeFunction;
-}
+import {
+  DocumentLoadCustomAttributeFunction,
+  DocumentLoadInstrumentationConfig,
+} from './types';
 
 /**
  * This class represents a document load plugin
@@ -268,7 +256,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
     span: Span,
     applyCustomAttributesOnSpan: DocumentLoadCustomAttributeFunction | undefined
   ) {
-    if (span && applyCustomAttributesOnSpan) {
+    if (applyCustomAttributesOnSpan) {
       safeExecuteInTheMiddle(
         () => applyCustomAttributesOnSpan(span),
         error => {
@@ -300,3 +288,5 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
     window.removeEventListener('load', this._onDocumentLoaded);
   }
 }
+
+

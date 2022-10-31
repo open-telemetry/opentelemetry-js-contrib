@@ -89,14 +89,19 @@ as a config to the DocumentLoad Instrumentation as shown below.
 
 ```js
 
-const addCustomAttributesToDoucmentLoadSpan = (span)=> {
-    span.setAttribute('<custom.attribute.key>','<custom-attribute-value>');
+const addCustomAttributesToSpan = (span: Span) => {
+  span.setAttribute('<custom.attribute.key>','<custom-attribute-value>');
 }
+
 registerInstrumentations({
-    instrumentations: [
-        new DocumentLoadInstrumentation({applyCustomAttributesOnDocumentLoadSpan:addCustomAttributesToDoucmentLoadSpan,
-                                         applyCustomAttributesOnDocumentFetchSpan:addCustomAttributesToDoucmentLoadSpan,
-                                         applyCustomAttributesOnResourceFetchSpans:addCustomAttributesToDoucmentLoadSpan})]
+  instrumentations: [
+    // @ts-ignore
+    new DocumentLoadInstrumentation({
+      applyCustomAttributesOnDocumentLoadSpan: addCustomAttributesToSpan,
+      applyCustomAttributesOnDocumentFetchSpan: addCustomAttributesToSpan,
+      applyCustomAttributesOnResourceFetchSpans: addCustomAttributesToSpan,
+    }),
+  ],
 });
 ```
 
