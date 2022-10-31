@@ -462,6 +462,76 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
   });
+
+  describe('add custom attributes to spans', () => {
+    let spyEntries: any;
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resources);
+      spyEntries.withArgs('paint').returns([]);
+    });
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should add attribute to document load span', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        applyCustomAttributesOnDocumentLoadSpan: span => {
+          span.setAttribute('custom-key', 'custom-val');
+        },
+      });
+      plugin.enable();
+      setTimeout(() => {
+        const rootSpan = exporter.getFinishedSpans()[3] as ReadableSpan;
+        assert.strictEqual(rootSpan.attributes['custom-key'], 'custom-val');
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+
+    it('should add attribute to document fetch span', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        applyCustomAttributesOnDocumentFetchSpan: span => {
+          span.setAttribute('custom-key', 'custom-val');
+        },
+      });
+      plugin.enable();
+      setTimeout(() => {
+        const fetchSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+        assert.strictEqual(fetchSpan.attributes['custom-key'], 'custom-val');
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+
+    it('should add attribute to resource fetch spans', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        applyCustomAttributesOnResourceFetchSpans: span => {
+          span.setAttribute('custom-key', 'custom-val');
+        },
+      });
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan1 = exporter.getFinishedSpans()[1] as ReadableSpan;
+        const resourceSpan2 = exporter.getFinishedSpans()[2] as ReadableSpan;
+        assert.strictEqual(
+          resourceSpan1.attributes['custom-key'],
+          'custom-val'
+        );
+        assert.strictEqual(
+          resourceSpan2.attributes['custom-key'],
+          'custom-val'
+        );
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+  });
+
   describe('when resource entries are available AND secureConnectionStart is 0', () => {
     let spyEntries: any;
     beforeEach(() => {
