@@ -29,7 +29,7 @@ import {
   ForceUpdateFunction,
   GetSnapshotBeforeUpdateFunction,
   ComponentWillUnmountFunction,
-} from './types';
+} from './internal-types';
 
 /**
  * This class is the base component for a React component with lifecycle instrumentation
