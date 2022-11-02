@@ -23,7 +23,8 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 
-import type * as Hapi from '@hapi/hapi';
+// types for @hapi/hapi are published under @types/hapi__hapi
+import type * as Hapi from 'hapi__hapi';
 import { VERSION } from './version';
 import {
   HapiComponentName,
@@ -35,7 +36,7 @@ import {
   RegisterFunction,
   PatchableExtMethod,
   ServerExtDirectInput,
-} from './types';
+} from './internal-types';
 import {
   getRouteMetadata,
   getPluginName,
@@ -149,7 +150,7 @@ export class HapiInstrumentation extends InstrumentationBase {
       if (Array.isArray(pluginInput)) {
         for (const pluginObj of pluginInput) {
           instrumentation._wrapRegisterHandler(
-            pluginObj.plugin?.plugin ?? pluginObj.plugin
+            pluginObj.plugin?.plugin ?? pluginObj.plugin ?? pluginObj
           );
         }
       } else {
