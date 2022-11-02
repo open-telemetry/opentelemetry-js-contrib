@@ -530,6 +530,19 @@ describe('DocumentLoad Instrumentation', () => {
         done();
       });
     });
+    it('should still create the spans if the function throws error', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        applyCustomAttributesOnDocumentLoadSpan: span => {
+          throw new Error('test error');
+        },
+      });
+      plugin.enable();
+      setTimeout(() => {
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
   });
 
   describe('when resource entries are available AND secureConnectionStart is 0', () => {

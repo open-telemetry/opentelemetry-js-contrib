@@ -25,8 +25,10 @@ export interface DocumentLoadCustomAttributeFunction {
  */
 export interface DocumentLoadInstrumentationConfig
   extends InstrumentationConfig {
-  /** Functions for adding custom attributes on the spans */
+  /** Function for adding custom attributes on the document load root span */
   applyCustomAttributesOnDocumentLoadSpan?: DocumentLoadCustomAttributeFunction;
+  /** Function for adding custom attributes on the document fetch span */
   applyCustomAttributesOnDocumentFetchSpan?: DocumentLoadCustomAttributeFunction;
+  /** Function for adding custom attributes on the resource fetch spans */
   applyCustomAttributesOnResourceFetchSpans?: DocumentLoadCustomAttributeFunction;
 }
