@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-ot-trace-v0.26.1...propagator-ot-trace-v0.26.2) (2022-11-02)
+
+
+### Bug Fixes
+
+* address webpack memory issue for browser tests ([#1264](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1264)) ([c7f08fe](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c7f08fed51bca68b0c522769c3c589102b98ec93))
+
 ## [0.26.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-ot-trace-v0.26.0...propagator-ot-trace-v0.26.1) (2022-08-09)
 
 

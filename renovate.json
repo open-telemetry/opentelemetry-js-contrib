@@ -11,6 +11,12 @@
     {
       "matchPackageNames": ["@opentelemetry/api"],
       "rangeStrategy": "bump"
+    },
+    {
+      "groupName": "Otel Core experimental",
+      "matchPackageNames": ["@opentelemetry/sdk-node", "@opentelemetry/instrumentation", "@opentelemetry/instrumentation-grpc", "@opentelemetry/instrumentation-http", "@opentelemetry/instrumentation-fetch", "@opentelemetry/instrumentation-xml-http-request", "@opentelemetry/api-metrics", "@opentelemetry/sdk-metrics" ],
+      "matchUpdateTypes": ["minor"],
+      "rangeStrategy": "bump"
     }
   ],
   "ignoreDeps": ["lerna", "lerna-changelog"],
