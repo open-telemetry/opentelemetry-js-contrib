@@ -286,10 +286,11 @@ export class FastifyInstrumentation extends InstrumentationBase {
 
       if (instrumentation.getConfig().requestHook) {
         safeExecuteInTheMiddle(
-          () => instrumentation.getConfig().requestHook!(span, request),
+          () => instrumentation.getConfig().requestHook!(span, { request }),
           e => {
             if (e) {
-              diag.error('fastify instrumentation: request hook failed', e);
+              diag.error('request hook failed', e);
+              instrumentation._diag.error('request hook failed', e);
             }
           },
           true
