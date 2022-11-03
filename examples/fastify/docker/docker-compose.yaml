@@ -2,8 +2,7 @@ version: "3"
 services:
   # Collector
   collector:
-    image: otel/opentelemetry-collector:0.38.0
-#    image: otel/opentelemetry-collector:latest
+    image: otel/opentelemetry-collector:0.63.1
     command: ["--config=/conf/collector-config.yaml"]
     volumes:
       - ./collector-config.yaml:/conf/collector-config.yaml
@@ -11,7 +10,6 @@ services:
       - "9464:9464"
       - "4317:4317"
       - "4318:4318"
-      - "55681:55681"
     depends_on:
       - zipkin-all-in-one
 

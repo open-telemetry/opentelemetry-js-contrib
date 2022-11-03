@@ -22,30 +22,26 @@ npm install
 
 - Run docker container with collector
 
-   ```sh
-   # from this directory
-   $ npm run docker:start
-   ```
-
-Note: If you are running the example on an Apple Silicon system, you might
-get an error similar to `no matching manifest for Linux/arm64/v8 in the manifest list entries`.
-In that case you can resolve this error by adding `platform: linux/amd64` to each service in `docker/docker-compose.yaml`.
+  ```sh
+  # from this directory
+  $ npm run docker:start
+  ```
 
 ### Server
 
 - Run the server
 
-   ```sh
-   # from this directory
-   $ npm run server
-   ```
+  ```sh
+  # from this directory
+  $ npm run server
+  ```
 
 - Run the client
 
-   ```sh
-   # from this directory
-   npm run client
-   ```
+  ```sh
+  # from this directory
+  npm run client
+  ```
 
 #### Zipkin UI
 

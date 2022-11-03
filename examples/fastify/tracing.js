@@ -6,13 +6,19 @@ const { diag, DiagConsoleLogger, DiagLogLevel } = opentelemetry;
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 const { Resource } = require('@opentelemetry/resources');
-const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
+const {
+  SemanticResourceAttributes,
+} = require('@opentelemetry/semantic-conventions');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
-const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
+const {
+  OTLPTraceExporter,
+} = require('@opentelemetry/exporter-trace-otlp-http');
 
-const { FastifyInstrumentation } = require('@opentelemetry/instrumentation-fastify');
+const {
+  FastifyInstrumentation,
+} = require('@opentelemetry/instrumentation-fastify');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
 function log() {
@@ -38,7 +44,7 @@ module.exports = (serviceName) => {
     ],
   });
 
-  const exporter = new CollectorTraceExporter();
+  const exporter = new OTLPTraceExporter();
   provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
