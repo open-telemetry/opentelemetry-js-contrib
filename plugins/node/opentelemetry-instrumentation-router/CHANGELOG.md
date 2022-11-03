@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.30.0...instrumentation-router-v0.31.0) (2022-11-02)
+
+
+### Features
+
+* add new instrumentations into `auto-instrumentations-node` ([#981](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/981)) ([a00f390](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a00f390977a3091b068cf1485e7596b4133ea5d8))
+
+
+### Bug Fixes
+
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.29.1...instrumentation-router-v0.30.0) (2022-09-02)
 
 

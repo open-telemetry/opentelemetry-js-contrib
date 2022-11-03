@@ -34,18 +34,18 @@ import {
   executeType,
   parseType,
   validateType,
-  GraphQLInstrumentationConfig,
   GraphQLInstrumentationParsedConfig,
   OtelExecutionArgs,
   ObjectWithGraphQLData,
   OPERATION_NOT_SUPPORTED,
   Maybe,
-} from './types';
+} from './internal-types';
 import {
   addInputVariableAttributes,
   addSpanSource,
   endSpan,
   getOperation,
+  isPromise,
   wrapFieldResolver,
   wrapFields,
 } from './utils';
@@ -53,6 +53,7 @@ import {
 import { VERSION } from './version';
 import * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
+import { GraphQLInstrumentationConfig } from './types';
 
 const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
   mergeItems: false,
@@ -249,7 +250,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       return;
     }
 
-    if (result.constructor.name === 'Promise') {
+    if (isPromise(result)) {
       (result as Promise<graphqlTypes.ExecutionResult>).then(resultData => {
         if (typeof config.responseHook !== 'function') {
           endSpan(span);

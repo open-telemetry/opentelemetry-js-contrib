@@ -26,7 +26,8 @@ import {
   SemanticAttributes,
   NetTransportValues,
 } from '@opentelemetry/semantic-conventions';
-import { Net, NormalizedOptions, SocketEvent, TLSAttributes } from './types';
+import { TLSAttributes } from './types';
+import { Net, NormalizedOptions, SocketEvent } from './internal-types';
 import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
 import { VERSION } from './version';
 import { Socket } from 'net';

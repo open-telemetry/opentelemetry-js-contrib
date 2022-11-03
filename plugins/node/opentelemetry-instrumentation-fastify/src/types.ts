@@ -15,15 +15,7 @@
  */
 
 import { Span } from '@opentelemetry/api';
-import type { FastifyReply } from 'fastify';
-import { spanRequestSymbol } from './constants';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-
-export type HandlerOriginal = (() => Promise<unknown>) & (() => void);
-
-export type PluginFastifyReply = FastifyReply & {
-  [spanRequestSymbol]?: Span[];
-};
 
 export type FastifyRequestInfo = {
   request: any, // FastifyRequest object from fastify package
