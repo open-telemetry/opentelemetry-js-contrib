@@ -88,6 +88,7 @@ If it is needed to add custom attributes to the document load span,and/or docume
 as a config to the DocumentLoad Instrumentation as shown below. The attributes will be added to the respective spans
 before the individual are spans are ended. If the function throws an error , no attributes will be added to the span and
 the rest of the process continues.
+
 ```js
 
 const addCustomAttributesToSpan = (span: Span) => {
