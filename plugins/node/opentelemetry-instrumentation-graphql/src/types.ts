@@ -15,11 +15,10 @@
  */
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import type * as graphqlTypes from 'graphql';
 import type * as api from '@opentelemetry/api';
 
 export interface GraphQLInstrumentationExecutionResponseHook {
-  (span: api.Span, data: graphqlTypes.ExecutionResult): void;
+  (span: api.Span, data: any): void;
 }
 
 export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
@@ -50,6 +49,11 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
   /**
    * Hook that allows adding custom span attributes based on the data
    * returned from "execute" GraphQL action.
+   *
+   * @param data - A GraphQL `ExecutionResult` object. For the exact type definitions, see the following:
+   *  - {@linkcode https://github.com/graphql/graphql-js/blob/v14.7.0/src/execution/execute.js#L115 graphql@14}
+   *  - {@linkcode https://github.com/graphql/graphql-js/blob/15.x.x/src/execution/execute.d.ts#L31 graphql@15}
+   *  - {@linkcode https://github.com/graphql/graphql-js/blob/16.x.x/src/execution/execute.ts#L127 graphql@16}
    *
    * @default undefined
    */
