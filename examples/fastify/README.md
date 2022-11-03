@@ -27,9 +27,9 @@ npm install
    $ npm run docker:start
    ```
 
-Note: If you are happen to run the example on a Apple Silicon system, you might
-get an error similar to `no matching manifest for Linux/arm64/v8 in the manifest list entries`
-in that case you can resolve this error by adding `platform: linux/amd64` to each service in `docker/docker-compose.yaml`.
+Note: If you are running the example on an Apple Silicon system, you might
+get an error similar to `no matching manifest for Linux/arm64/v8 in the manifest list entries`.
+In that case you can resolve this error by adding `platform: linux/amd64` to each service in `docker/docker-compose.yaml`.
 
 ### Server
 
