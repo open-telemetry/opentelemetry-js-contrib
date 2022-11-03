@@ -432,7 +432,10 @@ describe('fastify', () => {
     describe('using requestHook in config', () => {
       it('calls requestHook provided function when set in config', async () => {
         const requestHook = (span: Span, info: FastifyRequestInfo) => {
-          span.setAttribute('http.method', info.request.method);
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
         };
 
         instrumentation.setConfig({
@@ -454,13 +457,16 @@ describe('fastify', () => {
           'fastify.type': 'request_handler',
           'plugin.name': 'fastify -> @fastify/express',
           [SemanticAttributes.HTTP_ROUTE]: '/test',
-          'http.method': 'GET',
+          [SemanticAttributes.HTTP_METHOD]: 'GET',
         });
       });
 
       it('does not propagate an error from a requestHook that throws exception', async () => {
         const requestHook = (span: Span, info: FastifyRequestInfo) => {
-          span.setAttribute('http.method', info.request.method);
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
 
           throw Error('error thrown in requestHook');
         };
@@ -484,7 +490,7 @@ describe('fastify', () => {
           'fastify.type': 'request_handler',
           'plugin.name': 'fastify -> @fastify/express',
           [SemanticAttributes.HTTP_ROUTE]: '/test',
-          'http.method': 'GET',
+          [SemanticAttributes.HTTP_METHOD]: 'GET',
         });
       });
     });

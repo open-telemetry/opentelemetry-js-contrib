@@ -16,7 +16,6 @@
 
 import {
   context,
-  diag,
   SpanAttributes,
   SpanStatusCode,
   trace,
@@ -286,7 +285,6 @@ export class FastifyInstrumentation extends InstrumentationBase {
           () => instrumentation.getConfig().requestHook!(span, { request }),
           e => {
             if (e) {
-              diag.error('request hook failed', e);
               instrumentation._diag.error('request hook failed', e);
             }
           },

@@ -17,8 +17,8 @@
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export type FastifyRequestInfo = {
-  request: any, // FastifyRequest object from fastify package
+export interface FastifyRequestInfo {
+  request: any; // FastifyRequest object from fastify package
 }
 
 /**

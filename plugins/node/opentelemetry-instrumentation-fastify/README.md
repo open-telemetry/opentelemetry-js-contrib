@@ -48,7 +48,7 @@ See [examples/fastify](https://github.com/open-telemetry/opentelemetry-js-contri
 ## Fastify Instrumentation Options
 
 | Options | Type | Example | Description |
-| `requestHook` | `FastifyCustomAttributeFunction` | `(span, request) => {}` | Function for adding custom attributes to Fastify requests. Receives params: `Span, FastifyRequest`. |
+| `requestHook` | `FastifyCustomAttributeFunction` | `(span, requestInfo) => {}` | Function for adding custom attributes to Fastify requests. Receives params: `Span, FastifyRequestInfo`. |
 
 ### Using `requestHook`
 
