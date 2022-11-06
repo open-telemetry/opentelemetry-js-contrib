@@ -15,4 +15,4 @@
  */
 
 export * from './instrumentation';
-export { IORedisInstrumentationConfig } from './types';
+export * from './types';
