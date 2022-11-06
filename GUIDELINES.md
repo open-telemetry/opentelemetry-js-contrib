@@ -132,4 +132,3 @@ To support this use case, you can choose one of the following options:
     This option will offer no typing aid to the instrumentation consumer, which will move the burden and risk of checking type correctness to the user.
 
     It is recommended to implemnt it only if the previous options are not feasible or are too complex to use.
-    
