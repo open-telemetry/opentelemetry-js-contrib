@@ -30,6 +30,7 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   allowValues?: boolean;
+
   /**
    * The maximum depth of fields/resolvers to instrument.
    * When set to 0 it will not instrument fields and resolvers
@@ -37,6 +38,19 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
    * @default undefined
    */
   depth?: number;
+
+  /**
+   * Don't create spans for the execution of the default resolver on object properties.
+   *
+   * When a resolver function is not defined on the schema for a field, graphql will
+   * use the default resolver which just looks for a property with that name on the object.
+   * If the property is not a function, it's not very interesting to trace.
+   * This option can reduce noise and number of spans created.
+   *
+   * @default false
+   */
+  ignoreTrivialResolveSpans?: boolean;
+
   /**
    * Whether to merge list items into a single element.
    *
