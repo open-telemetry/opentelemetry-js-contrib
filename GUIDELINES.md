@@ -75,16 +75,16 @@ Since the instrumented package is installed as a dev dependency, types are avail
 
 ### Types Public API
 
-When a user install instrumentation package into it's typescript application, and `import * from '@opentelemetry/instrumentation-foo'` in his code, typescript compiler will look for the instrumentation package ["types"](https://www.typescriptlang.org/docs/handbook/declaration-files/publishing.html#including-declarations-in-your-npm-package) file `index.d.ts` and use it. If this file reference other type files such as `export * from './instrumentation';`, typescript will then import and transpile these files (and other transitive files they might use) as well. We will call these files "public" as they are exposed to the package consumers and processed by their typescript compiler when transpiling their applications.
+When users install an instrumentation package into their typescript application, and `import * from '@opentelemetry/instrumentation-foo'` in their code, typescript compiler will look for the instrumentation package ["types"](https://www.typescriptlang.org/docs/handbook/declaration-files/publishing.html#including-declarations-in-your-npm-package) file `index.d.ts` and use it. If this file reference other type files such as `export * from './instrumentation';`, typescript will then import and transpile these files (and other transitive files they might use) as well. We will call these files "public" as they are exposed to the package consumers and processed by their typescript compiler when transpiling their applications.
 
-If one of these files `import`s from a package which is not in users' `node_module` directory, the instrumentation package will fail transpilation for end users' application which should be avoided. A common problem is "leaking" the types from the instrumented package (which we cannot assume to be found in end user `node_module`) in one of these public modules ".d.ts" files.
+If one of these files `import`s from a package that is not in users' `node_module` directory, the instrumentation package will fail transpilation for the end users' application which should be avoided. A common problem is "leaking" the types from the instrumented package (which we cannot assume to be found in end-user `node_module`) in one of these public modules ".d.ts" files.
 
-When invoking `npm run compile` on the instrumentation package, typescript will generate the `.d.ts` types files in the `build` directory and will only include in them "public" types - those that can be consumed by user of the module. These may include: 
-- Types that are `export`ed from the module, or types that are transitivly used in other types that are `export`ed from the module.
+When invoking `npm run compile` on the instrumentation package, typescript will generate the `.d.ts` types files in the `build` directory and will only include in them "public" types - those that can be consumed by the user of the module. These may include: 
+- Types that are `export`ed from the module, or types that are transitively used in other types that are `export`ed from the module.
 - Types in `public` functions of exported classes such as `class InstrumentationFoo`.
 - Types used as [`Generic Type Varibles`] on exported generic types/classes/functions.
 
-Note that types that are used in non-public files (like `internal-types.ts` or `utils.ts`), or that are not somehow `export`ed from a module (for example - used in private function implementations), can safily use types from a "devDependency" package.
+Note that types that are used in non-public files (like `internal-types.ts` or `utils.ts`), or that are not somehow `export`ed from a module (for example - used in private function implementations), can safely use types from a "devDependency" package.
 
 ### Adding Types in Public API
 
@@ -114,6 +114,20 @@ To support this use case, you can choose one of the following options:
     ...
     ```
 
+    If possible, this is the prefered options, as it uses types from a maintained package.
+
+    Notice that types may introduce breaking changes in major semver releases, and instrumentation should choose a `@types/` package that is compatible with the version range it supports. 
+
 2. Copy the relevant type declarations into the instrumentation. You may choose to copy only a subset of the type that is relevant to the need.
 
+    A type can transitively reference other types which in turn need to be copied as well.
+
+    This option requires maintaining the types in the instrumentation codebase, which is not ideal. On the other end, it offers instrumentation users typing on its public API which is convenient.
+
+    It is recommended to use this option when the types involved are simple and short.
+
 3. Use `any` type, and add a comment to guide users on what type they should expect, with a link to its definition.
+
+    This option will offer no typing aid to the instrumentation consumer, which will move the burden and risk of checking type correctness to the user.
+
+    It is recommended to implemnt it only if the previous options are not feasible or are too complex to use.
