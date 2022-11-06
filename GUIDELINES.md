@@ -42,13 +42,13 @@ Since the declarations in this file are not exported in the public instrumentati
 
 ## Dependencies
 
-This section refers to the "dependencies" entry in instrumentation's `package.json` file.
+This section refers to the "dependencies" and "peerDependencies" entries in instrumentation's `package.json` file.
 
 Since instrumentations will install all their dependencies into the end user `node_modules` application, they should be examined to guarantee only small-size-required packages are added.
 
 ### OpenTelemetry API
 
-Instrumentation SHOULD NOT add a dependency on `@opentelemetry/api`, as it might install multiple api versions into the user node_modules directory. It SHOULD add an entry in `"peerDependencies"` in `package.json` with the **minimum** api version it requires, as caret range (`^1.0.0`).
+Instrumentation SHOULD NOT add a dependency on `@opentelemetry/api`, as using multilpe instrumentations might install multiple api versions into the user node_modules directory. It SHOULD add an entry in `"peerDependencies"` in `package.json` with the **minimum** api version it requires, as caret range (for example: `^1.0.0`).
 
 Users and distributions need to install a version of `@opentelemetry/api` that is compatible with the instrumentation to use it.
 
@@ -60,15 +60,15 @@ Instrumentation SHOULD specify dependency as caret range (`^1.0.0`), with minimu
 
 ### Instrumented Package Dependency
 
-Instrumentations SHOULD NOT add a dependency on the package it is instrumenting as it can add large overhead for end users' application.
+Instrumentations SHOULD NOT add a `"dependency"` or `"peerDependencies"` on the package it is instrumenting as it can end up installing this package into users' applications, adding large overhead.
 
-This means that the instrumentation code SHOULD NOT `import` anywhere from the instrumented package. e.g. `@opentelemetry/instrumentation-foo` cannot `import 'foo'` as it might fail for applications that installed the instrumentation but not the `foo` package itself, which is a valid and supported use case for OpenTelemetry distributions and end users.
+This means that the instrumentation code SHOULD NOT `import` anywhere from the instrumented package. e.g. `@opentelemetry/instrumentation-foo` cannot `import 'foo'` as it will fail for applications that installed the instrumentation but not the `foo` package itself, which is a valid and supported use case for OpenTelemetry distributions and end users.
 
 It is allowed, however, to import `types`  from the instrumented package with the [`import type`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax, as long as this type is not used in public api:
 
 ```js
 // instrumentation.ts
-import type { Bar } from 'foo';
+import type { Bar } from 'foo'; // OK
 ```
 
 Since the instrumented package is installed as a dev dependency, types are available during development. Since they are not part of the public api, typescript removes these imports from the build artifacts during transpilation.
