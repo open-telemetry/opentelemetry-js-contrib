@@ -18,16 +18,27 @@ import { InstrumentationBase } from "@opentelemetry/instrumentation";
 import { createEventLoopLagMetrics } from "./metrics/event-loop-lag";
 import { RuntimeInstrumentationConfig } from "./types";
 import { VERSION } from "./version";
+import { monitorEventLoopDelay } from "perf_hooks";
 
 /**
  * Runtime instrumentation for Opentelemetry
  */
 export class RuntimeInstrumentation extends InstrumentationBase {
-  constructor(_config: RuntimeInstrumentationConfig = {}) {
+  constructor(protected override _config: RuntimeInstrumentationConfig = {}) {
     super("@opentelemetry/instrumentation-runtime", VERSION, _config);
   }
 
+  override setConfig(config: RuntimeInstrumentationConfig = {}) {
+    this._config = config;
+  }
+
   init() {
-    createEventLoopLagMetrics(this.meter, this._config);
+    const histogram = monitorEventLoopDelay({
+      resolution: this._config.monitorEventLoopDelayResolution,
+    });
+
+    histogram.enable();
+
+    createEventLoopLagMetrics(this.meter, histogram);
   }
 }
