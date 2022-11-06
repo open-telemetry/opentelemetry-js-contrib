@@ -71,9 +71,20 @@ It is allowed, however, to import `types`  from the instrumented package with th
 import type { Bar } from 'foo'; // OK
 ```
 
-Since the instrumented package is installed as a dev dependency, types are available during development. Since they are not part of the public api, typescript removes these imports from the build artifacts during transpilation.
+Since the instrumented package is installed as a dev dependency, types are available during compiling. Since they are not part of the public api, typescript removes these imports from the build artifacts during transpilation.
 
-To verify - `npm run compile` and check your `index.js` and `index.d.ts` files in the build directory. These files and any transitive files imported by them MUST NOT import the instrumented package.
+### Types Public API
+
+When a user install instrumentation package into it's typescript application, and `import * from '@opentelemetry/instrumentation-foo'` in his code, typescript compiler will look for the instrumentation package ["types"](https://www.typescriptlang.org/docs/handbook/declaration-files/publishing.html#including-declarations-in-your-npm-package) file `index.d.ts` and use it. If this file reference other type files such as `export * from './instrumentation';`, typescript will then import and transpile these files (and other transitive files they might use) as well. We will call these files "public" as they are exposed to the package consumers and processed by their typescript compiler when transpiling their applications.
+
+If one of these files `import`s from a package which is not in users' `node_module` directory, the instrumentation package will fail transpilation for end users' application which should be avoided. A common problem is "leaking" the types from the instrumented package (which we cannot assume to be found in end user `node_module`) in one of these public modules ".d.ts" files.
+
+When invoking `npm run compile` on the instrumentation package, typescript will generate the `.d.ts` types files in the `build` directory and will only include in them "public" types - those that can be consumed by user of the module. These may include: 
+- Types that are `export`ed from the module, or types that are transitivly used in other types that are `export`ed from the module.
+- Types in `public` functions of exported classes such as `class InstrumentationFoo`.
+- Types used as [`Generic Type Varibles`] on exported generic types/classes/functions.
+
+Note that types that are used in non-public files (like `internal-types.ts` or `utils.ts`), or that are not somehow `export`ed from a module (for example - used in private function implementations), can safily use types from a "devDependency" package.
 
 ### Adding Types in Public API
 
