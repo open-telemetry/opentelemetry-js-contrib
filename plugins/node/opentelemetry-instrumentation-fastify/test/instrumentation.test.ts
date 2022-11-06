@@ -24,6 +24,7 @@ import {
   ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import { Span } from '@opentelemetry/api';
 import { HookHandlerDoneFunction } from 'fastify/types/hooks';
 import { FastifyReply } from 'fastify/types/reply';
 import { FastifyRequest } from 'fastify/types/request';
@@ -31,6 +32,7 @@ import * as http from 'http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { ANONYMOUS_NAME } from '../src/instrumentation';
 import { AttributeNames, FastifyInstrumentation } from '../src';
+import { FastifyRequestInfo } from '../src/types';
 
 const URL = require('url').URL;
 
@@ -424,6 +426,72 @@ describe('fastify', () => {
         });
 
         await startServer();
+      });
+    });
+
+    describe('using requestHook in config', () => {
+      it('calls requestHook provided function when set in config', async () => {
+        const requestHook = (span: Span, info: FastifyRequestInfo) => {
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
+        };
+
+        instrumentation.setConfig({
+          ...instrumentation.getConfig(),
+          requestHook,
+        });
+
+        app.get('/test', (req, res) => {
+          res.send('OK');
+        });
+
+        await startServer();
+        await httpRequest.get(`http://localhost:${PORT}/test`);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 5);
+        const span = spans[3];
+        assert.deepStrictEqual(span.attributes, {
+          'fastify.type': 'request_handler',
+          'plugin.name': 'fastify -> @fastify/express',
+          [SemanticAttributes.HTTP_ROUTE]: '/test',
+          [SemanticAttributes.HTTP_METHOD]: 'GET',
+        });
+      });
+
+      it('does not propagate an error from a requestHook that throws exception', async () => {
+        const requestHook = (span: Span, info: FastifyRequestInfo) => {
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
+
+          throw Error('error thrown in requestHook');
+        };
+
+        instrumentation.setConfig({
+          ...instrumentation.getConfig(),
+          requestHook,
+        });
+
+        app.get('/test', (req, res) => {
+          res.send('OK');
+        });
+
+        await startServer();
+        await httpRequest.get(`http://localhost:${PORT}/test`);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 5);
+        const span = spans[3];
+        assert.deepStrictEqual(span.attributes, {
+          'fastify.type': 'request_handler',
+          'plugin.name': 'fastify -> @fastify/express',
+          [SemanticAttributes.HTTP_ROUTE]: '/test',
+          [SemanticAttributes.HTTP_METHOD]: 'GET',
+        });
       });
     });
   });
