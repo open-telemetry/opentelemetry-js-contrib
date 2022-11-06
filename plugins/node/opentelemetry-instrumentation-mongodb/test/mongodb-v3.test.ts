@@ -510,11 +510,11 @@ describe('MongoDBInstrumentation', () => {
             (err, address) => {
               if (err) return done(err);
               assert.strictEqual(
-                mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
+                mongoSpan.attributes[SemanticAttributes.NET_PEER_NAME],
                 address
               );
               assert.strictEqual(
-                mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
+                mongoSpan.attributes[SemanticAttributes.NET_PEER_PORT],
                 process.env.MONGODB_PORT || '27017'
               );
               done();
