@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-memcached",
-  "version": "0.30.0",
+  "version": "0.30.1",
   "description": "OpenTelemetry memcached automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
