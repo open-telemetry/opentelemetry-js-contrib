@@ -38,9 +38,9 @@ import {
   PgErrorCallback,
   PgPoolCallback,
   PgPoolExtended,
-  PgInstrumentationConfig,
-} from './types';
-import * as pgTypes from 'pg';
+} from './internal-types';
+import { PgInstrumentationConfig } from './types';
+import type * as pgTypes from 'pg';
 import { PgInstrumentation } from './';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 

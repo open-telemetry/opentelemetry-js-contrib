@@ -22,18 +22,23 @@ import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 import {
   GraphQLField,
   GraphQLPath,
-  GraphQLInstrumentationConfig,
   GraphQLInstrumentationParsedConfig,
   ObjectWithGraphQLData,
   OtelPatched,
   Maybe,
-} from './types';
+} from './internal-types';
+import { GraphQLInstrumentationConfig } from './types';
 
 const OPERATION_VALUES = Object.values(AllowedOperationTypes);
 
 // https://github.com/graphql/graphql-js/blob/main/src/jsutils/isPromise.ts
 export const isPromise = (value: any): value is Promise<unknown> => {
   return typeof value?.then === 'function';
+};
+
+// https://github.com/graphql/graphql-js/blob/main/src/jsutils/isObjectLike.ts
+const isObjectLike = (value: unknown): value is { [key: string]: unknown } => {
+  return typeof value == 'object' && value !== null;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -365,7 +370,8 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
   getConfig: () => Required<GraphQLInstrumentationConfig>,
   fieldResolver: Maybe<
     graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched
-  >
+  >,
+  isDefaultResolver = false
 ): graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched {
   if (
     (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] ||
@@ -385,6 +391,21 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
       return undefined;
     }
     const config = getConfig();
+
+    // follows what graphql is doing to decied if this is a trivial resolver
+    // for which we don't need to create a resolve span
+    if (
+      config.ignoreTrivialResolveSpans &&
+      isDefaultResolver &&
+      (isObjectLike(source) || typeof source === 'function')
+    ) {
+      const property = (source as any)[info.fieldName];
+      // a function execution is not trivial and should be recorder.
+      // property which is not a function is just a value and we don't want a "resolve" span for it
+      if (typeof property !== 'function') {
+        return fieldResolver.call(this, source, args, contextValue, info);
+      }
+    }
 
     if (!contextValue[OTEL_GRAPHQL_DATA_SYMBOL]) {
       return fieldResolver.call(this, source, args, contextValue, info);

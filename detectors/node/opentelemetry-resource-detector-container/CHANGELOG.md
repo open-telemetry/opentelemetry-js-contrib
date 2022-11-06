@@ -6,6 +6,14 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.30.0 to ^0.31.0
 
+## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.1.2...resource-detector-container-v0.2.0) (2022-11-02)
+
+
+### Features
+
+* container ID detector for cgroup v2 ([#1181](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1181)) ([502caae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/502caae17be17e20ee81189dbf79ca25121c7cfe))
+* upstream mocha instrumentation testing plugin from ext-js [#621](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/621) ([#669](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/669)) ([a5170c4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a5170c494706a2bec3ba51e59966d0ca8a41d00e))
+
 ## [0.1.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-docker-v0.1.1...resource-detector-docker-v0.1.2) (2022-09-02)
 
 

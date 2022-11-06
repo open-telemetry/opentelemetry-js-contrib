@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.30.0...instrumentation-hapi-v0.30.1) (2022-11-02)
+
+
+### Bug Fixes
+
+* allow hapi plugin from array to be registered as argument ([#1253](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1253)) ([1db3b7e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1db3b7e7aa15fc0759264535752b771abff81feb))
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.29.0...instrumentation-hapi-v0.30.0) (2022-09-02)
 
 

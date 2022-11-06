@@ -15,4 +15,4 @@
  */
 
 export * from './instrumentation';
-export { CassandraDriverInstrumentationConfig } from './types';
+export * from './types';

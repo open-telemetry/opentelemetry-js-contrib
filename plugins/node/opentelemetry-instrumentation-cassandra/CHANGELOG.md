@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cassandra-driver-v0.30.0...instrumentation-cassandra-driver-v0.31.0) (2022-11-02)
+
+
+### Features
+
+* **cassandra-responsehook:** added response hook to execute func ([#1180](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1180)) ([20767c4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/20767c4fffee34bc51392894001bbb667576e91d))
+
+
+### Bug Fixes
+
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cassandra-driver-v0.29.1...instrumentation-cassandra-driver-v0.30.0) (2022-09-02)
 
 
