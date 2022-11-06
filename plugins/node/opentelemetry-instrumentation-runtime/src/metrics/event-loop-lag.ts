@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-import * as perfHooks from "perf_hooks";
+import { IntervalHistogram } from "perf_hooks";
 import { Meter } from "@opentelemetry/api-metrics";
-import { RuntimeInstrumentationConfig } from "../types";
 
 export const createEventLoopLagMetrics = (
   meter: Meter,
-  config: RuntimeInstrumentationConfig
+  histogram: IntervalHistogram
 ) => {
-  const histogram = perfHooks.monitorEventLoopDelay({
-    resolution: config.monitorEventLoopDelayResolution,
-  });
-
-  histogram.enable();
-
   meter
     .createObservableGauge("process.runtime.nodejs.eventloop.lag", {
       description: "Lag of event loop.",
