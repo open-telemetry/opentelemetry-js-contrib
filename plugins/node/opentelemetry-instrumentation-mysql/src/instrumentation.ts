@@ -66,7 +66,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
   private _setMetricInstruments() {
     this._connectionsUsage = this.meter.createUpDownCounter(
-      'db.client.connections.usage',
+      'db.client.connections.usage', //TODO:: use semantic convention
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
@@ -370,38 +370,33 @@ export class MySQLInstrumentation extends InstrumentationBase<
     pool: mysqlTypes.Pool | mysqlTypes.PoolCluster,
     thisPlugin: MySQLInstrumentation
   ) {
+    //TODO:: use semantic convention
     pool.on('connection', connection => {
       thisPlugin._connectionsUsage.add(1, {
-        'db.client.connection.usage.state': 'idle',
-        'db.client.connection.usage.name': connection?.threadId,
+        'db.client.connections.usage.state': 'idle',
       });
       connection.on('end', () => {
         thisPlugin._connectionsUsage.add(-1, {
-          'db.client.connection.usage.state': 'idle',
-          'db.client.connection.usage.name': connection?.threadId,
+          'db.client.connections.usage.state': 'idle',
         });
       });
     });
 
     pool.on('acquire', connection => {
       thisPlugin._connectionsUsage.add(-1, {
-        'db.client.connection.usage.state': 'idle',
-        'db.client.connection.usage.name': connection?.threadId,
+        'db.client.connections.usage.state': 'idle',
       });
       thisPlugin._connectionsUsage.add(1, {
-        'db.client.connection.usage.state': 'used',
-        'db.client.connection.usage.name': connection?.threadId,
+        'db.client.connections.usage.state': 'used',
       });
     });
 
     pool.on('release', connection => {
       thisPlugin._connectionsUsage.add(-1, {
-        'db.client.connection.usage.state': 'used',
-        'db.client.connection.usage.name': connection?.threadId,
+        'db.client.connections.usage.state': 'used',
       });
       thisPlugin._connectionsUsage.add(1, {
-        'db.client.connection.usage.state': 'idle',
-        'db.client.connection.usage.name': connection?.threadId,
+        'db.client.connections.usage.state': 'idle',
       });
     });
   }

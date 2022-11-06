@@ -159,14 +159,14 @@ describe('mysql@2.x-Metrics', () => {
         assert.strictEqual(metrics[0].dataPoints[0].value, 1);
         assert.strictEqual(
           metrics[0].dataPoints[0].attributes[
-            'db.client.connection.usage.state'
+            'db.client.connections.usage.state'
           ],
           'idle'
         );
         assert.strictEqual(metrics[0].dataPoints[1].value, 0);
         assert.strictEqual(
           metrics[0].dataPoints[1].attributes[
-            'db.client.connection.usage.state'
+            'db.client.connections.usage.state'
           ],
           'used'
         );
