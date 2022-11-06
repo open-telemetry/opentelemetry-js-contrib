@@ -12,6 +12,13 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.32.0
 
+## [1.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.1.2...resource-detector-aws-v1.2.0) (2022-11-02)
+
+
+### Features
+
+* Implement experimental AWS ECS resource attributes ([#1083](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1083)) ([bea8a55](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bea8a554de6ef5678a9968bb0f11c140cba7062a))
+
 ## [1.1.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.0.3...resource-detector-aws-v1.1.0) (2022-05-14)
 
 

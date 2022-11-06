@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.32.1...instrumentation-mongodb-v0.32.2) (2022-11-02)
+
+
+### Bug Fixes
+
+* **mongodb:** use net.peer namespace for mongo host and port ([#1257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1257)) ([c63d2a4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c63d2a4206b8d4ba0fb337b253ff6c84f0814a09))
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
 ## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.32.0...instrumentation-mongodb-v0.32.1) (2022-09-27)
 
 

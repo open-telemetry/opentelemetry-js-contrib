@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-web",
-  "version": "0.30.0",
+  "version": "0.30.1",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-web#readme",
@@ -36,14 +36,14 @@
     "@babel/core": "7.15.0",
     "@opentelemetry/api": "^1.0.0",
     "@types/mocha": "8.2.3",
-    "@types/node": "16.11.21",
+    "@types/node": "18.11.7",
     "@types/sinon": "10.0.2",
     "@types/webpack-env": "1.16.2",
     "babel-loader": "8.2.2",
     "gts": "3.1.0",
     "@jsdevtools/coverage-istanbul-loader": "3.0.5",
     "karma": "6.3.16",
-    "karma-chrome-launcher": "3.1.0",
+    "karma-chrome-launcher": "^3.1.1",
     "karma-coverage-istanbul-reporter": "3.0.3",
     "karma-mocha": "2.0.1",
     "karma-spec-reporter": "0.0.32",
@@ -61,9 +61,9 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.32.0",
-    "@opentelemetry/instrumentation-document-load": "^0.30.0",
+    "@opentelemetry/instrumentation-document-load": "^0.30.1",
     "@opentelemetry/instrumentation-fetch": "^0.32.0",
-    "@opentelemetry/instrumentation-user-interaction": "^0.31.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.31.1",
     "@opentelemetry/instrumentation-xml-http-request": "^0.32.0"
   }
 }

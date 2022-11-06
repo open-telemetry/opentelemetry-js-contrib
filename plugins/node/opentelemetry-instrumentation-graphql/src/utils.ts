@@ -22,12 +22,12 @@ import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 import {
   GraphQLField,
   GraphQLPath,
-  GraphQLInstrumentationConfig,
   GraphQLInstrumentationParsedConfig,
   ObjectWithGraphQLData,
   OtelPatched,
   Maybe,
-} from './types';
+} from './internal-types';
+import { GraphQLInstrumentationConfig } from './types';
 
 const OPERATION_VALUES = Object.values(AllowedOperationTypes);
 

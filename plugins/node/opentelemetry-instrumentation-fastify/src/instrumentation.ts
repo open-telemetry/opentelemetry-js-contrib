@@ -38,7 +38,7 @@ import {
   FastifyNames,
   FastifyTypes,
 } from './enums/AttributeNames';
-import type { HandlerOriginal, PluginFastifyReply } from './types';
+import type { HandlerOriginal, PluginFastifyReply } from './internal-types';
 import {
   endSpan,
   safeExecuteInTheMiddleMaybePromise,
@@ -209,7 +209,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
     return fastify;
   }
 
-  public _patchSend() {
+  private _patchSend() {
     const instrumentation = this;
     this._diag.debug('Patching fastify reply.send function');
 
@@ -238,7 +238,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
     };
   }
 
-  public _hookPreHandler() {
+  private _hookPreHandler() {
     const instrumentation = this;
     this._diag.debug('Patching fastify preHandler function');
 

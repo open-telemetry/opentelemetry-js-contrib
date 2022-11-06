@@ -39,11 +39,11 @@ await client.execute('select * from foo');
 
 ### Instrumentation options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `enhancedDatabaseReporting` | `boolean` | `false` | Whether to include database queries with spans. These can contain sensitive information when using unescaped parameters - i.e. `insert into persons (name) values ('Bob')` instead of `insert into persons (name) values (?)`. |
-| `maxQueryLength` | `number` | `65536` | If `enhancedDatabaseReporting` is enabled, limits the attached query strings
-to this length. |
+| Option                      | Type                                             | Default     | Description                                                                                                                                                                                                                    |
+|-----------------------------|--------------------------------------------------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `enhancedDatabaseReporting` | `boolean`                                        | `false`     | Whether to include database queries with spans. These can contain sensitive information when using unescaped parameters - i.e. `insert into persons (name) values ('Bob')` instead of `insert into persons (name) values (?)`. |
+| `responseHook`              | `CassandraDriverResponseCustomAttributeFunction` | `undefined` | Hook for adding custom attributes before response is handled                                                                                                                                                                   |
+| `maxQueryLength`            | `number`                                         | `65536`     | If `enhancedDatabaseReporting` is enabled, limits the attached query strings to this length.                                                                                                                                   |
 
 ### Supported versions
 
