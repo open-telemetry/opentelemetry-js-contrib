@@ -289,5 +289,3 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
     window.removeEventListener('load', this._onDocumentLoaded);
   }
 }
-
-
