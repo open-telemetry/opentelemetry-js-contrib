@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import * as assert from 'assert';
+import * as assert from "assert";
 import {
   assertCloudResource,
   assertEmptyResource,
-} from '@opentelemetry/contrib-test-utils';
+} from "@opentelemetry/contrib-test-utils";
 
-import { awsLambdaDetector } from '../../src';
+import { awsLambdaDetector } from "../../src";
 
-describe('awsLambdaDetector', () => {
+describe("awsLambdaDetector", () => {
   let oldEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
@@ -33,28 +33,44 @@ describe('awsLambdaDetector', () => {
     process.env = oldEnv;
   });
 
-  describe('on lambda', () => {
-    it('fills resource', async () => {
-      process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
-      process.env.AWS_LAMBDA_FUNCTION_VERSION = 'v1';
-      process.env.AWS_REGION = 'us-east-1';
+  describe("on lambda", () => {
+    it("fills resource", async () => {
+      process.env.AWS_LAMBDA_FUNCTION_NAME = "name";
+      process.env.AWS_LAMBDA_FUNCTION_VERSION = "v1";
+      process.env.AWS_REGION = "us-east-1";
 
       const resource = await awsLambdaDetector.detect();
 
       assertCloudResource(resource, {
-        provider: 'aws',
-        region: 'us-east-1',
+        provider: "aws",
+        region: "us-east-1",
       });
 
-      assert.strictEqual(resource.attributes['faas.name'], 'name');
-      assert.strictEqual(resource.attributes['faas.version'], 'v1');
+      assert.strictEqual(resource.attributes["faas.name"], "name");
+      assert.strictEqual(resource.attributes["faas.version"], "v1");
+    });
+
+    it("also works synchronously", async () => {
+      process.env.AWS_LAMBDA_FUNCTION_NAME = "name";
+      process.env.AWS_LAMBDA_FUNCTION_VERSION = "v1";
+      process.env.AWS_REGION = "us-east-1";
+
+      const resource = awsLambdaDetector.detectSync();
+
+      assertCloudResource(resource, {
+        provider: "aws",
+        region: "us-east-1",
+      });
+
+      assert.strictEqual(resource.attributes["faas.name"], "name");
+      assert.strictEqual(resource.attributes["faas.version"], "v1");
     });
   });
 
-  describe('not on lambda', () => {
-    it('returns empty resource', async () => {
-      process.env.AWS_LAMBDA_FUNCTION_VERSION = 'v1';
-      process.env.AWS_REGION = 'us-east-1';
+  describe("not on lambda", () => {
+    it("returns empty resource", async () => {
+      process.env.AWS_LAMBDA_FUNCTION_VERSION = "v1";
+      process.env.AWS_REGION = "us-east-1";
 
       const resource = await awsLambdaDetector.detect();
 

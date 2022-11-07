@@ -18,12 +18,12 @@ import {
   Detector,
   Resource,
   ResourceDetectionConfig,
-} from '@opentelemetry/resources';
+} from "@opentelemetry/resources";
 import {
   CloudProviderValues,
   CloudPlatformValues,
   SemanticResourceAttributes,
-} from '@opentelemetry/semantic-conventions';
+} from "@opentelemetry/semantic-conventions";
 
 /**
  * The AwsLambdaDetector can be used to detect if a process is running in AWS Lambda
@@ -31,7 +31,7 @@ import {
  * Returns an empty Resource if detection fails.
  */
 export class AwsLambdaDetector implements Detector {
-  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+  detectSync(_config?: ResourceDetectionConfig): Resource {
     const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME;
     if (!functionName) {
       return Resource.empty();
@@ -60,6 +60,10 @@ export class AwsLambdaDetector implements Detector {
     }
 
     return new Resource(attributes);
+  }
+
+  async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
+    return this.detectSync(_config);
   }
 }
 
