@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/id-generator-aws-xray",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "AWS X-Ray ID generator for OpenTelemetry",
   "main": "build/src/index.js",
   "publishConfig": {
@@ -56,13 +56,13 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
     "@types/mocha": "8.2.3",
-    "@types/node": "16.11.21",
+    "@types/node": "18.11.7",
     "@types/sinon": "10.0.2",
     "@types/webpack-env": "1.16.2",
     "gts": "3.1.0",
     "@jsdevtools/coverage-istanbul-loader": "3.0.5",
     "karma": "6.3.16",
-    "karma-chrome-launcher": "3.1.0",
+    "karma-chrome-launcher": "^3.1.1",
     "karma-coverage-istanbul-reporter": "3.0.3",
     "karma-mocha": "2.0.1",
     "karma-spec-reporter": "0.0.32",

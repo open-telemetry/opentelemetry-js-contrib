@@ -23,7 +23,7 @@ import {
   ConnectNames,
   ConnectTypes,
 } from './enums/AttributeNames';
-import { Use, UseArgs, UseArgs2 } from './types';
+import { Use, UseArgs, UseArgs2 } from './internal-types';
 import { VERSION } from './version';
 import {
   InstrumentationBase,

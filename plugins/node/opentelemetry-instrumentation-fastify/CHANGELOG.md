@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.30.0...instrumentation-fastify-v0.30.1) (2022-11-02)
+
+
+### Bug Fixes
+
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.29.0...instrumentation-fastify-v0.30.0) (2022-09-27)
+
+
+### Features
+
+* **opentelemetry-instrumentation-fastify:** Support Fastify V4 also ([#1164](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1164)) ([d932d3e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d932d3edcbf41685ca0af546347450fa81444b4e))
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.28.0...instrumentation-fastify-v0.29.0) (2022-09-02)
 
 

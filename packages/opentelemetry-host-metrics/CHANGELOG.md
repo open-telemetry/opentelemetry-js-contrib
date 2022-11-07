@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.30.0...host-metrics-v0.30.1) (2022-09-27)
+
+
+### Bug Fixes
+
+* readme snippet ([#1182](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1182)) ([35d1e45](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/35d1e4579f7b160c501959f6fb45859b75cdde99))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.29.0...host-metrics-v0.30.0) (2022-09-02)
 
 

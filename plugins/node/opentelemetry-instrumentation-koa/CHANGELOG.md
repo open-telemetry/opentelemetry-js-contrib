@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.32.0...instrumentation-koa-v0.33.0) (2022-11-02)
+
+
+### Features
+
+* **koa:** add layer type to request hook context ([#1226](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1226)) ([6300733](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6300733ddfa7357546500782d83d63320c134013))
+
+
+### Bug Fixes
+
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.31.0...instrumentation-koa-v0.32.0) (2022-09-02)
 
 

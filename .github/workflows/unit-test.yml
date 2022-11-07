@@ -11,11 +11,11 @@ jobs:
       matrix:
         node: ["14", "16", "18"]
         include:
-          # tests fail on node@18, incompatibility with nock?
           - node: "18"
             lerna-extra-args: >-
               --ignore @opentelemetry/resource-detector-alibaba-cloud
               --ignore @opentelemetry/instrumentation-fastify
+              --ignore @opentelemetry/instrumentation-restify
     runs-on: ubuntu-latest
     services:
       memcached:
@@ -165,6 +165,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
         uses: actions/checkout@v3

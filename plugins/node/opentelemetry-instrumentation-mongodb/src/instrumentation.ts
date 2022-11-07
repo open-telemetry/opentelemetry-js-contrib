@@ -33,16 +33,15 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
+import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
   CursorState,
   MongodbCommandType,
-  MongoDBInstrumentationConfig,
   MongoInternalCommand,
   MongoInternalTopology,
   WireProtocolInternal,
-  CommandResult,
   V4Connection,
-} from './types';
+} from './internal-types';
 import { VERSION } from './version';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
@@ -570,8 +569,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
     if (host && port) {
       span.setAttributes({
-        [SemanticAttributes.NET_HOST_NAME]: host,
-        [SemanticAttributes.NET_HOST_PORT]: port,
+        [SemanticAttributes.NET_PEER_NAME]: host,
+        [SemanticAttributes.NET_PEER_PORT]: port,
       });
     }
     if (!commandObj) return;

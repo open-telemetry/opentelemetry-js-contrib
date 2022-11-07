@@ -213,7 +213,7 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       metadata.spanName ??
       `${normalizedRequest.serviceName}.${normalizedRequest.commandName}`;
     const newSpan = this.tracer.startSpan(name, {
-      kind: metadata.spanKind,
+      kind: metadata.spanKind ?? SpanKind.CLIENT,
       attributes: {
         ...extractAttributesFromNormalizedRequest(normalizedRequest),
         ...metadata.spanAttributes,

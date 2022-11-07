@@ -54,7 +54,7 @@ export const CALLBACK_FUNCTIONS: FMember[] = [
   'chown',
   'copyFile',
   'cp' as FMember, // added in v16
-  'exists', // deprecated, inconsistent cb signature
+  'exists', // deprecated, inconsistent cb signature, handling separately when patching
   'lchown',
   'link',
   'lstat',
