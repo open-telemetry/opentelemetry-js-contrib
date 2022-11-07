@@ -38,10 +38,11 @@ provider.register();
 registerInstrumentations({
   instrumentations: [
     new GraphQLInstrumentation({
-    // optional params
+      // optional params
       // allowValues: true,
       // depth: 2,
       // mergeItems: true,
+      // ignoreTrivialResolveSpans: true,
     }),
   ],
 });
@@ -55,7 +56,52 @@ registerInstrumentations({
 |  mergeItems | boolean |     false     |                    Whether to merge list items into a single element. example: `users.*.name` instead of `users.0.name`, `users.1.name`                   |   |
 |    depth    |  number |       -1      |                       The maximum depth of fields/resolvers to instrument. When set to 0 it will not instrument fields and resolvers. When set to -1 it will instrument all fields and resolvers.                      |   |
 | allowValues | boolean |     false     | When set to true it will not remove attributes values from schema source.   By default all values that can be sensitive are removed and replaced with "*" |   |
+| ignoreTrivialResolveSpans | boolean | false | Don't create spans for the execution of the default resolver on object properties. |
 | responseHook | GraphQLInstrumentationExecutionResponseHook |     undefined     | Hook that allows adding custom span attributes based on the data returned from "execute" GraphQL action. |   |
+
+## Verbosity
+
+The instrumentation by default will create a span for each invocation of a resolver.
+
+A resolver is run by graphql for each field in the query response, which can be a lot of spans for objects with many properties, or when lists are involved.
+
+There are few config options which can be used to reduce the verbosity of the instrumentations.
+
+They are all disabled by default. User can opt in to any combination of them to contol the amount of spans.
+
+### ignoreTrivialResolveSpans
+
+When a resolver function is not defined on the schema for a field, graphql will use the default resolver which just looks for a property with that name on the object. If the property is not a function, it's not very interesting to trace.
+
+### depth
+
+The depth is the number of nesting levels of the field, and the following is a query with a depth of 3:
+
+```json
+{
+  a {
+    b {
+      c
+    }
+  }
+}
+```
+
+You can limit the instrumentation to stop recording "resolve" spans after a specific depth is reached.
+
+- `-1` means no limit.
+- `0` means don't record any "resolve" spans.
+- `2` for the example above will record a span for resolving "a" and "b" but not "c".
+
+### mergeItems
+
+When resolving a field to a list, graphql will execute a resolver for every field in the query on every object in the list.
+
+When setting mergeItems to `true` it will only record a span for the first invocation of a resolver on each field in the list, marking it's path as "foo.*.bar" instead of "foo.0.bar", "foo.1.bar".
+
+Notice that all span data only reflects the invocation on the first element. That includes timing, events and status.
+
+Downstream spans in the context of all resolvers will be child of the first span.
 
 ## Examples
 
