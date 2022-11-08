@@ -148,7 +148,7 @@ describe('mysql@2.x-Metrics', () => {
 
         assert.strictEqual(
           metrics[0].descriptor.description,
-          'The number of connections that are currently in state described by the state attribute.'
+          'The number of connections that are currently in the state referenced by the attribute "state".'
         );
         assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
         assert.strictEqual(
@@ -159,14 +159,14 @@ describe('mysql@2.x-Metrics', () => {
         assert.strictEqual(metrics[0].dataPoints[0].value, 1);
         assert.strictEqual(
           metrics[0].dataPoints[0].attributes[
-            'db.client.connections.usage.state'
+            'state'
           ],
           'idle'
         );
         assert.strictEqual(metrics[0].dataPoints[1].value, 0);
         assert.strictEqual(
           metrics[0].dataPoints[1].attributes[
-            'db.client.connections.usage.state'
+            'state'
           ],
           'used'
         );

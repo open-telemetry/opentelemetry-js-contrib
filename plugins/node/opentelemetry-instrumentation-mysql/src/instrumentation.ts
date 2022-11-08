@@ -36,8 +36,7 @@ import type * as mysqlTypes from 'mysql';
 import { MySQLInstrumentationConfig } from './types';
 import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
 import { VERSION } from './version';
-import { UpDownCounter } from '@opentelemetry/api-metrics';
-import { MeterProvider } from '@opentelemetry/sdk-metrics';
+import { UpDownCounter, MeterProvider } from '@opentelemetry/api-metrics';
 
 type formatType = typeof mysqlTypes.format;
 
@@ -69,7 +68,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
       'db.client.connections.usage', //TODO:: use semantic convention
       {
         description:
-          'The number of connections that are currently in state described by the state attribute.',
+          'The number of connections that are currently in the state referenced by the attribute "state".',
         unit: '{connections}',
       }
     );
@@ -373,30 +372,30 @@ export class MySQLInstrumentation extends InstrumentationBase<
     //TODO:: use semantic convention
     pool.on('connection', connection => {
       thisPlugin._connectionsUsage.add(1, {
-        'db.client.connections.usage.state': 'idle',
+        'state': 'idle',
       });
       connection.on('end', () => {
         thisPlugin._connectionsUsage.add(-1, {
-          'db.client.connections.usage.state': 'idle',
+          'state': 'idle',
         });
       });
     });
 
     pool.on('acquire', connection => {
       thisPlugin._connectionsUsage.add(-1, {
-        'db.client.connections.usage.state': 'idle',
+        'state': 'idle',
       });
       thisPlugin._connectionsUsage.add(1, {
-        'db.client.connections.usage.state': 'used',
+        'state': 'used',
       });
     });
 
     pool.on('release', connection => {
       thisPlugin._connectionsUsage.add(-1, {
-        'db.client.connections.usage.state': 'used',
+        'state': 'used',
       });
       thisPlugin._connectionsUsage.add(1, {
-        'db.client.connections.usage.state': 'idle',
+        'state': 'idle',
       });
     });
   }
