@@ -165,6 +165,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
         uses: actions/checkout@v3

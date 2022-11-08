@@ -12,6 +12,13 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.32.0
 
+## [0.27.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.27.2...resource-detector-gcp-v0.27.3) (2022-11-02)
+
+
+### Bug Fixes
+
+* **deps:** update dependency gcp-metadata to v5 ([#1009](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1009)) ([d0a10eb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d0a10ebefbe3954e3a9b34e26e391eb73b53fb20))
+
 ## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.26.2...resource-detector-gcp-v0.27.0) (2022-05-14)
 
 
