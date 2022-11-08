@@ -372,30 +372,30 @@ export class MySQLInstrumentation extends InstrumentationBase<
     //TODO:: use semantic convention
     pool.on('connection', connection => {
       thisPlugin._connectionsUsage.add(1, {
-        'state': 'idle',
+        state: 'idle',
       });
       connection.on('end', () => {
         thisPlugin._connectionsUsage.add(-1, {
-          'state': 'idle',
+          state: 'idle',
         });
       });
     });
 
     pool.on('acquire', connection => {
       thisPlugin._connectionsUsage.add(-1, {
-        'state': 'idle',
+        state: 'idle',
       });
       thisPlugin._connectionsUsage.add(1, {
-        'state': 'used',
+        state: 'used',
       });
     });
 
     pool.on('release', connection => {
       thisPlugin._connectionsUsage.add(-1, {
-        'state': 'used',
+        state: 'used',
       });
       thisPlugin._connectionsUsage.add(1, {
-        'state': 'idle',
+        state: 'idle',
       });
     });
   }

@@ -158,16 +158,12 @@ describe('mysql@2.x-Metrics', () => {
         assert.strictEqual(metrics[0].dataPoints.length, 2);
         assert.strictEqual(metrics[0].dataPoints[0].value, 1);
         assert.strictEqual(
-          metrics[0].dataPoints[0].attributes[
-            'state'
-          ],
+          metrics[0].dataPoints[0].attributes['state'],
           'idle'
         );
         assert.strictEqual(metrics[0].dataPoints[1].value, 0);
         assert.strictEqual(
-          metrics[0].dataPoints[1].attributes[
-            'state'
-          ],
+          metrics[0].dataPoints[1].attributes['state'],
           'used'
         );
         done();
