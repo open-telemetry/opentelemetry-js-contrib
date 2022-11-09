@@ -182,13 +182,13 @@ export class CucumberInstrumentation extends InstrumentationBase {
               [SemanticAttributes.CODE_LINENO]: scenario.location.line,
               [SemanticAttributes.CODE_FUNCTION]: scenario.name,
               [SemanticAttributes.CODE_NAMESPACE]: feature.name,
-              'cucumber.feature.tags': JSON.stringify(
-                CucumberInstrumentation.mapTags(feature.tags)
+              'cucumber.feature.tags': CucumberInstrumentation.mapTags(
+                feature.tags
               ),
               'cucumber.feature.language': feature.language,
               'cucumber.feature.description': feature.description,
-              'cucumber.scenario.tags': JSON.stringify(
-                CucumberInstrumentation.mapTags(scenario.tags)
+              'cucumber.scenario.tags': CucumberInstrumentation.mapTags(
+                scenario.tags
               ),
               'cucumber.scenario.description': scenario.description,
             },

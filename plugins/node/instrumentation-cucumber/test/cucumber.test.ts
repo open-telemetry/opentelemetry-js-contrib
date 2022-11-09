@@ -170,10 +170,10 @@ describe('CucumberInstrumentation', () => {
           'cucumber.feature.description':
             '          A very basic feature file with a single scenario',
           'cucumber.feature.language': 'en',
-          'cucumber.feature.tags': '["@feature-tag"]',
+          'cucumber.feature.tags': ['@feature-tag'],
           'cucumber.scenario.description':
             '            Mostly pushing buttons\n            but also tables',
-          'cucumber.scenario.tags': '["@scenario-tag","@tag"]',
+          'cucumber.scenario.tags': ['@scenario-tag', '@tag'],
         });
       });
 
@@ -420,8 +420,9 @@ describe('CucumberInstrumentation', () => {
         const parent = spans.find(
           span =>
             span.name.includes('Feature') &&
-            span.attributes['cucumber.scenario.tags'] ===
-              JSON.stringify(['@skip'])
+            (span.attributes['cucumber.scenario.tags'] as string[])?.includes?.(
+              '@skip'
+            )
         );
         assert(parent);
         assert.equal(parent.events[0].name, 'SKIPPED');
