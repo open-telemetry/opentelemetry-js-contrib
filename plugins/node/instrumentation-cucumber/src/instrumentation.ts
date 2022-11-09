@@ -162,8 +162,6 @@ export class CucumberInstrumentation extends InstrumentationBase {
     const instrumentation = this;
     return function (original: TestCaseRunner['run']): TestCaseRunner['run'] {
       return async function (this: TestCaseRunner, ...args) {
-        if (!instrumentation.isEnabled()) return original.apply(this, args);
-
         const gherkinDocument = this[
           'gherkinDocument'
         ] as Required<messages.GherkinDocument>;
@@ -219,8 +217,6 @@ export class CucumberInstrumentation extends InstrumentationBase {
         this: TestCaseRunner,
         ...args
       ): Promise<messages.TestStepResult> {
-        if (!instrumentation.isEnabled()) return original.apply(this, args);
-
         const [pickleStep] = args;
         return instrumentation.tracer.startActiveSpan(
           pickleStep.text,
