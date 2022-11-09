@@ -142,7 +142,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
         messages.TestStepResultStatus.FAILED,
       ].includes(status)
     ) {
-      span.recordException(new Error(status));
+      span.recordException(status);
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: context || status,
