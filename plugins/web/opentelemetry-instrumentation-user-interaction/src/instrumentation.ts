@@ -320,7 +320,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
             return plugin._invokeListener(listener, this, args);
           }
         };
-        if (plugin.addPatchedListener(this, type, listener, patchedListener)) {
+        if (listener && plugin.addPatchedListener(this, type, listener, patchedListener)) {
           return original.call(this, type, patchedListener, useCapture);
         }
       };
