@@ -7,6 +7,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
