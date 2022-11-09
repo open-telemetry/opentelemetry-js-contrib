@@ -24,7 +24,7 @@ import {
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 import type * as cucumber from '@cucumber/cucumber';
-import * as messages from '@cucumber/messages';
+import type * as messages from '@cucumber/messages';
 import type TestCaseRunner from '@cucumber/cucumber/lib/runtime/test_case_runner';
 import type {
   DefineStepPattern,
@@ -46,7 +46,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-cucumber', VERSION, config);
   }
 
-  init() {
+  init(): InstrumentationNodeModuleDefinition<any>[] {
     return [
       new InstrumentationNodeModuleDefinition<Cucumber>(
         '@cucumber/cucumber',
@@ -135,25 +135,14 @@ export class CucumberInstrumentation extends InstrumentationBase {
     status: messages.TestStepResultStatus,
     context?: string
   ) {
-    if (
-      [
-        messages.TestStepResultStatus.UNDEFINED,
-        messages.TestStepResultStatus.AMBIGUOUS,
-        messages.TestStepResultStatus.FAILED,
-      ].includes(status)
-    ) {
+    if (['UNDEFINED', 'AMBIGUOUS', 'FAILED'].includes(status)) {
       span.recordException(status);
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: context || status,
       });
     }
-    if (
-      [
-        messages.TestStepResultStatus.SKIPPED,
-        messages.TestStepResultStatus.PENDING,
-      ].includes(status)
-    ) {
+    if (['SKIPPED', 'PENDING'].includes(status)) {
       span.addEvent(status);
     }
   }
