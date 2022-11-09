@@ -25,5 +25,6 @@ export enum AttributeNames {
   SCENARIO_TAGS = 'cucumber.scenario.tags',
   SCENARIO_DESCRIPTION = 'cucumber.scenario.description',
   STEP_TYPE = 'cucumber.step.type',
+  STEP_STATUS = 'cucumber.step.status',
   STEP_ARGS = 'cucumber.step.args',
 }
