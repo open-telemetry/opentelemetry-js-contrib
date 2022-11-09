@@ -135,15 +135,13 @@ export class CucumberInstrumentation extends InstrumentationBase {
     status: messages.TestStepResultStatus,
     context?: string
   ) {
+    span.setAttribute(AttributeNames.STEP_STATUS, status);
     if (['UNDEFINED', 'AMBIGUOUS', 'FAILED'].includes(status)) {
       span.recordException(status);
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: context || status,
       });
-    }
-    if (['SKIPPED', 'PENDING'].includes(status)) {
-      span.addEvent(status);
     }
   }
 

@@ -174,6 +174,7 @@ describe('CucumberInstrumentation', () => {
           [AttributeNames.SCENARIO_DESCRIPTION]:
             '            Mostly pushing buttons\n            but also tables',
           [AttributeNames.SCENARIO_TAGS]: ['@scenario-tag', '@tag'],
+          [AttributeNames.STEP_STATUS]: 'PASSED',
         });
       });
 
@@ -319,6 +320,7 @@ describe('CucumberInstrumentation', () => {
           assert(parent);
           assert.equal(parent.status.code, SpanStatusCode.ERROR);
           assert.equal(parent.status.message, 'FAILED');
+          assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'FAILED');
 
           const span = spans.find(
             span =>
@@ -349,15 +351,23 @@ describe('CucumberInstrumentation', () => {
         assert(parent);
         assert.equal(parent.status.code, SpanStatusCode.ERROR);
         assert.equal(parent.status.message, 'UNDEFINED');
+        assert.equal(
+          parent.attributes[AttributeNames.STEP_STATUS],
+          'UNDEFINED'
+        );
 
         const span = spans.find(span => span.name.startsWith('an undefined'));
         assert(span);
         assert.equal(span.status.code, SpanStatusCode.ERROR);
         assert.equal(span.status.message, 'UNDEFINED');
+        assert.equal(span.attributes[AttributeNames.STEP_STATUS], 'UNDEFINED');
 
         const skippedSpan = spans.find(span => span.name === 'does nothing');
         assert(skippedSpan);
-        assert.equal(skippedSpan.events[0].name, 'SKIPPED');
+        assert.equal(
+          skippedSpan.attributes[AttributeNames.STEP_STATUS],
+          'SKIPPED'
+        );
       });
     });
 
@@ -377,6 +387,10 @@ describe('CucumberInstrumentation', () => {
         assert(parent);
         assert.equal(parent.status.code, SpanStatusCode.ERROR);
         assert.equal(parent.status.message, 'AMBIGUOUS');
+        assert.equal(
+          parent.attributes[AttributeNames.STEP_STATUS],
+          'AMBIGUOUS'
+        );
 
         const span = spans.find(span => span.name.startsWith('an ambiguous'));
         assert(span);
@@ -401,11 +415,11 @@ describe('CucumberInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
-        assert.equal(parent.events[0].name, 'SKIPPED');
+        assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
 
         const span = spans.find(span => span.name.startsWith('a skipped step'));
         assert(span);
-        assert.equal(span.events[0].name, 'SKIPPED');
+        assert.equal(span.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
       });
 
       it('adds skipped event to skipped steps in before hook', async () => {
@@ -425,7 +439,7 @@ describe('CucumberInstrumentation', () => {
             )?.includes?.('@skip')
         );
         assert(parent);
-        assert.equal(parent.events[0].name, 'SKIPPED');
+        assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
       });
     });
 
@@ -441,11 +455,11 @@ describe('CucumberInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
-        assert.equal(parent.events[0].name, 'PENDING');
+        assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'PENDING');
 
         const span = spans.find(span => span.name.startsWith('a pending step'));
         assert(span);
-        assert.equal(span.events[0].name, 'PENDING');
+        assert.equal(span.attributes[AttributeNames.STEP_STATUS], 'PENDING');
       });
 
       it('adds pending event to pending steps in before hook', async () => {
@@ -459,13 +473,13 @@ describe('CucumberInstrumentation', () => {
         const spans = memoryExporter.getFinishedSpans();
         const parent = spans.find(span => span.name.includes('Feature'));
         assert(parent);
-        assert.equal(parent.events[0].name, 'PENDING');
+        assert.equal(parent.attributes[AttributeNames.STEP_STATUS], 'PENDING');
 
         const span = spans.find(span =>
           span.name.startsWith('I push the button')
         );
         assert(span);
-        assert.equal(span.events[0].name, 'SKIPPED');
+        assert.equal(span.attributes[AttributeNames.STEP_STATUS], 'SKIPPED');
       });
     });
   });
