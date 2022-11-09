@@ -32,7 +32,7 @@ import type {
   IDefineTestRunHookOptions,
 } from '@cucumber/cucumber/lib/support_code_library_builder/types';
 
-import type { CucumberInstrumentationConfig } from './types';
+import { AttributeNames, CucumberInstrumentationConfig } from './types';
 import { VERSION } from './version';
 
 const hooks = ['Before', 'BeforeStep', 'AfterStep', 'After'] as const;
@@ -182,15 +182,15 @@ export class CucumberInstrumentation extends InstrumentationBase {
               [SemanticAttributes.CODE_LINENO]: scenario.location.line,
               [SemanticAttributes.CODE_FUNCTION]: scenario.name,
               [SemanticAttributes.CODE_NAMESPACE]: feature.name,
-              'cucumber.feature.tags': CucumberInstrumentation.mapTags(
+              [AttributeNames.FEATURE_TAGS]: CucumberInstrumentation.mapTags(
                 feature.tags
               ),
-              'cucumber.feature.language': feature.language,
-              'cucumber.feature.description': feature.description,
-              'cucumber.scenario.tags': CucumberInstrumentation.mapTags(
+              [AttributeNames.FEATURE_LANGUAGE]: feature.language,
+              [AttributeNames.FEATURE_DESCRIPTION]: feature.description,
+              [AttributeNames.SCENARIO_TAGS]: CucumberInstrumentation.mapTags(
                 scenario.tags
               ),
-              'cucumber.scenario.description': scenario.description,
+              [AttributeNames.SCENARIO_DESCRIPTION]: scenario.description,
             },
           },
           async span => {
@@ -227,7 +227,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
           {
             kind: SpanKind.CLIENT,
             attributes: {
-              'cucumber.step.type': pickleStep.type,
+              [AttributeNames.STEP_TYPE]: pickleStep.type,
             },
           },
           async span => {
@@ -318,7 +318,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
               attributes: args.slice(0, -1).reduce(
                 (attrs, arg, index) => ({
                   ...attrs,
-                  [`cucumber.step.args[${index}]`]:
+                  [`${AttributeNames.STEP_ARGS}[${index}]`]:
                     arg?.raw instanceof Function
                       ? JSON.stringify(arg.raw())
                       : arg,
