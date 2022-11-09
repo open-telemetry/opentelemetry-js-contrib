@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.2.0...instrumentation-dataloader-v0.2.1) (2022-11-02)
+
+
+### Bug Fixes
+
+* remove types of the instrumented libs form public apis ([#1221](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1221)) ([682d610](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/682d6107b7285829bb72e592936c585ccdfab16a))
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
 ## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.1.0...instrumentation-dataloader-v0.2.0) (2022-09-27)
 
 

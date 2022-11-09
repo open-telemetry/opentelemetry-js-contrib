@@ -3,7 +3,6 @@ components:
   detectors/node/opentelemetry-resource-detector-alibaba-cloud:
     - legendecas
   detectors/node/opentelemetry-resource-detector-aws:
-    - NathanielRN
     - willarmiros
   detectors/node/opentelemetry-resource-detector-docker:
     - abhee11
@@ -16,7 +15,6 @@ components:
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
-    - NathanielRN
     - willarmiros
   plugins/node/instrumentation-amqplib:
     - blumamir
@@ -27,10 +25,8 @@ components:
   plugins/node/instrumentation-tedious:
     - rauno56
   plugins/node/opentelemetry-instrumentation-aws-lambda:
-    - NathanielRN
     - willarmiros
   plugins/node/opentelemetry-instrumentation-aws-sdk:
-    - NathanielRN
     - willarmiros
     - blumamir
   plugins/node/opentelemetry-instrumentation-generic-pool:
@@ -70,7 +66,6 @@ components:
   plugins/web/opentelemetry-instrumentation-user-interaction:
     - obecny
   propagators/opentelemetry-propagator-aws-xray:
-    - NathanielRN
     - willarmiros
   propagators/opentelemetry-propagator-instana:
     - basti1302

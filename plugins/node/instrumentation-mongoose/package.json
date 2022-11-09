@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mongoose",
-  "version": "0.31.0",
+  "version": "0.31.1",
   "description": "OpenTelemetry automatic instrumentation package for mongoose",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -49,7 +49,7 @@
     "@opentelemetry/contrib-test-utils": "^0.32.0",
     "@opentelemetry/sdk-trace-base": "^1.3.1",
     "@types/mocha": "8.2.3",
-    "@types/node": "16.11.21",
+    "@types/node": "18.11.7",
     "expect": "27.4.2",
     "gts": "3.1.0",
     "mocha": "7.2.0",

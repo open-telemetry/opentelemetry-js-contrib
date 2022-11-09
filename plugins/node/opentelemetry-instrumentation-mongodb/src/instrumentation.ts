@@ -569,8 +569,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
     if (host && port) {
       span.setAttributes({
-        [SemanticAttributes.NET_HOST_NAME]: host,
-        [SemanticAttributes.NET_HOST_PORT]: port,
+        [SemanticAttributes.NET_PEER_NAME]: host,
+        [SemanticAttributes.NET_PEER_PORT]: port,
       });
     }
     if (!commandObj) return;

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.31.0...instrumentation-graphql-v0.32.0) (2022-11-02)
+
+
+### Features
+
+* support `graphql` v16 ([#998](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/998)) ([5da46ef](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5da46ef7a29bbc64f600d794b1e68bb6738a9f2e))
+
+
+### Bug Fixes
+
+* **graphql:** graphql instrumentation throw for sync calls ([#1254](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1254)) ([524d98e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/524d98e4fac3322b7da3cc865f53043f03f67bb7))
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.30.0...instrumentation-graphql-v0.31.0) (2022-09-15)
 
 

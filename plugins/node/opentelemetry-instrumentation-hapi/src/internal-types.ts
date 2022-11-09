@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type * as Hapi from '@hapi/hapi';
-import { Lifecycle } from '@hapi/hapi';
+
+// types for @hapi/hapi are published under @types/hapi__hapi
+import type * as Hapi from 'hapi__hapi';
 
 export const HapiComponentName = '@hapi/hapi';
 
@@ -35,7 +36,7 @@ export type HapiServerRouteInput =
 export type PatchableServerRoute = Hapi.ServerRoute & {
   [handlerPatched]?: boolean;
   options?: {
-    handler?: Lifecycle.Method;
+    handler?: Hapi.Lifecycle.Method;
   };
 };
 
