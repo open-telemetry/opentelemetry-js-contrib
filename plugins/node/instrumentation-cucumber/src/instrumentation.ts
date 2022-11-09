@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { Span, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -52,7 +52,9 @@ export class CucumberInstrumentation extends InstrumentationBase {
         '@cucumber/cucumber',
         ['^8.0.0'],
         (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for @cucumber/cucumber@${moduleVersion}`);
+          this._diag.debug(
+            `Applying patch for @cucumber/cucumber@${moduleVersion}`
+          );
           steps.forEach(step => {
             if (isWrapped(moduleExports[step])) {
               this._unwrap(moduleExports, step);
@@ -69,7 +71,9 @@ export class CucumberInstrumentation extends InstrumentationBase {
         },
         (moduleExports, moduleVersion) => {
           if (moduleExports === undefined) return;
-          diag.debug(`Removing patch for @cucumber/cucumber@${moduleVersion}`);
+          this._diag.debug(
+            `Removing patch for @cucumber/cucumber@${moduleVersion}`
+          );
           [...hooks, ...steps].forEach(method => {
             this._unwrap(moduleExports, method);
           });
@@ -81,7 +85,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
             '@cucumber/cucumber/lib/runtime/test_case_runner.js',
             ['^8.0.0'],
             (moduleExports, moduleVersion) => {
-              diag.debug(
+              this._diag.debug(
                 `Applying patch for @cucumber/cucumber/lib/runtime/test_case_runner.js@${moduleVersion}`
               );
               if (isWrapped(moduleExports.default.prototype.run)) {
@@ -102,7 +106,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
             },
             (moduleExports, moduleVersion) => {
               if (moduleExports === undefined) return;
-              diag.debug(
+              this._diag.debug(
                 `Removing patch for @cucumber/cucumber/lib/runtime/test_case_runner.js@${moduleVersion}`
               );
               this._unwrap(moduleExports.default.prototype, 'run');
