@@ -151,7 +151,7 @@ describe('CucumberInstrumentation', () => {
             'AfterStep',
             'does something with the table',
             'After',
-            'Feature: Basic\nScenario: Button pushing',
+            'Feature: Basic. Scenario: Button pushing',
           ],
           'Expected all hooks to be patched'
         );
@@ -233,8 +233,8 @@ describe('CucumberInstrumentation', () => {
         assert.deepEqual(
           scenarios.map(span => span.name),
           [
-            'Feature: Examples\nScenario: passing button pushing',
-            'Feature: Examples\nScenario: failing button pushing',
+            'Feature: Examples. Scenario: passing button pushing',
+            'Feature: Examples. Scenario: failing button pushing',
           ]
         );
       });

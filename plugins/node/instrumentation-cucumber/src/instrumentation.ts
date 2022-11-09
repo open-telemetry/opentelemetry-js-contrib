@@ -161,7 +161,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
         )?.scenario as messages.Scenario;
 
         return instrumentation.tracer.startActiveSpan(
-          `Feature: ${feature.name}\nScenario: ${pickle.name}`,
+          `Feature: ${feature.name}. Scenario: ${pickle.name}`,
           {
             kind: SpanKind.CLIENT,
             attributes: {
