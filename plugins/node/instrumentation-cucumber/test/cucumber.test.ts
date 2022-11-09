@@ -29,7 +29,7 @@ import * as path from 'path';
 import * as assert from 'assert';
 import * as fs from 'fs';
 
-import { CucumberInstrumentation } from '../src';
+import { CucumberInstrumentation, AttributeNames } from '../src';
 
 const instrumentation = new CucumberInstrumentation();
 instrumentation.enable();
@@ -167,13 +167,13 @@ describe('CucumberInstrumentation', () => {
           [SemanticAttributes.CODE_LINENO]: 7,
           [SemanticAttributes.CODE_FUNCTION]: 'Button pushing',
           [SemanticAttributes.CODE_NAMESPACE]: 'Basic',
-          'cucumber.feature.description':
+          [AttributeNames.FEATURE_DESCRIPTION]:
             '          A very basic feature file with a single scenario',
-          'cucumber.feature.language': 'en',
-          'cucumber.feature.tags': ['@feature-tag'],
-          'cucumber.scenario.description':
+          [AttributeNames.FEATURE_LANGUAGE]: 'en',
+          [AttributeNames.FEATURE_TAGS]: ['@feature-tag'],
+          [AttributeNames.SCENARIO_DESCRIPTION]:
             '            Mostly pushing buttons\n            but also tables',
-          'cucumber.scenario.tags': ['@scenario-tag', '@tag'],
+          [AttributeNames.SCENARIO_TAGS]: ['@scenario-tag', '@tag'],
         });
       });
 
@@ -185,7 +185,7 @@ describe('CucumberInstrumentation', () => {
         assert(parametrisedSpan);
 
         assert.deepEqual(parametrisedSpan.attributes, {
-          'cucumber.step.args[0]': 'limit',
+          [`${AttributeNames.STEP_ARGS}[0]`]: 'limit',
         });
       });
 
@@ -197,7 +197,7 @@ describe('CucumberInstrumentation', () => {
         assert(tableSpan);
 
         assert.deepEqual(tableSpan.attributes, {
-          'cucumber.step.args[0]': JSON.stringify([
+          [`${AttributeNames.STEP_ARGS}[0]`]: JSON.stringify([
             ['Cucumber', 'Cucumis sativus'],
             ['Burr Gherkin', 'Cucumis anguria'],
           ]),
@@ -269,7 +269,7 @@ describe('CucumberInstrumentation', () => {
         const span = spans.find(span => span.name.startsWith('Given(a doc'));
         assert(span);
         assert.deepEqual(span.attributes, {
-          'cucumber.step.args[0]':
+          [`${AttributeNames.STEP_ARGS}[0]`]:
             'The cucumber (Cucumis sativus) is a widely cultivated plant in the gourd family Cucurbitaceae.',
         });
       });
@@ -298,7 +298,7 @@ describe('CucumberInstrumentation', () => {
         const span = spans.find(span => span.name.startsWith('Given(a doc'));
         assert(span);
         assert.deepEqual(span.attributes, {
-          'cucumber.step.args[0]': 'This is a background',
+          [`${AttributeNames.STEP_ARGS}[0]`]: 'This is a background',
         });
       });
     });
@@ -420,9 +420,9 @@ describe('CucumberInstrumentation', () => {
         const parent = spans.find(
           span =>
             span.name.includes('Feature') &&
-            (span.attributes['cucumber.scenario.tags'] as string[])?.includes?.(
-              '@skip'
-            )
+            (
+              span.attributes[AttributeNames.SCENARIO_TAGS] as string[]
+            )?.includes?.('@skip')
         );
         assert(parent);
         assert.equal(parent.events[0].name, 'SKIPPED');
