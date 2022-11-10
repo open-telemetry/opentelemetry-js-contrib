@@ -42,6 +42,8 @@ type Hook = typeof hooks[number];
 type Step = typeof steps[number];
 
 export class CucumberInstrumentation extends InstrumentationBase {
+  private module: Cucumber | undefined;
+
   constructor(config: CucumberInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-cucumber', VERSION, config);
   }
@@ -55,6 +57,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
           this._diag.debug(
             `Applying patch for @cucumber/cucumber@${moduleVersion}`
           );
+          this.module = moduleExports;
           steps.forEach(step => {
             if (isWrapped(moduleExports[step])) {
               this._unwrap(moduleExports, step);
@@ -130,13 +133,22 @@ export class CucumberInstrumentation extends InstrumentationBase {
     });
   }
 
-  private static setSpanToStepStatus(
+  private setSpanToStepStatus(
     span: Span,
     status: messages.TestStepResultStatus,
     context?: string
   ) {
+    // if the telemetry is enabled, the module should be defined
+    if (!this.module) return;
+
     span.setAttribute(AttributeNames.STEP_STATUS, status);
-    if (['UNDEFINED', 'AMBIGUOUS', 'FAILED'].includes(status)) {
+    if (
+      [
+        this.module.Status.UNDEFINED,
+        this.module.Status.AMBIGUOUS,
+        this.module.Status.FAILED,
+      ].includes(status)
+    ) {
       span.recordException(status);
       span.setStatus({
         code: SpanStatusCode.ERROR,
@@ -181,7 +193,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
           async span => {
             try {
               const status = await original.apply(this, args);
-              CucumberInstrumentation.setSpanToStepStatus(span, status);
+              instrumentation.setSpanToStepStatus(span, status);
               return status;
             } catch (error: any) {
               CucumberInstrumentation.setSpanToError(span, error);
@@ -216,7 +228,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
           async span => {
             try {
               const result = await original.apply(this, args);
-              CucumberInstrumentation.setSpanToStepStatus(
+              instrumentation.setSpanToStepStatus(
                 span,
                 result.status,
                 result.message
