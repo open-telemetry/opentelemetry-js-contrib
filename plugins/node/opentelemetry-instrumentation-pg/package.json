@@ -72,7 +72,7 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.32.0",
+    "@opentelemetry/instrumentation": "^0.34.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/pg": "8.6.1",
     "@types/pg-pool": "2.0.3"

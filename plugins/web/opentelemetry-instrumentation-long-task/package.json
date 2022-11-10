@@ -79,7 +79,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.0.0",
-    "@opentelemetry/instrumentation": "^0.32.0",
+    "@opentelemetry/instrumentation": "^0.34.0",
     "@opentelemetry/sdk-trace-web": "^1.0.0"
   },
   "peerDependencies": {
