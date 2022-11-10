@@ -263,6 +263,9 @@ export class CucumberInstrumentation extends InstrumentationBase {
           this: cucumber.IWorld,
           arg: cucumber.ITestCaseHookParameter
         ) {
+          // because we're wrapping the function that was passed to the hook,
+          // it will stay wrapped in cucumber's internal state
+          // even if we disable the instrumentation
           if (!instrumentation.isEnabled()) return code?.call(this, arg);
 
           return instrumentation.tracer.startActiveSpan(
@@ -303,6 +306,9 @@ export class CucumberInstrumentation extends InstrumentationBase {
         }
 
         function traceableCode(this: cucumber.IWorld, ...args: any[]) {
+          // because we're wrapping the function that was passed to the hook,
+          // it will stay wrapped in cucumber's internal state
+          // even if we disable the instrumentation
           if (!instrumentation.isEnabled()) return code?.apply(this, args);
 
           return instrumentation.tracer.startActiveSpan(
