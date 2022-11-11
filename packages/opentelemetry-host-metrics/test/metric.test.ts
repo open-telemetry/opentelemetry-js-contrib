@@ -15,7 +15,7 @@
  */
 
 const SI = require('systeminformation');
-import { MetricAttributes } from '@opentelemetry/api-metrics';
+import { MetricAttributes } from '@opentelemetry/api';
 import {
   AggregationTemporality,
   DataPoint,
@@ -33,7 +33,7 @@ const cpuJson = require('./mocks/cpu.json');
 const networkJson = require('./mocks/network.json');
 
 class TestMetricReader extends MetricReader {
-  public selectAggregationTemporality(): AggregationTemporality {
+  public override selectAggregationTemporality(): AggregationTemporality {
     return AggregationTemporality.CUMULATIVE;
   }
   protected async onForceFlush(): Promise<void> {}
