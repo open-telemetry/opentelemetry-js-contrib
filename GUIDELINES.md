@@ -89,7 +89,7 @@ Note that types that are used in non-public files (like `internal-types.ts` or `
 
 ### Adding Types in Public API
 
-Sometimes, instrumented package types are needed in instrumentation's public api. These are mostly found in `types.ts` file on instrumentation config hooks that include data from the package and want to type it for consumers.
+Sometimes, instrumented package types are needed in an instrumentation's public api. These are mostly found in `types.ts` file on instrumentation config hooks that include data from the package and want to type it for consumers.
 
 To support this use case, you can choose one of the following options:
 
