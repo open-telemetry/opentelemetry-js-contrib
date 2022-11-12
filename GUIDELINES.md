@@ -54,7 +54,7 @@ Users and distributions need to install a version of `@opentelemetry/api` that i
 
 ### OpenTelemetry Core packages
 
-Most instrumentations will depend on `@opentelemetry/instrumentation` and `@opentelemetry/semantic-conventions`. If needed, instrumentation can also depend on `@opentelemetry/core` for use of handy utils.
+Most instrumentations will depend on `@opentelemetry/instrumentation` and `@opentelemetry/semantic-conventions`. If needed, instrumentations can also depend on `@opentelemetry/core` for use of handy utils.
 
 Instrumentation SHOULD specify dependency as caret range (`^1.0.0`), with minimum supported version (and not latest version). If a specific feature or bug fix is required for instrumentation to function correctly, it SHOULD specify the minimum version that includes this feature.
 
