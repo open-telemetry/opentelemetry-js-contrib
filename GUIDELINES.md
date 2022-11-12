@@ -48,7 +48,7 @@ Since instrumentations will install all their dependencies into the end user `no
 
 ### OpenTelemetry API
 
-Instrumentation SHOULD NOT add a dependency on `@opentelemetry/api`, as using multilpe instrumentations might install multiple api versions into the user node_modules directory. It SHOULD add an entry in `"peerDependencies"` in `package.json` with the **minimum** api version it requires, as caret range (for example: `^1.0.0`).
+Instrumentation SHOULD NOT add a dependency on `@opentelemetry/api`, as using multiple instrumentations might install multiple api versions into the user node_modules directory. It SHOULD add an entry in `"peerDependencies"` in `package.json` with the **minimum** api version it requires, as caret range (for example: `^1.0.0`).
 
 Users and distributions need to install a version of `@opentelemetry/api` that is compatible with the instrumentation to use it.
 
