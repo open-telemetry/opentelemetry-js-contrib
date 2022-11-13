@@ -1,0 +1,15 @@
+'socket.io':
+  - versions: "^2"
+    peerDependencies: socket.io-client@^2
+    commands:
+      - yarn test
+
+  - versions: "^3"
+    peerDependencies: socket.io-client@^3
+    commands:
+      - yarn test
+
+  - versions: "^4"
+    peerDependencies: socket.io-client@^4
+    commands:
+      - yarn test
