@@ -37,7 +37,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<Io> {
     protected override _config!: SocketIoInstrumentationConfig;
 
     constructor(config: SocketIoInstrumentationConfig = {}) {
-        super('opentelemetry-instrumentation-socket.io', VERSION, normalizeConfig(config));
+        super('@opentelemetry/instrumentation-socket.io', VERSION, normalizeConfig(config));
         if (config.filterHttpTransport) {
             const httpInstrumentationConfig =
                 config.filterHttpTransport.httpInstrumentation.getConfig() as HttpInstrumentationConfig;
