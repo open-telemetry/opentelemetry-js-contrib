@@ -62,7 +62,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
   protected init() {
     const socketInstrumentation = new InstrumentationNodeModuleFile<any>(
       "socket.io/dist/socket.js",
-      [">=3"],
+      [">=3 <5"],
       (moduleExports, moduleVersion) => {
         if (moduleExports === undefined || moduleExports === null) {
           return moduleExports;
@@ -105,7 +105,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
     const broadcastOperatorInstrumentation =
       new InstrumentationNodeModuleFile<any>(
         "socket.io/dist/broadcast-operator.js",
-        [">=4"],
+        [">=4 <5"],
         (moduleExports, moduleVersion) => {
           if (moduleExports === undefined || moduleExports === null) {
             return moduleExports;
@@ -233,7 +233,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
     return [
       new InstrumentationNodeModuleDefinition<any>(
         "socket.io",
-        [">=3"],
+        [">=3 <5"],
         (moduleExports, moduleVersion) => {
           if (moduleExports === undefined || moduleExports === null) {
             return moduleExports;
