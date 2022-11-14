@@ -24,6 +24,7 @@ import {
   diag,
   INVALID_SPAN_CONTEXT,
   Attributes,
+  isSpanContextValid,
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
@@ -288,4 +289,69 @@ export function patchClientConnectCallback(
     span.end();
     cb.call(this, err);
   };
+}
+
+// Simplified W3CTraceContext serialization
+const W3C_TRACE_CONTEXT_VERSION = '00';
+const TRACE_PARENT_HEADER = 'traceparent';
+const TRACE_STATE_HEADER = 'tracestate';
+
+function hasValidSqlComment(query: string): boolean {
+  const indexOpeningDashDashComment = query.indexOf('--');
+  if (indexOpeningDashDashComment >= 0) {
+    return true;
+  }
+
+  const indexOpeningSlashComment = query.indexOf('/*');
+  if (indexOpeningSlashComment < 0) {
+    return false;
+  }
+
+  const indexClosingSlashComment = query.indexOf('*/');
+  return indexOpeningDashDashComment < indexClosingSlashComment;
+}
+
+export function addSqlCommenterComment(span: Span, query: string): string {
+  const spanContext = span.spanContext();
+
+  if (!isSpanContextValid(spanContext)) {
+    return query;
+  }
+
+  if (query.length === 0) {
+    return query;
+  }
+
+  // As per sqlcommenter spec we shall not add a comment if there already is a comment
+  // in the query
+  if (hasValidSqlComment(query)) {
+    return query;
+  }
+
+  const headers: { [key: string]: string } = {
+    [TRACE_PARENT_HEADER]: `${W3C_TRACE_CONTEXT_VERSION}-${
+      spanContext.traceId
+    }-${spanContext.spanId}-0${spanContext.traceFlags.toString(16)}`,
+  };
+
+  if (spanContext.traceState !== undefined) {
+    headers[TRACE_STATE_HEADER] = spanContext.traceState.serialize();
+  }
+
+  // NOTE: If additional keys are added to the header, make sure they are sorted correctly
+  // according to the sqlcommenter spec the comment should use lexicographic order
+  const commentString = Object.keys(headers)
+    .map(key => {
+      const uriEncodedKey = encodeURIComponent(key);
+      const uriEncodedValue = encodeURIComponent(headers[key]).replace(
+        /([^\\])(')/g,
+        (_, prefix) => {
+          return `${prefix}\\'`;
+        }
+      );
+      return `${uriEncodedKey}='${uriEncodedValue}'`;
+    })
+    .join(',');
+
+  return `${query} /*${commentString}*/`;
 }
