@@ -178,6 +178,7 @@ export class PgInstrumentation extends InstrumentationBase {
         // Handle different client.query(...) signatures
         if (typeof args[0] === 'string') {
           const query = args[0];
+
           if (args.length > 1 && args[1] instanceof Array) {
             const params = args[1];
             span = utils.handleParameterizedQuery.call(
@@ -195,14 +196,29 @@ export class PgInstrumentation extends InstrumentationBase {
               query
             );
           }
+
+          if (plugin.getConfig().addSqlCommenterCommentToQueries) {
+            // Modify the query with a tracing comment
+            args[0] = utils.addSqlCommenterComment(span, args[0]);
+          }
         } else if (typeof args[0] === 'object') {
           const queryConfig = args[0] as NormalizedQueryConfig;
+
           span = utils.handleConfigQuery.call(
             this,
             plugin.tracer,
             plugin.getConfig(),
             queryConfig
           );
+
+          if (plugin.getConfig().addSqlCommenterCommentToQueries) {
+            // Copy the query config instead of writing to args[0].text so that we don't modify user's
+            // original query config reference
+            args[0] = {
+              ...queryConfig,
+              text: utils.addSqlCommenterComment(span, queryConfig.text),
+            };
+          }
         } else {
           return utils.handleInvalidQuery.call(
             this,
