@@ -25,9 +25,6 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { Span } from '@opentelemetry/api';
-import { HookHandlerDoneFunction } from 'fastify/types/hooks';
-import { FastifyReply } from 'fastify/types/reply';
-import { FastifyRequest } from 'fastify/types/request';
 import * as http from 'http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { ANONYMOUS_NAME } from '../src/instrumentation';
@@ -70,7 +67,12 @@ instrumentation.enable();
 httpInstrumentation.enable();
 
 import '@fastify/express';
-import { FastifyInstance } from 'fastify/types/instance';
+import {
+  FastifyInstance,
+  HookHandlerDoneFunction,
+  FastifyReply,
+  FastifyRequest,
+} from 'fastify';
 
 const Fastify = require('fastify');
 
