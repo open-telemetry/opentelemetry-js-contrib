@@ -1,14 +1,14 @@
 import { strict as assert } from 'assert';
-import http from 'http';
+import * as http from 'http';
 import { AddressInfo } from 'net';
 
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 
-import expect from 'expect';
-import { Server, Socket } from 'socket.io';
-import socketIo from 'socket.io';
+import * as expect from 'expect';
+import { Server } from 'socket.io';
+import * as socketIo from 'socket.io';
 import * as ioClient from 'socket.io-client';
 import * as path from 'path';
 
@@ -45,5 +45,7 @@ export const expectSpan = (spanName: string, callback?: (span: ReadableSpan) => 
     expect(spans.length).toEqual(spanCount || 1);
     const span = spans.find((s) => s.name === spanName);
     expect(span).toBeDefined();
-    callback(span);
+    if (span && callback) {
+        callback(span);
+    }
 };

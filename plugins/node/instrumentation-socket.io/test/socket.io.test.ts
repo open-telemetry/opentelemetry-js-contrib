@@ -1,12 +1,12 @@
 import { MessagingDestinationKindValues, SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { SocketIoInstrumentation, SocketIoInstrumentationAttributes, SocketIoInstrumentationConfig } from '../src';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import expect from 'expect';
+import * as expect from 'expect';
 import 'mocha';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = registerInstrumentationTesting(new SocketIoInstrumentation());
-import { Server, Socket } from 'socket.io';
+import { Socket } from 'socket.io';
 import { createServer, createServerInstance, io, getSocketIoSpans, expectSpan, isV2 } from './utils';
 
 describe('SocketIoInstrumentation', () => {
