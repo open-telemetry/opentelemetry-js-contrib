@@ -80,7 +80,7 @@
     "@opentelemetry/instrumentation-redis-4": "^0.33.1",
     "@opentelemetry/instrumentation-restify": "^0.30.1",
     "@opentelemetry/instrumentation-router": "^0.31.0",
-    "@opentelemetry/instrumentation-socket.io": "^0.31.0",
+    "@opentelemetry/instrumentation-socket.io": "^0.32.0",
     "@opentelemetry/instrumentation-tedious": "^0.4.1",
     "@opentelemetry/instrumentation-winston": "^0.30.1"
   }

@@ -24,33 +24,40 @@ npm install --save @opentelemetry/instrumentation-socket.io
 To load a specific plugin, specify it in the registerInstrumentations's configuration:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { SocketIoInstrumentation } = require('@opentelemetry/instrumentation-socket.io');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { NodeTracerProvider } = require("@opentelemetry/sdk-trace-node");
+const {
+  SocketIoInstrumentation,
+} = require("@opentelemetry/instrumentation-socket.io");
+const { registerInstrumentations } = require("@opentelemetry/instrumentation");
 
 const provider = new NodeTracerProvider();
 provider.register();
 
 registerInstrumentations({
-  instrumentations: [
-    new SocketIoInstrumentation(),
-  ],
-})
+  instrumentations: [new SocketIoInstrumentation()],
+});
 ```
+
+## Optional Parameters
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `emitHook` | `SocketIoHookFunction` | `undefined` | hook for adding custom attributes before socket.io emits the event |
+| `emitIgnoreEventList` | `string[]` | `[]` | names of emitted events to ignore tracing for |
+| `onHook` | `SocketIoHookFunction` | `undefined` | hook for adding custom attributes before the event listener (callback) is invoked |
+| `onIgnoreEventList` | `string[]` | `[]` | names of listened events to ignore tracing for |
+| `traceReserved` | `boolean` | `false` | set to true if you want to trace socket.io reserved events (see https://socket.io/docs/v4/emit-cheatsheet/#Reserved-events) |
 
 ## Migration From opentelemetry-instrumentation-socket.io
 
 This instrumentation was originally published and maintained under the name `"opentelemetry-instrumentation-socket.io"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js).
 
-Few breaking changes were made during porting to the contrib repo to align with conventions:
+Few breaking changes were made during porting to the contrib repo:
 
-### Hook Info
+### filterHttpTransport
 
-The instrumentation's config `responseHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
-
-### `moduleVersionAttributeName` config option
-
-The `moduleVersionAttributeName` config option is removed. To add the socket.io package version to spans, use the `moduleVersion` attribute in hook info for `responseHook` function.
+The instrumentation's config `filterHttpTransport` option was removed to decouple this instrumentation from the http instrumentation.
+if you do not want to trace the socket.io http requests, add the default socket.io route (`/socket.io/`) to the `HttpInstrumentationConfig.ignoreIncomingPaths` array
 
 ## Useful links
 

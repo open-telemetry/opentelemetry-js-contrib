@@ -19,7 +19,6 @@ import {
   Span,
   SpanKind,
   SpanStatusCode,
-  diag,
 } from "@opentelemetry/api";
 import {
   InstrumentationBase,
@@ -71,8 +70,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        diag.debug(
-          `socket.io instrumentation: applying patch to socket.io@${moduleVersion} Socket`
+        this._diag.debug(
+          `applying patch to socket.io@${moduleVersion} Socket`
         );
         if (isWrapped(moduleExports?.Socket?.prototype?.on)) {
           this._unwrap(moduleExports.Socket.prototype, "on");
@@ -114,8 +113,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          diag.debug(
-            `socket.io instrumentation: applying patch to socket.io@${moduleVersion} StrictEventEmitter`
+          this._diag.debug(
+            `applying patch to socket.io@${moduleVersion} StrictEventEmitter`
           );
           if (isWrapped(moduleExports?.BroadcastOperator?.prototype?.emit)) {
             this._unwrap(moduleExports.BroadcastOperator.prototype, "emit");
@@ -144,8 +143,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        diag.debug(
-          `socket.io instrumentation: applying patch to socket.io@${moduleVersion} Namespace`
+        this._diag.debug(
+          `applying patch to socket.io@${moduleVersion} Namespace`
         );
         if (isWrapped(moduleExports?.Namespace?.prototype?.emit)) {
           this._unwrap(moduleExports.Namespace.prototype, "emit");
@@ -173,8 +172,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        diag.debug(
-          `socket.io instrumentation: applying patch to socket.io@${moduleVersion} Socket`
+        this._diag.debug(
+          `applying patch to socket.io@${moduleVersion} Socket`
         );
         if (isWrapped(moduleExports.prototype?.on)) {
           this._unwrap(moduleExports.prototype, "on");
@@ -211,8 +210,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          diag.debug(
-            `socket.io instrumentation: applying patch to socket.io@${moduleVersion} Namespace`
+          this._diag.debug(
+            `applying patch to socket.io@${moduleVersion} Namespace`
           );
           if (isWrapped(moduleExports?.prototype?.emit)) {
             this._unwrap(moduleExports.prototype, "emit");
@@ -242,8 +241,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          diag.debug(
-            `socket.io instrumentation: applying patch to socket.io@${moduleVersion} Server`
+          this._diag.debug(
+            `applying patch to socket.io@${moduleVersion} Server`
           );
           if (isWrapped(moduleExports?.Server?.prototype?.on)) {
             this._unwrap(moduleExports.Server.prototype, "on");
@@ -277,8 +276,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          diag.debug(
-            `socket.io instrumentation: applying patch to socket.io@${moduleVersion} Server`
+          this._diag.debug(
+            `applying patch to socket.io@${moduleVersion} Server`
           );
           if (isWrapped(moduleExports?.prototype?.on)) {
             this._unwrap(moduleExports.prototype, "on");
@@ -343,7 +342,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
               () =>
                 self._config?.onHook?.(span, { moduleVersion, payload: args }),
               (e) => {
-                if (e) diag.error(`socket.io instrumentation: onHook error`, e);
+                if (e) self._diag.error(`onHook error`, e);
               },
               true
             );
@@ -443,7 +442,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
             () =>
               self._config.emitHook?.(span, { moduleVersion, payload: args }),
             (e) => {
-              if (e) diag.error(`socket.io instrumentation: emitHook error`, e);
+              if (e) self._diag.error(`emitHook error`, e);
             },
             true
           );

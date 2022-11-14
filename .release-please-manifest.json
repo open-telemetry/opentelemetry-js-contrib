@@ -16,7 +16,7 @@
   "plugins/node/instrumentation-fs": "0.5.1",
   "plugins/node/instrumentation-lru-memoizer": "0.31.0",
   "plugins/node/instrumentation-mongoose": "0.31.1",
-  "plugins/node/instrumentation-socket.io": "0.31.0",
+  "plugins/node/instrumentation-socket.io": "0.32.0",
   "plugins/node/instrumentation-tedious": "0.4.1",
   "plugins/node/opentelemetry-instrumentation-aws-lambda": "0.33.1",
   "plugins/node/opentelemetry-instrumentation-aws-sdk": "0.9.3",
