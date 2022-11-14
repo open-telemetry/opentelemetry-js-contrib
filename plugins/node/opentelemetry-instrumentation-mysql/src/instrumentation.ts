@@ -37,6 +37,7 @@ import { MySQLInstrumentationConfig } from './types';
 import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
 import { VERSION } from './version';
 import { UpDownCounter, MeterProvider } from '@opentelemetry/api-metrics';
+import { SumAccumulation } from '@opentelemetry/sdk-metrics/build/src/aggregator';
 
 type formatType = typeof mysqlTypes.format;
 
@@ -197,6 +198,8 @@ export class MySQLInstrumentation extends InstrumentationBase<
       diag.debug(
         'MySQLInstrumentation#patch: patched mysql pool getConnection'
       );
+      thisPlugin._setPoolcallbacks(pool, thisPlugin);
+
       return function getConnection(
         arg1?: unknown,
         arg2?: unknown,
@@ -213,7 +216,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
             arg1 as getConnectionCallbackType,
             format
           );
-          thisPlugin._setPoolcallbacks(pool, thisPlugin);
           return originalGetConnection.call(pool, patchFn);
         }
         if (arguments.length === 2 && typeof arg2 === 'function') {
@@ -221,7 +223,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
             arg2 as getConnectionCallbackType,
             format
           );
-          thisPlugin._setPoolcallbacks(pool, thisPlugin);
           return originalGetConnection.call(pool, arg1, patchFn);
         }
         if (arguments.length === 3 && typeof arg3 === 'function') {
@@ -229,7 +230,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
             arg3 as getConnectionCallbackType,
             format
           );
-          thisPlugin._setPoolcallbacks(pool, thisPlugin);
           return originalGetConnection.call(pool, arg1, arg2, patchFn);
         }
 
@@ -374,10 +374,14 @@ export class MySQLInstrumentation extends InstrumentationBase<
       thisPlugin._connectionsUsage.add(1, {
         state: 'idle',
       });
+      console.log('on connection, add 1 -> idle', connection?.threadId);
+      printMap(thisPlugin);
       connection.on('end', () => {
         thisPlugin._connectionsUsage.add(-1, {
           state: 'idle',
         });
+        console.log('on end, add (-1) -> idle', connection?.threadId);
+        printMap(thisPlugin);
       });
     });
 
@@ -385,18 +389,40 @@ export class MySQLInstrumentation extends InstrumentationBase<
       thisPlugin._connectionsUsage.add(-1, {
         state: 'idle',
       });
+      console.log('on acquire, add (-1) -> idle', connection?.threadId);
+      printMap(thisPlugin);
+
       thisPlugin._connectionsUsage.add(1, {
         state: 'used',
       });
+      console.log('on acquire, add 1 -> used', connection?.threadId);
+      printMap(thisPlugin);
     });
 
     pool.on('release', connection => {
       thisPlugin._connectionsUsage.add(-1, {
         state: 'used',
       });
+      console.log('on release, add (-1) -> used', connection?.threadId);
+      printMap(thisPlugin);
+
       thisPlugin._connectionsUsage.add(1, {
         state: 'idle',
       });
+      console.log('on release, add 1 -> idle', connection?.threadId);
+      printMap(thisPlugin);
+
     });
   }
 }
+function printMap(thisPlugin: any) {
+  const map = (thisPlugin as any)._connectionsUsage._writableMetricStorage?._deltaMetricStorage._activeCollectionStorage._valueMap;
+  if(!map) return;
+  const entries = [...map.entries()];
+    for(let i=0; i<entries.length; i++){
+      const entry = entries[i];
+      const sum:SumAccumulation = entry[1];
+      console.log(entry[0] + ' --> ' + sum["_current"]);
+    }
+}
+
