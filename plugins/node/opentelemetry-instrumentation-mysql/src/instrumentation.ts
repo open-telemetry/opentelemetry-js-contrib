@@ -374,14 +374,10 @@ export class MySQLInstrumentation extends InstrumentationBase<
       thisPlugin._connectionsUsage.add(1, {
         state: 'idle',
       });
-      console.log('on connection, add 1 -> idle', connection?.threadId);
-      printMap(thisPlugin);
       connection.on('end', () => {
         thisPlugin._connectionsUsage.add(-1, {
           state: 'idle',
         });
-        console.log('on end, add (-1) -> idle', connection?.threadId);
-        printMap(thisPlugin);
       });
     });
 
@@ -389,40 +385,19 @@ export class MySQLInstrumentation extends InstrumentationBase<
       thisPlugin._connectionsUsage.add(-1, {
         state: 'idle',
       });
-      console.log('on acquire, add (-1) -> idle', connection?.threadId);
-      printMap(thisPlugin);
-
       thisPlugin._connectionsUsage.add(1, {
         state: 'used',
       });
-      console.log('on acquire, add 1 -> used', connection?.threadId);
-      printMap(thisPlugin);
     });
 
     pool.on('release', connection => {
       thisPlugin._connectionsUsage.add(-1, {
         state: 'used',
       });
-      console.log('on release, add (-1) -> used', connection?.threadId);
-      printMap(thisPlugin);
-
       thisPlugin._connectionsUsage.add(1, {
         state: 'idle',
       });
-      console.log('on release, add 1 -> idle', connection?.threadId);
-      printMap(thisPlugin);
-
     });
   }
-}
-function printMap(thisPlugin: any) {
-  const map = (thisPlugin as any)._connectionsUsage._writableMetricStorage?._deltaMetricStorage._activeCollectionStorage._valueMap;
-  if(!map) return;
-  const entries = [...map.entries()];
-    for(let i=0; i<entries.length; i++){
-      const entry = entries[i];
-      const sum:SumAccumulation = entry[1];
-      console.log(entry[0] + ' --> ' + sum["_current"]);
-    }
 }
 
