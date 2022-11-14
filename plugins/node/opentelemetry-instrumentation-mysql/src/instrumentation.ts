@@ -37,7 +37,6 @@ import { MySQLInstrumentationConfig } from './types';
 import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
 import { VERSION } from './version';
 import { UpDownCounter, MeterProvider } from '@opentelemetry/api-metrics';
-import { SumAccumulation } from '@opentelemetry/sdk-metrics/build/src/aggregator';
 
 type formatType = typeof mysqlTypes.format;
 
