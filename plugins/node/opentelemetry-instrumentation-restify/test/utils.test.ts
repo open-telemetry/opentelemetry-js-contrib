@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { isAsyncFunction, isPromise  } from '../src/utils';
+import { isAsyncFunction, isPromise } from '../src/utils';
 import * as assert from 'assert';
 
 describe('utils', () => {
   describe('isPromise', () => {
     it('should be able to validate a promise to be true', () => {
-      assert.strictEqual((Promise.resolve()), true);
+      assert.strictEqual(isPromise(Promise.resolve()), true);
     });
 
     it('should be able to validate non-promise to be false', () => {
@@ -32,7 +32,7 @@ describe('utils', () => {
         isPromise(() => {}),
         false
       );
-      assert.strictEqual(((async () => {}) as any), false);
+      assert.strictEqual(isPromise((async () => {}) as any), false);
     });
   });
 
