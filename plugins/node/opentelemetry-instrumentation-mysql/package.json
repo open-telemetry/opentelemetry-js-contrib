@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mysql",
-  "version": "0.30.0",
+  "version": "0.31.2",
   "description": "OpenTelemetry mysql automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -15,7 +15,8 @@
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
-    "version:update": "node ../../../scripts/version-update.js"
+    "version:update": "node ../../../scripts/version-update.js",
+    "compile:examples": "cd examples && npm run compile"
   },
   "keywords": [
     "instrumentation",
@@ -28,7 +29,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.12.0"
+    "node": ">=14"
   },
   "files": [
     "build/src/**/*.js",
@@ -47,20 +48,22 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/context-async-hooks": "^1.3.1",
-    "@opentelemetry/contrib-test-utils": "^0.31.0",
+    "@opentelemetry/contrib-test-utils": "^0.32.0",
     "@opentelemetry/sdk-trace-base": "^1.3.1",
     "@types/mocha": "7.0.2",
-    "@types/node": "16.11.21",
+    "@types/node": "18.11.7",
+    "@types/sinon": "10.0.13",
     "gts": "3.1.0",
     "mocha": "7.2.0",
     "mysql": "2.18.1",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
+    "sinon": "14.0.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.31.0",
+    "@opentelemetry/instrumentation": "^0.32.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/mysql": "2.15.19"
   },

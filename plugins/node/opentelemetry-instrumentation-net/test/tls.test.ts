@@ -23,7 +23,7 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as assert from 'assert';
 import * as tls from 'tls';
 import { NetInstrumentation } from '../src';
-import { SocketEvent } from '../src/types';
+import { SocketEvent } from '../src/internal-types';
 import {
   assertTLSSpan,
   HOST,
@@ -128,7 +128,7 @@ describe('NetInstrumentation', () => {
       );
       tlsSocket.on('error', error => {
         const { tlsSpan } = getTLSSpans();
-        assert.strictEqual(tlsSpan.status.message, 'self signed certificate');
+        assert.strictEqual(tlsSpan.status.message, error.message);
         assert.strictEqual(tlsSpan.status.code, SpanStatusCode.ERROR);
         done();
       });

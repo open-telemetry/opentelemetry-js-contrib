@@ -92,34 +92,44 @@ describe('Koa Instrumentation', () => {
     server.close();
   });
 
-  const simpleResponse: koa.Middleware = async (ctx, next) => {
-    ctx.body = 'test';
-    await next();
-  };
+  const simpleResponse: () => koa.Middleware = () =>
+    async function simpleResponse(ctx, next) {
+      ctx.body = 'test';
+      await next();
+    };
 
-  const customMiddleware: koa.Middleware = async (ctx, next) => {
-    for (let i = 0; i < 1000000; i++) {
-      continue;
-    }
-    await next();
-  };
+  const customMiddleware: () => koa.Middleware = () =>
+    async function customMiddleware(ctx, next) {
+      for (let i = 0; i < 1000000; i++) {
+        continue;
+      }
+      await next();
+    };
 
-  const spanCreateMiddleware: koa.Middleware = async (ctx, next) => {
-    const span = tracer.startSpan('foo');
-    span.end();
-    await next();
-  };
+  const spanCreateMiddleware: () => koa.Middleware = () =>
+    async function spanCreateMiddleware(ctx, next) {
+      const span = tracer.startSpan('foo');
+      span.end();
+      await next();
+    };
 
-  const asyncMiddleware: koa.Middleware = async (ctx, next) => {
-    const start = Date.now();
-    await next();
-    const ms = Date.now() - start;
-    ctx.body = `${ctx.method} ${ctx.url} - ${ms}ms`;
-  };
+  const asyncMiddleware: () => koa.Middleware = () =>
+    async function asyncMiddleware(ctx, next) {
+      const start = Date.now();
+      await next();
+      const ms = Date.now() - start;
+      ctx.body = `${ctx.method} ${ctx.url} - ${ms}ms`;
+    };
 
-  const failingMiddleware: koa.Middleware = async (_ctx, _next) => {
-    throw new Error('I failed!');
-  };
+  const failingMiddleware: () => koa.Middleware = () =>
+    async function failingMiddleware(_ctx, _next) {
+      throw new Error('I failed!');
+    };
+
+  const generatorMiddleware: () => koa.Middleware = () =>
+    function* generatorMiddleware(next) {
+      yield next;
+    };
 
   describe('Instrumenting @koa/router calls', () => {
     it('should create a child span for middlewares', async () => {
@@ -331,9 +341,9 @@ describe('Koa Instrumentation', () => {
       app.use((ctx, next) =>
         context.with(trace.setSpan(context.active(), rootSpan), next)
       );
-      app.use(customMiddleware);
-      app.use(simpleResponse);
-      app.use(spanCreateMiddleware);
+      app.use(customMiddleware());
+      app.use(simpleResponse());
+      app.use(spanCreateMiddleware());
 
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -384,8 +394,8 @@ describe('Koa Instrumentation', () => {
     });
 
     it('should not create span if there is no parent span', async () => {
-      app.use(customMiddleware);
-      app.use(simpleResponse);
+      app.use(customMiddleware());
+      app.use(simpleResponse());
 
       const res = await httpRequest.get(`http://localhost:${port}`);
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
@@ -397,7 +407,7 @@ describe('Koa Instrumentation', () => {
       app.use((ctx, next) =>
         context.with(trace.setSpan(context.active(), rootSpan), next)
       );
-      app.use(asyncMiddleware);
+      app.use(asyncMiddleware());
 
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -423,12 +433,72 @@ describe('Koa Instrumentation', () => {
       );
     });
 
+    it('should not instrument generator middleware functions', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      app.use((_ctx, next) =>
+        context.with(trace.setSpan(context.active(), rootSpan), next)
+      );
+
+      app.use(generatorMiddleware());
+      app.use(simpleResponse());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}`);
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+          const simpleResponseSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('simpleResponse'));
+          assert.notStrictEqual(simpleResponseSpan, undefined);
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
+    it('should not instrument the same middleware more than once', async () => {
+      const sameAsyncMiddleware = asyncMiddleware();
+
+      const rootSpan = tracer.startSpan('rootSpan');
+      app.use((_ctx, next) =>
+        context.with(trace.setSpan(context.active(), rootSpan), next)
+      );
+
+      app.use(sameAsyncMiddleware);
+      app.use(sameAsyncMiddleware);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}`);
+          rootSpan.end();
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+          const asyncMiddlewareSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('asyncMiddleware'));
+          assert.notStrictEqual(asyncMiddlewareSpan, undefined);
+
+          const exportedRootSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'rootSpan');
+          assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
     it('should propagate exceptions in the middleware while marking the span with an exception', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       app.use((_ctx, next) =>
         context.with(trace.setSpan(context.active(), rootSpan), next)
       );
-      app.use(failingMiddleware);
+      app.use(failingMiddleware());
       const res = await httpRequest.get(`http://localhost:${port}`);
       assert.deepStrictEqual(res, 'Internal Server Error');
 
@@ -531,6 +601,7 @@ describe('Koa Instrumentation', () => {
       const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
         span.setAttribute('http.method', info.context.request.method);
         span.setAttribute('app.env', info.context.app.env);
+        span.setAttribute('koa.layer', info.layerType);
       });
 
       plugin.setConfig({
@@ -564,6 +635,10 @@ describe('Koa Instrumentation', () => {
             requestHandlerSpan?.attributes['app.env'],
             'development'
           );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes['koa.layer'],
+            'router'
+          );
         }
       );
     });
@@ -573,7 +648,7 @@ describe('Koa Instrumentation', () => {
     it('should not create new spans', async () => {
       plugin.disable();
       const rootSpan = tracer.startSpan('rootSpan');
-      app.use(customMiddleware);
+      app.use(customMiddleware());
 
       await context.with(
         trace.setSpan(context.active(), rootSpan),

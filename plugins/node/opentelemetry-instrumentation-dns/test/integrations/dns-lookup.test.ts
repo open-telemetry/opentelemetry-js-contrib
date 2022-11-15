@@ -98,24 +98,30 @@ describe('dns.lookup()', () => {
       });
     });
 
-    it('should export a valid span with error NOT_FOUND', done => {
-      const hostname = 'ᚕ';
-      dns.lookup(hostname, (err, address, family) => {
-        assert.ok(err);
+    describe('extended timeout', function () {
+      // Extending the default timeout as some environments are taking longer than 2 seconds to fail
+      // So rather than fail the test -- just take a little longer
+      this.timeout(10000);
 
-        const spans = memoryExporter.getFinishedSpans();
-        const [span] = spans;
+      it('should export a valid span with error NOT_FOUND', done => {
+        const hostname = 'ᚕ';
+        dns.lookup(hostname, (err, address, family) => {
+          assert.ok(err);
 
-        assert.strictEqual(spans.length, 1);
-        assertSpan(span, {
-          addresses: [{ address, family }],
-          hostname,
-          forceStatus: {
-            code: SpanStatusCode.ERROR,
-            message: err!.message,
-          },
+          const spans = memoryExporter.getFinishedSpans();
+          const [span] = spans;
+
+          assert.strictEqual(spans.length, 1);
+          assertSpan(span, {
+            addresses: [{ address, family }],
+            hostname,
+            forceStatus: {
+              code: SpanStatusCode.ERROR,
+              message: err!.message,
+            },
+          });
+          done();
         });
-        done();
       });
     });
 

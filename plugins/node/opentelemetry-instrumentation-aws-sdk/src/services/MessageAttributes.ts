@@ -20,7 +20,7 @@ import {
   propagation,
   diag,
 } from '@opentelemetry/api';
-import type { SQS, SNS } from 'aws-sdk';
+import type { SQS, SNS } from '../aws-sdk.types';
 
 // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-quotas.html
 export const MAX_MESSAGE_ATTRIBUTES = 10;

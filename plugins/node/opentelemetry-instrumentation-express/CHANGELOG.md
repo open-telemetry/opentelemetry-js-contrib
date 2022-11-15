@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.31.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.31.2...instrumentation-express-v0.31.3) (2022-11-02)
+
+
+### Bug Fixes
+
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
+## [0.31.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.31.1...instrumentation-express-v0.31.2) (2022-09-28)
+
+
+### Bug Fixes
+
+* **express:** use the same clock for span start and end ([#1210](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1210)) ([cbeef6e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cbeef6eef7c4ec8801389fdf9787722b89056537))
+
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.31.0...instrumentation-express-v0.31.1) (2022-09-15)
+
+
+### Bug Fixes
+
+* **readme:** Correct urls to npm ([#1144](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1144)) ([d8767a9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d8767a9032dd7fb78b7fdd82f50c1f76e939d33e))
+
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.30.0...instrumentation-express-v0.31.0) (2022-09-02)
+
+
+### Features
+
+* **express:** add requestHook support ([#1091](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1091)) ([bcc048b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bcc048b4de1293b0d932ac69dc0b0c056aca13ee))
+* update experimental Otel deps to ^0.31.0 ([#1096](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1096)) ([4c8843b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4c8843be14896d1159a622c07eb3a049401ccba1))
+* update experimental Otel deps to ^0.32.0 ([#1143](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1143)) ([6fb1911](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6fb191139aed2ca763300dcf9adb51121a88f97e))
+
+
+### Bug Fixes
+
+* mongodb types fails to compile with latest tsc v4.8 ([#1141](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1141)) ([ec9ee13](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ec9ee131635dc2db88deea4f2efb887ff6f60577))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.29.0...instrumentation-express-v0.30.0) (2022-06-08)
 
 

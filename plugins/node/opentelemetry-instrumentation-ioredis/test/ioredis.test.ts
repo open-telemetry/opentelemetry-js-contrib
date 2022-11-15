@@ -373,7 +373,7 @@ describe('ioredis', () => {
         });
       });
 
-      it('should create a child span for pubsub', async () => {
+      it.skip('should create a child span for pubsub', async () => {
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
           try {
@@ -640,16 +640,24 @@ describe('ioredis', () => {
         };
         instrumentation.setConfig(config);
       });
-      it('should not create child span', async () => {
+      it('should not create child span for query', async () => {
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
         assert.strictEqual(result, 1);
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       });
+
+      it('should not create child span for connect', async () => {
+        const lazyClient = new ioredis(URL, { lazyConnect: true });
+        await lazyClient.connect();
+        const spans = memoryExporter.getFinishedSpans();
+        await lazyClient.quit();
+        assert.strictEqual(spans.length, 0);
+      });
     });
 
     describe('Instrumentation with requireParentSpan', () => {
-      it('should instrument with requireParentSpan equal false', async () => {
+      it('should instrument queries with requireParentSpan equal false', async () => {
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: false,
         };
@@ -658,10 +666,9 @@ describe('ioredis', () => {
         await client.set(testKeyName, 'data');
         const result = await client.del(testKeyName);
         assert.strictEqual(result, 1);
-
         const endedSpans = memoryExporter.getFinishedSpans();
-        assert.strictEqual(endedSpans.length, 2);
 
+        assert.strictEqual(endedSpans.length, 2);
         testUtils.assertSpan(
           endedSpans[0],
           SpanKind.CLIENT,
@@ -674,7 +681,33 @@ describe('ioredis', () => {
         );
       });
 
-      it('should not instrument with requireParentSpan equal true', async () => {
+      it.skip('should instrument connect with requireParentSpan equal false', async () => {
+        const config: IORedisInstrumentationConfig = {
+          requireParentSpan: false,
+        };
+        instrumentation.setConfig(config);
+
+        const lazyClient = new ioredis(URL, { lazyConnect: true });
+        await lazyClient.connect();
+        const endedSpans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(endedSpans.length, 2);
+        assert.strictEqual(endedSpans[0].name, 'connect');
+        assert.strictEqual(endedSpans[1].name, 'info');
+
+        await lazyClient.quit();
+        testUtils.assertSpan(
+          endedSpans[0],
+          SpanKind.CLIENT,
+          {
+            ...DEFAULT_ATTRIBUTES,
+            [SemanticAttributes.DB_STATEMENT]: 'connect',
+          },
+          [],
+          unsetStatus
+        );
+      });
+
+      it('should not instrument queries with requireParentSpan equal true', async () => {
         const config: IORedisInstrumentationConfig = {
           requireParentSpan: true,
         };
@@ -685,6 +718,20 @@ describe('ioredis', () => {
         assert.strictEqual(result, 1);
 
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      });
+
+      it('should not instrument connect with requireParentSpan equal true', async () => {
+        const config: IORedisInstrumentationConfig = {
+          requireParentSpan: true,
+        };
+        instrumentation.setConfig(config);
+
+        const lazyClient = new ioredis(URL, { lazyConnect: true });
+        await lazyClient.connect();
+        const endedSpans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(endedSpans.length, 0);
+
+        await lazyClient.quit();
       });
     });
 

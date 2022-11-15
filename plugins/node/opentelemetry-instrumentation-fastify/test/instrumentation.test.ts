@@ -15,7 +15,7 @@
  */
 
 import * as assert from 'assert';
-import { context, ROOT_CONTEXT, SpanStatusCode } from '@opentelemetry/api';
+import { context, SpanStatusCode } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -24,13 +24,12 @@ import {
   ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { HookHandlerDoneFunction } from 'fastify/types/hooks';
-import { FastifyReply } from 'fastify/types/reply';
-import { FastifyRequest } from 'fastify/types/request';
+import { Span } from '@opentelemetry/api';
 import * as http from 'http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { ANONYMOUS_NAME } from '../src/instrumentation';
 import { AttributeNames, FastifyInstrumentation } from '../src';
+import { FastifyRequestInfo } from '../src/types';
 
 const URL = require('url').URL;
 
@@ -67,10 +66,23 @@ provider.addSpanProcessor(spanProcessor);
 instrumentation.enable();
 httpInstrumentation.enable();
 
-import 'fastify-express';
-import { FastifyInstance } from 'fastify/types/instance';
+import '@fastify/express';
+import {
+  FastifyInstance,
+  HookHandlerDoneFunction,
+  FastifyReply,
+  FastifyRequest,
+} from 'fastify';
 
 const Fastify = require('fastify');
+
+const assertRootContextActive = () => {
+  // Asserting the context.active() to strictly equal ROOT_CONTEXT doesn't
+  // always work because of the linking and dep resolution.
+  // Specially in our CI environment there can be multiple instances to
+  // different @opentelemetry/api and thus ROOT_CONTEXTs in the tree.
+  assert.strictEqual((context.active() as any)['_currentContext'].size, 0);
+};
 
 function getSpans(): ReadableSpan[] {
   const spans = memoryExporter.getFinishedSpans().filter(s => {
@@ -86,7 +98,7 @@ describe('fastify', () => {
   let app: FastifyInstance;
 
   async function startServer(): Promise<void> {
-    const address = await app.listen(0);
+    const address = await app.listen({ port: 0 });
     const url = new URL(address);
     PORT = parseInt(url.port, 10);
   }
@@ -94,7 +106,7 @@ describe('fastify', () => {
   beforeEach(async () => {
     instrumentation.enable();
     app = Fastify();
-    app.register(require('fastify-express'));
+    app.register(require('@fastify/express'));
   });
 
   afterEach(async () => {
@@ -137,7 +149,7 @@ describe('fastify', () => {
       const span = spans[3];
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
-        'plugin.name': 'fastify-express',
+        'plugin.name': 'fastify -> @fastify/express',
         [SemanticAttributes.HTTP_ROUTE]: '/test',
       });
       assert.strictEqual(span.name, `request handler - ${ANONYMOUS_NAME}`);
@@ -160,7 +172,7 @@ describe('fastify', () => {
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
         'fastify.name': 'namedHandler',
-        'plugin.name': 'fastify-express',
+        'plugin.name': 'fastify -> @fastify/express',
         [SemanticAttributes.HTTP_ROUTE]: '/test',
       });
       assert.strictEqual(span.name, 'request handler - namedHandler');
@@ -224,7 +236,7 @@ describe('fastify', () => {
         assert.strictEqual(span.name, 'middleware - runConnect');
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
-          'plugin.name': 'fastify-express',
+          'plugin.name': 'fastify -> @fastify/express',
           'hook.name': 'onRequest',
         });
 
@@ -240,7 +252,7 @@ describe('fastify', () => {
         assert.strictEqual(span.name, 'middleware - enhanceRequest');
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
-          'plugin.name': 'fastify-express',
+          'plugin.name': 'fastify -> @fastify/express',
           'hook.name': 'onRequest',
         });
 
@@ -330,12 +342,16 @@ describe('fastify', () => {
 
           // done was not yet called from the hook, so it should not end the span
           const preDoneSpans = getSpans().filter(
-            s => !s.attributes[AttributeNames.PLUGIN_NAME]
+            s =>
+              !s.attributes[AttributeNames.PLUGIN_NAME] ||
+              s.attributes[AttributeNames.PLUGIN_NAME] === 'fastify'
           );
           assert.strictEqual(preDoneSpans.length, 0);
           hookDone!();
           const postDoneSpans = getSpans().filter(
-            s => !s.attributes[AttributeNames.PLUGIN_NAME]
+            s =>
+              !s.attributes[AttributeNames.PLUGIN_NAME] ||
+              s.attributes[AttributeNames.PLUGIN_NAME] === 'fastify'
           );
           assert.strictEqual(postDoneSpans.length, 1);
         });
@@ -359,7 +375,9 @@ describe('fastify', () => {
           await startServer();
           await httpRequest.get(`http://localhost:${PORT}/test`);
           const spans = getSpans().filter(
-            s => !s.attributes[AttributeNames.PLUGIN_NAME]
+            s =>
+              !s.attributes[AttributeNames.PLUGIN_NAME] ||
+              s.attributes[AttributeNames.PLUGIN_NAME] === 'fastify'
           );
           assert.strictEqual(spans.length, 1);
         });
@@ -367,9 +385,14 @@ describe('fastify', () => {
     });
 
     describe('application hooks', () => {
+      afterEach(() => {
+        const spans = getSpans();
+        assert.strictEqual(spans.length, 0);
+      });
+
       it('onRoute not instrumented', async () => {
         app.addHook('onRoute', () => {
-          assert.strictEqual(context.active(), ROOT_CONTEXT);
+          assertRootContextActive();
         });
         // add a route to trigger the 'onRoute' hook
         app.get('/test', (_req: FastifyRequest, reply: FastifyReply) => {
@@ -381,7 +404,7 @@ describe('fastify', () => {
 
       it('onRegister is not instrumented', async () => {
         app.addHook('onRegister', () => {
-          assert.strictEqual(context.active(), ROOT_CONTEXT);
+          assertRootContextActive();
         });
         // register a plugin to trigger 'onRegister' hook
         app.register((fastify, options, done) => {
@@ -393,7 +416,7 @@ describe('fastify', () => {
 
       it('onReady is not instrumented', async () => {
         app.addHook('onReady', () => {
-          assert.strictEqual(context.active(), ROOT_CONTEXT);
+          assertRootContextActive();
         });
 
         await startServer();
@@ -401,11 +424,76 @@ describe('fastify', () => {
 
       it('onClose is not instrumented', async () => {
         app.addHook('onClose', () => {
-          assert.strictEqual(context.active(), ROOT_CONTEXT);
+          assertRootContextActive();
         });
 
         await startServer();
-        await app.close();
+      });
+    });
+
+    describe('using requestHook in config', () => {
+      it('calls requestHook provided function when set in config', async () => {
+        const requestHook = (span: Span, info: FastifyRequestInfo) => {
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
+        };
+
+        instrumentation.setConfig({
+          ...instrumentation.getConfig(),
+          requestHook,
+        });
+
+        app.get('/test', (req, res) => {
+          res.send('OK');
+        });
+
+        await startServer();
+        await httpRequest.get(`http://localhost:${PORT}/test`);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 5);
+        const span = spans[3];
+        assert.deepStrictEqual(span.attributes, {
+          'fastify.type': 'request_handler',
+          'plugin.name': 'fastify -> @fastify/express',
+          [SemanticAttributes.HTTP_ROUTE]: '/test',
+          [SemanticAttributes.HTTP_METHOD]: 'GET',
+        });
+      });
+
+      it('does not propagate an error from a requestHook that throws exception', async () => {
+        const requestHook = (span: Span, info: FastifyRequestInfo) => {
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
+
+          throw Error('error thrown in requestHook');
+        };
+
+        instrumentation.setConfig({
+          ...instrumentation.getConfig(),
+          requestHook,
+        });
+
+        app.get('/test', (req, res) => {
+          res.send('OK');
+        });
+
+        await startServer();
+        await httpRequest.get(`http://localhost:${PORT}/test`);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 5);
+        const span = spans[3];
+        assert.deepStrictEqual(span.attributes, {
+          'fastify.type': 'request_handler',
+          'plugin.name': 'fastify -> @fastify/express',
+          [SemanticAttributes.HTTP_ROUTE]: '/test',
+          [SemanticAttributes.HTTP_METHOD]: 'GET',
+        });
       });
     });
   });

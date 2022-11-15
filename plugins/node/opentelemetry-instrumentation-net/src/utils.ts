@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-import { NormalizedOptions } from './types';
+import { NormalizedOptions } from './internal-types';
 import { NetTransportValues } from '@opentelemetry/semantic-conventions';
 import { platform } from 'os';
 
 export const IPC_TRANSPORT =
   platform() === 'win32' ? NetTransportValues.PIPE : NetTransportValues.UNIX;
+
+function getHost(args: unknown[]) {
+  return typeof args[1] === 'string' ? args[1] : 'localhost';
+}
 
 export function getNormalizedArgs(
   args: unknown[]
@@ -33,17 +37,26 @@ export function getNormalizedArgs(
     case 'number':
       return {
         port: opt,
-        host: typeof args[1] === 'string' ? args[1] : 'localhost',
+        host: getHost(args),
       };
     case 'object':
       if (Array.isArray(opt)) {
         return getNormalizedArgs(opt);
       }
       return opt;
-    case 'string':
+    case 'string': {
+      const maybePort = Number(opt);
+      if (maybePort >= 0) {
+        return {
+          port: maybePort,
+          host: getHost(args),
+        };
+      }
+
       return {
         path: opt,
       };
+    }
     default:
       return;
   }

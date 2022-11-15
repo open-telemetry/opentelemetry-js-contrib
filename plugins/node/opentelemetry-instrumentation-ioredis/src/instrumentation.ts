@@ -185,6 +185,13 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
   private traceConnection = (original: Function) => {
     const instrumentation = this;
     return function (this: RedisInterface) {
+      const config =
+        instrumentation.getConfig() as IORedisInstrumentationConfig;
+      const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
+      if (config?.requireParentSpan === true && hasNoParentSpan) {
+        return original.apply(this, arguments);
+      }
+
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
         attributes: {

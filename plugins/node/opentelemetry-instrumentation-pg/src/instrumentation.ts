@@ -19,24 +19,19 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
+import { context, diag, trace, Span, SpanStatusCode } from '@opentelemetry/api';
+import type * as pgTypes from 'pg';
+import type * as pgPoolTypes from 'pg-pool';
 import {
-  context,
-  diag,
-  trace,
-  Span,
-  SpanKind,
-  SpanStatusCode,
-} from '@opentelemetry/api';
-import * as pgTypes from 'pg';
-import * as pgPoolTypes from 'pg-pool';
-import {
+  PgClientConnect,
   PgClientExtended,
+  PgErrorCallback,
   NormalizedQueryConfig,
   PostgresCallback,
   PgPoolExtended,
   PgPoolCallback,
-  PgInstrumentationConfig,
-} from './types';
+} from './internal-types';
+import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { AttributeNames } from './enums/AttributeNames';
 import {
@@ -44,8 +39,10 @@ import {
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
+import { startSpan } from './utils';
 
 const PG_POOL_COMPONENT = 'pg-pool';
+
 export class PgInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'pg';
 
@@ -67,11 +64,23 @@ export class PgInstrumentation extends InstrumentationBase {
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
+
+        if (isWrapped(moduleExports.Client.prototype.connect)) {
+          this._unwrap(moduleExports.Client.prototype, 'connect');
+        }
+
         this._wrap(
           moduleExports.Client.prototype,
           'query',
-          this._getClientQueryPatch() as never
+          this._getClientQueryPatch() as any
         );
+
+        this._wrap(
+          moduleExports.Client.prototype,
+          'connect',
+          this._getClientConnectPatch() as any
+        );
+
         return moduleExports;
       },
       moduleExports => {
@@ -93,7 +102,7 @@ export class PgInstrumentation extends InstrumentationBase {
         this._wrap(
           moduleExports.prototype,
           'connect',
-          this._getPoolConnectPatch() as never
+          this._getPoolConnectPatch() as any
         );
         return moduleExports;
       },
@@ -105,6 +114,56 @@ export class PgInstrumentation extends InstrumentationBase {
     );
 
     return [modulePG, modulePGPool];
+  }
+
+  override setConfig(config: PgInstrumentationConfig = {}) {
+    this._config = Object.assign({}, config);
+  }
+
+  override getConfig(): PgInstrumentationConfig {
+    return this._config as PgInstrumentationConfig;
+  }
+
+  private _getClientConnectPatch() {
+    const plugin = this;
+    return (original: PgClientConnect) => {
+      return function connect(
+        this: pgTypes.Client,
+        callback?: PgErrorCallback
+      ) {
+        const span = startSpan(
+          plugin.tracer,
+          plugin.getConfig(),
+          `${PgInstrumentation.COMPONENT}.connect`,
+          {
+            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+            [SemanticAttributes.DB_NAME]: this.database,
+            [SemanticAttributes.NET_PEER_NAME]: this.host,
+            [SemanticAttributes.DB_CONNECTION_STRING]:
+              utils.getConnectionString(this),
+            [SemanticAttributes.NET_PEER_PORT]: this.port,
+            [SemanticAttributes.DB_USER]: this.user,
+          }
+        );
+
+        if (callback) {
+          const parentSpan = trace.getSpan(context.active());
+          callback = utils.patchClientConnectCallback(span, callback);
+          if (parentSpan) {
+            callback = context.bind(context.active(), callback);
+          }
+        }
+
+        const connectResult: unknown = context.with(
+          trace.setSpan(context.active(), span),
+          () => {
+            return original.call(this, callback);
+          }
+        );
+
+        return handleConnectResult(span, connectResult);
+      };
+    };
   }
 
   private _getClientQueryPatch() {
@@ -124,25 +183,31 @@ export class PgInstrumentation extends InstrumentationBase {
             span = utils.handleParameterizedQuery.call(
               this,
               plugin.tracer,
-              plugin.getConfig() as PgInstrumentationConfig,
+              plugin.getConfig(),
               query,
               params
             );
           } else {
-            span = utils.handleTextQuery.call(this, plugin.tracer, query);
+            span = utils.handleTextQuery.call(
+              this,
+              plugin.tracer,
+              plugin.getConfig(),
+              query
+            );
           }
         } else if (typeof args[0] === 'object') {
           const queryConfig = args[0] as NormalizedQueryConfig;
           span = utils.handleConfigQuery.call(
             this,
             plugin.tracer,
-            plugin.getConfig() as PgInstrumentationConfig,
+            plugin.getConfig(),
             queryConfig
           );
         } else {
           return utils.handleInvalidQuery.call(
             this,
             plugin.tracer,
+            plugin.getConfig(),
             original,
             ...args
           );
@@ -154,7 +219,7 @@ export class PgInstrumentation extends InstrumentationBase {
           if (typeof args[args.length - 1] === 'function') {
             // Patch ParameterQuery callback
             args[args.length - 1] = utils.patchCallback(
-              plugin.getConfig() as PgInstrumentationConfig,
+              plugin.getConfig(),
               span,
               args[args.length - 1] as PostgresCallback
             );
@@ -170,7 +235,7 @@ export class PgInstrumentation extends InstrumentationBase {
           ) {
             // Patch ConfigQuery callback
             let callback = utils.patchCallback(
-              plugin.getConfig() as PgInstrumentationConfig,
+              plugin.getConfig(),
               span,
               (args[0] as NormalizedQueryConfig).callback!
             );
@@ -186,7 +251,7 @@ export class PgInstrumentation extends InstrumentationBase {
         }
 
         // Perform the original query
-        const result: unknown = original.apply(this, args as never);
+        const result: unknown = original.apply(this, args as any);
 
         // Bind promise to parent span and end the span
         if (result instanceof Promise) {
@@ -194,11 +259,7 @@ export class PgInstrumentation extends InstrumentationBase {
             .then((result: unknown) => {
               // Return a pass-along promise which ends the span and then goes to user's orig resolvers
               return new Promise(resolve => {
-                utils.handleExecutionResult(
-                  plugin.getConfig() as PgInstrumentationConfig,
-                  span,
-                  result
-                );
+                utils.handleExecutionResult(plugin.getConfig(), span, result);
                 span.end();
                 resolve(result);
               });
@@ -225,22 +286,24 @@ export class PgInstrumentation extends InstrumentationBase {
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
-        const jdbcString = utils.getJDBCString(this.options);
+        const connString = utils.getConnectionString(this.options);
         // setup span
-        const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {
-          kind: SpanKind.CLIENT,
-          attributes: {
+        const span = startSpan(
+          plugin.tracer,
+          plugin.getConfig(),
+          `${PG_POOL_COMPONENT}.connect`,
+          {
             [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
             [SemanticAttributes.DB_NAME]: this.options.database, // required
             [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
-            [SemanticAttributes.DB_CONNECTION_STRING]: jdbcString, // required
+            [SemanticAttributes.DB_CONNECTION_STRING]: connString, // required
             [SemanticAttributes.NET_PEER_PORT]: this.options.port,
             [SemanticAttributes.DB_USER]: this.options.user,
             [AttributeNames.IDLE_TIMEOUT_MILLIS]:
               this.options.idleTimeoutMillis,
             [AttributeNames.MAX_CLIENT]: this.options.maxClient,
-          },
-        });
+          }
+        );
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
@@ -254,40 +317,39 @@ export class PgInstrumentation extends InstrumentationBase {
           }
         }
 
-        const connectResult: unknown = originalConnect.call(
-          this,
-          callback as never
+        const connectResult: unknown = context.with(
+          trace.setSpan(context.active(), span),
+          () => {
+            return originalConnect.call(this, callback as any);
+          }
         );
 
-        // No callback was provided, return a promise instead
-        if (connectResult instanceof Promise) {
-          const connectResultPromise = connectResult as Promise<unknown>;
-          return context.bind(
-            context.active(),
-            connectResultPromise
-              .then(result => {
-                // Return a pass-along promise which ends the span and then goes to user's orig resolvers
-                return new Promise(resolve => {
-                  span.end();
-                  resolve(result);
-                });
-              })
-              .catch((error: Error) => {
-                return new Promise((_, reject) => {
-                  span.setStatus({
-                    code: SpanStatusCode.ERROR,
-                    message: error.message,
-                  });
-                  span.end();
-                  reject(error);
-                });
-              })
-          );
-        }
-
-        // Else a callback was provided, so just return the result
-        return connectResult;
+        return handleConnectResult(span, connectResult);
       };
     };
   }
+}
+
+function handleConnectResult(span: Span, connectResult: unknown) {
+  if (!(connectResult instanceof Promise)) {
+    return connectResult;
+  }
+
+  const connectResultPromise = connectResult as Promise<unknown>;
+  return context.bind(
+    context.active(),
+    connectResultPromise
+      .then(result => {
+        span.end();
+        return result;
+      })
+      .catch((error: Error) => {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error.message,
+        });
+        span.end();
+        return Promise.reject(error);
+      })
+  );
 }

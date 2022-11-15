@@ -15,8 +15,4 @@
  */
 
 export * from './instrumentation';
-export {
-  MongoDBInstrumentationConfig,
-  MongoDBInstrumentationExecutionResponseHook,
-  MongoResponseHookInformation,
-} from './types';
+export * from './types';

@@ -8,7 +8,7 @@ const { OTLPTraceExporter } = require('@opentelemetry/exporter-otlp-http');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
 const { Resource } = require('@opentelemetry/resources');
-const { SemanticResourceAttributes }  = require('@opentelemetry/semantic-conventions');
+const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 
 const provider = new NodeTracerProvider({
   resource: new Resource({

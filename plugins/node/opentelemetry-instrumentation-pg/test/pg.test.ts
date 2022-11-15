@@ -64,7 +64,7 @@ const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
   [SemanticAttributes.DB_NAME]: CONFIG.database,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.DB_CONNECTION_STRING]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SemanticAttributes.DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
   [SemanticAttributes.DB_USER]: CONFIG.user,
 };
@@ -99,6 +99,7 @@ describe('pg', () => {
     instrumentation.enable();
   }
 
+  let postgres: typeof pg;
   let client: pg.Client;
   let instrumentation: PgInstrumentation;
   let contextManager: AsyncHooksContextManager;
@@ -140,8 +141,8 @@ describe('pg', () => {
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
 
-    const pg = require('pg');
-    client = new pg.Client(CONFIG);
+    postgres = require('pg');
+    client = new postgres.Client(CONFIG);
     await client.connect();
   });
 
@@ -203,6 +204,91 @@ describe('pg', () => {
         }),
       'pg should not throw when invalid config args are provided'
     );
+  });
+
+  describe('#client.connect(...)', () => {
+    let connClient: pg.Client;
+
+    beforeEach(() => {
+      connClient = new postgres.Client(CONFIG);
+    });
+
+    afterEach(async () => {
+      await connClient.end();
+    });
+
+    it('should not return a promise when callback is provided', done => {
+      const res = connClient.connect(err => {
+        assert.strictEqual(err, null);
+        done();
+      });
+      assert.strictEqual(res, undefined, 'No promise is returned');
+    });
+
+    it('should return a promise if callback is not provided', done => {
+      const resPromise = connClient.connect();
+      resPromise
+        .then(res => {
+          assert.equal(res, undefined);
+          assert.deepStrictEqual(
+            memoryExporter.getFinishedSpans()[0].name,
+            'pg.connect'
+          );
+          done();
+        })
+        .catch((err: Error) => {
+          assert.ok(false, err.message);
+        });
+    });
+
+    it('should throw on failure', done => {
+      connClient = new postgres.Client({ ...CONFIG, port: 59999 });
+      connClient
+        .connect()
+        .then(() => assert.fail('expected connect to throw'))
+        .catch(err => {
+          assert(err instanceof Error);
+          done();
+        });
+    });
+
+    it('should call back with an error', done => {
+      connClient = new postgres.Client({ ...CONFIG, port: 59999 });
+      connClient.connect(err => {
+        assert(err instanceof Error);
+        done();
+      });
+    });
+
+    it('should intercept connect', async () => {
+      const span = tracer.startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), async () => {
+        await connClient.connect();
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 1);
+        const connectSpan = spans[0];
+        assert.deepStrictEqual(connectSpan.name, 'pg.connect');
+        testUtils.assertSpan(
+          connectSpan,
+          SpanKind.CLIENT,
+          DEFAULT_ATTRIBUTES,
+          [],
+          { code: SpanStatusCode.UNSET }
+        );
+
+        testUtils.assertPropagation(connectSpan, span);
+      });
+    });
+
+    it('should not generate traces when requireParentSpan=true is specified', async () => {
+      instrumentation.setConfig({
+        requireParentSpan: true,
+      });
+      memoryExporter.reset();
+      await connClient.connect();
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+    });
   });
 
   describe('#client.query(...)', () => {
@@ -406,7 +492,7 @@ describe('pg', () => {
           [dataAttributeName]: '{"rowCount":1}',
         };
         beforeEach(async () => {
-          const config: PgInstrumentationConfig = {
+          create({
             enhancedDatabaseReporting: true,
             responseHook: (
               span: Span,
@@ -416,8 +502,7 @@ describe('pg', () => {
                 dataAttributeName,
                 JSON.stringify({ rowCount: responseInfo?.data.rowCount })
               ),
-          };
-          create(config);
+          });
         });
 
         it('should attach response hook data to resulting spans for query with callback ', done => {
@@ -561,6 +646,20 @@ describe('pg', () => {
       });
       context.with(trace.setSpan(context.active(), spans[1]), () => {
         client.query('SELECT NOW()').then(queryHandler);
+      });
+    });
+
+    it('should not generate traces for client.query() when requireParentSpan=true is specified', done => {
+      instrumentation.setConfig({
+        requireParentSpan: true,
+      });
+      memoryExporter.reset();
+      client.query('SELECT NOW()', (err, res) => {
+        assert.strictEqual(err, null);
+        assert.ok(res);
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 0);
+        done();
       });
     });
   });
