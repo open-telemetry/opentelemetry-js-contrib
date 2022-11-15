@@ -19,33 +19,33 @@ import {
   Span,
   SpanKind,
   SpanStatusCode,
-} from "@opentelemetry/api";
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleFile,
   InstrumentationNodeModuleDefinition,
   isWrapped,
   safeExecuteInTheMiddle,
-} from "@opentelemetry/instrumentation";
+} from '@opentelemetry/instrumentation';
 import {
   SemanticAttributes,
   MessagingOperationValues,
   MessagingDestinationKindValues,
-} from "@opentelemetry/semantic-conventions";
+} from '@opentelemetry/semantic-conventions';
 import {
   SocketIoInstrumentationConfig,
   SocketIoInstrumentationAttributes,
-} from "./types";
-import { VERSION } from "./version";
-import { isPromise } from "./utils";
+} from './types';
+import { VERSION } from './version';
+import { isPromise } from './utils';
 
 const reservedEvents = [
-  "connect",
-  "connect_error",
-  "disconnect",
-  "disconnecting",
-  "newListener",
-  "removeListener",
+  'connect',
+  'connect_error',
+  'disconnect',
+  'disconnecting',
+  'newListener',
+  'removeListener',
 ];
 
 export class SocketIoInstrumentation extends InstrumentationBase<any> {
@@ -53,7 +53,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
 
   constructor(config: SocketIoInstrumentationConfig = {}) {
     super(
-      "@opentelemetry/instrumentation-socket.io",
+      '@opentelemetry/instrumentation-socket.io',
       VERSION,
       normalizeConfig(config)
     );
@@ -61,8 +61,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
 
   protected init() {
     const socketInstrumentation = new InstrumentationNodeModuleFile<any>(
-      "socket.io/dist/socket.js",
-      [">=3 <5"],
+      'socket.io/dist/socket.js',
+      ['>=3 <5'],
       (moduleExports, moduleVersion) => {
         if (moduleExports === undefined || moduleExports === null) {
           return moduleExports;
@@ -70,33 +70,31 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        this._diag.debug(
-          `applying patch to socket.io@${moduleVersion} Socket`
-        );
+        this._diag.debug(`applying patch to socket.io@${moduleVersion} Socket`);
         if (isWrapped(moduleExports?.Socket?.prototype?.on)) {
-          this._unwrap(moduleExports.Socket.prototype, "on");
+          this._unwrap(moduleExports.Socket.prototype, 'on');
         }
         this._wrap(
           moduleExports.Socket.prototype,
-          "on",
+          'on',
           this._patchOn(moduleVersion)
         );
         if (isWrapped(moduleExports?.Socket?.prototype?.emit)) {
-          this._unwrap(moduleExports.Socket.prototype, "emit");
+          this._unwrap(moduleExports.Socket.prototype, 'emit');
         }
         this._wrap(
           moduleExports.Socket.prototype,
-          "emit",
+          'emit',
           this._patchEmit(moduleVersion)
         );
         return moduleExports;
       },
-      (moduleExports) => {
+      moduleExports => {
         if (isWrapped(moduleExports?.Socket?.prototype?.on)) {
-          this._unwrap(moduleExports.Socket.prototype, "on");
+          this._unwrap(moduleExports.Socket.prototype, 'on');
         }
         if (isWrapped(moduleExports?.Socket?.prototype?.emit)) {
-          this._unwrap(moduleExports.Socket.prototype, "emit");
+          this._unwrap(moduleExports.Socket.prototype, 'emit');
         }
         return moduleExports;
       }
@@ -104,8 +102,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
 
     const broadcastOperatorInstrumentation =
       new InstrumentationNodeModuleFile<any>(
-        "socket.io/dist/broadcast-operator.js",
-        [">=4 <5"],
+        'socket.io/dist/broadcast-operator.js',
+        ['>=4 <5'],
         (moduleExports, moduleVersion) => {
           if (moduleExports === undefined || moduleExports === null) {
             return moduleExports;
@@ -117,25 +115,25 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
             `applying patch to socket.io@${moduleVersion} StrictEventEmitter`
           );
           if (isWrapped(moduleExports?.BroadcastOperator?.prototype?.emit)) {
-            this._unwrap(moduleExports.BroadcastOperator.prototype, "emit");
+            this._unwrap(moduleExports.BroadcastOperator.prototype, 'emit');
           }
           this._wrap(
             moduleExports.BroadcastOperator.prototype,
-            "emit",
+            'emit',
             this._patchEmit(moduleVersion)
           );
           return moduleExports;
         },
-        (moduleExports) => {
+        moduleExports => {
           if (isWrapped(moduleExports?.BroadcastOperator?.prototype?.emit)) {
-            this._unwrap(moduleExports.BroadcastOperator.prototype, "emit");
+            this._unwrap(moduleExports.BroadcastOperator.prototype, 'emit');
           }
           return moduleExports;
         }
       );
     const namespaceInstrumentation = new InstrumentationNodeModuleFile<any>(
-      "socket.io/dist/namespace.js",
-      ["<4"],
+      'socket.io/dist/namespace.js',
+      ['<4'],
       (moduleExports, moduleVersion) => {
         if (moduleExports === undefined || moduleExports === null) {
           return moduleExports;
@@ -147,24 +145,24 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           `applying patch to socket.io@${moduleVersion} Namespace`
         );
         if (isWrapped(moduleExports?.Namespace?.prototype?.emit)) {
-          this._unwrap(moduleExports.Namespace.prototype, "emit");
+          this._unwrap(moduleExports.Namespace.prototype, 'emit');
         }
         this._wrap(
           moduleExports.Namespace.prototype,
-          "emit",
+          'emit',
           this._patchEmit(moduleVersion)
         );
         return moduleExports;
       },
-      (moduleExports) => {
+      moduleExports => {
         if (isWrapped(moduleExports?.Namespace?.prototype?.emit)) {
-          this._unwrap(moduleExports.Namespace.prototype, "emit");
+          this._unwrap(moduleExports.Namespace.prototype, 'emit');
         }
       }
     );
     const socketInstrumentationLegacy = new InstrumentationNodeModuleFile<any>(
-      "socket.io/lib/socket.js",
-      ["2"],
+      'socket.io/lib/socket.js',
+      ['2'],
       (moduleExports, moduleVersion) => {
         if (moduleExports === undefined || moduleExports === null) {
           return moduleExports;
@@ -172,37 +170,35 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        this._diag.debug(
-          `applying patch to socket.io@${moduleVersion} Socket`
-        );
+        this._diag.debug(`applying patch to socket.io@${moduleVersion} Socket`);
         if (isWrapped(moduleExports.prototype?.on)) {
-          this._unwrap(moduleExports.prototype, "on");
+          this._unwrap(moduleExports.prototype, 'on');
         }
-        this._wrap(moduleExports.prototype, "on", this._patchOn(moduleVersion));
+        this._wrap(moduleExports.prototype, 'on', this._patchOn(moduleVersion));
         if (isWrapped(moduleExports.prototype?.emit)) {
-          this._unwrap(moduleExports.prototype, "emit");
+          this._unwrap(moduleExports.prototype, 'emit');
         }
         this._wrap(
           moduleExports.prototype,
-          "emit",
+          'emit',
           this._patchEmit(moduleVersion)
         );
         return moduleExports;
       },
-      (moduleExports) => {
+      moduleExports => {
         if (isWrapped(moduleExports.prototype?.on)) {
-          this._unwrap(moduleExports.prototype, "on");
+          this._unwrap(moduleExports.prototype, 'on');
         }
         if (isWrapped(moduleExports.prototype?.emit)) {
-          this._unwrap(moduleExports.prototype, "emit");
+          this._unwrap(moduleExports.prototype, 'emit');
         }
         return moduleExports;
       }
     );
     const namespaceInstrumentationLegacy =
       new InstrumentationNodeModuleFile<any>(
-        "socket.io/lib/namespace.js",
-        ["2"],
+        'socket.io/lib/namespace.js',
+        ['2'],
         (moduleExports, moduleVersion) => {
           if (moduleExports === undefined || moduleExports === null) {
             return moduleExports;
@@ -214,26 +210,26 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
             `applying patch to socket.io@${moduleVersion} Namespace`
           );
           if (isWrapped(moduleExports?.prototype?.emit)) {
-            this._unwrap(moduleExports.prototype, "emit");
+            this._unwrap(moduleExports.prototype, 'emit');
           }
           this._wrap(
             moduleExports.prototype,
-            "emit",
+            'emit',
             this._patchEmit(moduleVersion)
           );
           return moduleExports;
         },
-        (moduleExports) => {
+        moduleExports => {
           if (isWrapped(moduleExports?.prototype?.emit)) {
-            this._unwrap(moduleExports.prototype, "emit");
+            this._unwrap(moduleExports.prototype, 'emit');
           }
         }
       );
 
     return [
       new InstrumentationNodeModuleDefinition<any>(
-        "socket.io",
-        [">=3 <5"],
+        'socket.io',
+        ['>=3 <5'],
         (moduleExports, moduleVersion) => {
           if (moduleExports === undefined || moduleExports === null) {
             return moduleExports;
@@ -245,18 +241,18 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
             `applying patch to socket.io@${moduleVersion} Server`
           );
           if (isWrapped(moduleExports?.Server?.prototype?.on)) {
-            this._unwrap(moduleExports.Server.prototype, "on");
+            this._unwrap(moduleExports.Server.prototype, 'on');
           }
           this._wrap(
             moduleExports.Server.prototype,
-            "on",
+            'on',
             this._patchOn(moduleVersion)
           );
           return moduleExports;
         },
         (moduleExports, moduleVersion) => {
           if (isWrapped(moduleExports?.Server?.prototype?.on)) {
-            this._unwrap(moduleExports.Server.prototype, "on");
+            this._unwrap(moduleExports.Server.prototype, 'on');
           }
           return moduleExports;
         },
@@ -267,8 +263,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         ]
       ),
       new InstrumentationNodeModuleDefinition<any>(
-        "socket.io",
-        ["2"],
+        'socket.io',
+        ['2'],
         (moduleExports, moduleVersion) => {
           if (moduleExports === undefined || moduleExports === null) {
             return moduleExports;
@@ -280,18 +276,18 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
             `applying patch to socket.io@${moduleVersion} Server`
           );
           if (isWrapped(moduleExports?.prototype?.on)) {
-            this._unwrap(moduleExports.prototype, "on");
+            this._unwrap(moduleExports.prototype, 'on');
           }
           this._wrap(
             moduleExports.prototype,
-            "on",
+            'on',
             this._patchOn(moduleVersion)
           );
           return moduleExports;
         },
         (moduleExports, moduleVersion) => {
           if (isWrapped(moduleExports?.prototype?.on)) {
-            this._unwrap(moduleExports.prototype, "on");
+            this._unwrap(moduleExports.prototype, 'on');
           }
           return moduleExports;
         },
@@ -316,7 +312,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         }
         const wrappedListener = function (this: any, ...args: any[]) {
           const eventName = ev;
-          const defaultNamespace = "/";
+          const defaultNamespace = '/';
           const namespace = this.name || this.adapter?.nsp?.name;
           const destination =
             namespace === defaultNamespace
@@ -327,7 +323,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
             {
               kind: SpanKind.CONSUMER,
               attributes: {
-                [SemanticAttributes.MESSAGING_SYSTEM]: "socket.io",
+                [SemanticAttributes.MESSAGING_SYSTEM]: 'socket.io',
                 [SemanticAttributes.MESSAGING_DESTINATION]: namespace,
                 [SemanticAttributes.MESSAGING_OPERATION]:
                   MessagingOperationValues.RECEIVE,
@@ -341,8 +337,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
             safeExecuteInTheMiddle(
               () =>
                 self._config?.onHook?.(span, { moduleVersion, payload: args }),
-              (e) => {
-                if (e) self._diag.error(`onHook error`, e);
+              e => {
+                if (e) self._diag.error('onHook error', e);
               },
               true
             );
@@ -361,9 +357,9 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
       const result = traced();
       if (isPromise(result)) {
         return Promise.resolve(result)
-          .catch((err) => {
+          .catch(err => {
             if (err) {
-              if (typeof err === "string") {
+              if (typeof err === 'string') {
                 span.setStatus({ code: SpanStatusCode.ERROR, message: err });
               } else {
                 span.recordException(err);
@@ -398,7 +394,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         if (self._config?.emitIgnoreEventList?.includes(ev)) {
           return original.apply(this, arguments);
         }
-        const messagingSystem = "socket.io";
+        const messagingSystem = 'socket.io';
         const eventName = ev;
         const attributes: any = {
           [SemanticAttributes.MESSAGING_SYSTEM]: messagingSystem,
@@ -431,7 +427,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
             namespace;
           attributes[SemanticAttributes.MESSAGING_DESTINATION] = namespace;
         }
-        const spanRooms = rooms.length ? `[${rooms.join()}]` : "";
+        const spanRooms = rooms.length ? `[${rooms.join()}]` : '';
         const span = self.tracer.startSpan(`${namespace}${spanRooms} send`, {
           kind: SpanKind.PRODUCER,
           attributes,
@@ -441,8 +437,8 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           safeExecuteInTheMiddle(
             () =>
               self._config.emitHook?.(span, { moduleVersion, payload: args }),
-            (e) => {
-              if (e) self._diag.error(`emitHook error`, e);
+            e => {
+              if (e) self._diag.error('emitHook error', e);
             },
             true
           );
