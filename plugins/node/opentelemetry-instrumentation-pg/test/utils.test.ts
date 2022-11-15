@@ -255,12 +255,21 @@ describe('utils.ts', () => {
         traceFlags: TraceFlags.SAMPLED,
       };
 
-      assert.strictEqual(utils.addSqlCommenterComment(wrapSpanContext(spanContext), ''), '');
+      assert.strictEqual(
+        utils.addSqlCommenterComment(wrapSpanContext(spanContext), ''),
+        ''
+      );
     });
 
     it('does not add a comment if span context is invalid', () => {
       const query = 'SELECT * from FOO;';
-      assert.strictEqual(utils.addSqlCommenterComment(wrapSpanContext(INVALID_SPAN_CONTEXT), query), query);
+      assert.strictEqual(
+        utils.addSqlCommenterComment(
+          wrapSpanContext(INVALID_SPAN_CONTEXT),
+          query
+        ),
+        query
+      );
     });
 
     it('correctly also sets trace state', () => {
