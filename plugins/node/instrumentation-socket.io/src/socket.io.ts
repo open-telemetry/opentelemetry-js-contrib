@@ -35,7 +35,11 @@ import {
 import { SocketIoInstrumentationConfig } from './types';
 import { SocketIoInstrumentationAttributes } from './AttributeNames';
 import { VERSION } from './version';
-import { isPromise, normalizeConfig } from './utils';
+import {
+  extractRoomsAttributeValue,
+  isPromise,
+  normalizeConfig,
+} from './utils';
 
 const reservedEvents = [
   'connect',
@@ -354,18 +358,21 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
     try {
       const result = traced();
       if (isPromise(result)) {
-        return result
-          .catch(err => {
-            if (err) {
-              span.recordException(err);
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: err?.message,
-              });
-            }
+        return result.then(
+          value => {
+            span.end();
+            return value;
+          },
+          err => {
+            span.recordException(err);
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: err?.message,
+            });
+            span.end();
             throw err;
-          })
-          .finally(() => span.end());
+          }
+        );
       } else {
         span.end();
         return result;
@@ -397,20 +404,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           [SocketIoInstrumentationAttributes.SOCKET_IO_EVENT_NAME]: eventName,
         };
 
-        let rooms =
-          this.rooms ||
-          this._rooms ||
-          this.sockets?._rooms ||
-          this.sockets?.rooms ||
-          [];
-        // Some of the attributes above are of Set type. Convert it.
-        if (!Array.isArray(rooms)) {
-          rooms = Array.from<string>(rooms);
-        }
-        // only for v2: this.id is only set for v2. That's to mimic later versions which have this.id in the rooms Set.
-        if (rooms.length === 0 && this.id) {
-          rooms.push(this.id);
-        }
+        const rooms = extractRoomsAttributeValue(this);
         if (rooms.length) {
           attributes[SocketIoInstrumentationAttributes.SOCKET_IO_ROOMS] = rooms;
         }

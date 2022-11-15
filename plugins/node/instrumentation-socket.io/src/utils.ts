@@ -29,3 +29,21 @@ export const normalizeConfig = (config?: SocketIoInstrumentationConfig) => {
   }
   return config;
 };
+
+export const extractRoomsAttributeValue = (self: any): any[] => {
+  let rooms =
+    self.rooms ||
+    self._rooms ||
+    self.sockets?._rooms ||
+    self.sockets?.rooms ||
+    [];
+  // Some of the attributes above are of Set type. Convert it.
+  if (!Array.isArray(rooms)) {
+    rooms = Array.from<string>(rooms);
+  }
+  // only for v2: this.id is only set for v2. That's to mimic later versions which have this.id in the rooms Set.
+  if (rooms.length === 0 && self.id) {
+    rooms.push(self.id);
+  }
+  return rooms;
+};
