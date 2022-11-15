@@ -23,7 +23,6 @@ import {
 import {
   IORedisInstrumentationConfig,
   IORedisCommand,
-  IORedisT,
   RedisInterface,
 } from './types';
 import {
@@ -38,7 +37,7 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
 };
 
-export class IORedisInstrumentation extends InstrumentationBase<IORedisT> {
+export class IORedisInstrumentation extends InstrumentationBase<any> {
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-ioredis',
@@ -47,11 +46,11 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisT> {
     );
   }
 
-  init(): InstrumentationNodeModuleDefinition<IORedisT>[] {
+  init(): InstrumentationNodeModuleDefinition<any>[] {
     return [
-      new InstrumentationNodeModuleDefinition<IORedisT>(
+      new InstrumentationNodeModuleDefinition<any>(
         'ioredis',
-        ['>1'],
+        ['>1', '<6'],
         (moduleExports, moduleVersion?: string) => {
           diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
