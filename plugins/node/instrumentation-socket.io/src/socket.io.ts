@@ -32,12 +32,10 @@ import {
   MessagingOperationValues,
   MessagingDestinationKindValues,
 } from '@opentelemetry/semantic-conventions';
-import {
-  SocketIoInstrumentationConfig,
-  SocketIoInstrumentationAttributes,
-} from './types';
+import { SocketIoInstrumentationConfig } from './types';
+import { SocketIoInstrumentationAttributes } from './AttributeNames';
 import { VERSION } from './version';
-import { isPromise } from './utils';
+import { isPromise, normalizeConfig } from './utils';
 
 const reservedEvents = [
   'connect',
@@ -356,18 +354,14 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
     try {
       const result = traced();
       if (isPromise(result)) {
-        return Promise.resolve(result)
+        return result
           .catch(err => {
             if (err) {
-              if (typeof err === 'string') {
-                span.setStatus({ code: SpanStatusCode.ERROR, message: err });
-              } else {
-                span.recordException(err);
-                span.setStatus({
-                  code: SpanStatusCode.ERROR,
-                  message: err?.message,
-                });
-              }
+              span.recordException(err);
+              span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: err?.message,
+              });
             }
             throw err;
           })
@@ -460,14 +454,3 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
     };
   }
 }
-
-const normalizeConfig = (config?: SocketIoInstrumentationConfig) => {
-  config = Object.assign({}, config);
-  if (!Array.isArray(config.emitIgnoreEventList)) {
-    config.emitIgnoreEventList = [];
-  }
-  if (!Array.isArray(config.onIgnoreEventList)) {
-    config.onIgnoreEventList = [];
-  }
-  return config;
-};

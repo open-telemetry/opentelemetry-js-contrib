@@ -18,11 +18,6 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export const defaultSocketIoPath = '/socket.io/';
 
-export const SocketIoInstrumentationAttributes = {
-  SOCKET_IO_ROOMS: 'messaging.socket.io.rooms',
-  SOCKET_IO_NAMESPACE: 'messaging.socket.io.namespace',
-  SOCKET_IO_EVENT_NAME: 'messaging.socket.io.event_name',
-};
 export interface SocketIoHookInfo {
   moduleVersion?: string;
   payload: any[];

@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from './socket.io';
-export * from './types';
-export * from './AttributeNames';
+export const SocketIoInstrumentationAttributes = {
+  SOCKET_IO_ROOMS: 'messaging.socket.io.rooms',
+  SOCKET_IO_NAMESPACE: 'messaging.socket.io.namespace',
+  SOCKET_IO_EVENT_NAME: 'messaging.socket.io.event_name',
+};

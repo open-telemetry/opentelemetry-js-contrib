@@ -13,6 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { SocketIoInstrumentationConfig } from './types';
+
 export const isPromise = (value: any): value is Promise<unknown> => {
   return typeof value?.then === 'function';
+};
+
+export const normalizeConfig = (config?: SocketIoInstrumentationConfig) => {
+  config = Object.assign({}, config);
+  if (!Array.isArray(config.emitIgnoreEventList)) {
+    config.emitIgnoreEventList = [];
+  }
+  if (!Array.isArray(config.onIgnoreEventList)) {
+    config.onIgnoreEventList = [];
+  }
+  return config;
 };
