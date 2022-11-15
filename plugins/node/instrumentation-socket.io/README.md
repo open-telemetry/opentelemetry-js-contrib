@@ -46,7 +46,7 @@ registerInstrumentations({
 | `emitIgnoreEventList` | `string[]` | `[]` | names of emitted events to ignore tracing for |
 | `onHook` | `SocketIoHookFunction` | `undefined` | hook for adding custom attributes before the event listener (callback) is invoked |
 | `onIgnoreEventList` | `string[]` | `[]` | names of listened events to ignore tracing for |
-| `traceReserved` | `boolean` | `false` | set to true if you want to trace socket.io reserved events (see https://socket.io/docs/v4/emit-cheatsheet/#Reserved-events) |
+| `traceReserved` | `boolean` | `false` | set to true if you want to trace socket.io reserved events (see [docs](https://socket.io/docs/v4/emit-cheatsheet/#Reserved-events)) |
 
 ## Migration From opentelemetry-instrumentation-socket.io
 
