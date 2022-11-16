@@ -94,6 +94,9 @@ export class CucumberInstrumentation extends InstrumentationBase {
               if (isWrapped(moduleExports.default.prototype.run)) {
                 this._unwrap(moduleExports.default.prototype, 'run');
                 this._unwrap(moduleExports.default.prototype, 'runStep');
+                if ('runAttempt' in moduleExports.default.prototype) {
+                  this._unwrap(moduleExports.default.prototype, 'runAttempt');
+                }
               }
               this._wrap(
                 moduleExports.default.prototype,
@@ -105,6 +108,13 @@ export class CucumberInstrumentation extends InstrumentationBase {
                 'runStep',
                 this._getTestCaseRunStepPatch()
               );
+              if ('runAttempt' in moduleExports.default.prototype) {
+                this._wrap(
+                  moduleExports.default.prototype,
+                  'runAttempt',
+                  this._getTestCaseRunAttemptPatch()
+                );
+              }
               return moduleExports;
             },
             (moduleExports, moduleVersion) => {
@@ -114,6 +124,9 @@ export class CucumberInstrumentation extends InstrumentationBase {
               );
               this._unwrap(moduleExports.default.prototype, 'run');
               this._unwrap(moduleExports.default.prototype, 'runStep');
+              if ('runAttempt' in moduleExports.default.prototype) {
+                this._unwrap(moduleExports.default.prototype, 'runAttempt');
+              }
             }
           ),
         ]
@@ -232,6 +245,41 @@ export class CucumberInstrumentation extends InstrumentationBase {
                 span,
                 result.status,
                 result.message
+              );
+              return result;
+            } catch (error) {
+              CucumberInstrumentation.setSpanToError(span, error);
+              throw error;
+            } finally {
+              span.end();
+            }
+          }
+        );
+      };
+    };
+  }
+
+  private _getTestCaseRunAttemptPatch() {
+    const instrumentation = this;
+    return function (
+      original: TestCaseRunner['runAttempt']
+    ): TestCaseRunner['runAttempt'] {
+      return async function (this: TestCaseRunner, ...args): Promise<boolean> {
+        const [attempt] = args;
+        return instrumentation.tracer.startActiveSpan(
+          `Attempt #${attempt}`,
+          {
+            kind: SpanKind.CLIENT,
+            attributes: {},
+          },
+          async span => {
+            try {
+              const result = await original.apply(this, args);
+              const worstResult = this.getWorstStepResult();
+              instrumentation.setSpanToStepStatus(
+                span,
+                worstResult.status,
+                worstResult.message
               );
               return result;
             } catch (error) {
