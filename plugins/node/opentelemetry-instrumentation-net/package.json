@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-net",
-  "version": "0.30.2",
+  "version": "0.31.0",
   "description": "OpenTelemetry net module automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
