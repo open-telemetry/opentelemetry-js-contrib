@@ -15,7 +15,7 @@
  */
 
 import { BaseMetrics } from './BaseMetrics';
-import * as api from '@opentelemetry/api-metrics';
+import * as api from '@opentelemetry/api';
 import * as enums from './enum';
 
 import { getCpuUsageData, getMemoryData } from './stats/common';
