@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.30.1...instrumentation-fastify-v0.31.0) (2022-11-16)
+
+
+### Features
+
+* **fastify:** add requestHook support ([#1255](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1255)) ([c9923e3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c9923e3636649c67e5122531f164909b48dbb58d))
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
+
+### Bug Fixes
+
+* **instrumentation-fastify:** stop using fastify types in public api ([#1267](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1267)) ([40515c3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/40515c3dca81d1c177d71af2663fce3b8813bbf2))
+
 ## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.30.0...instrumentation-fastify-v0.30.1) (2022-11-02)
 
 

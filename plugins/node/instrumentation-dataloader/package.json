@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dataloader",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "OpenTelemetry instrumentation for dataloader",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
