@@ -28,14 +28,19 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import * as path from 'path';
 import * as assert from 'assert';
 import * as fs from 'fs';
+import * as semver from 'semver';
 
 import { CucumberInstrumentation, AttributeNames } from '../src';
+
+const LIB_VERSION = require('@cucumber/cucumber/package.json').version;
+const hasRunAttempt = semver.gte(LIB_VERSION, '8.8.0');
 
 const instrumentation = new CucumberInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
 import {
+  IConfiguration,
   loadConfiguration,
   loadSupport,
   runCucumber,
@@ -69,7 +74,10 @@ describe('CucumberInstrumentation', () => {
     await provider.shutdown();
   });
 
-  const init = async (feature: string) => {
+  const init = async (
+    feature: string,
+    providedConfiguration?: Partial<IConfiguration>
+  ) => {
     // clean-up require cache to re-register cucumber hooks for a new run
     ['features/support/world', 'features/step_definitions/steps'].forEach(
       search => {
@@ -84,6 +92,7 @@ describe('CucumberInstrumentation', () => {
     await fs.promises.writeFile(featurePath, feature, 'utf-8');
     const { runConfiguration } = await loadConfiguration({
       provided: {
+        ...providedConfiguration,
         paths: [featurePath],
         require: [
           path.join(__dirname, 'features/support/world.ts'),
@@ -126,14 +135,6 @@ describe('CucumberInstrumentation', () => {
         const parent = spans.find(span => span.name.startsWith('Feature'));
         assert(parent, 'Expected a parent span');
 
-        // all step spans should have Feature as parent
-        assert.equal(
-          spans.filter(
-            span => span.parentSpanId === parent.spanContext().spanId
-          ).length,
-          5,
-          'Expected all step spans and global hooks to be children of Feature'
-        );
         assert.deepEqual(
           spans.map(span => span.name),
           [
@@ -151,8 +152,9 @@ describe('CucumberInstrumentation', () => {
             'AfterStep',
             'does something with the table',
             'After',
+            hasRunAttempt && 'Attempt #0',
             'Feature: Basic. Scenario: Button pushing',
-          ],
+          ].filter(Boolean),
           'Expected all hooks to be patched'
         );
       });
@@ -248,6 +250,56 @@ describe('CucumberInstrumentation', () => {
         assert.equal(span.status.code, SpanStatusCode.ERROR);
       });
     });
+
+    if (hasRunAttempt) {
+      describe('attempts.feature', () => {
+        beforeEach(async () => {
+          await init(
+            `
+          Feature: Attempts
+
+            Scenario: fail button pushing
+              Given a failing step
+              When I push the button
+        `,
+            { retry: 2 }
+          );
+        });
+
+        it('generates spans for each attempt', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          const parent = spans.find(span => span.name.includes('Feature'));
+          assert(parent);
+
+          const attemptSpans = spans.filter(span =>
+            span.name.startsWith('Attempt')
+          );
+          assert.equal(attemptSpans.length, 3);
+
+          assert.deepEqual(
+            attemptSpans.map(span => span.parentSpanId),
+            Array(3).fill(parent.spanContext().spanId)
+          );
+        });
+
+        it('creates scanario spans as children of attempts', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          const attemptSpans = spans.filter(span =>
+            span.name.startsWith('Attempt')
+          );
+          assert.equal(attemptSpans.length, 3);
+
+          attemptSpans.forEach(attempt => {
+            assert.equal(
+              spans.filter(
+                span => span.parentSpanId === attempt.spanContext().spanId
+              ).length,
+              4
+            );
+          });
+        });
+      });
+    }
 
     describe('doc-string.feature', () => {
       beforeEach(async () => {
