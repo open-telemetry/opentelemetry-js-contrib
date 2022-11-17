@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as path from "path";
+import * as path from 'path';
 
 import {
   InstrumentationBase,
@@ -22,7 +22,7 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
-} from "@opentelemetry/instrumentation";
+} from '@opentelemetry/instrumentation';
 import {
   Context as OtelContext,
   context as otelContext,
@@ -36,27 +36,27 @@ import {
   TraceFlags,
   TracerProvider,
   ROOT_CONTEXT,
-} from "@opentelemetry/api";
+} from '@opentelemetry/api';
 import {
   AWSXRAY_TRACE_ID_HEADER,
   AWSXRayPropagator,
-} from "@opentelemetry/propagator-aws-xray";
+} from '@opentelemetry/propagator-aws-xray';
 import {
   SemanticAttributes,
   SemanticResourceAttributes,
-} from "@opentelemetry/semantic-conventions";
+} from '@opentelemetry/semantic-conventions';
 
 import {
   APIGatewayProxyEventHeaders,
   Callback,
   Context,
   Handler,
-} from "aws-lambda";
+} from 'aws-lambda';
 
-import { AwsLambdaInstrumentationConfig, EventContextExtractor } from "./types";
-import { VERSION } from "./version";
-import { LambdaModule } from "./internal-types";
-import { strict } from "assert";
+import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
+import { VERSION } from './version';
+import { LambdaModule } from './internal-types';
+import { strict } from 'assert';
 
 const awsPropagator = new AWSXRayPropagator();
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
@@ -68,7 +68,7 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   },
 };
 
-export const traceContextEnvironmentKey = "_X_AMZN_TRACE_ID";
+export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 
 type GatewayResult = Partial<{
   statusCode: number;
@@ -79,7 +79,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _forceFlush?: () => Promise<void>;
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
-    super("@opentelemetry/instrumentation-aws-lambda", VERSION, _config);
+    super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
@@ -98,13 +98,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     const handler = path.basename(handlerDef);
     const moduleRoot = handlerDef.substr(0, handlerDef.length - handler.length);
 
-    const [module, functionName] = handler.split(".", 2);
+    const [module, functionName] = handler.split('.', 2);
 
     // Lambda loads user function using an absolute path.
     let filename = path.resolve(taskRoot, moduleRoot, module);
-    if (!filename.endsWith(".js")) {
+    if (!filename.endsWith('.js')) {
       // Patching infrastructure currently requires a filename when requiring with an absolute path.
-      filename += ".js";
+      filename += '.js';
     }
 
     return [
@@ -112,15 +112,15 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         // NB: The patching infrastructure seems to match names backwards, this must be the filename, while
         // InstrumentationNodeModuleFile must be the module name.
         filename,
-        ["*"],
+        ['*'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile(
             module,
-            ["*"],
+            ['*'],
             (moduleExports: LambdaModule) => {
-              diag.debug("Applying patch for lambda handler");
+              diag.debug('Applying patch for lambda handler');
               if (isWrapped(moduleExports[functionName])) {
                 this._unwrap(moduleExports, functionName);
               }
@@ -129,7 +129,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             },
             (moduleExports?: LambdaModule) => {
               if (moduleExports == undefined) return;
-              diag.debug("Removing patch for lambda handler");
+              diag.debug('Removing patch for lambda handler');
               this._unwrap(moduleExports, functionName);
             }
           ),
@@ -145,7 +145,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   }
 
   private _getPatchHandler(original: Handler) {
-    diag.debug("patch handler function");
+    diag.debug('patch handler function');
     const plugin = this;
 
     return function patchedHandler(
@@ -249,7 +249,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             () => config.requestHook!(lambdaSpan, { event, context }),
             (e) => {
               if (e)
-                diag.error("aws-lambda instrumentation: requestHook error", e);
+                diag.error('aws-lambda instrumentation: requestHook error', e);
             },
             true
           );
@@ -280,7 +280,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                 }
               }
             ) as Promise<{}> | undefined;
-            if (typeof maybePromise?.then === "function") {
+            if (typeof maybePromise?.then === 'function') {
               return maybePromise.then(
                 (value) => {
                   plugin._applyResponseHook(lambdaSpan, null, value);
@@ -319,7 +319,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             () => {
               const innerResult = inner(subCtx); // This call never fails, because it either returns a promise, or was called with safeExecuteInTheMiddle
               // The handler was an async, it returned a promise.
-              if (typeof innerResult?.then === "function") {
+              if (typeof innerResult?.then === 'function') {
                 return innerResult.then(
                   (value) => {
                     strict(gatewaySpan);
@@ -339,7 +339,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                   }
                 );
               } else {
-               
                 // The lambda was synchronous, or it as synchronously thrown an error
                 strict(gatewaySpan);
 
@@ -357,14 +356,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                 plugin._endGatewaySpan(gatewaySpan, undefined, error);
                 plugin._flush();
               }
-
             }
           );
         });
       }
 
       // Second case, lambda was asynchronous, in which case
-      if (typeof handlerReturn?.then === "function") {
+      if (typeof handlerReturn?.then === 'function') {
         return handlerReturn.then(
           async (success) => {
             await plugin._flush();
@@ -375,7 +373,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             throw error;
           }
         );
-      } 
+      }
 
       // Third case, the lambda is purely synchronous, without event loop, nor callback() being called
       // Pitfall, no flushing !
@@ -405,10 +403,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       span.end();
       return;
     }
-    if (!(typeof returnFromLambda == "object")) {
+    if (!(typeof returnFromLambda == 'object')) {
       span.setStatus({
         code: SpanStatusCode.ERROR,
-        message: "Lambda return value malformed",
+        message: 'Lambda return value malformed',
       });
       span.end();
       return;
@@ -421,7 +419,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message:
-          "Return to API Gateway with error " + returnFromLambda.statusCode,
+          'Return to API Gateway with error ' + returnFromLambda.statusCode,
       });
     } else {
       span.setStatus({
@@ -438,11 +436,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let currentProvider: any = tracerProvider;
 
-    if (typeof currentProvider.getDelegate === "function") {
+    if (typeof currentProvider.getDelegate === 'function') {
       currentProvider = currentProvider.getDelegate();
     }
 
-    if (typeof currentProvider.forceFlush === "function") {
+    if (typeof currentProvider.forceFlush === 'function') {
       return currentProvider.forceFlush.bind(currentProvider);
     }
 
@@ -456,16 +454,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   ): Callback {
     const plugin = this;
     return (err, res) => {
-      diag.debug("executing wrapped lookup callback function");
+      diag.debug('executing wrapped lookup callback function');
       plugin._applyResponseHook(span, err, res);
 
       plugin._endSpan(span, err);
       if (gatewaySpan) {
-        plugin._endGatewaySpan(gatewaySpan, res, err); 
+        plugin._endGatewaySpan(gatewaySpan, res, err);
       }
 
       this._flush().then(() => {
-        diag.debug("executing original lookup callback function");
+        diag.debug('executing original lookup callback function');
         originalAWSLambdaCallback.apply(this, [err, res]); // End of the function
       });
     };
@@ -477,11 +475,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         await this._forceFlush();
       } catch (e) {
         // We must not fail this call, but we may log it
-        diag.error("Error while flushing the lambda", e);
+        diag.error('Error while flushing the lambda', e);
       }
     } else {
       diag.error(
-        "Spans may not be exported for the lambda function because we are not force flushing before callback."
+        'Spans may not be exported for the lambda function because we are not force flushing before callback.'
       );
     }
   }
@@ -503,7 +501,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   private _errorToString(err: string | Error | null | undefined) {
     let errMessage;
-    if (typeof err === "string") {
+    if (typeof err === 'string') {
       errMessage = err;
     } else if (err) {
       errMessage = err.message;
@@ -521,7 +519,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         () => this._config.responseHook!(span, { err, res }),
         (e) => {
           if (e)
-            diag.error("aws-lambda instrumentation: responseHook error", e);
+            diag.error('aws-lambda instrumentation: responseHook error', e);
         },
         true
       );
@@ -529,7 +527,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   }
 
   private static _extractAccountId(arn: string): string | undefined {
-    const parts = arn.split(":");
+    const parts = arn.split(':');
     if (parts.length >= 5) {
       return parts[4];
     }
@@ -576,7 +574,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       (e) => {
         if (e)
           diag.error(
-            "aws-lambda instrumentation: eventContextExtractor error",
+            'aws-lambda instrumentation: eventContextExtractor error',
             e
           );
       },
