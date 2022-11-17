@@ -400,4 +400,3 @@ export class MySQLInstrumentation extends InstrumentationBase<
     });
   }
 }
-
