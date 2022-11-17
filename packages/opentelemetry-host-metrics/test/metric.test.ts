@@ -15,7 +15,7 @@
  */
 
 const SI = require('systeminformation');
-import { MetricAttributes } from '@opentelemetry/api-metrics';
+import { Attributes } from '@opentelemetry/api';
 import {
   AggregationTemporality,
   DataPoint,
@@ -33,7 +33,7 @@ const cpuJson = require('./mocks/cpu.json');
 const networkJson = require('./mocks/network.json');
 
 class TestMetricReader extends MetricReader {
-  public selectAggregationTemporality(): AggregationTemporality {
+  public override selectAggregationTemporality(): AggregationTemporality {
     return AggregationTemporality.CUMULATIVE;
   }
   protected async onForceFlush(): Promise<void> {}
@@ -231,7 +231,7 @@ async function getRecords(
 
 function ensureValue(
   metric: MetricData,
-  attributes: MetricAttributes,
+  attributes: Attributes,
   value: number
 ) {
   const attrHash = hashAttributes(attributes);
@@ -247,7 +247,7 @@ function ensureValue(
   assert.strictEqual(aggValue, value);
 }
 
-function hashAttributes(attributes: MetricAttributes) {
+function hashAttributes(attributes: Attributes) {
   return Object.entries(attributes)
     .sort(([a], [b]) => {
       return a < b ? -1 : 1;
