@@ -161,6 +161,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           'getConnection',
           thisPlugin._patchGetConnection(pool, format)
         );
+        thisPlugin._setPoolcallbacks(pool, thisPlugin);
 
         return pool;
       };
@@ -181,6 +182,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           'getConnection',
           thisPlugin._patchGetConnection(cluster, format)
         );
+        thisPlugin._setPoolcallbacks(cluster, thisPlugin);
 
         return cluster;
       };
@@ -197,7 +199,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
       diag.debug(
         'MySQLInstrumentation#patch: patched mysql pool getConnection'
       );
-      thisPlugin._setPoolcallbacks(pool, thisPlugin);
 
       return function getConnection(
         arg1?: unknown,
