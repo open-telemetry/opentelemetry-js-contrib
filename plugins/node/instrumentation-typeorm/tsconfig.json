@@ -1,12 +1,12 @@
 {
-    "extends": "../../../tsconfig.base",
-    "compilerOptions": {
-      "rootDir": ".",
-      "outDir": "build",
-    },
-    "include": [
-      "src/**/*.ts",
-      "test/**/*.ts"
-    ]
-  }
-  
+  "extends": "../../../tsconfig.base",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "build",
+    "experimentalDecorators": true,
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ]
+}
