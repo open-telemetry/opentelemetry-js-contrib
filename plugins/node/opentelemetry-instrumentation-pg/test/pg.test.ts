@@ -44,6 +44,7 @@ import {
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
 import { isSupported } from './utils';
+import { addSqlCommenterComment } from '../src/utils';
 
 const pgVersion = require('pg/package.json').version;
 const nodeVersion = process.versions.node;
@@ -99,6 +100,7 @@ describe('pg', () => {
     instrumentation.enable();
   }
 
+  let executedQueries: (pg.Query & { text?: string })[];
   let postgres: typeof pg;
   let client: pg.Client;
   let instrumentation: PgInstrumentation;
@@ -141,8 +143,21 @@ describe('pg', () => {
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
 
+    executedQueries = [];
     postgres = require('pg');
     client = new postgres.Client(CONFIG);
+
+    // We need to track the actual queries that get executed to assert
+    // that the sqlcommenter logic works
+    const privateClient: {
+      queryQueue: (pg.Query & { text?: string })[];
+    } = client as any;
+    const originalPush = privateClient.queryQueue.push;
+    privateClient.queryQueue.push = (...items) => {
+      executedQueries.push(...items);
+      return originalPush.apply(privateClient.queryQueue, items);
+    };
+
     await client.connect();
   });
 
@@ -161,6 +176,7 @@ describe('pg', () => {
   afterEach(() => {
     memoryExporter.reset();
     context.disable();
+    executedQueries.splice(0, executedQueries.length);
   });
 
   it('should return an instrumentation', () => {
@@ -646,6 +662,108 @@ describe('pg', () => {
       });
       context.with(trace.setSpan(context.active(), spans[1]), () => {
         client.query('SELECT NOW()').then(queryHandler);
+      });
+    });
+
+    it('should not add sqlcommenter comment when flag is not specified', async () => {
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        try {
+          const query = 'SELECT NOW()';
+          const resPromise = await client.query(query);
+          assert.ok(resPromise);
+
+          const [span] = memoryExporter.getFinishedSpans();
+          assert.ok(span);
+
+          const commentedQuery = addSqlCommenterComment(
+            trace.wrapSpanContext(span.spanContext()),
+            query
+          );
+          assert.equal(executedQueries.length, 1);
+          assert.equal(executedQueries[0].text, query);
+          assert.notEqual(query, commentedQuery);
+        } catch (e) {
+          assert.ok(false, e.message);
+        }
+      });
+    });
+
+    it('should not add sqlcommenter comment with client.query({text, callback}) when flag is not specified', done => {
+      const span = tracer.startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const query = 'SELECT NOW()';
+        client.query({
+          text: query,
+          callback: (err: Error, res: pg.QueryResult) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+
+            const [span] = memoryExporter.getFinishedSpans();
+            const commentedQuery = addSqlCommenterComment(
+              trace.wrapSpanContext(span.spanContext()),
+              query
+            );
+            assert.equal(executedQueries.length, 1);
+            assert.equal(executedQueries[0].text, query);
+            assert.notEqual(query, commentedQuery);
+            done();
+          },
+        } as pg.QueryConfig);
+      });
+    });
+
+    it('should add sqlcommenter comment when addSqlCommenterCommentToQueries=true is specified', async () => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        try {
+          const query = 'SELECT NOW()';
+          const resPromise = await client.query(query);
+          assert.ok(resPromise);
+
+          const [span] = memoryExporter.getFinishedSpans();
+          const commentedQuery = addSqlCommenterComment(
+            trace.wrapSpanContext(span.spanContext()),
+            query
+          );
+          assert.equal(executedQueries.length, 1);
+          assert.equal(executedQueries[0].text, commentedQuery);
+          assert.notEqual(query, commentedQuery);
+        } catch (e) {
+          assert.ok(false, e.message);
+        }
+      });
+    });
+
+    it('should add sqlcommenter comment when addSqlCommenterCommentToQueries=true is specified with client.query({text, callback})', done => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      });
+
+      const span = tracer.startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const query = 'SELECT NOW()';
+        client.query({
+          text: query,
+          callback: (err: Error, res: pg.QueryResult) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+
+            const [span] = memoryExporter.getFinishedSpans();
+            const commentedQuery = addSqlCommenterComment(
+              trace.wrapSpanContext(span.spanContext()),
+              query
+            );
+            assert.equal(executedQueries.length, 1);
+            assert.equal(executedQueries[0].text, commentedQuery);
+            assert.notEqual(query, commentedQuery);
+            done();
+          },
+        } as pg.QueryConfig);
       });
     });
 
