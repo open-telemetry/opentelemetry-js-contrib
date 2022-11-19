@@ -121,7 +121,9 @@ describe("gateway API handler", () => {
 
   const initializeHandler = (
     handler: string,
-    config: AwsLambdaInstrumentationConfig = {}
+    config: AwsLambdaInstrumentationConfig = {
+      detectApiGateway: true
+    }
   ) => {
     process.env._HANDLER = handler;
 
@@ -244,11 +246,11 @@ describe("gateway API handler", () => {
     it("gateway span should reject when throwing error", async () => {
       initializeHandler("lambda-test/gateway.errorAsync");
 
-      let err: any;
+      //let err: any;
       try {
         await lambdaRequire("lambda-test/gateway").errorAsync(event, ctx);
       } catch (e) {
-        err = e;
+        //err = e;
       }
 
       const spans = memoryExporter.getFinishedSpans();

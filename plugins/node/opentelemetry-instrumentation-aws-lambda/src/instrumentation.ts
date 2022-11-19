@@ -55,7 +55,7 @@ import {
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
-import { LambdaModule } from './internal-types';
+import { ApiGatewayEvent, ApiGatewayRequestContext, LambdaModule } from './internal-types';
 import { strict } from 'assert';
 
 const awsPropagator = new AWSXRayPropagator();
@@ -167,65 +167,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
       const name = context.functionName;
 
-      let gatewaySpan: Span | undefined;
+      let wrapperSpan: Span | undefined;
 
-      if (event.requestContext) {
-        const requestContext = event.requestContext as {
-          accountId: string;
-          apiId: string;
-          resourceId: string;
-          authorizer: {
-            claims: string | null;
-            scopes: string | null;
-            principalId: string | null;
-          };
-          domainName: string;
-          domainPrefix: string;
-          extendedRequestId: string;
-          httpMethod: string;
-
-          identity: {
-            accessKey: string | null;
-            accountId: string | null;
-            caller: string | null;
-            cognitoAuthenticationProvider: string | null;
-            cognitoAuthenticationType: string | null;
-            cognitoIdentityPool: string | null;
-            principalOrdId: string | null;
-            sourceIp: string | null;
-            user: string | null;
-            userAgent: string;
-            userArn: string | null;
-            clientCert: any;
-          };
-          path: string;
-          protocol: string;
-          requestId: string;
-
-          requestTime: string;
-          requestTimeEpoch: string;
-          stage: string;
-
-          resourcePath: any;
-        };
-
-        gatewaySpan = plugin.tracer.startSpan(
-          requestContext.domainName + requestContext.path,
-          {
-            kind: SpanKind.SERVER,
-            attributes: {
-              [SemanticAttributes.HTTP_METHOD]: requestContext.httpMethod,
-              [SemanticAttributes.HTTP_ROUTE]: requestContext.resourcePath,
-              [SemanticAttributes.HTTP_SERVER_NAME]: requestContext.domainName,
-              [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]:
-                requestContext.accountId,
-            },
-          },
-          parent
-        );
+      if (plugin._config.detectApiGateway && event.requestContext) {
+        wrapperSpan = plugin._getApiGatewaySpan( event, parent );
       }
-
-      let hasLambdaSynchronouslyThrown: boolean = false;
 
       const inner = (otelContextInstance: OtelContext) => {
         const lambdaSpan = plugin.tracer.startSpan(
@@ -265,7 +211,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             const wrappedCallback = plugin._wrapCallback(
               callback,
               lambdaSpan,
-              gatewaySpan
+              wrapperSpan
             );
 
             const maybePromise = safeExecuteInTheMiddle(
@@ -274,7 +220,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                 if (error != null) {
                   // Exception thrown synchronously before resolving callback / promise.
                   // Callback may or may not have been called, we can't know for sure, but it doesn't matter, both will end the current span
-                  hasLambdaSynchronouslyThrown = true;
                   plugin._applyResponseHook(lambdaSpan, error);
                   plugin._endSpan(lambdaSpan, error);
                 }
@@ -303,7 +248,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       // Did not originate from an API Gateway call
 
       let handlerReturn: Promise<any> | undefined;
-      if (!gatewaySpan) {
+      if (!wrapperSpan) {
         try {
           handlerReturn = inner(parent);
         } catch (e) {
@@ -313,7 +258,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           throw e;
         }
       } else {
-        const subCtx = trace.setSpan(parent, gatewaySpan);
+        const subCtx = trace.setSpan(parent, wrapperSpan);
         handlerReturn = otelContext.with(subCtx, () => {
           return safeExecuteInTheMiddle(
             () => {
@@ -322,10 +267,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
               if (typeof innerResult?.then === 'function') {
                 return innerResult.then(
                   (value) => {
-                    strict(gatewaySpan);
+                    strict(wrapperSpan);
 
-                    plugin._endGatewaySpan(
-                      gatewaySpan,
+                    plugin._endwrapperSpan(
+                      wrapperSpan,
                       value as GatewayResult | any,
                       undefined
                     );
@@ -333,17 +278,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                     return value;
                   },
                   async (error) => {
-                    strict(gatewaySpan);
-                    await plugin._endGatewaySpan(gatewaySpan, undefined, error);
+                    strict(wrapperSpan);
+                    await plugin._endwrapperSpan(wrapperSpan, undefined, error);
                     throw error; // We don't want the instrumentation to hide the error from AWS
                   }
                 );
               } else {
                 // The lambda was synchronous, or it as synchronously thrown an error
-                strict(gatewaySpan);
+                strict(wrapperSpan);
 
                 //if (hasLambdaSynchronouslyThrown) {
-                plugin._endGatewaySpan(gatewaySpan, innerResult, undefined);
+                plugin._endwrapperSpan(wrapperSpan, innerResult, undefined);
                 // }
                 // Fallthrough: sync reply, but callback may be in use. No way to query the event loop !
               }
@@ -352,8 +297,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             },
             (error) => {
               if (error) {
-                strict(gatewaySpan);
-                plugin._endGatewaySpan(gatewaySpan, undefined, error);
+                strict(wrapperSpan);
+                plugin._endwrapperSpan(wrapperSpan, undefined, error);
                 plugin._flush();
               }
             }
@@ -380,6 +325,26 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       // We can't know for sure if the event loop is empty or not, so we can't know if we should flush or not.
       return handlerReturn;
     };
+ 
+  }
+
+  private _getApiGatewaySpan( event: ApiGatewayEvent, parent: OtelContext ) {
+    const requestContext = event.requestContext as ApiGatewayRequestContext;
+
+    return this.tracer.startSpan(
+      requestContext.domainName + requestContext.path,
+      {
+        kind: SpanKind.SERVER,
+        attributes: {
+          [SemanticAttributes.HTTP_METHOD]: requestContext.httpMethod,
+          [SemanticAttributes.HTTP_ROUTE]: requestContext.resourcePath,
+          [SemanticAttributes.HTTP_SERVER_NAME]: requestContext.domainName,
+          [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]:
+            requestContext.accountId,
+        },
+      },
+      parent
+    );
   }
 
   override setTracerProvider(tracerProvider: TracerProvider) {
@@ -387,7 +352,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     this._forceFlush = this._getForceFlush(tracerProvider);
   }
 
-  private async _endGatewaySpan(
+  private async _endwrapperSpan(
     span: Span,
     returnFromLambda: GatewayResult | any,
     errorFromLambda: string | Error | null | undefined
@@ -450,7 +415,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _wrapCallback(
     originalAWSLambdaCallback: Callback,
     span: Span,
-    gatewaySpan?: Span
+    wrapperSpan?: Span
   ): Callback {
     const plugin = this;
     return (err, res) => {
@@ -458,8 +423,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       plugin._applyResponseHook(span, err, res);
 
       plugin._endSpan(span, err);
-      if (gatewaySpan) {
-        plugin._endGatewaySpan(gatewaySpan, res, err);
+      if (wrapperSpan) {
+        plugin._endwrapperSpan(wrapperSpan, res, err);
       }
 
       this._flush().then(() => {
