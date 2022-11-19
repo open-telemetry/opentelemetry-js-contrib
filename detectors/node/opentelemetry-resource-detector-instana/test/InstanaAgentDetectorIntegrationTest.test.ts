@@ -54,13 +54,12 @@ describe('[Integration] instanaAgentDetector', () => {
 
     const sdk = new NodeSDK({
       autoDetectResources: false,
+      resourceDetectors: [envDetector, processDetector, instanaAgentDetector],
       resource: globalResource,
     });
 
     // attributes are automatically merged!
-    await sdk.detectResources({
-      detectors: [envDetector, processDetector, instanaAgentDetector],
-    });
+    await sdk.detectResources();
 
     const resource = sdk['_resource'];
 
