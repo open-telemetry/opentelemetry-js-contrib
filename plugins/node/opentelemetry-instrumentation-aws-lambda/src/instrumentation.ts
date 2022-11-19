@@ -36,6 +36,7 @@ import {
   TraceFlags,
   TracerProvider,
   ROOT_CONTEXT,
+  Attributes,
 } from '@opentelemetry/api';
 import {
   AWSXRAY_TRACE_ID_HEADER,
@@ -55,7 +56,12 @@ import {
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
-import { ApiGatewayEvent, ApiGatewayRequestContext, LambdaModule } from './internal-types';
+import {
+  ApiGatewayEvent,
+  ApiGatewayRequestContext,
+  LambdaModule,
+  TriggerOrigin,
+} from './internal-types';
 import { strict } from 'assert';
 
 const awsPropagator = new AWSXRayPropagator();
@@ -77,7 +83,7 @@ type GatewayResult = Partial<{
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _forceFlush?: () => Promise<void>;
-
+  private triggerOrigin: TriggerOrigin | undefined;
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
   }
@@ -170,7 +176,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       let wrapperSpan: Span | undefined;
 
       if (plugin._config.detectApiGateway && event.requestContext) {
-        wrapperSpan = plugin._getApiGatewaySpan( event, parent );
+        plugin.triggerOrigin = TriggerOrigin.API_GATEWAY;
+        wrapperSpan = plugin._getApiGatewaySpan(event, parent);
       }
 
       const inner = (otelContextInstance: OtelContext) => {
@@ -245,10 +252,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         );
       };
 
-      // Did not originate from an API Gateway call
-
       let handlerReturn: Promise<any> | undefined;
       if (!wrapperSpan) {
+        // No wrapper span
         try {
           handlerReturn = inner(parent);
         } catch (e) {
@@ -269,7 +275,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                   (value) => {
                     strict(wrapperSpan);
 
-                    plugin._endwrapperSpan(
+                    plugin._endWrapperSpan(
                       wrapperSpan,
                       value as GatewayResult | any,
                       undefined
@@ -279,7 +285,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                   },
                   async (error) => {
                     strict(wrapperSpan);
-                    await plugin._endwrapperSpan(wrapperSpan, undefined, error);
+                    await plugin._endWrapperSpan(wrapperSpan, undefined, error);
                     throw error; // We don't want the instrumentation to hide the error from AWS
                   }
                 );
@@ -288,7 +294,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                 strict(wrapperSpan);
 
                 //if (hasLambdaSynchronouslyThrown) {
-                plugin._endwrapperSpan(wrapperSpan, innerResult, undefined);
+                plugin._endWrapperSpan(wrapperSpan, innerResult, undefined);
                 // }
                 // Fallthrough: sync reply, but callback may be in use. No way to query the event loop !
               }
@@ -298,7 +304,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             (error) => {
               if (error) {
                 strict(wrapperSpan);
-                plugin._endwrapperSpan(wrapperSpan, undefined, error);
+                plugin._endWrapperSpan(wrapperSpan, undefined, error);
                 plugin._flush();
               }
             }
@@ -325,28 +331,65 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       // We can't know for sure if the event loop is empty or not, so we can't know if we should flush or not.
       return handlerReturn;
     };
- 
   }
 
-  private _getApiGatewaySpan( event: ApiGatewayEvent, parent: OtelContext ) {
+  private _getApiGatewaySpan(event: ApiGatewayEvent, parent: OtelContext) {
     const requestContext = event.requestContext as ApiGatewayRequestContext;
+
+    let attributes: Attributes = {
+      [SemanticAttributes.HTTP_METHOD]: requestContext.httpMethod,
+      [SemanticAttributes.HTTP_ROUTE]: requestContext.resourcePath,
+      [SemanticAttributes.HTTP_URL]:
+        requestContext.domainName + requestContext.path,
+      [SemanticAttributes.HTTP_SERVER_NAME]: requestContext.domainName,
+      [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: requestContext.accountId,
+    };
+
+    if (requestContext.identity?.sourceIp) {
+      attributes[SemanticAttributes.NET_PEER_IP] =
+        requestContext.identity.sourceIp;
+    }
+
+    if (event.multiValueQueryStringParameters) {
+      Object.assign(
+        attributes,
+        Object.fromEntries(
+          Object.entries(event.multiValueQueryStringParameters).map(
+            ([k, v]) => [`http.request.query.${k}`, v.length == 1 ? v[0] : v] // We don't have a semantic attribute for query parameters, but would be useful nonetheless
+          )
+        )
+      );
+    }
+
+    if (event.multiValueHeaders) {
+      Object.assign(
+        attributes,
+        Object.fromEntries(
+          Object.entries(event.multiValueHeaders).map(([k, v]) => [
+            // See https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/http/#http-request-and-response-headers
+            `http.request.header.${k}`,
+            v.length == 1 ? v[0] : v,
+          ])
+        )
+      );
+    }
+    if (event.pathParameters) {
+      Object.assign(
+        attributes,
+        Object.fromEntries(
+          Object.entries(event.pathParameters).map(([k, v]) => [
+            `http.request.parameters.${k}`,
+            v,
+          ])
+        )
+      );
+    }
 
     return this.tracer.startSpan(
       requestContext.domainName + requestContext.path,
       {
         kind: SpanKind.SERVER,
-        attributes: {
-          ...Object.fromEntries( Object.entries( event.multiValueQueryStringParameters ).map( ( [ k, v ] ) => [ `http.request.query.${k}`, v.length == 1 ? v[0] : v ] ) ), // We don't have a semantic attribute for that, but would be useful nonetheless
-          ...Object.fromEntries( Object.entries( event.multiValueHeaders ).map( ( [ k, v ] ) => [ `http.request.header.${k}`, v.length == 1 ? v[0] : v ] ) ), // See https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/http/#http-request-and-response-headers
-          ...Object.fromEntries( Object.entries( event.pathParameters ).map( ( [ k, v ] ) => [ `http.request.parameters.${k}`, v ] ) ), 
-          [SemanticAttributes.NET_PEER_IP]: requestContext.identity.sourceIp,
-          [SemanticAttributes.HTTP_METHOD]: requestContext.httpMethod,
-          [SemanticAttributes.HTTP_ROUTE]: requestContext.resourcePath,
-          [SemanticAttributes.HTTP_URL]: requestContext.domainName + requestContext.path,
-          [SemanticAttributes.HTTP_SERVER_NAME]: requestContext.domainName,
-          [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]:
-            requestContext.accountId,
-        },
+        attributes: attributes,
       },
       parent
     );
@@ -357,7 +400,19 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     this._forceFlush = this._getForceFlush(tracerProvider);
   }
 
-  private async _endwrapperSpan(
+  private async _endWrapperSpan(
+    span: Span,
+    returnFromLambda: GatewayResult | any,
+    errorFromLambda: string | Error | null | undefined
+  ) {
+    if (this.triggerOrigin == TriggerOrigin.API_GATEWAY) {
+      this._endAPIGatewaySpan(span, returnFromLambda, errorFromLambda);
+    }
+
+    span.end();
+  }
+
+  private _endAPIGatewaySpan(
     span: Span,
     returnFromLambda: GatewayResult | any,
     errorFromLambda: string | Error | null | undefined
@@ -381,6 +436,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       span.end();
       return;
     }
+
+    span.setAttribute( SemanticAttributes.HTTP_STATUS_CODE, returnFromLambda.statusCode )
+    
     if (
       !returnFromLambda.statusCode ||
       returnFromLambda.statusCode < 200 ||
@@ -396,8 +454,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         code: SpanStatusCode.OK,
       });
     }
-
-    span.end();
   }
 
   private _getForceFlush(tracerProvider: TracerProvider) {
@@ -429,7 +485,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
       plugin._endSpan(span, err);
       if (wrapperSpan) {
-        plugin._endwrapperSpan(wrapperSpan, res, err);
+        plugin._endWrapperSpan(wrapperSpan, res, err);
       }
 
       this._flush().then(() => {

@@ -15,6 +15,10 @@
  */
 import { Handler } from 'aws-lambda';
 
+export const enum TriggerOrigin {
+    API_GATEWAY
+}
+
 export type ApiGatewayEvent = {
   resource: string;
   path: string;

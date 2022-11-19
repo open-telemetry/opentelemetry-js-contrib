@@ -162,6 +162,7 @@ describe("gateway API handler", () => {
       const [spanLambda, spanGateway] = spans;
       assertSpanSuccess(spanLambda);
       assertGatewaySpanSuccess(spanGateway);
+      assert.strictEqual( spanGateway.attributes[ SemanticAttributes.HTTP_STATUS_CODE ], 200 )
       assert.strictEqual(spanGateway.parentSpanId, undefined);
       assert.strictEqual(
         spanLambda.parentSpanId,
@@ -191,6 +192,8 @@ describe("gateway API handler", () => {
       assertSpanSuccess(spanLambda);
       assertGatewaySpanFailure(spanGateway);
       assert.strictEqual(spanGateway.parentSpanId, undefined);
+      assert.strictEqual( spanGateway.attributes[ SemanticAttributes.HTTP_STATUS_CODE ], 500 )
+
       assert.strictEqual(
         spanLambda.parentSpanId,
         spanGateway.spanContext().spanId
@@ -208,7 +211,10 @@ describe("gateway API handler", () => {
       assert.strictEqual(result.statusCode, 400);
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
+      
       const [_, spanGateway] = spans;
+
+      assert.strictEqual( spanGateway.attributes[ SemanticAttributes.HTTP_STATUS_CODE ], 400 )
       assert.strictEqual(
         spanGateway.status.message,
         "Return to API Gateway with error 400"
@@ -236,6 +242,8 @@ describe("gateway API handler", () => {
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
       const [_, spanGateway] = spans;
+
+      assert.strictEqual( spanGateway.attributes[ SemanticAttributes.HTTP_STATUS_CODE ], 400 )
       assert.strictEqual(
         spanGateway.status.message,
         "Return to API Gateway with error 400"
