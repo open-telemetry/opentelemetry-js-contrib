@@ -23,7 +23,7 @@ export type ApiGatewayEvent = {
   headers: Record<string, string>;
   multiValueHeaders: Record<string, string[]>;
   queryStringParameters: string | null;
-  multiValueQueryStringParameters: any;
+  multiValueQueryStringParameters: Record<string, string[]>;
   pathParameters: any;
   stageVariables: any;
   body: string;

@@ -336,8 +336,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       {
         kind: SpanKind.SERVER,
         attributes: {
+          ...Object.fromEntries( Object.entries( event.multiValueQueryStringParameters ).map( ( [ k, v ] ) => [ `http.request.query.${k}`, v.length == 1 ? v[0] : v ] ) ), // We don't have a semantic attribute for that, but would be useful nonetheless
+          ...Object.fromEntries( Object.entries( event.multiValueHeaders ).map( ( [ k, v ] ) => [ `http.request.header.${k}`, v.length == 1 ? v[0] : v ] ) ), // See https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/http/#http-request-and-response-headers
+          ...Object.fromEntries( Object.entries( event.pathParameters ).map( ( [ k, v ] ) => [ `http.request.parameters.${k}`, v ] ) ), 
+          [SemanticAttributes.NET_PEER_IP]: requestContext.identity.sourceIp,
           [SemanticAttributes.HTTP_METHOD]: requestContext.httpMethod,
           [SemanticAttributes.HTTP_ROUTE]: requestContext.resourcePath,
+          [SemanticAttributes.HTTP_URL]: requestContext.domainName + requestContext.path,
           [SemanticAttributes.HTTP_SERVER_NAME]: requestContext.domainName,
           [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]:
             requestContext.accountId,
