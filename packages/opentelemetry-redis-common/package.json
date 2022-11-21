@@ -1,0 +1,44 @@
+{
+  "name": "@opentelemetry/redis-common",
+  "version": "0.33.0",
+  "description": "Redis utilities for redis instrumentations",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "compile": "tsc -p .",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/redis-common --include-dependencies",
+    "prewatch": "npm run precompile",
+    "prepare": "npm run compile",
+    "watch": "tsc -w"
+  },
+  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "keywords": [
+    "opentelemetry",
+    "redis-common"
+  ],
+  "files": [
+    "build/**/*.js",
+    "build/**/*.js.map",
+    "build/**/*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=14"
+  },
+  "bugs": {
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/redis-common#readme",
+  "devDependencies": {
+  },
+  "dependencies": {
+  }
+}

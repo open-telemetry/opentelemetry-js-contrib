@@ -25,7 +25,6 @@ import {
   diag,
 } from '@opentelemetry/api';
 import {
-  DbStatementSerializer,
   RedisCommand,
   RedisInstrumentationConfig,
 } from './types';
@@ -37,6 +36,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { RedisPluginClientTypes } from './internal-types';
+import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 
 const endSpan = (span: Span, err?: Error | null) => {
   if (err) {
@@ -74,8 +74,6 @@ export const getTracedCreateStreamTrace = (
     return original.apply(this, arguments);
   };
 };
-
-const defaultDbStatementSerializer: DbStatementSerializer = cmdName => cmdName;
 
 export const getTracedInternalSendCommand = (
   tracer: Tracer,

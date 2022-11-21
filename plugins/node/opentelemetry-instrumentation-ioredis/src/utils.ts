@@ -16,34 +16,9 @@
 
 import { Span, SpanStatusCode } from '@opentelemetry/api';
 import { DbStatementSerializer } from './types';
+import { defaultDbStatementSerializer as redisSerializer } from '@opentelemetry/redis-common';
 
-/**
- * List of regexes and the number of arguments that should be serialized for matching commands.
- * For example, HSET should serialize which key and field it's operating on, but not its value.
- * Setting the subset to -1 will serialize all arguments.
- * Commands without a match will have their first argument serialized.
- *
- * Refer to https://redis.io/commands/ for the full list.
- */
-const serializationSubsets = [
-  {
-    regex: /^ECHO/i,
-    args: 0,
-  },
-  {
-    regex: /^(LPUSH|MSET|PFA|PUBLISH|RPUSH|SADD|SET|SPUBLISH|XADD|ZADD)/i,
-    args: 1,
-  },
-  {
-    regex: /^(HSET|HMSET|LSET|LINSERT)/i,
-    args: 2,
-  },
-  {
-    regex:
-      /^(ACL|BIT|B[LRZ]|CLIENT|CLUSTER|CONFIG|COMMAND|DECR|DEL|EVAL|EX|FUNCTION|GEO|GET|HINCR|HMGET|HSCAN|INCR|L[TRLM]|MEMORY|P[EFISTU]|RPOP|S[CDIMORSU]|XACK|X[CDGILPRT]|Z[CDILMPRS])/i,
-    args: -1,
-  },
-];
+export const defaultDbStatementSerializer: DbStatementSerializer = redisSerializer;
 
 export const endSpan = (
   span: Span,
@@ -59,23 +34,3 @@ export const endSpan = (
   span.end();
 };
 
-export const defaultDbStatementSerializer: DbStatementSerializer = (
-  cmdName,
-  cmdArgs
-) => {
-  if (Array.isArray(cmdArgs) && cmdArgs.length) {
-    const nArgsToSerialize =
-      serializationSubsets.find(({ regex }) => {
-        return regex.test(cmdName);
-      })?.args ?? 0;
-    const argsToSerialize =
-      nArgsToSerialize >= 0 ? cmdArgs.slice(0, nArgsToSerialize) : cmdArgs;
-    if (cmdArgs.length > argsToSerialize.length) {
-      argsToSerialize.push(
-        `[${cmdArgs.length - nArgsToSerialize} other arguments]`
-      );
-    }
-    return `${cmdName} ${argsToSerialize.join(' ')}`;
-  }
-  return cmdName;
-};
