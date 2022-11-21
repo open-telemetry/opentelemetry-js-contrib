@@ -196,8 +196,8 @@ export class TypeormInstrumentation extends InstrumentationBase<any> {
     const module = new InstrumentationNodeModuleDefinition<any>(
       'typeorm',
       ['>0.2.28'],
-      null,
-      null,
+      undefined,
+      undefined,
       [selectQueryBuilder, entityManager, connection, dataSource]
     );
     return module;
@@ -207,7 +207,7 @@ export class TypeormInstrumentation extends InstrumentationBase<any> {
     const self = this;
     this._diag.debug(`patched EntityManager ${opName} prototype`);
     return (original: any) => {
-      return function (...args: any[]) {
+      return function (this: any, ...args: any[]) {
         if (isTypeormInternalTracingSuppressed(context.active())) {
           return original.apply(this, arguments);
         }
@@ -242,7 +242,9 @@ export class TypeormInstrumentation extends InstrumentationBase<any> {
               attributes[SemanticAttributes.DB_SQL_TABLE] = metadata.tableName;
             }
           }
-        } catch {}
+        } catch {
+          self._diag.debug('failed to get table name');
+        }
 
         Object.entries(attributes).forEach(([key, value]) => {
           if (value === undefined) delete attributes[key];
@@ -271,10 +273,10 @@ export class TypeormInstrumentation extends InstrumentationBase<any> {
     };
   }
 
-  private _patchQueryBuilder(moduleVersion: string) {
+  private _patchQueryBuilder(moduleVersion: string | undefined) {
     const self = this;
     return (original: any) => {
-      return function () {
+      return function (this: any) {
         if (isTypeormInternalTracingSuppressed(context.active())) {
           return original.apply(this, arguments);
         }
@@ -298,7 +300,9 @@ export class TypeormInstrumentation extends InstrumentationBase<any> {
           try {
             attributes[ExtendedDatabaseAttribute.DB_STATEMENT_PARAMETERS] =
               JSON.stringify(parameters);
-          } catch (err) {}
+          } catch (err) {
+            self._diag.debug('failed to stringify parameters');
+          }
         }
         const span: Span = self.tracer.startSpan(
           `TypeORM ${operation} ${mainTableName}`,
@@ -332,16 +336,17 @@ export class TypeormInstrumentation extends InstrumentationBase<any> {
       statement = statement.trim();
       try {
         operation = statement.split(' ')[0].toUpperCase();
-      } catch (e) {}
+      } catch (e) {
+        this._diag.debug('failed to get operation name');
+      }
     }
-
     return operation;
   }
 
-  private _patchRawQuery(moduleVersion: string) {
+  private _patchRawQuery(moduleVersion: string | undefined) {
     const self = this;
     return (original: any) => {
-      return function () {
+      return function (this: any) {
         if (isTypeormInternalTracingSuppressed(context.active())) {
           return original.apply(this, arguments);
         }
@@ -387,7 +392,7 @@ export class TypeormInstrumentation extends InstrumentationBase<any> {
       if (this._config?.responseHook) {
         safeExecuteInTheMiddle(
           () => this._config.responseHook(span, response),
-          (e: Error) => {
+          (e: Error | undefined) => {
             if (e) this._diag.error('responseHook error', e);
           },
           true
@@ -441,7 +446,9 @@ const buildStatement = (func: Function, args: any[]) => {
         statement[pName] = args[i];
         return;
       }
-    } catch (err) {}
+    } catch (err) {
+      // do nothing
+    }
     if (value?.name) {
       statement[pName] = value.name;
       return;

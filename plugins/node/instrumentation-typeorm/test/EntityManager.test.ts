@@ -146,7 +146,7 @@ describe('EntityManager', () => {
     const options2: any = {
       name: 'connection2',
       type: 'sqlite',
-      database: 'connection2.db',
+      database: './test/connection2.db',
       entities: [User],
       synchronize: true,
     };
