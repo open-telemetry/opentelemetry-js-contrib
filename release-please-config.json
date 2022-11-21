@@ -24,6 +24,7 @@
     "plugins/node/instrumentation-lru-memoizer": {},
     "plugins/node/instrumentation-mongoose": {},
     "plugins/node/instrumentation-tedious": {},
+    "plugins/node/instrumentation-typeorm": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},
     "plugins/node/opentelemetry-instrumentation-aws-sdk": {},
     "plugins/node/opentelemetry-instrumentation-bunyan": {},

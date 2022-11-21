@@ -22,6 +22,8 @@ components:
     - rauno56
   plugins/node/instrumentation-tedious:
     - rauno56
+  plugins/node/instrumentation-typeorm:
+    - mottibec
   plugins/node/opentelemetry-instrumentation-aws-lambda:
     - willarmiros
   plugins/node/opentelemetry-instrumentation-aws-sdk:

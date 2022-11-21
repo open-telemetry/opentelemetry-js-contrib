@@ -51,6 +51,7 @@ import { RedisInstrumentation as RedisInstrumentationV4 } from '@opentelemetry/i
 import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
 import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
 import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
+import {TypeormInstrumentation } from '@opentelemetry/instrumentation-typeorm';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 
 const InstrumentationMap = {
@@ -89,6 +90,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-restify': RestifyInstrumentation,
   '@opentelemetry/instrumentation-router': RouterInstrumentation,
   '@opentelemetry/instrumentation-tedious': TediousInstrumentation,
+  '@opentelemetry/instrumentation-typeorm': TypeormInstrumentation,
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 

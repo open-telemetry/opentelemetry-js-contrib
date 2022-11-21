@@ -81,6 +81,7 @@
     "@opentelemetry/instrumentation-restify": "^0.31.0",
     "@opentelemetry/instrumentation-router": "^0.32.0",
     "@opentelemetry/instrumentation-tedious": "^0.5.0",
+    "@opentelemetry/instrumentation-typeorm": "^0.32.0",
     "@opentelemetry/instrumentation-winston": "^0.31.0"
   }
 }
