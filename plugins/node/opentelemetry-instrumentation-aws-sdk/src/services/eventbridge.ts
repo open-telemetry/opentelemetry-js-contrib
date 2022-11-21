@@ -91,7 +91,6 @@ export class EventBridgeServiceExtension implements ServiceExtension {
     tracer: Tracer,
     config: AwsSdkInstrumentationConfig
   ) => {
-    switch (response.request.commandName) {
-    }
+    
   };
 }
