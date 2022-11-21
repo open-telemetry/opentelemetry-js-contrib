@@ -389,9 +389,9 @@ export class TypeormInstrumentation extends InstrumentationBase<any> {
 
   private _endSpan(traced: any, span: Span) {
     const executeResponseHook = (response: any) => {
-      if (this._config?.responseHook) {
+      if (this._config.responseHook) {
         safeExecuteInTheMiddle(
-          () => this._config.responseHook(span, response),
+          () => this._config?.responseHook?.(span, response),
           (e: Error | undefined) => {
             if (e) this._diag.error('responseHook error', e);
           },
