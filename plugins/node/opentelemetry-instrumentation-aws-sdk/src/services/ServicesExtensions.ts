@@ -24,6 +24,7 @@ import {
 import { DynamodbServiceExtension } from './dynamodb';
 import { SnsServiceExtension } from './sns';
 import { LambdaServiceExtension } from './lambda';
+import { EventBridgeServiceExtension } from './eventbridge';
 
 export class ServicesExtensions implements ServiceExtension {
   services: Map<string, ServiceExtension> = new Map();
@@ -31,6 +32,7 @@ export class ServicesExtensions implements ServiceExtension {
   constructor() {
     this.services.set('SQS', new SqsServiceExtension());
     this.services.set('SNS', new SnsServiceExtension());
+    this.services.set('EventBridge', new EventBridgeServiceExtension());
     this.services.set('DynamoDB', new DynamodbServiceExtension());
     this.services.set('Lambda', new LambdaServiceExtension());
   }
