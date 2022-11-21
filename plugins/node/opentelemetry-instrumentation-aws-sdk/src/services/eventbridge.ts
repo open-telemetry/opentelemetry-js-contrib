@@ -78,13 +78,7 @@ export class EventBridgeServiceExtension implements ServiceExtension {
       case 'PutEvents':
         request.commandInput?.Entries?.forEach(
           (entry: EventBridge.PutEventsRequestEntry) => {
-            try {
-              propagation.inject(context.active(), entry, contextSetter);
-            } catch (e) {
-              diag.warn(
-                'Could not deserialize EventBridge event. Not a valid JSON'
-              );
-            }
+            propagation.inject(context.active(), entry, contextSetter);
           }
         );
         break;
