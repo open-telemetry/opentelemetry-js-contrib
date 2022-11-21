@@ -57,7 +57,7 @@ IORedis instrumentation has few options available to choose from. You can set th
 
 The instrumentation serializes the command into a Span attribute called `db.statement`. The standard serialization format attempts to be as informative
 as possible while avoiding the export of potentially sensitive data. The number of serialized arguments depends on the specific command, see the configuration
-list in `src/utils.ts`.
+list in `packages/opentelemetry-redis-common/src/index.ts`.
 It is also possible to define a custom serialization function. The function will receive the command name and arguments and must return a string.
 
 Here is a simple example to serialize the command name skipping arguments:
