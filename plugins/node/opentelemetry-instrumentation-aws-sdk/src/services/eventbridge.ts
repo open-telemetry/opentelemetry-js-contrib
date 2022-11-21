@@ -17,7 +17,6 @@ import {
   Tracer,
   SpanKind,
   Span,
-  diag,
   propagation,
   context,
   TextMapSetter,

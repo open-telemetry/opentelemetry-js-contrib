@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AwsInstrumentation, AwsSdkSqsProcessHookInformation } from '../src';
+import { AwsInstrumentation } from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -22,26 +22,15 @@ const instrumentation = registerInstrumentationTesting(
   new AwsInstrumentation()
 );
 import * as AWS from 'aws-sdk';
-import { AWSError } from 'aws-sdk';
 
 import {
   MessagingDestinationKindValues,
-  MessagingOperationValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import {
-  context,
-  SpanKind,
-  SpanStatusCode,
-  trace,
-  Span,
-} from '@opentelemetry/api';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+
 import { mockV2AwsSend } from './testing-utils';
-import { Message } from 'aws-sdk/clients/sqs';
 import * as expect from 'expect';
 import * as sinon from 'sinon';
-import * as messageAttributes from '../src/services/MessageAttributes';
 import { AttributeNames } from '../src/enums';
 
 const responseMockSuccess = {
