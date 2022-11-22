@@ -27,8 +27,7 @@ import * as socketIo from 'socket.io';
 import * as ioClient from 'socket.io-client';
 import * as path from 'path';
 
-export const io = (ioClient.io ||
-  (ioClient as any).default) as typeof ioClient.io;
+export const io = ioClient.io || ioClient;
 
 const packageJsonPath = (packageName: string) =>
   path.join(path.dirname(require.resolve(packageName)), '..', 'package.json');
