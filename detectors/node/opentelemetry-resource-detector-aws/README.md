@@ -37,6 +37,11 @@ const tracerProvider = new NodeTracerProvider({ resource });
 - `awsLambdaDetector`: Populates `faas` and `cloud` for functions running on [AWS Lambda](https://aws.amazon.com/lambda/)
   - `faas.id` is currently not populated as it is not provided by the runtime at startup
 
+## Ordering
+
+Note that if multiple detectors are inserting the same attribute name, the first detector to insert wins.
+For example, if you had `detectors: [awsEc2Detector, awsEc2Detector]` then cloud.platform will be aws_eks instead of ec2. The below ordering is recommended.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
