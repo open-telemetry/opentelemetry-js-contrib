@@ -23,6 +23,7 @@
     "plugins/node/instrumentation-fs": {},
     "plugins/node/instrumentation-lru-memoizer": {},
     "plugins/node/instrumentation-mongoose": {},
+    "plugins/node/instrumentation-socket.io": {},
     "plugins/node/instrumentation-tedious": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},
     "plugins/node/opentelemetry-instrumentation-aws-sdk": {},
