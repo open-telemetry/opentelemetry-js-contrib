@@ -335,17 +335,13 @@ export function addSqlCommenterComment(span: Span, query: string): string {
   }
 
   const commentString = sortedKeys
-    .map(key => {
-      const uriEncodedKey = encodeURIComponent(key);
-      const uriEncodedValue = encodeURIComponent(headers[key]).replace(
-        /([^\\])(')/g,
-        (_, prefix) => {
-          return `${prefix}\\'`;
-        }
-      );
-      return `${uriEncodedKey}='${uriEncodedValue}'`;
+    .map((key) => {
+      const escapedValue = headers[key].replace(/([^\\])(')/g, (_, prefix) => {
+        return `${prefix}\\'`;
+      });
+      return `${key}='${escapedValue}'`;
     })
-    .join(',');
+    .join(",");
 
   return `${query} /*${commentString}*/`;
 }
