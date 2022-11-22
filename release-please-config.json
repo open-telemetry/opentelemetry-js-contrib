@@ -17,6 +17,7 @@
     "packages/opentelemetry-host-metrics": {},
     "packages/opentelemetry-id-generator-aws-xray": {},
     "packages/opentelemetry-propagation-utils": {},
+    "packages/opentelemetry-redis-common": {},
     "packages/opentelemetry-test-utils": {},
     "plugins/node/instrumentation-amqplib": {},
     "plugins/node/instrumentation-dataloader": {},
