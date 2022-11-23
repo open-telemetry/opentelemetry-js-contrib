@@ -336,9 +336,12 @@ export function addSqlCommenterComment(span: Span, query: string): string {
 
   const commentString = sortedKeys
     .map((key) => {
-      const escapedValue = headers[key].replace(/([^\\])(')/g, (_, prefix) => {
-        return `${prefix}\\'`;
-      });
+      const escapedValue = encodeURIComponent(headers[key]).replace(
+        /([^\\])(')/g,
+        (_, prefix) => {
+          return `${prefix}\\'`;
+        }
+      );
       return `${key}='${escapedValue}'`;
     })
     .join(",");
