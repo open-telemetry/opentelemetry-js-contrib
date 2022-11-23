@@ -133,7 +133,7 @@ describe('redis@2.x', () => {
       description: string;
       command: string;
       args: string[];
-      serializedArgs: Array<string>,
+      serializedArgs: Array<string>;
       method: (cb: redisTypes.Callback<unknown>) => unknown;
     }> = [
       {
@@ -192,7 +192,9 @@ describe('redis@2.x', () => {
         it(`should create a child span for ${operation.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `${operation.command} ${operation.serializedArgs.join(' ')}` ,
+            [SemanticAttributes.DB_STATEMENT]: `${
+              operation.command
+            } ${operation.serializedArgs.join(' ')}`,
           };
           const span = tracer.startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {

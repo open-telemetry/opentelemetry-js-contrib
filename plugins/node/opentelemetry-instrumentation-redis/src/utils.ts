@@ -24,10 +24,7 @@ import {
   trace,
   diag,
 } from '@opentelemetry/api';
-import {
-  RedisCommand,
-  RedisInstrumentationConfig,
-} from './types';
+import { RedisCommand, RedisInstrumentationConfig } from './types';
 import { EventEmitter } from 'events';
 import { RedisInstrumentation } from './';
 import {

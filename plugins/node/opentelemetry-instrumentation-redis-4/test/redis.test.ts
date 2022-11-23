@@ -124,7 +124,7 @@ describe('redis@^4.0.0', () => {
       );
       assert.strictEqual(
         getSpan?.attributes[SemanticAttributes.DB_STATEMENT],
-        'GET'
+        'GET key'
       );
       assert.strictEqual(
         getSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
@@ -272,7 +272,7 @@ describe('redis@^4.0.0', () => {
       assert.strictEqual(multiGetSpan.name, 'redis-GET');
       assert.strictEqual(
         multiGetSpan.attributes[SemanticAttributes.DB_STATEMENT],
-        'GET'
+        'GET another-key'
       );
       assert.strictEqual(
         multiGetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
