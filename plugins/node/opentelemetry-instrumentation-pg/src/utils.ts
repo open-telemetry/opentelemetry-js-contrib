@@ -308,6 +308,13 @@ function hasValidSqlComment(query: string): boolean {
   return indexOpeningDashDashComment < indexClosingSlashComment;
 }
 
+function escapeMetaCharacters(value: string): string {
+  // Single quotes must be escaped by a slash, unless already escaped
+  return value.replace(/([^\\])(')/g, (_, prefix) => {
+    return `${prefix}\\'`;
+  });
+}
+
 export function addSqlCommenterComment(span: Span, query: string): string {
   if (typeof query !== 'string' || query.length === 0) {
     return query;
@@ -335,16 +342,13 @@ export function addSqlCommenterComment(span: Span, query: string): string {
   }
 
   const commentString = sortedKeys
-    .map((key) => {
-      const escapedValue = encodeURIComponent(headers[key]).replace(
-        /([^\\])(')/g,
-        (_, prefix) => {
-          return `${prefix}\\'`;
-        }
+    .map(key => {
+      const escapedValue = escapeMetaCharacters(
+        encodeURIComponent(headers[key])
       );
       return `${key}='${escapedValue}'`;
     })
-    .join(",");
+    .join(',');
 
   return `${query} /*${commentString}*/`;
 }

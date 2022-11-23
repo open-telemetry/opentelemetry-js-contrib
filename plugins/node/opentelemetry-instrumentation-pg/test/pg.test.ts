@@ -32,6 +32,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import type * as pg from 'pg';
+import * as Sinon from 'sinon';
 import {
   PgInstrumentation,
   PgInstrumentationConfig,
@@ -100,7 +101,6 @@ describe('pg', () => {
     instrumentation.enable();
   }
 
-  let executedQueries: (pg.Query & { text?: string })[];
   let postgres: typeof pg;
   let client: pg.Client;
   let instrumentation: PgInstrumentation;
@@ -111,6 +111,12 @@ describe('pg', () => {
   const testPostgres = process.env.RUN_POSTGRES_TESTS; // For CI: assumes local postgres db is already available
   const testPostgresLocally = process.env.RUN_POSTGRES_TESTS_LOCAL; // For local: spins up local postgres db via docker
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
+
+  function getExecutedQueries() {
+    return (client as any).queryQueue.push.args.flat() as (pg.Query & {
+      text?: string;
+    })[];
+  }
 
   before(async function () {
     const skipForUnsupported =
@@ -143,21 +149,8 @@ describe('pg', () => {
     context.setGlobalContextManager(contextManager);
     instrumentation.setTracerProvider(provider);
 
-    executedQueries = [];
     postgres = require('pg');
     client = new postgres.Client(CONFIG);
-
-    // We need to track the actual queries that get executed to assert
-    // that the sqlcommenter logic works
-    const privateClient: {
-      queryQueue: (pg.Query & { text?: string })[];
-    } = client as any;
-    const originalPush = privateClient.queryQueue.push;
-    privateClient.queryQueue.push = (...items) => {
-      executedQueries.push(...items);
-      return originalPush.apply(privateClient.queryQueue, items);
-    };
-
     await client.connect();
   });
 
@@ -171,12 +164,16 @@ describe('pg', () => {
   beforeEach(() => {
     contextManager = new AsyncHooksContextManager().enable();
     context.setGlobalContextManager(contextManager);
+
+    // Add a spy on the underlying client's internal query queue so that
+    // we could assert on what the final queries are that are executed
+    Sinon.spy((client as any).queryQueue, 'push');
   });
 
   afterEach(() => {
     memoryExporter.reset();
     context.disable();
-    executedQueries.splice(0, executedQueries.length);
+    Sinon.restore();
   });
 
   it('should return an instrumentation', () => {
@@ -680,6 +677,8 @@ describe('pg', () => {
             trace.wrapSpanContext(span.spanContext()),
             query
           );
+
+          const executedQueries = getExecutedQueries();
           assert.equal(executedQueries.length, 1);
           assert.equal(executedQueries[0].text, query);
           assert.notEqual(query, commentedQuery);
@@ -704,6 +703,8 @@ describe('pg', () => {
               trace.wrapSpanContext(span.spanContext()),
               query
             );
+
+            const executedQueries = getExecutedQueries();
             assert.equal(executedQueries.length, 1);
             assert.equal(executedQueries[0].text, query);
             assert.notEqual(query, commentedQuery);
@@ -730,6 +731,8 @@ describe('pg', () => {
             trace.wrapSpanContext(span.spanContext()),
             query
           );
+
+          const executedQueries = getExecutedQueries();
           assert.equal(executedQueries.length, 1);
           assert.equal(executedQueries[0].text, commentedQuery);
           assert.notEqual(query, commentedQuery);
@@ -758,6 +761,8 @@ describe('pg', () => {
               trace.wrapSpanContext(span.spanContext()),
               query
             );
+
+            const executedQueries = getExecutedQueries();
             assert.equal(executedQueries.length, 1);
             assert.equal(executedQueries[0].text, commentedQuery);
             assert.notEqual(query, commentedQuery);
