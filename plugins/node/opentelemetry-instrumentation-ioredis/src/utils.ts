@@ -18,7 +18,8 @@ import { Span, SpanStatusCode } from '@opentelemetry/api';
 import { DbStatementSerializer } from './types';
 import { defaultDbStatementSerializer as redisSerializer } from '@opentelemetry/redis-common';
 
-export const defaultDbStatementSerializer: DbStatementSerializer = redisSerializer;
+export const defaultDbStatementSerializer: DbStatementSerializer =
+  redisSerializer;
 
 export const endSpan = (
   span: Span,
@@ -33,4 +34,3 @@ export const endSpan = (
   }
   span.end();
 };
-
