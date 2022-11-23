@@ -309,7 +309,7 @@ function hasValidSqlComment(query: string): boolean {
 }
 
 export function addSqlCommenterComment(span: Span, query: string): string {
-  if (query.length === 0 || typeof query !== 'string') {
+  if (typeof query !== 'string' || query.length === 0) {
     return query;
   }
 
