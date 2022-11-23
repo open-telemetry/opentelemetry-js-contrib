@@ -20,7 +20,8 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { defaultDbStatementSerializer as redisSerializer } from '@opentelemetry/redis-common';
 
-export const defaultDbStatementSerializer: DbStatementSerializer = redisSerializer;
+export const defaultDbStatementSerializer: DbStatementSerializer =
+  redisSerializer;
 
 export function getClientAttributes(options: any) {
   return {
