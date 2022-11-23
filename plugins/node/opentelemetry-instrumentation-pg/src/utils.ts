@@ -308,11 +308,15 @@ function hasValidSqlComment(query: string): boolean {
   return indexOpeningDashDashComment < indexClosingSlashComment;
 }
 
-function escapeMetaCharacters(value: string): string {
-  // Single quotes must be escaped by a slash, unless already escaped
-  return value.replace(/([^\\])(')/g, (_, prefix) => {
-    return `${prefix}\\'`;
-  });
+// sqlcommenter specification expects us to URL encode all reserved
+// characters, but encodeURIComponent does not handle ! ' ( ) *,
+// which means we need special handling for this
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+function fixedEncodeURIComponent(str: string) {
+  return encodeURIComponent(str).replace(
+    /[!'()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`
+  );
 }
 
 export function addSqlCommenterComment(span: Span, query: string): string {
@@ -343,10 +347,8 @@ export function addSqlCommenterComment(span: Span, query: string): string {
 
   const commentString = sortedKeys
     .map(key => {
-      const escapedValue = escapeMetaCharacters(
-        encodeURIComponent(headers[key])
-      );
-      return `${key}='${escapedValue}'`;
+      const encodedValue = fixedEncodeURIComponent(headers[key]);
+      return `${key}='${encodedValue}'`;
     })
     .join(',');
 
