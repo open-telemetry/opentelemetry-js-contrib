@@ -43,7 +43,6 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 
 const memoryExporter = new InMemorySpanExporter();
 
