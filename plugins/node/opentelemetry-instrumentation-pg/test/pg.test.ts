@@ -32,7 +32,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import type * as pg from 'pg';
-import * as Sinon from 'sinon';
+import * as sinon from 'sinon';
 import {
   PgInstrumentation,
   PgInstrumentationConfig,
@@ -167,13 +167,13 @@ describe('pg', () => {
 
     // Add a spy on the underlying client's internal query queue so that
     // we could assert on what the final queries are that are executed
-    Sinon.spy((client as any).queryQueue, 'push');
+    sinon.spy((client as any).queryQueue, 'push');
   });
 
   afterEach(() => {
     memoryExporter.reset();
     context.disable();
-    Sinon.restore();
+    sinon.restore();
   });
 
   it('should return an instrumentation', () => {
