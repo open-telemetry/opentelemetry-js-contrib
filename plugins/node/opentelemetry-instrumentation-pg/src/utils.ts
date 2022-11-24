@@ -293,6 +293,9 @@ export function patchClientConnectCallback(
   };
 }
 
+// NOTE: This function currently is returning false-positives
+// in cases where comment characters appear in string literals
+// ("SELECT '-- not a comment';" would return true, although has no comment)
 function hasValidSqlComment(query: string): boolean {
   const indexOpeningDashDashComment = query.indexOf('--');
   if (indexOpeningDashDashComment >= 0) {
