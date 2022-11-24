@@ -16,7 +16,6 @@
 import { defaultDbStatementSerializer } from '../src/index';
 import * as assert from 'assert';
 
-
 describe('#defaultDbStatementSerializer()', () => {
   [
     {
@@ -53,4 +52,3 @@ describe('#defaultDbStatementSerializer()', () => {
     });
   });
 });
-
