@@ -291,13 +291,13 @@ describe('utils.ts', () => {
         traceId: 'd4cda95b652f4a1592b449d5929fda1b',
         spanId: '6e0c63257de34c92',
         traceFlags: TraceFlags.SAMPLED,
-        traceState: createTraceState("foo='bar,baz='qux',hack='DROP TABLE"),
+        traceState: createTraceState("foo='bar,baz='qux!()*',hack='DROP TABLE"),
       };
 
       const query = 'SELECT * from FOO;';
       assert.strictEqual(
         utils.addSqlCommenterComment(trace.wrapSpanContext(spanContext), query),
-        "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01',tracestate='foo%3D%27bar%2Cbaz%3D%27qux%27%2Chack%3D%27DROP%20TABLE'*/"
+        "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01',tracestate='foo%3D%27bar%2Cbaz%3D%27qux%21%28%29%2A%27%2Chack%3D%27DROP%20TABLE'*/"
       );
     });
   });
