@@ -308,8 +308,9 @@ function hasValidSqlComment(query: string): boolean {
   return indexOpeningDashDashComment < indexClosingSlashComment;
 }
 
-// sqlcommenter specification expects us to URL encode all reserved
-// characters, but encodeURIComponent does not handle ! ' ( ) *,
+// sqlcommenter specification (https://google.github.io/sqlcommenter/spec/#value-serialization)
+// expects us to URL encode based on the RFC 3986 spec (https://en.wikipedia.org/wiki/Percent-encoding),
+// but encodeURIComponent does not handle some characters correctly (! ' ( ) *),
 // which means we need special handling for this
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
 function fixedEncodeURIComponent(str: string) {
