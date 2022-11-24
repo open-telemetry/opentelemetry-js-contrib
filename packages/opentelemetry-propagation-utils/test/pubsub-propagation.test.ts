@@ -20,7 +20,7 @@ import {
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
 import { ROOT_CONTEXT, trace } from '@opentelemetry/api';
-import * as expect from 'expect';
+import { expect } from 'expect';
 
 registerInstrumentationTestingProvider();
 
