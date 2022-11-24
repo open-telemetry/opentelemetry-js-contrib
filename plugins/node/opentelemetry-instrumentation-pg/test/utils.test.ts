@@ -22,7 +22,6 @@ import {
   trace,
   TraceFlags,
 } from '@opentelemetry/api';
-import { wrapSpanContext } from '@opentelemetry/api/build/src/trace/spancontext-utils';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import {
@@ -223,13 +222,13 @@ describe('utils.ts', () => {
 
       const query = 'SELECT * from FOO;';
       assert.strictEqual(
-        utils.addSqlCommenterComment(wrapSpanContext(spanContext), query),
+        utils.addSqlCommenterComment(trace.wrapSpanContext(spanContext), query),
         "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01'*/"
       );
     });
 
     it('does not add a comment if query already has a comment', () => {
-      const span = wrapSpanContext({
+      const span = trace.wrapSpanContext({
         traceId: 'd4cda95b652f4a1592b449d5929fda1b',
         spanId: '6e0c63257de34c92',
         traceFlags: TraceFlags.SAMPLED,
@@ -256,7 +255,7 @@ describe('utils.ts', () => {
       };
 
       assert.strictEqual(
-        utils.addSqlCommenterComment(wrapSpanContext(spanContext), ''),
+        utils.addSqlCommenterComment(trace.wrapSpanContext(spanContext), ''),
         ''
       );
     });
@@ -265,7 +264,7 @@ describe('utils.ts', () => {
       const query = 'SELECT * from FOO;';
       assert.strictEqual(
         utils.addSqlCommenterComment(
-          wrapSpanContext(INVALID_SPAN_CONTEXT),
+          trace.wrapSpanContext(INVALID_SPAN_CONTEXT),
           query
         ),
         query
@@ -282,7 +281,7 @@ describe('utils.ts', () => {
 
       const query = 'SELECT * from FOO;';
       assert.strictEqual(
-        utils.addSqlCommenterComment(wrapSpanContext(spanContext), query),
+        utils.addSqlCommenterComment(trace.wrapSpanContext(spanContext), query),
         "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01',tracestate='foo%3Dbar%2Cbaz%3Dqux'*/"
       );
     });
@@ -297,7 +296,7 @@ describe('utils.ts', () => {
 
       const query = 'SELECT * from FOO;';
       assert.strictEqual(
-        utils.addSqlCommenterComment(wrapSpanContext(spanContext), query),
+        utils.addSqlCommenterComment(trace.wrapSpanContext(spanContext), query),
         "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01',tracestate='foo%3D%27bar%2Cbaz%3D%27qux%27%2Chack%3D%27DROP%20TABLE'*/"
       );
     });
