@@ -192,9 +192,7 @@ describe('redis@2.x', () => {
         it(`should create a child span for ${operation.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `${
-              operation.command
-            } ${operation.expectedDbStatement}`,
+            [SemanticAttributes.DB_STATEMENT]: `${operation.command} ${operation.expectedDbStatement}`,
           };
           const span = tracer.startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
