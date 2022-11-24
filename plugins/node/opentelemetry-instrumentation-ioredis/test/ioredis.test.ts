@@ -187,14 +187,14 @@ describe('ioredis', () => {
       description: string;
       name: string;
       args: Array<string>;
-      serializedArgs: Array<string>;
+      expectedDbStatement: string;
       method: (cb: ioredisTypes.CallbackFunction<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         name: 'hset',
         args: [hashKeyName, 'testField', 'testValue'],
-        serializedArgs: [hashKeyName, 'testField', '[1 other arguments]'],
+        expectedDbStatement: `${hashKeyName} testField [1 other arguments]`,
         method: (cb: ioredisTypes.CallbackFunction<number>) =>
           client.hset(hashKeyName, 'testField', 'testValue', cb),
       },
@@ -202,7 +202,7 @@ describe('ioredis', () => {
         description: 'get',
         name: 'get',
         args: [testKeyName],
-        serializedArgs: [testKeyName],
+        expectedDbStatement: `${testKeyName}`,
         method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
           client.get(testKeyName, cb),
       },
@@ -246,7 +246,7 @@ describe('ioredis', () => {
             ...DEFAULT_ATTRIBUTES,
             [SemanticAttributes.DB_STATEMENT]: `${
               command.name
-            } ${command.serializedArgs.join(' ')}`,
+            } ${command.expectedDbStatement}`,
           };
           const span = provider
             .getTracer('ioredis-test')

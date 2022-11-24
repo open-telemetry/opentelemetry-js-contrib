@@ -16,57 +16,41 @@
 import { defaultDbStatementSerializer } from '../src/index';
 import * as assert from 'assert';
 
-describe('ioredis', () => {
-  const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
-  const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
 
-  before(function () {
-    // needs to be "function" to have MochaContext "this" context
-    if (!shouldTest) {
-      // this.skip() workaround
-      // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
-      this.test!.parent!.pending = true;
-      this.skip();
-    }
-
-    if (shouldTestLocal) {
-    }
-  });
-
-  describe('#defaultDbStatementSerializer()', () => {
-    [
-      {
-        cmdName: 'UNKNOWN',
-        cmdArgs: ['something'],
-        expected: 'UNKNOWN [1 other arguments]',
-      },
-      {
-        cmdName: 'ECHO',
-        cmdArgs: ['echo'],
-        expected: 'ECHO [1 other arguments]',
-      },
-      {
-        cmdName: 'LPUSH',
-        cmdArgs: ['list', 'value'],
-        expected: 'LPUSH list [1 other arguments]',
-      },
-      {
-        cmdName: 'HSET',
-        cmdArgs: ['hash', 'field', 'value'],
-        expected: 'HSET hash field [1 other arguments]',
-      },
-      {
-        cmdName: 'INCRBY',
-        cmdArgs: ['key', 5],
-        expected: 'INCRBY key 5',
-      },
-    ].forEach(({ cmdName, cmdArgs, expected }) => {
-      it(`should serialize the correct number of arguments for ${cmdName}`, () => {
-        assert.strictEqual(
-          defaultDbStatementSerializer(cmdName, cmdArgs),
-          expected
-        );
-      });
+describe('#defaultDbStatementSerializer()', () => {
+  [
+    {
+      cmdName: 'UNKNOWN',
+      cmdArgs: ['something'],
+      expected: 'UNKNOWN [1 other arguments]',
+    },
+    {
+      cmdName: 'ECHO',
+      cmdArgs: ['echo'],
+      expected: 'ECHO [1 other arguments]',
+    },
+    {
+      cmdName: 'LPUSH',
+      cmdArgs: ['list', 'value'],
+      expected: 'LPUSH list [1 other arguments]',
+    },
+    {
+      cmdName: 'HSET',
+      cmdArgs: ['hash', 'field', 'value'],
+      expected: 'HSET hash field [1 other arguments]',
+    },
+    {
+      cmdName: 'INCRBY',
+      cmdArgs: ['key', 5],
+      expected: 'INCRBY key 5',
+    },
+  ].forEach(({ cmdName, cmdArgs, expected }) => {
+    it(`should serialize the correct number of arguments for ${cmdName}`, () => {
+      assert.strictEqual(
+        defaultDbStatementSerializer(cmdName, cmdArgs),
+        expected
+      );
     });
   });
 });
+
