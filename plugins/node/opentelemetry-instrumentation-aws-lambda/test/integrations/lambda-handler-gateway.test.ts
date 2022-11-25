@@ -17,29 +17,26 @@
 // We access through node_modules to allow it to be patched.
 /* eslint-disable node/no-extraneous-require */
 
-import * as path from "path";
+import * as path from 'path';
 
 import {
   AwsLambdaInstrumentation,
   AwsLambdaInstrumentationConfig,
-} from "../../src";
+} from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
   ReadableSpan,
-} from "@opentelemetry/sdk-trace-base";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { Context } from "aws-lambda";
-import * as assert from "assert";
+} from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { Context } from 'aws-lambda';
+import * as assert from 'assert';
 import {
   SemanticAttributes,
   SemanticResourceAttributes,
-} from "@opentelemetry/semantic-conventions";
-import {
-  SpanKind,
-  SpanStatusCode,
-} from "@opentelemetry/api";
-import { assertSpanSuccess } from "./lambda-handler.test";
+} from '@opentelemetry/semantic-conventions';
+import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { assertSpanSuccess } from './lambda-handler.test';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -48,24 +45,24 @@ provider.register();
 
 const event = {
   requestContext: {
-    accountId: "123456789012",
-    apiId: "id",
+    accountId: '123456789012',
+    apiId: 'id',
     authorizer: {
       claims: null,
       scopes: null,
     },
-    domainName: "id.execute-api.us-east-1.amazonaws.com",
-    domainPrefix: "id",
-    extendedRequestId: "request-id",
-    httpMethod: "GET",
-    path: "/my/path",
-    protocol: "HTTP/1.1",
-    requestId: "id=",
-    requestTime: "04/Mar/2020:19:15:17 +0000",
+    domainName: 'id.execute-api.us-east-1.amazonaws.com',
+    domainPrefix: 'id',
+    extendedRequestId: 'request-id',
+    httpMethod: 'GET',
+    path: '/my/path',
+    protocol: 'HTTP/1.1',
+    requestId: 'id=',
+    requestTime: '04/Mar/2020:19:15:17 +0000',
     requestTimeEpoch: 1583349317135,
     resourceId: null,
-    resourcePath: "/my/path",
-    stage: "$default",
+    resourcePath: '/my/path',
+    stage: '$default',
   },
 };
 
@@ -108,21 +105,24 @@ const assertGatewaySpanFailure = (span: ReadableSpan) => {
   assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
 };
 
-describe("gateway API handler", () => {
+describe('gateway API handler', () => {
   let instrumentation: AwsLambdaInstrumentation;
 
   let oldEnv: NodeJS.ProcessEnv;
 
   const ctx = {
-    functionName: "my_function",
-    invokedFunctionArn: "my_arn",
-    awsRequestId: "aws_request_id",
+    functionName: 'my_function',
+    invokedFunctionArn: 'my_arn',
+    awsRequestId: 'aws_request_id',
   } as Context;
 
   const initializeHandler = (
     handler: string,
     config: AwsLambdaInstrumentationConfig = {
-      detectApiGateway: true
+      detectApiGateway: {
+        enable: true,
+        errorCodes: [400, 500],
+      },
     }
   ) => {
     process.env._HANDLER = handler;
@@ -132,12 +132,11 @@ describe("gateway API handler", () => {
   };
 
   const lambdaRequire = (module: string) =>
-    require(path.resolve(__dirname, "..", module));
-
+    require(path.resolve(__dirname, '..', module));
 
   beforeEach(() => {
     oldEnv = { ...process.env };
-    process.env.LAMBDA_TASK_ROOT = path.resolve(__dirname, "..");
+    process.env.LAMBDA_TASK_ROOT = path.resolve(__dirname, '..');
   });
 
   afterEach(() => {
@@ -147,11 +146,11 @@ describe("gateway API handler", () => {
     memoryExporter.reset();
   });
 
-  describe("gateway span tests", () => {
-    it("should export two valid span", async () => {
-      initializeHandler("lambda-test/gateway.handler");
+  describe('gateway span tests', () => {
+    it('should export two valid span', async () => {
+      initializeHandler('lambda-test/gateway.handler');
 
-      const result = await lambdaRequire("lambda-test/gateway").handler(
+      const result = await lambdaRequire('lambda-test/gateway').handler(
         event,
         ctx
       );
@@ -162,7 +161,10 @@ describe("gateway API handler", () => {
       const [spanLambda, spanGateway] = spans;
       assertSpanSuccess(spanLambda);
       assertGatewaySpanSuccess(spanGateway);
-      assert.strictEqual( spanGateway.attributes[ SemanticAttributes.HTTP_STATUS_CODE ], 200 )
+      assert.strictEqual(
+        spanGateway.attributes[SemanticAttributes.HTTP_STATUS_CODE],
+        200
+      );
       assert.strictEqual(spanGateway.parentSpanId, undefined);
       assert.strictEqual(
         spanLambda.parentSpanId,
@@ -170,10 +172,10 @@ describe("gateway API handler", () => {
       );
     });
 
-    it("gateway span should reject when returning 500 ", async () => {
-      initializeHandler("lambda-test/gateway.error500");
+    it('gateway span should reject when returning 500 ', async () => {
+      initializeHandler('lambda-test/gateway.error500');
 
-      const result = await lambdaRequire("lambda-test/gateway").error500(
+      const result = await lambdaRequire('lambda-test/gateway').error500(
         event,
         ctx
       );
@@ -186,13 +188,16 @@ describe("gateway API handler", () => {
 
       assert.strictEqual(
         spanGateway.status.message,
-        "Return to API Gateway with error 500"
+        'Return to API Gateway with error 500'
       );
 
       assertSpanSuccess(spanLambda);
       assertGatewaySpanFailure(spanGateway);
       assert.strictEqual(spanGateway.parentSpanId, undefined);
-      assert.strictEqual( spanGateway.attributes[ SemanticAttributes.HTTP_STATUS_CODE ], 500 )
+      assert.strictEqual(
+        spanGateway.attributes[SemanticAttributes.HTTP_STATUS_CODE],
+        500
+      );
 
       assert.strictEqual(
         spanLambda.parentSpanId,
@@ -200,10 +205,10 @@ describe("gateway API handler", () => {
       );
     });
 
-    it("gateway span should reject when returning 400 ", async () => {
-      initializeHandler("lambda-test/gateway.error400");
+    it('gateway span should reject when returning 400 ', async () => {
+      initializeHandler('lambda-test/gateway.error400');
 
-      const result = await lambdaRequire("lambda-test/gateway").error400(
+      const result = await lambdaRequire('lambda-test/gateway').error400(
         event,
         ctx
       );
@@ -211,22 +216,25 @@ describe("gateway API handler", () => {
       assert.strictEqual(result.statusCode, 400);
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
-      
+
       const [_, spanGateway] = spans;
 
-      assert.strictEqual( spanGateway.attributes[ SemanticAttributes.HTTP_STATUS_CODE ], 400 )
+      assert.strictEqual(
+        spanGateway.attributes[SemanticAttributes.HTTP_STATUS_CODE],
+        400
+      );
       assert.strictEqual(
         spanGateway.status.message,
-        "Return to API Gateway with error 400"
+        'Return to API Gateway with error 400'
       );
       assertGatewaySpanFailure(spanGateway);
     });
 
-    it("gateway span should reject when returning 400 sync", async () => {
-      initializeHandler("lambda-test/gateway.error400Sync");
+    it('gateway span should reject when returning 400 sync', async () => {
+      initializeHandler('lambda-test/gateway.error400Sync');
 
       await new Promise((resolve, reject) => {
-        lambdaRequire("lambda-test/gateway").error400Sync(
+        lambdaRequire('lambda-test/gateway').error400Sync(
           event,
           ctx,
           (err: Error, res: any) => {
@@ -243,20 +251,23 @@ describe("gateway API handler", () => {
       assert.strictEqual(spans.length, 2);
       const [_, spanGateway] = spans;
 
-      assert.strictEqual( spanGateway.attributes[ SemanticAttributes.HTTP_STATUS_CODE ], 400 )
+      assert.strictEqual(
+        spanGateway.attributes[SemanticAttributes.HTTP_STATUS_CODE],
+        400
+      );
       assert.strictEqual(
         spanGateway.status.message,
-        "Return to API Gateway with error 400"
+        'Return to API Gateway with error 400'
       );
       assertGatewaySpanFailure(spanGateway);
     });
 
-    it("gateway span should reject when throwing error", async () => {
-      initializeHandler("lambda-test/gateway.errorAsync");
+    it('gateway span should reject when throwing error', async () => {
+      initializeHandler('lambda-test/gateway.errorAsync');
 
       //let err: any;
       try {
-        await lambdaRequire("lambda-test/gateway").errorAsync(event, ctx);
+        await lambdaRequire('lambda-test/gateway').errorAsync(event, ctx);
       } catch (e) {
         //err = e;
       }
@@ -264,8 +275,66 @@ describe("gateway API handler", () => {
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
       const [_, spanGateway] = spans;
-      assert.strictEqual(spanGateway.status.message, "handler error");
+      assert.strictEqual(spanGateway.status.message, 'handler error');
     });
-
   });
+
+  describe("Filtering error codes", async() => {
+
+    it("Span should not fail when error code not in list", async() => {
+
+      initializeHandler('lambda-test/gateway.error400', {
+        detectApiGateway: { enable: true, errorCodes: [500]}
+      });
+
+      const result = await lambdaRequire('lambda-test/gateway').error400(
+        event,
+        ctx
+      );
+
+      assert.strictEqual(result.statusCode, 400);
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2);
+      const [_, spanGateway] = spans;
+      assert.strictEqual( spanGateway.status.code, SpanStatusCode.OK );
+    })
+
+    it("Span fail when matching regex", async() => {
+
+      initializeHandler('lambda-test/gateway.error400', {
+        detectApiGateway: { enable: true, errorCodes: [/^4[0-9]{2}$/]}
+      });
+
+      const result = await lambdaRequire('lambda-test/gateway').error400(
+        event,
+        ctx
+      );
+
+      assert.strictEqual(result.statusCode, 400);
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2);
+      const [_, spanGateway] = spans;
+      assert.strictEqual( spanGateway.status.code, SpanStatusCode.ERROR );
+    })
+
+    
+    it("Span should have unset status when no error code is provided", async() => {
+
+      initializeHandler('lambda-test/gateway.error400', {
+        detectApiGateway: { enable: true }
+      });
+
+      const result = await lambdaRequire('lambda-test/gateway').error400(
+        event,
+        ctx
+      );
+
+      assert.strictEqual(result.statusCode, 400);
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2);
+      const [_, spanGateway] = spans;
+      assert.strictEqual( spanGateway.status.code, SpanStatusCode.UNSET );
+    })
+
+  })
 });

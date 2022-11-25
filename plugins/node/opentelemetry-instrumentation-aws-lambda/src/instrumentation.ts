@@ -175,7 +175,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
       let wrapperSpan: Span | undefined;
 
-      if (plugin._config.detectApiGateway && event.requestContext) {
+      if (plugin._config.detectApiGateway?.enable && event.requestContext) {
         plugin.triggerOrigin = TriggerOrigin.API_GATEWAY;
         wrapperSpan = plugin._getApiGatewaySpan(event, parent);
       }
@@ -408,7 +408,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     if (this.triggerOrigin == TriggerOrigin.API_GATEWAY) {
       this._endAPIGatewaySpan(span, returnFromLambda, errorFromLambda);
     }
-
     span.end();
   }
 
@@ -437,23 +436,45 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       return;
     }
 
-    span.setAttribute( SemanticAttributes.HTTP_STATUS_CODE, returnFromLambda.statusCode )
-    
-    if (
-      !returnFromLambda.statusCode ||
-      returnFromLambda.statusCode < 200 ||
-      returnFromLambda.statusCode >= 400
-    ) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message:
-          'Return to API Gateway with error ' + returnFromLambda.statusCode,
-      });
-    } else {
-      span.setStatus({
-        code: SpanStatusCode.OK,
-      });
+    span.setAttribute(
+      SemanticAttributes.HTTP_STATUS_CODE,
+      returnFromLambda.statusCode
+    );
+    const statusCode = returnFromLambda.statusCode;
+
+    if (this._config.detectApiGateway?.errorCodes) {
+      const fail = this._config.detectApiGateway.errorCodes.reduce(
+        (fail, ec) => {
+          if (fail || ec === statusCode) {
+            return true;
+          }
+
+          if (ec instanceof RegExp && ec.test(String(statusCode))) {
+            return true;
+          }
+          return fail;
+        },
+        false
+      );
+
+     
+
+      if (fail) {
+        return span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message:
+            'Return to API Gateway with error ' + returnFromLambda.statusCode,
+        });
+      } else {
+        return span.setStatus({
+          code: SpanStatusCode.OK,
+        });
+      }
     }
+
+    return span.setStatus({
+      code: SpanStatusCode.UNSET,
+    });
   }
 
   private _getForceFlush(tracerProvider: TracerProvider) {
