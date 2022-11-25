@@ -42,7 +42,7 @@ export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   //detectApiGateway?: boolean;
   detectApiGateway?: {
     enable: true,
-    errorCodes: Array<RegExp | number>
+    errorCodes?: Array<RegExp | number>
   }
   eventContextExtractor?: EventContextExtractor;
 }
