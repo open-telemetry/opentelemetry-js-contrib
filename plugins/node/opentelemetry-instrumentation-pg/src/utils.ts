@@ -36,10 +36,10 @@ import {
 import {
   PgClientExtended,
   PostgresCallback,
-  PgClientConnectionParams,
   PgErrorCallback,
   PgPoolCallback,
   PgPoolExtended,
+  PgParsedConnectionParams,
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
@@ -97,7 +97,7 @@ function parseNormalizedOperationName(queryText: string) {
   return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
 }
 
-function getConnectionString(params: PgClientConnectionParams) {
+export function getConnectionString(params: PgParsedConnectionParams) {
   const host = params.host || 'localhost';
   const port = params.port || 5432;
   const database = params.database || '';
@@ -105,7 +105,7 @@ function getConnectionString(params: PgClientConnectionParams) {
 }
 
 export function getSemanticAttributesFromConnection(
-  params: PgClientConnectionParams
+  params: PgParsedConnectionParams
 ) {
   return {
     [SemanticAttributes.DB_NAME]: params.database, // required
