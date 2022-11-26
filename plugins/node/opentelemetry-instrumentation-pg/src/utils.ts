@@ -50,11 +50,51 @@ function arrayStringifyHelper(arr: Array<unknown>): string {
   return '[' + arr.toString() + ']';
 }
 
-// Helper function to get a low cardinality command name from the full text query
-function getCommandFromText(text?: string): string {
-  if (!text) return 'unknown';
-  const words = text.split(' ');
-  return words[0].length > 0 ? words[0] : 'unknown';
+/**
+ * Helper function to get a low cardinality span name from whatever info we have
+ * about the query.
+ *
+ * This is tricky, because we don't have most of the information (table name,
+ * operation name, etc) the spec recommends using to build a low-cardinality
+ * value w/o parsing. So, we use db.name and assume that, if the query's a named
+ * prepared statement, those `name` values will be low cardinality. If we don't
+ * have a named prepared statement, we try to parse an operation (despite the
+ * spec's warnings).
+ *
+ * @params dbName The name of the db against which this query is being issued,
+ *   which could be missing if no db name was given at the time that the
+ *   connection was established.
+ * @params queryConfig Information we have about the query being issued, typed
+ *   to reflect only the validation we've actually done on the args to
+ *   `client.query()`. This will be undefined if `client.query()` was called
+ *   with invalid arguments.
+ */
+export function getQuerySpanName(
+  dbName: string | undefined,
+  queryConfig?: { text: string; name?: unknown }
+) {
+  // NB: when the query config is invalid, we omit the dbName too, so that
+  // someone (or some tool) reading the span name doesn't misinterpret the
+  // dbName as being a prepared statement or sql commit name.
+  if (!queryConfig) return PgInstrumentation.BASE_SPAN_NAME;
+
+  // Either the name of a prepared statement; or an attempted parse
+  // of the SQL command, normalized to uppercase; or unknown.
+  const command =
+    typeof queryConfig.name === 'string' && queryConfig.name
+      ? queryConfig.name
+      : parseNormalizedOperationName(queryConfig.text);
+
+  return `${PgInstrumentation.BASE_SPAN_NAME}:${command}${
+    dbName ? ` ${dbName}` : ''
+  }`;
+}
+
+function parseNormalizedOperationName(queryText: string) {
+  const sqlCommand = queryText.split(' ')[0].toUpperCase();
+
+  // Handle query text being "COMMIT;", which has an extra semicolon before the space.
+  return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
 }
 
 function getConnectionString(params: PgClientConnectionParams) {
@@ -96,19 +136,6 @@ export function startSpan(
   });
 }
 
-// Private helper function to start a span after a connection has been established
-function startQuerySpan(
-  client: PgClientExtended,
-  tracer: Tracer,
-  instrumentationConfig: PgInstrumentationConfig,
-  name: string
-) {
-  return startSpan(tracer, instrumentationConfig, name, {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
-    ...getSemanticAttributesFromConnection(client.connectionParameters),
-  });
-}
-
 // Create a span from our normalized queryConfig object,
 // or return a basic span if no queryConfig was given/could be created.
 export function handleConfigQuery(
@@ -117,22 +144,19 @@ export function handleConfigQuery(
   instrumentationConfig: PgInstrumentationConfig,
   queryConfig?: { text: string; values?: unknown; name?: unknown }
 ) {
-  if (!queryConfig) {
-    return startQuerySpan(
-      this,
-      tracer,
-      instrumentationConfig,
-      PgInstrumentation.BASE_SPAN_NAME
-    );
-  }
+  // Create child span.
+  const { connectionParameters } = this;
+  const dbName = connectionParameters.database;
 
-  // Set child span name
-  const queryCommand = getCommandFromText(
-    (typeof queryConfig.name === 'string' ? queryConfig.name : undefined) ||
-      queryConfig.text
-  );
-  const name = `${PgInstrumentation.BASE_SPAN_NAME}:${queryCommand}`;
-  const span = startQuerySpan(this, tracer, instrumentationConfig, name);
+  const spanName = getQuerySpanName(dbName, queryConfig);
+  const span = startSpan(tracer, instrumentationConfig, spanName, {
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
+    ...getSemanticAttributesFromConnection(connectionParameters),
+  });
+
+  if (!queryConfig) {
+    return span;
+  }
 
   // Set attributes
   if (queryConfig.text) {

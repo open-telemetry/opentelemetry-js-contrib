@@ -75,6 +75,59 @@ describe('utils.ts', () => {
     context.disable();
   });
 
+  describe('.getQuerySpanName()', () => {
+    const dummyQuery = {
+      text: 'SELECT $1',
+      values: ['hello'],
+      name: 'select-placeholder-val',
+    };
+
+    it('uses prepared statement name when given, over query text', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', dummyQuery),
+        'pg.query:select-placeholder-val dbName'
+      );
+    });
+
+    it('falls back to parsing query text when no (valid) name is available', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', { ...dummyQuery, name: undefined }),
+        'pg.query:SELECT dbName'
+      );
+    });
+
+    it('normalizes operation names parsed from query text', () => {
+      const queryUpperCase = { text: dummyQuery.text.toUpperCase() };
+      const queryLowerCase = { text: dummyQuery.text.toLowerCase() };
+
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', queryUpperCase),
+        utils.getQuerySpanName('dbName', queryLowerCase)
+      );
+    });
+
+    it('ignores trailing semicolons when parsing operation names', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', { text: 'COMMIT;' }),
+        'pg.query:COMMIT dbName'
+      );
+    });
+
+    it('omits db name if missing', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName(undefined, dummyQuery),
+        'pg.query:select-placeholder-val'
+      );
+    });
+
+    it('should omit all info if the queryConfig is invalid', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('db-name-ignored', undefined),
+        'pg.query'
+      );
+    });
+  });
+
   describe('.startSpan()', () => {
     it('starts real span when requireParentSpan=false', async () => {
       const span = utils.startSpan(tracer, instrumentationConfig, 'spanName', {
