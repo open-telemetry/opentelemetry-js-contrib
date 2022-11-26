@@ -136,12 +136,7 @@ export class PgInstrumentation extends InstrumentationBase {
           `${PgInstrumentation.COMPONENT}.connect`,
           {
             [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-            [SemanticAttributes.DB_NAME]: this.database,
-            [SemanticAttributes.NET_PEER_NAME]: this.host,
-            [SemanticAttributes.DB_CONNECTION_STRING]:
-              utils.getConnectionString(this),
-            [SemanticAttributes.NET_PEER_PORT]: this.port,
-            [SemanticAttributes.DB_USER]: this.user,
+            ...utils.getSemanticAttributesFromConnection(this),
           }
         );
 
@@ -308,7 +303,6 @@ export class PgInstrumentation extends InstrumentationBase {
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
-        const connString = utils.getConnectionString(this.options);
         // setup span
         const span = startSpan(
           plugin.tracer,
@@ -316,11 +310,7 @@ export class PgInstrumentation extends InstrumentationBase {
           `${PG_POOL_COMPONENT}.connect`,
           {
             [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-            [SemanticAttributes.DB_NAME]: this.options.database, // required
-            [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
-            [SemanticAttributes.DB_CONNECTION_STRING]: connString, // required
-            [SemanticAttributes.NET_PEER_PORT]: this.options.port,
-            [SemanticAttributes.DB_USER]: this.options.user,
+            ...utils.getSemanticAttributesFromConnection(this.options),
             [AttributeNames.IDLE_TIMEOUT_MILLIS]:
               this.options.idleTimeoutMillis,
             [AttributeNames.MAX_CLIENT]: this.options.maxClient,

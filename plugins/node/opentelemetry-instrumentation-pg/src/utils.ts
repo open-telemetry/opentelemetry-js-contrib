@@ -57,11 +57,23 @@ function getCommandFromText(text?: string): string {
   return words[0].length > 0 ? words[0] : 'unknown';
 }
 
-export function getConnectionString(params: PgClientConnectionParams) {
+function getConnectionString(params: PgClientConnectionParams) {
   const host = params.host || 'localhost';
   const port = params.port || 5432;
   const database = params.database || '';
   return `postgresql://${host}:${port}/${database}`;
+}
+
+export function getSemanticAttributesFromConnection(
+  params: PgClientConnectionParams
+) {
+  return {
+    [SemanticAttributes.DB_NAME]: params.database, // required
+    [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
+    [SemanticAttributes.NET_PEER_NAME]: params.host, // required
+    [SemanticAttributes.NET_PEER_PORT]: params.port,
+    [SemanticAttributes.DB_USER]: params.user,
+  };
 }
 
 export function startSpan(
@@ -91,14 +103,9 @@ function startQuerySpan(
   instrumentationConfig: PgInstrumentationConfig,
   name: string
 ) {
-  const jdbcString = getConnectionString(client.connectionParameters);
   return startSpan(tracer, instrumentationConfig, name, {
-    [SemanticAttributes.DB_NAME]: client.connectionParameters.database, // required
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
-    [SemanticAttributes.DB_CONNECTION_STRING]: jdbcString, // required
-    [SemanticAttributes.NET_PEER_NAME]: client.connectionParameters.host, // required
-    [SemanticAttributes.NET_PEER_PORT]: client.connectionParameters.port,
-    [SemanticAttributes.DB_USER]: client.connectionParameters.user,
+    ...getSemanticAttributesFromConnection(client.connectionParameters),
   });
 }
 
