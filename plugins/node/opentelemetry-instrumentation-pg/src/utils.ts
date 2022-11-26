@@ -35,7 +35,6 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   PgClientExtended,
-  NormalizedQueryConfig,
   PostgresCallback,
   PgClientConnectionParams,
   PgErrorCallback,
@@ -103,107 +102,52 @@ function startQuerySpan(
   });
 }
 
-// Queries where args[0] is a QueryConfig
+// Create a span from our normalized queryConfig object,
+// or return a basic span if no queryConfig was given/could be created.
 export function handleConfigQuery(
   this: PgClientExtended,
   tracer: Tracer,
   instrumentationConfig: PgInstrumentationConfig,
-  queryConfig: NormalizedQueryConfig
+  queryConfig?: { text: string; values?: unknown; name?: unknown }
 ) {
+  if (!queryConfig) {
+    return startQuerySpan(
+      this,
+      tracer,
+      instrumentationConfig,
+      PgInstrumentation.BASE_SPAN_NAME
+    );
+  }
+
   // Set child span name
-  const queryCommand = getCommandFromText(queryConfig.name || queryConfig.text);
-  const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
+  const queryCommand = getCommandFromText(
+    (typeof queryConfig.name === 'string' ? queryConfig.name : undefined) ||
+      queryConfig.text
+  );
+  const name = `${PgInstrumentation.BASE_SPAN_NAME}:${queryCommand}`;
   const span = startQuerySpan(this, tracer, instrumentationConfig, name);
 
   // Set attributes
   if (queryConfig.text) {
     span.setAttribute(SemanticAttributes.DB_STATEMENT, queryConfig.text);
   }
+
   if (
     instrumentationConfig.enhancedDatabaseReporting &&
-    queryConfig.values instanceof Array
+    Array.isArray(queryConfig.values)
   ) {
     span.setAttribute(
       AttributeNames.PG_VALUES,
       arrayStringifyHelper(queryConfig.values)
     );
   }
+
   // Set plan name attribute, if present
-  if (queryConfig.name) {
+  if (typeof queryConfig.name === 'string') {
     span.setAttribute(AttributeNames.PG_PLAN, queryConfig.name);
   }
 
   return span;
-}
-
-// Queries where args[1] is a 'values' array
-export function handleParameterizedQuery(
-  this: PgClientExtended,
-  tracer: Tracer,
-  instrumentationConfig: PgInstrumentationConfig,
-  query: string,
-  values: unknown[]
-) {
-  // Set child span name
-  const queryCommand = getCommandFromText(query);
-  const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = startQuerySpan(this, tracer, instrumentationConfig, name);
-
-  // Set attributes
-  span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
-  if (instrumentationConfig.enhancedDatabaseReporting) {
-    span.setAttribute(AttributeNames.PG_VALUES, arrayStringifyHelper(values));
-  }
-
-  return span;
-}
-
-// Queries where args[0] is a text query and 'values' was not specified
-export function handleTextQuery(
-  this: PgClientExtended,
-  tracer: Tracer,
-  instrumentationConfig: PgInstrumentationConfig,
-  query: string
-) {
-  // Set child span name
-  const queryCommand = getCommandFromText(query);
-  const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = startQuerySpan(this, tracer, instrumentationConfig, name);
-
-  // Set attributes
-  span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
-
-  return span;
-}
-
-/**
- * Invalid query handler. We should never enter this function unless invalid args were passed to the driver.
- * Create and immediately end a new span
- */
-export function handleInvalidQuery(
-  this: PgClientExtended,
-  tracer: Tracer,
-  instrumentationConfig: PgInstrumentationConfig,
-  originalQuery: typeof pgTypes.Client.prototype.query,
-  ...args: unknown[]
-) {
-  let result;
-  const span = startQuerySpan(
-    this,
-    tracer,
-    instrumentationConfig,
-    PgInstrumentation.BASE_SPAN_NAME
-  );
-  try {
-    result = originalQuery.apply(this, args as never);
-  } catch (e) {
-    // span.recordException(e);
-    span.setStatus({ code: SpanStatusCode.ERROR, message: e.message });
-    throw e;
-  } finally {
-    span.end();
-  }
-  return result;
 }
 
 export function handleExecutionResult(
@@ -358,3 +302,26 @@ export function addSqlCommenterComment(span: Span, query: string): string {
 
   return `${query} /*${commentString}*/`;
 }
+
+/**
+ * Attempt to get a message string from a thrown value, while being quite
+ * defensive, to recognize the fact that, in JS, any kind of value (even
+ * primitives) can be thrown.
+ */
+export function getErrorMessage(e: unknown) {
+  return typeof e === 'object' && e !== null && 'message' in e
+    ? String((e as { message?: unknown }).message)
+    : undefined;
+}
+
+export function isObjectWithTextString(it: unknown): it is ObjectWithText {
+  return (
+    typeof it === 'object' &&
+    typeof (it as null | { text?: unknown })?.text === 'string'
+  );
+}
+
+export type ObjectWithText = {
+  text: string;
+  [k: string]: unknown;
+};

@@ -32,12 +32,6 @@ export interface PgClientExtended extends pgTypes.Client {
   connectionParameters: PgClientConnectionParams;
 }
 
-// Interface name based on original driver implementation
-// https://github.com/brianc/node-postgres/blob/2ef55503738eb2cbb6326744381a92c0bc0439ab/packages/pg/lib/utils.js#L157
-export interface NormalizedQueryConfig extends pgTypes.QueryConfig {
-  callback?: PostgresCallback;
-}
-
 export type PgPoolCallback = (
   err: Error,
   client: any,

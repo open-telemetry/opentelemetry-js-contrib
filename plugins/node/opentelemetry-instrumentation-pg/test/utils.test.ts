@@ -33,7 +33,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import { PgInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { PgClientExtended, NormalizedQueryConfig } from '../src/internal-types';
+import { PgClientExtended } from '../src/internal-types';
 import * as utils from '../src/utils';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -131,7 +131,7 @@ describe('utils.ts', () => {
   });
 
   describe('.handleConfigQuery()', () => {
-    const queryConfig: NormalizedQueryConfig = {
+    const queryConfig = {
       text: 'SELECT $1::text',
       values: ['0'],
     };
@@ -161,47 +161,6 @@ describe('utils.ts', () => {
         tracer,
         extPluginConfig,
         queryConfig
-      );
-      querySpan.end();
-
-      const readableSpan = getLatestSpan();
-
-      const pgValues = readableSpan.attributes[AttributeNames.PG_VALUES];
-      assert.strictEqual(pgValues, '[0]');
-    });
-  });
-
-  describe('.handleParameterizedQuery()', () => {
-    const query = 'SELECT $1::text';
-    const values = ['0'];
-
-    it('does not track pg.values by default', async () => {
-      const querySpan = utils.handleParameterizedQuery.call(
-        client,
-        tracer,
-        instrumentationConfig,
-        query,
-        values
-      );
-      querySpan.end();
-
-      const readableSpan = getLatestSpan();
-
-      const pgValues = readableSpan.attributes[AttributeNames.PG_VALUES];
-      assert.strictEqual(pgValues, undefined);
-    });
-
-    it('tracks pg.values if enabled explicitly', async () => {
-      const extPluginConfig: PgInstrumentationConfig & InstrumentationConfig = {
-        ...instrumentationConfig,
-        enhancedDatabaseReporting: true,
-      };
-      const querySpan = utils.handleParameterizedQuery.call(
-        client,
-        tracer,
-        extPluginConfig,
-        query,
-        values
       );
       querySpan.end();
 
