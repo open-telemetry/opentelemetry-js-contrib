@@ -42,6 +42,8 @@ import {
   AWSXRayPropagator,
 } from '@opentelemetry/propagator-aws-xray';
 import {
+  MessagingDestinationKindValues,
+  MessagingOperationValues,
   SemanticAttributes,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
@@ -56,6 +58,72 @@ import {
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
 import { LambdaModule } from './internal-types';
+import { pubsubPropagation } from '@opentelemetry/propagation-utils';
+import { SQS } from 'aws-sdk';
+
+type LowerCase<T> = T extends {}
+  ? {
+      [K in keyof T as K extends string
+        ? string extends K
+          ? string
+          : `${Uncapitalize<string & K>}`
+        : K]: T[K] extends {} | undefined ? LowerCase<T[K]> : T[K];
+    }
+  : T; //[ keyof T ]
+
+type V = LowerCase<SQS.Message>;
+declare const a: V;
+
+class ContextGetter
+  implements TextMapGetter<LowerCase<SQS.MessageBodyAttributeMap>>
+{
+  keys(carrier: LowerCase<SQS.MessageBodyAttributeMap>): string[] {
+    return Object.keys(carrier);
+  }
+
+  get(carrier: any, key: string): undefined | string | string[] {
+    if (typeof carrier?.[key] == 'object') {
+      return carrier?.[key]?.stringValue || carrier?.[key]?.value;
+    } else {
+      return carrier?.[key];
+    }
+  }
+}
+
+const extractPropagationContext = (
+  message: LowerCase<SQS.Message>,
+  sqsExtractContextPropagationFromPayload: boolean | undefined
+): any => {
+  const propagationFields = propagation.fields();
+
+  if (
+    message.attributes &&
+    Object.keys(message.attributes).some((attr) =>
+      propagationFields.includes(attr)
+    )
+  ) {
+    return message.attributes;
+  } else if (
+    message.messageAttributes &&
+    Object.keys(message.messageAttributes).some((attr) =>
+      propagationFields.includes(attr)
+    )
+  ) {
+    return message.messageAttributes;
+  } else if (sqsExtractContextPropagationFromPayload && message.body) {
+    try {
+      const payload = JSON.parse(message.body);
+      return payload.messageAttributes;
+    } catch {
+      diag.debug(
+        'failed to parse SQS payload to extract context propagation, trace might be incomplete.'
+      );
+    }
+  }
+  return undefined;
+};
+
+export const contextGetter = new ContextGetter();
 
 const awsPropagator = new AWSXRayPropagator();
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
@@ -179,7 +247,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       if (config.requestHook) {
         safeExecuteInTheMiddle(
           () => config.requestHook!(span, { event, context }),
-          e => {
+          (e) => {
             if (e)
               diag.error('aws-lambda instrumentation: requestHook error', e);
           },
@@ -192,10 +260,58 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         // the handler and see if the result is a Promise or not. In such a case, the callback is usually ignored. If
         // the handler happened to both call the callback and complete a returned Promise, whichever happens first will
         // win and the latter will be ignored.
+
+        /**
+         * If there is a "Records" entry in the event that is of Array type, we might assume we are receiving a list of records coming from a queue, like SQS.
+         * We will patch those items following the aws-sdk implementation
+         */
+
+        if ('Records' in event) {
+          pubsubPropagation.patchMessagesArrayToStartProcessSpans<
+            LowerCase<SQS.Message> /* | SNS.Message */
+          >({
+            messages: event.Records as Array<LowerCase<SQS.Message>>,
+            parentContext: trace.setSpan(otelContext.active(), span),
+            tracer: plugin.tracer,
+            messageToSpanDetails: (message: LowerCase<SQS.Message>) => {
+              console.log(
+                propagation.extract(
+                  ROOT_CONTEXT,
+                  extractPropagationContext(message, false),
+                  contextGetter
+                )
+              );
+
+              return {
+                name: 'SQS',
+                parentContext: propagation.extract(
+                  ROOT_CONTEXT,
+                  extractPropagationContext(message, false),
+                  contextGetter
+                ),
+                attributes: {
+                  [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sqs',
+                  [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
+                    MessagingDestinationKindValues.QUEUE,
+                  [SemanticAttributes.MESSAGING_MESSAGE_ID]: message.messageId,
+                  [SemanticAttributes.MESSAGING_OPERATION]:
+                    MessagingOperationValues.PROCESS,
+                },
+              };
+            },
+          });
+
+          pubsubPropagation.patchArrayForProcessSpans(
+            event.Records,
+            plugin.tracer,
+            otelContext.active()
+          );
+        }
+
         const wrappedCallback = plugin._wrapCallback(callback, span);
         const maybePromise = safeExecuteInTheMiddle(
           () => original.apply(this, [event, context, wrappedCallback]),
-          error => {
+          (error) => {
             if (error != null) {
               // Exception thrown synchronously before resolving callback / promise.
               plugin._applyResponseHook(span, error);
@@ -205,9 +321,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         ) as Promise<{}> | undefined;
         if (typeof maybePromise?.then === 'function') {
           return maybePromise.then(
-            value => {
+            (value) => {
               plugin._applyResponseHook(span, null, value);
-              return new Promise(resolve =>
+              return new Promise((resolve) =>
                 plugin._endSpan(span, undefined, () => resolve(value))
               );
             },
@@ -304,7 +420,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     if (this._config?.responseHook) {
       safeExecuteInTheMiddle(
         () => this._config.responseHook!(span, { err, res }),
-        e => {
+        (e) => {
           if (e)
             diag.error('aws-lambda instrumentation: responseHook error', e);
         },
@@ -358,7 +474,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     }
     const extractedContext = safeExecuteInTheMiddle(
       () => eventContextExtractor(event, context),
-      e => {
+      (e) => {
         if (e)
           diag.error(
             'aws-lambda instrumentation: eventContextExtractor error',

@@ -51,6 +51,7 @@
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
+    "aws-sdk": "^2.1262.0",
     "gts": "3.1.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
@@ -60,6 +61,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.32.0",
+    "@opentelemetry/propagation-utils": "^0.29.1",
     "@opentelemetry/propagator-aws-xray": "^1.1.1",
     "@opentelemetry/resources": "^1.8.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",

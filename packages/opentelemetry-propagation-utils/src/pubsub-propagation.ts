@@ -154,10 +154,11 @@ const startMessagingProcessSpan = <T>(
   parentContext: Context,
   propagatedContext: Context,
   tracer: Tracer,
-  processHook?: ProcessHook<T>
+  processHook?: ProcessHook<T>,
+  propagatedContextAsActive?: boolean
 ): Span => {
   const links: Link[] = [];
-  const spanContext = trace.getSpanContext(propagatedContext);
+  const spanContext = trace.getSpanContext(propagatedContextAsActive ? parentContext : propagatedContext);
   if (spanContext) {
     links.push({
       context: spanContext,
@@ -175,7 +176,7 @@ const startMessagingProcessSpan = <T>(
       },
       links,
     },
-    parentContext
+    propagatedContextAsActive ? propagatedContext : parentContext
   );
 
   Object.defineProperty(message, START_SPAN_FUNCTION, {
@@ -220,6 +221,7 @@ interface PatchForProcessingPayload<T> {
   parentContext: Context;
   messageToSpanDetails: (message: T) => SpanDetails;
   processHook?: ProcessHook<T>;
+  propagatedContextAsActive?: boolean;
 }
 
 const patchMessagesArrayToStartProcessSpans = <T>({
@@ -228,6 +230,7 @@ const patchMessagesArrayToStartProcessSpans = <T>({
   parentContext,
   messageToSpanDetails,
   processHook,
+  propagatedContextAsActive
 }: PatchForProcessingPayload<T>) => {
   messages.forEach(message => {
     const {
@@ -247,7 +250,8 @@ const patchMessagesArrayToStartProcessSpans = <T>({
           parentContext,
           propagatedContext,
           tracer,
-          processHook
+          processHook,
+          propagatedContextAsActive
         ),
     });
   });

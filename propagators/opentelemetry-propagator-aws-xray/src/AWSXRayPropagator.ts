@@ -31,6 +31,7 @@ import {
 } from '@opentelemetry/api';
 
 export const AWSXRAY_TRACE_ID_HEADER = 'x-amzn-trace-id';
+export const AWS_TRACE_ID_MESSAGE = 'AWSTraceHeader';
 
 const TRACE_HEADER_DELIMITER = ';';
 const KV_DELIMITER = '=';
@@ -85,14 +86,14 @@ export class AWSXRayPropagator implements TextMapPropagator {
   }
 
   fields(): string[] {
-    return [AWSXRAY_TRACE_ID_HEADER];
+    return [AWSXRAY_TRACE_ID_HEADER, AWS_TRACE_ID_MESSAGE];
   }
 
   private getSpanContextFromHeader(
     carrier: unknown,
     getter: TextMapGetter
   ): SpanContext {
-    const traceHeader = getter.get(carrier, AWSXRAY_TRACE_ID_HEADER);
+    const traceHeader = getter.get(carrier, AWSXRAY_TRACE_ID_HEADER) || getter.get( carrier, AWS_TRACE_ID_MESSAGE );
     if (!traceHeader || typeof traceHeader !== 'string')
       return INVALID_SPAN_CONTEXT;
 
