@@ -27,7 +27,7 @@ import { SpanKind } from '@opentelemetry/api';
 import { Lambda, InvocationType } from '@aws-sdk/client-lambda';
 import { ClientRequest } from 'http';
 import * as nock from 'nock';
-import * as expect from 'expect';
+import { expect } from 'expect';
 
 process.env.AWS_ACCESS_KEY_ID = 'testing';
 process.env.AWS_SECRET_ACCESS_KEY = 'testing';

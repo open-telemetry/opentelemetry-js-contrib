@@ -46,4 +46,10 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   requireParentSpan?: boolean;
+
+  /**
+   * If true, queries are modified to also include a comment with
+   * the tracing context, following the {@link https://github.com/open-telemetry/opentelemetry-sqlcommenter sqlcommenter} format
+   */
+  addSqlCommenterCommentToQueries?: boolean;
 }
