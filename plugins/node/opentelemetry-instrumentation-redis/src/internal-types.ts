@@ -17,6 +17,7 @@ export interface RedisPluginClientTypes {
   options?: {
     host: string;
     port: string;
+    db: string;
   };
 
   address?: string;

@@ -19,10 +19,21 @@ import {
 } from '@opentelemetry/semantic-conventions';
 
 export function getClientAttributes(options: any) {
+
+  let db_redis_database_index;
+
+      //checking if database index is specified in Redis client (if not, default db_redis_database_index = 0)
+  if (options?.database){
+    db_redis_database_index = options?.database
+  }else{
+    db_redis_database_index = '0'
+  }
+
   return {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
     [SemanticAttributes.NET_PEER_NAME]: options?.socket?.host,
     [SemanticAttributes.NET_PEER_PORT]: options?.socket?.port,
     [SemanticAttributes.DB_CONNECTION_STRING]: options?.url,
+    [SemanticAttributes.DB_REDIS_DATABASE_INDEX]: db_redis_database_index,
   };
 }

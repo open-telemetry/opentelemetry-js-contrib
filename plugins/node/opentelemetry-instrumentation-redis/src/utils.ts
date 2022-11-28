@@ -111,9 +111,19 @@ export const getTracedInternalSendCommand = (
 
     // Set attributes for not explicitly typed RedisPluginClientTypes
     if (this.options) {
+
+      let db_redis_database_index;
+
+      //checking if database index is specified in Redis client (if not, default db_redis_database_index = 0)
+      if (this.options.db){
+        db_redis_database_index = this.options.db
+      }else{
+        db_redis_database_index = '0'
+      }
       span.setAttributes({
         [SemanticAttributes.NET_PEER_NAME]: this.options.host,
         [SemanticAttributes.NET_PEER_PORT]: this.options.port,
+        [SemanticAttributes.DB_REDIS_DATABASE_INDEX]: db_redis_database_index,
       });
     }
     if (this.address) {
