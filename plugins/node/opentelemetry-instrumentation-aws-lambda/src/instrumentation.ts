@@ -18,8 +18,6 @@ import * as path from 'path';
 
 import {
   InstrumentationBase,
-  InstrumentationNodeModuleDefinition,
-  InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
@@ -52,6 +50,7 @@ import {
   Context,
   Handler,
 } from 'aws-lambda';
+import * as RequireInTheMiddle from 'require-in-the-middle';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
@@ -97,39 +96,22 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     // Lambda loads user function using an absolute path.
     let filename = path.resolve(taskRoot, moduleRoot, module);
     if (!filename.endsWith('.js')) {
-      // Patching infrastructure currently requires a filename when requiring with an absolute path.
+      // RITM requires a filename when requiring with an absolute path.
       filename += '.js';
     }
 
-    return [
-      new InstrumentationNodeModuleDefinition(
-        // NB: The patching infrastructure seems to match names backwards, this must be the filename, while
-        // InstrumentationNodeModuleFile must be the module name.
-        filename,
-        ['*'],
-        undefined,
-        undefined,
-        [
-          new InstrumentationNodeModuleFile(
-            module,
-            ['*'],
-            (moduleExports: LambdaModule) => {
-              diag.debug('Applying patch for lambda handler');
-              if (isWrapped(moduleExports[functionName])) {
-                this._unwrap(moduleExports, functionName);
-              }
-              this._wrap(moduleExports, functionName, this._getHandler());
-              return moduleExports;
-            },
-            (moduleExports?: LambdaModule) => {
-              if (moduleExports == undefined) return;
-              diag.debug('Removing patch for lambda handler');
-              this._unwrap(moduleExports, functionName);
-            }
-          ),
-        ]
-      ),
-    ];
+    // Use RITM directly because `@opentelemetry/instrumentation` does not support absolute paths.
+    RequireInTheMiddle([filename], ((moduleExports: LambdaModule) => {
+      diag.debug('Applying patch for lambda handler');
+      if (isWrapped(moduleExports[functionName])) {
+        this._unwrap(moduleExports, functionName);
+      }
+      this._wrap(moduleExports, functionName, this._getHandler());
+      return moduleExports;
+    }) as RequireInTheMiddle.OnRequireFn);
+
+    // Do not use patching infrastructure, since we are using RITM directly.
+    return [];
   }
 
   private _getHandler() {
