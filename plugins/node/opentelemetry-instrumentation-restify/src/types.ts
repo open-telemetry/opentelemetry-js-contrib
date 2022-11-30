@@ -18,7 +18,7 @@ import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface RestifyRequestInfo {
-  request: any; // Restify type from @types/restify package
+  request: any; // Request type from @types/restify package
 }
 
 /**
