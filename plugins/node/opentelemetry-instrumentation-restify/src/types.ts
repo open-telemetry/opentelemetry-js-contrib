@@ -17,8 +17,14 @@
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
+export enum LayerType {
+  MIDDLEWARE = 'middleware',
+  REQUEST_HANDLER = 'request_handler',
+}
+
 export interface RestifyRequestInfo {
   request: any; // Request type from @types/restify package
+  layerType: LayerType;
 }
 
 /**

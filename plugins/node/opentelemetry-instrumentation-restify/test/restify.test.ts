@@ -497,6 +497,7 @@ describe('Restify Instrumentation', () => {
             SemanticAttributes.HTTP_METHOD,
             info.request.method
           );
+          span.setAttribute('restify.layer', info.layerType);
         };
 
         plugin.setConfig({
@@ -520,6 +521,10 @@ describe('Restify Instrumentation', () => {
               assert.strictEqual(
                 span.attributes[SemanticAttributes.HTTP_METHOD],
                 'GET'
+              );
+              assert.strictEqual(
+                span.attributes['restify.layer'],
+                'request_handler'
               );
             }
           }

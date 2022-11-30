@@ -19,7 +19,7 @@ import type * as restify from 'restify';
 
 import * as api from '@opentelemetry/api';
 import type { Server } from 'restify';
-import { LayerType } from './internal-types';
+import { LayerType } from './types';
 import * as AttributeNames from './enums/AttributeNames';
 import { VERSION } from './version';
 import * as constants from './constants';
@@ -203,7 +203,12 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
         const requestHook = instrumentation.getConfig().requestHook;
         if (requestHook) {
           safeExecuteInTheMiddle(
-            () => requestHook!(span, { request: req }),
+            () => {
+              return requestHook!(span, {
+                request: req,
+                layerType: metadata.type,
+              });
+            },
             e => {
               if (e) {
                 instrumentation._diag.error('request hook failed', e);
