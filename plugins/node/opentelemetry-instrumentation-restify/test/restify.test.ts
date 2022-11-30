@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, trace } from '@opentelemetry/api';
+import { context, trace, Span } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
