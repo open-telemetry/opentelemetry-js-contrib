@@ -42,6 +42,7 @@ const dockerRunCmds = {
   postgres:
     'docker run --rm -d --name otel-postgres -p 54320:5432 -e POSTGRES_PASSWORD=postgres postgres:15-alpine',
   redis: 'docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine',
+  pulsar: 'docker run --rm -d --name otel-pulsar -p 6650:6650 apachepulsar/pulsar:2.10.2 ./bin/pulsar standalone'
 };
 
 export function startDocker(db: keyof typeof dockerRunCmds) {

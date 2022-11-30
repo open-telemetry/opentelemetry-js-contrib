@@ -75,14 +75,18 @@ jobs:
       cassandra:
         image: bitnami/cassandra:3
         ports:
-        - 9042:9042
+          - 9042:9042
       rabbitmq:
         image: rabbitmq:3
         ports:
-        - 22221:5672
+          - 22221:5672
         env:
           RABBITMQ_DEFAULT_USER: username
           RABBITMQ_DEFAULT_PASS: password
+      pulsar:
+        image: apachepulsar/pulsar:2.10.2
+        ports:
+          - 6650:6650
     env:
       RUN_CASSANDRA_TESTS: 1
       RUN_MEMCACHED_TESTS: 1
@@ -92,6 +96,7 @@ jobs:
       RUN_POSTGRES_TESTS: 1
       RUN_REDIS_TESTS: 1
       RUN_RABBIT_TESTS: 1
+      RUN_PULSAR_TESTS: 1
       CASSANDRA_HOST: localhost
       MONGODB_DB: opentelemetry-tests
       MONGODB_HOST: 127.0.0.1
@@ -145,6 +150,12 @@ jobs:
       - name: Legacy Peer Dependencies for npm 7
         if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
+      - name: Install native dependencies
+        run: |
+          wget https://archive.apache.org/dist/pulsar/pulsar-2.10.2/DEB/apache-pulsar-client-dev.deb
+          wget https://archive.apache.org/dist/pulsar/pulsar-2.10.2/DEB/apache-pulsar-client.deb
+          sudo dpkg -i apache-*.deb
+          rm apache*.deb
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies

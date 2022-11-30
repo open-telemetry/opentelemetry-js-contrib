@@ -1,0 +1,69 @@
+{
+  "name": "@opentelemetry/instrumentation-pulsar-client",
+  "version": "0.31.0",
+  "description": "OpenTelemetry pulsar-client automatic instrumentation package.",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "scripts": {
+    "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-pulsar-client --include-dependencies",
+    "prewatch": "npm run precompile",
+    "prepare": "npm run compile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test:debug": "cross-env RUN_PULSAR_TESTS_LOCAL=true ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
+    "test:local": "cross-env RUN_PULSAR_TESTS_LOCAL=true npm run test",
+    "version:update": "node ../../../scripts/version-update.js"
+  },
+  "keywords": [
+    "instrumentation",
+    "pulsar",
+    "nodejs",
+    "opentelemetry",
+    "profiling",
+    "tracing"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=14"
+  },
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts",
+    "doc",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.3.0"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.3.0",
+    "@opentelemetry/contrib-test-utils": "file:../../../packages/opentelemetry-test-utils",
+    "@types/mocha": "7.0.2",
+    "@types/node": "18.11.7",
+    "gts": "3.1.0",
+    "pulsar-client": "1.7.0",
+    "mocha": "10.1.0",
+    "nyc": "15.1.0",
+    "ts-mocha": "10.0.0",
+    "typescript": "4.3.5"
+  },
+  "dependencies": {
+    "@opentelemetry/instrumentation": "^0.34.0",
+    "@opentelemetry/semantic-conventions": "^1.0.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pulsar-client#readme",
+  "mocha": {
+    "require": [ "@opentelemetry/contrib-test-utils" ]
+  }
+}
