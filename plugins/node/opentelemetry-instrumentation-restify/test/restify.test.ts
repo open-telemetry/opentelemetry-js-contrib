@@ -516,7 +516,10 @@ describe('Restify Instrumentation', () => {
               // span from get
               const span = memoryExporter.getFinishedSpans()[2];
               assert.notStrictEqual(span, undefined);
-              assert.strictEqual(span.attributes[SemanticAttributes.HTTP_METHOD], 'GET');
+              assert.strictEqual(
+                span.attributes[SemanticAttributes.HTTP_METHOD],
+                'GET'
+              );
             }
           }
         );
@@ -550,7 +553,10 @@ describe('Restify Instrumentation', () => {
               // span from get
               const span = memoryExporter.getFinishedSpans()[2];
               assert.notStrictEqual(span, undefined);
-              assert.strictEqual(span.attributes[SemanticAttributes.HTTP_METHOD], 'GET');
+              assert.strictEqual(
+                span.attributes[SemanticAttributes.HTTP_METHOD],
+                'GET'
+              );
             }
           }
         );

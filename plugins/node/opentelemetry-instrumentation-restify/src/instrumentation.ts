@@ -200,11 +200,11 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
         );
 
         const instrumentation = this;
-        const requestHook = instrumentation.getConfig().requestHook
+        const requestHook = instrumentation.getConfig().requestHook;
         if (requestHook) {
           safeExecuteInTheMiddle(
             () => requestHook!(span, { request: req }),
-            (e) => {
+            e => {
               if (e) {
                 instrumentation._diag.error('request hook failed', e);
               }
