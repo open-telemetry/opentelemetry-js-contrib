@@ -39,7 +39,11 @@ const { diag } = api;
 
 export class RestifyInstrumentation extends InstrumentationBase<any> {
   constructor(config: RestifyInstrumentationConfig = {}) {
-    super(`@opentelemetry/instrumentation-${constants.MODULE_NAME}`, VERSION);
+    super(
+      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
+      VERSION,
+      Object.assign({}, config)
+    );
   }
 
   private _moduleVersion?: string;
