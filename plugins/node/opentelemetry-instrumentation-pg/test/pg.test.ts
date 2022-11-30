@@ -203,6 +203,26 @@ describe('pg', () => {
     runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
     memoryExporter.reset();
 
+    assert.throws(
+      () => {
+        (client as any).query(null);
+      },
+      assertPgError,
+      'pg should throw when null provided as only arg'
+    );
+    runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
+    memoryExporter.reset();
+
+    assert.throws(
+      () => {
+        (client as any).query(undefined);
+      },
+      assertPgError,
+      'pg should throw when undefined provided as only arg'
+    );
+    runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
+    memoryExporter.reset();
+
     assert.doesNotThrow(
       () =>
         (client as any).query({ foo: 'bar' }, undefined, () => {

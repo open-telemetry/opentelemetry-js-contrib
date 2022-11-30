@@ -26,7 +26,6 @@ import {
   PgClientConnect,
   PgClientExtended,
   PgErrorCallback,
-  NormalizedQueryConfig,
   PostgresCallback,
   PgPoolExtended,
   PgPoolCallback,
@@ -137,12 +136,7 @@ export class PgInstrumentation extends InstrumentationBase {
           `${PgInstrumentation.COMPONENT}.connect`,
           {
             [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-            [SemanticAttributes.DB_NAME]: this.database,
-            [SemanticAttributes.NET_PEER_NAME]: this.host,
-            [SemanticAttributes.DB_CONNECTION_STRING]:
-              utils.getConnectionString(this),
-            [SemanticAttributes.NET_PEER_PORT]: this.port,
-            [SemanticAttributes.DB_USER]: this.user,
+            ...utils.getSemanticAttributesFromConnection(this),
           }
         );
 
@@ -173,72 +167,70 @@ export class PgInstrumentation extends InstrumentationBase {
         `Patching ${PgInstrumentation.COMPONENT}.Client.prototype.query`
       );
       return function query(this: PgClientExtended, ...args: unknown[]) {
-        let span: Span;
+        // client.query(text, cb?), client.query(text, values, cb?), and
+        // client.query(configObj, cb?) are all valid signatures. We construct
+        // a queryConfig obj from all (valid) signatures to build the span in a
+        // unified way. We verify that we at least have query text, and code
+        // defensively when dealing with `queryConfig` after that (to handle all
+        // the other invalid cases, like a non-array for values being provided).
+        // The type casts here reflect only what we've actually validated.
+        const arg0 = args[0];
+        const firstArgIsString = typeof arg0 === 'string';
+        const firstArgIsQueryObjectWithText =
+          utils.isObjectWithTextString(arg0);
 
-        // Handle different client.query(...) signatures
-        if (typeof args[0] === 'string') {
-          const query = args[0];
+        // TODO: remove the `as ...` casts below when the TS version is upgraded.
+        // Newer TS versions will use the result of firstArgIsQueryObjectWithText
+        // to properly narrow arg0, but TS 4.3.5 does not.
+        const queryConfig = firstArgIsString
+          ? {
+              text: arg0 as string,
+              values: Array.isArray(args[1]) ? args[1] : undefined,
+            }
+          : firstArgIsQueryObjectWithText
+          ? (arg0 as utils.ObjectWithText)
+          : undefined;
 
-          if (args.length > 1 && args[1] instanceof Array) {
-            const params = args[1];
-            span = utils.handleParameterizedQuery.call(
-              this,
-              plugin.tracer,
-              plugin.getConfig(),
-              query,
-              params
-            );
-          } else {
-            span = utils.handleTextQuery.call(
-              this,
-              plugin.tracer,
-              plugin.getConfig(),
-              query
-            );
-          }
+        const instrumentationConfig = plugin.getConfig();
 
-          if (plugin.getConfig().addSqlCommenterCommentToQueries) {
-            // Modify the query with a tracing comment
-            args[0] = utils.addSqlCommenterComment(span, args[0]);
-          }
-        } else if (typeof args[0] === 'object') {
-          const queryConfig = args[0] as NormalizedQueryConfig;
+        const span = utils.handleConfigQuery.call(
+          this,
+          plugin.tracer,
+          instrumentationConfig,
+          queryConfig
+        );
 
-          span = utils.handleConfigQuery.call(
-            this,
-            plugin.tracer,
-            plugin.getConfig(),
-            queryConfig
-          );
-
-          if (plugin.getConfig().addSqlCommenterCommentToQueries) {
-            // Copy the query config instead of writing to args[0].text so that we don't modify user's
-            // original query config reference
-            args[0] = {
-              ...queryConfig,
-              text: utils.addSqlCommenterComment(span, queryConfig.text),
-            };
-          }
-        } else {
-          return utils.handleInvalidQuery.call(
-            this,
-            plugin.tracer,
-            plugin.getConfig(),
-            original,
-            ...args
-          );
+        // Modify query text w/ a tracing comment before invoking original for
+        // tracing, but only if args[0] has one of our expected shapes.
+        //
+        // TODO: remove the `as ...` casts below when the TS version is upgraded.
+        // Newer TS versions will use the result of firstArgIsQueryObjectWithText
+        // to properly narrow arg0, but TS 4.3.5 does not.
+        if (instrumentationConfig.addSqlCommenterCommentToQueries) {
+          args[0] = firstArgIsString
+            ? utils.addSqlCommenterComment(span, arg0 as string)
+            : firstArgIsQueryObjectWithText
+            ? {
+                ...(arg0 as utils.ObjectWithText),
+                text: utils.addSqlCommenterComment(
+                  span,
+                  (arg0 as utils.ObjectWithText).text
+                ),
+              }
+            : args[0];
         }
 
-        // Bind callback to parent span
+        // Bind callback (if any) to parent span (if any)
         if (args.length > 0) {
           const parentSpan = trace.getSpan(context.active());
           if (typeof args[args.length - 1] === 'function') {
             // Patch ParameterQuery callback
             args[args.length - 1] = utils.patchCallback(
-              plugin.getConfig(),
+              instrumentationConfig,
               span,
-              args[args.length - 1] as PostgresCallback
+              args[args.length - 1] as PostgresCallback // nb: not type safe.
             );
+
             // If a parent span exists, bind the callback
             if (parentSpan) {
               args[args.length - 1] = context.bind(
@@ -246,28 +238,37 @@ export class PgInstrumentation extends InstrumentationBase {
                 args[args.length - 1]
               );
             }
-          } else if (
-            typeof (args[0] as NormalizedQueryConfig).callback === 'function'
-          ) {
+          } else if (typeof queryConfig?.callback === 'function') {
             // Patch ConfigQuery callback
             let callback = utils.patchCallback(
               plugin.getConfig(),
               span,
-              (args[0] as NormalizedQueryConfig).callback!
+              queryConfig.callback as PostgresCallback // nb: not type safe.
             );
+
             // If a parent span existed, bind the callback
             if (parentSpan) {
               callback = context.bind(context.active(), callback);
             }
 
-            // Copy the callback instead of writing to args.callback so that we don't modify user's
-            // original callback reference
+            // Copy the callback instead of writing to args.callback so that we
+            // don't modify user's original callback reference
             args[0] = { ...(args[0] as object), callback };
           }
         }
 
-        // Perform the original query
-        const result: unknown = original.apply(this, args as any);
+        let result: unknown;
+        try {
+          result = original.apply(this, args as never);
+        } catch (e: unknown) {
+          // span.recordException(e);
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: utils.getErrorMessage(e),
+          });
+          span.end();
+          throw e;
+        }
 
         // Bind promise to parent span and end the span
         if (result instanceof Promise) {
@@ -302,7 +303,6 @@ export class PgInstrumentation extends InstrumentationBase {
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
-        const connString = utils.getConnectionString(this.options);
         // setup span
         const span = startSpan(
           plugin.tracer,
@@ -310,11 +310,7 @@ export class PgInstrumentation extends InstrumentationBase {
           `${PG_POOL_COMPONENT}.connect`,
           {
             [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-            [SemanticAttributes.DB_NAME]: this.options.database, // required
-            [SemanticAttributes.NET_PEER_NAME]: this.options.host, // required
-            [SemanticAttributes.DB_CONNECTION_STRING]: connString, // required
-            [SemanticAttributes.NET_PEER_PORT]: this.options.port,
-            [SemanticAttributes.DB_USER]: this.options.user,
+            ...utils.getSemanticAttributesFromConnection(this.options),
             [AttributeNames.IDLE_TIMEOUT_MILLIS]:
               this.options.idleTimeoutMillis,
             [AttributeNames.MAX_CLIENT]: this.options.maxClient,
@@ -359,10 +355,10 @@ function handleConnectResult(span: Span, connectResult: unknown) {
         span.end();
         return result;
       })
-      .catch((error: Error) => {
+      .catch((error: unknown) => {
         span.setStatus({
           code: SpanStatusCode.ERROR,
-          message: error.message,
+          message: utils.getErrorMessage(error),
         });
         span.end();
         return Promise.reject(error);
