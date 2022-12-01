@@ -1,0 +1,69 @@
+import * as Pulsar from "pulsar-client";
+import * as api from "@opentelemetry/api";
+import {SemanticAttributes} from "@opentelemetry/semantic-conventions";
+import {Instrumentation} from "../instrumentation";
+
+export class ProducerProxy implements Pulsar.Producer {
+  private _producer: Pulsar.Producer;
+  private _tracer: api.Tracer;
+  private _moduleVersion: undefined | string;
+  private _config: Pulsar.ProducerConfig;
+
+  constructor(
+    tracer: api.Tracer,
+    moduleVersion: undefined | string,
+    config: Pulsar.ProducerConfig,
+    producer: Pulsar.Producer
+  ) {
+    this._tracer = tracer;
+    this._moduleVersion = moduleVersion;
+    this._config = config;
+    this._producer = producer;
+  }
+
+  flush(): Promise<null> {
+    throw new Error('Method not implemented.');
+  }
+
+  close(): Promise<null> {
+    throw new Error('Method not implemented.');
+  }
+
+  getProducerName(): string {
+    throw new Error('Method not implemented.');
+  }
+
+  getTopic(): string {
+    throw new Error('Method not implemented.');
+  }
+
+  isConnected(): boolean {
+    throw new Error('Method not implemented.');
+  }
+
+  async send(message: Pulsar.ProducerMessage): Promise<Pulsar.MessageId> {
+    const parentContext = api.context.active();
+
+    const span = this._tracer.startSpan('send', {
+      kind: api.SpanKind.PRODUCER,
+      attributes: {
+        'pulsar.version': this._moduleVersion,
+        [SemanticAttributes.MESSAGING_DESTINATION]: this._config.topic,
+        ...Instrumentation.COMMON_ATTRIBUTES,
+      },
+    });
+    message.properties ||= {};
+    const context = api.trace.setSpan(parentContext, span);
+    api.propagation.inject(context, message.properties);
+
+    try {
+      return await this._producer.send(message);
+    } catch (error) {
+      span.recordException(error);
+      span.setStatus({code: api.SpanStatusCode.ERROR});
+      throw error;
+    } finally {
+      span.end();
+    }
+  }
+}
