@@ -70,6 +70,7 @@ describe('pulsar@1.7.x', () => {
   describe('default config', () => {
     let client: Pulsar.Client;
     let topic: string;
+
     beforeEach(function () {
       client = getClient({
         serviceUrl: `pulsar://${CONFIG.host}:${CONFIG.port}`,
@@ -85,14 +86,18 @@ describe('pulsar@1.7.x', () => {
       client.close();
     });
 
+    async function getProducer() {
+      return await client.createProducer({
+        topic,
+      });
+    }
+
     const sampleMessage = {
       data: Buffer.from('produced message'),
     };
 
     it('should produce message', async () => {
-      const producer = await client.createProducer({
-        topic,
-      });
+      const producer = await getProducer();
       const messageId = await producer.send(sampleMessage);
       assert.ok(messageId);
 
@@ -107,10 +112,8 @@ describe('pulsar@1.7.x', () => {
       );
     });
 
-    it('should receive message message', async () => {
-      const producer = await client.createProducer({
-        topic,
-      });
+    it('should receive message', async () => {
+      const producer = await getProducer();
       const messageId = await producer.send(sampleMessage);
       assert.ok(messageId);
 
@@ -127,6 +130,59 @@ describe('pulsar@1.7.x', () => {
       await consumer.close();
 
       const [produceSpan, receiveSpan] = getTestSpans();
+
+      // The receiveSpan gets the parent
+      assert.equal(
+        produceSpan.spanContext().traceId,
+        receiveSpan.spanContext().traceId
+      );
+    });
+
+    it('should consume message with callbacks', async () => {
+      const producer = await getProducer();
+      const messageId = await producer.send(sampleMessage);
+      assert.ok(messageId);
+
+      let doneWithMessage: (
+        value: PromiseLike<Pulsar.Message> | Pulsar.Message
+      ) => void;
+      const receivedMessagePromise = new Promise<Pulsar.Message>(
+        (resolve, _) => {
+          console.log(`Initialized with ${resolve}`);
+          doneWithMessage = resolve;
+        }
+      );
+
+      await client.subscribe({
+        topic,
+        subscription: 'test-receive-message',
+        subscriptionInitialPosition: 'Earliest',
+        listener: (message, consumer) => {
+          doneWithMessage(message);
+          consumer.close();
+        },
+      });
+
+      const receivedMessage = await receivedMessagePromise;
+      assert.ok(receivedMessage);
+
+      assert.deepEqual(receivedMessage?.getData(), sampleMessage.data);
+      let spans: any[] = [];
+      for (let i = 0; i < 10; i++) {
+        spans = getTestSpans();
+        if (spans.length == 1) {
+          // This means that the await in the wrapped function signed the node executor that it is waiting for something
+          // and the messaged is resolved before the wrapped listener finished as it awaits the callback and then on finally
+          // ends the span
+          await new Promise((resolve, _) => setTimeout(resolve, 100));
+          spans = getTestSpans();
+        }
+      }
+      if (spans.length < 2) {
+        throw new Error('Receive span was never ended');
+      }
+
+      const [produceSpan, receiveSpan] = spans;
 
       // The receiveSpan gets the parent
       assert.equal(

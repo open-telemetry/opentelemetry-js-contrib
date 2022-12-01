@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-import {InstrumentationBase, InstrumentationNodeModuleDefinition, isWrapped,} from '@opentelemetry/instrumentation';
+import {
+  InstrumentationBase,
+  InstrumentationNodeModuleDefinition,
+  isWrapped,
+} from '@opentelemetry/instrumentation';
 import type * as Pulsar from 'pulsar-client';
-import {SemanticAttributes} from '@opentelemetry/semantic-conventions';
-import {InstrumentationConfig} from './types';
-import {VERSION} from './version';
-import {ClientProxy} from "./proxies/client";
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { InstrumentationConfig } from './types';
+import { VERSION } from './version';
+import { ClientProxy } from './proxies/client';
 
 type PulsarConstructor = new (config: Pulsar.ClientConfig) => Pulsar.Client;
 
@@ -95,4 +99,3 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
     this._wrap(obj, methodName, wrapper);
   }
 }
-
