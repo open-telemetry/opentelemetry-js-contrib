@@ -22,6 +22,7 @@ import {
 } from '@opentelemetry/api';
 import * as assert from 'assert';
 import Instrumentation from '../src';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import type * as Pulsar from 'pulsar-client';
 import {
@@ -57,13 +58,13 @@ describe('pulsar@1.7.x', () => {
     }
 
     if (shouldTestLocal) {
-      // testUtils.startDocker("pulsar");
+      testUtils.startDocker("pulsar");
     }
   });
 
   after(() => {
     if (shouldTestLocal) {
-      // testUtils.cleanUpDocker("pulsar");
+      testUtils.cleanUpDocker("pulsar");
     }
   });
 
