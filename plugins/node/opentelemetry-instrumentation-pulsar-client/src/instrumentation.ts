@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-import * as api from "@opentelemetry/api";
-import {Span, SpanStatusCode, Tracer} from "@opentelemetry/api";
-import {InstrumentationBase, InstrumentationNodeModuleDefinition, isWrapped,} from "@opentelemetry/instrumentation";
-import * as Pulsar from "pulsar-client";
-import {SemanticAttributes} from "@opentelemetry/semantic-conventions";
-import {InstrumentationConfig} from "./types";
-import {VERSION} from "./version";
+import * as api from '@opentelemetry/api';
+import { Span, Tracer } from '@opentelemetry/api';
+import {
+  InstrumentationBase,
+  InstrumentationNodeModuleDefinition,
+  isWrapped,
+} from '@opentelemetry/instrumentation';
+import type * as Pulsar from 'pulsar-client';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { InstrumentationConfig } from './types';
+import { VERSION } from './version';
+
+type PulsarConstructor = new (config: Pulsar.ClientConfig) => Pulsar.Client;
 
 export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
-  static readonly COMPONENT = "pulsar";
+  static readonly COMPONENT = 'pulsar';
   static readonly COMMON_ATTRIBUTES = {
-    [SemanticAttributes.MESSAGING_SYSTEM]: "pulsar",
+    [SemanticAttributes.MESSAGING_SYSTEM]: 'pulsar',
   };
   static readonly DEFAULT_CONFIG: InstrumentationConfig = {
     enhancedDatabaseReporting: false,
@@ -33,7 +39,7 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
 
   constructor(config: InstrumentationConfig = {}) {
     super(
-      "@opentelemetry/instrumentation-pulsar-client",
+      '@opentelemetry/instrumentation-pulsar-client',
       VERSION,
       Object.assign({}, Instrumentation.DEFAULT_CONFIG, config)
     );
@@ -46,8 +52,8 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
   init() {
     return [
       new InstrumentationNodeModuleDefinition<typeof Pulsar>(
-        "pulsar-client",
-        [">=1.0"],
+        'pulsar-client',
+        ['>=1.0'],
         (moduleExports, moduleVersion) => {
           this._diag.debug(
             `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
@@ -55,7 +61,7 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
           this.ensureWrapped(
             moduleVersion,
             moduleExports,
-            "Client",
+            'Client',
             this.wrapClient.bind(this, moduleVersion)
           );
           return moduleExports;
@@ -66,31 +72,27 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
           );
           if (moduleExports === undefined) return;
 
-          this._unwrap(moduleExports, "Client");
+          this._unwrap(moduleExports, 'Client');
         }
       ),
     ];
   }
 
-  wrapClient(
-    moduleVersion: undefined | string,
-    original: (config: Pulsar.ClientConfig) => Pulsar.Client
-  ) {
+  wrapClient(moduleVersion: undefined | string, original: PulsarConstructor) {
     const tracer = this.tracer;
     return function (config: Pulsar.ClientConfig) {
-      // @ts-ignore
       return new ClientProxy(tracer, moduleVersion, new original(config));
     };
   }
 
   private ensureWrapped(
     moduleVersion: string | undefined,
-    obj: any,
+    obj: Pulsar.Client,
     methodName: string,
-    wrapper: (original: any) => any
+    wrapper: PulsarConstructor
   ) {
     this._diag.debug(
-      `Applying ${methodName} patch for ${Instrumentation.COMPONENT}@${moduleVersion} ${obj} ${wrapper}`
+      `Applying ${methodName} patch for ${Instrumentation.COMPONENT}@${moduleVersion}`
     );
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
@@ -115,8 +117,8 @@ class ClientProxy implements Pulsar.Client {
   }
 
   createReader(config: Pulsar.ReaderConfig): Promise<Pulsar.Reader> {
-        throw new Error("Method not implemented.");
-    }
+    throw new Error('Method not implemented.');
+  }
 
   async createProducer(
     config: Pulsar.ProducerConfig
@@ -127,11 +129,16 @@ class ClientProxy implements Pulsar.Client {
       this._moduleVersion,
       config,
       producer
-    ) as any;
+    );
   }
   async subscribe(config: Pulsar.ConsumerConfig): Promise<Pulsar.Consumer> {
     const consumer = await this._client.subscribe(config);
-    return new ConsumerProxy(this._tracer, this._moduleVersion, config, consumer);
+    return new ConsumerProxy(
+      this._tracer,
+      this._moduleVersion,
+      config,
+      consumer
+    );
   }
   // createReader(config: Pulsar.ReaderConfig): Promise<Pulsar.Reader>;
   close(): Promise<null> {
@@ -158,28 +165,28 @@ class ProducerProxy implements Pulsar.Producer {
   }
 
   flush(): Promise<null> {
-        throw new Error("Method not implemented.");
-    }
-    close(): Promise<null> {
-        throw new Error("Method not implemented.");
-    }
-    getProducerName(): string {
-        throw new Error("Method not implemented.");
-    }
-    getTopic(): string {
-        throw new Error("Method not implemented.");
-    }
-    isConnected(): boolean {
-        throw new Error("Method not implemented.");
-    }
+    throw new Error('Method not implemented.');
+  }
+  close(): Promise<null> {
+    throw new Error('Method not implemented.');
+  }
+  getProducerName(): string {
+    throw new Error('Method not implemented.');
+  }
+  getTopic(): string {
+    throw new Error('Method not implemented.');
+  }
+  isConnected(): boolean {
+    throw new Error('Method not implemented.');
+  }
 
   async send(message: Pulsar.ProducerMessage): Promise<Pulsar.MessageId> {
     const parentContext = api.context.active();
 
-    const span = this._tracer.startSpan("send", {
+    const span = this._tracer.startSpan('send', {
       kind: api.SpanKind.PRODUCER,
       attributes: {
-        "pulsar.version": this._moduleVersion,
+        'pulsar.version': this._moduleVersion,
         [SemanticAttributes.MESSAGING_DESTINATION]: this._config.topic,
         ...Instrumentation.COMMON_ATTRIBUTES,
       },
@@ -208,7 +215,12 @@ class ConsumerProxy implements Pulsar.Consumer {
 
   private _lastSpan: Span | undefined;
 
-  constructor(_tracer: Tracer, _moduleVersion: string | undefined, config: Pulsar.ConsumerConfig, consumer:Pulsar.Consumer) {
+  constructor(
+    _tracer: Tracer,
+    _moduleVersion: string | undefined,
+    config: Pulsar.ConsumerConfig,
+    consumer: Pulsar.Consumer
+  ) {
     this._tracer = _tracer;
     this._moduleVersion = _moduleVersion;
     this.config = config;
@@ -216,64 +228,73 @@ class ConsumerProxy implements Pulsar.Consumer {
   }
 
   async receive(timeout?: number): Promise<Pulsar.Message> {
+    this.closePreviousSpan();
+    const message = await this.consumer.receive(timeout);
+
+    const remoteContext = api.propagation.extract(
+      api.context.active(),
+      message.getProperties()
+    );
+    const span = this._tracer.startSpan(
+      'receive',
+      {
+        kind: api.SpanKind.CONSUMER,
+        attributes: {
+          'pulsar.version': this._moduleVersion,
+          topic: this.config.topic,
+          ...Instrumentation.COMMON_ATTRIBUTES,
+        },
+      },
+      remoteContext
+    );
+
+    api.trace.setSpan(remoteContext, span);
+
+    // Postpone the span ending for the next time the user calls receive
+    this._lastSpan = span;
+    return message;
+  }
+
+  private closePreviousSpan() {
     // User is done with the last message and called receive again.
     if (this._lastSpan) {
       this._lastSpan.end();
     }
-    const parentContext = api.context.active();
-
-    const span = this._tracer.startSpan("receive", {
-      kind: api.SpanKind.CONSUMER,
-      attributes: {
-        "pulsar.version": this._moduleVersion,
-        "topic": this.config.topic,
-        ...Instrumentation.COMMON_ATTRIBUTES,
-      },
-    });
-    const context = api.trace.setSpan(parentContext, span);
-    let message: Pulsar.Message;
-    try {
-      message = await this.consumer.receive(timeout);
-    } catch(error) {
-      span.recordException(error);
-      span.setStatus({code: SpanStatusCode.ERROR});
-      span.end();
-      throw error;
-    }
-
-    // Postpone the span ending for the next time the user calls receive
-    this._lastSpan = span;
-
-    const remoteContext = api.propagation.extract(context, message.getProperties());
-    api.trace.setSpan(remoteContext, span); // TODO: This seems wrong
-    return message;
   }
+
   acknowledge(message: Pulsar.Message): Promise<null> {
-    throw new Error("Method not implemented.");
+    this.closePreviousSpan();
+    throw new Error('Method not implemented.');
   }
   acknowledgeId(messageId: Pulsar.MessageId): Promise<null> {
-    throw new Error("Method not implemented.");
+    this.closePreviousSpan();
+    throw new Error('Method not implemented.');
   }
   negativeAcknowledge(message: Pulsar.Message): void {
-    throw new Error("Method not implemented.");
+    this.closePreviousSpan();
+    throw new Error('Method not implemented.');
   }
   negativeAcknowledgeId(messageId: Pulsar.MessageId): void {
-    throw new Error("Method not implemented.");
+    this.closePreviousSpan();
+    throw new Error('Method not implemented.');
   }
   acknowledgeCumulative(message: Pulsar.Message): Promise<null> {
-    throw new Error("Method not implemented.");
+    this.closePreviousSpan();
+    throw new Error('Method not implemented.');
   }
   acknowledgeCumulativeId(messageId: Pulsar.MessageId): Promise<null> {
-    throw new Error("Method not implemented.");
+    this.closePreviousSpan();
+    throw new Error('Method not implemented.');
   }
   isConnected(): boolean {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
   close(): Promise<null> {
-    throw new Error("Method not implemented.");
+    this.closePreviousSpan();
+    return this.consumer.close();
   }
   unsubscribe(): Promise<null> {
-    throw new Error("Method not implemented.");
+    this.closePreviousSpan();
+    throw new Error('Method not implemented.');
   }
-
 }

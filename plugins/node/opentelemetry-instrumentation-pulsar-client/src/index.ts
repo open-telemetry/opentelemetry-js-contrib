@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { Instrumentation } from "./instrumentation";
-export * from "./types";
+import { Instrumentation } from './instrumentation';
+export * from './types';
 
-export * from "./instrumentation";
+export * from './instrumentation';
 export default Instrumentation;
 export { Instrumentation as PulsarInstrumentation };

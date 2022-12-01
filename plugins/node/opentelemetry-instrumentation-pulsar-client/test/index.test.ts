@@ -14,44 +14,39 @@
  * limitations under the License.
  */
 
-import {diag, DiagConsoleLogger, DiagLogLevel, SpanKind,} from "@opentelemetry/api";
-import * as assert from "assert";
-import Instrumentation from "../src";
-import {SemanticAttributes} from "@opentelemetry/semantic-conventions";
-import type * as Pulsar from "pulsar-client";
-import {getTestSpans, registerInstrumentationTesting} from "@opentelemetry/contrib-test-utils";
+import {
+  diag,
+  DiagConsoleLogger,
+  DiagLogLevel,
+  SpanKind,
+} from '@opentelemetry/api';
+import * as assert from 'assert';
+import Instrumentation from '../src';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import type * as Pulsar from 'pulsar-client';
+import {
+  getTestSpans,
+  registerInstrumentationTesting,
+} from '@opentelemetry/contrib-test-utils';
 
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
-
 
 registerInstrumentationTesting(new Instrumentation());
 
 const CONFIG = {
-  host: process.env.OPENTELEMETRY_PULSAR_HOST || "localhost",
-  port: process.env.OPENTELEMETRY_PULSAR_PORT || "6650",
+  host: process.env.OPENTELEMETRY_PULSAR_HOST || 'localhost',
+  port: process.env.OPENTELEMETRY_PULSAR_PORT || '6650',
 };
 
 const getClient = (config: Pulsar.ClientConfig): Pulsar.Client => {
-  const pulsar = require("pulsar-client");
-  console.log(pulsar.Client);
+  const pulsar = require('pulsar-client');
   return new pulsar.Client(config);
 };
 
 const shouldTestLocal = process.env.RUN_PULSAR_TESTS_LOCAL;
 const shouldTest = process.env.RUN_PULSAR_TESTS || shouldTestLocal;
 
-describe("pulsar@1.7.x", () => {
-    let topic: string;
-  beforeEach((this) => {
-    if (this.currentTest) {
-      const title = this.currentTest.fullTitle().replace(/\W/g, '').toString();
-      topic = `${title}-${Math.random()}`;
-    }
-  });
-
-  afterEach(() => {
-  });
-
+describe('pulsar@1.7.x', () => {
   before(function () {
     // needs to be "function" to have MochaContext "this" context
     if (!shouldTest) {
@@ -72,26 +67,31 @@ describe("pulsar@1.7.x", () => {
     }
   });
 
-  describe("default config", () => {
+  describe('default config', () => {
     let client: Pulsar.Client;
-    beforeEach(() => {
+    let topic: string;
+    beforeEach(function () {
       client = getClient({
         serviceUrl: `pulsar://${CONFIG.host}:${CONFIG.port}`,
       });
+      const title = this.currentTest
+        ?.fullTitle()
+        .replace(/\W/g, '')
+        .toLowerCase();
+      topic = `${title}-${Math.random()}`;
     });
 
     afterEach(() => {
       client.close();
     });
 
-
     const sampleMessage = {
-      data: Buffer.from("produced message"),
+      data: Buffer.from('produced message'),
     };
 
-    it("should produce message", async () => {
+    it('should produce message', async () => {
       const producer = await client.createProducer({
-        topic: topic,
+        topic,
       });
       const messageId = await producer.send(sampleMessage);
       assert.ok(messageId);
@@ -99,33 +99,40 @@ describe("pulsar@1.7.x", () => {
       const [produceSpan] = getTestSpans();
 
       assert.equal(produceSpan.kind, SpanKind.PRODUCER);
-      assert.equal(produceSpan.name, "send");
-      assert.equal(produceSpan.attributes["pulsar.version"], "1.7.0");
+      assert.equal(produceSpan.name, 'send');
+      assert.equal(produceSpan.attributes['pulsar.version'], '1.7.0');
       assert.equal(
         produceSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION],
-        "test-producing"
+        topic
       );
-
     });
 
-    it("should receive message message", async () => {
+    it('should receive message message', async () => {
       const producer = await client.createProducer({
-        topic: topic,
+        topic,
       });
       const messageId = await producer.send(sampleMessage);
       assert.ok(messageId);
 
-      const consumer = await client.subscribe({topic: topic, subscription: "test-receive-message", subscriptionInitialPosition: 'Earliest'});
+      const consumer = await client.subscribe({
+        topic,
+        subscription: 'test-receive-message',
+        subscriptionInitialPosition: 'Earliest',
+      });
 
       const receivedMessage = await consumer.receive();
       assert.deepEqual(receivedMessage.getData(), sampleMessage.data);
-      console.log(receivedMessage.getProperties());
-      assert.ok(receivedMessage.getProperties())
+
+      // force the span to be released
+      await consumer.close();
 
       const [produceSpan, receiveSpan] = getTestSpans();
 
-      assert.equal(produceSpan.spanContext().traceId, receiveSpan.spanContext().traceId);
-
+      // The receiveSpan gets the parent
+      assert.equal(
+        produceSpan.spanContext().traceId,
+        receiveSpan.spanContext().traceId
+      );
     });
   });
 });
