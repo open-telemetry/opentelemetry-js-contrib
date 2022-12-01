@@ -26,11 +26,38 @@ export interface PgInstrumentationExecutionResponseHook {
   (span: api.Span, responseInfo: PgResponseHookInformation): void;
 }
 
+export interface PgRequestHookInformation {
+  query: {
+    text: string;
+    name?: string;
+    values?: unknown[];
+  };
+  connection: {
+    database?: string;
+    host?: string;
+    port?: number;
+    user?: string;
+  };
+}
+
+export interface PgInstrumentationExecutionRequestHook {
+  (span: api.Span, queryInfo: PgRequestHookInformation): void;
+}
+
 export interface PgInstrumentationConfig extends InstrumentationConfig {
   /**
-   * If true, additional information about query parameters will be attached (as `attributes`) to spans representing
+   * If true, an attribute containing the query's parameters will be attached
+   * the spans generated to represent the query.
    */
   enhancedDatabaseReporting?: boolean;
+
+  /**
+   * Hook that allows adding custom span attributes or updating the
+   * span's name based on the data about the query to execute.
+   *
+   * @default undefined
+   */
+  requestHook?: PgInstrumentationExecutionRequestHook;
 
   /**
    * Hook that allows adding custom span attributes based on the data

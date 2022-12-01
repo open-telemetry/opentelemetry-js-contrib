@@ -17,6 +17,7 @@ import {
   isWrapped,
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 
 import { context, diag, trace, Span, SpanStatusCode } from '@opentelemetry/api';
@@ -255,6 +256,50 @@ export class PgInstrumentation extends InstrumentationBase {
             // don't modify user's original callback reference
             args[0] = { ...(args[0] as object), callback };
           }
+        }
+
+        if (
+          typeof instrumentationConfig.requestHook === 'function' &&
+          queryConfig
+        ) {
+          safeExecuteInTheMiddle(
+            () => {
+              // pick keys to expose explicitly, so we're not leaking pg package
+              // internals that are subject to change
+              const { database, host, port, user } = this.connectionParameters;
+              const connection = { database, host, port, user };
+
+              instrumentationConfig.requestHook!(span, {
+                connection,
+                query: {
+                  text: queryConfig.text,
+                  // nb: if `client.query` is called with illegal arguments
+                  // (e.g., if `queryConfig.values` is passed explicitly, but a
+                  // non-array is given), then the type casts will be wrong. But
+                  // we leave it up to the queryHook to handle that, and we
+                  // catch and swallow any errors it throws. The other options
+                  // are all worse. E.g., we could leave `queryConfig.values`
+                  // and `queryConfig.name` as `unknown`, but then the hook body
+                  // would be forced to validate (or cast) them before using
+                  // them, which seems incredibly cumbersome given that these
+                  // casts will be correct 99.9% of the time -- and pg.query
+                  // will immediately throw during development in the other .1%
+                  // of cases. Alternatively, we could simply skip calling the
+                  // hook when `values` or `name` don't have the expected type,
+                  // but that would add unnecessary validation overhead to every
+                  // hook invocation and possibly be even more confusing/unexpected.
+                  values: queryConfig.values as unknown[],
+                  name: queryConfig.name as string | undefined,
+                },
+              });
+            },
+            err => {
+              if (err) {
+                plugin._diag.error('Error running query hook', err);
+              }
+            },
+            true
+          );
         }
 
         let result: unknown;
