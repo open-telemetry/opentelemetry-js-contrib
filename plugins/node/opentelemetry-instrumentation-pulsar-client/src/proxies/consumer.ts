@@ -25,9 +25,9 @@ type ConsumerListener = (
 ) => void | Promise<void>;
 
 export class ConsumerProxy implements Pulsar.Consumer {
-  private _tracer: Tracer;
-  private _moduleVersion: string | undefined;
-  private config: Pulsar.ConsumerConfig;
+  private readonly _tracer: Tracer;
+  private readonly _moduleVersion: string | undefined;
+  private readonly config: Pulsar.ConsumerConfig;
   private consumer: Pulsar.Consumer;
 
   private _lastSpan: Span | undefined;
@@ -67,36 +67,36 @@ export class ConsumerProxy implements Pulsar.Consumer {
 
   acknowledge(message: Pulsar.Message): Promise<null> {
     this.closePreviousSpan();
-    throw new Error('Method not implemented.');
+    return this.consumer.acknowledge(message);
   }
 
   acknowledgeId(messageId: Pulsar.MessageId): Promise<null> {
     this.closePreviousSpan();
-    throw new Error('Method not implemented.');
+    return this.consumer.acknowledgeId(messageId);
   }
 
   negativeAcknowledge(message: Pulsar.Message): void {
     this.closePreviousSpan();
-    throw new Error('Method not implemented.');
+    this.consumer.negativeAcknowledge(message);
   }
 
   negativeAcknowledgeId(messageId: Pulsar.MessageId): void {
     this.closePreviousSpan();
-    throw new Error('Method not implemented.');
+    this.consumer.negativeAcknowledgeId(messageId);
   }
 
   acknowledgeCumulative(message: Pulsar.Message): Promise<null> {
     this.closePreviousSpan();
-    throw new Error('Method not implemented.');
+    return this.consumer.acknowledgeCumulative(message);
   }
 
   acknowledgeCumulativeId(messageId: Pulsar.MessageId): Promise<null> {
     this.closePreviousSpan();
-    throw new Error('Method not implemented.');
+    return this.consumer.acknowledgeCumulativeId(messageId);
   }
 
   isConnected(): boolean {
-    throw new Error('Method not implemented.');
+    return this.consumer.isConnected();
   }
 
   close(): Promise<null> {
@@ -106,7 +106,7 @@ export class ConsumerProxy implements Pulsar.Consumer {
 
   unsubscribe(): Promise<null> {
     this.closePreviousSpan();
-    throw new Error('Method not implemented.');
+    return this.consumer.unsubscribe();
   }
 }
 

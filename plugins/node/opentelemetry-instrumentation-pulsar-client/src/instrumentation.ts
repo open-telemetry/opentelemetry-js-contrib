@@ -61,7 +61,7 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
             moduleVersion,
             moduleExports,
             'Client',
-            this.wrapClient.bind(this, moduleVersion)
+            this.wrapClient.bind(this, moduleVersion) as any
           );
           return moduleExports;
         },
@@ -86,7 +86,7 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
 
   private ensureWrapped(
     moduleVersion: string | undefined,
-    obj: Pulsar.Client,
+    obj: any,
     methodName: string,
     wrapper: PulsarConstructor
   ) {
@@ -96,6 +96,6 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
     }
-    this._wrap(obj, methodName, wrapper);
+    this._wrap(obj, methodName, wrapper as any);
   }
 }

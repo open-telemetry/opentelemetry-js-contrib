@@ -20,8 +20,8 @@ import { ConsumerProxy, wrappedListener } from './consumer';
 
 export class ClientProxy implements Pulsar.Client {
   private _client: Pulsar.Client;
-  private _tracer: api.Tracer;
-  private _moduleVersion: undefined | string;
+  private readonly _tracer: api.Tracer;
+  private readonly _moduleVersion: undefined | string;
 
   constructor(
     tracer: api.Tracer,
@@ -34,7 +34,7 @@ export class ClientProxy implements Pulsar.Client {
   }
 
   createReader(config: Pulsar.ReaderConfig): Promise<Pulsar.Reader> {
-    throw new Error('Method not implemented.');
+    return this._client.createReader(config);
   }
 
   async createProducer(

@@ -21,7 +21,7 @@ import { Instrumentation } from '../instrumentation';
 export class ProducerProxy implements Pulsar.Producer {
   private _producer: Pulsar.Producer;
   private _tracer: api.Tracer;
-  private _moduleVersion: undefined | string;
+  private readonly _moduleVersion: undefined | string;
   private _config: Pulsar.ProducerConfig;
 
   constructor(
@@ -37,36 +37,41 @@ export class ProducerProxy implements Pulsar.Producer {
   }
 
   flush(): Promise<null> {
-    throw new Error('Method not implemented.');
+    return this._producer.flush();
   }
 
   close(): Promise<null> {
-    throw new Error('Method not implemented.');
+    return this._producer.close();
   }
 
   getProducerName(): string {
-    throw new Error('Method not implemented.');
+    return this._producer.getProducerName();
   }
 
   getTopic(): string {
-    throw new Error('Method not implemented.');
+    return this._producer.getTopic();
   }
 
   isConnected(): boolean {
-    throw new Error('Method not implemented.');
+    return this._producer.isConnected();
   }
 
   async send(message: Pulsar.ProducerMessage): Promise<Pulsar.MessageId> {
     const parentContext = api.context.active();
 
-    const span = this._tracer.startSpan('send', {
-      kind: api.SpanKind.PRODUCER,
-      attributes: {
-        'pulsar.version': this._moduleVersion,
-        [SemanticAttributes.MESSAGING_DESTINATION]: this._config.topic,
-        ...Instrumentation.COMMON_ATTRIBUTES,
+    const span = this._tracer.startSpan(
+      'send',
+      {
+        kind: api.SpanKind.PRODUCER,
+        attributes: {
+          'pulsar.version': this._moduleVersion,
+          [SemanticAttributes.MESSAGING_DESTINATION]: this._config.topic,
+          ...Instrumentation.COMMON_ATTRIBUTES,
+        },
       },
-    });
+      parentContext
+    );
+
     message.properties ||= {};
     const context = api.trace.setSpan(parentContext, span);
     api.propagation.inject(context, message.properties);
