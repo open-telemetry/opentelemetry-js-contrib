@@ -71,6 +71,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.34.0",
+    "@opentelemetry/redis-common": "^0.33.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/redis": "2.8.31"
   },
