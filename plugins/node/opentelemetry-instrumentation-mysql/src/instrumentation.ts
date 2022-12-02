@@ -366,17 +366,21 @@ export class MySQLInstrumentation extends InstrumentationBase<
     };
   }
   private _setPoolcallbacks(
-    pool: mysqlTypes.Pool | mysqlTypes.PoolCluster,
+    pool: mysqlTypes.Pool,
     thisPlugin: MySQLInstrumentation
   ) {
     //TODO:: use semantic convention
+    const poolName = getPoolName(pool);
+
     pool.on('connection', connection => {
       thisPlugin._connectionsUsage.add(1, {
         state: 'idle',
+        name: poolName,
       });
       connection.on('end', () => {
         thisPlugin._connectionsUsage.add(-1, {
           state: 'idle',
+          name: poolName,
         });
       });
     });
@@ -384,19 +388,33 @@ export class MySQLInstrumentation extends InstrumentationBase<
     pool.on('acquire', connection => {
       thisPlugin._connectionsUsage.add(-1, {
         state: 'idle',
+        name: poolName,
       });
       thisPlugin._connectionsUsage.add(1, {
         state: 'used',
+        name: poolName,
       });
     });
 
     pool.on('release', connection => {
       thisPlugin._connectionsUsage.add(-1, {
         state: 'used',
+        name: poolName,
       });
       thisPlugin._connectionsUsage.add(1, {
         state: 'idle',
+        name: poolName,
       });
     });
   }
 }
+function getPoolName(pool: mysqlTypes.Pool): string {
+  const c = pool.config.connectionConfig;
+  let poolName = '';
+  poolName += c.host ? `host: ${c.host} ` : '';
+  poolName += c.port ? `port: ${c.port} ` : '';
+  poolName += c.database ? `database: ${c.database} ` : '';
+  poolName += c.user ? `user: ${c.user}` : '';
+  return poolName;
+}
+

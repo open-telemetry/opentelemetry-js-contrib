@@ -4,6 +4,9 @@ services:
 # mysql
   mysql:
     image: mysql:5.7
+    command: --init-file /etc/mysql/init.sql
+    volumes:
+        - ./mysql/init.sql:/etc/mysql/init.sql
     environment:
       - MYSQL_ROOT_PASSWORD=secret
     ports:
