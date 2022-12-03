@@ -161,10 +161,18 @@ describe('mysql@2.x-Metrics', () => {
           metrics[0].dataPoints[0].attributes['state'],
           'idle'
         );
+        assert.strictEqual(
+          metrics[0].dataPoints[0].attributes['name'],
+          'host: 127.0.0.1 port: 33306 database: test_db user: otel'
+        );
         assert.strictEqual(metrics[0].dataPoints[1].value, 0);
         assert.strictEqual(
           metrics[0].dataPoints[1].attributes['state'],
           'used'
+        );
+        assert.strictEqual(
+          metrics[0].dataPoints[0].attributes['name'],
+          'host: 127.0.0.1 port: 33306 database: test_db user: otel'
         );
         done();
       });

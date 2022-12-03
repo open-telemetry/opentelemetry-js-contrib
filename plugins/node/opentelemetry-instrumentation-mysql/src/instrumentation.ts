@@ -182,7 +182,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           'getConnection',
           thisPlugin._patchGetConnection(cluster, format)
         );
-        thisPlugin._setPoolcallbacks(cluster, thisPlugin);
+        // thisPlugin._setPoolcallbacks(cluster, thisPlugin);
 
         return cluster;
       };
