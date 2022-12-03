@@ -417,4 +417,3 @@ function getPoolName(pool: mysqlTypes.Pool): string {
   poolName += c.user ? `user: ${c.user}` : '';
   return poolName;
 }
-
