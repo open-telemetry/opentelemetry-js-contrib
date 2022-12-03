@@ -60,11 +60,11 @@ const { AwsLambdaInstrumentation } = require('@opentelemetry/instrumentation-aws
 
 new AwsLambdaInstrumentation({
     requestHook: (span, { event, context }) => {
-        span.setAttributes('faas.name', context.functionName);
+        span.setAttribute('faas.name', context.functionName);
     },
     responseHook: (span, { err, res }) => {
-        if (err instanceof Error) span.setAttributes('faas.error', err.message);
-        if (res) span.setAttributes('faas.res', res);
+        if (err instanceof Error) span.setAttribute('faas.error', err.message);
+        if (res) span.setAttribute('faas.res', res);
     }
 })
 ```
