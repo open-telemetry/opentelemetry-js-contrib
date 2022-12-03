@@ -163,7 +163,7 @@ describe('mysql@2.x-Metrics', () => {
         );
         assert.strictEqual(
           metrics[0].dataPoints[0].attributes['name'],
-          'host: 127.0.0.1 port: 33306 database: test_db user: otel'
+          `host: ${host} port: ${port} database: ${database} user: ${user}`
         );
         assert.strictEqual(metrics[0].dataPoints[1].value, 0);
         assert.strictEqual(
@@ -172,7 +172,7 @@ describe('mysql@2.x-Metrics', () => {
         );
         assert.strictEqual(
           metrics[0].dataPoints[0].attributes['name'],
-          'host: 127.0.0.1 port: 33306 database: test_db user: otel'
+          `host: ${host} port: ${port} database: ${database} user: ${user}`
         );
         done();
       });
