@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.31.1...instrumentation-mongoose-v0.32.0) (2022-11-16)
+
+
+### Features
+
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.32.0 to ^0.33.0
+
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.31.0...instrumentation-mongoose-v0.31.1) (2022-11-02)
+
+
+### Bug Fixes
+
+* remove types of the instrumented libs form public apis ([#1221](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1221)) ([682d610](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/682d6107b7285829bb72e592936c585ccdfab16a))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.30.0...instrumentation-mongoose-v0.31.0) (2022-09-27)
 
 

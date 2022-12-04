@@ -28,7 +28,8 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
-import { defaultDbStatementSerializer, getClientAttributes } from './utils';
+import { getClientAttributes } from './utils';
+import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';

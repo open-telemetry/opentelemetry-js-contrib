@@ -39,10 +39,15 @@ graphQLInstrumentation.enable();
 graphQLInstrumentation.disable();
 
 // now graphql can be required
-
-import { buildSchema } from 'graphql';
+import {
+  GraphQLSchema,
+  GraphQLObjectType,
+  GraphQLString,
+  buildSchema,
+  graphqlSync,
+} from 'graphql';
 import { buildTestSchema } from './schema';
-import { graphql, graphqlSync } from './graphql-adaptor';
+import { graphql } from './graphql-adaptor';
 // Construct a schema, using GraphQL schema language
 const schema = buildTestSchema();
 
@@ -575,6 +580,112 @@ describe('graphql', () => {
       it('should have 3 spans', () => {
         assert.deepStrictEqual(spans.length, 3);
       });
+    });
+  });
+
+  describe('when ignoreTrivialResolveSpans is set to true', () => {
+    beforeEach(() => {
+      create({
+        ignoreTrivialResolveSpans: true,
+      });
+    });
+
+    afterEach(() => {
+      exporter.reset();
+      graphQLInstrumentation.disable();
+    });
+
+    it('should create span for resolver defined on schema', async () => {
+      const simpleSchemaWithResolver = new GraphQLSchema({
+        query: new GraphQLObjectType({
+          name: 'RootQueryType',
+          fields: {
+            hello: {
+              type: GraphQLString,
+              resolve() {
+                return 'world';
+              },
+            },
+          },
+        }),
+      });
+
+      await graphql({ schema: simpleSchemaWithResolver, source: '{ hello }' });
+      const resovleSpans = exporter
+        .getFinishedSpans()
+        .filter(span => span.name === SpanNames.RESOLVE);
+      assert.deepStrictEqual(resovleSpans.length, 1);
+      const resolveSpan = resovleSpans[0];
+      assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
+    });
+
+    it('should create span for resolver function', async () => {
+      const schema = buildSchema(`
+        type Query {
+          hello: String
+        }
+      `);
+
+      const rootValue = {
+        hello: () => 'world',
+      };
+
+      await graphql({ schema, source: '{ hello }', rootValue });
+      const resovleSpans = exporter
+        .getFinishedSpans()
+        .filter(span => span.name === SpanNames.RESOLVE);
+      assert.deepStrictEqual(resovleSpans.length, 1);
+      const resolveSpan = resovleSpans[0];
+      assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
+    });
+
+    it('should NOT create span for resolver property', async () => {
+      const schema = buildSchema(`
+        type Query {
+          hello: String
+        }
+      `);
+
+      const rootValue = {
+        hello: 'world', // regular property, not a function
+      };
+
+      await graphql({ schema, source: '{ hello }', rootValue });
+      const resovleSpans = exporter
+        .getFinishedSpans()
+        .filter(span => span.name === SpanNames.RESOLVE);
+      assert.deepStrictEqual(resovleSpans.length, 0);
+    });
+
+    it('should create resolve span for custom field resolver', async () => {
+      const schema = buildSchema(`
+        type Query {
+          hello: String
+        }
+      `);
+
+      const rootValue = {
+        hello: 'world', // regular property, not a function
+      };
+
+      // since we use a custom field resolver, we record a span
+      // even though the field is a property
+      const fieldResolver = (
+        source: any,
+        args: any,
+        context: any,
+        info: any
+      ) => {
+        return source[info.fieldName];
+      };
+
+      await graphql({ schema, source: '{ hello }', rootValue, fieldResolver });
+      const resovleSpans = exporter
+        .getFinishedSpans()
+        .filter(span => span.name === SpanNames.RESOLVE);
+      assert.deepStrictEqual(resovleSpans.length, 1);
+      const resolveSpan = resovleSpans[0];
+      assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
     });
   });
 
