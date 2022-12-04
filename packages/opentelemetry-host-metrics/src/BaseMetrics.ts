@@ -15,7 +15,6 @@
  */
 
 import * as api from '@opentelemetry/api';
-import * as apiMetrics from '@opentelemetry/api-metrics';
 import * as metrics from '@opentelemetry/sdk-metrics';
 
 import { VERSION } from './version';
@@ -45,7 +44,7 @@ const DEFAULT_NAME = 'opentelemetry-host-metrics';
 export abstract class BaseMetrics {
   protected _logger = api.diag;
   protected _maxTimeoutUpdateMS: number;
-  protected _meter: apiMetrics.Meter;
+  protected _meter: api.Meter;
   private _name: string;
 
   constructor(config: MetricsCollectorConfig) {
@@ -53,7 +52,7 @@ export abstract class BaseMetrics {
     this._maxTimeoutUpdateMS =
       config.maxTimeoutUpdateMS || DEFAULT_MAX_TIMEOUT_UPDATE_MS;
     const meterProvider =
-      config.meterProvider! || apiMetrics.metrics.getMeterProvider();
+      config.meterProvider! || api.metrics.getMeterProvider();
     if (!config.meterProvider) {
       this._logger.warn('No meter provider, using default');
     }

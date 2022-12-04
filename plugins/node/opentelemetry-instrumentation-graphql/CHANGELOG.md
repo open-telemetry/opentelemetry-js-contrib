@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.32.0...instrumentation-graphql-v0.33.0) (2022-11-16)
+
+
+### Features
+
+* **graphql:** add ignoreTrivialResolveSpans config option ([#1256](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1256)) ([aff84bb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aff84bba1d391ec2061b8d0121ac8dd36fc1980c))
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
+
+### Bug Fixes
+
+* **instrumentation-graphql:** stop using types from `graphql` library in public api ([#1268](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1268)) ([f8cabf3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f8cabf306faa3e3eb4b9ce38ccdde842abdb2b82))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.31.0...instrumentation-graphql-v0.32.0) (2022-11-02)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.30.1...instrumentation-connect-v0.31.0) (2022-11-16)
+
+
+### Features
+
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
 ## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.30.0...instrumentation-connect-v0.30.1) (2022-11-02)
 
 

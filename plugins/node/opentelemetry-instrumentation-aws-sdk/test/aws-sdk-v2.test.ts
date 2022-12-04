@@ -31,7 +31,7 @@ import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { SpanStatusCode, Span, SpanKind } from '@opentelemetry/api';
 import { AttributeNames } from '../src/enums';
 import { mockV2AwsSend } from './testing-utils';
-import * as expect from 'expect';
+import { expect } from 'expect';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 describe('instrumentation-aws-sdk-v2', () => {

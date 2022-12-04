@@ -56,6 +56,9 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-pg:
     - rauno56
+  plugins/node/opentelemetry-instrumentation-socket.io:
+    - mottibec
+    - rauno56
   plugins/web/opentelemetry-instrumentation-document-load:
     - obecny
   plugins/web/opentelemetry-instrumentation-long-task:
