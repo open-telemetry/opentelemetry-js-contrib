@@ -44,6 +44,7 @@ For example, if you had `detectors: [AwsEksDetector, AwsEc2Detector]` then `clou
 The below ordering is recommended.
 
 ### AWS Detectors
+
 * AwsBeanstalkDetector
 * AwsEksDetector
 * AwsEcsDetector
