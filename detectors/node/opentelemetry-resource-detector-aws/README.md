@@ -45,11 +45,11 @@ The below ordering is recommended.
 
 ### AWS Detectors
 
-* AwsBeanstalkDetector
-* AwsEksDetector
-* AwsEcsDetector
-* AwsEc2Detector
-* AwsLambdaDetector
+- AwsBeanstalkDetector
+- AwsEksDetector
+- AwsEcsDetector
+- AwsEc2Detector
+- AwsLambdaDetector
 
 ## Useful links
 
