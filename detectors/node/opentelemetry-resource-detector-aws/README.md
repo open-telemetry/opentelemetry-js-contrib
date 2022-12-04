@@ -40,7 +40,15 @@ const tracerProvider = new NodeTracerProvider({ resource });
 ## Ordering
 
 Note that if multiple detectors are inserting the same attribute name, the first detector to insert wins.
-For example, if you had `detectors: [awsEc2Detector, awsEc2Detector]` then cloud.platform will be aws_eks instead of ec2. The below ordering is recommended.
+For example, if you had `detectors: [AwsEksDetector, AwsEc2Detector]` then `cloud.platform` will be `eks` instead of `ec2`.
+The below ordering is recommended.
+
+### AWS Detectors
+* AwsBeanstalkDetector
+* AwsEksDetector
+* AwsEcsDetector
+* AwsEc2Detector
+* AwsLambdaDetector
 
 ## Useful links
 
