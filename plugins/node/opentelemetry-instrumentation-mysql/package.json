@@ -56,7 +56,6 @@
     "@types/sinon": "10.0.13",
     "gts": "3.1.0",
     "mocha": "7.2.0",
-    "mysql": "2.18.1",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
     "sinon": "14.0.0",
@@ -67,6 +66,7 @@
     "@opentelemetry/api-metrics": "^0.32.0",
     "@opentelemetry/instrumentation": "^0.34.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
+    "mysql": "2.18.1",
     "@types/mysql": "2.15.19"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql#readme"
