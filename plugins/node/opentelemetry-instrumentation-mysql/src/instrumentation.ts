@@ -182,11 +182,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           'getConnection',
           thisPlugin._patchGetConnection(cluster, format)
         );
-        thisPlugin._wrap(
-          cluster,
-          'add',
-          thisPlugin._patchAdd(cluster, format)
-        );
+        thisPlugin._wrap(cluster, 'add', thisPlugin._patchAdd(cluster, format));
 
         return cluster;
       };
@@ -195,9 +191,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
   private _patchAdd(cluster: mysqlTypes.PoolCluster, format: formatType) {
     return (originalAdd: Function) => {
       const thisPlugin = this;
-      diag.debug(
-        'MySQLInstrumentation#patch: patched mysql pool cluster add'
-      );
+      diag.debug('MySQLInstrumentation#patch: patched mysql pool cluster add');
       return function add(id: string, config: unknown) {
         // Unwrap if unpatch has been called
         if (!thisPlugin['_enabled']) {
@@ -206,12 +200,12 @@ export class MySQLInstrumentation extends InstrumentationBase<
         }
         originalAdd.apply(cluster, arguments);
         const c = cluster['_nodes' as keyof mysqlTypes.PoolCluster] as any;
-        if(c) {
+        if (c) {
           const pool = c[id as any].pool;
           thisPlugin._setPoolcallbacks(pool, thisPlugin, id);
         }
-      }
-    }
+      };
+    };
   }
 
   // method on cluster or pool
@@ -396,7 +390,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     id: string
   ) {
     //TODO:: use semantic convention
-    let poolName = id || getPoolName(pool);
+    const poolName = id || getPoolName(pool);
 
     pool.on('connection', connection => {
       thisPlugin._connectionsUsage.add(1, {

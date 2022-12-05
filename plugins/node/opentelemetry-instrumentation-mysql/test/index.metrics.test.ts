@@ -185,7 +185,6 @@ describe('mysql@2.x-Metrics', () => {
   });
 
   describe('#PoolCluster - metrics', () => {
-
     let poolCluster: mysqlTypes.PoolCluster;
 
     beforeEach(() => {
