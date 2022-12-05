@@ -32,7 +32,7 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import type * as mysqlTypes from 'mysql';
+import * as mysqlTypes from 'mysql';
 import { MySQLInstrumentationConfig } from './types';
 import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
 import { VERSION } from './version';
@@ -161,7 +161,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           'getConnection',
           thisPlugin._patchGetConnection(pool, format)
         );
-        thisPlugin._setPoolcallbacks(pool, thisPlugin);
+        thisPlugin._setPoolcallbacks(pool, thisPlugin, '');
 
         return pool;
       };
@@ -182,11 +182,36 @@ export class MySQLInstrumentation extends InstrumentationBase<
           'getConnection',
           thisPlugin._patchGetConnection(cluster, format)
         );
-        // thisPlugin._setPoolcallbacks(cluster, thisPlugin);
+        thisPlugin._wrap(
+          cluster,
+          'add',
+          thisPlugin._patchAdd(cluster, format)
+        );
 
         return cluster;
       };
     };
+  }
+  private _patchAdd(cluster: mysqlTypes.PoolCluster, format: formatType) {
+    return (originalAdd: Function) => {
+      const thisPlugin = this;
+      diag.debug(
+        'MySQLInstrumentation#patch: patched mysql pool cluster add'
+      );
+      return function add(id: string, config: unknown) {
+        // Unwrap if unpatch has been called
+        if (!thisPlugin['_enabled']) {
+          thisPlugin._unwrap(cluster, 'add');
+          return originalAdd.apply(cluster, arguments);
+        }
+        originalAdd.apply(cluster, arguments);
+        const c = cluster['_nodes' as keyof mysqlTypes.PoolCluster] as any;
+        if(c) {
+          const pool = c[id as any].pool;
+          thisPlugin._setPoolcallbacks(pool, thisPlugin, id);
+        }
+      }
+    }
   }
 
   // method on cluster or pool
@@ -367,10 +392,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
   }
   private _setPoolcallbacks(
     pool: mysqlTypes.Pool,
-    thisPlugin: MySQLInstrumentation
+    thisPlugin: MySQLInstrumentation,
+    id: string
   ) {
     //TODO:: use semantic convention
-    const poolName = getPoolName(pool);
+    let poolName = id || getPoolName(pool);
 
     pool.on('connection', connection => {
       thisPlugin._connectionsUsage.add(1, {

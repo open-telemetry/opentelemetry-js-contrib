@@ -24,8 +24,9 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
 import { MySQLInstrumentation } from '../src';
-import { MysqlError, PoolConnection } from 'mysql';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
+import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
+import { MysqlError, PoolConnection } from 'mysql';
 
 const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
@@ -45,7 +46,6 @@ const metricReader = new PeriodicExportingMetricReader({
 
 otelTestingMeterProvider.addMetricReader(metricReader);
 
-import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 const instrumentation = registerInstrumentationTesting(
   new MySQLInstrumentation()
 );
@@ -71,7 +71,6 @@ async function waitForNumberOfExports(
 import * as mysqlTypes from 'mysql';
 
 describe('mysql@2.x-Metrics', () => {
-  let pool: mysqlTypes.Pool;
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
@@ -102,79 +101,164 @@ describe('mysql@2.x-Metrics', () => {
     }
   });
 
-  beforeEach(() => {
-    inMemoryMetricsExporter.reset();
-    // credentials to connect to pool if you run docker locally using 'npm run docker:start' from 'examples' folder
-    // pool = mysqlTypes.createPool({
-    //   host: 'localhost',
-    //   user: 'root',
-    //   password: 'secret',
-    // });
-    pool = mysqlTypes.createPool({
-      port,
-      user,
-      host,
-      password,
-      database,
+  describe('#Pool - metrics', () => {
+    let pool: mysqlTypes.Pool;
+
+    beforeEach(() => {
+      instrumentation.disable();
+      instrumentation.enable();
+      inMemoryMetricsExporter.reset();
+      // credentials to connect to pool if you run docker locally using 'npm run docker:start' from 'examples' folder
+      // pool = mysqlTypes.createPool({
+      //   host: 'localhost',
+      //   user: 'root',
+      //   password: 'secret',
+      // });
+      pool = mysqlTypes.createPool({
+        port,
+        user,
+        host,
+        password,
+        database,
+      });
     });
-  });
 
-  afterEach(done => {
-    instrumentation.disable();
-    pool.end(() => {
-      done();
-    });
-  });
-
-  it('Should add connection usage metrics', done => {
-    pool.getConnection((connErr: MysqlError, conn: PoolConnection) => {
-      assert.ifError(connErr);
-      assert.ok(conn);
-      const sql = 'SELECT 1+1 as solution';
-      conn.query(sql, async (err, results) => {
-        assert.ifError(err);
-        assert.ok(results);
-        conn.release();
-
-        assert.strictEqual(results[0]?.solution, 2);
-        const exportedMetrics = await waitForNumberOfExports(
-          inMemoryMetricsExporter,
-          2
-        );
-        assert.strictEqual(exportedMetrics.length, 2);
-        const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
-        assert.strictEqual(metrics.length, 1);
-        assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
-
-        assert.strictEqual(
-          metrics[0].descriptor.description,
-          'The number of connections that are currently in the state referenced by the attribute "state".'
-        );
-        assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
-        assert.strictEqual(
-          metrics[0].descriptor.name,
-          'db.client.connections.usage'
-        );
-        assert.strictEqual(metrics[0].dataPoints.length, 2);
-        assert.strictEqual(metrics[0].dataPoints[0].value, 1);
-        assert.strictEqual(
-          metrics[0].dataPoints[0].attributes['state'],
-          'idle'
-        );
-        assert.strictEqual(
-          metrics[0].dataPoints[0].attributes['name'],
-          `host: ${host} port: ${port} database: ${database} user: ${user}`
-        );
-        assert.strictEqual(metrics[0].dataPoints[1].value, 0);
-        assert.strictEqual(
-          metrics[0].dataPoints[1].attributes['state'],
-          'used'
-        );
-        assert.strictEqual(
-          metrics[0].dataPoints[0].attributes['name'],
-          `host: ${host} port: ${port} database: ${database} user: ${user}`
-        );
+    afterEach(done => {
+      instrumentation.disable();
+      pool.end(() => {
         done();
+      });
+    });
+
+    it('Pool - Should add connection usage metrics', done => {
+      pool.getConnection((connErr: MysqlError, conn: PoolConnection) => {
+        assert.ifError(connErr);
+        assert.ok(conn);
+        const sql = 'SELECT 1+1 as solution';
+        conn.query(sql, async (err, results) => {
+          assert.ifError(err);
+          assert.ok(results);
+          conn.release();
+
+          assert.strictEqual(results[0]?.solution, 2);
+          const exportedMetrics = await waitForNumberOfExports(
+            inMemoryMetricsExporter,
+            2
+          );
+          assert.strictEqual(exportedMetrics.length, 2);
+          const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
+          assert.strictEqual(metrics.length, 1);
+          assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+
+          assert.strictEqual(
+            metrics[0].descriptor.description,
+            'The number of connections that are currently in the state referenced by the attribute "state".'
+          );
+          assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
+          assert.strictEqual(
+            metrics[0].descriptor.name,
+            'db.client.connections.usage'
+          );
+          assert.strictEqual(metrics[0].dataPoints.length, 2);
+          assert.strictEqual(metrics[0].dataPoints[0].value, 1);
+          assert.strictEqual(
+            metrics[0].dataPoints[0].attributes['state'],
+            'idle'
+          );
+          assert.strictEqual(
+            metrics[0].dataPoints[0].attributes['name'],
+            `host: ${host} port: ${port} database: ${database} user: ${user}`
+          );
+          assert.strictEqual(metrics[0].dataPoints[1].value, 0);
+          assert.strictEqual(
+            metrics[0].dataPoints[1].attributes['state'],
+            'used'
+          );
+          assert.strictEqual(
+            metrics[0].dataPoints[0].attributes['name'],
+            `host: ${host} port: ${port} database: ${database} user: ${user}`
+          );
+          done();
+        });
+      });
+    });
+  });
+
+  describe('#PoolCluster - metrics', () => {
+
+    let poolCluster: mysqlTypes.PoolCluster;
+
+    beforeEach(() => {
+      instrumentation.disable();
+      instrumentation.enable();
+      inMemoryMetricsExporter.reset();
+      poolCluster = mysqlTypes.createPoolCluster();
+      poolCluster.add('name', {
+        port,
+        user,
+        host,
+        password,
+        database,
+      });
+    });
+
+    afterEach(done => {
+      instrumentation.disable();
+      poolCluster.end(() => {
+        done();
+      });
+    });
+
+    it('PoolCluster - Should add connection usage metrics', done => {
+      poolCluster.getConnection((connErr: MysqlError, conn: PoolConnection) => {
+        assert.ifError(connErr);
+        assert.ok(conn);
+        const sql = 'SELECT 1+1 as solution';
+        conn.query(sql, async (err, results) => {
+          assert.ifError(err);
+          assert.ok(results);
+
+          assert.strictEqual(results[0]?.solution, 2);
+          const exportedMetrics = await waitForNumberOfExports(
+            inMemoryMetricsExporter,
+            2
+          );
+          assert.strictEqual(exportedMetrics.length, 2);
+          const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
+          assert.strictEqual(metrics.length, 1);
+          assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+
+          assert.strictEqual(
+            metrics[0].descriptor.description,
+            'The number of connections that are currently in the state referenced by the attribute "state".'
+          );
+          assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
+          assert.strictEqual(
+            metrics[0].descriptor.name,
+            'db.client.connections.usage'
+          );
+          assert.strictEqual(metrics[0].dataPoints.length, 4);
+          assert.strictEqual(metrics[0].dataPoints[2].value, 0);
+          assert.strictEqual(
+            metrics[0].dataPoints[2].attributes['state'],
+            'idle'
+          );
+          assert.strictEqual(
+            metrics[0].dataPoints[2].attributes['name'],
+            'name'
+          );
+          assert.strictEqual(metrics[0].dataPoints[3].value, 1);
+          assert.strictEqual(
+            metrics[0].dataPoints[3].attributes['state'],
+            'used'
+          );
+          assert.strictEqual(
+            metrics[0].dataPoints[3].attributes['name'],
+            'name'
+          );
+          conn.release();
+          done();
+        });
       });
     });
   });
