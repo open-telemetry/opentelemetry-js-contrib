@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as expect from 'expect';
+import { expect } from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { SpanStatusCode } from '@opentelemetry/api';
