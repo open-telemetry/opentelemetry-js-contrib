@@ -143,7 +143,7 @@ describe('MongoDBInstrumentation', () => {
           .deleteOne({ a: 3 })
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'mongodb.delete', SpanKind.CLIENT);
+            assertSpans(getTestSpans(), 'mongodb.remove', SpanKind.CLIENT);
             done();
           })
           .catch(err => {
