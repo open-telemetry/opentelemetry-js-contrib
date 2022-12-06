@@ -256,7 +256,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         const span = instrumentation.tracer.startSpan(`mongodb.${type}`, {
           kind: SpanKind.CLIENT,
         });
-        instrumentation._populateV3Attributes(span, ns, server, cmd, type);
+        instrumentation._populateV3Attributes(
+          span,
+          ns,
+          server,
+          cmd,
+          commandType === MongodbCommandType.UNKNOWN ? undefined : commandType
+        );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -521,7 +527,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     ns: string,
     topology: MongoInternalTopology,
     command?: MongoInternalCommand,
-    operation?: string
+    operation?: string | undefined
   ) {
     // add network attributes to determine the remote server
     let host: undefined | string;
@@ -565,7 +571,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     host?: undefined | string,
     port?: undefined | string,
     commandObj?: any,
-    operation?: string
+    operation?: string | undefined
   ) {
     // add database related attributes
     span.setAttributes({
