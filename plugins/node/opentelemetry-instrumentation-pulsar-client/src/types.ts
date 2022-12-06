@@ -16,6 +16,4 @@
 
 import { InstrumentationConfig as BaseInstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export interface InstrumentationConfig extends BaseInstrumentationConfig {
-  enhancedDatabaseReporting?: boolean;
-}
+export type InstrumentationConfig = BaseInstrumentationConfig;

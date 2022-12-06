@@ -58,13 +58,13 @@ describe('pulsar@1.7.x', () => {
     }
 
     if (shouldTestLocal) {
-      testUtils.startDocker("pulsar");
+      testUtils.startDocker('pulsar');
     }
   });
 
   after(() => {
     if (shouldTestLocal) {
-      testUtils.cleanUpDocker("pulsar");
+      testUtils.cleanUpDocker('pulsar');
     }
   });
 

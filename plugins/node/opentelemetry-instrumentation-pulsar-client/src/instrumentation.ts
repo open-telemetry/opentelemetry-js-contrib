@@ -32,20 +32,17 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.MESSAGING_SYSTEM]: 'pulsar',
   };
-  static readonly DEFAULT_CONFIG: InstrumentationConfig = {
-    enhancedDatabaseReporting: false,
-  };
 
   constructor(config: InstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-pulsar-client',
       VERSION,
-      Object.assign({}, Instrumentation.DEFAULT_CONFIG, config)
+      Object.assign({}, config)
     );
   }
 
   override setConfig(config: InstrumentationConfig = {}) {
-    this._config = Object.assign({}, Instrumentation.DEFAULT_CONFIG, config);
+    this._config = Object.assign({}, config);
   }
 
   init() {
