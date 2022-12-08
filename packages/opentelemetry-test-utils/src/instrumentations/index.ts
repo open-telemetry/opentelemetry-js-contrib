@@ -18,13 +18,14 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { getInstrumentation } from './instrumentation-singelton';
 import { registerInstrumentationTestingProvider } from './otel-default-provider';
 import {
-  resetMetricsMemoryExporter,
+  resetTestMemoryMetricsExporter,
   resetTestMemorySpanExporter,
 } from './otel-provider-api';
 
 export * from './instrumentation-singelton';
 export * from './otel-provider-api';
 export * from './otel-default-provider';
+export * from './types';
 
 export const mochaHooks = {
   beforeAll(done: Function) {
@@ -45,14 +46,9 @@ export const mochaHooks = {
       [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
     });
 
-    const providers = registerInstrumentationTestingProvider(
-      {
-        resource: testResource,
-      },
-      {
-        resource: testResource,
-      }
-    );
+    const providers = registerInstrumentationTestingProvider({
+      resource: testResource,
+    });
 
     getInstrumentation()?.setTracerProvider(providers.traceProvider);
     getInstrumentation()?.setMeterProvider(providers.meterProvider);
@@ -61,7 +57,7 @@ export const mochaHooks = {
 
   beforeEach(done: Function) {
     resetTestMemorySpanExporter();
-    resetMetricsMemoryExporter();
+    resetTestMemoryMetricsExporter();
     // reset the config before each test, so that we don't leak state from one test to another
     getInstrumentation()?.setConfig({});
     done();

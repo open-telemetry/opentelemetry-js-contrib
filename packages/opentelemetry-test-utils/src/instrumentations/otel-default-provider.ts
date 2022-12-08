@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
-import {
-  NodeTracerConfig,
-  NodeTracerProvider,
-} from '@opentelemetry/sdk-trace-node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -33,11 +30,12 @@ import {
   AggregationTemporality,
   InMemoryMetricExporter,
   MeterProvider,
-  MeterProviderOptions,
 } from '@opentelemetry/sdk-metrics';
 
-import { metrics } from '@opentelemetry/api-metrics';
+import { metrics } from '@opentelemetry/api';
 import { TestMetricReader } from '../TestMetricReader';
+
+import { TestInstrumentationConfig } from './types';
 
 export type OTelProviders = {
   traceProvider: NodeTracerProvider;
@@ -45,11 +43,18 @@ export type OTelProviders = {
 };
 
 export const registerInstrumentationTestingProvider = (
-  tracerConfig?: NodeTracerConfig,
-  meterConfig?: MeterProviderOptions
+  testInstrumentationConfig: Partial<TestInstrumentationConfig> = {}
 ): OTelProviders => {
-  const otelTestingTraceProvider = new NodeTracerProvider(tracerConfig);
-  const otelTestingMeterProvider = new MeterProvider(meterConfig);
+  const otelTestingTraceProvider = new NodeTracerProvider({
+    sampler: testInstrumentationConfig.sampler,
+    resource: testInstrumentationConfig.resource,
+    spanLimits: testInstrumentationConfig.spanLimits,
+  });
+
+  const otelTestingMeterProvider = new MeterProvider({
+    resource: testInstrumentationConfig.resource,
+    views: testInstrumentationConfig.views,
+  });
 
   setTestMemorySpanExporter(new InMemorySpanExporter());
   setTestMetricsMemoryExporter(
