@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pulsar-client",
-  "version": "0.31.0",
+  "version": "0.34.0",
   "description": "OpenTelemetry pulsar-client automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

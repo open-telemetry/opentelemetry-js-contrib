@@ -21,7 +21,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import type * as Pulsar from 'pulsar-client';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { InstrumentationConfig } from './types';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
 import { ClientProxy } from './proxies/client';
 
@@ -39,10 +39,6 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
       VERSION,
       Object.assign({}, config)
     );
-  }
-
-  override setConfig(config: InstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
   }
 
   init() {

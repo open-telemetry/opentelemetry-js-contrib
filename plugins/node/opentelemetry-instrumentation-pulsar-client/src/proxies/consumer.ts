@@ -121,7 +121,7 @@ function extractSpanFromMessage(
     message.getProperties()
   );
   const span = tracer.startSpan(
-    'receive',
+    `receive ${config.topic}`,
     {
       kind: api.SpanKind.CONSUMER,
       attributes: {

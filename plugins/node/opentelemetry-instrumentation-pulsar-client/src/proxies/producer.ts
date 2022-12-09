@@ -60,7 +60,7 @@ export class ProducerProxy implements Pulsar.Producer {
     const parentContext = api.context.active();
 
     const span = this._tracer.startSpan(
-      'send',
+      `send ${this._config.topic}`,
       {
         kind: api.SpanKind.PRODUCER,
         attributes: {
