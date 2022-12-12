@@ -19,9 +19,17 @@ import type * as pgPoolTypes from 'pg-pool';
 
 export type PostgresCallback = (err: Error, res: object) => unknown;
 
-// These are not included in @types/pg, so manually define them.
-// https://github.com/brianc/node-postgres/blob/fde5ec586e49258dfc4a2fcd861fcdecb4794fc3/lib/client.js#L25
-export interface PgClientConnectionParams {
+// NB: this type describes the shape of a parsed, normalized form of the
+// connection information that's stored inside each pg.Client instance. It's
+// _not_ the same as the ConnectionConfig type exported from `@types/pg`. That
+// type defines how data must be _passed in_ when creating a new `pg.Client`,
+// which doesn't necessarily match the normalized internal form. E.g., a user
+// can call `new Client({ connectionString: '...' }), but `connectionString`
+// will never show up in the type below, because only the extracted host, port,
+// etc. are recorded in this normalized config. The keys listed below are also
+// incomplete, which is fine because the type is internal and these keys are the
+// only ones our code is reading. See https://github.com/brianc/node-postgres/blob/fde5ec586e49258dfc4a2fcd861fcdecb4794fc3/lib/client.js#L25
+export interface PgParsedConnectionParams {
   database?: string;
   host?: string;
   port?: number;
@@ -29,13 +37,7 @@ export interface PgClientConnectionParams {
 }
 
 export interface PgClientExtended extends pgTypes.Client {
-  connectionParameters: PgClientConnectionParams;
-}
-
-// Interface name based on original driver implementation
-// https://github.com/brianc/node-postgres/blob/2ef55503738eb2cbb6326744381a92c0bc0439ab/packages/pg/lib/utils.js#L157
-export interface NormalizedQueryConfig extends pgTypes.QueryConfig {
-  callback?: PostgresCallback;
+  connectionParameters: PgParsedConnectionParams;
 }
 
 export type PgPoolCallback = (

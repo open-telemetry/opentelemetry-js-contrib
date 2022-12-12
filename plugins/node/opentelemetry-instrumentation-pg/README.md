@@ -47,7 +47,8 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 | Options | Type | Description |
 | ------- | ---- | ----------- |
 | [`enhancedDatabaseReporting`](./src/types.ts#L30) | `boolean` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
-| `responseHook` | `PgInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
+| `requestHook` | `PgInstrumentationExecutionRequestHook` (function) | Function for adding custom span attributes using information about the query being issued and the db to which it's directed |
+| `responseHook` | `PgInstrumentationExecutionResponseHook` (function) | Function for adding custom span attributes from db response |
 | `requireParentSpan` | `boolean` | If true, requires a parent span to create new spans (default false) |
 | `addSqlCommenterCommentToQueries` | `boolean` | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
 

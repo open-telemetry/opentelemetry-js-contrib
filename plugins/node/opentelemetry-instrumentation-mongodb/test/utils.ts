@@ -65,6 +65,7 @@ export function assertSpans(
   spans: ReadableSpan[],
   expectedName: string,
   expectedKind: SpanKind,
+  expectedOperation: string,
   log = false,
   isEnhancedDatabaseReportingEnabled = false
 ) {
@@ -79,6 +80,10 @@ export function assertSpans(
   const [mongoSpan] = spans;
   assert.strictEqual(mongoSpan.name, expectedName);
   assert.strictEqual(mongoSpan.kind, expectedKind);
+  assert.strictEqual(
+    mongoSpan.attributes[SemanticAttributes.DB_OPERATION],
+    expectedOperation
+  );
   assert.strictEqual(
     mongoSpan.attributes[SemanticAttributes.DB_SYSTEM],
     'mongodb'
