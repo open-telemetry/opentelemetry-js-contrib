@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DbStatementSerializer } from './types';
 import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-
-export const defaultDbStatementSerializer: DbStatementSerializer = cmdName =>
-  cmdName;
 
 export function getClientAttributes(options: any) {
   return {

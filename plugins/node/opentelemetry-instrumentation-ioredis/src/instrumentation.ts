@@ -27,7 +27,8 @@ import {
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import { endSpan, defaultDbStatementSerializer } from './utils';
+import { endSpan } from './utils';
+import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {

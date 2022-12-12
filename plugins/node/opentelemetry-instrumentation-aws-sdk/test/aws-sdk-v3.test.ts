@@ -47,7 +47,7 @@ import {
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from '../src/enums';
-import * as expect from 'expect';
+import { expect } from 'expect';
 import * as fs from 'fs';
 import * as nock from 'nock';
 
