@@ -28,26 +28,26 @@ import {
   INVALID_TRACEID,
   INVALID_SPANID,
   INVALID_SPAN_CONTEXT,
-} from '@opentelemetry/api';
+} from "@opentelemetry/api";
 
-export const AWSXRAY_TRACE_ID_HEADER = 'x-amzn-trace-id';
+export const AWSXRAY_TRACE_ID_HEADER = "x-amzn-trace-id";
 
-const TRACE_HEADER_DELIMITER = ';';
-const KV_DELIMITER = '=';
+const TRACE_HEADER_DELIMITER = ";";
+const KV_DELIMITER = "=";
 
-const TRACE_ID_KEY = 'Root';
+const TRACE_ID_KEY = "Root";
 const TRACE_ID_LENGTH = 35;
-const TRACE_ID_VERSION = '1';
-const TRACE_ID_DELIMITER = '-';
+const TRACE_ID_VERSION = "1";
+const TRACE_ID_DELIMITER = "-";
 const TRACE_ID_DELIMITER_INDEX_1 = 1;
 const TRACE_ID_DELIMITER_INDEX_2 = 10;
 const TRACE_ID_FIRST_PART_LENGTH = 8;
 
-const PARENT_ID_KEY = 'Parent';
+const PARENT_ID_KEY = "Parent";
 
-const SAMPLED_FLAG_KEY = 'Sampled';
-const IS_SAMPLED = '1';
-const NOT_SAMPLED = '0';
+const SAMPLED_FLAG_KEY = "Sampled";
+const IS_SAMPLED = "1";
+const NOT_SAMPLED = "0";
 
 /**
  * Implementation of the AWS X-Ray Trace Header propagation protocol. See <a href=
@@ -92,9 +92,18 @@ export class AWSXRayPropagator implements TextMapPropagator {
     carrier: unknown,
     getter: TextMapGetter
   ): SpanContext {
-    const traceHeader = getter.get(carrier, AWSXRAY_TRACE_ID_HEADER);
-    if (!traceHeader || typeof traceHeader !== 'string')
+    const headerKeys = getter.keys(carrier);
+    const relevantHeaderKey = headerKeys.find((e) => {
+      return e.toLowerCase() === AWSXRAY_TRACE_ID_HEADER;
+    });
+    if (!relevantHeaderKey) {
       return INVALID_SPAN_CONTEXT;
+    }
+    const traceHeader = getter.get(carrier, relevantHeaderKey);
+
+    if (!traceHeader || typeof traceHeader !== "string") {
+      return INVALID_SPAN_CONTEXT;
+    }
 
     let pos = 0;
     let trimmedPart: string;
