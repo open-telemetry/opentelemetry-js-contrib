@@ -9,6 +9,10 @@ This is a simple example that demonstrates tracing calls made to Fastify API. Th
 - Span Events
 - Span Attributes
 
+## Prerequisites
+
+Install [Docker Engine](https://docs.docker.com/engine/install).
+
 ## Installation
 
 ```sh
