@@ -92,8 +92,6 @@ describe('mysql@2.x-Tracing', () => {
       password,
       database,
     });
-    // connection = mysqlTypes.createConnection(url);
-
     pool = mysqlTypes.createPool({
       port,
       user,
@@ -101,9 +99,6 @@ describe('mysql@2.x-Tracing', () => {
       password,
       database,
     });
-    // const url = 'mysql://otel:secret@localhost:33306/test_db?debug=true&charset=BIG5_CHINESE_CI&timezone=-0700';
-    // pool = mysqlTypes.createPool(url);
-
     poolCluster = mysqlTypes.createPoolCluster();
     poolCluster.add('name', {
       port,
