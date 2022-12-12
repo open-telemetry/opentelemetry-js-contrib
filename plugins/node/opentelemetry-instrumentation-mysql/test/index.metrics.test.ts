@@ -26,6 +26,13 @@ import * as assert from 'assert';
 import { MySQLInstrumentation } from '../src';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
+
+const instrumentation = registerInstrumentationTesting(
+  new MySQLInstrumentation()
+);
+instrumentation.enable();
+instrumentation.disable();
+
 import { MysqlError, PoolConnection } from 'mysql';
 
 const port = Number(process.env.MYSQL_PORT) || 33306;
@@ -33,24 +40,6 @@ const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
 const user = process.env.MYSQL_USER || 'otel';
 const password = process.env.MYSQL_PASSWORD || 'secret';
-
-const otelTestingMeterProvider = new MeterProvider();
-const inMemoryMetricsExporter = new InMemoryMetricExporter(
-  AggregationTemporality.CUMULATIVE
-);
-const metricReader = new PeriodicExportingMetricReader({
-  exporter: inMemoryMetricsExporter,
-  exportIntervalMillis: 100,
-  exportTimeoutMillis: 100,
-});
-
-otelTestingMeterProvider.addMetricReader(metricReader);
-
-const instrumentation = registerInstrumentationTesting(
-  new MySQLInstrumentation()
-);
-
-instrumentation.setMeterProvider(otelTestingMeterProvider);
 
 async function waitForNumberOfExports(
   exporter: InMemoryMetricExporter,
@@ -71,9 +60,26 @@ async function waitForNumberOfExports(
 import * as mysqlTypes from 'mysql';
 
 describe('mysql@2.x-Metrics', () => {
+  let otelTestingMeterProvider;
+  let inMemoryMetricsExporter: InMemoryMetricExporter;
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
+
+  beforeEach(() => {
+    otelTestingMeterProvider = new MeterProvider();
+    inMemoryMetricsExporter = new InMemoryMetricExporter(
+      AggregationTemporality.CUMULATIVE
+    );
+    const metricReader = new PeriodicExportingMetricReader({
+      exporter: inMemoryMetricsExporter,
+      exportIntervalMillis: 100,
+      exportTimeoutMillis: 100,
+    });
+
+    otelTestingMeterProvider.addMetricReader(metricReader);
+    instrumentation.setMeterProvider(otelTestingMeterProvider);
+  });
 
   before(function (done) {
     if (!shouldTest) {
@@ -236,23 +242,23 @@ describe('mysql@2.x-Metrics', () => {
             metrics[0].descriptor.name,
             'db.client.connections.usage'
           );
-          assert.strictEqual(metrics[0].dataPoints.length, 4);
-          assert.strictEqual(metrics[0].dataPoints[2].value, 0);
+          assert.strictEqual(metrics[0].dataPoints.length, 2);
+          assert.strictEqual(metrics[0].dataPoints[0].value, 0);
           assert.strictEqual(
-            metrics[0].dataPoints[2].attributes['state'],
+            metrics[0].dataPoints[0].attributes['state'],
             'idle'
           );
           assert.strictEqual(
-            metrics[0].dataPoints[2].attributes['name'],
+            metrics[0].dataPoints[0].attributes['name'],
             'name'
           );
-          assert.strictEqual(metrics[0].dataPoints[3].value, 1);
+          assert.strictEqual(metrics[0].dataPoints[1].value, 1);
           assert.strictEqual(
-            metrics[0].dataPoints[3].attributes['state'],
+            metrics[0].dataPoints[1].attributes['state'],
             'used'
           );
           assert.strictEqual(
-            metrics[0].dataPoints[3].attributes['name'],
+            metrics[0].dataPoints[1].attributes['name'],
             'name'
           );
           conn.release();
