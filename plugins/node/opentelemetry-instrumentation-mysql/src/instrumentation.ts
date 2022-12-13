@@ -34,7 +34,12 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as mysqlTypes from 'mysql';
 import { MySQLInstrumentationConfig } from './types';
-import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
+import {
+  getConnectionAttributes,
+  getDbStatement,
+  getSpanName,
+  getPoolName,
+} from './utils';
 import { VERSION } from './version';
 import { UpDownCounter, MeterProvider } from '@opentelemetry/api-metrics';
 
@@ -427,13 +432,4 @@ export class MySQLInstrumentation extends InstrumentationBase<
       });
     });
   }
-}
-function getPoolName(pool: mysqlTypes.Pool): string {
-  const c = pool.config.connectionConfig;
-  let poolName = '';
-  poolName += c.host ? `host: ${c.host} ` : '';
-  poolName += c.port ? `port: ${c.port} ` : '';
-  poolName += c.database ? `database: ${c.database} ` : '';
-  poolName += c.user ? `user: ${c.user}` : '';
-  return poolName;
 }
