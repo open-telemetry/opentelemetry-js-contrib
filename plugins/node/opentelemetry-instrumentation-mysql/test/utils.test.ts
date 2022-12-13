@@ -18,7 +18,6 @@ import * as assert from 'assert';
 import * as mysqlTypes from 'mysql';
 
 describe('utils.ts', () => {
-
   describe('getPoolName()', () => {
     let pool: mysqlTypes.Pool;
 

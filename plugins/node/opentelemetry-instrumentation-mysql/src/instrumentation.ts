@@ -41,7 +41,7 @@ import {
   getPoolName,
 } from './utils';
 import { VERSION } from './version';
-import { UpDownCounter, MeterProvider } from '@opentelemetry/api-metrics';
+import { UpDownCounter, MeterProvider } from '@opentelemetry/api';
 
 type formatType = typeof mysqlTypes.format;
 
