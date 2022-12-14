@@ -66,7 +66,7 @@ describe('mysql@2.x-Metrics', () => {
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
 
-  function initMeterProvider(){
+  function initMeterProvider() {
     otelTestingMeterProvider = new MeterProvider();
     inMemoryMetricsExporter = new InMemoryMetricExporter(
       AggregationTemporality.CUMULATIVE
@@ -191,9 +191,8 @@ describe('mysql@2.x-Metrics', () => {
     });
 
     it('Pool - use pool.query', done => {
-
       const sql = 'SELECT 1+1 as solution';
-      pool.query(sql, async function (error, results, fields) {
+      pool.query(sql, async (error, results, fields) => {
         assert.ifError(error);
         console.log('The solution is: ', results[0].solution);
         const exportedMetrics = await waitForNumberOfExports(
