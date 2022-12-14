@@ -66,7 +66,7 @@ describe('mysql@2.x-Metrics', () => {
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
 
-  beforeEach(() => {
+  function initMeterProvider(){
     otelTestingMeterProvider = new MeterProvider();
     inMemoryMetricsExporter = new InMemoryMetricExporter(
       AggregationTemporality.CUMULATIVE
@@ -79,7 +79,7 @@ describe('mysql@2.x-Metrics', () => {
 
     otelTestingMeterProvider.addMetricReader(metricReader);
     instrumentation.setMeterProvider(otelTestingMeterProvider);
-  });
+  }
 
   before(function (done) {
     if (!shouldTest) {
@@ -111,6 +111,7 @@ describe('mysql@2.x-Metrics', () => {
     let pool: mysqlTypes.Pool;
 
     beforeEach(() => {
+      initMeterProvider();
       instrumentation.disable();
       instrumentation.enable();
       inMemoryMetricsExporter.reset();
@@ -188,12 +189,59 @@ describe('mysql@2.x-Metrics', () => {
         });
       });
     });
+
+    it('Pool - use pool.query', done => {
+
+      const sql = 'SELECT 1+1 as solution';
+      pool.query(sql, async function (error, results, fields) {
+        assert.ifError(error);
+        console.log('The solution is: ', results[0].solution);
+        const exportedMetrics = await waitForNumberOfExports(
+          inMemoryMetricsExporter,
+          2
+        );
+        assert.strictEqual(exportedMetrics.length, 2);
+        const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
+        assert.strictEqual(metrics.length, 1);
+        assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
+        assert.strictEqual(
+          metrics[0].descriptor.description,
+          'The number of connections that are currently in the state referenced by the attribute "state".'
+        );
+        assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
+        assert.strictEqual(
+          metrics[0].descriptor.name,
+          'db.client.connections.usage'
+        );
+        assert.strictEqual(metrics[0].dataPoints.length, 2);
+        assert.strictEqual(metrics[0].dataPoints[0].value, 1);
+        assert.strictEqual(
+          metrics[0].dataPoints[0].attributes['state'],
+          'idle'
+        );
+        assert.strictEqual(
+          metrics[0].dataPoints[0].attributes['name'],
+          `host: ${host} port: ${port} database: ${database} user: ${user}`
+        );
+        assert.strictEqual(metrics[0].dataPoints[1].value, 0);
+        assert.strictEqual(
+          metrics[0].dataPoints[1].attributes['state'],
+          'used'
+        );
+        assert.strictEqual(
+          metrics[0].dataPoints[0].attributes['name'],
+          `host: ${host} port: ${port} database: ${database} user: ${user}`
+        );
+        done();
+      });
+    });
   });
 
   describe('#PoolCluster - metrics', () => {
     let poolCluster: mysqlTypes.PoolCluster;
 
     beforeEach(() => {
+      initMeterProvider();
       instrumentation.disable();
       instrumentation.enable();
       inMemoryMetricsExporter.reset();
