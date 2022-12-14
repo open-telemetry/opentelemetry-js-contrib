@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { NormalizedOptions } from './types';
+import { NormalizedOptions } from './internal-types';
 import { NetTransportValues } from '@opentelemetry/semantic-conventions';
 import { platform } from 'os';
 

@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import * as pgTypes from 'pg';
-import * as pgPoolTypes from 'pg-pool';
+import type * as pgTypes from 'pg';
 import type * as api from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
@@ -27,11 +26,38 @@ export interface PgInstrumentationExecutionResponseHook {
   (span: api.Span, responseInfo: PgResponseHookInformation): void;
 }
 
+export interface PgRequestHookInformation {
+  query: {
+    text: string;
+    name?: string;
+    values?: unknown[];
+  };
+  connection: {
+    database?: string;
+    host?: string;
+    port?: number;
+    user?: string;
+  };
+}
+
+export interface PgInstrumentationExecutionRequestHook {
+  (span: api.Span, queryInfo: PgRequestHookInformation): void;
+}
+
 export interface PgInstrumentationConfig extends InstrumentationConfig {
   /**
-   * If true, additional information about query parameters will be attached (as `attributes`) to spans representing
+   * If true, an attribute containing the query's parameters will be attached
+   * the spans generated to represent the query.
    */
   enhancedDatabaseReporting?: boolean;
+
+  /**
+   * Hook that allows adding custom span attributes or updating the
+   * span's name based on the data about the query to execute.
+   *
+   * @default undefined
+   */
+  requestHook?: PgInstrumentationExecutionRequestHook;
 
   /**
    * Hook that allows adding custom span attributes based on the data
@@ -47,50 +73,10 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   requireParentSpan?: boolean;
+
+  /**
+   * If true, queries are modified to also include a comment with
+   * the tracing context, following the {@link https://github.com/open-telemetry/opentelemetry-sqlcommenter sqlcommenter} format
+   */
+  addSqlCommenterCommentToQueries?: boolean;
 }
-
-export type PostgresCallback = (err: Error, res: object) => unknown;
-
-// These are not included in @types/pg, so manually define them.
-// https://github.com/brianc/node-postgres/blob/fde5ec586e49258dfc4a2fcd861fcdecb4794fc3/lib/client.js#L25
-export interface PgClientConnectionParams {
-  database?: string;
-  host?: string;
-  port?: number;
-  user?: string;
-}
-
-export interface PgClientExtended extends pgTypes.Client {
-  connectionParameters: PgClientConnectionParams;
-}
-
-// Interface name based on original driver implementation
-// https://github.com/brianc/node-postgres/blob/2ef55503738eb2cbb6326744381a92c0bc0439ab/packages/pg/lib/utils.js#L157
-export interface NormalizedQueryConfig extends pgTypes.QueryConfig {
-  callback?: PostgresCallback;
-}
-
-export type PgPoolCallback = (
-  err: Error,
-  client: any,
-  done: (release?: any) => void
-) => void;
-
-export type PgErrorCallback = (err: Error) => void;
-
-export interface PgPoolOptionsParams {
-  database: string;
-  host: string;
-  port: number;
-  user: string;
-  idleTimeoutMillis: number; // the minimum amount of time that an object may sit idle in the pool before it is eligible for eviction due to idle time
-  maxClient: number; // maximum size of the pool
-}
-
-export interface PgPoolExtended extends pgPoolTypes<pgTypes.Client> {
-  options: PgPoolOptionsParams;
-}
-
-export type PgClientConnect = (
-  callback?: (err: Error) => void
-) => Promise<void> | void;

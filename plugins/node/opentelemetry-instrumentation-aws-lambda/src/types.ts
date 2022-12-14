@@ -16,9 +16,7 @@
 
 import { Span, Context as OtelContext } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { Handler, Context } from 'aws-lambda';
-
-export type LambdaModule = Record<string, Handler>;
+import type { Context } from 'aws-lambda';
 
 export type RequestHook = (
   span: Span,

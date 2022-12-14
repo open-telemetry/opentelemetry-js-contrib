@@ -15,7 +15,7 @@
  */
 import type * as amqp from 'amqplib';
 import type * as amqpCallback from 'amqplib/callback_api';
-import * as expect from 'expect';
+import { expect } from 'expect';
 
 export const asyncConfirmSend = (
   confirmChannel: amqp.ConfirmChannel | amqpCallback.ConfirmChannel,

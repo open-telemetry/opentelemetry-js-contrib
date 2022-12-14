@@ -15,8 +15,4 @@
  */
 
 export * from './instrumentation';
-export {
-  AwsLambdaInstrumentationConfig,
-  RequestHook,
-  ResponseHook,
-} from './types';
+export * from './types';
