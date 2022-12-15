@@ -166,9 +166,36 @@ export class MySQLInstrumentation extends InstrumentationBase<
           'getConnection',
           thisPlugin._patchGetConnection(pool, format)
         );
+        thisPlugin._wrap(pool, 'end', thisPlugin._patchPoolEnd(pool));
         thisPlugin._setPoolcallbacks(pool, thisPlugin, '');
 
         return pool;
+      };
+    };
+  }
+  private _patchPoolEnd(pool: any) {
+    return (originalPoolEnd: Function) => {
+      const thisPlugin = this;
+      diag.debug('MySQLInstrumentation#patch: patched mysql pool end');
+      return function end(callback?: unknown) {
+        const nAll = (pool as any)._allConnections.length;
+        const nFree = (pool as any)._freeConnections.length;
+        const nUsed = nAll - nFree;
+        const poolName = getPoolName(pool);
+
+        for (let i = 0; i < nUsed; i++) {
+          thisPlugin._connectionsUsage.add(-1, {
+            state: 'used',
+            name: poolName,
+          });
+        }
+        for (let i = 0; i < nFree; i++) {
+          thisPlugin._connectionsUsage.add(-1, {
+            state: 'idle',
+            name: poolName,
+          });
+        }
+        originalPoolEnd.apply(pool, arguments);
       };
     };
   }
@@ -401,12 +428,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
       thisPlugin._connectionsUsage.add(1, {
         state: 'idle',
         name: poolName,
-      });
-      connection.on('end', () => {
-        thisPlugin._connectionsUsage.add(-1, {
-          state: 'idle',
-          name: poolName,
-        });
       });
     });
 

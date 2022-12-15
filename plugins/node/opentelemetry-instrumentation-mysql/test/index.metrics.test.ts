@@ -190,6 +190,50 @@ describe('mysql@2.x-Metrics', () => {
       });
     });
 
+    it('Pool - Create 2 connection, release only 1', done => {
+      pool.getConnection((connErr: MysqlError, conn1: PoolConnection) => {
+        const sql1 = 'SELECT 1+1 as solution';
+        conn1.query(sql1, async (err, results) => {
+          pool.getConnection((connErr: MysqlError, conn2: PoolConnection) => {
+            const sql2 = 'SELECT 2+2 as solution';
+            conn2.query(sql2, async (err, results) => {
+              conn2.release();
+              //conn2 is release, but conn1 is not.
+
+              const exportedMetrics = await waitForNumberOfExports(
+                inMemoryMetricsExporter,
+                2
+              );
+              assert.strictEqual(exportedMetrics.length, 2);
+              const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
+              assert.strictEqual(metrics.length, 1);
+
+              assert.strictEqual(metrics[0].dataPoints.length, 2);
+              assert.strictEqual(metrics[0].dataPoints[0].value, 1);
+              assert.strictEqual(
+                metrics[0].dataPoints[0].attributes['state'],
+                'idle'
+              );
+              assert.strictEqual(
+                metrics[0].dataPoints[0].attributes['name'],
+                `host: ${host} port: ${port} database: ${database} user: ${user}`
+              );
+              assert.strictEqual(metrics[0].dataPoints[1].value, 1);
+              assert.strictEqual(
+                metrics[0].dataPoints[1].attributes['state'],
+                'used'
+              );
+              assert.strictEqual(
+                metrics[0].dataPoints[0].attributes['name'],
+                `host: ${host} port: ${port} database: ${database} user: ${user}`
+              );
+              done();
+            });
+          });
+        });
+      });
+    });
+
     it('Pool - use pool.query', done => {
       const sql = 'SELECT 1+1 as solution';
       pool.query(sql, async (error, results, fields) => {
