@@ -182,19 +182,14 @@ export class MySQLInstrumentation extends InstrumentationBase<
         const nFree = (pool as any)._freeConnections.length;
         const nUsed = nAll - nFree;
         const poolName = getPoolName(pool);
-
-        for (let i = 0; i < nUsed; i++) {
-          thisPlugin._connectionsUsage.add(-1, {
-            state: 'used',
-            name: poolName,
-          });
-        }
-        for (let i = 0; i < nFree; i++) {
-          thisPlugin._connectionsUsage.add(-1, {
-            state: 'idle',
-            name: poolName,
-          });
-        }
+        thisPlugin._connectionsUsage.add(-nUsed, {
+          state: 'used',
+          name: poolName,
+        });
+        thisPlugin._connectionsUsage.add(-nFree, {
+          state: 'idle',
+          name: poolName,
+        });
         originalPoolEnd.apply(pool, arguments);
       };
     };
