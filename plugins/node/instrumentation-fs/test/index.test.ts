@@ -28,6 +28,8 @@ import * as sinon from 'sinon';
 import type * as FSType from 'fs';
 import tests, { TestCase, TestCreator } from './definitions';
 import type { FMember, FPMember, CreateHook, EndHook } from '../src/types';
+import { SYNC_FUNCTIONS } from '../src/constants';
+import * as fsActual from 'fs'
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
@@ -259,6 +261,23 @@ describe('fs instrumentation', () => {
       ]);
     });
   };
+
+  describe('Syncronous API native', () => {
+    beforeEach(() => {
+      plugin.enable();
+    });
+    it('should not remove fs functions', () => {
+      console.log(fsActual)
+      for (const fname of SYNC_FUNCTIONS) {
+        if(Array.isArray(fname)) {
+          let [K, L] = fname
+          assert.strictEqual(typeof (fsActual[K] as any)[L], 'function', `fs.${K}.${L} is not a function`);
+        } else {
+          assert.strictEqual(typeof fsActual[fname], 'function', `fs.${fname} is not a function`);
+        }
+      }
+    })
+  })
 
   describe('Syncronous API', () => {
     const selection: TestCase[] = tests.filter(
