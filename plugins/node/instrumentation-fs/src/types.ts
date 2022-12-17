@@ -23,7 +23,19 @@ export type FunctionPropertyNames<T> = {
 }[keyof T];
 export type FunctionProperties<T> = Pick<T, FunctionPropertyNames<T>>;
 
-export type FMember = FunctionPropertyNames<typeof fs>;
+export type FunctionPropertyNamesTwoLevels<T> = {
+  [K in keyof T]: {
+    [L in keyof T[K]]: L extends string
+      ? T[K][L] extends Function
+        ? [K, L]
+        : never
+      : never;
+  }[keyof T[K]];
+}[keyof T];
+
+export type FMember =
+  | FunctionPropertyNames<typeof fs>
+  | FunctionPropertyNamesTwoLevels<typeof fs>;
 export type FPMember = FunctionPropertyNames<typeof fs['promises']>;
 
 export type CreateHook = (

@@ -41,6 +41,23 @@ type FS = typeof fs;
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
+export function indexFs(fs: FS, member: FMember): { fs: FS | any; fName: any } {
+  if (Array.isArray(member)) {
+    const [K, L] = member;
+    return { fs: fs[K], fName: L };
+  } else {
+    return { fs, fName: member };
+  }
+}
+export function memberToDisplayName(member: FMember): string {
+  if (Array.isArray(member)) {
+    const [K, L] = member;
+    return `${K}.${L}`;
+  } else {
+    return member;
+  }
+}
+
 export default class FsInstrumentation extends InstrumentationBase<FS> {
   constructor(config?: FsInstrumentationConfig) {
     super('@opentelemetry/instrumentation-fs', VERSION, config);
@@ -54,32 +71,35 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         (fs: FS) => {
           this._diag.debug('Applying patch for fs');
           for (const fName of SYNC_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, fName);
+
+            if (isWrapped(fsToIndex[fNameToIndex])) {
+              this._unwrap(fsToIndex, fNameToIndex);
             }
             this._wrap(
-              fs,
-              fName,
+              fsToIndex,
+              fNameToIndex,
               <any>this._patchSyncFunction.bind(this, fName)
             );
           }
           for (const fName of CALLBACK_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, fName);
+            if (isWrapped(fsToIndex[fNameToIndex])) {
+              this._unwrap(fsToIndex, fNameToIndex);
             }
             if (fName === 'exists') {
               // handling separately because of the inconsistent cb style:
               // `exists` doesn't have error as the first argument, but the result
               this._wrap(
-                fs,
-                fName,
+                fsToIndex,
+                fNameToIndex,
                 <any>this._patchExistsCallbackFunction.bind(this, fName)
               );
               continue;
             }
             this._wrap(
-              fs,
-              fName,
+              fsToIndex,
+              fNameToIndex,
               <any>this._patchCallbackFunction.bind(this, fName)
             );
           }
@@ -101,13 +121,15 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           if (fs === undefined) return;
           this._diag.debug('Removing patch for fs');
           for (const fName of SYNC_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, fName);
+            if (isWrapped(fsToIndex[fNameToIndex])) {
+              this._unwrap(fsToIndex, fNameToIndex);
             }
           }
           for (const fName of CALLBACK_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, fName);
+            if (isWrapped(fsToIndex[fNameToIndex])) {
+              this._unwrap(fsToIndex, fNameToIndex);
             }
           }
           if (supportsPromises) {
@@ -127,7 +149,8 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    return <any>function (this: any, ...args: any[]) {
+    functionName = memberToDisplayName(functionName) as FMember;
+    const rv = <any>function (this: any, ...args: any[]) {
       if (isTracingSuppressed(api.context.active())) {
         // Performance optimization. Avoid creating additional contexts and spans
         // if we already know that the tracing is being suppressed.
@@ -172,6 +195,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         span.end();
       }
     };
+    Object.assign(rv, original);
+
+    return rv;
   }
 
   protected _patchCallbackFunction<T extends (...args: any[]) => ReturnType<T>>(
@@ -179,7 +205,8 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    return <any>function (this: any, ...args: any[]) {
+    functionName = memberToDisplayName(functionName) as FMember;
+    const rv = <any>function (this: any, ...args: any[]) {
       if (isTracingSuppressed(api.context.active())) {
         // Performance optimization. Avoid creating additional contexts and spans
         // if we already know that the tracing is being suppressed.
@@ -253,6 +280,8 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         return original.apply(this, args);
       }
     };
+    Object.assign(rv, original);
+    return rv;
   }
 
   protected _patchExistsCallbackFunction<

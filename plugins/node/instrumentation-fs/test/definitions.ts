@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-import { FMember, FPMember } from '../src/types';
+import { FMember } from '../src/types';
 import * as fs from 'fs';
 
-export type FsFunction = FPMember & FMember;
+export type FsFunction = FMember;
 export type Opts = {
   sync?: boolean;
   callback?: boolean;
   promise?: boolean;
 };
-export type Result = { error?: RegExp; result?: any; resultAsError?: any };
+export type Result = {
+  error?: RegExp;
+  result?: any;
+  resultAsError?: any;
+  hasPromiseVersion?: boolean;
+};
 export type TestCase = [FsFunction, any[], Result, any[], Opts?];
 export type TestCreator = (
   name: FsFunction,
@@ -75,6 +80,13 @@ const tests: TestCase[] = [
     'exists' as FsFunction, // we are defining promisified version of exists in the tests, so this is OK
     ['./test/fixtures/readtest'],
     { resultAsError: true },
+    [{ name: 'fs %NAME' }],
+  ],
+  ['realpath', ['/./'], { result: '/' }, [{ name: 'fs %NAME' }]],
+  [
+    ['realpath', 'native'],
+    ['/./'],
+    { result: '/', hasPromiseVersion: false },
     [{ name: 'fs %NAME' }],
   ],
 ];
