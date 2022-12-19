@@ -53,7 +53,6 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
 
 export class RedisInstrumentation extends InstrumentationBase<any> {
   static readonly COMPONENT = 'redis';
-  static readonly SUPPORTED_CLIENT_VERSIONS = ['>=1 <1.4.2'];
 
   constructor(protected override _config: RedisInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-redis-4', VERSION, _config);
@@ -78,7 +77,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
   ): InstrumentationNodeModuleDefinition<any> {
     const commanderModuleFile = new InstrumentationNodeModuleFile<any>(
       `${basePackageName}/dist/lib/commander.js`,
-      RedisInstrumentation.SUPPORTED_CLIENT_VERSIONS,
+      ['^1.0.0'],
       (moduleExports: any, moduleVersion?: string) => {
         const transformCommandArguments =
           moduleExports.transformCommandArguments;
@@ -121,7 +120,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
 
     const multiCommanderModule = new InstrumentationNodeModuleFile<any>(
       `${basePackageName}/dist/lib/client/multi-command.js`,
-      RedisInstrumentation.SUPPORTED_CLIENT_VERSIONS,
+      ['^1.0.0'],
       (moduleExports: any) => {
         this._diag.debug('Patching redis multi commands executor');
         const redisClientMultiCommandPrototype =
@@ -162,7 +161,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
 
     const clientIndexModule = new InstrumentationNodeModuleFile<any>(
       `${basePackageName}/dist/lib/client/index.js`,
-      RedisInstrumentation.SUPPORTED_CLIENT_VERSIONS,
+      ['^1.0.0'],
       (moduleExports: any) => {
         this._diag.debug('Patching redis client');
         const redisClientPrototype = moduleExports?.default?.prototype;
@@ -173,6 +172,15 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         this._wrap(
           redisClientPrototype,
           'multi',
+          this._getPatchRedisClientMulti()
+        );
+
+        if (isWrapped(redisClientPrototype?.MULTI)) {
+          this._unwrap(redisClientPrototype, 'MULTI');
+        }
+        this._wrap(
+          redisClientPrototype,
+          'MULTI',
           this._getPatchRedisClientMulti()
         );
 
