@@ -207,6 +207,9 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         if (isWrapped(redisClientPrototype?.multi)) {
           this._unwrap(redisClientPrototype, 'multi');
         }
+        if (isWrapped(redisClientPrototype?.MULTI)) {
+          this._unwrap(redisClientPrototype, 'MULTI');
+        }
         if (isWrapped(redisClientPrototype?.sendCommand)) {
           this._unwrap(redisClientPrototype, 'sendCommand');
         }
