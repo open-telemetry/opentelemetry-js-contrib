@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-ioredis",
-  "version": "0.33.0",
+  "version": "0.33.1",
   "description": "OpenTelemetry ioredis automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -71,7 +71,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.34.0",
-    "@opentelemetry/redis-common": "^0.33.0",
+    "@opentelemetry/redis-common": "^0.34.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/ioredis": "4.26.6"
   },
