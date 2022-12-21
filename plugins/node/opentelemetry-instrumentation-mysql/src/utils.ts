@@ -113,9 +113,13 @@ export function getSpanName(query: string | Query | QueryOptions): string {
 export function getPoolName(pool: mysqlTypes.Pool): string {
   const c = pool.config.connectionConfig;
   let poolName = '';
-  poolName += c.host ? `host: ${c.host} ` : '';
-  poolName += c.port ? `port: ${c.port} ` : '';
-  poolName += c.database ? `database: ${c.database} ` : '';
-  poolName += c.user ? `user: ${c.user}` : '';
+  poolName += c.host ? `host: '${c.host}', ` : '';
+  poolName += c.port ? `port: ${c.port}, ` : '';
+  poolName += c.database ? `database: '${c.database}', ` : '';
+  poolName += c.user ? `user: '${c.user}'` : '';
+  if(!c.user) {
+    poolName = poolName.substring(0,poolName.length-2); //omit last comma
+  }
+  console.log('poolName: ', poolName);
   return poolName.trim();
 }
