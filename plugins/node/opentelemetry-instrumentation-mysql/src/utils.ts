@@ -117,8 +117,8 @@ export function getPoolName(pool: mysqlTypes.Pool): string {
   poolName += c.port ? `port: ${c.port}, ` : '';
   poolName += c.database ? `database: '${c.database}', ` : '';
   poolName += c.user ? `user: '${c.user}'` : '';
-  if(!c.user) {
-    poolName = poolName.substring(0,poolName.length-2); //omit last comma
+  if (!c.user) {
+    poolName = poolName.substring(0,poolName.length - 2); //omit last comma
   }
   console.log('poolName: ', poolName);
   return poolName.trim();
