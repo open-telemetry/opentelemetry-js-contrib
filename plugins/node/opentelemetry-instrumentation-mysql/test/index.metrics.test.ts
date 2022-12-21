@@ -174,7 +174,7 @@ describe('mysql@2.x-Metrics', () => {
           );
           assert.strictEqual(
             metrics[0].dataPoints[0].attributes['name'],
-            `host: ${host} port: ${port} database: ${database} user: ${user}`
+            `host: '${host}', port: ${port}, database: '${database}', user: '${user}'`
           );
           assert.strictEqual(metrics[0].dataPoints[1].value, 0);
           assert.strictEqual(
@@ -183,7 +183,7 @@ describe('mysql@2.x-Metrics', () => {
           );
           assert.strictEqual(
             metrics[0].dataPoints[0].attributes['name'],
-            `host: ${host} port: ${port} database: ${database} user: ${user}`
+            `host: '${host}', port: ${port}, database: '${database}', user: '${user}'`
           );
           done();
         });
@@ -216,7 +216,7 @@ describe('mysql@2.x-Metrics', () => {
               );
               assert.strictEqual(
                 metrics[0].dataPoints[0].attributes['name'],
-                `host: ${host} port: ${port} database: ${database} user: ${user}`
+                `host: '${host}', port: ${port}, database: '${database}', user: '${user}'`
               );
               assert.strictEqual(metrics[0].dataPoints[1].value, 1);
               assert.strictEqual(
@@ -225,7 +225,7 @@ describe('mysql@2.x-Metrics', () => {
               );
               assert.strictEqual(
                 metrics[0].dataPoints[0].attributes['name'],
-                `host: ${host} port: ${port} database: ${database} user: ${user}`
+                `host: '${host}', port: ${port}, database: '${database}', user: '${user}'`
               );
               done();
             });
@@ -264,7 +264,7 @@ describe('mysql@2.x-Metrics', () => {
         );
         assert.strictEqual(
           metrics[0].dataPoints[0].attributes['name'],
-          `host: ${host} port: ${port} database: ${database} user: ${user}`
+          `host: '${host}', port: ${port}, database: '${database}', user: '${user}'`
         );
         assert.strictEqual(metrics[0].dataPoints[1].value, 0);
         assert.strictEqual(
@@ -273,7 +273,7 @@ describe('mysql@2.x-Metrics', () => {
         );
         assert.strictEqual(
           metrics[0].dataPoints[0].attributes['name'],
-          `host: ${host} port: ${port} database: ${database} user: ${user}`
+          `host: '${host}', port: ${port}, database: '${database}', user: '${user}'`
         );
         done();
       });

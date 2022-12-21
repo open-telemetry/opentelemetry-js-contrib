@@ -120,6 +120,5 @@ export function getPoolName(pool: mysqlTypes.Pool): string {
   if (!c.user) {
     poolName = poolName.substring(0, poolName.length - 2); //omit last comma
   }
-  console.log('poolName: ', poolName);
   return poolName.trim();
 }
