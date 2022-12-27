@@ -226,9 +226,14 @@ export class MySQLInstrumentation extends InstrumentationBase<
           return originalAdd.apply(cluster, arguments);
         }
         originalAdd.apply(cluster, arguments);
-        const c = cluster['_nodes' as keyof mysqlTypes.PoolCluster] as any;
-        if (c) {
-          const pool = c[id as any].pool;
+        const nodes = cluster['_nodes' as keyof mysqlTypes.PoolCluster] as any;
+        if (nodes) {
+          const nodeId =
+            typeof id === 'object'
+              ? 'CLUSTER::' + (cluster as any)._lastId
+              : String(id);
+
+          const pool = nodes[nodeId].pool;
           thisPlugin._setPoolcallbacks(pool, thisPlugin, id);
         }
       };
