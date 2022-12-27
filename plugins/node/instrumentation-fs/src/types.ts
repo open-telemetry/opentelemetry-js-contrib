@@ -38,4 +38,5 @@ export type EndHook = (
 export interface FsInstrumentationConfig extends InstrumentationConfig {
   createHook?: CreateHook;
   endHook?: EndHook;
+  requireParentSpan?: boolean;
 }
