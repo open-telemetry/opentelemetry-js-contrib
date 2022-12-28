@@ -238,7 +238,6 @@ describe('mysql@2.x-Metrics', () => {
       const sql = 'SELECT 1+1 as solution';
       pool.query(sql, async (error, results, fields) => {
         assert.ifError(error);
-        console.log('The solution is: ', results[0].solution);
         const exportedMetrics = await waitForNumberOfExports(
           inMemoryMetricsExporter,
           2
