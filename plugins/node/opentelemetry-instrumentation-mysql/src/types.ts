@@ -16,4 +16,17 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export type MySQLInstrumentationConfig = InstrumentationConfig;
+/**
+ * Function that can be used to serialize db.statement tag
+ * @param statement - mysql statement object
+ *
+ * @returns serialized string that will be used as the db.statement attribute.
+ */
+export type DbStatementSerializer = (statement: string) => string;
+
+export interface MySQLInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * Custom serializer function for the db.statement tag
+   */
+  dbStatementSerializer?: DbStatementSerializer;
+}

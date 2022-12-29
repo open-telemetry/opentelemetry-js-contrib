@@ -152,6 +152,66 @@ describe('mysql@2.x', () => {
         });
       });
     });
+
+    it('db.statement should have ? instead of quoted words when using default serializer ', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT * FROM `books` WHERE `author` = ?';
+        const query = connection.query({ sql, values: ['David'] });
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans[0].name, sql);
+          assert.strictEqual(
+            spans[0].attributes[SemanticAttributes.DB_STATEMENT],
+            'SELECT * FROM `books` WHERE `author` = ?'
+          );
+          done();
+        });
+      });
+    });
+  });
+
+  describe('dbStatementSerializer config', () => {
+    const dbStatementSerializer = (dbStatement: string) => {
+      return dbStatement
+    };
+
+    before(() => {
+      instrumentation.disable();
+      instrumentation.setConfig({ dbStatementSerializer });
+      instrumentation.enable();
+    });
+
+    it('query is object: db.statement should capture the full query ', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT * FROM `books` WHERE `author` = ?';
+        const query = connection.query({ sql, values: ['David'] });
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[SemanticAttributes.DB_STATEMENT],
+            "SELECT * FROM `books` WHERE `author` = 'David'"
+          );
+          done();
+        });
+      });
+    });
+    it.only('query is string: db.statement should capture the full query ', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = "SELECT * FROM `books` WHERE `author` = 'David'";
+        const query = connection.query(sql);
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[SemanticAttributes.DB_STATEMENT],
+            "SELECT * FROM `books` WHERE `author` = 'David'"
+          );
+          done();
+        });
+      });
+    });
   });
 
   describe('#Connection', () => {

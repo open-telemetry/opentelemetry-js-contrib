@@ -51,8 +51,12 @@ export class MySQLInstrumentation extends InstrumentationBase<
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
 
-  constructor(config?: MySQLInstrumentationConfig) {
-    super('@opentelemetry/instrumentation-mysql', VERSION, config);
+  constructor(protected override _config: MySQLInstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-mysql', VERSION, _config);
+  }
+
+  override setConfig(config: MySQLInstrumentationConfig = {}) {
+    this._config = config;
   }
 
   protected init() {
@@ -252,11 +256,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation: patched mysql query');
 
-      return function query(
+      return (
         query: string | mysqlTypes.Query | mysqlTypes.QueryOptions,
         _valuesOrCallback?: unknown[] | mysqlTypes.queryCallback,
         _callback?: mysqlTypes.queryCallback
-      ) {
+      ) => {
         if (!thisPlugin['_enabled']) {
           thisPlugin._unwrap(connection, 'query');
           return originalQuery.apply(connection, arguments);
@@ -278,10 +282,15 @@ export class MySQLInstrumentation extends InstrumentationBase<
           values = [_valuesOrCallback];
         }
 
-        span.setAttribute(
-          SemanticAttributes.DB_STATEMENT,
-          getDbStatement(query, format, values)
-        );
+        const dbStatementSerializer =
+        typeof this._config.dbStatementSerializer === 'function'
+        ? this._config.dbStatementSerializer
+        : this._defaultDbStatementSerializer.bind(this);
+
+        let dbStatement = getDbStatement(query, format, values);
+        dbStatement = dbStatementSerializer(dbStatement);
+
+        span.setAttribute(SemanticAttributes.DB_STATEMENT, dbStatement);
 
         const cbIndex = Array.from(arguments).findIndex(
           arg => typeof arg === 'function'
@@ -321,6 +330,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
         }
       };
     };
+  }
+
+  private _defaultDbStatementSerializer(dbStatement: string) {
+    //replace all quoted words with a question mark (' and ". not `)
+    return dbStatement.replace(/['"]([^'"]*)['"]/g, '?');
   }
 
   private _patchCallbackQuery(span: Span, parentContext: Context) {
