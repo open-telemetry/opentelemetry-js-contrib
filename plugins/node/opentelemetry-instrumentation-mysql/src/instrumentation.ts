@@ -283,9 +283,9 @@ export class MySQLInstrumentation extends InstrumentationBase<
         }
 
         const dbStatementSerializer =
-        typeof this._config.dbStatementSerializer === 'function'
-        ? this._config.dbStatementSerializer
-        : this._defaultDbStatementSerializer.bind(this);
+          typeof this._config.dbStatementSerializer === 'function'
+            ? this._config.dbStatementSerializer
+            : this._defaultDbStatementSerializer.bind(this);
 
         let dbStatement = getDbStatement(query, format, values);
         dbStatement = dbStatementSerializer(dbStatement);

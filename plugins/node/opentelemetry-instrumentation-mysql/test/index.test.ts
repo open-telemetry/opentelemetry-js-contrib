@@ -173,7 +173,7 @@ describe('mysql@2.x', () => {
 
   describe('dbStatementSerializer config', () => {
     const dbStatementSerializer = (dbStatement: string) => {
-      return dbStatement
+      return dbStatement;
     };
 
     before(() => {
