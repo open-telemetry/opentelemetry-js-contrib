@@ -197,7 +197,7 @@ describe('mysql@2.x', () => {
         });
       });
     });
-    it.only('query is string: db.statement should capture the full query ', done => {
+    it('query is string: db.statement should capture the full query ', done => {
       const span = provider.getTracer('default').startSpan('test span');
       context.with(trace.setSpan(context.active(), span), () => {
         const sql = "SELECT * FROM `books` WHERE `author` = 'David'";
