@@ -2,7 +2,6 @@
 
 OpenTelemetry MySQL Instrumentation allows the user to automatically collect trace data and metrics and export them to the backend of choice (we can use Zipkin, Jaeger or Grafana for this example), to give observability to distributed systems.
 
-
 This is a modification of the HTTP example that executes multiple parallel requests that interact with a MySQL server backend using the `mysql` npm module. The example displays traces using multiple connection methods.
 
 - Direct Connection Query
