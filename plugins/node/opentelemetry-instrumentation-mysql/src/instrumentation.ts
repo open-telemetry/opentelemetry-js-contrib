@@ -256,11 +256,11 @@ export class MySQLInstrumentation extends InstrumentationBase<
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation: patched mysql query');
 
-      return (
+      return function query(
         query: string | mysqlTypes.Query | mysqlTypes.QueryOptions,
         _valuesOrCallback?: unknown[] | mysqlTypes.queryCallback,
         _callback?: mysqlTypes.queryCallback
-      ) => {
+      ) {
         if (!thisPlugin['_enabled']) {
           thisPlugin._unwrap(connection, 'query');
           return originalQuery.apply(connection, arguments);
@@ -283,9 +283,9 @@ export class MySQLInstrumentation extends InstrumentationBase<
         }
 
         const dbStatementSerializer =
-          typeof this._config.dbStatementSerializer === 'function'
-            ? this._config.dbStatementSerializer
-            : this._defaultDbStatementSerializer.bind(this);
+          typeof thisPlugin._config.dbStatementSerializer === 'function'
+            ? thisPlugin._config.dbStatementSerializer
+            : thisPlugin._defaultDbStatementSerializer.bind(thisPlugin);
 
         let dbStatement = getDbStatement(query, format, values);
         dbStatement = dbStatementSerializer(dbStatement);
