@@ -1,12 +1,17 @@
 # Overview
 
-OpenTelemetry MySQL Instrumentation allows the user to automatically collect trace data and metrics (currently only the number of connections is supported) and export them to the backend of choice (we can use Zipkin, Jaeger or Grafana for this example), to give observability to distributed systems.
+OpenTelemetry MySQL Instrumentation allows the user to automatically collect trace data and metrics and export them to the backend of choice (we can use Zipkin, Jaeger or Grafana for this example), to give observability to distributed systems.
+
 
 This is a modification of the HTTP example that executes multiple parallel requests that interact with a MySQL server backend using the `mysql` npm module. The example displays traces using multiple connection methods.
 
 - Direct Connection Query
 - Pool Connection Query
 - Cluster Pool Connection Query
+
+## supported metrics
+
+- Currently only `db.client.connections.usage` is supported, which denoted the number of idle/used connections.
 
 ## Installation
 
