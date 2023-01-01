@@ -34,7 +34,12 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql';
 import { MySQLInstrumentationConfig } from './types';
-import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
+import {
+  getConnectionAttributes,
+  getDbStatement,
+  getSpanName,
+  defaultDbStatementSerializer,
+} from './utils';
 import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
@@ -282,13 +287,18 @@ export class MySQLInstrumentation extends InstrumentationBase<
           values = [_valuesOrCallback];
         }
 
-        const dbStatementSerializer =
-          typeof thisPlugin._config.dbStatementSerializer === 'function'
-            ? thisPlugin._config.dbStatementSerializer
-            : thisPlugin._defaultDbStatementSerializer.bind(thisPlugin);
-
-        let dbStatement = getDbStatement(query, format, values);
-        dbStatement = dbStatementSerializer(dbStatement);
+        let dbStatement = '';
+        if (typeof thisPlugin._config.dbStatementSerializer === 'function') {
+          dbStatement = getDbStatement(query, format, values);
+          dbStatement = thisPlugin._config.dbStatementSerializer(dbStatement);
+        } else {
+          if (typeof query === 'string') {
+            dbStatement = getDbStatement(query, format, values);
+            dbStatement = defaultDbStatementSerializer(dbStatement);
+          } else {
+            dbStatement = query.sql;
+          }
+        }
 
         span.setAttribute(SemanticAttributes.DB_STATEMENT, dbStatement);
 
@@ -330,11 +340,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
         }
       };
     };
-  }
-
-  private _defaultDbStatementSerializer(dbStatement: string) {
-    //replace all quoted words with a question mark (' and ". not `)
-    return dbStatement.replace(/['"]([^'"]*)['"]/g, '?');
   }
 
   private _patchCallbackQuery(span: Span, parentContext: Context) {

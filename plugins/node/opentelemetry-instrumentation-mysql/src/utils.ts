@@ -108,3 +108,8 @@ export function getSpanName(query: string | Query | QueryOptions): string {
   }
   return query.split(' ')[0];
 }
+
+export function defaultDbStatementSerializer(dbStatement: string) {
+  //replace all quoted words with a question mark (' and ". not `)
+  return dbStatement.replace(/['"]([^'"]*)['"]/g, '?');
+}
