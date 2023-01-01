@@ -52,6 +52,26 @@
   * dependencies
     * @opentelemetry/instrumentation-express bumped from ^0.31.1 to ^0.31.2
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.35.0...auto-instrumentations-node-v0.36.0) (2022-12-20)
+
+
+### Features
+
+* add socket.io instrumentation ([#1284](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1284)) ([f865143](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f865143d9042c41ebed6adbe906097ad7622f2c7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.33.0 to ^0.33.1
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-redis bumped from ^0.34.0 to ^0.34.1
+    * @opentelemetry/instrumentation-redis-4 bumped from ^0.34.0 to ^0.34.1
+    * @opentelemetry/instrumentation-restify bumped from ^0.31.0 to ^0.32.0
+    * @opentelemetry/instrumentation-socket.io bumped from ^0.32.0 to ^0.33.0
+
 ## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.34.0...auto-instrumentations-node-v0.35.0) (2022-11-16)
 
 

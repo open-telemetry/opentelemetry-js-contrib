@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.33.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.33.0...instrumentation-ioredis-v0.33.1) (2022-12-20)
+
+
+### Bug Fixes
+
+* **redis:** serialize non sensitive arguments into db.statement attribute ([#1299](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1299)) ([092a250](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/092a2509bcf884e1b997e0eaec3a6ca02cfd2058))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/redis-common bumped from ^0.33.0 to ^0.34.0
+
 ## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.32.2...instrumentation-ioredis-v0.33.0) (2022-11-16)
 
 

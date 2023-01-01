@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-socket.io",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "description": "OpenTelemetry automatic instrumentation package for socket.io",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
