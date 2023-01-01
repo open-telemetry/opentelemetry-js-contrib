@@ -15,11 +15,7 @@
  */
 import { Span } from '@opentelemetry/api';
 import type * as restify from 'restify';
-
-export enum LayerType {
-  MIDDLEWARE = 'middleware',
-  REQUEST_HANDLER = 'request_handler',
-}
+import { LayerType } from './types';
 
 declare interface RequestWithRoute extends restify.Request {
   route: { path: string };

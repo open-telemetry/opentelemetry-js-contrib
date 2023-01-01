@@ -41,6 +41,27 @@ registerInstrumentations({
 
 See [examples/restify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/restify) for a short example.
 
+## Restify Instrumentation Options
+
+| Options | Type | Example | Description |
+| `requestHook` | `RestifyCustomAttributeFunction` | `(span, requestInfo) => {}` | Function for adding custom attributes to restify requests. Receives params: `Span, RestifyRequestInfo`. |
+
+### Using `requestHook`
+
+Instrumentation configuration accepts a custom "hook" function which will be called for every instrumented restify request. Custom attributes can be set on the span or run any custom logic per request.
+
+```javascript
+import { RestifyInstrumentation } from "@opentelemetry/instrumentation-restify"
+const restifyInstrumentation = new RestifyInstrumentation({
+  requestHook: function (span: Span, info: RestifyRequestInfo) {
+    span.setAttribute(
+      'http.method',
+      info.request.method,
+    )
+  }
+});
+```
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

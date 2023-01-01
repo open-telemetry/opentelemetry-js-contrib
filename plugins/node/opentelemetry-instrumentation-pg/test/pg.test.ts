@@ -33,6 +33,7 @@ import {
 import * as assert from 'assert';
 import type * as pg from 'pg';
 import * as sinon from 'sinon';
+import stringify from 'safe-stable-stringify';
 import {
   PgInstrumentation,
   PgInstrumentationConfig,
@@ -199,6 +200,26 @@ describe('pg', () => {
       },
       assertPgError,
       'pg should throw when no args provided'
+    );
+    runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
+    memoryExporter.reset();
+
+    assert.throws(
+      () => {
+        (client as any).query(null);
+      },
+      assertPgError,
+      'pg should throw when null provided as only arg'
+    );
+    runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
+    memoryExporter.reset();
+
+    assert.throws(
+      () => {
+        (client as any).query(undefined);
+      },
+      assertPgError,
+      'pg should throw when undefined provided as only arg'
     );
     runCallbackTest(null, DEFAULT_ATTRIBUTES, [], errorStatus);
     memoryExporter.reset();
@@ -490,6 +511,100 @@ describe('pg', () => {
         } catch (e) {
           assert.ok(false, e.message);
         }
+      });
+    });
+
+    describe('when specifying a requestHook configuration', () => {
+      const dataAttributeName = 'pg_data';
+      const query = 'SELECT 0::text';
+      const events: TimedEvent[] = [];
+
+      // these are the attributes that we'd expect would end up on the final
+      // span if there is no requestHook.
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [SemanticAttributes.DB_STATEMENT]: query,
+      };
+
+      // These are the attributes we expect on the span after the requestHook
+      // has run. We set up the hook to just add to the span a stringified
+      // version of the args it receives (which is an easy way to assert both
+      // that the proper args were passed and that the hook was called).
+      const attributesAfterHook = {
+        ...attributes,
+        [dataAttributeName]: stringify({
+          connection: {
+            database: CONFIG.database,
+            port: CONFIG.port,
+            host: CONFIG.host,
+            user: CONFIG.user,
+          },
+          query: { text: query },
+        }),
+      };
+
+      describe('AND valid requestHook', () => {
+        beforeEach(async () => {
+          create({
+            enhancedDatabaseReporting: true,
+            requestHook: (span, requestInfo) => {
+              span.setAttribute(dataAttributeName, stringify(requestInfo));
+            },
+          });
+        });
+
+        it('should attach request hook data to resulting spans for query with callback ', done => {
+          const span = tracer.startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            const res = client.query(query, (err, res) => {
+              assert.strictEqual(err, null);
+              assert.ok(res);
+              runCallbackTest(span, attributesAfterHook, events);
+              done();
+            });
+            assert.strictEqual(res, undefined, 'No promise is returned');
+          });
+        });
+
+        it('should attach request hook data to resulting spans for query returning a Promise', async () => {
+          const span = tracer.startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async () => {
+              const resPromise = await client.query({ text: query });
+              try {
+                assert.ok(resPromise);
+                runCallbackTest(span, attributesAfterHook, events);
+              } catch (e) {
+                assert.ok(false, e.message);
+              }
+            }
+          );
+        });
+      });
+
+      describe('AND invalid requestHook', () => {
+        beforeEach(async () => {
+          create({
+            enhancedDatabaseReporting: true,
+            requestHook: (_span, _requestInfo) => {
+              throw 'some kind of failure!';
+            },
+          });
+        });
+
+        it('should not do any harm when throwing an exception', done => {
+          const span = tracer.startSpan('test span');
+          context.with(trace.setSpan(context.active(), span), () => {
+            const res = client.query(query, (err, res) => {
+              assert.strictEqual(err, null);
+              assert.ok(res);
+              runCallbackTest(span, attributes, events);
+              done();
+            });
+            assert.strictEqual(res, undefined, 'No promise is returned');
+          });
+        });
       });
     });
 
