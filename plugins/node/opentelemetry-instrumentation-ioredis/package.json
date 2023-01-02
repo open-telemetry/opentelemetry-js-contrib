@@ -60,7 +60,6 @@
     "@types/node": "18.11.7",
     "cross-env": "7.0.3",
     "gts": "3.1.0",
-    "ioredis4": "npm:ioredis@^4.27.7",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
