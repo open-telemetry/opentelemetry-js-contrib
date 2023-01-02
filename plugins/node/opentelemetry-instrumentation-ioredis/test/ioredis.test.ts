@@ -187,23 +187,23 @@ describe('ioredis', () => {
       description: string;
       name: string;
       args: Array<string>;
-      expectedDbStatement: string;
-      method: (cb: ioredisTypes.CallbackFunction<unknown>) => unknown;
+      serializedArgs: Array<string>;
+      method: (cb: ioredisTypes.Callback<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         name: 'hset',
         args: [hashKeyName, 'testField', 'testValue'],
-        expectedDbStatement: `${hashKeyName} testField [1 other arguments]`,
-        method: (cb: ioredisTypes.CallbackFunction<number>) =>
+        serializedArgs: [hashKeyName, 'testField', '[1 other arguments]'],
+        method: (cb: ioredisTypes.Callback<number>) =>
           client.hset(hashKeyName, 'testField', 'testValue', cb),
       },
       {
         description: 'get',
         name: 'get',
         args: [testKeyName],
-        expectedDbStatement: `${testKeyName}`,
-        method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
+        serializedArgs: [testKeyName],
+        method: (cb: ioredisTypes.Callback<string | null>) =>
           client.get(testKeyName, cb),
       },
     ];
@@ -244,7 +244,7 @@ describe('ioredis', () => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `${command.name} ${command.expectedDbStatement}`,
+            [SemanticAttributes.DB_STATEMENT]: `${command.name} ${command.serializedArgs}`,
           };
           const span = provider
             .getTracer('ioredis-test')

@@ -14,70 +14,69 @@
  * limitations under the License.
  */
 
-import { diag, trace, context, SpanKind } from "@opentelemetry/api";
+import { diag, trace, context, SpanKind } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
-} from "@opentelemetry/instrumentation";
+} from '@opentelemetry/instrumentation';
 import {
   IORedisInstrumentationConfig,
   IORedisCommand,
-  IORedisT,
   RedisInterface,
-} from "./types";
+} from './types';
 import {
   DbSystemValues,
   SemanticAttributes,
-} from "@opentelemetry/semantic-conventions";
-import { safeExecuteInTheMiddle } from "@opentelemetry/instrumentation";
-import { endSpan } from "./utils";
-import { defaultDbStatementSerializer } from "@opentelemetry/redis-common";
-import { VERSION } from "./version";
+} from '@opentelemetry/semantic-conventions';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import { endSpan } from './utils';
+import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
+import { VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
 };
 
-export class IORedisInstrumentation extends InstrumentationBase<IORedisT> {
+export class IORedisInstrumentation extends InstrumentationBase<any> {
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
-      "@opentelemetry/instrumentation-ioredis",
+      '@opentelemetry/instrumentation-ioredis',
       VERSION,
       Object.assign({}, DEFAULT_CONFIG, _config)
     );
   }
 
-  init(): InstrumentationNodeModuleDefinition<IORedisT>[] {
+  init(): InstrumentationNodeModuleDefinition<any>[] {
     return [
-      new InstrumentationNodeModuleDefinition<IORedisT>(
-        "ioredis",
-        [">1"],
+      new InstrumentationNodeModuleDefinition<any>(
+        'ioredis',
+        ['>1', '<6'],
         (moduleExports, moduleVersion?: string) => {
-          diag.debug("Applying patch for ioredis");
+          diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
-            this._unwrap(moduleExports.prototype, "sendCommand");
+            this._unwrap(moduleExports.prototype, 'sendCommand');
           }
           this._wrap(
             moduleExports.prototype,
-            "sendCommand",
+            'sendCommand',
             this._patchSendCommand(moduleVersion)
           );
           if (isWrapped(moduleExports.prototype.connect)) {
-            this._unwrap(moduleExports.prototype, "connect");
+            this._unwrap(moduleExports.prototype, 'connect');
           }
           this._wrap(
             moduleExports.prototype,
-            "connect",
+            'connect',
             this._patchConnection()
           );
           return moduleExports;
         },
-        (moduleExports) => {
+        moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug("Removing patch for ioredis");
-          this._unwrap(moduleExports.prototype, "sendCommand");
-          this._unwrap(moduleExports.prototype, "connect");
+          diag.debug('Removing patch for ioredis');
+          this._unwrap(moduleExports.prototype, 'sendCommand');
+          this._unwrap(moduleExports.prototype, 'connect');
         }
       ),
     ];
@@ -101,7 +100,7 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisT> {
   private traceSendCommand = (original: Function, moduleVersion?: string) => {
     const instrumentation = this;
     return function (this: RedisInterface, cmd?: IORedisCommand) {
-      if (arguments.length < 1 || typeof cmd !== "object") {
+      if (arguments.length < 1 || typeof cmd !== 'object') {
         return original.apply(this, arguments);
       }
       const config =
@@ -133,9 +132,9 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisT> {
               cmdName: cmd.name,
               cmdArgs: cmd.args,
             }),
-          (e) => {
+          e => {
             if (e) {
-              diag.error("ioredis instrumentation: request hook failed", e);
+              diag.error('ioredis instrumentation: request hook failed', e);
             }
           },
           true
@@ -158,9 +157,9 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisT> {
         cmd.resolve = function (result: any) {
           safeExecuteInTheMiddle(
             () => config?.responseHook?.(span, cmd.name, cmd.args, result),
-            (e) => {
+            e => {
               if (e) {
-                diag.error("ioredis instrumentation: response hook failed", e);
+                diag.error('ioredis instrumentation: response hook failed', e);
               }
             },
             true
@@ -186,7 +185,7 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisT> {
 
   private traceConnection = (original: Function) => {
     const instrumentation = this;
-    return function (this: ioredisTypes.Redis) {
+    return function (this: RedisInterface) {
       const config =
         instrumentation.getConfig() as IORedisInstrumentationConfig;
       const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
@@ -194,11 +193,11 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisT> {
         return original.apply(this, arguments);
       }
 
-      const span = instrumentation.tracer.startSpan("connect", {
+      const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
         attributes: {
           [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.DB_STATEMENT]: "connect",
+          [SemanticAttributes.DB_STATEMENT]: 'connect',
         },
       });
       const { host, port } = this.options;
