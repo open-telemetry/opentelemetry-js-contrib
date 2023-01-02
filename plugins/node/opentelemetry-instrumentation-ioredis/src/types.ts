@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// import Redis from "ioredis";
 import type { Redis, Command } from 'ioredis';
 import type * as LegacyIORedis from 'ioredis4';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';

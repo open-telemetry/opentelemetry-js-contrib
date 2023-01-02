@@ -187,14 +187,14 @@ describe('ioredis', () => {
       description: string;
       name: string;
       args: Array<string>;
-      serializedArgs: Array<string>;
+      expectedDbStatement: string;
       method: (cb: ioredisTypes.Callback<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         name: 'hset',
         args: [hashKeyName, 'testField', 'testValue'],
-        serializedArgs: [hashKeyName, 'testField', '[1 other arguments]'],
+        expectedDbStatement: `${hashKeyName} testField [1 other arguments]`,
         method: (cb: ioredisTypes.Callback<number>) =>
           client.hset(hashKeyName, 'testField', 'testValue', cb),
       },
@@ -202,7 +202,7 @@ describe('ioredis', () => {
         description: 'get',
         name: 'get',
         args: [testKeyName],
-        serializedArgs: [testKeyName],
+        expectedDbStatement: `${testKeyName}`,
         method: (cb: ioredisTypes.Callback<string | null>) =>
           client.get(testKeyName, cb),
       },
@@ -244,7 +244,7 @@ describe('ioredis', () => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `${command.name} ${command.serializedArgs}`,
+            [SemanticAttributes.DB_STATEMENT]: `${command.name} ${command.expectedDbStatement}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -734,7 +734,7 @@ describe('ioredis', () => {
 
     describe('Instrumenting with a custom db.statement serializer', () => {
       const dbStatementSerializer: DbStatementSerializer = (cmdName, cmdArgs) =>
-        `FOOBAR_${cmdName}: ${cmdArgs}`;
+        `FOOBAR_${cmdName}: ${cmdArgs[0]}`;
       before(() => {
         const config: IORedisInstrumentationConfig = {
           dbStatementSerializer,
@@ -960,7 +960,7 @@ describe('ioredis', () => {
     describe('setConfig - custom dbStatementSerializer config', () => {
       const dbStatementSerializer = (
         cmdName: string,
-        cmdArgs: string | Buffer | number | any[]
+        cmdArgs: Array<string | Buffer | number | any>
       ) => {
         return Array.isArray(cmdArgs) && cmdArgs.length
           ? `FooBar_${cmdName} ${cmdArgs.join(',')}`
