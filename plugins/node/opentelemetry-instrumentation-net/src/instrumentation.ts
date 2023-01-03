@@ -112,9 +112,12 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
   ) {
     const tlsSpan = this.tracer.startSpan('tls.connect');
 
-    const netSpan = context.with(trace.setSpan(context.active(), tlsSpan), () => {
-      return this._startSpan(options, socket);
-    });
+    const netSpan = context.with(
+      trace.setSpan(context.active(), tlsSpan),
+      () => {
+        return this._startSpan(options, socket);
+      }
+    );
 
     const otelTlsSpanListener = () => {
       const peerCertificate = socket.getPeerCertificate(true);

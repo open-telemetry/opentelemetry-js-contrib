@@ -109,8 +109,14 @@ export function assertAttrib(span: ReadableSpan, attrib: string, value: any) {
   assert.strictEqual(span.attributes[attrib], value);
 }
 
-export function assertParentChild(parentSpan: ReadableSpan, childSpan: ReadableSpan) {
-  assert.strictEqual(childSpan.spanContext().traceId, parentSpan.spanContext().traceId);
+export function assertParentChild(
+  parentSpan: ReadableSpan,
+  childSpan: ReadableSpan
+) {
+  assert.strictEqual(
+    childSpan.spanContext().traceId,
+    parentSpan.spanContext().traceId
+  );
   assert.strictEqual(childSpan.parentSpanId, parentSpan.spanContext().spanId);
 }
 
