@@ -41,12 +41,12 @@ type FS = typeof fs;
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
-export function indexFs(fs: FS, member: FMember): { fs: FS | any; fName: any } {
+export function indexFs(fs: FS, member: FMember): { objectToPatch: any; functionNameToPatch: string } {
   if (Array.isArray(member)) {
-    const [K, L] = member;
-    return { fs: fs[K], fName: L };
+    const [functionObject, functionNameToPatch] = member;
+    return { objectToPatch: fs[functionObject], functionNameToPatch };
   } else {
-    return { fs, fName: member };
+    return { objectToPatch: fs, functionNameToPatch: member };
   }
 }
 export function memberToDisplayName(member: FMember): string {
@@ -71,35 +71,35 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         (fs: FS) => {
           this._diag.debug('Applying patch for fs');
           for (const fName of SYNC_FUNCTIONS) {
-            const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, fName);
+            const { objectToPatch, functionNameToPatch} = indexFs(fs, fName);
 
-            if (isWrapped(fsToIndex[fNameToIndex])) {
-              this._unwrap(fsToIndex, fNameToIndex);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
             this._wrap(
-              fsToIndex,
-              fNameToIndex,
+              objectToPatch,
+              functionNameToPatch,
               <any>this._patchSyncFunction.bind(this, fName)
             );
           }
           for (const fName of CALLBACK_FUNCTIONS) {
-            const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, fName);
-            if (isWrapped(fsToIndex[fNameToIndex])) {
-              this._unwrap(fsToIndex, fNameToIndex);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
             if (fName === 'exists') {
               // handling separately because of the inconsistent cb style:
               // `exists` doesn't have error as the first argument, but the result
               this._wrap(
-                fsToIndex,
-                fNameToIndex,
+                objectToPatch,
+                functionNameToPatch,
                 <any>this._patchExistsCallbackFunction.bind(this, fName)
               );
               continue;
             }
             this._wrap(
-              fsToIndex,
-              fNameToIndex,
+              objectToPatch,
+              functionNameToPatch,
               <any>this._patchCallbackFunction.bind(this, fName)
             );
           }
@@ -121,15 +121,15 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           if (fs === undefined) return;
           this._diag.debug('Removing patch for fs');
           for (const fName of SYNC_FUNCTIONS) {
-            const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, fName);
-            if (isWrapped(fsToIndex[fNameToIndex])) {
-              this._unwrap(fsToIndex, fNameToIndex);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
           }
           for (const fName of CALLBACK_FUNCTIONS) {
-            const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, fName);
-            if (isWrapped(fsToIndex[fNameToIndex])) {
-              this._unwrap(fsToIndex, fNameToIndex);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
           }
           if (supportsPromises) {
