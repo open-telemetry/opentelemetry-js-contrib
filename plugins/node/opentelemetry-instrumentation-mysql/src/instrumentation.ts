@@ -33,12 +33,13 @@ import {
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql';
+import { AttributeNames } from './AttributeNames';
 import { MySQLInstrumentationConfig } from './types';
 import {
   getConnectionAttributes,
   getDbStatement,
+  arrayStringifyHelper,
   getSpanName,
-  defaultDbStatementSerializer,
 } from './utils';
 import { VERSION } from './version';
 
@@ -56,12 +57,8 @@ export class MySQLInstrumentation extends InstrumentationBase<
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
 
-  constructor(protected override _config: MySQLInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mysql', VERSION, _config);
-  }
-
-  override setConfig(config: MySQLInstrumentationConfig = {}) {
-    this._config = config;
+  constructor(config?: MySQLInstrumentationConfig) {
+    super('@opentelemetry/instrumentation-mysql', VERSION, config);
   }
 
   protected init() {
@@ -287,20 +284,23 @@ export class MySQLInstrumentation extends InstrumentationBase<
           values = [_valuesOrCallback];
         }
 
-        let dbStatement = '';
-        if (typeof thisPlugin._config.dbStatementSerializer === 'function') {
-          dbStatement = getDbStatement(query, format, values);
-          dbStatement = thisPlugin._config.dbStatementSerializer(dbStatement);
-        } else {
-          if (typeof query === 'string') {
-            dbStatement = getDbStatement(query, format, values);
-            dbStatement = defaultDbStatementSerializer(dbStatement);
-          } else {
-            dbStatement = query.sql;
-          }
-        }
+        span.setAttribute(
+          SemanticAttributes.DB_STATEMENT,
+          getDbStatement(query, format, values)
+        );
 
-        span.setAttribute(SemanticAttributes.DB_STATEMENT, dbStatement);
+        const instrumentationConfig: MySQLInstrumentationConfig = thisPlugin.getConfig();
+        if(instrumentationConfig.enhancedDatabaseReporting) {
+          if (typeof query === 'string') {
+            if(values)
+              span.setAttribute(AttributeNames.MYSQL_VALUES, arrayStringifyHelper(values));
+          } else {
+            // According to https://github.com/mysqljs/mysql#performing-queries
+            // The values argument will override the values in the option object.
+            span.setAttribute(AttributeNames.MYSQL_VALUES, arrayStringifyHelper(values || query.values));
+          }
+
+        }
 
         const cbIndex = Array.from(arguments).findIndex(
           arg => typeof arg === 'function'
