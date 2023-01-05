@@ -119,10 +119,7 @@ describe('gateway API handler', () => {
   const initializeHandler = (
     handler: string,
     config: AwsLambdaInstrumentationConfig = {
-      detectApiGateway: {
-        enable: true,
-        errorCodes: [400, 500],
-      },
+      detectTrigger: true,
     }
   ) => {
     process.env._HANDLER = handler;
@@ -279,12 +276,10 @@ describe('gateway API handler', () => {
     });
   });
 
-  describe("Filtering error codes", async() => {
-
-    it("Span should not fail when error code not in list", async() => {
-
+  describe('Filtering error codes', async () => {
+    it('Span should not fail when error code not in list', async () => {
       initializeHandler('lambda-test/gateway.error400', {
-        detectApiGateway: { enable: true, errorCodes: [500]}
+        detectTrigger: true,
       });
 
       const result = await lambdaRequire('lambda-test/gateway').error400(
@@ -296,13 +291,12 @@ describe('gateway API handler', () => {
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
       const [_, spanGateway] = spans;
-      assert.strictEqual( spanGateway.status.code, SpanStatusCode.OK );
-    })
+      assert.strictEqual(spanGateway.status.code, SpanStatusCode.OK);
+    });
 
-    it("Span fail when matching regex", async() => {
-
+    it('Span fail when matching regex', async () => {
       initializeHandler('lambda-test/gateway.error400', {
-        detectApiGateway: { enable: true, errorCodes: [/^4[0-9]{2}$/]}
+        detectTrigger: true,
       });
 
       const result = await lambdaRequire('lambda-test/gateway').error400(
@@ -314,14 +308,12 @@ describe('gateway API handler', () => {
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
       const [_, spanGateway] = spans;
-      assert.strictEqual( spanGateway.status.code, SpanStatusCode.ERROR );
-    })
+      assert.strictEqual(spanGateway.status.code, SpanStatusCode.ERROR);
+    });
 
-    
-    it("Span should have unset status when no error code is provided", async() => {
-
+    it('Span should have unset status when no error code is provided', async () => {
       initializeHandler('lambda-test/gateway.error400', {
-        detectApiGateway: { enable: true }
+        detectTrigger: true,
       });
 
       const result = await lambdaRequire('lambda-test/gateway').error400(
@@ -333,8 +325,7 @@ describe('gateway API handler', () => {
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
       const [_, spanGateway] = spans;
-      assert.strictEqual( spanGateway.status.code, SpanStatusCode.UNSET );
-    })
-
-  })
+      assert.strictEqual(spanGateway.status.code, SpanStatusCode.UNSET);
+    });
+  });
 });

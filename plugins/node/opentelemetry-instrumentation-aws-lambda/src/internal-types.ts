@@ -16,8 +16,26 @@
 import { Handler } from 'aws-lambda';
 
 export const enum TriggerOrigin {
-    API_GATEWAY
+  API_GATEWAY,
+  SQS,
 }
+
+export type SQSEvent = {
+  Records: SQSMessage[];
+};
+
+export type SQSMessage = {
+  messageId: string;
+  receiptHandle: string;
+  body: unknown;
+  attributes?: Record<string, string>;
+  messageAttributes?: Record<string, string>;
+  messageSystemAttributes?: Record<string, string>;
+  md5OfBody?: string;
+  eventSource?: string;
+  eventSourceARN: string;
+  awsRegion: string;
+};
 
 export type ApiGatewayEvent = {
   resource: string;
