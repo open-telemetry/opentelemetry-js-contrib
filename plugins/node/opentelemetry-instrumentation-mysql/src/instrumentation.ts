@@ -40,8 +40,10 @@ import {
   getDbStatement,
   arrayStringifyHelper,
   getSpanName,
+  getPoolName,
 } from './utils';
 import { VERSION } from './version';
+import { UpDownCounter, MeterProvider } from '@opentelemetry/api';
 
 type formatType = typeof mysqlTypes.format;
 
@@ -56,9 +58,27 @@ export class MySQLInstrumentation extends InstrumentationBase<
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
+  private _connectionsUsage!: UpDownCounter;
 
   constructor(config?: MySQLInstrumentationConfig) {
     super('@opentelemetry/instrumentation-mysql', VERSION, config);
+    this._setMetricInstruments();
+  }
+
+  override setMeterProvider(meterProvider: MeterProvider) {
+    super.setMeterProvider(meterProvider);
+    this._setMetricInstruments();
+  }
+
+  private _setMetricInstruments() {
+    this._connectionsUsage = this.meter.createUpDownCounter(
+      'db.client.connections.usage', //TODO:: use semantic convention
+      {
+        description:
+          'The number of connections that are currently in the state referenced by the attribute "state".',
+        unit: '{connections}',
+      }
+    );
   }
 
   protected init() {
@@ -148,8 +168,31 @@ export class MySQLInstrumentation extends InstrumentationBase<
           'getConnection',
           thisPlugin._patchGetConnection(pool, format)
         );
+        thisPlugin._wrap(pool, 'end', thisPlugin._patchPoolEnd(pool));
+        thisPlugin._setPoolcallbacks(pool, thisPlugin, '');
 
         return pool;
+      };
+    };
+  }
+  private _patchPoolEnd(pool: any) {
+    return (originalPoolEnd: Function) => {
+      const thisPlugin = this;
+      diag.debug('MySQLInstrumentation#patch: patched mysql pool end');
+      return function end(callback?: unknown) {
+        const nAll = (pool as any)._allConnections.length;
+        const nFree = (pool as any)._freeConnections.length;
+        const nUsed = nAll - nFree;
+        const poolName = getPoolName(pool);
+        thisPlugin._connectionsUsage.add(-nUsed, {
+          state: 'used',
+          name: poolName,
+        });
+        thisPlugin._connectionsUsage.add(-nFree, {
+          state: 'idle',
+          name: poolName,
+        });
+        originalPoolEnd.apply(pool, arguments);
       };
     };
   }
@@ -168,8 +211,33 @@ export class MySQLInstrumentation extends InstrumentationBase<
           'getConnection',
           thisPlugin._patchGetConnection(cluster, format)
         );
+        thisPlugin._wrap(cluster, 'add', thisPlugin._patchAdd(cluster, format));
 
         return cluster;
+      };
+    };
+  }
+  private _patchAdd(cluster: mysqlTypes.PoolCluster, format: formatType) {
+    return (originalAdd: Function) => {
+      const thisPlugin = this;
+      diag.debug('MySQLInstrumentation#patch: patched mysql pool cluster add');
+      return function add(id: string, config: unknown) {
+        // Unwrap if unpatch has been called
+        if (!thisPlugin['_enabled']) {
+          thisPlugin._unwrap(cluster, 'add');
+          return originalAdd.apply(cluster, arguments);
+        }
+        originalAdd.apply(cluster, arguments);
+        const nodes = cluster['_nodes' as keyof mysqlTypes.PoolCluster] as any;
+        if (nodes) {
+          const nodeId =
+            typeof id === 'object'
+              ? 'CLUSTER::' + (cluster as any)._lastId
+              : String(id);
+
+          const pool = nodes[nodeId].pool;
+          thisPlugin._setPoolcallbacks(pool, thisPlugin, id);
+        }
       };
     };
   }
@@ -184,6 +252,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
       diag.debug(
         'MySQLInstrumentation#patch: patched mysql pool getConnection'
       );
+
       return function getConnection(
         arg1?: unknown,
         arg2?: unknown,
@@ -367,5 +436,42 @@ export class MySQLInstrumentation extends InstrumentationBase<
         );
       };
     };
+  }
+  private _setPoolcallbacks(
+    pool: mysqlTypes.Pool,
+    thisPlugin: MySQLInstrumentation,
+    id: string
+  ) {
+    //TODO:: use semantic convention
+    const poolName = id || getPoolName(pool);
+
+    pool.on('connection', connection => {
+      thisPlugin._connectionsUsage.add(1, {
+        state: 'idle',
+        name: poolName,
+      });
+    });
+
+    pool.on('acquire', connection => {
+      thisPlugin._connectionsUsage.add(-1, {
+        state: 'idle',
+        name: poolName,
+      });
+      thisPlugin._connectionsUsage.add(1, {
+        state: 'used',
+        name: poolName,
+      });
+    });
+
+    pool.on('release', connection => {
+      thisPlugin._connectionsUsage.add(-1, {
+        state: 'used',
+        name: poolName,
+      });
+      thisPlugin._connectionsUsage.add(1, {
+        state: 'idle',
+        name: poolName,
+      });
+    });
   }
 }
