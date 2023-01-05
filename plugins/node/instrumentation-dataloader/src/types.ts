@@ -23,4 +23,13 @@ export interface DataloaderInstrumentationConfig extends InstrumentationConfig {
    * (default: true)
    */
   requireParentSpan?: boolean;
+
+  /**
+   * Generate a name to be used for a specific instance of dataloader,
+   * this appears in the span names that the dataloader creates
+   * The name is generated lazily, when it is first needed, and
+   * then cached for later spans
+   * (default: undefined, meaning no name is generated)
+   */
+  dataloaderNameGenerator?: (dataloader: object) => string;
 }

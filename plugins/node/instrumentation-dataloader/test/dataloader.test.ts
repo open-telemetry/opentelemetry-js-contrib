@@ -140,6 +140,26 @@ describe('DataloaderInstrumentation', () => {
         message: 'Error message',
       });
     });
+
+    it('correctly uses a generated name in spans', async () => {
+      instrumentation.setConfig({
+        dataloaderNameGenerator: (object) => {
+          // This equality will allow applications to for example determine the name
+          // based on some global context they are aware of
+          assert.strictEqual(object, dataloader);
+          return 'test-name';
+        },
+      });
+
+      assert.strictEqual(await dataloader.load('test'), 0);
+
+      // We should have exactly two spans (one for .load and one for the following batch)
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
+      const [batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(loadSpan.name, 'dataloader.load test-name');
+      assert.strictEqual(batchSpan.name, 'dataloader.batch test-name');
+    });
   });
 
   describe('loadMany', () => {
@@ -234,6 +254,30 @@ describe('DataloaderInstrumentation', () => {
       assert.deepStrictEqual(loadManySpan.status, {
         code: SpanStatusCode.UNSET,
       });
+    });
+
+
+    it('correctly uses a generated name in spans', async () => {
+      instrumentation.setConfig({
+        dataloaderNameGenerator: (object) => {
+          // This equality will allow applications to for example determine the name
+          // based on some global context they are aware of
+          assert.strictEqual(object, dataloader);
+          return 'test-name';
+        },
+      });
+
+      assert.deepStrictEqual(await dataloader.loadMany(['test']), [0]);
+
+      // We should have exactly three spans (one for .loadMany, one for the underlying .load
+      // and one for the following batch)
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
+      const [batchSpan, loadSpan, loadManySpan] =
+        memoryExporter.getFinishedSpans();
+
+      assert.strictEqual(batchSpan.name, 'dataloader.batch test-name');
+      assert.strictEqual(loadManySpan.name, 'dataloader.loadMany test-name');
+      assert.strictEqual(loadSpan.name, 'dataloader.load test-name');
     });
   });
 
