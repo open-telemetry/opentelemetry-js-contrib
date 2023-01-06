@@ -90,7 +90,9 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     return hasParentSpan || !config.requireParentSpan;
   }
 
-  private getDataloaderName(dataloader: DataloaderInternal): string | undefined {
+  private getDataloaderName(
+    dataloader: DataloaderInternal
+  ): string | undefined {
     if (dataloader._generatedName !== undefined) {
       return dataloader._generatedName;
     }
@@ -105,7 +107,10 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     return generatedName;
   }
 
-  private getSpanName(dataloader: DataloaderInternal, operation: 'load' | 'loadMany' | 'batch'): string {
+  private getSpanName(
+    dataloader: DataloaderInternal,
+    operation: 'load' | 'loadMany' | 'batch'
+  ): string {
     const dataloaderName = this.getDataloaderName(dataloader);
     if (dataloaderName === undefined) {
       return `${MODULE_NAME}.${operation}`;
@@ -138,7 +143,10 @@ export class DataloaderInstrumentation extends InstrumentationBase {
           this: DataloaderInternal,
           ...args: Parameters<Dataloader.BatchLoadFn<unknown, unknown>>
         ) {
-          if (!instrumentation.isEnabled() || !instrumentation.shouldCreateSpans()) {
+          if (
+            !instrumentation.isEnabled() ||
+            !instrumentation.shouldCreateSpans()
+          ) {
             return original.call(this, ...args);
           }
 

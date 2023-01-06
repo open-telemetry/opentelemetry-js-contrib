@@ -143,7 +143,7 @@ describe('DataloaderInstrumentation', () => {
 
     it('correctly uses a generated name in spans', async () => {
       instrumentation.setConfig({
-        dataloaderNameGenerator: (object) => {
+        dataloaderNameGenerator: object => {
           // This equality will allow applications to for example determine the name
           // based on some global context they are aware of
           assert.strictEqual(object, dataloader);
@@ -256,10 +256,9 @@ describe('DataloaderInstrumentation', () => {
       });
     });
 
-
     it('correctly uses a generated name in spans', async () => {
       instrumentation.setConfig({
-        dataloaderNameGenerator: (object) => {
+        dataloaderNameGenerator: object => {
           // This equality will allow applications to for example determine the name
           // based on some global context they are aware of
           assert.strictEqual(object, dataloader);
