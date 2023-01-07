@@ -53,17 +53,23 @@ import {
   Callback,
   Context,
   Handler,
+  SQSEvent,
 } from 'aws-lambda';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
 import {
   ApiGatewayEvent,
+  GatewayResult,
+  isApiGatewayEvent,
+  isGatewayResult,
+  isSQSEvent,
   LambdaModule,
-  SQSEvent,
   TriggerOrigin,
 } from './internal-types';
 import { strict } from 'assert';
+import { isDefined } from './utils';
+import { SQSRecord } from 'aws-lambda/trigger/sqs';
 
 const awsPropagator = new AWSXRayPropagator();
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
@@ -76,12 +82,6 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 };
 
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
-export const traceContextSystemAttributeKey = 'AWSTraceHeader';
-type GatewayResult = {
-  statusCode: number;
-  headers?: Record<string, string>;
-  body?: object | string;
-};
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _forceFlush?: () => Promise<void>;
@@ -89,6 +89,26 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+  }
+
+  private sqsAttributes: Attributes = {
+    [SemanticAttributes.FAAS_TRIGGER]: 'pubsub',
+    [SemanticAttributes.MESSAGING_OPERATION]: 'process',
+    [SemanticAttributes.MESSAGING_SYSTEM]: 'AmazonSQS',
+    'messaging.source.kind': 'queue',
+  };
+
+  private static getSQSRecordLink(record: SQSRecord): Link | undefined {
+    const { AWSTraceHeader } = record?.attributes;
+    if (!AWSTraceHeader) return undefined;
+    const extractedContext = awsPropagator.extract(
+      otelContext.active(),
+      { [AWSXRAY_TRACE_ID_HEADER]: AWSTraceHeader },
+      headerGetter
+    );
+    const context = trace.getSpan(extractedContext)?.spanContext();
+    if (!context) return undefined;
+    return { context };
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
@@ -179,10 +199,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       let wrapperSpan: Span | undefined;
 
       if (plugin._config.detectTrigger !== false) {
-        if (AwsLambdaInstrumentation.isApiGatewayEvent(event)) {
+        if (isApiGatewayEvent(event)) {
           plugin.triggerOrigin = TriggerOrigin.API_GATEWAY;
           wrapperSpan = plugin._getApiGatewaySpan(event, parent);
-        } else if (AwsLambdaInstrumentation.isSQSEvent(event)) {
+        } else if (isSQSEvent(event)) {
           plugin.triggerOrigin = TriggerOrigin.SQS;
           wrapperSpan = plugin._getSQSSpan(event, parent);
         }
@@ -350,11 +370,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       multiValueHeaders,
       pathParameters,
     } = event;
-    const { httpMethod, domainName, path, accountId, identity } =
+    const { httpMethod, domainName, path, accountId, identity, resourcePath } =
       requestContext;
     const attributes: Attributes = {
       [SemanticAttributes.HTTP_METHOD]: httpMethod,
-      [SemanticAttributes.HTTP_ROUTE]: resource,
+      [SemanticAttributes.HTTP_ROUTE]: resourcePath,
       [SemanticAttributes.HTTP_URL]: domainName + path,
       [SemanticAttributes.HTTP_SERVER_NAME]: domainName,
       [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: accountId,
@@ -412,13 +432,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _getSQSSpan(event: SQSEvent, parent: OtelContext) {
     const { Records: records } = event;
 
-    const attributes: Attributes = {
-      [SemanticAttributes.FAAS_TRIGGER]: 'pubsub',
-      [SemanticAttributes.MESSAGING_OPERATION]: 'process',
-      [SemanticAttributes.MESSAGING_SYSTEM]: 'AmazonSQS',
-      'messaging.source.kind': 'queue',
-    };
-
     const sources = new Set(
       records.map(({ eventSourceARN }) => eventSourceARN)
     );
@@ -426,26 +439,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     const source =
       sources.size === 1 ? sources.values()!.next()!.value : 'multiple_sources';
 
-    function isDefined<T>(x: T | undefined): x is T {
-      return x !== undefined;
-    }
+    const attributes: Attributes = {
+      ...this.sqsAttributes,
+      'messaging.source.name': source,
+      'messaging.batch.message_count': records.length,
+    };
 
-    const links: Link[] = records
-      .map(
-        message =>
-          message?.messageSystemAttributes?.[traceContextSystemAttributeKey]
-      )
-      .filter(isDefined)
-      .map(context =>
-        awsPropagator.extract(
-          otelContext.active(),
-          { [AWSXRAY_TRACE_ID_HEADER]: context },
-          headerGetter
-        )
-      )
-      .map(context => trace.getSpan(context)?.spanContext())
-      .filter(isDefined)
-      .map(context => ({ context }));
+    let links: Link[] | undefined = records
+      .map(AwsLambdaInstrumentation.getSQSRecordLink)
+      .filter(isDefined);
+
+    links = links?.length === 0 ? undefined : links;
 
     return this.tracer.startSpan(
       `${source} process`,
@@ -487,12 +491,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   }
 
   private _endAPIGatewaySpan(span: Span, lambdaResponse: GatewayResult | any) {
-    if (!AwsLambdaInstrumentation.isGatewayResult(lambdaResponse)) {
+    if (!isGatewayResult(lambdaResponse)) {
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: 'Lambda return malformed value',
       });
-      span.end();
       return;
     }
 
@@ -628,18 +631,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       return parts[4];
     }
     return undefined;
-  }
-
-  private static isApiGatewayEvent(event: any): event is ApiGatewayEvent {
-    return 'requestContext' in event;
-  }
-
-  private static isSQSEvent(event: any): event is SQSEvent {
-    return 'Records' in event && Array.isArray(event.Records);
-  }
-
-  private static isGatewayResult(result: any): result is GatewayResult {
-    return 'statusCode' in result && typeof result.statusCode === 'number';
   }
 
   private static _defaultEventContextExtractor(event: any): OtelContext {

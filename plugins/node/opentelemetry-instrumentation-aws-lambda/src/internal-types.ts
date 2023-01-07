@@ -13,44 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Handler } from 'aws-lambda';
+import { Handler, SQSEvent } from 'aws-lambda';
 
 export const enum TriggerOrigin {
   API_GATEWAY,
   SQS,
 }
 
-export type SQSEvent = {
-  Records: SQSMessage[];
-};
-
-export type SQSMessage = {
-  messageId: string;
-  receiptHandle: string;
-  body: unknown;
-  attributes?: Record<string, string>;
-  messageAttributes?: Record<string, string>;
-  messageSystemAttributes?: Record<string, string>;
-  md5OfBody?: string;
-  eventSource?: string;
-  eventSourceARN: string;
-  awsRegion: string;
-};
-
 export type ApiGatewayEvent = {
   resource: string;
   path: string;
   httpMethod: string;
   requestContext: ApiGatewayRequestContext;
-  headers: Record<string, string>;
-  multiValueHeaders: Record<string, string[]>;
+  headers: Record<string, string> | null;
+  multiValueHeaders: Record<string, string[]> | null;
   queryStringParameters: string | null;
-  multiValueQueryStringParameters: Record<string, string[]>;
+  multiValueQueryStringParameters: Record<string, string[]> | null;
   pathParameters: any;
   stageVariables: any;
   body: string;
   isBase64Encoded: boolean;
 };
+
+export function isApiGatewayEvent(event: any): event is ApiGatewayEvent {
+  return (
+    event &&
+    typeof event === 'object' &&
+    'resource' in event &&
+    typeof event.resource === 'string' &&
+    'requestContext' in event
+  );
+}
 
 export type ApiGatewayRequestContext = {
   accountId: string;
@@ -79,7 +72,7 @@ export type ApiGatewayRequestContext = {
     userAgent: string;
     userArn: string | null;
     clientCert: any;
-  };
+  } | null;
   path: string;
   protocol: string;
   requestId: string;
@@ -90,5 +83,29 @@ export type ApiGatewayRequestContext = {
 
   resourcePath: any;
 };
+
+export type GatewayResult = {
+  statusCode: number;
+  headers?: Record<string, string>;
+  body?: object | string;
+};
+
+export function isGatewayResult(result: any): result is GatewayResult {
+  return (
+    result &&
+    typeof result === 'object' &&
+    'statusCode' in result &&
+    typeof result.statusCode === 'number'
+  );
+}
+
+export function isSQSEvent(event: any): event is SQSEvent {
+  return (
+    event &&
+    typeof event === 'object' &&
+    'Records' in event &&
+    Array.isArray(event.Records)
+  );
+}
 
 export type LambdaModule = Record<string, Handler>;

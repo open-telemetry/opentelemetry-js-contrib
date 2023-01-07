@@ -37,19 +37,33 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { assertSpanSuccess } from './lambda-handler.test';
+import { ApiGatewayEvent } from '../../src/internal-types';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
 provider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
 provider.register();
 
-const event = {
+const event: ApiGatewayEvent = {
+  resource: '/my/resource',
+  path: '/my/path',
+  httpMethod: 'POST',
+  headers: {},
+  multiValueHeaders: {},
+  queryStringParameters: null,
+  multiValueQueryStringParameters: null,
+  pathParameters: null,
+  stageVariables: null,
+  body: '',
+  isBase64Encoded: false,
   requestContext: {
+    identity: null,
     accountId: '123456789012',
     apiId: 'id',
     authorizer: {
       claims: null,
       scopes: null,
+      principalId: null,
     },
     domainName: 'id.execute-api.us-east-1.amazonaws.com',
     domainPrefix: 'id',
@@ -59,8 +73,8 @@ const event = {
     protocol: 'HTTP/1.1',
     requestId: 'id=',
     requestTime: '04/Mar/2020:19:15:17 +0000',
-    requestTimeEpoch: 1583349317135,
-    resourceId: null,
+    requestTimeEpoch: '1583349317135',
+    resourceId: 'my-resource',
     resourcePath: '/my/path',
     stage: '$default',
   },
@@ -68,10 +82,7 @@ const event = {
 
 const assertGatewaySpanSuccess = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
-  assert.strictEqual(
-    span.name,
-    event.requestContext.domainName + event.requestContext.path
-  );
+  assert.strictEqual(span.name, event.resource);
 
   assert.strictEqual(span.status.code, SpanStatusCode.OK);
   assert.strictEqual(span.status.message, undefined);
@@ -97,10 +108,7 @@ const assertGatewaySpanSuccess = (span: ReadableSpan) => {
 
 const assertGatewaySpanFailure = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
-  assert.strictEqual(
-    span.name,
-    event.requestContext.domainName + event.requestContext.path
-  );
+  assert.strictEqual(span.name, event.resource);
 
   assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
 };
@@ -274,58 +282,79 @@ describe('gateway API handler', () => {
       const [_, spanGateway] = spans;
       assert.strictEqual(spanGateway.status.message, 'handler error');
     });
-  });
 
-  describe('Filtering error codes', async () => {
-    it('Span should not fail when error code not in list', async () => {
-      initializeHandler('lambda-test/gateway.error400', {
-        detectTrigger: true,
-      });
+    it('gateway span contains string response body when returned from lambda', async () => {
+      initializeHandler('lambda-test/gateway.stringBody');
 
-      const result = await lambdaRequire('lambda-test/gateway').error400(
-        event,
-        ctx
-      );
+      await lambdaRequire('lambda-test/gateway').stringBody(event, ctx);
 
-      assert.strictEqual(result.statusCode, 400);
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
       const [_, spanGateway] = spans;
-      assert.strictEqual(spanGateway.status.code, SpanStatusCode.OK);
+      assert.strictEqual(
+        spanGateway.attributes['http.response.body'],
+        'string-response'
+      );
     });
 
-    it('Span fail when matching regex', async () => {
-      initializeHandler('lambda-test/gateway.error400', {
-        detectTrigger: true,
-      });
+    it('gateway span contain stringified json response body when returned from lambda', async () => {
+      initializeHandler('lambda-test/gateway.jsonBody');
 
-      const result = await lambdaRequire('lambda-test/gateway').error400(
-        event,
-        ctx
-      );
+      await lambdaRequire('lambda-test/gateway').jsonBody(event, ctx);
 
-      assert.strictEqual(result.statusCode, 400);
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
       const [_, spanGateway] = spans;
-      assert.strictEqual(spanGateway.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(
+        spanGateway.attributes['http.response.body'],
+        JSON.stringify({ val: 'json-response' })
+      );
     });
 
-    it('Span should have unset status when no error code is provided', async () => {
-      initializeHandler('lambda-test/gateway.error400', {
-        detectTrigger: true,
-      });
+    it('gateway span should not be added if body does not include resource', async () => {
+      initializeHandler('lambda-test/gateway.handler');
 
-      const result = await lambdaRequire('lambda-test/gateway').error400(
-        event,
+      const { resource, ...invalidEvent } = event;
+      const result = await lambdaRequire('lambda-test/gateway').handler(
+        invalidEvent,
         ctx
       );
 
-      assert.strictEqual(result.statusCode, 400);
+      assert.strictEqual(result.statusCode, 200);
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+    });
+
+    it('gateway span should not be added if body does not include requestContext', async () => {
+      initializeHandler('lambda-test/gateway.handler');
+
+      const { requestContext, ...invalidEvent } = event;
+      const result = await lambdaRequire('lambda-test/gateway').handler(
+        invalidEvent,
+        ctx
+      );
+
+      assert.strictEqual(result.statusCode, 200);
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+    });
+
+    it('gateway span should reject if response is lambda not valid gateway response', async () => {
+      initializeHandler('lambda-test/gateway.invalidApiGatewayResponse');
+
+      await lambdaRequire(
+        'lambda-test/gateway'
+      ).invalidApiGatewayResponse(event, ctx);
+
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 2);
       const [_, spanGateway] = spans;
-      assert.strictEqual(spanGateway.status.code, SpanStatusCode.UNSET);
+      assertGatewaySpanFailure(spanGateway);
+
+      assert.strictEqual(
+        spanGateway.attributes[SemanticAttributes.HTTP_STATUS_CODE],
+        undefined
+      );
     });
   });
 });
