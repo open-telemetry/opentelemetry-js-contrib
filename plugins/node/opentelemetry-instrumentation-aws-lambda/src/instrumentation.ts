@@ -82,7 +82,7 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 };
 
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
-export const xForwardProto = 'x-forward-proto';
+export const xForwardProto = 'X-Forwarded-Proto';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _forceFlush?: () => Promise<void>;
