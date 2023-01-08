@@ -52,6 +52,38 @@ function makeRequest() {
     http.get({
       host: 'localhost',
       port: 8080,
+      path: '/pool/query-with-2-connections',
+    }, (response) => {
+      const body: any[] = [];
+      response.on('data', (chunk) => body.push(chunk));
+      response.on('end', () => {
+        responses += 1;
+        console.log(body.toString());
+        if (responses === queries) span.end();
+      });
+    });
+  });
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+    queries += 1;
+    http.get({
+      host: 'localhost',
+      port: 8080,
+      path: '/pool/query-2-pools',
+    }, (response) => {
+      const body: any[] = [];
+      response.on('data', (chunk) => body.push(chunk));
+      response.on('end', () => {
+        responses += 1;
+        console.log(body.toString());
+        if (responses === queries) span.end();
+      });
+    });
+  });
+  api.context.with(api.trace.setSpan(api.ROOT_CONTEXT, span), () => {
+    queries += 1;
+    http.get({
+      host: 'localhost',
+      port: 8080,
       path: '/cluster/query',
     }, (response) => {
       const body: any[] = [];

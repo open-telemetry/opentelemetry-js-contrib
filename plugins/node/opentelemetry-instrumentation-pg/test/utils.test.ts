@@ -33,7 +33,7 @@ import * as assert from 'assert';
 import * as pg from 'pg';
 import { PgInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { PgClientExtended, NormalizedQueryConfig } from '../src/internal-types';
+import { PgClientExtended } from '../src/internal-types';
 import * as utils from '../src/utils';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -73,6 +73,59 @@ describe('utils.ts', () => {
   afterEach(() => {
     memoryExporter.reset();
     context.disable();
+  });
+
+  describe('.getQuerySpanName()', () => {
+    const dummyQuery = {
+      text: 'SELECT $1',
+      values: ['hello'],
+      name: 'select-placeholder-val',
+    };
+
+    it('uses prepared statement name when given, over query text', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', dummyQuery),
+        'pg.query:select-placeholder-val dbName'
+      );
+    });
+
+    it('falls back to parsing query text when no (valid) name is available', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', { ...dummyQuery, name: undefined }),
+        'pg.query:SELECT dbName'
+      );
+    });
+
+    it('normalizes operation names parsed from query text', () => {
+      const queryUpperCase = { text: dummyQuery.text.toUpperCase() };
+      const queryLowerCase = { text: dummyQuery.text.toLowerCase() };
+
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', queryUpperCase),
+        utils.getQuerySpanName('dbName', queryLowerCase)
+      );
+    });
+
+    it('ignores trailing semicolons when parsing operation names', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('dbName', { text: 'COMMIT;' }),
+        'pg.query:COMMIT dbName'
+      );
+    });
+
+    it('omits db name if missing', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName(undefined, dummyQuery),
+        'pg.query:select-placeholder-val'
+      );
+    });
+
+    it('should omit all info if the queryConfig is invalid', () => {
+      assert.strictEqual(
+        utils.getQuerySpanName('db-name-ignored', undefined),
+        'pg.query'
+      );
+    });
   });
 
   describe('.startSpan()', () => {
@@ -131,7 +184,7 @@ describe('utils.ts', () => {
   });
 
   describe('.handleConfigQuery()', () => {
-    const queryConfig: NormalizedQueryConfig = {
+    const queryConfig = {
       text: 'SELECT $1::text',
       values: ['0'],
     };
@@ -161,47 +214,6 @@ describe('utils.ts', () => {
         tracer,
         extPluginConfig,
         queryConfig
-      );
-      querySpan.end();
-
-      const readableSpan = getLatestSpan();
-
-      const pgValues = readableSpan.attributes[AttributeNames.PG_VALUES];
-      assert.strictEqual(pgValues, '[0]');
-    });
-  });
-
-  describe('.handleParameterizedQuery()', () => {
-    const query = 'SELECT $1::text';
-    const values = ['0'];
-
-    it('does not track pg.values by default', async () => {
-      const querySpan = utils.handleParameterizedQuery.call(
-        client,
-        tracer,
-        instrumentationConfig,
-        query,
-        values
-      );
-      querySpan.end();
-
-      const readableSpan = getLatestSpan();
-
-      const pgValues = readableSpan.attributes[AttributeNames.PG_VALUES];
-      assert.strictEqual(pgValues, undefined);
-    });
-
-    it('tracks pg.values if enabled explicitly', async () => {
-      const extPluginConfig: PgInstrumentationConfig & InstrumentationConfig = {
-        ...instrumentationConfig,
-        enhancedDatabaseReporting: true,
-      };
-      const querySpan = utils.handleParameterizedQuery.call(
-        client,
-        tracer,
-        extPluginConfig,
-        query,
-        values
       );
       querySpan.end();
 

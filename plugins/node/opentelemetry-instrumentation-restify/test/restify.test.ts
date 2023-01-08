@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { context, trace } from '@opentelemetry/api';
+import { context, trace, Span } from '@opentelemetry/api';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -25,6 +26,7 @@ import {
 
 import RestifyInstrumentation from '../src';
 import * as types from '../src/internal-types';
+import { RestifyRequestInfo } from '../src/types';
 const plugin = new RestifyInstrumentation();
 
 import * as semver from 'semver';
@@ -486,6 +488,85 @@ describe('Restify Instrumentation', () => {
       const res = await httpRequest.get(`http://localhost:${port}/route/bar`);
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
       assert.strictEqual(res, '{"route":"bar"}');
+    });
+
+    describe('using requestHook in config', () => {
+      it('calls requestHook provided function when set in config', async () => {
+        const requestHook = (span: Span, info: RestifyRequestInfo) => {
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
+          span.setAttribute('restify.layer', info.layerType);
+        };
+
+        plugin.setConfig({
+          ...plugin.getConfig(),
+          requestHook,
+        });
+
+        const rootSpan = tracer.startSpan('clientSpan');
+
+        await context.with(
+          trace.setSpan(context.active(), rootSpan),
+          async () => {
+            await httpRequest.get(`http://localhost:${port}/route/foo`);
+            rootSpan.end();
+            assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
+
+            {
+              // span from get
+              const span = memoryExporter.getFinishedSpans()[2];
+              assert.notStrictEqual(span, undefined);
+              assert.strictEqual(
+                span.attributes[SemanticAttributes.HTTP_METHOD],
+                'GET'
+              );
+              assert.strictEqual(
+                span.attributes['restify.layer'],
+                'request_handler'
+              );
+            }
+          }
+        );
+      });
+
+      it('does not propagate an error from a requestHook that throws exception', async () => {
+        const requestHook = (span: Span, info: RestifyRequestInfo) => {
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
+
+          throw Error('error thrown in requestHook');
+        };
+
+        plugin.setConfig({
+          ...plugin.getConfig(),
+          requestHook,
+        });
+
+        const rootSpan = tracer.startSpan('clientSpan');
+
+        await context.with(
+          trace.setSpan(context.active(), rootSpan),
+          async () => {
+            await httpRequest.get(`http://localhost:${port}/route/foo`);
+            rootSpan.end();
+            assert.strictEqual(memoryExporter.getFinishedSpans().length, 4);
+
+            {
+              // span from get
+              const span = memoryExporter.getFinishedSpans()[2];
+              assert.notStrictEqual(span, undefined);
+              assert.strictEqual(
+                span.attributes[SemanticAttributes.HTTP_METHOD],
+                'GET'
+              );
+            }
+          }
+        );
+      });
     });
   });
 
