@@ -82,6 +82,7 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 };
 
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
+export const xForwardProto = 'x-forward-proto';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _forceFlush?: () => Promise<void>;
@@ -369,10 +370,12 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       multiValueQueryStringParameters,
       multiValueHeaders,
       pathParameters,
+      headers,
     } = event;
     const { httpMethod, domainName, path, accountId, identity, resourcePath } =
       requestContext;
     const attributes: Attributes = {
+      [SemanticAttributes.FAAS_TRIGGER]: 'http',
       [SemanticAttributes.HTTP_METHOD]: httpMethod,
       [SemanticAttributes.HTTP_ROUTE]: resourcePath,
       [SemanticAttributes.HTTP_URL]: domainName + path,
@@ -382,6 +385,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     if (identity?.sourceIp) {
       attributes[SemanticAttributes.NET_PEER_IP] = identity.sourceIp;
+    }
+
+    if (headers?.[xForwardProto]) {
+      attributes[SemanticAttributes.HTTP_SCHEME] = headers[xForwardProto];
     }
 
     if (multiValueQueryStringParameters) {
