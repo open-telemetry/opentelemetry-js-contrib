@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span } from '@opentelemetry/api';
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import type * as amqp from 'amqplib';
+import { Span } from "@opentelemetry/api";
+import { InstrumentationConfig } from "@opentelemetry/instrumentation";
+import { ConsumeMessage, Options } from "./internal-types";
 
 export interface PublishInfo {
   moduleVersion: string | undefined;
   exchange: string;
   routingKey: string;
   content: Buffer;
-  options?: amqp.Options.Publish;
+  options?: Options.Publish;
   isConfirmChannel?: boolean;
 }
 
@@ -32,11 +32,11 @@ export interface PublishConfirmedInfo extends PublishInfo {
 
 export interface ConsumeInfo {
   moduleVersion: string | undefined;
-  msg: amqp.ConsumeMessage;
+  msg: ConsumeMessage;
 }
 
 export interface ConsumeEndInfo {
-  msg: amqp.ConsumeMessage;
+  msg: ConsumeMessage;
   rejected: boolean | null;
   endOperation: EndOperation;
 }
@@ -58,15 +58,15 @@ export interface AmqplibConsumeEndCustomAttributeFunction {
 }
 
 export enum EndOperation {
-  AutoAck = 'auto ack',
-  Ack = 'ack',
-  AckAll = 'ackAll',
-  Reject = 'reject',
-  Nack = 'nack',
-  NackAll = 'nackAll',
-  ChannelClosed = 'channel closed',
-  ChannelError = 'channel error',
-  InstrumentationTimeout = 'instrumentation timeout',
+  AutoAck = "auto ack",
+  Ack = "ack",
+  AckAll = "ackAll",
+  Reject = "reject",
+  Nack = "nack",
+  NackAll = "nackAll",
+  ChannelClosed = "channel closed",
+  ChannelError = "channel error",
+  InstrumentationTimeout = "instrumentation timeout",
 }
 
 export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
