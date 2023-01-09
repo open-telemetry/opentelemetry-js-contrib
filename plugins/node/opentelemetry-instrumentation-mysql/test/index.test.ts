@@ -43,7 +43,7 @@ instrumentation.disable();
 
 import * as mysqlTypes from 'mysql';
 
-describe('mysql@2.x', () => {
+describe('mysql@2.x-Tracing', () => {
   let contextManager: AsyncHooksContextManager;
   let connection: mysqlTypes.Connection;
   let pool: mysqlTypes.Pool;
