@@ -22,6 +22,7 @@ import type {
   Query,
   QueryOptions,
 } from 'mysql';
+import * as mysqlTypes from 'mysql';
 
 /**
  * Get an SpanAttributes map from a mysql connection config object
@@ -115,4 +116,17 @@ export function getSpanName(query: string | Query | QueryOptions): string {
 export function arrayStringifyHelper(arr: Array<unknown> | undefined): string {
   if (arr) return '[' + arr.toString() + ']';
   return '';
+}
+
+export function getPoolName(pool: mysqlTypes.Pool): string {
+  const c = pool.config.connectionConfig;
+  let poolName = '';
+  poolName += c.host ? `host: '${c.host}', ` : '';
+  poolName += c.port ? `port: ${c.port}, ` : '';
+  poolName += c.database ? `database: '${c.database}', ` : '';
+  poolName += c.user ? `user: '${c.user}'` : '';
+  if (!c.user) {
+    poolName = poolName.substring(0, poolName.length - 2); //omit last comma
+  }
+  return poolName.trim();
 }

@@ -49,7 +49,7 @@
     "@opentelemetry/instrumentation": "^0.34.0",
     "@opentelemetry/instrumentation-amqplib": "^0.32.0",
     "@opentelemetry/instrumentation-aws-lambda": "^0.34.0",
-    "@opentelemetry/instrumentation-aws-sdk": "^0.10.0",
+    "@opentelemetry/instrumentation-aws-sdk": "^0.33.0",
     "@opentelemetry/instrumentation-bunyan": "^0.31.0",
     "@opentelemetry/instrumentation-cassandra-driver": "^0.32.0",
     "@opentelemetry/instrumentation-connect": "^0.31.0",
