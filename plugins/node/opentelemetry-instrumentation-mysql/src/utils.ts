@@ -77,22 +77,25 @@ function getJDBCString(
  */
 export function getDbStatement(
   query: string | Query | QueryOptions,
-  format: (
-    sql: string,
-    values: any[],
-    stringifyObjects?: boolean,
-    timeZone?: string
-  ) => string,
   values?: any[]
 ): string {
   if (typeof query === 'string') {
-    return values ? format(query, values) : query;
+    return query;
+  } else {
+    return query.sql;
+  }
+}
+
+export function getDbValues(
+  query: string | Query | QueryOptions,
+  values?: any[]
+): string {
+  if (typeof query === 'string') {
+    return arrayStringifyHelper(values);
   } else {
     // According to https://github.com/mysqljs/mysql#performing-queries
     // The values argument will override the values in the option object.
-    return values || query.values
-      ? format(query.sql, values || query.values)
-      : query.sql;
+    return arrayStringifyHelper(values || query.values);
   }
 }
 
@@ -109,6 +112,7 @@ export function getSpanName(query: string | Query | QueryOptions): string {
   return query.split(' ')[0];
 }
 
-export function arrayStringifyHelper(arr: Array<unknown>): string {
-  return '[' + arr.toString() + ']';
+export function arrayStringifyHelper(arr: Array<unknown> | undefined): string {
+  if (arr) return '[' + arr.toString() + ']';
+  return '';
 }

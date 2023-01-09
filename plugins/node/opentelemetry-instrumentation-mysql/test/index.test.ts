@@ -181,7 +181,7 @@ describe('mysql@2.x', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(
             spans[0].attributes[AttributeNames.MYSQL_VALUES],
-            undefined
+            ''
           );
           done();
         });
@@ -876,10 +876,7 @@ function assertSpan(
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_PORT], port);
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], host);
   assert.strictEqual(span.attributes[SemanticAttributes.DB_USER], user);
-  assert.strictEqual(
-    span.attributes[SemanticAttributes.DB_STATEMENT],
-    mysqlTypes.format(sql, values)
-  );
+  assert.strictEqual(span.attributes[SemanticAttributes.DB_STATEMENT], sql);
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);

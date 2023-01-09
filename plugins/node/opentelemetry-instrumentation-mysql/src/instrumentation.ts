@@ -38,7 +38,7 @@ import { MySQLInstrumentationConfig } from './types';
 import {
   getConnectionAttributes,
   getDbStatement,
-  arrayStringifyHelper,
+  getDbValues,
   getSpanName,
 } from './utils';
 import { VERSION } from './version';
@@ -286,26 +286,17 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
         span.setAttribute(
           SemanticAttributes.DB_STATEMENT,
-          getDbStatement(query, format, values)
+          getDbStatement(query, values)
         );
 
         const instrumentationConfig: MySQLInstrumentationConfig =
           thisPlugin.getConfig();
+
         if (instrumentationConfig.enhancedDatabaseReporting) {
-          if (typeof query === 'string') {
-            if (values)
-              span.setAttribute(
-                AttributeNames.MYSQL_VALUES,
-                arrayStringifyHelper(values)
-              );
-          } else {
-            // According to https://github.com/mysqljs/mysql#performing-queries
-            // The values argument will override the values in the option object.
-            span.setAttribute(
-              AttributeNames.MYSQL_VALUES,
-              arrayStringifyHelper(values || query.values)
-            );
-          }
+          span.setAttribute(
+            AttributeNames.MYSQL_VALUES,
+            getDbValues(query, values)
+          );
         }
 
         const cbIndex = Array.from(arguments).findIndex(
