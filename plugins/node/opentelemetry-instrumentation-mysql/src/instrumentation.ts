@@ -355,7 +355,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
         span.setAttribute(
           SemanticAttributes.DB_STATEMENT,
-          getDbStatement(query, values)
+          getDbStatement(query)
         );
 
         const instrumentationConfig: MySQLInstrumentationConfig =
