@@ -114,7 +114,7 @@ export function getSpanName(query: string | Query | QueryOptions): string {
 }
 
 export function arrayStringifyHelper(arr: Array<unknown> | undefined): string {
-  if (arr) return '[' + arr.toString() + ']';
+  if (arr) return `[${arr.toString()}]`;
   return '';
 }
 
