@@ -77,8 +77,7 @@ function getJDBCString(
  * @returns the database statement being executed.
  */
 export function getDbStatement(
-  query: string | Query | QueryOptions,
-  values?: any[]
+  query: string | Query | QueryOptions
 ): string {
   if (typeof query === 'string') {
     return query;
