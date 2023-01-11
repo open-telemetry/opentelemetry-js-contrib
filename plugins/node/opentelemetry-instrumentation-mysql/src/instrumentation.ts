@@ -45,7 +45,6 @@ import {
 import { VERSION } from './version';
 import { UpDownCounter, MeterProvider } from '@opentelemetry/api';
 
-type formatType = typeof mysqlTypes.format;
 
 type getConnectionCallbackType = (
   err: mysqlTypes.MysqlError,
@@ -96,7 +95,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           this._wrap(
             moduleExports,
             'createConnection',
-            this._patchCreateConnection(moduleExports.format) as any
+            this._patchCreateConnection() as any
           );
 
           diag.debug('Patching mysql.createPool');
@@ -106,7 +105,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           this._wrap(
             moduleExports,
             'createPool',
-            this._patchCreatePool(moduleExports.format) as any
+            this._patchCreatePool() as any
           );
 
           diag.debug('Patching mysql.createPoolCluster');
@@ -116,7 +115,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           this._wrap(
             moduleExports,
             'createPoolCluster',
-            this._patchCreatePoolCluster(moduleExports.format) as any
+            this._patchCreatePoolCluster() as any
           );
 
           return moduleExports;
@@ -132,7 +131,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
   }
 
   // global export function
-  private _patchCreateConnection(format: formatType) {
+  private _patchCreateConnection() {
     return (originalCreateConnection: Function) => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation#patch: patched mysql createConnection');
@@ -146,7 +145,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
         thisPlugin._wrap(
           originalResult,
           'query',
-          thisPlugin._patchQuery(originalResult, format) as any
+          thisPlugin._patchQuery(originalResult) as any
         );
 
         return originalResult;
@@ -155,18 +154,18 @@ export class MySQLInstrumentation extends InstrumentationBase<
   }
 
   // global export function
-  private _patchCreatePool(format: formatType) {
+  private _patchCreatePool() {
     return (originalCreatePool: Function) => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation#patch: patched mysql createPool');
       return function createPool(_config: string | mysqlTypes.PoolConfig) {
         const pool = originalCreatePool(...arguments);
 
-        thisPlugin._wrap(pool, 'query', thisPlugin._patchQuery(pool, format));
+        thisPlugin._wrap(pool, 'query', thisPlugin._patchQuery(pool));
         thisPlugin._wrap(
           pool,
           'getConnection',
-          thisPlugin._patchGetConnection(pool, format)
+          thisPlugin._patchGetConnection(pool)
         );
         thisPlugin._wrap(pool, 'end', thisPlugin._patchPoolEnd(pool));
         thisPlugin._setPoolcallbacks(pool, thisPlugin, '');
@@ -198,7 +197,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
   }
 
   // global export function
-  private _patchCreatePoolCluster(format: formatType) {
+  private _patchCreatePoolCluster() {
     return (originalCreatePoolCluster: Function) => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation#patch: patched mysql createPoolCluster');
@@ -209,15 +208,15 @@ export class MySQLInstrumentation extends InstrumentationBase<
         thisPlugin._wrap(
           cluster,
           'getConnection',
-          thisPlugin._patchGetConnection(cluster, format)
+          thisPlugin._patchGetConnection(cluster)
         );
-        thisPlugin._wrap(cluster, 'add', thisPlugin._patchAdd(cluster, format));
+        thisPlugin._wrap(cluster, 'add', thisPlugin._patchAdd(cluster));
 
         return cluster;
       };
     };
   }
-  private _patchAdd(cluster: mysqlTypes.PoolCluster, format: formatType) {
+  private _patchAdd(cluster: mysqlTypes.PoolCluster) {
     return (originalAdd: Function) => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation#patch: patched mysql pool cluster add');
@@ -245,7 +244,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
   // method on cluster or pool
   private _patchGetConnection(
     pool: mysqlTypes.Pool | mysqlTypes.PoolCluster,
-    format: formatType
   ) {
     return (originalGetConnection: Function) => {
       const thisPlugin = this;
@@ -266,22 +264,19 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
         if (arguments.length === 1 && typeof arg1 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg1 as getConnectionCallbackType,
-            format
+            arg1 as getConnectionCallbackType
           );
           return originalGetConnection.call(pool, patchFn);
         }
         if (arguments.length === 2 && typeof arg2 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg2 as getConnectionCallbackType,
-            format
+            arg2 as getConnectionCallbackType
           );
           return originalGetConnection.call(pool, arg1, patchFn);
         }
         if (arguments.length === 3 && typeof arg3 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg3 as getConnectionCallbackType,
-            format
+            arg3 as getConnectionCallbackType
           );
           return originalGetConnection.call(pool, arg1, arg2, patchFn);
         }
@@ -293,7 +288,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
   private _getConnectionCallbackPatchFn(
     cb: getConnectionCallbackType,
-    format: formatType
   ) {
     const thisPlugin = this;
     const activeContext = context.active();
@@ -309,7 +303,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           thisPlugin._wrap(
             connection,
             'query',
-            thisPlugin._patchQuery(connection, format)
+            thisPlugin._patchQuery(connection)
           );
         }
       }
@@ -321,7 +315,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
   private _patchQuery(
     connection: mysqlTypes.Connection | mysqlTypes.Pool,
-    format: formatType
   ) {
     return (originalQuery: Function): mysqlTypes.QueryFunction => {
       const thisPlugin = this;

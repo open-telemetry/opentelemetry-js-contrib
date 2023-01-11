@@ -72,8 +72,6 @@ function getJDBCString(
 }
 
 /**
- * Conjures up the value for the db.statement attribute by formatting a SQL query.
- *
  * @returns the database statement being executed.
  */
 export function getDbStatement(query: string | Query | QueryOptions): string {
