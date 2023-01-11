@@ -45,7 +45,6 @@ import {
 import { VERSION } from './version';
 import { UpDownCounter, MeterProvider } from '@opentelemetry/api';
 
-
 type getConnectionCallbackType = (
   err: mysqlTypes.MysqlError,
   connection: mysqlTypes.PoolConnection
@@ -242,9 +241,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
   }
 
   // method on cluster or pool
-  private _patchGetConnection(
-    pool: mysqlTypes.Pool | mysqlTypes.PoolCluster,
-  ) {
+  private _patchGetConnection(pool: mysqlTypes.Pool | mysqlTypes.PoolCluster) {
     return (originalGetConnection: Function) => {
       const thisPlugin = this;
       diag.debug(
@@ -286,9 +283,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     };
   }
 
-  private _getConnectionCallbackPatchFn(
-    cb: getConnectionCallbackType,
-  ) {
+  private _getConnectionCallbackPatchFn(cb: getConnectionCallbackType) {
     const thisPlugin = this;
     const activeContext = context.active();
     return function (
@@ -313,9 +308,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     };
   }
 
-  private _patchQuery(
-    connection: mysqlTypes.Connection | mysqlTypes.Pool,
-  ) {
+  private _patchQuery(connection: mysqlTypes.Connection | mysqlTypes.Pool) {
     return (originalQuery: Function): mysqlTypes.QueryFunction => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation: patched mysql query');
