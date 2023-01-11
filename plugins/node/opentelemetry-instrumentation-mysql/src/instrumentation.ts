@@ -331,14 +331,6 @@ export class MySQLInstrumentation extends InstrumentationBase<
           },
         });
 
-        let values;
-
-        if (Array.isArray(_valuesOrCallback)) {
-          values = _valuesOrCallback;
-        } else if (arguments[2]) {
-          values = [_valuesOrCallback];
-        }
-
         span.setAttribute(
           SemanticAttributes.DB_STATEMENT,
           getDbStatement(query)
@@ -348,6 +340,14 @@ export class MySQLInstrumentation extends InstrumentationBase<
           thisPlugin.getConfig();
 
         if (instrumentationConfig.enhancedDatabaseReporting) {
+          let values;
+
+          if (Array.isArray(_valuesOrCallback)) {
+            values = _valuesOrCallback;
+          } else if (arguments[2]) {
+            values = [_valuesOrCallback];
+          }
+
           span.setAttribute(
             AttributeNames.MYSQL_VALUES,
             getDbValues(query, values)

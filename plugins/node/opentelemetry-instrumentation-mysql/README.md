@@ -46,7 +46,7 @@ See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/m
 
 | Options | Type | Default | Description |
 | ------- | ---- | --------| ----------- |
-| [`enhancedDatabaseReporting`](./src/types.ts#L24) | `boolean` | `false` | If true, the 'values' of the query will be attached (as `attributes`) to span. |
+| [`enhancedDatabaseReporting`](./src/types.ts#L24) | `boolean` | `false` | If true, an attribute containing the query's parameters will be attached the spans generated to represent the query |
 |
 
 ## Useful links
