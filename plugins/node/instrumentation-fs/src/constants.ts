@@ -67,7 +67,7 @@ export const CALLBACK_FUNCTIONS: FMember[] = [
   'readFile',
   'readlink',
   'realpath',
-  ['realpath', 'native'],
+  'realpath.native',
   'rename',
   'rm', // added in v14
   'rmdir',
@@ -112,7 +112,7 @@ export const SYNC_FUNCTIONS: FMember[] = [
   'readFileSync',
   'readlinkSync',
   'realpathSync',
-  ['realpathSync', 'native'],
+  'realpathSync.native',
   'renameSync',
   'rmdirSync',
   'rmSync', // added in v14

@@ -36,26 +36,20 @@ import type {
   FsInstrumentationConfig,
 } from './types';
 import { promisify } from 'util';
+import { indexFs } from './utils';
 
 type FS = typeof fs;
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
-export function indexFs(fs: FS, member: FMember): { objectToPatch: any; functionNameToPatch: string } {
-  if (Array.isArray(member)) {
-    const [functionObject, functionNameToPatch] = member;
-    return { objectToPatch: fs[functionObject], functionNameToPatch };
-  } else {
-    return { objectToPatch: fs, functionNameToPatch: member };
-  }
-}
-export function memberToDisplayName(member: FMember): string {
-  if (Array.isArray(member)) {
-    const [K, L] = member;
-    return `${K}.${L}`;
-  } else {
-    return member;
-  }
+/**
+ * This is important for 2-level functions like `realpath.native` to retain the 2nd-level
+ * when patching the 1st-level.
+ */
+function patchedFunctionWithOriginalProperties<
+  T extends (...args: any[]) => ReturnType<T>
+>(patchedFunction: T, original: T): T {
+  return Object.assign(patchedFunction, original);
 }
 
 export default class FsInstrumentation extends InstrumentationBase<FS> {
@@ -71,7 +65,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         (fs: FS) => {
           this._diag.debug('Applying patch for fs');
           for (const fName of SYNC_FUNCTIONS) {
-            const { objectToPatch, functionNameToPatch} = indexFs(fs, fName);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
 
             if (isWrapped(objectToPatch[functionNameToPatch])) {
               this._unwrap(objectToPatch, functionNameToPatch);
@@ -149,8 +143,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    functionName = memberToDisplayName(functionName) as FMember;
-    const rv = <any>function (this: any, ...args: any[]) {
+    const patchedFunction = <any>function (this: any, ...args: any[]) {
       if (isTracingSuppressed(api.context.active())) {
         // Performance optimization. Avoid creating additional contexts and spans
         // if we already know that the tracing is being suppressed.
@@ -195,9 +188,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         span.end();
       }
     };
-    Object.assign(rv, original);
-
-    return rv;
+    return patchedFunctionWithOriginalProperties(patchedFunction, original);
   }
 
   protected _patchCallbackFunction<T extends (...args: any[]) => ReturnType<T>>(
@@ -205,8 +196,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    functionName = memberToDisplayName(functionName) as FMember;
-    const rv = <any>function (this: any, ...args: any[]) {
+    const patchedFunction = <any>function (this: any, ...args: any[]) {
       if (isTracingSuppressed(api.context.active())) {
         // Performance optimization. Avoid creating additional contexts and spans
         // if we already know that the tracing is being suppressed.
@@ -280,13 +270,12 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         return original.apply(this, args);
       }
     };
-    Object.assign(rv, original);
-    return rv;
+    return patchedFunctionWithOriginalProperties(patchedFunction, original);
   }
 
   protected _patchExistsCallbackFunction<
     T extends (...args: any[]) => ReturnType<T>
-  >(functionName: FMember, original: T): T {
+  >(functionName: 'exists', original: T): T {
     const instrumentation = this;
     const patchedFunction = <any>function (this: any, ...args: any[]) {
       if (isTracingSuppressed(api.context.active())) {
@@ -354,18 +343,22 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         return original.apply(this, args);
       }
     };
+    const functionWithOriginalProperties =
+      patchedFunctionWithOriginalProperties(patchedFunction, original);
 
     // `exists` has a custom promisify function because of the inconsistent signature
     // replicating that on the patched function
     const promisified = function (path: unknown) {
-      return new Promise(resolve => patchedFunction(path, resolve));
+      return new Promise(resolve =>
+        functionWithOriginalProperties(path, resolve)
+      );
     };
     Object.defineProperty(promisified, 'name', { value: functionName });
-    Object.defineProperty(patchedFunction, promisify.custom, {
+    Object.defineProperty(functionWithOriginalProperties, promisify.custom, {
       value: promisified,
     });
 
-    return patchedFunction;
+    return functionWithOriginalProperties;
   }
 
   protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
@@ -373,7 +366,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    return <any>async function (this: any, ...args: any[]) {
+    const patchedFunction = <any>async function (this: any, ...args: any[]) {
       if (isTracingSuppressed(api.context.active())) {
         // Performance optimization. Avoid creating additional contexts and spans
         // if we already know that the tracing is being suppressed.
@@ -418,6 +411,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         span.end();
       }
     };
+    return patchedFunctionWithOriginalProperties(patchedFunction, original);
   }
 
   protected _runCreateHook(

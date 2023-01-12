@@ -27,16 +27,25 @@ export type FunctionPropertyNamesTwoLevels<T> = {
   [K in keyof T]: {
     [L in keyof T[K]]: L extends string
       ? T[K][L] extends Function
-        ? [K, L]
+        ? K extends string
+          ? L extends string
+            ? `${K}.${L}`
+            : never
+          : never
         : never
       : never;
   }[keyof T[K]];
 }[keyof T];
 
+export type Member<F> =
+  | FunctionPropertyNames<F>
+  | FunctionPropertyNamesTwoLevels<F>;
 export type FMember =
   | FunctionPropertyNames<typeof fs>
   | FunctionPropertyNamesTwoLevels<typeof fs>;
-export type FPMember = FunctionPropertyNames<typeof fs['promises']>;
+export type FPMember =
+  | FunctionPropertyNames<typeof fs['promises']>
+  | FunctionPropertyNamesTwoLevels<typeof fs['promises']>;
 
 export type CreateHook = (
   functionName: FMember | FPMember,

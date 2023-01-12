@@ -23,12 +23,17 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { promisify } from 'util';
-import Instrumentation, { indexFs, memberToDisplayName } from '../src';
+import Instrumentation from '../src';
 import * as sinon from 'sinon';
 import type * as FSType from 'fs';
 import tests, { TestCase, TestCreator } from './definitions';
 import type { FMember, FPMember, CreateHook, EndHook } from '../src/types';
-import { SYNC_FUNCTIONS } from '../src/constants';
+import {
+  CALLBACK_FUNCTIONS,
+  PROMISE_FUNCTIONS,
+  SYNC_FUNCTIONS,
+} from '../src/constants';
+import { indexFs, memberToDisplayName, splitTwoLevels } from '../src/utils';
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
@@ -88,36 +93,44 @@ describe('fs instrumentation', () => {
     context.disable();
   });
 
-  const syncTest: TestCreator = (
+  const syncTest: TestCreator<FMember> = (
     name: FMember,
     args,
     { error, result, resultAsError = null },
     spans
   ) => {
     let syncName: FMember;
-    let syncDisplayName: string;
-    if (Array.isArray(name)) {
-      syncName = [`${name[0]}Sync`, name[1]] as any as FMember;
-      syncDisplayName = `${syncName[0] as string}.${name[1]}`;
+    const splitFunctionResult = splitTwoLevels(name);
+    if ('twoLevel' in splitFunctionResult) {
+      syncName =
+        `${splitFunctionResult.twoLevel[0]}Sync.${splitFunctionResult.twoLevel[1]}` as FMember;
     } else {
       syncName = `${name}Sync` as FMember;
-      syncDisplayName = syncName as string;
     }
-    const rootSpanName = `${syncDisplayName} test span`;
-    it(`${syncDisplayName} ${error ? 'error' : 'success'}`, () => {
-      const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, syncName);
+    const rootSpanName = `${syncName} test span`;
+    it(`${syncName} ${error ? 'error' : 'success'}`, () => {
+      const { objectToPatch, functionNameToPatch } = indexFs(fs, syncName);
       const rootSpan = tracer.startSpan(rootSpanName);
 
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       context.with(trace.setSpan(context.active(), rootSpan), () => {
         if (error) {
           assert.throws(
-            () => Reflect.apply(fsToIndex[fNameToIndex], fsToIndex, args),
+            () =>
+              Reflect.apply(
+                objectToPatch[functionNameToPatch],
+                objectToPatch,
+                args
+              ),
             error
           );
         } else {
           assert.deepEqual(
-            Reflect.apply(fsToIndex[fNameToIndex], fsToIndex, args),
+            Reflect.apply(
+              objectToPatch[functionNameToPatch],
+              objectToPatch,
+              args
+            ),
             result ?? resultAsError
           );
         }
@@ -126,7 +139,7 @@ describe('fs instrumentation', () => {
 
       assertSpans(memoryExporter.getFinishedSpans(), [
         ...spans.map((s: any) => {
-          const spanName = s.name.replace(/%NAME/, syncDisplayName);
+          const spanName = s.name.replace(/%NAME/, syncName);
           const attributes = {
             ...(s.attributes ?? {}),
           };
@@ -152,7 +165,7 @@ describe('fs instrumentation', () => {
     return rsn;
   };
 
-  const callbackTest: TestCreator = (
+  const callbackTest: TestCreator<FMember> = (
     name: FMember,
     args,
     { error, result, resultAsError = null },
@@ -161,13 +174,13 @@ describe('fs instrumentation', () => {
     const rootSpanName = makeRootSpanName(name);
     const displayName = memberToDisplayName(name) as FMember;
     it(`${displayName} ${error ? 'error' : 'success'}`, done => {
-      const { fs: fsToIndex, fName: fNameToIndex } = indexFs(fs, name);
+      const { objectToPatch, functionNameToPatch } = indexFs(fs, name);
       const rootSpan = tracer.startSpan(rootSpanName);
 
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       context.with(trace.setSpan(context.active(), rootSpan), () => {
-        (fsToIndex[fNameToIndex] as Function)(
+        (objectToPatch[functionNameToPatch] as Function)(
           ...args,
           (actualError: any | undefined, actualResult: any) => {
             assert.strictEqual(trace.getSpan(context.active()), rootSpan);
@@ -224,7 +237,7 @@ describe('fs instrumentation', () => {
     });
   };
 
-  const promiseTest: TestCreator = (
+  const promiseTest: TestCreator<FPMember> = (
     name: FPMember,
     args,
     { error, result, resultAsError = null, hasPromiseVersion = true },
@@ -287,26 +300,29 @@ describe('fs instrumentation', () => {
     });
   };
 
-  describe('Syncronous API native', () => {
+  describe('Synchronous API native', () => {
     beforeEach(() => {
       plugin.enable();
     });
     it('should not remove fs functions', () => {
-      for (const fname of SYNC_FUNCTIONS) {
-        if (Array.isArray(fname)) {
-          const [K, L] = fname;
-          assert.strictEqual(
-            typeof (fs[K] as any)[L],
-            'function',
-            `fs.${K}.${L} is not a function`
-          );
-        } else {
-          assert.strictEqual(
-            typeof fs[fname],
-            'function',
-            `fs.${fname} is not a function`
-          );
-        }
+      for (const fname of [...SYNC_FUNCTIONS, ...CALLBACK_FUNCTIONS]) {
+        const { objectToPatch, functionNameToPatch } = indexFs(fs, fname);
+        assert.strictEqual(
+          typeof objectToPatch[functionNameToPatch],
+          'function',
+          `fs.${fname} is not a function`
+        );
+      }
+      for (const fname of PROMISE_FUNCTIONS) {
+        const { objectToPatch, functionNameToPatch } = indexFs(
+          fs.promises,
+          fname
+        );
+        assert.strictEqual(
+          typeof objectToPatch[functionNameToPatch],
+          'function',
+          `fs.promises.${fname} is not a function`
+        );
       }
     });
   });

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { FMember } from '../src/types';
+import { FMember, FPMember } from '../src/types';
 import * as fs from 'fs';
 
 export type FsFunction = FMember;
@@ -30,8 +30,8 @@ export type Result = {
   hasPromiseVersion?: boolean;
 };
 export type TestCase = [FsFunction, any[], Result, any[], Opts?];
-export type TestCreator = (
-  name: FsFunction,
+export type TestCreator<Member extends FMember | FPMember> = (
+  name: Member,
   args: any[],
   result: Result,
   spans: any[]
@@ -84,7 +84,7 @@ const tests: TestCase[] = [
   ],
   ['realpath', ['/./'], { result: '/' }, [{ name: 'fs %NAME' }]],
   [
-    ['realpath', 'native'],
+    'realpath.native',
     ['/./'],
     { result: '/', hasPromiseVersion: false },
     [{ name: 'fs %NAME' }],
