@@ -59,12 +59,14 @@ import {
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
 import {
-  ApiGatewayEvent,
   GatewayResult,
-  isApiGatewayEvent,
+  HttpApiGatewayEvent,
   isGatewayResult,
+  isHttpApiGatewayEvent,
+  isRestApiGatewayEvent,
   isSQSEvent,
   LambdaModule,
+  RestApiGatewayEvent,
   TriggerOrigin,
 } from './internal-types';
 import { strict } from 'assert';
@@ -200,9 +202,12 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       let wrapperSpan: Span | undefined;
 
       if (plugin._config.detectTrigger !== false) {
-        if (isApiGatewayEvent(event)) {
-          plugin.triggerOrigin = TriggerOrigin.API_GATEWAY;
-          wrapperSpan = plugin._getApiGatewaySpan(event, parent);
+        if (isRestApiGatewayEvent(event)) {
+          plugin.triggerOrigin = TriggerOrigin.API_GATEWAY_REST;
+          wrapperSpan = plugin._getRestApiGatewaySpan(event, parent);
+        } else if (isHttpApiGatewayEvent(event)) {
+          plugin.triggerOrigin = TriggerOrigin.API_GATEWAY_HTTP;
+          wrapperSpan = plugin._getHttpApiGatewaySpan(event, parent);
         } else if (isSQSEvent(event)) {
           plugin.triggerOrigin = TriggerOrigin.SQS;
           wrapperSpan = plugin._getSQSSpan(event, parent);
@@ -363,7 +368,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     };
   }
 
-  private _getApiGatewaySpan(event: ApiGatewayEvent, parent: OtelContext) {
+  private _getRestApiGatewaySpan(
+    event: RestApiGatewayEvent,
+    parent: OtelContext
+  ) {
     const {
       resource,
       requestContext,
@@ -436,6 +444,48 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     );
   }
 
+  private _getHttpApiGatewaySpan(
+    event: HttpApiGatewayEvent,
+    parent: OtelContext
+  ) {
+    const { rawPath, headers, requestContext } = event;
+    const {
+      http: { method, userAgent, sourceIp },
+      domainName,
+      accountId,
+    } = requestContext;
+
+    const attributes: Attributes = {
+      [SemanticAttributes.FAAS_TRIGGER]: 'http',
+      [SemanticAttributes.HTTP_METHOD]: method,
+      [SemanticAttributes.HTTP_TARGET]: rawPath,
+      [SemanticAttributes.HTTP_URL]: domainName + rawPath,
+      [SemanticAttributes.HTTP_SERVER_NAME]: domainName,
+      [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: accountId,
+    };
+
+    if (userAgent) {
+      attributes[SemanticAttributes.HTTP_USER_AGENT] = userAgent;
+    }
+
+    if (sourceIp) {
+      attributes[SemanticAttributes.NET_PEER_IP] = sourceIp;
+    }
+
+    if (headers?.[xForwardProto]) {
+      attributes[SemanticAttributes.HTTP_SCHEME] = headers[xForwardProto];
+    }
+
+    return this.tracer.startSpan(
+      rawPath,
+      {
+        kind: SpanKind.SERVER,
+        attributes: attributes,
+      },
+      parent
+    );
+  }
+
   private _getSQSSpan(event: SQSEvent, parent: OtelContext) {
     const { Records: records } = event;
 
@@ -491,7 +541,12 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       return;
     }
 
-    if (this.triggerOrigin == TriggerOrigin.API_GATEWAY) {
+    if (
+      this.triggerOrigin !== undefined &&
+      [TriggerOrigin.API_GATEWAY_REST, TriggerOrigin.API_GATEWAY_HTTP].includes(
+        this.triggerOrigin
+      )
+    ) {
       this._endAPIGatewaySpan(span, lambdaResponse);
     }
     span.end();

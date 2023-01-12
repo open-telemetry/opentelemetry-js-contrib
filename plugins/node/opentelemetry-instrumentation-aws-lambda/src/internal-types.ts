@@ -16,36 +16,11 @@
 import { Handler, SQSEvent } from 'aws-lambda';
 
 export const enum TriggerOrigin {
-  API_GATEWAY,
+  API_GATEWAY_REST,
+  API_GATEWAY_HTTP,
   SQS,
 }
-
-export type ApiGatewayEvent = {
-  resource: string;
-  path: string;
-  httpMethod: string;
-  requestContext: ApiGatewayRequestContext;
-  headers: Record<string, string> | null;
-  multiValueHeaders: Record<string, string[]> | null;
-  queryStringParameters: string | null;
-  multiValueQueryStringParameters: Record<string, string[]> | null;
-  pathParameters: any;
-  stageVariables: any;
-  body: string;
-  isBase64Encoded: boolean;
-};
-
-export function isApiGatewayEvent(event: any): event is ApiGatewayEvent {
-  return (
-    event &&
-    typeof event === 'object' &&
-    'resource' in event &&
-    typeof event.resource === 'string' &&
-    'requestContext' in event
-  );
-}
-
-export type ApiGatewayRequestContext = {
+export type RestApiGatewayRequestContext = {
   accountId: string;
   apiId: string;
   resourceId: string;
@@ -83,6 +58,76 @@ export type ApiGatewayRequestContext = {
 
   resourcePath: any;
 };
+
+export type RestApiGatewayEvent = {
+  resource: string;
+  path: string;
+  httpMethod: string;
+  requestContext: RestApiGatewayRequestContext;
+  headers: Record<string, string> | null;
+  multiValueHeaders: Record<string, string[]> | null;
+  queryStringParameters: string | null;
+  multiValueQueryStringParameters: Record<string, string[]> | null;
+  pathParameters: any;
+  stageVariables: any;
+  body: string;
+  isBase64Encoded: boolean;
+};
+
+export function isRestApiGatewayEvent(
+  event: any
+): event is RestApiGatewayEvent {
+  return (
+    event &&
+    typeof event === 'object' &&
+    'resource' in event &&
+    typeof event.resource === 'string' &&
+    'requestContext' in event
+  );
+}
+
+export type HttpApiGatewaySpec = {
+  method: string;
+  path: string;
+  protocol?: string;
+  sourceIp?: string;
+  userAgent?: string;
+};
+
+export type HttpApiGatewayRequestContext = {
+  accountId: string;
+  apiId?: string;
+  domainName: string;
+  domainPrefix?: string;
+  http: HttpApiGatewaySpec;
+  requestId?: string;
+  routeKey?: string;
+  stage?: string;
+  time?: string;
+  timeEpoch?: number;
+};
+
+export interface HttpApiGatewayEvent {
+  version?: string;
+  routeKey?: string;
+  rawPath: string;
+  rawQueryString?: string;
+  headers: Record<string, string>;
+  requestContext: HttpApiGatewayRequestContext;
+  isBase64Encoded?: boolean;
+}
+
+export function isHttpApiGatewayEvent(
+  event: any
+): event is HttpApiGatewayEvent {
+  return (
+    event &&
+    typeof event === 'object' &&
+    'rawPath' in event &&
+    typeof event.rawPath === 'string' &&
+    'requestContext' in event
+  );
+}
 
 export type GatewayResult = {
   statusCode: number;
