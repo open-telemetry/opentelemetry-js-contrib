@@ -451,7 +451,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           msg[MESSAGE_STORED_SPAN] = span;
         }
 
-        context.with(trace.setSpan(context.active(), span), () => {
+        context.with(trace.setSpan(parentContext, span), () => {
           onMessage.call(this, msg);
         });
 
