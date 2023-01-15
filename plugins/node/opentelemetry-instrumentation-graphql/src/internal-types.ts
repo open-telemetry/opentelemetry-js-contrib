@@ -18,8 +18,8 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
 import type * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
-import { DocumentNode } from 'graphql/language/ast';
-import {
+import type { DocumentNode } from 'graphql/language/ast';
+import type {
   GraphQLFieldResolver,
   GraphQLTypeResolver,
 } from 'graphql/type/definition';
