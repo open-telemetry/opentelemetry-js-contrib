@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span } from '@opentelemetry/api';
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { Span } from "@opentelemetry/api";
+import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 
 export interface PublishInfo {
   moduleVersion: string | undefined;
@@ -57,15 +57,15 @@ export interface AmqplibConsumeEndCustomAttributeFunction {
 }
 
 export enum EndOperation {
-  AutoAck = 'auto ack',
-  Ack = 'ack',
-  AckAll = 'ackAll',
-  Reject = 'reject',
-  Nack = 'nack',
-  NackAll = 'nackAll',
-  ChannelClosed = 'channel closed',
-  ChannelError = 'channel error',
-  InstrumentationTimeout = 'instrumentation timeout',
+  AutoAck = "auto ack",
+  Ack = "ack",
+  AckAll = "ackAll",
+  Reject = "reject",
+  Nack = "nack",
+  NackAll = "nackAll",
+  ChannelClosed = "channel closed",
+  ChannelError = "channel error",
+  InstrumentationTimeout = "instrumentation timeout",
 }
 
 export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
@@ -105,6 +105,7 @@ export const DEFAULT_CONFIG: AmqplibInstrumentationConfig = {
 // The following types are vendored from `@types/amqplib@0.10.1` - commit SHA: 4205e03127692a40b4871709a7134fe4e2ed5510
 
 // Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/properties.d.ts#LL23C18-L23C25
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Options {
   export interface Connect {
     /**
@@ -238,8 +239,11 @@ interface ServerProperties {
 }
 
 // Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/properties.d.ts#L1
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Replies {
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
   export interface Empty {}
+
   export interface AssertQueue {
     queue: string;
     messageCount: number;
