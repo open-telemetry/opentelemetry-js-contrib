@@ -334,7 +334,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
       const spansNotEnded: { msg: Message }[] =
         channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
       const msgIndex = spansNotEnded.findIndex(
-        (msgDetails) => msgDetails.msg === message
+        msgDetails => msgDetails.msg === message
       );
       if (msgIndex < 0) {
         // should not happen in happy flow
@@ -432,7 +432,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         if (self._config.consumeHook) {
           safeExecuteInTheMiddle(
             () => self._config.consumeHook!(span, { moduleVersion, msg }),
-            (e) => {
+            e => {
               if (e) {
                 diag.error('amqplib instrumentation: consumerHook error', e);
               }
@@ -692,7 +692,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
   ) {
     const spansNotEnded: { msg: Message }[] =
       channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
-    spansNotEnded.forEach((msgDetails) => {
+    spansNotEnded.forEach(msgDetails => {
       this.endConsumerSpan(msgDetails.msg, isRejected, operation, requeue);
     });
     channel[CHANNEL_SPANS_NOT_ENDED] = [];
@@ -708,7 +708,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
 
     safeExecuteInTheMiddle(
       () => this._config.consumeEndHook!(span, { msg, rejected, endOperation }),
-      (e) => {
+      e => {
         if (e) {
           diag.error('amqplib instrumentation: consumerEndHook error', e);
         }

@@ -57,15 +57,15 @@ export interface AmqplibConsumeEndCustomAttributeFunction {
 }
 
 export enum EndOperation {
-  AutoAck = "auto ack",
-  Ack = "ack",
-  AckAll = "ackAll",
-  Reject = "reject",
-  Nack = "nack",
-  NackAll = "nackAll",
-  ChannelClosed = "channel closed",
-  ChannelError = "channel error",
-  InstrumentationTimeout = "instrumentation timeout",
+  AutoAck = 'auto ack',
+  Ack = 'ack',
+  AckAll = 'ackAll',
+  Reject = 'reject',
+  Nack = 'nack',
+  NackAll = 'nackAll',
+  ChannelClosed = 'channel closed',
+  ChannelError = 'channel error',
+  InstrumentationTimeout = 'instrumentation timeout',
 }
 
 export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
