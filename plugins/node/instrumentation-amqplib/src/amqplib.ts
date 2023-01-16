@@ -41,16 +41,14 @@ import {
   MessagingDestinationKindValues,
 } from '@opentelemetry/semantic-conventions';
 import {
+  AmqplibInstrumentationConfig,
   Connection,
   ConsumeMessage,
+  DEFAULT_CONFIG,
+  EndOperation,
   Message,
   Options,
   Replies,
-} from './internal-types';
-import {
-  AmqplibInstrumentationConfig,
-  DEFAULT_CONFIG,
-  EndOperation,
 } from './types';
 import {
   CHANNEL_CONSUME_TIMEOUT_TIMER,
