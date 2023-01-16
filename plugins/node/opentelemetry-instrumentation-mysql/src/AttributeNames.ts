@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-
-export interface MySQLInstrumentationConfig extends InstrumentationConfig {
-  /**
-   * If true, an attribute containing the query's parameters will be attached
-   * the spans generated to represent the query.
-   */
-  enhancedDatabaseReporting?: boolean;
+// Mysql specific attributes not covered by semantic conventions
+export enum AttributeNames {
+  MYSQL_VALUES = 'db.mysql.values',
 }
