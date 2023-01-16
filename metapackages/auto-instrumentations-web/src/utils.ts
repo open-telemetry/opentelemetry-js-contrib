@@ -34,7 +34,7 @@ const InstrumentationMap = {
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
 export type InstrumentationConfigMap = {
   [Name in keyof typeof InstrumentationMap]?: ConfigArg<
-    typeof InstrumentationMap[Name]
+    (typeof InstrumentationMap)[Name]
   >;
 };
 
