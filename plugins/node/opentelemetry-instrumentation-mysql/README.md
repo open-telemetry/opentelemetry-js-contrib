@@ -42,6 +42,13 @@ registerInstrumentations({
 
 See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql/examples) for a short example.
 
+### MySQL instrumentation Options
+
+| Options | Type | Default | Description |
+| ------- | ---- | --------| ----------- |
+| [`enhancedDatabaseReporting`](./src/types.ts#L24) | `boolean` | `false` | If true, an attribute containing the query's parameters will be attached the spans generated to represent the query |
+|
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

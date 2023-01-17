@@ -28,7 +28,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { MySQLInstrumentation } from '../src';
+import { MySQLInstrumentation, MySQLInstrumentationConfig } from '../src';
 import * as sinon from 'sinon';
 
 const port = Number(process.env.MYSQL_PORT) || 33306;
@@ -42,6 +42,7 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as mysqlTypes from 'mysql';
+import { AttributeNames } from '../src/AttributeNames';
 
 describe('mysql@2.x-Tracing', () => {
   let contextManager: AsyncHooksContextManager;
@@ -148,6 +149,89 @@ describe('mysql@2.x-Tracing', () => {
         query.on('end', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans[0].name, sql);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('enhancedDatabaseReporting:true config, should track mysql.values', () => {
+    before(() => {
+      instrumentation.disable();
+      const config: MySQLInstrumentationConfig = {
+        enhancedDatabaseReporting: true,
+      };
+      instrumentation.setConfig(config);
+      instrumentation.enable();
+    });
+
+    after(() => {
+      instrumentation.disable();
+      instrumentation.setConfig({});
+      instrumentation.enable();
+    });
+
+    it('call conn.query(sqlString) with no values', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const query = connection.query(
+          'SELECT * FROM `books` WHERE `author` = "David"'
+        );
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[AttributeNames.MYSQL_VALUES],
+            ''
+          );
+          done();
+        });
+      });
+    });
+    it('call conn.query(sqlString, values)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT * FROM `books` WHERE `author` = ?';
+        const query = connection.query(sql, ['David']);
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[AttributeNames.MYSQL_VALUES],
+            '[David]'
+          );
+          done();
+        });
+      });
+    });
+    it('call conn.query(options)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql =
+          'SELECT * FROM `books` WHERE `author` = ? AND `year` > ? OR `genre` = `?`';
+        const query = connection.query({
+          sql,
+          values: ['David', 2000, 'Fiction'],
+        });
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[AttributeNames.MYSQL_VALUES],
+            '[David,2000,Fiction]'
+          );
+          done();
+        });
+      });
+    });
+    it('call conn.query(options, values)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT * FROM `books` WHERE `author` = ?';
+        const query = connection.query({ sql }, ['David']);
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[AttributeNames.MYSQL_VALUES],
+            '[David]'
+          );
           done();
         });
       });
@@ -792,10 +876,7 @@ function assertSpan(
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_PORT], port);
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], host);
   assert.strictEqual(span.attributes[SemanticAttributes.DB_USER], user);
-  assert.strictEqual(
-    span.attributes[SemanticAttributes.DB_STATEMENT],
-    mysqlTypes.format(sql, values)
-  );
+  assert.strictEqual(span.attributes[SemanticAttributes.DB_STATEMENT], sql);
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
