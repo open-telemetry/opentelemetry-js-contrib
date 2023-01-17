@@ -60,10 +60,10 @@
     "webpack-merge": "5.8.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.34.0",
+    "@opentelemetry/instrumentation": "^0.35.0",
     "@opentelemetry/instrumentation-document-load": "^0.31.0",
-    "@opentelemetry/instrumentation-fetch": "^0.34.0",
+    "@opentelemetry/instrumentation-fetch": "^0.35.0",
     "@opentelemetry/instrumentation-user-interaction": "^0.32.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.34.0"
+    "@opentelemetry/instrumentation-xml-http-request": "^0.35.0"
   }
 }
