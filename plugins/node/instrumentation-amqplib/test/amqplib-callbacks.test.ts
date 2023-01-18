@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 import 'mocha';
-import {expect} from 'expect';
-import {AmqplibInstrumentation} from '../src';
+import { expect } from 'expect';
+import { AmqplibInstrumentation } from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -28,15 +28,19 @@ import {
   MessagingDestinationKindValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import {Baggage, context, propagation, SpanKind} from '@opentelemetry/api';
-import {asyncConfirmSend, asyncConsume, shouldTest} from './utils';
+import { Baggage, context, propagation, SpanKind } from '@opentelemetry/api';
+import { asyncConfirmSend, asyncConsume, shouldTest } from './utils';
 import {
   censoredUrl,
   rabbitMqUrl,
   TEST_RABBITMQ_HOST,
   TEST_RABBITMQ_PORT,
 } from './config';
-import {CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator} from '@opentelemetry/core';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
 
 const msgPayload = 'payload from test';
 const queueName = 'queue-name-from-unittest';
@@ -44,9 +48,14 @@ const queueName = 'queue-name-from-unittest';
 describe('amqplib instrumentation callback model', () => {
   let conn: amqpCallback.Connection;
   before(() => {
-    propagation.setGlobalPropagator(new CompositePropagator({
-      propagators: [new W3CBaggagePropagator(), new W3CTraceContextPropagator()],
-    }));
+    propagation.setGlobalPropagator(
+      new CompositePropagator({
+        propagators: [
+          new W3CBaggagePropagator(),
+          new W3CTraceContextPropagator(),
+        ],
+      })
+    );
   });
   before(function (done) {
     if (!shouldTest) {
@@ -74,11 +83,10 @@ describe('amqplib instrumentation callback model', () => {
           channel = c;
           // install an error handler, otherwise when we have tests that create error on the channel,
           // it throws and crash process
-          channel.on('error', () => {
-          });
+          channel.on('error', () => {});
           channel.assertQueue(
             queueName,
-            {durable: false},
+            { durable: false },
             context.bind(context.active(), (err, ok) => {
               channel.purgeQueue(
                 queueName,
@@ -97,8 +105,7 @@ describe('amqplib instrumentation callback model', () => {
         channel.close(err => {
           done();
         });
-      } catch {
-      }
+      } catch {}
     });
 
     it('simple publish and consume from queue callback', done => {
@@ -132,7 +139,7 @@ describe('amqplib instrumentation callback model', () => {
         expect(
           publishSpan.attributes[
             SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY
-            ]
+          ]
         ).toEqual(queueName);
         expect(
           publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
@@ -164,7 +171,7 @@ describe('amqplib instrumentation callback model', () => {
         expect(
           consumeSpan.attributes[
             SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY
-            ]
+          ]
         ).toEqual(queueName);
         expect(
           consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
@@ -195,21 +202,23 @@ describe('amqplib instrumentation callback model', () => {
     });
 
     it('baggage is available while consuming', done => {
-      const baggageContext = propagation.setBaggage(context.active(), propagation.createBaggage({
-        key1: {value: 'value1'},
-      }));
+      const baggageContext = propagation.setBaggage(
+        context.active(),
+        propagation.createBaggage({
+          key1: { value: 'value1' },
+        })
+      );
       context.with(baggageContext, () => {
-        channel.sendToQueue(
-          queueName,
-          Buffer.from(msgPayload)
-        );
+        channel.sendToQueue(queueName, Buffer.from(msgPayload));
         let extractedBaggage: Baggage | undefined;
         asyncConsume(
           channel,
           queueName,
-          [msg => {
-            extractedBaggage = propagation.getActiveBaggage();
-          }],
+          [
+            msg => {
+              extractedBaggage = propagation.getActiveBaggage();
+            },
+          ],
           {
             noAck: true,
           }
@@ -253,11 +262,10 @@ describe('amqplib instrumentation callback model', () => {
           confirmChannel = c;
           // install an error handler, otherwise when we have tests that create error on the channel,
           // it throws and crash process
-          confirmChannel.on('error', () => {
-          });
+          confirmChannel.on('error', () => {});
           confirmChannel.assertQueue(
             queueName,
-            {durable: false},
+            { durable: false },
             context.bind(context.active(), (err, ok) => {
               confirmChannel.purgeQueue(
                 queueName,
@@ -276,8 +284,7 @@ describe('amqplib instrumentation callback model', () => {
         confirmChannel.close(err => {
           done();
         });
-      } catch {
-      }
+      } catch {}
     });
 
     it('simple publish and consume from queue callback', done => {
@@ -303,12 +310,12 @@ describe('amqplib instrumentation callback model', () => {
           expect(
             publishSpan.attributes[
               SemanticAttributes.MESSAGING_DESTINATION_KIND
-              ]
+            ]
           ).toEqual(MessagingDestinationKindValues.TOPIC);
           expect(
             publishSpan.attributes[
               SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY
-              ]
+            ]
           ).toEqual(queueName);
           expect(
             publishSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
@@ -316,7 +323,7 @@ describe('amqplib instrumentation callback model', () => {
           expect(
             publishSpan.attributes[
               SemanticAttributes.MESSAGING_PROTOCOL_VERSION
-              ]
+            ]
           ).toEqual('0.9.1');
           expect(
             publishSpan.attributes[SemanticAttributes.MESSAGING_URL]
@@ -339,12 +346,12 @@ describe('amqplib instrumentation callback model', () => {
           expect(
             consumeSpan.attributes[
               SemanticAttributes.MESSAGING_DESTINATION_KIND
-              ]
+            ]
           ).toEqual(MessagingDestinationKindValues.TOPIC);
           expect(
             consumeSpan.attributes[
               SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY
-              ]
+            ]
           ).toEqual(queueName);
           expect(
             consumeSpan.attributes[SemanticAttributes.MESSAGING_PROTOCOL]
@@ -352,7 +359,7 @@ describe('amqplib instrumentation callback model', () => {
           expect(
             consumeSpan.attributes[
               SemanticAttributes.MESSAGING_PROTOCOL_VERSION
-              ]
+            ]
           ).toEqual('0.9.1');
           expect(
             consumeSpan.attributes[SemanticAttributes.MESSAGING_URL]
