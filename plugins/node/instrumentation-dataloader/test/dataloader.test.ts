@@ -141,17 +141,12 @@ describe('DataloaderInstrumentation', () => {
       });
     });
 
-    it('correctly uses a generated name in spans', async () => {
-      instrumentation.setConfig({
-        dataloaderNameGenerator: object => {
-          // This equality will allow applications to for example determine the name
-          // based on some global context they are aware of
-          assert.strictEqual(object, dataloader);
-          return 'test-name';
-        },
-      });
-
-      assert.strictEqual(await dataloader.load('test'), 0);
+    it('correctly uses dataloader name', async () => {
+      const namedDataloader = new Dataloader(
+        async keys => keys.map((_, idx) => idx),
+        { name: 'test-name' }
+      );
+      assert.strictEqual(await namedDataloader.load('test'), 0);
 
       // We should have exactly two spans (one for .load and one for the following batch)
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
@@ -257,16 +252,12 @@ describe('DataloaderInstrumentation', () => {
     });
 
     it('correctly uses a generated name in spans', async () => {
-      instrumentation.setConfig({
-        dataloaderNameGenerator: object => {
-          // This equality will allow applications to for example determine the name
-          // based on some global context they are aware of
-          assert.strictEqual(object, dataloader);
-          return 'test-name';
-        },
-      });
+      const namedDataloader = new Dataloader(
+        async keys => keys.map((_, idx) => idx),
+        { name: 'test-name' }
+      );
 
-      assert.deepStrictEqual(await dataloader.loadMany(['test']), [0]);
+      assert.deepStrictEqual(await namedDataloader.loadMany(['test']), [0]);
 
       // We should have exactly three spans (one for .loadMany, one for the underlying .load
       // and one for the following batch)

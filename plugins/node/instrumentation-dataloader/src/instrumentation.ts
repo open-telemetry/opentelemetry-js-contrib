@@ -37,6 +37,7 @@ type DataloaderInternal = typeof Dataloader.prototype & {
   _batchLoadFn: Dataloader.BatchLoadFn<unknown, unknown>;
   _batch: { spanLinks?: Link[] } | null;
   _generatedName?: string;
+  _name?: string;
 };
 
 type LoadFn = (typeof Dataloader.prototype)['load'];
@@ -90,28 +91,11 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     return hasParentSpan || !config.requireParentSpan;
   }
 
-  private getDataloaderName(
-    dataloader: DataloaderInternal
-  ): string | undefined {
-    if (dataloader._generatedName !== undefined) {
-      return dataloader._generatedName;
-    }
-
-    const config = this.getConfig();
-    if (config.dataloaderNameGenerator === undefined) {
-      return undefined;
-    }
-
-    const generatedName = config.dataloaderNameGenerator(dataloader);
-    dataloader._generatedName = generatedName;
-    return generatedName;
-  }
-
   private getSpanName(
     dataloader: DataloaderInternal,
     operation: 'load' | 'loadMany' | 'batch'
   ): string {
-    const dataloaderName = this.getDataloaderName(dataloader);
+    const dataloaderName = dataloader._name;
     if (dataloaderName === undefined) {
       return `${MODULE_NAME}.${operation}`;
     }
@@ -128,11 +112,14 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     function PatchedDataloader(
       ...args: ConstructorParameters<typeof constructor>
     ) {
+      const [, options] = args;
       const inst = new constructor(...args) as DataloaderInternal;
 
       if (!instrumentation.isEnabled()) {
         return inst;
       }
+
+      inst._name = options?.name ?? undefined;
 
       if (isWrapped(inst._batchLoadFn)) {
         instrumentation._unwrap(inst, '_batchLoadFn');
