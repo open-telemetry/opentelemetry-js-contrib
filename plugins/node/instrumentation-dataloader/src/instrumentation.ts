@@ -36,7 +36,6 @@ const MODULE_NAME = 'dataloader';
 type DataloaderInternal = typeof Dataloader.prototype & {
   _batchLoadFn: Dataloader.BatchLoadFn<unknown, unknown>;
   _batch: { spanLinks?: Link[] } | null;
-  _generatedName?: string;
   _name?: string;
 };
 
