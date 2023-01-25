@@ -74,12 +74,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _forceFlush?: () => Promise<void>;
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+    // shallow copy to prevent modification of original object
+    _config = { ..._config }
 
     if (_config.disableAwsContextPropagation == null) {
       if (
         typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
-          'string' &&
+        'string' &&
         env[
           'OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'
         ].toLocaleLowerCase() === 'true'
@@ -87,6 +88,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         _config.disableAwsContextPropagation = true;
       }
     }
+
+    super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
@@ -169,7 +172,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         context,
         config.disableAwsContextPropagation === true,
         config.eventContextExtractor ||
-          AwsLambdaInstrumentation._defaultEventContextExtractor
+        AwsLambdaInstrumentation._defaultEventContextExtractor
       );
 
       const name = context.functionName;
@@ -212,7 +215,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             if (error != null) {
               // Exception thrown synchronously before resolving callback / promise.
               plugin._applyResponseHook(span, error);
-              plugin._endSpan(span, error, () => {});
+              plugin._endSpan(span, error, () => { });
             }
           }
         ) as Promise<{}> | undefined;
