@@ -15,11 +15,8 @@
  */
 
 export enum AttributeNames {
-  COMPONENT = 'component',
   EVENT_TYPE = 'event_type',
   TARGET_ELEMENT = 'target_element',
   TARGET_XPATH = 'target_xpath',
   HTTP_URL = 'http.url',
-  // NOT ON OFFICIAL SPEC
-  HTTP_USER_AGENT = 'http.user_agent',
 }
