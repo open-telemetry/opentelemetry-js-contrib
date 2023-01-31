@@ -27,7 +27,7 @@ jobs:
         id: lerna-args
         run: |
           OUTPUT=`node scripts/parse-lerna-scopes.mjs "$PR_LABELS"`
-          echo "::set-output name=args::$OUTPUT"
+          echo "args=$OUTPUT" >> $GITHUB_OUTPUT
 
   tav:
     uses: ./.github/workflows/test-all-versions.yml
