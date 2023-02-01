@@ -32,11 +32,13 @@ import {
   AggregationTemporality,
   InMemoryMetricExporter,
   MeterProvider,
-  PeriodicExportingMetricReader
-} from '@opentelemetry/sdk-metrics'
+  PeriodicExportingMetricReader,
+} from '@opentelemetry/sdk-metrics';
 
 const traceMemoryExporter = new InMemorySpanExporter();
-const metricMemoryExporter = new InMemoryMetricExporter(AggregationTemporality.CUMULATIVE);
+const metricMemoryExporter = new InMemoryMetricExporter(
+  AggregationTemporality.CUMULATIVE
+);
 
 describe('force flush', () => {
   let instrumentation: AwsLambdaInstrumentation;
@@ -49,14 +51,20 @@ describe('force flush', () => {
     awsRequestId: 'aws_request_id',
   } as Context;
 
-  const initializeHandlerTracing = (handler: string, provider: TracerProvider) => {
+  const initializeHandlerTracing = (
+    handler: string,
+    provider: TracerProvider
+  ) => {
     process.env._HANDLER = handler;
 
     instrumentation = new AwsLambdaInstrumentation();
     instrumentation.setTracerProvider(provider);
   };
 
-  const initializeHandlerMetrics = (handler: string, provider: MeterProvider) => {
+  const initializeHandlerMetrics = (
+    handler: string,
+    provider: MeterProvider
+  ) => {
     process.env._HANDLER = handler;
 
     instrumentation = new AwsLambdaInstrumentation();
@@ -111,7 +119,9 @@ describe('force flush', () => {
 
   it('should force flush ProxyTracerProvider with NodeTracerProvider', async () => {
     const nodeTracerProvider = new NodeTracerProvider();
-    nodeTracerProvider.addSpanProcessor(new BatchSpanProcessor(traceMemoryExporter));
+    nodeTracerProvider.addSpanProcessor(
+      new BatchSpanProcessor(traceMemoryExporter)
+    );
     nodeTracerProvider.register();
     const provider = new ProxyTracerProvider();
     provider.setDelegate(nodeTracerProvider);
@@ -143,7 +153,9 @@ describe('force flush', () => {
 
   it('should force flush MeterProvider', async () => {
     const provider = new MeterProvider();
-    provider.addMetricReader(new PeriodicExportingMetricReader({exporter: metricMemoryExporter}));
+    provider.addMetricReader(
+      new PeriodicExportingMetricReader({ exporter: metricMemoryExporter })
+    );
     let forceFlushed = false;
     const forceFlush = () =>
       new Promise<void>(resolve => {

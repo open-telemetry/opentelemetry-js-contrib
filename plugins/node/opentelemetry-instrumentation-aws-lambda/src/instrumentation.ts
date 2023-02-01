@@ -257,7 +257,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     if (!meterProvider) return undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let currentProvider: any = meterProvider;
+    const currentProvider: any = meterProvider;
 
     if (typeof currentProvider.forceFlush === 'function') {
       return currentProvider.forceFlush.bind(currentProvider);
