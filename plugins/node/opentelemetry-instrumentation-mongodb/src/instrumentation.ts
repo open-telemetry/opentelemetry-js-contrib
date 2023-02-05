@@ -56,15 +56,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
-    this._setMetricInstruments();
   }
 
-  override setMeterProvider(meterProvider: MeterProvider) {
-    super.setMeterProvider(meterProvider);
-    this._setMetricInstruments();
-  }
 
-  private _setMetricInstruments() {
+  override _updateMetricInstruments() {
     this._connectionsUsage = this.meter.createUpDownCounter(
       'db.client.connections.usage',
       {
