@@ -199,12 +199,20 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         if (isWrapped(moduleExports.acquire)) {
           this._unwrap(moduleExports, 'acquire');
         }
-        this._wrap(moduleExports.ServerSessionPool.prototype, 'acquire', this._getV4AcquireCommand());
+        this._wrap(
+          moduleExports.ServerSessionPool.prototype,
+          'acquire',
+          this._getV4AcquireCommand()
+        );
 
         if (isWrapped(moduleExports.release)) {
           this._unwrap(moduleExports, 'release');
         }
-        this._wrap(moduleExports.ServerSessionPool.prototype, 'release', this._getV4ReleaseCommand());
+        this._wrap(
+          moduleExports.ServerSessionPool.prototype,
+          'release',
+          this._getV4ReleaseCommand()
+        );
         return moduleExports;
       },
       v4UnpatchSessions: (moduleExports?: T, moduleVersion?: string) => {
@@ -223,9 +231,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4AcquireCommand() {
     const instrumentation = this;
     return (original: V4Session['acquire']) => {
-      return function patchAcquire(
-        this: any
-      ){
+      return function patchAcquire(this: any) {
         const nSessionsBeforeAcquire = this.sessions.count;
         const session = original.call(this);
         const nSessionsAfterAcquire = this.sessions.count;
@@ -234,44 +240,41 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           //no session in the pool. a new session was created and used
           instrumentation._connectionsUsage.add(1, {
             state: 'used',
-            'pool.name': instrumentation._poolName
+            'pool.name': instrumentation._poolName,
           });
-        } else if (nSessionsBeforeAcquire-1 === nSessionsAfterAcquire){
+        } else if (nSessionsBeforeAcquire - 1 === nSessionsAfterAcquire) {
           //a session was already in the pool. remove it from the pool and use it.
           instrumentation._connectionsUsage.add(-1, {
             state: 'idle',
-            'pool.name': instrumentation._poolName
+            'pool.name': instrumentation._poolName,
           });
           instrumentation._connectionsUsage.add(1, {
             state: 'used',
-            'pool.name': instrumentation._poolName
+            'pool.name': instrumentation._poolName,
           });
         }
         return session;
-      }
-    }
+      };
+    };
   }
 
   private _getV4ReleaseCommand() {
     const instrumentation = this;
-    return(original: V4Session['release']) => {
-      return function patchRelease(
-        this: any,
-        session: ServerSession
-        ){
+    return (original: V4Session['release']) => {
+      return function patchRelease(this: any, session: ServerSession) {
         const cmdPromise = original.call(this, session);
 
         instrumentation._connectionsUsage.add(-1, {
           state: 'used',
-          'pool.name': instrumentation._poolName
+          'pool.name': instrumentation._poolName,
         });
         instrumentation._connectionsUsage.add(1, {
           state: 'idle',
-          'pool.name': instrumentation._poolName
+          'pool.name': instrumentation._poolName,
         });
         return cmdPromise;
-      }
-    }
+      };
+    };
   }
 
   private _getV4ConnectPatches<T extends V4Connect>() {
@@ -308,7 +311,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             callback(err, conn);
             return;
           }
-          instrumentation.setPoolName(options)
+          instrumentation.setPoolName(options);
           callback(err, conn);
         };
         return original.call(this, options, patchedCallback);
@@ -846,11 +849,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       }
 
       return context.with(activeContext, () => {
-
         if (commandType === 'endSessions') {
           instrumentation._connectionsUsage.add(-1, {
             state: 'idle',
-            'pool.name': instrumentation._poolName
+            'pool.name': instrumentation._poolName,
           });
         }
         return resultHandler.apply(this, args);

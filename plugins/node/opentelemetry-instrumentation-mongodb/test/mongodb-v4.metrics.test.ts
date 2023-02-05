@@ -89,7 +89,6 @@ describe('MongoDBInstrumentation-Metrics', () => {
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
   // const URL2 = "mongodb://myuser:pass123@cluster.mongodb.net/test?retryWrites=true&w=majority";
 
-
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
   beforeEach(function mongoBeforeEach(done) {
@@ -131,20 +130,14 @@ describe('MongoDBInstrumentation-Metrics', () => {
     );
     assert.strictEqual(metrics[0].dataPoints.length, 2);
     assert.strictEqual(metrics[0].dataPoints[0].value, 0);
-    assert.strictEqual(
-      metrics[0].dataPoints[0].attributes['state'],
-      'used'
-    );
+    assert.strictEqual(metrics[0].dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
       metrics[0].dataPoints[0].attributes['pool.name'],
       `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
     );
 
     assert.strictEqual(metrics[0].dataPoints[1].value, 1);
-    assert.strictEqual(
-      metrics[0].dataPoints[1].attributes['state'],
-      'idle'
-    );
+    assert.strictEqual(metrics[0].dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
       metrics[0].dataPoints[1].attributes['pool.name'],
       `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
@@ -163,19 +156,13 @@ describe('MongoDBInstrumentation-Metrics', () => {
     );
     assert.strictEqual(metrics[0].dataPoints.length, 2);
     assert.strictEqual(metrics[0].dataPoints[0].value, 0);
-    assert.strictEqual(
-      metrics[0].dataPoints[0].attributes['state'],
-      'used'
-    );
+    assert.strictEqual(metrics[0].dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
       metrics[0].dataPoints[0].attributes['pool.name'],
       `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
     );
     assert.strictEqual(metrics[0].dataPoints[1].value, 0);
-    assert.strictEqual(
-      metrics[0].dataPoints[1].attributes['state'],
-      'idle'
-    );
+    assert.strictEqual(metrics[0].dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
       metrics[0].dataPoints[1].attributes['pool.name'],
       `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`

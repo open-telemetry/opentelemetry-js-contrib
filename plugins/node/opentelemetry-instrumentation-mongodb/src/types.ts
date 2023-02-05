@@ -181,8 +181,8 @@ export type V4Connect = {
 
 export type V4Session = {
   acquire: () => ServerSession;
-  release: (session: ServerSession) => void
-}
+  release: (session: ServerSession) => void;
+};
 
 export type V4Db = {
   db: (dbName?: string, options?: DbOptions) => Db;
