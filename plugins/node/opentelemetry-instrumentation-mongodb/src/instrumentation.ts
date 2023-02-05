@@ -46,8 +46,7 @@ import {
 } from './types';
 import { VERSION } from './version';
 import { ServerSession } from 'mongodb';
-import { UpDownCounter } from '@opentelemetry/api-metrics';
-import { MeterProvider } from '@opentelemetry/sdk-metrics';
+import { UpDownCounter } from '@opentelemetry/api';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase {
