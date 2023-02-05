@@ -16,6 +16,7 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Span } from '@opentelemetry/api';
+import { ServerSession, DbOptions, Db } from 'mongodb';
 
 export interface MongoDBInstrumentationExecutionResponseHook {
   (span: Span, responseInfo: MongoResponseHookInformation): void;
@@ -176,4 +177,13 @@ export type V4Connection = {
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connect.ts
 export type V4Connect = {
   connect: (options: any, callback: any) => void;
+};
+
+export type V4Session = {
+  acquire: () => ServerSession;
+  release: (session: ServerSession) => void
+}
+
+export type V4Db = {
+  db: (dbName?: string, options?: DbOptions) => Db;
 };

@@ -81,11 +81,14 @@ describe('MongoDBInstrumentation-Metrics', () => {
     shouldTest = false;
   }
 
-  const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
-    process.env.MONGODB_PORT || '27017'
-  }`;
+  const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
+  const PORT = process.env.MONGODB_PORT || '27017';
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics';
   const COLLECTION_NAME = 'test-metrics';
+  // const URL = `mongodb://${HOST}:${PORT}`;
+  const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
+  // const URL2 = "mongodb://myuser:pass123@cluster.mongodb.net/test?retryWrites=true&w=majority";
+
 
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
@@ -126,21 +129,25 @@ describe('MongoDBInstrumentation-Metrics', () => {
       metrics[0].descriptor.name,
       'db.client.connections.usage'
     );
-    assert.strictEqual(metrics[0].dataPoints.length, 3);
-    assert.strictEqual(metrics[0].dataPoints[0].value, 1);
+    assert.strictEqual(metrics[0].dataPoints.length, 2);
+    assert.strictEqual(metrics[0].dataPoints[0].value, 0);
     assert.strictEqual(
-      metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
-      'idle'
+      metrics[0].dataPoints[0].attributes['state'],
+      'used'
     );
+    assert.strictEqual(
+      metrics[0].dataPoints[0].attributes['pool.name'],
+      `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
+    );
+
     assert.strictEqual(metrics[0].dataPoints[1].value, 1);
     assert.strictEqual(
-      metrics[0].dataPoints[1].attributes['db.client.connection.usage.state'],
+      metrics[0].dataPoints[1].attributes['state'],
       'idle'
     );
-    assert.strictEqual(metrics[0].dataPoints[2].value, 0);
     assert.strictEqual(
-      metrics[0].dataPoints[2].attributes['db.client.connection.usage.state'],
-      'used'
+      metrics[0].dataPoints[1].attributes['pool.name'],
+      `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
     );
     await client.close();
 
@@ -154,21 +161,24 @@ describe('MongoDBInstrumentation-Metrics', () => {
       metrics[0].descriptor.description,
       'The number of connections that are currently in state described by the state attribute.'
     );
-    assert.strictEqual(metrics[0].dataPoints.length, 3);
+    assert.strictEqual(metrics[0].dataPoints.length, 2);
     assert.strictEqual(metrics[0].dataPoints[0].value, 0);
     assert.strictEqual(
-      metrics[0].dataPoints[0].attributes['db.client.connection.usage.state'],
-      'idle'
+      metrics[0].dataPoints[0].attributes['state'],
+      'used'
+    );
+    assert.strictEqual(
+      metrics[0].dataPoints[0].attributes['pool.name'],
+      `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
     );
     assert.strictEqual(metrics[0].dataPoints[1].value, 0);
     assert.strictEqual(
-      metrics[0].dataPoints[1].attributes['db.client.connection.usage.state'],
+      metrics[0].dataPoints[1].attributes['state'],
       'idle'
     );
-    assert.strictEqual(metrics[0].dataPoints[2].value, 0);
     assert.strictEqual(
-      metrics[0].dataPoints[2].attributes['db.client.connection.usage.state'],
-      'used'
+      metrics[0].dataPoints[1].attributes['pool.name'],
+      `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
     );
   });
 });

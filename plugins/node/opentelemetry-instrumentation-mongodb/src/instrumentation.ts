@@ -43,14 +43,17 @@ import {
   CommandResult,
   V4Connection,
   V4Connect,
+  V4Session,
 } from './types';
 import { VERSION } from './version';
+import { ServerSession } from 'mongodb';
 import { UpDownCounter } from '@opentelemetry/api-metrics';
 import { MeterProvider } from '@opentelemetry/sdk-metrics';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase {
   private _connectionsUsage!: UpDownCounter;
+  private _poolName!: string;
 
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
@@ -82,6 +85,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const { v4PatchConnect, v4UnpatchConnect } = this._getV4ConnectPatches();
     const { v4PatchConnection, v4UnpatchConnection } =
       this._getV4ConnectionPatches();
+    const { v4PatchSessions, v4UnpatchSessions } = this._getV4SessionsPatches();
 
     return [
       new InstrumentationNodeModuleDefinition<any>(
@@ -115,6 +119,12 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             ['4.*'],
             v4PatchConnect,
             v4UnpatchConnect
+          ),
+          new InstrumentationNodeModuleFile<V4Session>(
+            'mongodb/lib/sessions.js',
+            ['4.*'],
+            v4PatchSessions,
+            v4UnpatchSessions
           ),
         ]
       ),
@@ -182,6 +192,88 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     };
   }
 
+  private _getV4SessionsPatches<T extends V4Session>() {
+    return {
+      v4PatchSessions: (moduleExports: any, moduleVersion?: string) => {
+        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+        if (isWrapped(moduleExports.acquire)) {
+          this._unwrap(moduleExports, 'acquire');
+        }
+        this._wrap(moduleExports.ServerSessionPool.prototype, 'acquire', this._getV4AcquireCommand());
+
+        if (isWrapped(moduleExports.release)) {
+          this._unwrap(moduleExports, 'release');
+        }
+        this._wrap(moduleExports.ServerSessionPool.prototype, 'release', this._getV4ReleaseCommand());
+        return moduleExports;
+      },
+      v4UnpatchSessions: (moduleExports?: T, moduleVersion?: string) => {
+        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
+        if (moduleExports === undefined) return;
+        if (isWrapped(moduleExports.acquire)) {
+          this._unwrap(moduleExports, 'acquire');
+        }
+        if (isWrapped(moduleExports.release)) {
+          this._unwrap(moduleExports, 'release');
+        }
+      },
+    };
+  }
+
+  private _getV4AcquireCommand() {
+    const instrumentation = this;
+    return (original: V4Session['acquire']) => {
+      return function patchAcquire(
+        this: any
+      ){
+        const nSessionsBeforeAcquire = this.sessions.count;
+        const session = original.call(this);
+        const nSessionsAfterAcquire = this.sessions.count;
+
+        if (nSessionsBeforeAcquire === nSessionsAfterAcquire) {
+          //no session in the pool. a new session was created and used
+          instrumentation._connectionsUsage.add(1, {
+            state: 'used',
+            'pool.name': instrumentation._poolName
+          });
+        } else if (nSessionsBeforeAcquire-1 === nSessionsAfterAcquire){
+          //a session was already in the pool. remove it from the pool and use it.
+          instrumentation._connectionsUsage.add(-1, {
+            state: 'idle',
+            'pool.name': instrumentation._poolName
+          });
+          instrumentation._connectionsUsage.add(1, {
+            state: 'used',
+            'pool.name': instrumentation._poolName
+          });
+        }
+        return session;
+      }
+    }
+  }
+
+  private _getV4ReleaseCommand() {
+    const instrumentation = this;
+    return(original: V4Session['release']) => {
+      return function patchRelease(
+        this: any,
+        session: ServerSession
+        ){
+        const cmdPromise = original.call(this, session);
+
+        instrumentation._connectionsUsage.add(-1, {
+          state: 'used',
+          'pool.name': instrumentation._poolName
+        });
+        instrumentation._connectionsUsage.add(1, {
+          state: 'idle',
+          'pool.name': instrumentation._poolName
+        });
+        return cmdPromise;
+      }
+    }
+  }
+
   private _getV4ConnectPatches<T extends V4Connect>() {
     return {
       v4PatchConnect: (moduleExports: any, moduleVersion?: string) => {
@@ -216,19 +308,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             callback(err, conn);
             return;
           }
-
-          instrumentation._connectionsUsage.add(1, {
-            'db.client.connection.usage.state': 'idle',
-            'db.client.connection.usage.name': conn?.id,
-          });
-
-          conn.on('close', () => {
-            instrumentation._connectionsUsage.add(-1, {
-              'db.client.connection.usage.state': 'idle',
-              'db.client.connection.usage.name': conn?.id,
-            });
-          });
-
+          instrumentation.setPoolName(options)
           callback(err, conn);
         };
         return original.call(this, options, patchedCallback);
@@ -370,6 +450,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ) {
         const currentSpan = trace.getSpan(context.active());
         const resultHandler = callback;
+        const commandType = Object.keys(cmd)[0];
 
         if (
           typeof resultHandler !== 'function' ||
@@ -379,25 +460,17 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         ) {
           return original.call(this, ns, cmd, options, callback);
         }
-        instrumentation._connectionsUsage.add(-1, {
-          'db.client.connection.usage.state': 'idle',
-          'db.client.connection.usage.name': this.id,
-        });
-        instrumentation._connectionsUsage.add(1, {
-          'db.client.connection.usage.state': 'used',
-          'db.client.connection.usage.name': this.id,
-        });
 
         if (!currentSpan) {
           const patchedCallback = instrumentation._patchEnd(
             undefined,
             resultHandler,
-            this.id
+            this.id,
+            commandType
           );
 
           return original.call(this, ns, cmd, options, patchedCallback);
         } else {
-          const commandType = Object.keys(cmd)[0];
           const span = instrumentation.tracer.startSpan(
             `mongodb.${commandType}`,
             {
@@ -408,7 +481,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           const patchedCallback = instrumentation._patchEnd(
             span,
             resultHandler,
-            this.id
+            this.id,
+            commandType
           );
 
           return original.call(this, ns, cmd, options, patchedCallback);
@@ -749,7 +823,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _patchEnd(
     span: Span | undefined,
     resultHandler: Function,
-    connectionId?: number
+    connectionId?: number,
+    commandType?: string
   ): Function {
     // mongodb is using "tick" when calling a callback, this way the context
     // in final callback (resultHandler) is lost
@@ -770,20 +845,30 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         span.end();
       }
 
-      if (connectionId) {
-        instrumentation._connectionsUsage.add(-1, {
-          'db.client.connection.usage.state': 'used',
-          'db.client.connection.usage.name': connectionId,
-        });
-        instrumentation._connectionsUsage.add(1, {
-          'db.client.connection.usage.state': 'idle',
-          'db.client.connection.usage.name': connectionId,
-        });
-      }
-
       return context.with(activeContext, () => {
+
+        if (commandType === 'endSessions') {
+          instrumentation._connectionsUsage.add(-1, {
+            state: 'idle',
+            'pool.name': instrumentation._poolName
+          });
+        }
         return resultHandler.apply(this, args);
       });
     };
+  }
+  private setPoolName(options: any) {
+    const host = options.hostAddress?.host;
+    const port = options.hostAddress?.port;
+    const database = options.dbName;
+
+    let poolName = '';
+    poolName += host ? `host: '${host}', ` : '';
+    poolName += port ? `port: ${port}, ` : '';
+    poolName += database ? `database: '${database}' ` : '';
+    if (!database) {
+      poolName = poolName.substring(0, poolName.length - 2); //omit last comma
+    }
+    this._poolName = poolName.trim();
   }
 }
