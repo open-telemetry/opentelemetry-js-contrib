@@ -22,14 +22,24 @@ import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
 import {
   GraphQLField,
   GraphQLPath,
-  GraphQLInstrumentationConfig,
   GraphQLInstrumentationParsedConfig,
   ObjectWithGraphQLData,
   OtelPatched,
   Maybe,
-} from './types';
+} from './internal-types';
+import { GraphQLInstrumentationConfig } from './types';
 
 const OPERATION_VALUES = Object.values(AllowedOperationTypes);
+
+// https://github.com/graphql/graphql-js/blob/main/src/jsutils/isPromise.ts
+export const isPromise = (value: any): value is Promise<unknown> => {
+  return typeof value?.then === 'function';
+};
+
+// https://github.com/graphql/graphql-js/blob/main/src/jsutils/isObjectLike.ts
+const isObjectLike = (value: unknown): value is { [key: string]: unknown } => {
+  return typeof value == 'object' && value !== null;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function addInputVariableAttribute(span: api.Span, key: string, variable: any) {
@@ -329,12 +339,39 @@ export function wrapFields(
   });
 }
 
+const handleResolveSpanError = (
+  resolveSpan: api.Span,
+  err: any,
+  shouldEndSpan: boolean
+) => {
+  if (!shouldEndSpan) {
+    return;
+  }
+  resolveSpan.recordException(err);
+  resolveSpan.setStatus({
+    code: api.SpanStatusCode.ERROR,
+    message: err.message,
+  });
+  resolveSpan.end();
+};
+
+const handleResolveSpanSuccess = (
+  resolveSpan: api.Span,
+  shouldEndSpan: boolean
+) => {
+  if (!shouldEndSpan) {
+    return;
+  }
+  resolveSpan.end();
+};
+
 export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
   tracer: api.Tracer,
   getConfig: () => Required<GraphQLInstrumentationConfig>,
   fieldResolver: Maybe<
     graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched
-  >
+  >,
+  isDefaultResolver = false
 ): graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched {
   if (
     (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] ||
@@ -354,6 +391,21 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
       return undefined;
     }
     const config = getConfig();
+
+    // follows what graphql is doing to decied if this is a trivial resolver
+    // for which we don't need to create a resolve span
+    if (
+      config.ignoreTrivialResolveSpans &&
+      isDefaultResolver &&
+      (isObjectLike(source) || typeof source === 'function')
+    ) {
+      const property = (source as any)[info.fieldName];
+      // a function execution is not trivial and should be recorder.
+      // property which is not a function is just a value and we don't want a "resolve" span for it
+      if (typeof property !== 'function') {
+        return fieldResolver.call(this, source, args, contextValue, info);
+      }
+    }
 
     if (!contextValue[OTEL_GRAPHQL_DATA_SYMBOL]) {
       return fieldResolver.call(this, source, args, contextValue, info);
@@ -380,21 +432,33 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
     return api.context.with(
       api.trace.setSpan(api.context.active(), field.span),
       () => {
-        return safeExecuteInTheMiddleAsync<
-          | Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>
-          | Promise<
-              Maybe<graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs>>
-            >
-        >(
-          () => {
-            return fieldResolver.call(this, source, args, contextValue, info);
-          },
-          err => {
-            if (shouldEndSpan) {
-              endSpan(field.span, err);
-            }
+        try {
+          const res = fieldResolver.call(
+            this,
+            source,
+            args,
+            contextValue,
+            info
+          );
+          if (isPromise(res)) {
+            return res.then(
+              (r: any) => {
+                handleResolveSpanSuccess(field.span, shouldEndSpan);
+                return r;
+              },
+              (err: Error) => {
+                handleResolveSpanError(field.span, err, shouldEndSpan);
+                throw err;
+              }
+            );
+          } else {
+            handleResolveSpanSuccess(field.span, shouldEndSpan);
+            return res;
           }
-        );
+        } catch (err: any) {
+          handleResolveSpanError(field.span, err, shouldEndSpan);
+          throw err;
+        }
       }
     );
   }
@@ -402,33 +466,4 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
   (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] = true;
 
   return wrappedFieldResolver;
-}
-
-/**
- * Async version of safeExecuteInTheMiddle from instrumentation package
- * can be removed once this will be added to instrumentation package
- * @param execute
- * @param onFinish
- * @param preventThrowingError
- */
-async function safeExecuteInTheMiddleAsync<T>(
-  execute: () => T,
-  onFinish: (e: Error | undefined, result: T | undefined) => void,
-  preventThrowingError?: boolean
-): Promise<T> {
-  let error: Error | undefined;
-  let result: T | undefined;
-  try {
-    result = await execute();
-  } catch (e) {
-    error = e;
-  } finally {
-    onFinish(error, result);
-    if (error && !preventThrowingError) {
-      // eslint-disable-next-line no-unsafe-finally
-      throw error;
-    }
-    // eslint-disable-next-line no-unsafe-finally
-    return result as T;
-  }
 }

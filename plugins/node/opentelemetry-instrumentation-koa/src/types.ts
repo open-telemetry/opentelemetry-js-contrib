@@ -19,22 +19,21 @@ import type * as Router from '@koa/router';
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-/**
- * This symbol is used to mark a Koa layer as being already instrumented
- * since its possible to use a given layer multiple times (ex: middlewares)
- */
-export const kLayerPatched: unique symbol = Symbol('koa-layer-patched');
-
-export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
-  [kLayerPatched]?: boolean;
-  router?: Router;
-};
+export enum KoaLayerType {
+  ROUTER = 'router',
+  MIDDLEWARE = 'middleware',
+}
 
 export type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
 
+export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
+  router?: Router;
+};
+
 export type KoaRequestInfo = {
   context: KoaContext;
-  middlewareLayer: KoaMiddleware;
+  middlewareLayer: Middleware<DefaultState, KoaContext>;
+  layerType: KoaLayerType;
 };
 
 /**
@@ -55,10 +54,3 @@ export interface KoaInstrumentationConfig extends InstrumentationConfig {
   /** Function for adding custom attributes to each middleware layer span */
   requestHook?: KoaRequestCustomAttributeFunction;
 }
-
-export enum KoaLayerType {
-  ROUTER = 'router',
-  MIDDLEWARE = 'middleware',
-}
-
-export const KoaComponentName = 'koa';

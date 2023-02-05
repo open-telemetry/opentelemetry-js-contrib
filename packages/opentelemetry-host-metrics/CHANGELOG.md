@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.30.1...host-metrics-v0.31.0) (2022-11-16)
+
+
+### Features
+
+* use GA version of metrics ([#1281](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1281)) ([7f02de2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f02de23c3cedd6198bfd838e6b63002c3341bd8))
+
+## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.30.0...host-metrics-v0.30.1) (2022-09-27)
+
+
+### Bug Fixes
+
+* readme snippet ([#1182](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1182)) ([35d1e45](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/35d1e4579f7b160c501959f6fb45859b75cdde99))
+
 ## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.29.0...host-metrics-v0.30.0) (2022-09-02)
 
 

@@ -68,6 +68,7 @@ export function assertSpans(
   spans: ReadableSpan[],
   expectedName: string,
   expectedKind: SpanKind,
+  expectedOperation: string,
   log = false,
   isEnhancedDatabaseReportingEnabled = false
 ) {
@@ -83,11 +84,15 @@ export function assertSpans(
   assert.strictEqual(mongoSpan.name, expectedName);
   assert.strictEqual(mongoSpan.kind, expectedKind);
   assert.strictEqual(
+    mongoSpan.attributes[SemanticAttributes.DB_OPERATION],
+    expectedOperation
+  );
+  assert.strictEqual(
     mongoSpan.attributes[SemanticAttributes.DB_SYSTEM],
     'mongodb'
   );
   assert.strictEqual(
-    mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
+    mongoSpan.attributes[SemanticAttributes.NET_PEER_NAME],
     process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);

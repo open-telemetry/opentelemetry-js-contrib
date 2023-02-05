@@ -340,7 +340,7 @@ describe('pg-pool', () => {
         };
 
         beforeEach(async () => {
-          const config: PgInstrumentationConfig = {
+          create({
             enhancedDatabaseReporting: true,
             responseHook: (
               span: Span,
@@ -350,9 +350,7 @@ describe('pg-pool', () => {
                 dataAttributeName,
                 JSON.stringify({ rowCount: responseInfo?.data.rowCount })
               ),
-          };
-
-          create(config);
+          });
         });
 
         it('should attach response hook data to resulting spans for query with callback ', done => {

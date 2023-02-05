@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, Span, SpanStatusCode } from '@opentelemetry/api';
+import { diag, Span, SpanStatusCode, context, trace } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -26,7 +26,8 @@ import {
   SemanticAttributes,
   NetTransportValues,
 } from '@opentelemetry/semantic-conventions';
-import { Net, NormalizedOptions, SocketEvent, TLSAttributes } from './types';
+import { TLSAttributes } from './types';
+import { Net, NormalizedOptions, SocketEvent } from './internal-types';
 import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
 import { VERSION } from './version';
 import { Socket } from 'net';
@@ -111,7 +112,12 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
   ) {
     const tlsSpan = this.tracer.startSpan('tls.connect');
 
-    const netSpan = this._startSpan(options, socket);
+    const netSpan = context.with(
+      trace.setSpan(context.active(), tlsSpan),
+      () => {
+        return this._startSpan(options, socket);
+      }
+    );
 
     const otelTlsSpanListener = () => {
       const peerCertificate = socket.getPeerCertificate(true);

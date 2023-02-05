@@ -110,7 +110,12 @@ describe('MongoDBInstrumentation-Tracing', () => {
           .insertMany(insertData)
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'mongodb.insert', SpanKind.CLIENT);
+            assertSpans(
+              getTestSpans(),
+              'mongodb.insert',
+              SpanKind.CLIENT,
+              'insert'
+            );
             done();
           })
           .catch(err => {
@@ -126,7 +131,12 @@ describe('MongoDBInstrumentation-Tracing', () => {
           .updateOne({ a: 2 }, { $set: { b: 1 } })
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'mongodb.update', SpanKind.CLIENT);
+            assertSpans(
+              getTestSpans(),
+              'mongodb.update',
+              SpanKind.CLIENT,
+              'update'
+            );
             done();
           })
           .catch(err => {
@@ -142,7 +152,12 @@ describe('MongoDBInstrumentation-Tracing', () => {
           .deleteOne({ a: 3 })
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'mongodb.delete', SpanKind.CLIENT);
+            assertSpans(
+              getTestSpans(),
+              'mongodb.delete',
+              SpanKind.CLIENT,
+              'delete'
+            );
             done();
           })
           .catch(err => {
@@ -162,7 +177,12 @@ describe('MongoDBInstrumentation-Tracing', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'mongodb.find', SpanKind.CLIENT);
+            assertSpans(
+              getTestSpans(),
+              'mongodb.find',
+              SpanKind.CLIENT,
+              'find'
+            );
             done();
           })
           .catch(err => {
@@ -188,7 +208,8 @@ describe('MongoDBInstrumentation-Tracing', () => {
                   span => !span.name.includes('mongodb.getMore')
                 ),
                 'mongodb.find',
-                SpanKind.CLIENT
+                SpanKind.CLIENT,
+                'find'
               );
               // assert that we correctly got the first as a find
               assertSpans(
@@ -196,7 +217,8 @@ describe('MongoDBInstrumentation-Tracing', () => {
                   span => !span.name.includes('mongodb.find')
                 ),
                 'mongodb.getMore',
-                SpanKind.CLIENT
+                SpanKind.CLIENT,
+                'getMore'
               );
               done();
             })
@@ -220,7 +242,8 @@ describe('MongoDBInstrumentation-Tracing', () => {
             assertSpans(
               getTestSpans(),
               'mongodb.createIndexes',
-              SpanKind.CLIENT
+              SpanKind.CLIENT,
+              'createIndexes'
             );
             done();
           })
@@ -251,7 +274,14 @@ describe('MongoDBInstrumentation-Tracing', () => {
             span.end();
             const spans = getTestSpans();
             const operationName = 'mongodb.insert';
-            assertSpans(spans, operationName, SpanKind.CLIENT, false, false);
+            assertSpans(
+              spans,
+              operationName,
+              SpanKind.CLIENT,
+              'insert',
+              false,
+              false
+            );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
               mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
@@ -289,7 +319,14 @@ describe('MongoDBInstrumentation-Tracing', () => {
               span.end();
               const spans = getTestSpans();
               const operationName = 'mongodb.insert';
-              assertSpans(spans, operationName, SpanKind.CLIENT, false, true);
+              assertSpans(
+                spans,
+                operationName,
+                SpanKind.CLIENT,
+                'insert',
+                false,
+                true
+              );
               const mongoSpan = spans.find(s => s.name === operationName);
               const dbStatement = JSON.parse(
                 mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
@@ -322,7 +359,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
+              assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT, 'insert');
               done();
             })
             .catch(err => {
@@ -416,7 +453,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(spans, 'mongodb.find', SpanKind.CLIENT);
+              assertSpans(spans, 'mongodb.find', SpanKind.CLIENT, 'find');
               done();
             })
             .catch(err => {
@@ -438,7 +475,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
             span.end();
             const spans = getTestSpans();
             const mainSpan = spans[spans.length - 1];
-            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
+            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT, 'insert');
             resetMemoryExporter();
 
             collection
@@ -447,7 +484,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
               .then(() => {
                 const spans2 = getTestSpans();
                 spans2.push(mainSpan);
-                assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT);
+                assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT, 'find');
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
                   spans2[0].parentSpanId

@@ -15,7 +15,7 @@
  */
 
 import { Instrumentation } from './instrumentation';
-export { InstrumentationConfig } from './types';
+export * from './types';
 
 export * from './instrumentation';
 export default Instrumentation;

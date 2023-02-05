@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.33.0...instrumentation-mongodb-v0.34.0) (2022-12-20)
+
+
+### Features
+
+* **mongodb:** add db.operation span attribute ([#1321](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1321)) ([97305e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/97305e1880ecbfb3b87d6c38f0c6521570583510))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.32.2...instrumentation-mongodb-v0.33.0) (2022-11-16)
+
+
+### Features
+
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.32.0 to ^0.33.0
+
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.32.1...instrumentation-mongodb-v0.32.2) (2022-11-02)
+
+
+### Bug Fixes
+
+* **mongodb:** use net.peer namespace for mongo host and port ([#1257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1257)) ([c63d2a4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c63d2a4206b8d4ba0fb337b253ff6c84f0814a09))
+* separate public and internal types for all instrumentations ([#1251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1251)) ([e72ea58](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e72ea58cfb888a90590970f63d3a042a8ea3aaf2))
+
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.32.0...instrumentation-mongodb-v0.32.1) (2022-09-27)
+
+
+### Bug Fixes
+
+* remove unneeded type exports in mongodb instrumentation ([#1194](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1194)) ([6920a55](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6920a554b46bf8af5e00b60073d479feacb18dcd))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.31.1...instrumentation-mongodb-v0.32.0) (2022-09-02)
 
 

@@ -19,12 +19,6 @@ import FsInstrumentation from './instrumentation';
 export { FsInstrumentation };
 
 export * from './instrumentation';
-export {
-  FMember,
-  FPMember,
-  CreateHook,
-  EndHook,
-  FsInstrumentationConfig,
-} from './types';
+export * from './types';
 
 export default FsInstrumentation;
