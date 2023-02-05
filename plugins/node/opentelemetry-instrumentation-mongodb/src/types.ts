@@ -52,24 +52,6 @@ export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
   dbStatementSerializer?: DbStatementSerializer;
 }
 
-export type Func<T> = (...args: unknown[]) => T;
-export type MongoInternalCommand = {
-  findandmodify: boolean;
-  createIndexes: boolean;
-  count: boolean;
-  ismaster: boolean;
-  indexes?: unknown[];
-  query?: Record<string, unknown>;
-  limit?: number;
-  q?: Record<string, unknown>;
-  u?: Record<string, unknown>;
-};
-
-export type CursorState = { cmd: MongoInternalCommand } & Record<
-  string,
-  unknown
->;
-
 export interface MongoResponseHookInformation {
   data: CommandResult;
 }

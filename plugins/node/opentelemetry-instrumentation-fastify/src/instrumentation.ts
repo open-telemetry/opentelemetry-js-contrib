@@ -23,22 +23,24 @@ import {
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import type { HookHandlerDoneFunction } from 'fastify/types/hooks';
-import type { FastifyInstance } from 'fastify/types/instance';
-import type { FastifyReply } from 'fastify/types/reply';
-import type { FastifyRequest } from 'fastify/types/request';
+import type {
+  HookHandlerDoneFunction,
+  FastifyInstance,
+  FastifyRequest,
+  FastifyReply,
+} from 'fastify';
 import { applicationHookNames } from './constants';
 import {
   AttributeNames,
   FastifyNames,
   FastifyTypes,
 } from './enums/AttributeNames';
-import type { HandlerOriginal, PluginFastifyReply } from './types';
+import type { HandlerOriginal, PluginFastifyReply } from './internal-types';
+import type { FastifyInstrumentationConfig } from './types';
 import {
   endSpan,
   safeExecuteInTheMiddleMaybePromise,
@@ -50,7 +52,7 @@ export const ANONYMOUS_NAME = 'anonymous';
 
 /** Fastify instrumentation for OpenTelemetry */
 export class FastifyInstrumentation extends InstrumentationBase {
-  constructor(config: InstrumentationConfig = {}) {
+  constructor(config: FastifyInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-fastify',
       VERSION,
@@ -58,11 +60,19 @@ export class FastifyInstrumentation extends InstrumentationBase {
     );
   }
 
+  override setConfig(config: FastifyInstrumentationConfig = {}) {
+    this._config = Object.assign({}, config);
+  }
+
+  override getConfig(): FastifyInstrumentationConfig {
+    return this._config as FastifyInstrumentationConfig;
+  }
+
   init() {
     return [
       new InstrumentationNodeModuleDefinition<any>(
         'fastify',
-        ['^3.0.0'],
+        ['^3.0.0', '^4.0.0'],
         (moduleExports, moduleVersion) => {
           this._diag.debug(`Applying patch for fastify@${moduleVersion}`);
           return this._patchConstructor(moduleExports);
@@ -100,6 +110,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
     syncFunctionWithDone: boolean
   ): () => Promise<unknown> {
     const instrumentation = this;
+    this._diag.debug('Patching fastify route.handler function');
+
     return function (this: any, ...args: unknown[]): Promise<unknown> {
       if (!instrumentation.isEnabled()) {
         return original.apply(this, args);
@@ -156,6 +168,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
     original: FastifyInstance['addHook']
   ) => () => FastifyInstance {
     const instrumentation = this;
+    this._diag.debug('Patching fastify server.addHook function');
+
     return function (
       original: FastifyInstance['addHook']
     ): () => FastifyInstance {
@@ -188,6 +202,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
     original: () => FastifyInstance
   ): () => FastifyInstance {
     const instrumentation = this;
+    this._diag.debug('Patching fastify constructor function');
 
     function fastify(this: FastifyInstance, ...args: any) {
       const app: FastifyInstance = original.apply(this, args);
@@ -204,8 +219,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
     return fastify;
   }
 
-  public _patchSend() {
+  private _patchSend() {
     const instrumentation = this;
+    this._diag.debug('Patching fastify reply.send function');
+
     return function patchSend(
       original: () => FastifyReply
     ): () => FastifyReply {
@@ -231,8 +248,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
     };
   }
 
-  public _hookPreHandler() {
+  private _hookPreHandler() {
     const instrumentation = this;
+    this._diag.debug('Patching fastify preHandler function');
+
     return function preHandler(
       this: any,
       request: FastifyRequest,
@@ -262,6 +281,19 @@ export class FastifyInstrumentation extends InstrumentationBase {
         spanName,
         spanAttributes
       );
+
+      if (instrumentation.getConfig().requestHook) {
+        safeExecuteInTheMiddle(
+          () => instrumentation.getConfig().requestHook!(span, { request }),
+          e => {
+            if (e) {
+              instrumentation._diag.error('request hook failed', e);
+            }
+          },
+          true
+        );
+      }
+
       return context.with(trace.setSpan(context.active(), span), () => {
         done();
       });

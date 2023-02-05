@@ -26,8 +26,6 @@ import type * as koa from 'koa';
 import {
   KoaMiddleware,
   KoaContext,
-  KoaComponentName,
-  kLayerPatched,
   KoaLayerType,
   KoaInstrumentationConfig,
 } from './types';
@@ -35,6 +33,11 @@ import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
+import {
+  kLayerPatched,
+  KoaComponentName,
+  KoaPatchedMiddleware,
+} from './internal-types';
 
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
@@ -136,7 +139,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
    * router about the routed path which the middleware is attached to
    */
   private _patchLayer(
-    middlewareLayer: KoaMiddleware,
+    middlewareLayer: KoaPatchedMiddleware,
     isRouter: boolean,
     layerPath?: string
   ): KoaMiddleware {
@@ -196,7 +199,11 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       if (this.getConfig().requestHook) {
         safeExecuteInTheMiddle(
           () =>
-            this.getConfig().requestHook!(span, { context, middlewareLayer }),
+            this.getConfig().requestHook!(span, {
+              context,
+              middlewareLayer,
+              layerType,
+            }),
           e => {
             if (e) {
               api.diag.error('koa instrumentation: request hook failed', e);

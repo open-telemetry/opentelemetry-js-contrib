@@ -35,6 +35,7 @@ import type {
   EndHook,
   FsInstrumentationConfig,
 } from './types';
+import { promisify } from 'util';
 
 type FS = typeof fs;
 
@@ -65,6 +66,16 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           for (const fName of CALLBACK_FUNCTIONS) {
             if (isWrapped(fs[fName])) {
               this._unwrap(fs, fName);
+            }
+            if (fName === 'exists') {
+              // handling separately because of the inconsistent cb style:
+              // `exists` doesn't have error as the first argument, but the result
+              this._wrap(
+                fs,
+                fName,
+                <any>this._patchExistsCallbackFunction.bind(this, fName)
+              );
+              continue;
             }
             this._wrap(
               fs,
@@ -117,9 +128,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
   ): T {
     const instrumentation = this;
     return <any>function (this: any, ...args: any[]) {
-      if (isTracingSuppressed(api.context.active())) {
-        // Performance optimization. Avoid creating additional contexts and spans
-        // if we already know that the tracing is being suppressed.
+      const activeContext = api.context.active();
+
+      if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
       }
       if (
@@ -128,7 +139,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }) === false
       ) {
         return api.context.with(
-          suppressTracing(api.context.active()),
+          suppressTracing(activeContext),
           original,
           this,
           ...args
@@ -142,7 +153,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
       try {
         // Suppress tracing for internal fs calls
         const res = api.context.with(
-          suppressTracing(api.trace.setSpan(api.context.active(), span)),
+          suppressTracing(api.trace.setSpan(activeContext, span)),
           original,
           this,
           ...args
@@ -169,9 +180,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
   ): T {
     const instrumentation = this;
     return <any>function (this: any, ...args: any[]) {
-      if (isTracingSuppressed(api.context.active())) {
-        // Performance optimization. Avoid creating additional contexts and spans
-        // if we already know that the tracing is being suppressed.
+      const activeContext = api.context.active();
+
+      if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
       }
       if (
@@ -180,7 +191,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }) === false
       ) {
         return api.context.with(
-          suppressTracing(api.context.active()),
+          suppressTracing(activeContext),
           original,
           this,
           ...args
@@ -196,7 +207,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
 
         // Return to the context active during the call in the callback
         args[lastIdx] = api.context.bind(
-          api.context.active(),
+          activeContext,
           function (this: unknown, error?: Error) {
             if (error) {
               span.recordException(error);
@@ -218,7 +229,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         try {
           // Suppress tracing for internal fs calls
           return api.context.with(
-            suppressTracing(api.trace.setSpan(api.context.active(), span)),
+            suppressTracing(api.trace.setSpan(activeContext, span)),
             original,
             this,
             ...args
@@ -244,15 +255,14 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     };
   }
 
-  protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
-    functionName: FPMember,
-    original: T
-  ): T {
+  protected _patchExistsCallbackFunction<
+    T extends (...args: any[]) => ReturnType<T>
+  >(functionName: FMember, original: T): T {
     const instrumentation = this;
-    return <any>async function (this: any, ...args: any[]) {
-      if (isTracingSuppressed(api.context.active())) {
-        // Performance optimization. Avoid creating additional contexts and spans
-        // if we already know that the tracing is being suppressed.
+    const patchedFunction = <any>function (this: any, ...args: any[]) {
+      const activeContext = api.context.active();
+
+      if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
       }
       if (
@@ -261,7 +271,92 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }) === false
       ) {
         return api.context.with(
-          suppressTracing(api.context.active()),
+          suppressTracing(activeContext),
+          original,
+          this,
+          ...args
+        );
+      }
+
+      const lastIdx = args.length - 1;
+      const cb = args[lastIdx];
+      if (typeof cb === 'function') {
+        const span = instrumentation.tracer.startSpan(
+          `fs ${functionName}`
+        ) as api.Span;
+
+        // Return to the context active during the call in the callback
+        args[lastIdx] = api.context.bind(
+          activeContext,
+          function (this: unknown) {
+            // `exists` never calls the callback with an error
+            instrumentation._runEndHook(functionName, {
+              args: args,
+              span,
+            });
+            span.end();
+            return cb.apply(this, arguments);
+          }
+        );
+
+        try {
+          // Suppress tracing for internal fs calls
+          return api.context.with(
+            suppressTracing(api.trace.setSpan(activeContext, span)),
+            original,
+            this,
+            ...args
+          );
+        } catch (error) {
+          span.recordException(error);
+          span.setStatus({
+            message: error.message,
+            code: api.SpanStatusCode.ERROR,
+          });
+          instrumentation._runEndHook(functionName, {
+            args: args,
+            span,
+            error,
+          });
+          span.end();
+          throw error;
+        }
+      } else {
+        return original.apply(this, args);
+      }
+    };
+
+    // `exists` has a custom promisify function because of the inconsistent signature
+    // replicating that on the patched function
+    const promisified = function (path: unknown) {
+      return new Promise(resolve => patchedFunction(path, resolve));
+    };
+    Object.defineProperty(promisified, 'name', { value: functionName });
+    Object.defineProperty(patchedFunction, promisify.custom, {
+      value: promisified,
+    });
+
+    return patchedFunction;
+  }
+
+  protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
+    functionName: FPMember,
+    original: T
+  ): T {
+    const instrumentation = this;
+    return <any>async function (this: any, ...args: any[]) {
+      const activeContext = api.context.active();
+
+      if (!instrumentation._shouldTrace(activeContext)) {
+        return original.apply(this, args);
+      }
+      if (
+        instrumentation._runCreateHook(functionName, {
+          args: args,
+        }) === false
+      ) {
+        return api.context.with(
+          suppressTracing(activeContext),
           original,
           this,
           ...args
@@ -275,7 +370,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
       try {
         // Suppress tracing for internal fs calls
         const res = await api.context.with(
-          suppressTracing(api.trace.setSpan(api.context.active(), span)),
+          suppressTracing(api.trace.setSpan(activeContext, span)),
           original,
           this,
           ...args
@@ -319,5 +414,23 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         this._diag.error('caught endHook error', e);
       }
     }
+  }
+
+  protected _shouldTrace(context: api.Context): boolean {
+    if (isTracingSuppressed(context)) {
+      // Performance optimization. Avoid creating additional contexts and spans
+      // if we already know that the tracing is being suppressed.
+      return false;
+    }
+
+    const { requireParentSpan } = this.getConfig() as FsInstrumentationConfig;
+    if (requireParentSpan) {
+      const parentSpan = api.trace.getSpan(context);
+      if (parentSpan == null) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

@@ -15,7 +15,7 @@
  */
 
 import * as constants from './constants';
-import * as types from './types';
+import * as types from './internal-types';
 
 // Detect whether a function is a router package internal plumming handler
 export const isInternal = (fn: Function) => {

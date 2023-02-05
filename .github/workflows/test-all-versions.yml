@@ -1,13 +1,16 @@
 name: Test All Versions
 on:
-  push:
-    branches:
-      - "main"
-      - "release/**"
-      - "release-please/**"
   schedule:
     - cron: "30 4 * * *"
   workflow_dispatch:
+    inputs:
+      lerna-args:
+        type: string
+  workflow_call:
+    inputs:
+      lerna-args:
+        required: true
+        type: string
 
 jobs:
   tav:
@@ -16,12 +19,14 @@ jobs:
       fail-fast: false
       matrix:
         node: ["14", "16", "18"]
+        include:
+          - node: "18"
+            lerna-extra-args: >-
+              --ignore @opentelemetry/instrumentation-fastify
+              --ignore @opentelemetry/instrumentation-restify
+              --ignore @opentelemetry/resource-detector-alibaba-cloud
     runs-on: ubuntu-latest
     services:
-      memcached:
-        image: memcached:1.6.9-alpine
-        ports:
-        - 11211:11211
       mongo:
         image: mongo
         ports:
@@ -40,11 +45,11 @@ jobs:
           --health-start-period 10s
           --health-retries 20
       mysql:
-        image: circleci/mysql:5.7
+        image: mysql:5.7
         env:
           MYSQL_USER: otel
           MYSQL_PASSWORD: secret
-          MYSQL_DATABASE: circle_database
+          MYSQL_DATABASE: otel_mysql_database
           MYSQL_ROOT_PASSWORD: rootpw
         ports:
         - 3306:3306
@@ -54,10 +59,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       postgres:
-        image: circleci/postgres:9.6-alpine
+        image: postgres:15-alpine
         env:
           POSTGRES_USER: postgres
-          POSTGRES_DB: circle_database
+          POSTGRES_DB: otel_pg_database
+          POSTGRES_PASSWORD: postgres
         ports:
         - 5432:5432
         options: >-
@@ -65,6 +71,13 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3
+        ports:
+        - 22221:5672
+        env:
+          RABBITMQ_DEFAULT_USER: username
+          RABBITMQ_DEFAULT_PASS: password
       redis:
         image: redis
         ports:
@@ -74,43 +87,28 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      cassandra:
-        image: bitnami/cassandra:3
-        ports:
-        - 9042:9042
-      rabbitmq:
-        image: rabbitmq:3
-        ports:
-        - 22221:5672
-        env:
-          RABBITMQ_DEFAULT_USER: username
-          RABBITMQ_DEFAULT_PASS: password
     env:
-      RUN_CASSANDRA_TESTS: 1
-      RUN_MEMCACHED_TESTS: 1
-      RUN_MONGODB_TESTS: 1
-      RUN_MYSQL_TESTS: 1
-      RUN_MSSQL_TESTS: 1
-      RUN_POSTGRES_TESTS: 1
-      RUN_REDIS_TESTS: 1
-      CASSANDRA_HOST: localhost
       MONGODB_DB: opentelemetry-tests
       MONGODB_HOST: 127.0.0.1
       MONGODB_PORT: 27017
       MSSQL_PASSWORD: mssql_passw0rd
-      MYSQL_DATABASE: circle_database
+      MYSQL_DATABASE: otel_mysql_database
       MYSQL_HOST: localhost
       MYSQL_PASSWORD: secret
       MYSQL_PORT: 3306
       MYSQL_USER: otel
-      OPENTELEMETRY_MEMCACHED_HOST: localhost
-      OPENTELEMETRY_MEMCACHED_PORT: 11211
       OPENTELEMETRY_REDIS_HOST: localhost
       OPENTELEMETRY_REDIS_PORT: 6379
-      POSTGRES_DB: circle_database
+      POSTGRES_DB: otel_pg_database
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      RUN_MONGODB_TESTS: 1
+      RUN_MSSQL_TESTS: 1
+      RUN_MYSQL_TESTS: 1
+      RUN_POSTGRES_TESTS: 1
+      RUN_REDIS_TESTS: 1
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout
@@ -147,4 +145,4 @@ jobs:
       - name: Bootstrap Dependencies
         run: lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Run test-all-versions
-        run: lerna run test-all-versions ${{ matrix.lerna-extra-args }} --stream --concurrency 1
+        run: lerna run test-all-versions ${{ inputs.lerna-args }} ${{ matrix.lerna-extra-args }} --stream --concurrency 1

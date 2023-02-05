@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-import {
-  hrTime,
-  setRPCMetadata,
-  getRPCMetadata,
-  RPCType,
-} from '@opentelemetry/core';
+import { setRPCMetadata, getRPCMetadata, RPCType } from '@opentelemetry/core';
 import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
 import type * as express from 'express';
-import {
-  ExpressLayer,
-  ExpressRouter,
-  PatchedRequest,
-  _LAYERS_STORE_PROPERTY,
-  ExpressInstrumentationConfig,
-  ExpressRequestInfo,
-} from './types';
+import { ExpressInstrumentationConfig, ExpressRequestInfo } from './types';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 import { AttributeNames } from './enums/AttributeNames';
 import { getLayerMetadata, storeLayerPath, isLayerIgnored } from './utils';
@@ -41,12 +29,13 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-
-/**
- * This symbol is used to mark express layer as being already instrumented
- * since its possible to use a given layer multiple times (ex: middlewares)
- */
-export const kLayerPatched: unique symbol = Symbol('express-layer-patched');
+import {
+  ExpressLayer,
+  ExpressRouter,
+  kLayerPatched,
+  PatchedRequest,
+  _LAYERS_STORE_PROPERTY,
+} from './internal-types';
 
 /** Express instrumentation for OpenTelemetry */
 export class ExpressInstrumentation extends InstrumentationBase<
@@ -263,22 +252,19 @@ export class ExpressInstrumentation extends InstrumentationBase<
           );
         }
 
-        const startTime = hrTime();
         let spanHasEnded = false;
-        // If we found anything that isnt a middleware, there no point of measuring
-        // their time since they dont have callback.
         if (
           metadata.attributes[AttributeNames.EXPRESS_TYPE] !==
           ExpressLayerType.MIDDLEWARE
         ) {
-          span.end(startTime);
+          span.end();
           spanHasEnded = true;
         }
         // listener for response.on('finish')
         const onResponseFinish = () => {
           if (spanHasEnded === false) {
             spanHasEnded = true;
-            span.end(startTime);
+            span.end();
           }
         };
         // verify we have a callback

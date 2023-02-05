@@ -15,8 +15,5 @@
  */
 
 export * from './instrumentation';
-export {
-  PgInstrumentationConfig,
-  PgInstrumentationExecutionResponseHook,
-  PgResponseHookInformation,
-} from './types';
+export * from './types';
+export * from './enums/AttributeNames';

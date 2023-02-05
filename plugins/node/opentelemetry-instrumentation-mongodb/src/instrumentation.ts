@@ -33,14 +33,13 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
+import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
   CursorState,
   MongodbCommandType,
-  MongoDBInstrumentationConfig,
   MongoInternalCommand,
   MongoInternalTopology,
   WireProtocolInternal,
-  CommandResult,
   V4Connection,
   V4Connect,
   V4Session,
@@ -383,7 +382,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           ns,
           server,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ops[0] as any
+          ops[0] as any,
+          operationName
         );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
@@ -428,7 +428,9 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         const span = instrumentation.tracer.startSpan(`mongodb.${type}`, {
           kind: SpanKind.CLIENT,
         });
-        instrumentation._populateV3Attributes(span, ns, server, cmd);
+        const operation =
+          commandType === MongodbCommandType.UNKNOWN ? undefined : commandType;
+        instrumentation._populateV3Attributes(span, ns, server, cmd, operation);
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -463,7 +465,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         ) {
           return original.call(this, ns, cmd, options, callback);
         }
-
         if (!currentSpan) {
           const patchedCallback = instrumentation._patchEnd(
             undefined,
@@ -480,7 +481,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
               kind: SpanKind.CLIENT,
             }
           );
-          instrumentation._populateV4Attributes(span, this, ns, cmd);
+          instrumentation._populateV4Attributes(span, this, ns, cmd, commandType);
           const patchedCallback = instrumentation._patchEnd(
             span,
             resultHandler,
@@ -532,7 +533,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         const span = instrumentation.tracer.startSpan('mongodb.find', {
           kind: SpanKind.CLIENT,
         });
-        instrumentation._populateV3Attributes(span, ns, server, cmd);
+        instrumentation._populateV3Attributes(span, ns, server, cmd, 'find');
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
         if (typeof options === 'function') {
@@ -604,7 +605,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           span,
           ns,
           server,
-          cursorState.cmd
+          cursorState.cmd,
+          'getMore'
         );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
@@ -663,7 +665,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     span: Span,
     connectionCtx: any,
     ns: any,
-    command?: any
+    command?: any,
+    operation?: string
   ) {
     let host, port: undefined | string;
     if (connectionCtx) {
@@ -692,7 +695,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ns.collection,
       host,
       port,
-      commandObj
+      commandObj,
+      operation
     );
   }
 
@@ -707,7 +711,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     span: Span,
     ns: string,
     topology: MongoInternalTopology,
-    command?: MongoInternalCommand
+    command?: MongoInternalCommand,
+    operation?: string | undefined
   ) {
     // add network attributes to determine the remote server
     let host: undefined | string;
@@ -739,7 +744,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       dbCollection,
       host,
       port,
-      commandObj
+      commandObj,
+      operation
     );
   }
 
@@ -749,19 +755,21 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     dbCollection?: string,
     host?: undefined | string,
     port?: undefined | string,
-    commandObj?: any
+    commandObj?: any,
+    operation?: string | undefined
   ) {
     // add database related attributes
     span.setAttributes({
       [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MONGODB,
       [SemanticAttributes.DB_NAME]: dbName,
       [SemanticAttributes.DB_MONGODB_COLLECTION]: dbCollection,
+      [SemanticAttributes.DB_OPERATION]: operation,
     });
 
     if (host && port) {
       span.setAttributes({
-        [SemanticAttributes.NET_HOST_NAME]: host,
-        [SemanticAttributes.NET_HOST_PORT]: port,
+        [SemanticAttributes.NET_PEER_NAME]: host,
+        [SemanticAttributes.NET_PEER_PORT]: port,
       });
     }
     if (!commandObj) return;

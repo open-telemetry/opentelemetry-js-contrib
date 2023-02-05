@@ -15,12 +15,19 @@
  */
 
 import {
+  context,
+  trace,
   Span,
   SpanStatusCode,
   Tracer,
   SpanKind,
   diag,
+  INVALID_SPAN_CONTEXT,
+  Attributes,
+  defaultTextMapSetter,
+  ROOT_CONTEXT,
 } from '@opentelemetry/api';
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { AttributeNames } from './enums/AttributeNames';
 import {
   SemanticAttributes,
@@ -28,15 +35,14 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   PgClientExtended,
-  NormalizedQueryConfig,
   PostgresCallback,
-  PgClientConnectionParams,
   PgErrorCallback,
   PgPoolCallback,
   PgPoolExtended,
-  PgInstrumentationConfig,
-} from './types';
-import * as pgTypes from 'pg';
+  PgParsedConnectionParams,
+} from './internal-types';
+import { PgInstrumentationConfig } from './types';
+import type * as pgTypes from 'pg';
 import { PgInstrumentation } from './';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
@@ -44,130 +50,135 @@ function arrayStringifyHelper(arr: Array<unknown>): string {
   return '[' + arr.toString() + ']';
 }
 
-// Helper function to get a low cardinality command name from the full text query
-function getCommandFromText(text?: string): string {
-  if (!text) return 'unknown';
-  const words = text.split(' ');
-  return words[0].length > 0 ? words[0] : 'unknown';
+/**
+ * Helper function to get a low cardinality span name from whatever info we have
+ * about the query.
+ *
+ * This is tricky, because we don't have most of the information (table name,
+ * operation name, etc) the spec recommends using to build a low-cardinality
+ * value w/o parsing. So, we use db.name and assume that, if the query's a named
+ * prepared statement, those `name` values will be low cardinality. If we don't
+ * have a named prepared statement, we try to parse an operation (despite the
+ * spec's warnings).
+ *
+ * @params dbName The name of the db against which this query is being issued,
+ *   which could be missing if no db name was given at the time that the
+ *   connection was established.
+ * @params queryConfig Information we have about the query being issued, typed
+ *   to reflect only the validation we've actually done on the args to
+ *   `client.query()`. This will be undefined if `client.query()` was called
+ *   with invalid arguments.
+ */
+export function getQuerySpanName(
+  dbName: string | undefined,
+  queryConfig?: { text: string; name?: unknown }
+) {
+  // NB: when the query config is invalid, we omit the dbName too, so that
+  // someone (or some tool) reading the span name doesn't misinterpret the
+  // dbName as being a prepared statement or sql commit name.
+  if (!queryConfig) return PgInstrumentation.BASE_SPAN_NAME;
+
+  // Either the name of a prepared statement; or an attempted parse
+  // of the SQL command, normalized to uppercase; or unknown.
+  const command =
+    typeof queryConfig.name === 'string' && queryConfig.name
+      ? queryConfig.name
+      : parseNormalizedOperationName(queryConfig.text);
+
+  return `${PgInstrumentation.BASE_SPAN_NAME}:${command}${
+    dbName ? ` ${dbName}` : ''
+  }`;
 }
 
-export function getConnectionString(params: PgClientConnectionParams) {
+function parseNormalizedOperationName(queryText: string) {
+  const sqlCommand = queryText.split(' ')[0].toUpperCase();
+
+  // Handle query text being "COMMIT;", which has an extra semicolon before the space.
+  return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
+}
+
+export function getConnectionString(params: PgParsedConnectionParams) {
   const host = params.host || 'localhost';
   const port = params.port || 5432;
   const database = params.database || '';
   return `postgresql://${host}:${port}/${database}`;
 }
 
-// Private helper function to start a span
-function pgStartSpan(tracer: Tracer, client: PgClientExtended, name: string) {
-  const jdbcString = getConnectionString(client.connectionParameters);
+export function getSemanticAttributesFromConnection(
+  params: PgParsedConnectionParams
+) {
+  return {
+    [SemanticAttributes.DB_NAME]: params.database, // required
+    [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
+    [SemanticAttributes.NET_PEER_NAME]: params.host, // required
+    [SemanticAttributes.NET_PEER_PORT]: params.port,
+    [SemanticAttributes.DB_USER]: params.user,
+  };
+}
+
+export function startSpan(
+  tracer: Tracer,
+  instrumentationConfig: PgInstrumentationConfig,
+  name: string,
+  attributes: Attributes
+): Span {
+  // If a parent span is required but not present, use a noop span to propagate
+  // context without recording it. Adapted from opentelemetry-instrumentation-http:
+  // https://github.com/open-telemetry/opentelemetry-js/blob/597ea98e58a4f68bcd9aec5fd283852efe444cd6/experimental/packages/opentelemetry-instrumentation-http/src/http.ts#L660
+  const currentSpan = trace.getSpan(context.active());
+  if (instrumentationConfig.requireParentSpan && currentSpan === undefined) {
+    return trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
+  }
+
   return tracer.startSpan(name, {
     kind: SpanKind.CLIENT,
-    attributes: {
-      [SemanticAttributes.DB_NAME]: client.connectionParameters.database, // required
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
-      [SemanticAttributes.DB_CONNECTION_STRING]: jdbcString, // required
-      [SemanticAttributes.NET_PEER_NAME]: client.connectionParameters.host, // required
-      [SemanticAttributes.NET_PEER_PORT]: client.connectionParameters.port,
-      [SemanticAttributes.DB_USER]: client.connectionParameters.user,
-    },
+    attributes,
   });
 }
 
-// Queries where args[0] is a QueryConfig
+// Create a span from our normalized queryConfig object,
+// or return a basic span if no queryConfig was given/could be created.
 export function handleConfigQuery(
   this: PgClientExtended,
   tracer: Tracer,
   instrumentationConfig: PgInstrumentationConfig,
-  queryConfig: NormalizedQueryConfig
+  queryConfig?: { text: string; values?: unknown; name?: unknown }
 ) {
-  // Set child span name
-  const queryCommand = getCommandFromText(queryConfig.name || queryConfig.text);
-  const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = pgStartSpan(tracer, this, name);
+  // Create child span.
+  const { connectionParameters } = this;
+  const dbName = connectionParameters.database;
+
+  const spanName = getQuerySpanName(dbName, queryConfig);
+  const span = startSpan(tracer, instrumentationConfig, spanName, {
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
+    ...getSemanticAttributesFromConnection(connectionParameters),
+  });
+
+  if (!queryConfig) {
+    return span;
+  }
 
   // Set attributes
   if (queryConfig.text) {
     span.setAttribute(SemanticAttributes.DB_STATEMENT, queryConfig.text);
   }
+
   if (
     instrumentationConfig.enhancedDatabaseReporting &&
-    queryConfig.values instanceof Array
+    Array.isArray(queryConfig.values)
   ) {
     span.setAttribute(
       AttributeNames.PG_VALUES,
       arrayStringifyHelper(queryConfig.values)
     );
   }
+
   // Set plan name attribute, if present
-  if (queryConfig.name) {
+  if (typeof queryConfig.name === 'string') {
     span.setAttribute(AttributeNames.PG_PLAN, queryConfig.name);
   }
 
   return span;
-}
-
-// Queries where args[1] is a 'values' array
-export function handleParameterizedQuery(
-  this: PgClientExtended,
-  tracer: Tracer,
-  instrumentationConfig: PgInstrumentationConfig,
-  query: string,
-  values: unknown[]
-) {
-  // Set child span name
-  const queryCommand = getCommandFromText(query);
-  const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = pgStartSpan(tracer, this, name);
-
-  // Set attributes
-  span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
-  if (instrumentationConfig.enhancedDatabaseReporting) {
-    span.setAttribute(AttributeNames.PG_VALUES, arrayStringifyHelper(values));
-  }
-
-  return span;
-}
-
-// Queries where args[0] is a text query and 'values' was not specified
-export function handleTextQuery(
-  this: PgClientExtended,
-  tracer: Tracer,
-  query: string
-) {
-  // Set child span name
-  const queryCommand = getCommandFromText(query);
-  const name = PgInstrumentation.BASE_SPAN_NAME + ':' + queryCommand;
-  const span = pgStartSpan(tracer, this, name);
-
-  // Set attributes
-  span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
-
-  return span;
-}
-
-/**
- * Invalid query handler. We should never enter this function unless invalid args were passed to the driver.
- * Create and immediately end a new span
- */
-export function handleInvalidQuery(
-  this: PgClientExtended,
-  tracer: Tracer,
-  originalQuery: typeof pgTypes.Client.prototype.query,
-  ...args: unknown[]
-) {
-  let result;
-  const span = pgStartSpan(tracer, this, PgInstrumentation.BASE_SPAN_NAME);
-  try {
-    result = originalQuery.apply(this, args as never);
-  } catch (e) {
-    // span.recordException(e);
-    span.setStatus({ code: SpanStatusCode.ERROR, message: e.message });
-    throw e;
-  } finally {
-    span.end();
-  }
-  return result;
 }
 
 export function handleExecutionResult(
@@ -256,3 +267,92 @@ export function patchClientConnectCallback(
     cb.call(this, err);
   };
 }
+
+// NOTE: This function currently is returning false-positives
+// in cases where comment characters appear in string literals
+// ("SELECT '-- not a comment';" would return true, although has no comment)
+function hasValidSqlComment(query: string): boolean {
+  const indexOpeningDashDashComment = query.indexOf('--');
+  if (indexOpeningDashDashComment >= 0) {
+    return true;
+  }
+
+  const indexOpeningSlashComment = query.indexOf('/*');
+  if (indexOpeningSlashComment < 0) {
+    return false;
+  }
+
+  const indexClosingSlashComment = query.indexOf('*/');
+  return indexOpeningDashDashComment < indexClosingSlashComment;
+}
+
+// sqlcommenter specification (https://google.github.io/sqlcommenter/spec/#value-serialization)
+// expects us to URL encode based on the RFC 3986 spec (https://en.wikipedia.org/wiki/Percent-encoding),
+// but encodeURIComponent does not handle some characters correctly (! ' ( ) *),
+// which means we need special handling for this
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+function fixedEncodeURIComponent(str: string) {
+  return encodeURIComponent(str).replace(
+    /[!'()*]/g,
+    c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`
+  );
+}
+
+export function addSqlCommenterComment(span: Span, query: string): string {
+  if (typeof query !== 'string' || query.length === 0) {
+    return query;
+  }
+
+  // As per sqlcommenter spec we shall not add a comment if there already is a comment
+  // in the query
+  if (hasValidSqlComment(query)) {
+    return query;
+  }
+
+  const propagator = new W3CTraceContextPropagator();
+  const headers: { [key: string]: string } = {};
+  propagator.inject(
+    trace.setSpan(ROOT_CONTEXT, span),
+    headers,
+    defaultTextMapSetter
+  );
+
+  // sqlcommenter spec requires keys in the comment to be sorted lexicographically
+  const sortedKeys = Object.keys(headers).sort();
+
+  if (sortedKeys.length === 0) {
+    return query;
+  }
+
+  const commentString = sortedKeys
+    .map(key => {
+      const encodedValue = fixedEncodeURIComponent(headers[key]);
+      return `${key}='${encodedValue}'`;
+    })
+    .join(',');
+
+  return `${query} /*${commentString}*/`;
+}
+
+/**
+ * Attempt to get a message string from a thrown value, while being quite
+ * defensive, to recognize the fact that, in JS, any kind of value (even
+ * primitives) can be thrown.
+ */
+export function getErrorMessage(e: unknown) {
+  return typeof e === 'object' && e !== null && 'message' in e
+    ? String((e as { message?: unknown }).message)
+    : undefined;
+}
+
+export function isObjectWithTextString(it: unknown): it is ObjectWithText {
+  return (
+    typeof it === 'object' &&
+    typeof (it as null | { text?: unknown })?.text === 'string'
+  );
+}
+
+export type ObjectWithText = {
+  text: string;
+  [k: string]: unknown;
+};

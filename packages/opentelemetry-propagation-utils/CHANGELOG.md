@@ -1,5 +1,18 @@
 # Changelog
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.33.0
+
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.28.0...propagation-utils-v0.29.0) (2022-09-27)
+
+
+### Features
+
+* **propagation-utils:** end pub-sub process span on promise settled ([#1055](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1055)) ([cb83d30](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cb83d300582b4d485be56563634cd3859069004c))
+
 ## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.27.0...propagation-utils-v0.28.0) (2022-05-14)
 
 

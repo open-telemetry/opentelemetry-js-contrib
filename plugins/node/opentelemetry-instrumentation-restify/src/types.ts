@@ -13,33 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { Span } from '@opentelemetry/api';
-import * as restify from 'restify';
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export enum LayerType {
   MIDDLEWARE = 'middleware',
   REQUEST_HANDLER = 'request_handler',
 }
 
-declare interface RequestWithRoute extends restify.Request {
-  route: { path: string };
-  getRoute: () => { path: string };
+export interface RestifyRequestInfo {
+  request: any; // Request type from @types/restify package
+  layerType: LayerType;
 }
 
-export declare type Request = RequestWithRoute;
-export declare type Metadata = {
-  path?: string;
-  methodName?: string;
-  type: LayerType;
-};
-
-export type NestedRequestHandlers = Array<
-  NestedRequestHandlers | restify.RequestHandler
->;
+/**
+ * Function that can be used to add custom attributes to the current span
+ * @param span - The restify handler span.
+ * @param info - The restify request info object.
+ */
+export interface RestifyCustomAttributeFunction {
+  (span: Span, info: RestifyRequestInfo): void;
+}
 
 /**
- * extends opentelemetry/api Span object to instrument the root span name of http instrumentation
+ * Options available for the restify Instrumentation
  */
-export interface InstrumentationSpan extends Span {
-  name?: string;
+export interface RestifyInstrumentationConfig extends InstrumentationConfig {
+  /** Function for adding custom attributes to each handler span */
+  requestHook?: RestifyCustomAttributeFunction;
 }

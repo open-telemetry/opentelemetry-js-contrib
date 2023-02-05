@@ -20,6 +20,7 @@ registerInstrumentations({
   instrumentations: [
     new IORedisInstrumentation(),
   ],
+  tracerProvider: provider,
 });
 
 module.exports = opentelemetry.trace.getTracer('ioredis-example');
