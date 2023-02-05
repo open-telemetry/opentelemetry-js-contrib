@@ -58,7 +58,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
   }
 
-
   override _updateMetricInstruments() {
     this._connectionsUsage = this.meter.createUpDownCounter(
       'db.client.connections.usage',
@@ -476,7 +475,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
               kind: SpanKind.CLIENT,
             }
           );
-          instrumentation._populateV4Attributes(span, this, ns, cmd, commandType);
+          instrumentation._populateV4Attributes(
+            span,
+            this,
+            ns,
+            cmd,
+            commandType
+          );
           const patchedCallback = instrumentation._patchEnd(
             span,
             resultHandler,
