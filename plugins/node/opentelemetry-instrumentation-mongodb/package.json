@@ -61,6 +61,7 @@
     "mocha": "7.2.0",
     "mongodb": "3.6.11",
     "@types/mongodb": "3.6.20",
+    "@types/bson": "4.0.5",
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
     "test-all-versions": "5.0.1",
@@ -70,9 +71,6 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.35.1",
     "@opentelemetry/semantic-conventions": "^1.0.0"
-  },
-  "overrides":{
-    "@types/bson": "4.0.5"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb#readme"
 }

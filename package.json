@@ -58,9 +58,6 @@
     "lerna-changelog": "2.2.0",
     "typescript": "4.3.5"
   },
-  "overrides":{
-    "@types/bson": "4.0.5"
-  },
   "changelog": {
     "labels": {
       "breaking": ":boom: Breaking Change",
