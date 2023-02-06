@@ -29,9 +29,12 @@ import * as utils from './utils';
 import { VERSION } from './version';
 import {
   Dns,
+  DnsPromises,
   LookupCallbackSignature,
   LookupPromiseSignature,
 } from './internal-types';
+
+const supportsPromises = semver.gte(process.version, '10.6.0');
 
 /**
  * Dns instrumentation for Opentelemetry
@@ -41,36 +44,59 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
     super('@opentelemetry/instrumentation-dns', VERSION, _config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<Dns>[] {
+  init(): InstrumentationNodeModuleDefinition<Dns | DnsPromises>[] {
     return [
-      new InstrumentationNodeModuleDefinition<Dns>(
+      new InstrumentationNodeModuleDefinition<Dns | DnsPromises>(
         'dns',
         ['*'],
-        moduleExports => {
-          diag.debug('Applying patch for dns');
-          if (isWrapped(moduleExports.lookup)) {
-            this._unwrap(moduleExports, 'lookup');
-          }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          this._wrap(moduleExports, 'lookup', this._getLookup() as any);
-          // new promise methods in node >= 10.6.0
-          // https://nodejs.org/docs/latest/api/dns.html#dns_dnspromises_lookup_hostname_options
-          if (semver.gte(process.version, '10.6.0')) {
+        (moduleExports: Dns | DnsPromises) => {
+          if (!supportsPromises || 'promises' in moduleExports) {
+            moduleExports = moduleExports as Dns;
+            diag.debug('Applying patch for dns');
+            if (isWrapped(moduleExports.lookup)) {
+              this._unwrap(moduleExports, 'lookup');
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this._wrap(moduleExports, 'lookup', this._getLookup() as any);
+            // new promise methods in node >= 10.6.0
+            // https://nodejs.org/docs/latest/api/dns.html#dns_dnspromises_lookup_hostname_options
+            if (supportsPromises) {
+              this._wrap(
+                moduleExports.promises,
+                'lookup',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                this._getLookup() as any
+              );
+            }
+            return moduleExports;
+          } else {
+            moduleExports = moduleExports as DnsPromises;
+            diag.debug('Applying patch for dns/promises');
+            if (isWrapped(moduleExports.lookup)) {
+              this._unwrap(moduleExports, 'lookup');
+            }
             this._wrap(
-              moduleExports.promises,
+              moduleExports,
               'lookup',
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               this._getLookup() as any
             );
+            return moduleExports;
           }
-          return moduleExports;
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch for dns');
-          this._unwrap(moduleExports, 'lookup');
-          if (semver.gte(process.version, '10.6.0')) {
-            this._unwrap(moduleExports.promises, 'lookup');
+          if (!supportsPromises || 'promises' in moduleExports) {
+            moduleExports = moduleExports as Dns;
+            diag.debug('Removing patch for dns');
+            this._unwrap(moduleExports, 'lookup');
+            if (supportsPromises) {
+              this._unwrap(moduleExports.promises, 'lookup');
+            }
+          } else {
+            moduleExports = moduleExports as DnsPromises;
+            diag.debug('Removing patch for dns/promises');
+            this._unwrap(moduleExports, 'lookup');
           }
         }
       ),
