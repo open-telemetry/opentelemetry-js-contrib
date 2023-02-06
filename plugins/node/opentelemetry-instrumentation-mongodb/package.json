@@ -71,8 +71,5 @@
     "@opentelemetry/instrumentation": "^0.35.1",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
-  "overrides":{
-    "@types/bson": "4.0.5"
-  },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb#readme"
 }
