@@ -28,7 +28,8 @@ import type * as FSPromisesType from 'fs/promises';
 import tests, { FsFunction, TestCase, TestCreator } from './definitions';
 import type { FPMember, EndHook } from '../src/types';
 
-const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
+const supportsPromises =
+  parseInt(process.versions.node.split('.')[0], 10) >= 14;
 
 const TEST_ATTRIBUTE = 'test.attr';
 const TEST_VALUE = 'test.attr.value';

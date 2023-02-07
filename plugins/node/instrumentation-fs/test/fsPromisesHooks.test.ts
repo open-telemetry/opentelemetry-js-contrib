@@ -24,7 +24,8 @@ import * as sinon from 'sinon';
 import type * as FSPromisesType from 'fs/promises';
 import type { FsInstrumentationConfig } from '../src/types';
 
-const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
+const supportsPromises =
+  parseInt(process.versions.node.split('.')[0], 10) >= 14;
 
 const createHookError = new Error('createHook failed');
 const createHook = sinon.spy((_functionName: string) => {
