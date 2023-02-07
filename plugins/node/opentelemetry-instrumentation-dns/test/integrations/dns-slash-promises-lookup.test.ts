@@ -43,7 +43,7 @@ if (supportsPromises) {
       if (process.env.CI) {
         instrumentation = new DnsInstrumentation();
         instrumentation.setTracerProvider(provider);
-        require('dns/promises');
+        dnsPromises = require('dns/promises');
         done();
         return;
       }
