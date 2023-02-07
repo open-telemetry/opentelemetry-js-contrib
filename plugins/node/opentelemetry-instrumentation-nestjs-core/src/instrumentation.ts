@@ -145,7 +145,7 @@ function createWrapNestFactoryCreate(
       return api.context.with(spanContext, async () => {
         try {
           return await original.apply(this, arguments as any);
-        } catch (e) {
+        } catch (e: any) {
           throw addError(span, e);
         } finally {
           span.end();
@@ -198,7 +198,7 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
         return api.context.with(spanContext, async () => {
           try {
             return await handler.apply(this, arguments as any);
-          } catch (e) {
+          } catch (e: any) {
             throw addError(span, e);
           } finally {
             span.end();
@@ -228,7 +228,7 @@ function createWrapHandler(
     return api.context.with(spanContext, async () => {
       try {
         return await handler.apply(this, arguments);
-      } catch (e) {
+      } catch (e: any) {
         throw addError(span, e);
       } finally {
         span.end();

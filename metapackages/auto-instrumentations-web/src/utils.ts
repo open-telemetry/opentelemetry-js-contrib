@@ -65,7 +65,7 @@ export function getWebAutoInstrumentations(
     try {
       diag.debug(`Loading instrumentation for ${name}`);
       instrumentations.push(new Instance(userConfig));
-    } catch (e) {
+    } catch (e: any) {
       diag.error(e);
     }
   }

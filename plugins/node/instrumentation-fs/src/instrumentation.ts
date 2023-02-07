@@ -189,7 +189,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         );
         instrumentation._runEndHook(functionName, { args: args, span });
         return res;
-      } catch (error) {
+      } catch (error: any) {
         span.recordException(error);
         span.setStatus({
           message: error.message,
@@ -263,7 +263,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             this,
             ...args
           );
-        } catch (error) {
+        } catch (error: any) {
           span.recordException(error);
           span.setStatus({
             message: error.message,
@@ -336,7 +336,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             this,
             ...args
           );
-        } catch (error) {
+        } catch (error: any) {
           span.recordException(error);
           span.setStatus({
             message: error.message,
@@ -406,7 +406,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         );
         instrumentation._runEndHook(functionName, { args: args, span });
         return res;
-      } catch (error) {
+      } catch (error: any) {
         span.recordException(error);
         span.setStatus({
           message: error.message,
