@@ -38,6 +38,7 @@ import type {
 import { promisify } from 'util';
 
 type FS = typeof fs;
+type FSPromises = typeof fs['promises'];
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
@@ -46,7 +47,10 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     super('@opentelemetry/instrumentation-fs', VERSION, config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<FS>[] {
+  init(): (
+    | InstrumentationNodeModuleDefinition<FS>
+    | InstrumentationNodeModuleDefinition<FSPromises>
+  )[] {
     return [
       new InstrumentationNodeModuleDefinition<FS>(
         'fs',
@@ -115,6 +119,33 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
               if (isWrapped(fs.promises[fName])) {
                 this._unwrap(fs.promises, fName);
               }
+            }
+          }
+        }
+      ),
+      new InstrumentationNodeModuleDefinition<FSPromises>(
+        'fs/promises',
+        ['*'],
+        (fsPromises: FSPromises) => {
+          this._diag.debug('Applying patch for fs/promises');
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fsPromises[fName])) {
+              this._unwrap(fsPromises, fName);
+            }
+            this._wrap(
+              fsPromises,
+              fName,
+              <any>this._patchPromiseFunction.bind(this, fName)
+            );
+          }
+          return fsPromises;
+        },
+        (fsPromises: FSPromises) => {
+          if (fsPromises === undefined) return;
+          this._diag.debug('Removing patch for fs/promises');
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fsPromises[fName])) {
+              this._unwrap(fsPromises, fName);
             }
           }
         }
