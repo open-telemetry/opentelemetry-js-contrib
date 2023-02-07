@@ -105,7 +105,7 @@ describe('dns/promises.lookup()', () => {
         try {
           await dnsPromises.lookup(hostname);
           assert.fail();
-        } catch (error) {
+        } catch (error: any) {
           const spans = memoryExporter.getFinishedSpans();
           const [span] = spans;
 
@@ -127,7 +127,7 @@ describe('dns/promises.lookup()', () => {
       try {
         await dnsPromises.lookup(hostname, { family: -1 });
         assert.fail();
-      } catch (error) {
+      } catch (error: any) {
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
 
@@ -149,7 +149,7 @@ describe('dns/promises.lookup()', () => {
       try {
         await dnsPromises.lookup(hostname as any, { family: 4 });
         assert.fail();
-      } catch (error) {
+      } catch (error: any) {
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
 
