@@ -38,7 +38,6 @@ import type {
 import { promisify } from 'util';
 
 type FS = typeof fs;
-type FSPromises = typeof fs.promises;
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
@@ -47,102 +46,74 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     super('@opentelemetry/instrumentation-fs', VERSION, config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<FS | FSPromises>[] {
+  init(): InstrumentationNodeModuleDefinition<FS>[] {
     return [
-      new InstrumentationNodeModuleDefinition<FS | FSPromises>(
+      new InstrumentationNodeModuleDefinition<FS>(
         'fs',
         ['*'],
-        (fs: FS | FSPromises) => {
-          if (!supportsPromises || 'promises' in fs) {
-            fs = fs as FS;
-            this._diag.debug('Applying patch for fs');
-            for (const fName of SYNC_FUNCTIONS) {
-              if (isWrapped(fs[fName])) {
-                this._unwrap(fs, fName);
-              }
+        (fs: FS) => {
+          this._diag.debug('Applying patch for fs');
+          for (const fName of SYNC_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
+            }
+            this._wrap(
+              fs,
+              fName,
+              <any>this._patchSyncFunction.bind(this, fName)
+            );
+          }
+          for (const fName of CALLBACK_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
+            }
+            if (fName === 'exists') {
+              // handling separately because of the inconsistent cb style:
+              // `exists` doesn't have error as the first argument, but the result
               this._wrap(
                 fs,
                 fName,
-                <any>this._patchSyncFunction.bind(this, fName)
+                <any>this._patchExistsCallbackFunction.bind(this, fName)
               );
+              continue;
             }
-            for (const fName of CALLBACK_FUNCTIONS) {
-              if (isWrapped(fs[fName])) {
-                this._unwrap(fs, fName);
-              }
-              if (fName === 'exists') {
-                // handling separately because of the inconsistent cb style:
-                // `exists` doesn't have error as the first argument, but the result
-                this._wrap(
-                  fs,
-                  fName,
-                  <any>this._patchExistsCallbackFunction.bind(this, fName)
-                );
-                continue;
-              }
-              this._wrap(
-                fs,
-                fName,
-                <any>this._patchCallbackFunction.bind(this, fName)
-              );
-            }
-            if (supportsPromises) {
-              for (const fName of PROMISE_FUNCTIONS) {
-                if (isWrapped(fs.promises[fName])) {
-                  this._unwrap(fs.promises, fName);
-                }
-                this._wrap(
-                  fs.promises,
-                  fName,
-                  <any>this._patchPromiseFunction.bind(this, fName)
-                );
-              }
-            }
-            return fs;
-          } else {
-            const fsPromises = fs as FSPromises;
-            this._diag.debug('Applying patch for fs/promises');
+            this._wrap(
+              fs,
+              fName,
+              <any>this._patchCallbackFunction.bind(this, fName)
+            );
+          }
+          if (supportsPromises) {
             for (const fName of PROMISE_FUNCTIONS) {
-              if (isWrapped(fsPromises[fName])) {
-                this._unwrap(fsPromises, fName);
+              if (isWrapped(fs.promises[fName])) {
+                this._unwrap(fs.promises, fName);
               }
               this._wrap(
-                fsPromises,
+                fs.promises,
                 fName,
                 <any>this._patchPromiseFunction.bind(this, fName)
               );
             }
-            return fsPromises;
           }
+          return fs;
         },
-        (fs: FS | FSPromises) => {
+        (fs: FS) => {
           if (fs === undefined) return;
-          if (!supportsPromises || 'promises' in fs) {
-            fs = fs as FS;
-            this._diag.debug('Removing patch for fs');
-            for (const fName of SYNC_FUNCTIONS) {
-              if (isWrapped(fs[fName])) {
-                this._unwrap(fs, fName);
-              }
+          this._diag.debug('Removing patch for fs');
+          for (const fName of SYNC_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
             }
-            for (const fName of CALLBACK_FUNCTIONS) {
-              if (isWrapped(fs[fName])) {
-                this._unwrap(fs, fName);
-              }
+          }
+          for (const fName of CALLBACK_FUNCTIONS) {
+            if (isWrapped(fs[fName])) {
+              this._unwrap(fs, fName);
             }
-            if (supportsPromises) {
-              for (const fName of PROMISE_FUNCTIONS) {
-                if (isWrapped(fs.promises[fName])) {
-                  this._unwrap(fs.promises, fName);
-                }
-              }
-            }
-          } else {
-            const fsPromises = fs as FSPromises;
-            this._diag.debug('Removing patch for fs/promises');
+          }
+          if (supportsPromises) {
             for (const fName of PROMISE_FUNCTIONS) {
-              if (isWrapped(fsPromises[fName])) {
-                this._unwrap(fsPromises, fName);
+              if (isWrapped(fs.promises[fName])) {
+                this._unwrap(fs.promises, fName);
               }
             }
           }
