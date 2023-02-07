@@ -24,7 +24,7 @@ export type FunctionPropertyNames<T> = {
 export type FunctionProperties<T> = Pick<T, FunctionPropertyNames<T>>;
 
 export type FMember = FunctionPropertyNames<typeof fs>;
-export type FPMember = FunctionPropertyNames<typeof fs['promises']>;
+export type FPMember = FunctionPropertyNames<(typeof fs)['promises']>;
 
 export type CreateHook = (
   functionName: FMember | FPMember,
@@ -38,4 +38,5 @@ export type EndHook = (
 export interface FsInstrumentationConfig extends InstrumentationConfig {
   createHook?: CreateHook;
   endHook?: EndHook;
+  requireParentSpan?: boolean;
 }

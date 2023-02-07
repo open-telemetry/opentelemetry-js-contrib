@@ -107,7 +107,7 @@ describe('fs instrumentation: hooks', () => {
     it('should not shadow the error from original call when hooks throw', () => {
       try {
         fs.accessSync('./test/fixtures/readtest-404', fs.constants.R_OK);
-      } catch (e) {
+      } catch (e: any) {
         assertNotHookError(e);
       }
 

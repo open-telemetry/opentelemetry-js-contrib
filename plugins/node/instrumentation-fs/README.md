@@ -40,10 +40,11 @@ registerInstrumentations({
 
 You can set the following:
 
-| Options | Type | Description |
-| ------- | ---- | ----------- |
-| `createHook` | `(functionName: FMember | FPMember, info: { args: ArrayLike<unknown> }) => boolean` | Hook called before creating the span. If `false` is returned this and all the sibling calls will not be traced. |
-| `endHook` | `( functionName: FMember | FPMember, info: { args: ArrayLike<unknown>; span: api.Span } ) => void` | Function called just before the span is ended. Useful for adding attributes. |
+| Options             | Type                                                                                                | Description                                                                                                     |
+| ------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `createHook`        | `(functionName: FMember \| FPMember, info: { args: ArrayLike<unknown> }) => boolean`                | Hook called before creating the span. If `false` is returned this and all the sibling calls will not be traced. |
+| `endHook`           | `( functionName: FMember \| FPMember, info: { args: ArrayLike<unknown>; span: api.Span } ) => void` | Function called just before the span is ended. Useful for adding attributes.                                    |
+| `requireParentSpan` | `boolean`                                                                                           | Require parent to create fs span, default when unset is `false`.                                                |
 
 ## Useful links
 
