@@ -69,7 +69,7 @@
     "pg-pool": "3.4.1",
     "rimraf": "3.0.2",
     "safe-stable-stringify": "^2.4.1",
-    "sinon": "14.0.0",
+    "sinon": "15.0.1",
     "test-all-versions": "5.0.1",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
