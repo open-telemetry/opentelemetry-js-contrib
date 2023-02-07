@@ -1,9 +1,5 @@
 # Changelog
 
-### Features
-
-* feat: collect `host.name` resource attribute from GCP Metadata API (#[1364](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/1364))
-
 ### Dependencies
 
 * The following workspace dependencies were updated
