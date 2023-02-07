@@ -277,7 +277,6 @@ describe('pg-pool', () => {
       create({
         requireParentSpan: true,
       });
-      memoryExporter.reset();
       const client = await newPool.connect();
       try {
         await client.query('SELECT NOW()');
