@@ -13,13 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Handler, SQSEvent } from 'aws-lambda';
+import { EventBridgeEvent, Handler, SQSEvent } from 'aws-lambda';
+import { SNSEvent } from 'aws-lambda/trigger/sns';
+import { S3Event } from 'aws-lambda/trigger/s3';
+import { SESEvent } from 'aws-lambda/trigger/ses';
+import { DynamoDBStreamEvent } from 'aws-lambda/trigger/dynamodb-stream';
+import { BaseTriggerEvent as CognitoBaseTriggerEvent } from 'aws-lambda/trigger/cognito-user-pool-trigger/_common';
+export const LambdaAttributes = {
+  TRIGGER_SERVICE: 'faas.trigger.type',
+};
 
 export const enum TriggerOrigin {
-  API_GATEWAY_REST,
-  API_GATEWAY_HTTP,
-  SQS,
+  API_GATEWAY_REST = 'Api Gateway Rest',
+  API_GATEWAY_HTTP = 'Api Gateway HTTP',
+  SQS = 'SQS',
+  SNS = 'SNS',
+  DYNAMO_DB_STREAM = 'Dynamo DB',
+  S3 = 'S3',
+  SES = 'SES',
+  COGNITO = 'Cognito',
+  EVENT_BRIDGE = 'EventBridge',
 }
+
 export type RestApiGatewayRequestContext = {
   accountId: string;
   apiId: string;
@@ -129,11 +144,39 @@ export function isHttpApiGatewayEvent(
   );
 }
 
+export type RecordValidator<T> = (record: any) => record is T;
+
 export type GatewayResult = {
   statusCode: number;
   headers?: Record<string, string>;
   body?: object | string;
 };
+
+const validateRecord =
+  (recordSource: string, additionalRecordFields?: string[]) =>
+  (record: any) => {
+    return record &&
+      typeof record === 'object' &&
+      'eventSource' in record &&
+      record.eventSource === recordSource &&
+      additionalRecordFields
+      ? additionalRecordFields.every(field => {
+          field in record && typeof record[field] === 'object';
+        })
+      : true;
+  };
+
+const validateRecordsEvent =
+  <T>(recordSource: string, additionalRecordFields?: string[]) =>
+  (event: any): event is T => {
+    return (
+      event &&
+      typeof event === 'object' &&
+      'Records' in event &&
+      Array.isArray(event.Records) &&
+      event.Records.every(validateRecord(recordSource, additionalRecordFields))
+    );
+  };
 
 export function isGatewayResult(result: any): result is GatewayResult {
   return (
@@ -144,13 +187,37 @@ export function isGatewayResult(result: any): result is GatewayResult {
   );
 }
 
-export function isSQSEvent(event: any): event is SQSEvent {
+export const isSQSEvent = validateRecordsEvent<SQSEvent>('aws:sqs');
+
+export const isSNSEvent = validateRecordsEvent<SNSEvent>('aws:sns', ['sns']);
+
+export const isDynamoDBStreamEvent =
+  validateRecordsEvent<DynamoDBStreamEvent>('aws:dynamodb');
+
+export const isS3Event = validateRecordsEvent<S3Event>('aws:s3', ['s3']);
+
+export const isSESEvent = validateRecordsEvent<SESEvent>('aws:ses', ['ses']);
+
+export const isCognitoEvent = (
+  event: any
+): event is CognitoBaseTriggerEvent<string> => {
   return (
     event &&
     typeof event === 'object' &&
-    'Records' in event &&
-    Array.isArray(event.Records)
+    'triggerSource' in event &&
+    typeof event.triggerSource === 'string'
   );
-}
+};
+
+export const isEventBridgeEvent = (
+  event: any
+): event is EventBridgeEvent<string, any> => {
+  return (
+    event &&
+    typeof event === 'object' &&
+    'source' in event &&
+    typeof event.source === 'string'
+  );
+};
 
 export type LambdaModule = Record<string, Handler>;
