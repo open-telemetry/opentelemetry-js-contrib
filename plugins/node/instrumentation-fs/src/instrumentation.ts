@@ -38,7 +38,7 @@ import type {
 import { promisify } from 'util';
 
 type FS = typeof fs;
-type FSPromises = typeof fs['promises'];
+type FSPromises = (typeof fs)['promises'];
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
