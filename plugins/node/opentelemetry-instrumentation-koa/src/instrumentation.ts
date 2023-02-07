@@ -216,7 +216,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       return api.context.with(newContext, async () => {
         try {
           return await middlewareLayer(context, next);
-        } catch (err) {
+        } catch (err: any) {
           span.recordException(err);
           throw err;
         } finally {
