@@ -127,7 +127,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
           return original();
         }
       );
-    } catch (err) {
+    } catch (err: any) {
       span.setAttribute(AttributeNames.REACT_ERROR, err.stack);
       wasError = true;
       throw err;

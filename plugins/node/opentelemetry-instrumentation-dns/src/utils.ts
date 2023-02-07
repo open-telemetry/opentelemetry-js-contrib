@@ -146,7 +146,7 @@ export const isIgnored = (
         return true;
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     if (onException) {
       onException(e);
     }
