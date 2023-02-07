@@ -21,7 +21,7 @@ import {
 import * as assert from 'assert';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { DnsInstrumentation } from '../../src';
-import * as dnsPromises from 'dns/promises';
+import type * as DnsPromisesType from 'dns/promises';
 import * as utils from '../utils/utils';
 import { assertSpan } from '../utils/assertSpan';
 import { SpanStatusCode } from '@opentelemetry/api';
@@ -30,46 +30,67 @@ const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
-describe('dns/promises.lookup()', () => {
-  let instrumentation: DnsInstrumentation;
+const supportsPromises =
+  parseInt(process.versions.node.split('.')[0], 10) >= 15;
 
-  before(function (done) {
-    // if node version is supported, it's mandatory for CI
-    if (process.env.CI) {
+if (supportsPromises) {
+  describe('dns/promises.lookup()', () => {
+    let instrumentation: DnsInstrumentation;
+    let dnsPromises: typeof DnsPromisesType;
+
+    before(function (done) {
+      // if node version is supported, it's mandatory for CI
+      if (process.env.CI) {
+        instrumentation = new DnsInstrumentation();
+        instrumentation.setTracerProvider(provider);
+        require('dns/promises');
+        done();
+        return;
+      }
+
+      utils.checkInternet(isConnected => {
+        if (!isConnected) {
+          this.skip();
+          // don't disturb people
+        }
+        done();
+      });
       instrumentation = new DnsInstrumentation();
       instrumentation.setTracerProvider(provider);
-      require('dns/promises');
-      done();
-      return;
-    }
-
-    utils.checkInternet(isConnected => {
-      if (!isConnected) {
-        this.skip();
-        // don't disturb people
-      }
-      done();
+      dnsPromises = require('dns/promises');
     });
-    instrumentation = new DnsInstrumentation();
-    instrumentation.setTracerProvider(provider);
-    require('dns/promises');
-  });
 
-  afterEach(() => {
-    memoryExporter.reset();
-  });
+    afterEach(() => {
+      memoryExporter.reset();
+    });
 
-  after(() => {
-    instrumentation.disable();
-  });
+    after(() => {
+      instrumentation.disable();
+    });
 
-  describe('with family param', () => {
-    [4, 6].forEach(ipversion => {
-      it(`should export a valid span with "family" arg to ${ipversion}`, async () => {
-        const hostname = 'google.com';
-        const { address, family } = await dnsPromises.lookup(hostname, {
-          family: ipversion,
+    describe('with family param', () => {
+      [4, 6].forEach(ipversion => {
+        it(`should export a valid span with "family" arg to ${ipversion}`, async () => {
+          const hostname = 'google.com';
+          const { address, family } = await dnsPromises.lookup(hostname, {
+            family: ipversion,
+          });
+          assert.ok(address);
+          assert.ok(family);
+
+          const spans = memoryExporter.getFinishedSpans();
+          const [span] = spans;
+          assert.strictEqual(spans.length, 1);
+          assertSpan(span, { addresses: [{ address, family }], hostname });
         });
+      });
+    });
+
+    describe('with no options param', () => {
+      it('should export a valid span', async () => {
+        const hostname = 'google.com';
+        const { address, family } = await dnsPromises.lookup(hostname);
+
         assert.ok(address);
         assert.ok(family);
 
@@ -78,32 +99,38 @@ describe('dns/promises.lookup()', () => {
         assert.strictEqual(spans.length, 1);
         assertSpan(span, { addresses: [{ address, family }], hostname });
       });
-    });
-  });
 
-  describe('with no options param', () => {
-    it('should export a valid span', async () => {
-      const hostname = 'google.com';
-      const { address, family } = await dnsPromises.lookup(hostname);
+      describe('extended timeout', function () {
+        // Extending the default timeout as some environments are taking longer than 2 seconds to fail
+        // So rather than fail the test -- just take a little longer
+        this.timeout(10000);
 
-      assert.ok(address);
-      assert.ok(family);
+        it('should export a valid span with error NOT_FOUND', async () => {
+          const hostname = 'ᚕ';
+          try {
+            await dnsPromises.lookup(hostname);
+            assert.fail();
+          } catch (error: any) {
+            const spans = memoryExporter.getFinishedSpans();
+            const [span] = spans;
 
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpan(span, { addresses: [{ address, family }], hostname });
-    });
+            assert.strictEqual(spans.length, 1);
+            assertSpan(span, {
+              addresses: [],
+              hostname,
+              forceStatus: {
+                code: SpanStatusCode.ERROR,
+                message: error!.message,
+              },
+            });
+          }
+        });
+      });
 
-    describe('extended timeout', function () {
-      // Extending the default timeout as some environments are taking longer than 2 seconds to fail
-      // So rather than fail the test -- just take a little longer
-      this.timeout(10000);
-
-      it('should export a valid span with error NOT_FOUND', async () => {
-        const hostname = 'ᚕ';
+      it('should export a valid span with error INVALID_ARGUMENT when "family" param is equal to -1', async () => {
+        const hostname = 'google.com';
         try {
-          await dnsPromises.lookup(hostname);
+          await dnsPromises.lookup(hostname, { family: -1 });
           assert.fail();
         } catch (error: any) {
           const spans = memoryExporter.getFinishedSpans();
@@ -112,7 +139,30 @@ describe('dns/promises.lookup()', () => {
           assert.strictEqual(spans.length, 1);
           assertSpan(span, {
             addresses: [],
-            hostname,
+            // tslint:disable-next-line:no-any
+            hostname: hostname as any,
+            forceStatus: {
+              code: SpanStatusCode.ERROR,
+              message: error!.message,
+            },
+          });
+        }
+      });
+
+      it('should export a valid span with error INVALID_ARGUMENT when "hostname" param is a number', async () => {
+        const hostname = 1234;
+        try {
+          await dnsPromises.lookup(hostname as any, { family: 4 });
+          assert.fail();
+        } catch (error: any) {
+          const spans = memoryExporter.getFinishedSpans();
+          const [span] = spans;
+
+          assert.strictEqual(spans.length, 1);
+          assertSpan(span, {
+            addresses: [],
+            // tslint:disable-next-line:no-any
+            hostname: hostname as any,
             forceStatus: {
               code: SpanStatusCode.ERROR,
               message: error!.message,
@@ -121,97 +171,53 @@ describe('dns/promises.lookup()', () => {
         }
       });
     });
+    describe('with options param', () => {
+      [4, 6].forEach(ipversion => {
+        it(`should export a valid span with "family" to ${ipversion}`, async () => {
+          const hostname = 'google.com';
+          const { address, family } = await dnsPromises.lookup(hostname, {
+            family: ipversion,
+          });
 
-    it('should export a valid span with error INVALID_ARGUMENT when "family" param is equal to -1', async () => {
-      const hostname = 'google.com';
-      try {
-        await dnsPromises.lookup(hostname, { family: -1 });
-        assert.fail();
-      } catch (error: any) {
-        const spans = memoryExporter.getFinishedSpans();
-        const [span] = spans;
+          assert.ok(address);
+          assert.ok(family);
 
-        assert.strictEqual(spans.length, 1);
-        assertSpan(span, {
-          addresses: [],
-          // tslint:disable-next-line:no-any
-          hostname: hostname as any,
-          forceStatus: {
-            code: SpanStatusCode.ERROR,
-            message: error!.message,
-          },
-        });
-      }
-    });
+          const spans = memoryExporter.getFinishedSpans();
+          const [span] = spans;
+          assert.strictEqual(spans.length, 1);
 
-    it('should export a valid span with error INVALID_ARGUMENT when "hostname" param is a number', async () => {
-      const hostname = 1234;
-      try {
-        await dnsPromises.lookup(hostname as any, { family: 4 });
-        assert.fail();
-      } catch (error: any) {
-        const spans = memoryExporter.getFinishedSpans();
-        const [span] = spans;
-
-        assert.strictEqual(spans.length, 1);
-        assertSpan(span, {
-          addresses: [],
-          // tslint:disable-next-line:no-any
-          hostname: hostname as any,
-          forceStatus: {
-            code: SpanStatusCode.ERROR,
-            message: error!.message,
-          },
-        });
-      }
-    });
-  });
-  describe('with options param', () => {
-    [4, 6].forEach(ipversion => {
-      it(`should export a valid span with "family" to ${ipversion}`, async () => {
-        const hostname = 'google.com';
-        const { address, family } = await dnsPromises.lookup(hostname, {
-          family: ipversion,
+          assertSpan(span, { addresses: [{ address, family }], hostname });
         });
 
-        assert.ok(address);
-        assert.ok(family);
+        it(`should export a valid span when setting "verbatim" property to true and "family" to ${ipversion}`, async () => {
+          const hostname = 'google.com';
+          const { address, family } = await dnsPromises.lookup(hostname, {
+            family: ipversion,
+            verbatim: true,
+          });
 
-        const spans = memoryExporter.getFinishedSpans();
-        const [span] = spans;
-        assert.strictEqual(spans.length, 1);
+          assert.ok(address);
+          assert.ok(family);
 
-        assertSpan(span, { addresses: [{ address, family }], hostname });
+          const spans = memoryExporter.getFinishedSpans();
+          const [span] = spans;
+          assert.strictEqual(spans.length, 1);
+
+          assertSpan(span, { addresses: [{ address, family }], hostname });
+        });
       });
 
-      it(`should export a valid span when setting "verbatim" property to true and "family" to ${ipversion}`, async () => {
-        const hostname = 'google.com';
-        const { address, family } = await dnsPromises.lookup(hostname, {
-          family: ipversion,
-          verbatim: true,
-        });
+      it('should export a valid span when setting "all" property to true', async () => {
+        const hostname = 'montreal.ca';
+        const addresses = await dnsPromises.lookup(hostname, { all: true });
 
-        assert.ok(address);
-        assert.ok(family);
+        assert.ok(addresses instanceof Array);
 
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
-
-        assertSpan(span, { addresses: [{ address, family }], hostname });
+        assertSpan(span, { addresses, hostname });
       });
     });
-
-    it('should export a valid span when setting "all" property to true', async () => {
-      const hostname = 'montreal.ca';
-      const addresses = await dnsPromises.lookup(hostname, { all: true });
-
-      assert.ok(addresses instanceof Array);
-
-      const spans = memoryExporter.getFinishedSpans();
-      const [span] = spans;
-      assert.strictEqual(spans.length, 1);
-      assertSpan(span, { addresses, hostname });
-    });
   });
-});
+}
