@@ -77,6 +77,10 @@ const assertFailingCallHooks = (expectedFunctionName: string) => {
   assert((endHookCall.getCall(0).args as any)[1].error, 'Expected an error');
 };
 
+// This should equal `fs.constants.R_OK`.
+// We are hard-coding this because Node 14 and below does not include `constants` in `fsPromises`.
+const fsConstantsR_OK = 4;
+
 if (supportsPromises) {
   describe('fs/promises instrumentation: hooks', () => {
     let plugin: Instrumentation;
@@ -100,10 +104,7 @@ if (supportsPromises) {
 
     it('should not fail the original successful call when hooks throw', async () => {
       // eslint-disable-next-line node/no-unsupported-features/node-builtins
-      await fsPromises.access(
-        './test/fixtures/readtest',
-        fsPromises.constants.R_OK
-      );
+      await fsPromises.access('./test/fixtures/readtest', fsConstantsR_OK);
 
       assertSuccessfulCallHooks('access');
     });
@@ -111,7 +112,7 @@ if (supportsPromises) {
     it('should not shadow the error from original call when hooks throw', async () => {
       // eslint-disable-next-line node/no-unsupported-features/node-builtins
       await fsPromises
-        .access('./test/fixtures/readtest-404', fsPromises.constants.R_OK)
+        .access('./test/fixtures/readtest-404', fsConstantsR_OK)
         .catch(assertNotHookError);
 
       assertFailingCallHooks('access');
