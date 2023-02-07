@@ -93,7 +93,7 @@ export class AWSXRayPropagator implements TextMapPropagator {
     getter: TextMapGetter
   ): SpanContext {
     const headerKeys = getter.keys(carrier);
-    const relevantHeaderKey = headerKeys.find((e) => {
+    const relevantHeaderKey = headerKeys.find(e => {
       return e.toLowerCase() === AWSXRAY_TRACE_ID_HEADER;
     });
     if (!relevantHeaderKey) {
