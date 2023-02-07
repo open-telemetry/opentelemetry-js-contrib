@@ -180,7 +180,7 @@ export class AwsEksDetector implements Detector {
           return str.substring(str.length - this.CONTAINER_ID_LENGTH);
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       diag.warn(`AwsEksDetector failed to read container ID: ${e.message}`);
     }
     return undefined;
