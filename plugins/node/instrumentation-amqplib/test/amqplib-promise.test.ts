@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import 'mocha';
-import * as expect from 'expect';
+import { expect } from 'expect';
 import * as sinon from 'sinon';
 import * as lodash from 'lodash';
 import {

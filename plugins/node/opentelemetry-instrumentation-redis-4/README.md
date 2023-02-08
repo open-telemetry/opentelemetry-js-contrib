@@ -53,14 +53,14 @@ Redis instrumentation has a few options available to choose from. You can set th
 
 #### Custom `db.statement` Serializer
 
-The instrumentation serializes the command into a Span attribute called
-`db.statement`. The default serialization sets the attribute to the command
-name, without the command arguments.
+The instrumentation serializes the command into a Span attribute called `db.statement`. The standard serialization format attempts to be as informative as possible while avoiding the export of potentially sensitive data. The number of serialized arguments depends on the specific command, see the configuration
+list in `@opentelemetry/redis-common`.
 
 It is also possible to define a custom serialization function. The function
 will receive the command name and arguments and must return a string.
 
-Here is a simple example to serialize the command name and arguments:
+Here is a simple example to serialize the command name and all command arguments.
+Notice that it might capture sensitive data and big payloads:
 
 ```javascript
 const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis');

@@ -24,13 +24,12 @@ import {
   ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { HookHandlerDoneFunction } from 'fastify/types/hooks';
-import { FastifyReply } from 'fastify/types/reply';
-import { FastifyRequest } from 'fastify/types/request';
+import { Span } from '@opentelemetry/api';
 import * as http from 'http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { ANONYMOUS_NAME } from '../src/instrumentation';
 import { AttributeNames, FastifyInstrumentation } from '../src';
+import { FastifyRequestInfo } from '../src/types';
 
 const URL = require('url').URL;
 
@@ -68,7 +67,12 @@ instrumentation.enable();
 httpInstrumentation.enable();
 
 import '@fastify/express';
-import { FastifyInstance } from 'fastify/types/instance';
+import {
+  FastifyInstance,
+  HookHandlerDoneFunction,
+  FastifyReply,
+  FastifyRequest,
+} from 'fastify';
 
 const Fastify = require('fastify');
 
@@ -142,7 +146,7 @@ describe('fastify', () => {
 
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 5);
-      const span = spans[3];
+      const span = spans[2];
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
         'plugin.name': 'fastify -> @fastify/express',
@@ -164,7 +168,7 @@ describe('fastify', () => {
 
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 5);
-      const span = spans[3];
+      const span = spans[2];
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
         'fastify.name': 'namedHandler',
@@ -216,11 +220,11 @@ describe('fastify', () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const changedRootSpan = spans[2];
-        const span = spans[4];
+        const changedRootSpan = spans[4];
+        const span = spans[3];
         assert.strictEqual(changedRootSpan.name, 'GET /test/:id');
         assert.strictEqual(span.name, 'request handler - foo');
-        assert.strictEqual(span.parentSpanId, spans[3].spanContext().spanId);
+        assert.strictEqual(span.parentSpanId, spans[2].spanContext().spanId);
       });
 
       it('should create span for fastify express runConnect', async () => {
@@ -243,7 +247,7 @@ describe('fastify', () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const baseSpan = spans[2];
+        const baseSpan = spans[4];
         const span = spans[0];
         assert.strictEqual(span.name, 'middleware - enhanceRequest');
         assert.deepStrictEqual(span.attributes, {
@@ -259,8 +263,8 @@ describe('fastify', () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const baseSpan = spans[3];
-        const span = spans[4];
+        const baseSpan = spans[2];
+        const span = spans[3];
         assert.strictEqual(span.name, 'request handler - foo');
         assert.deepStrictEqual(span.attributes, {
           'plugin.name': 'subsystem',
@@ -276,7 +280,7 @@ describe('fastify', () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const span = spans[2];
+        const span = spans[4];
         assert.strictEqual(span.attributes['http.route'], '/test/:id');
       });
 
@@ -285,7 +289,7 @@ describe('fastify', () => {
 
         assert.strictEqual(spans.length, 6);
         const baseSpan = spans[1];
-        const span = spans[3];
+        const span = spans[2];
         assert.strictEqual(span.name, `middleware - ${ANONYMOUS_NAME}`);
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
@@ -302,7 +306,7 @@ describe('fastify', () => {
         const spans = memoryExporter.getFinishedSpans();
 
         assert.strictEqual(spans.length, 6);
-        const span = spans[4];
+        const span = spans[3];
         assert.strictEqual(span.name, 'request handler - anonymous');
         assert.deepStrictEqual(span.status, {
           code: SpanStatusCode.ERROR,
@@ -424,6 +428,72 @@ describe('fastify', () => {
         });
 
         await startServer();
+      });
+    });
+
+    describe('using requestHook in config', () => {
+      it('calls requestHook provided function when set in config', async () => {
+        const requestHook = (span: Span, info: FastifyRequestInfo) => {
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
+        };
+
+        instrumentation.setConfig({
+          ...instrumentation.getConfig(),
+          requestHook,
+        });
+
+        app.get('/test', (req, res) => {
+          res.send('OK');
+        });
+
+        await startServer();
+        await httpRequest.get(`http://localhost:${PORT}/test`);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 5);
+        const span = spans[2];
+        assert.deepStrictEqual(span.attributes, {
+          'fastify.type': 'request_handler',
+          'plugin.name': 'fastify -> @fastify/express',
+          [SemanticAttributes.HTTP_ROUTE]: '/test',
+          [SemanticAttributes.HTTP_METHOD]: 'GET',
+        });
+      });
+
+      it('does not propagate an error from a requestHook that throws exception', async () => {
+        const requestHook = (span: Span, info: FastifyRequestInfo) => {
+          span.setAttribute(
+            SemanticAttributes.HTTP_METHOD,
+            info.request.method
+          );
+
+          throw Error('error thrown in requestHook');
+        };
+
+        instrumentation.setConfig({
+          ...instrumentation.getConfig(),
+          requestHook,
+        });
+
+        app.get('/test', (req, res) => {
+          res.send('OK');
+        });
+
+        await startServer();
+        await httpRequest.get(`http://localhost:${PORT}/test`);
+
+        const spans = memoryExporter.getFinishedSpans();
+        assert.strictEqual(spans.length, 5);
+        const span = spans[2];
+        assert.deepStrictEqual(span.attributes, {
+          'fastify.type': 'request_handler',
+          'plugin.name': 'fastify -> @fastify/express',
+          [SemanticAttributes.HTTP_ROUTE]: '/test',
+          [SemanticAttributes.HTTP_METHOD]: 'GET',
+        });
       });
     });
   });

@@ -16,7 +16,7 @@
 import { context } from '@opentelemetry/api';
 import { isTracingSuppressed } from '@opentelemetry/core';
 import { getInstrumentation } from '@opentelemetry/contrib-test-utils';
-import * as expect from 'expect';
+import { expect } from 'expect';
 import * as AWS from 'aws-sdk';
 
 // we want to mock the request object and trigger events on it's events emitter.

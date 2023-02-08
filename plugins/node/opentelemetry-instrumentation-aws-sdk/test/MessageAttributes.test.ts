@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as expect from 'expect';
+import { expect } from 'expect';
 import {
   MAX_MESSAGE_ATTRIBUTES,
   contextSetter,

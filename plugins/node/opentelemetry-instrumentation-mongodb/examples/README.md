@@ -37,11 +37,11 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
    npm run zipkin:server
    ```
 
-- Run the zipkin:client
+- Run the client
 
    ```sh
    # from this directory
-   npm run client
+   npm run zipkin:client
    ```
 
 #### Zipkin UI

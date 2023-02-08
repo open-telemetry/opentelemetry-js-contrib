@@ -199,7 +199,7 @@ describe('NetInstrumentation', () => {
         // socket.connect() will not throw before node@16 only closes
         socket.once(SocketEvent.CLOSE, assertSpan);
         socket.connect(undefined as unknown as string);
-      } catch (e) {
+      } catch (e: any) {
         // socket.connect() will throw in node@16
         socket.removeListener(SocketEvent.CLOSE, assertSpan);
         assert.strictEqual(

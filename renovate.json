@@ -14,8 +14,14 @@
     },
     {
       "groupName": "Otel Core experimental",
-      "matchPackageNames": ["@opentelemetry/sdk-node", "@opentelemetry/instrumentation", "@opentelemetry/instrumentation-grpc", "@opentelemetry/instrumentation-http", "@opentelemetry/instrumentation-fetch", "@opentelemetry/instrumentation-xml-http-request", "@opentelemetry/api-metrics", "@opentelemetry/sdk-metrics" ],
-      "matchUpdateTypes": ["minor"],
+      "matchPackageNames": [
+        "@opentelemetry/instrumentation",
+        "@opentelemetry/instrumentation-grpc",
+        "@opentelemetry/instrumentation-http",
+        "@opentelemetry/instrumentation-fetch",
+        "@opentelemetry/instrumentation-xml-http-request",
+        "@opentelemetry/sdk-node"
+      ],
       "rangeStrategy": "bump"
     }
   ],

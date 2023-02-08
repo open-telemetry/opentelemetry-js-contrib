@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import 'mocha';
-import * as expect from 'expect';
+import { expect } from 'expect';
 import { context, ROOT_CONTEXT } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { MongooseInstrumentation } from '../src';
@@ -44,7 +44,7 @@ describe('mongoose instrumentation', () => {
         useCreateIndex: true,
         dbName: DB_NAME,
       } as any); // TODO: amir - document older mongoose support
-    } catch (err) {
+    } catch (err: any) {
       // connect signature changed from mongo v5 to v6.
       // the following check tries both signatures, so test-all-versions
       // can run against both versions.

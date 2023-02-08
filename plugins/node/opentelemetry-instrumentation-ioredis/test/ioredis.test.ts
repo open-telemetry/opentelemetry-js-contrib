@@ -43,7 +43,6 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import { defaultDbStatementSerializer } from '../src/utils';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -188,14 +187,14 @@ describe('ioredis', () => {
       description: string;
       name: string;
       args: Array<string>;
-      serializedArgs: Array<string>;
+      expectedDbStatement: string;
       method: (cb: ioredisTypes.CallbackFunction<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         name: 'hset',
         args: [hashKeyName, 'testField', 'testValue'],
-        serializedArgs: [hashKeyName, 'testField', '[1 other arguments]'],
+        expectedDbStatement: `${hashKeyName} testField [1 other arguments]`,
         method: (cb: ioredisTypes.CallbackFunction<number>) =>
           client.hset(hashKeyName, 'testField', 'testValue', cb),
       },
@@ -203,7 +202,7 @@ describe('ioredis', () => {
         description: 'get',
         name: 'get',
         args: [testKeyName],
-        serializedArgs: [testKeyName],
+        expectedDbStatement: `${testKeyName}`,
         method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
           client.get(testKeyName, cb),
       },
@@ -245,9 +244,7 @@ describe('ioredis', () => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `${
-              command.name
-            } ${command.serializedArgs.join(' ')}`,
+            [SemanticAttributes.DB_STATEMENT]: `${command.name} ${command.expectedDbStatement}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -310,7 +307,7 @@ describe('ioredis', () => {
             // should throw 'ReplyError: ERR value is not an integer or out of range'
             // because the value im the key is not numeric and we try to increment it
             await client.incr('non-int-key');
-          } catch (ex) {
+          } catch (ex: any) {
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
             const ioredisSpan = endedSpans[1];
@@ -999,43 +996,6 @@ describe('ioredis', () => {
             });
           });
         });
-      });
-    });
-  });
-
-  describe('#defaultDbStatementSerializer()', () => {
-    [
-      {
-        cmdName: 'UNKNOWN',
-        cmdArgs: ['something'],
-        expected: 'UNKNOWN [1 other arguments]',
-      },
-      {
-        cmdName: 'ECHO',
-        cmdArgs: ['echo'],
-        expected: 'ECHO [1 other arguments]',
-      },
-      {
-        cmdName: 'LPUSH',
-        cmdArgs: ['list', 'value'],
-        expected: 'LPUSH list [1 other arguments]',
-      },
-      {
-        cmdName: 'HSET',
-        cmdArgs: ['hash', 'field', 'value'],
-        expected: 'HSET hash field [1 other arguments]',
-      },
-      {
-        cmdName: 'INCRBY',
-        cmdArgs: ['key', 5],
-        expected: 'INCRBY key 5',
-      },
-    ].forEach(({ cmdName, cmdArgs, expected }) => {
-      it(`should serialize the correct number of arguments for ${cmdName}`, () => {
-        assert.strictEqual(
-          defaultDbStatementSerializer(cmdName, cmdArgs),
-          expected
-        );
       });
     });
   });

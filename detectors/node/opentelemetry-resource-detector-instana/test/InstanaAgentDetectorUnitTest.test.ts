@@ -138,7 +138,7 @@ describe('[UNIT] instanaAgentDetector', () => {
       try {
         await instanaAgentDetector.detect();
         assert.ok(false, 'Expected to throw');
-      } catch (err) {
+      } catch (err: any) {
         assert.equal(err.code, 'ECONNREFUSED');
       }
     });
