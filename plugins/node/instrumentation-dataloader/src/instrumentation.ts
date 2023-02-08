@@ -38,8 +38,8 @@ type DataloaderInternal = typeof Dataloader.prototype & {
   _batch: { spanLinks?: Link[] } | null;
 };
 
-type LoadFn = typeof Dataloader.prototype['load'];
-type LoadManyFn = typeof Dataloader.prototype['loadMany'];
+type LoadFn = (typeof Dataloader.prototype)['load'];
+type LoadManyFn = (typeof Dataloader.prototype)['loadMany'];
 
 export class DataloaderInstrumentation extends InstrumentationBase {
   constructor(config: DataloaderInstrumentationConfig = {}) {

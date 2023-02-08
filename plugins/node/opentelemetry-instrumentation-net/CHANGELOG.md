@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.31.0...instrumentation-net-v0.31.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+* **instrumentation-net:** make tls span parent of net span ([#1342](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1342)) ([1ee197e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1ee197ed74e44054b092d0adcdac7f9db1a42737))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.30.2...instrumentation-net-v0.31.0) (2022-11-16)
 
 
