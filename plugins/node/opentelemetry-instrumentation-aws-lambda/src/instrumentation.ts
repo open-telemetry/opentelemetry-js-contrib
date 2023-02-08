@@ -303,28 +303,26 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     span.end();
 
+    const flushers = [];
     if (this._traceForceFlusher) {
-      this._traceForceFlusher().then(
-        () => callback(),
-        () => callback()
-      );
+      flushers.push(this._traceForceFlusher());
     } else {
       diag.error(
         'Spans may not be exported for the lambda function because we are not force flushing before callback.'
       );
-      callback();
     }
     if (this._metricForceFlusher) {
-      this._metricForceFlusher().then(
-        () => callback(),
-        () => callback()
-      );
+      flushers.push(this._metricForceFlusher());
     } else {
       diag.error(
         'Metrics may not be exported for the lambda function because we are not force flushing before callback.'
       );
-      callback();
     }
+
+    Promise.all(flushers).then(
+      () => callback(),
+      () => callback()
+    );
   }
 
   private _applyResponseHook(
