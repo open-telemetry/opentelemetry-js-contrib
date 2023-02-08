@@ -33,7 +33,7 @@ import {
   PROMISE_FUNCTIONS,
   SYNC_FUNCTIONS,
 } from '../src/constants';
-import { indexFs, memberToDisplayName, splitTwoLevels } from '../src/utils';
+import { indexFs, splitTwoLevels } from '../src/utils';
 
 const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
 
@@ -172,8 +172,7 @@ describe('fs instrumentation', () => {
     spans
   ) => {
     const rootSpanName = makeRootSpanName(name);
-    const displayName = memberToDisplayName(name) as FMember;
-    it(`${displayName} ${error ? 'error' : 'success'}`, done => {
+    it(`${name} ${error ? 'error' : 'success'}`, done => {
       const { objectToPatch, functionNameToPatch } = indexFs(fs, name);
       const rootSpan = tracer.startSpan(rootSpanName);
 
@@ -214,7 +213,7 @@ describe('fs instrumentation', () => {
               }
               assertSpans(memoryExporter.getFinishedSpans(), [
                 ...spans.map((s: any) => {
-                  const spanName = s.name.replace(/%NAME/, displayName);
+                  const spanName = s.name.replace(/%NAME/, name);
                   const attributes = {
                     ...(s.attributes ?? {}),
                   };
@@ -245,7 +244,6 @@ describe('fs instrumentation', () => {
   ) => {
     if (!hasPromiseVersion) return;
     const rootSpanName = makeRootSpanName(name);
-    name = memberToDisplayName(name) as FPMember;
     it(`promises.${name} ${error ? 'error' : 'success'}`, async () => {
       const rootSpan = tracer.startSpan(rootSpanName);
 

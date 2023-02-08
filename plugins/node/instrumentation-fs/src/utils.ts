@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { FMember, Member, FunctionPropertyNames } from './types';
+import type { Member, FunctionPropertyNames } from './types';
 import type * as fs from 'fs';
 type FS = typeof fs;
 
@@ -50,13 +50,5 @@ export function indexFs<FSObject extends FS | FS['promises']>(
     };
   } else {
     return { objectToPatch: fs, functionNameToPatch: member };
-  }
-}
-export function memberToDisplayName(member: FMember): string {
-  if (Array.isArray(member)) {
-    const [K, L] = member;
-    return `${K}.${L}`;
-  } else {
-    return member;
   }
 }
