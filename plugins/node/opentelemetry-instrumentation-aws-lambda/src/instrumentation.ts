@@ -319,10 +319,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       );
     }
 
-    Promise.all(flushers).then(
-      () => callback(),
-      () => callback()
-    );
+    Promise.all(flushers)
+      .then(callback, callback);
   }
 
   private _applyResponseHook(
