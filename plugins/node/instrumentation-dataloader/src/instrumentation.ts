@@ -36,11 +36,13 @@ const MODULE_NAME = 'dataloader';
 type DataloaderInternal = typeof Dataloader.prototype & {
   _batchLoadFn: Dataloader.BatchLoadFn<unknown, unknown>;
   _batch: { spanLinks?: Link[] } | null;
-  _name?: string;
+
+  // TODO: Remove this once types on Dataloader get fixed https://github.com/graphql/dataloader/pull/334
+  name?: string | null;
 };
 
-type LoadFn = (typeof Dataloader.prototype)['load'];
-type LoadManyFn = (typeof Dataloader.prototype)['loadMany'];
+type LoadFn = typeof Dataloader.prototype['load'];
+type LoadManyFn = typeof Dataloader.prototype['loadMany'];
 
 export class DataloaderInstrumentation extends InstrumentationBase {
   constructor(config: DataloaderInstrumentationConfig = {}) {
@@ -94,8 +96,8 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     dataloader: DataloaderInternal,
     operation: 'load' | 'loadMany' | 'batch'
   ): string {
-    const dataloaderName = dataloader._name;
-    if (dataloaderName === undefined) {
+    const dataloaderName = dataloader.name;
+    if (dataloaderName === undefined || dataloaderName === null) {
       return `${MODULE_NAME}.${operation}`;
     }
 
@@ -111,14 +113,11 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     function PatchedDataloader(
       ...args: ConstructorParameters<typeof constructor>
     ) {
-      const [, options] = args;
       const inst = new constructor(...args) as DataloaderInternal;
 
       if (!instrumentation.isEnabled()) {
         return inst;
       }
-
-      inst._name = options?.name ?? undefined;
 
       if (isWrapped(inst._batchLoadFn)) {
         instrumentation._unwrap(inst, '_batchLoadFn');
