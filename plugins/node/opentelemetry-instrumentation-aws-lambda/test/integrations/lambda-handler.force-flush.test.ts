@@ -181,4 +181,59 @@ describe('force flush', () => {
 
     assert.strictEqual(forceFlushed, true);
   });
+
+  it('should callback once after force flush providers', async () => {
+    const nodeTracerProvider = new NodeTracerProvider();
+    nodeTracerProvider.addSpanProcessor(
+      new BatchSpanProcessor(traceMemoryExporter)
+    );
+    nodeTracerProvider.register();
+    const tracerProvider = new ProxyTracerProvider();
+    tracerProvider.setDelegate(nodeTracerProvider);
+    let tracerForceFlushed = false;
+    const tracerForceFlush = () =>
+      new Promise<void>(resolve => {
+        tracerForceFlushed = true;
+        resolve();
+      });
+    nodeTracerProvider.forceFlush = tracerForceFlush;
+
+    const meterProvider = new MeterProvider();
+    meterProvider.addMetricReader(
+      new PeriodicExportingMetricReader({ exporter: metricMemoryExporter })
+    );
+    let meterForceFlushed = false;
+    const meterForceFlush = () =>
+      new Promise<void>(resolve => {
+        meterForceFlushed = true;
+        resolve();
+      });
+    meterProvider.forceFlush = meterForceFlush;
+
+    process.env._HANDLER = 'lambda-test/sync.handler';
+
+    instrumentation = new AwsLambdaInstrumentation();
+    instrumentation.setTracerProvider(tracerProvider);
+    instrumentation.setMeterProvider(meterProvider);
+
+    let callbackCount = 0;
+    await new Promise((resolve, reject) => {
+      lambdaRequire('lambda-test/sync').handler(
+        'arg',
+        ctx,
+        (err: Error, res: any) => {
+          callbackCount++;
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
+          }
+        }
+      );
+    });
+
+    assert.strictEqual(tracerForceFlushed, true);
+    assert.strictEqual(meterForceFlushed, true);
+    assert.strictEqual(callbackCount, 1);
+  });
 });
