@@ -100,13 +100,8 @@ describe('fs instrumentation', () => {
     spans
   ) => {
     let syncName: FMember;
-    const splitFunctionResult = splitTwoLevels(name);
-    if ('twoLevel' in splitFunctionResult) {
-      syncName =
-        `${splitFunctionResult.twoLevel[0]}Sync.${splitFunctionResult.twoLevel[1]}` as FMember;
-    } else {
-      syncName = `${name}Sync` as FMember;
-    }
+    const [functionNamePart1, functionNamePart2] = splitTwoLevels(name);
+    syncName = `${functionNamePart1}Sync${functionNamePart2 ? `.${functionNamePart2}` : ''}` as FMember;
     const rootSpanName = `${syncName} test span`;
     it(`${syncName} ${error ? 'error' : 'success'}`, () => {
       const { objectToPatch, functionNameToPatch } = indexFs(fs, syncName);
