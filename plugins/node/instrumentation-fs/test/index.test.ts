@@ -99,9 +99,10 @@ describe('fs instrumentation', () => {
     { error, result, resultAsError = null },
     spans
   ) => {
-    let syncName: FMember;
     const [functionNamePart1, functionNamePart2] = splitTwoLevels(name);
-    syncName = `${functionNamePart1}Sync${functionNamePart2 ? `.${functionNamePart2}` : ''}` as FMember;
+    const syncName = `${functionNamePart1}Sync${
+      functionNamePart2 ? `.${functionNamePart2}` : ''
+    }` as FMember;
     const rootSpanName = `${syncName} test span`;
     it(`${syncName} ${error ? 'error' : 'success'}`, () => {
       const { objectToPatch, functionNameToPatch } = indexFs(fs, syncName);
