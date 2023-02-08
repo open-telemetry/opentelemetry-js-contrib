@@ -42,6 +42,7 @@ const INSTANCE_ID_PATH = BASE_PATH + '/instance/id';
 const PROJECT_ID_PATH = BASE_PATH + '/project/project-id';
 const ZONE_PATH = BASE_PATH + '/instance/zone';
 const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
+const HOSTNAME_PATH = BASE_PATH + '/instance/hostname';
 
 (semver.satisfies(process.version, '>=10') ? describe : describe.skip)(
   'gcpDetector',
@@ -81,7 +82,9 @@ const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
           .get(ZONE_PATH)
           .reply(200, () => 'project/zone/my-zone', HEADERS)
           .get(CLUSTER_NAME_PATH)
-          .reply(404);
+          .reply(404)
+          .get(HOSTNAME_PATH)
+          .reply(200, () => 'dev.my-project.local', HEADERS);
         const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
           .get(INSTANCE_PATH)
           .reply(200, {}, HEADERS);
@@ -94,7 +97,10 @@ const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
           accountId: 'my-project-id',
           zone: 'my-zone',
         });
-        assertHostResource(resource, { id: '4520031799277581759' });
+        assertHostResource(resource, {
+          id: '4520031799277581759',
+          name: 'dev.my-project.local',
+        });
       });
 
       it('should populate K8s attributes when KUBERNETES_SERVICE_HOST is set', async () => {
@@ -112,7 +118,9 @@ const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
           .get(PROJECT_ID_PATH)
           .reply(200, () => 'my-project-id', HEADERS)
           .get(ZONE_PATH)
-          .reply(200, () => 'project/zone/my-zone', HEADERS);
+          .reply(200, () => 'project/zone/my-zone', HEADERS)
+          .get(HOSTNAME_PATH)
+          .reply(200, () => 'dev.my-project.local', HEADERS);
         const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
           .get(INSTANCE_PATH)
           .reply(200, {}, HEADERS);
@@ -144,7 +152,9 @@ const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
           .get(INSTANCE_ID_PATH)
           .reply(400, undefined, HEADERS)
           .get(CLUSTER_NAME_PATH)
-          .reply(413);
+          .reply(413)
+          .get(HOSTNAME_PATH)
+          .reply(400, undefined, HEADERS);
         const secondaryScope = nock(SECONDARY_HOST_ADDRESS)
           .get(INSTANCE_PATH)
           .reply(200, {}, HEADERS);

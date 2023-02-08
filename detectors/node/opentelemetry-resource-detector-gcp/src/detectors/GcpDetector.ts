@@ -52,16 +52,19 @@ class GcpDetector implements Detector {
       return Resource.empty();
     }
 
-    const [projectId, instanceId, zoneId, clusterName] = await Promise.all([
-      this._getProjectId(),
-      this._getInstanceId(),
-      this._getZone(),
-      this._getClusterName(),
-    ]);
+    const [projectId, instanceId, zoneId, clusterName, hostname] =
+      await Promise.all([
+        this._getProjectId(),
+        this._getInstanceId(),
+        this._getZone(),
+        this._getClusterName(),
+        this._getHostname(),
+      ]);
 
     const attributes: ResourceAttributes = {};
     attributes[SemanticResourceAttributes.CLOUD_ACCOUNT_ID] = projectId;
     attributes[SemanticResourceAttributes.HOST_ID] = instanceId;
+    attributes[SemanticResourceAttributes.HOST_NAME] = hostname;
     attributes[SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE] = zoneId;
     attributes[SemanticResourceAttributes.CLOUD_PROVIDER] =
       CloudProviderValues.GCP;
@@ -121,6 +124,15 @@ class GcpDetector implements Detector {
   private async _getClusterName(): Promise<string> {
     try {
       return await gcpMetadata.instance('attributes/cluster-name');
+    } catch {
+      return '';
+    }
+  }
+
+  /** Gets hostname from GCP instance metadata. */
+  private async _getHostname(): Promise<string> {
+    try {
+      return await gcpMetadata.instance('hostname');
     } catch {
       return '';
     }

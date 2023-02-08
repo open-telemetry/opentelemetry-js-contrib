@@ -29,6 +29,7 @@ import {
   diag,
   trace,
   propagation,
+  MeterProvider,
   Span,
   SpanKind,
   SpanStatusCode,
@@ -70,7 +71,8 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 export const traceContextEnvironmentKey = '_X_AMZN_TRACE_ID';
 
 export class AwsLambdaInstrumentation extends InstrumentationBase {
-  private _forceFlush?: () => Promise<void>;
+  private _traceForceFlusher?: () => Promise<void>;
+  private _metricForceFlusher?: () => Promise<void>;
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
@@ -226,10 +228,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   override setTracerProvider(tracerProvider: TracerProvider) {
     super.setTracerProvider(tracerProvider);
-    this._forceFlush = this._getForceFlush(tracerProvider);
+    this._traceForceFlusher = this._traceForceFlush(tracerProvider);
   }
 
-  private _getForceFlush(tracerProvider: TracerProvider) {
+  private _traceForceFlush(tracerProvider: TracerProvider) {
     if (!tracerProvider) return undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -238,6 +240,24 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     if (typeof currentProvider.getDelegate === 'function') {
       currentProvider = currentProvider.getDelegate();
     }
+
+    if (typeof currentProvider.forceFlush === 'function') {
+      return currentProvider.forceFlush.bind(currentProvider);
+    }
+
+    return undefined;
+  }
+
+  override setMeterProvider(meterProvider: MeterProvider) {
+    super.setMeterProvider(meterProvider);
+    this._metricForceFlusher = this._metricForceFlush(meterProvider);
+  }
+
+  private _metricForceFlush(meterProvider: MeterProvider) {
+    if (!meterProvider) return undefined;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentProvider: any = meterProvider;
 
     if (typeof currentProvider.forceFlush === 'function') {
       return currentProvider.forceFlush.bind(currentProvider);
@@ -283,14 +303,25 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     span.end();
 
-    if (this._forceFlush) {
-      this._forceFlush().then(
+    if (this._traceForceFlusher) {
+      this._traceForceFlusher().then(
         () => callback(),
         () => callback()
       );
     } else {
       diag.error(
         'Spans may not be exported for the lambda function because we are not force flushing before callback.'
+      );
+      callback();
+    }
+    if (this._metricForceFlusher) {
+      this._metricForceFlusher().then(
+        () => callback(),
+        () => callback()
+      );
+    } else {
+      diag.error(
+        'Metrics may not be exported for the lambda function because we are not force flushing before callback.'
       );
       callback();
     }

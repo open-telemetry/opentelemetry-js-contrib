@@ -98,7 +98,7 @@ const InstrumentationMap = {
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
 export type InstrumentationConfigMap = {
   [Name in keyof typeof InstrumentationMap]?: ConfigArg<
-    typeof InstrumentationMap[Name]
+    (typeof InstrumentationMap)[Name]
   >;
 };
 
@@ -119,7 +119,7 @@ export function getNodeAutoInstrumentations(
   >) {
     const Instance = InstrumentationMap[name];
     // Defaults are defined by the instrumentation itself
-    const userConfig = inputConfigs[name] ?? {};
+    const userConfig: any = inputConfigs[name] ?? {};
 
     if (userConfig.enabled === false) {
       diag.debug(`Disabling instrumentation for ${name}`);
@@ -129,7 +129,7 @@ export function getNodeAutoInstrumentations(
     try {
       diag.debug(`Loading instrumentation for ${name}`);
       instrumentations.push(new Instance(userConfig));
-    } catch (e) {
+    } catch (e: any) {
       diag.error(e);
     }
   }

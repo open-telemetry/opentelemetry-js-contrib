@@ -175,7 +175,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
         };
 
         return result;
-      } catch (error) {
+      } catch (error: any) {
         endSpan(span, error);
         throw error;
       }
@@ -210,7 +210,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
         const client = original.apply(this, arguments);
         endSpan(span, null);
         return client;
-      } catch (error) {
+      } catch (error: any) {
         endSpan(span, error);
         throw error;
       }
