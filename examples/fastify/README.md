@@ -11,7 +11,9 @@ This is a simple example that demonstrates tracing calls made to Fastify API. Th
 
 ## Prerequisites
 
-Install [Docker Engine](https://docs.docker.com/engine/install).
+Install [Docker Desktop](https://docs.docker.com/desktop), version 4.12.0 or later.
+
+If you have an existing Docker Engine installation, you can [install the docker-compose plugin](https://docs.docker.com/compose/install) instead.
 
 ## Installation
 
@@ -26,26 +28,26 @@ npm install
 
 - Run docker container with collector
 
-   ```sh
-   # from this directory
-   $ npm run docker:start
-   ```
+  ```sh
+  # from this directory
+  $ npm run docker:start
+  ```
 
 ### Server
 
 - Run the server
 
-   ```sh
-   # from this directory
-   $ npm run server
-   ```
+  ```sh
+  # from this directory
+  $ npm run server
+  ```
 
 - Run the client
 
-   ```sh
-   # from this directory
-   npm run client
-   ```
+  ```sh
+  # from this directory
+  npm run client
+  ```
 
 #### Zipkin UI
 
