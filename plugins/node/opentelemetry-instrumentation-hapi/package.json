@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-hapi",
-  "version": "0.31.0",
+  "version": "0.31.1",
   "description": "OpenTelemetry Hapi automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -57,7 +57,7 @@
     "nyc": "15.1.0",
     "rimraf": "3.0.2",
     "ts-mocha": "10.0.0",
-    "typescript": "4.3.5"
+    "typescript": "4.4.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",

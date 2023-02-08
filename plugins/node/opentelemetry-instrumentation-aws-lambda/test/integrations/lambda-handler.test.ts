@@ -217,7 +217,7 @@ describe('lambda handler', () => {
       let err: Error;
       try {
         await lambdaRequire('lambda-test/async').error('arg', ctx);
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!.message, 'handler error');
@@ -234,7 +234,7 @@ describe('lambda handler', () => {
       let err: string;
       try {
         await lambdaRequire('lambda-test/async').stringerror('arg', ctx);
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!, 'handler error');
@@ -304,7 +304,7 @@ describe('lambda handler', () => {
           ctx,
           (err: Error, res: any) => {}
         );
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!.message, 'handler error');
@@ -333,7 +333,7 @@ describe('lambda handler', () => {
             }
           );
         });
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!.message, 'handler error');
@@ -354,7 +354,7 @@ describe('lambda handler', () => {
           ctx,
           (err: Error, res: any) => {}
         );
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!, 'handler error');
@@ -426,7 +426,7 @@ describe('lambda handler', () => {
           }
         );
       });
-    } catch (e) {
+    } catch (e: any) {
       err = e;
     }
     assert.strictEqual(err!, 'handler error');
@@ -809,7 +809,7 @@ describe('lambda handler', () => {
         let err: Error;
         try {
           await lambdaRequire('lambda-test/async').error('arg', ctx);
-        } catch (e) {
+        } catch (e: any) {
           err = e;
         }
         const [span] = memoryExporter.getFinishedSpans();
@@ -836,7 +836,7 @@ describe('lambda handler', () => {
         let err: Error;
         try {
           lambdaRequire('lambda-test/sync').error('arg', ctx, () => {});
-        } catch (e) {
+        } catch (e: any) {
           err = e;
         }
         const [span] = memoryExporter.getFinishedSpans();
