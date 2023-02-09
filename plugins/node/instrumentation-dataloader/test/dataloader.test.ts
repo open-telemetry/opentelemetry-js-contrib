@@ -141,19 +141,27 @@ describe('DataloaderInstrumentation', () => {
       });
     });
 
-    it('correctly uses dataloader name', async () => {
+    it('correctly uses dataloader name (if available)', async () => {
       const namedDataloader = new Dataloader(
         async keys => keys.map((_, idx) => idx),
         { name: 'test-name' }
       );
+
       assert.strictEqual(await namedDataloader.load('test'), 0);
 
       // We should have exactly two spans (one for .load and one for the following batch)
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 2);
       const [batchSpan, loadSpan] = memoryExporter.getFinishedSpans();
 
-      assert.strictEqual(loadSpan.name, 'dataloader.load test-name');
-      assert.strictEqual(batchSpan.name, 'dataloader.batch test-name');
+      if ((namedDataloader as { name?: string | null }).name === undefined) {
+        // For versions of dataloader package that does not support name, we should
+        // not be adding anything to the names
+        assert.strictEqual(loadSpan.name, 'dataloader.load');
+        assert.strictEqual(batchSpan.name, 'dataloader.batch');
+      } else {
+        assert.strictEqual(loadSpan.name, 'dataloader.load test-name');
+        assert.strictEqual(batchSpan.name, 'dataloader.batch test-name');
+      }
     });
   });
 
