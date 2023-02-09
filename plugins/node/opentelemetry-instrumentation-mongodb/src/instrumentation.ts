@@ -36,16 +36,15 @@ import {
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
   CursorState,
+  ServerSession,
   MongodbCommandType,
   MongoInternalCommand,
   MongoInternalTopology,
   WireProtocolInternal,
   V4Connection,
-  V4Connect,
-  V4Session,
-} from './types';
+} from './internal-types';
+import { V4Connect, V4Session } from './types';
 import { VERSION } from './version';
-import { ServerSession } from 'mongodb';
 import { UpDownCounter } from '@opentelemetry/api';
 
 /** mongodb instrumentation plugin for OpenTelemetry */

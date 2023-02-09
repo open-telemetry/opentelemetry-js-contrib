@@ -16,7 +16,7 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { Span } from '@opentelemetry/api';
-import { ServerSession, DbOptions, Db } from 'mongodb';
+import { ServerSession } from './internal-types';
 
 export interface MongoDBInstrumentationExecutionResponseHook {
   (span: Span, responseInfo: MongoResponseHookInformation): void;
@@ -61,60 +61,6 @@ export type CommandResult = {
   result?: unknown;
   connection?: unknown;
   message?: unknown;
-};
-
-// https://github.com/mongodb/node-mongodb-native/blob/3.6/lib/core/wireprotocol/index.js
-export type WireProtocolInternal = {
-  insert: (
-    server: MongoInternalTopology,
-    ns: string,
-    ops: unknown[],
-    options: unknown | Function,
-    callback?: Function
-  ) => unknown;
-  update: (
-    server: MongoInternalTopology,
-    ns: string,
-    ops: unknown[],
-    options: unknown | Function,
-    callback?: Function
-  ) => unknown;
-  remove: (
-    server: MongoInternalTopology,
-    ns: string,
-    ops: unknown[],
-    options: unknown | Function,
-    callback?: Function
-  ) => unknown;
-  killCursors: (
-    server: MongoInternalTopology,
-    ns: string,
-    cursorState: CursorState,
-    callback: Function
-  ) => unknown;
-  getMore: (
-    server: MongoInternalTopology,
-    ns: string,
-    cursorState: CursorState,
-    batchSize: number,
-    options: unknown | Function,
-    callback?: Function
-  ) => unknown;
-  query: (
-    server: MongoInternalTopology,
-    ns: string,
-    cmd: MongoInternalCommand,
-    cursorState: CursorState,
-    options: unknown | Function,
-    callback?: Function
-  ) => unknown;
-  command: (
-    server: MongoInternalTopology,
-    ns: string,
-    cmd: MongoInternalCommand,
-    options: unknown | Function,
-    callback?: Function
-  ) => unknown;
 };
 
 // https://github.com/mongodb/node-mongodb-native/blob/3.6/lib/topologies/server.js#L172

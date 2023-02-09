@@ -64,6 +64,13 @@ export type MongoInternalCommand = {
   u?: Record<string, unknown>;
 };
 
+export type ServerSession = {
+  id: any;
+  lastUse: number;
+  txnNumber: number;
+  isDirty: boolean;
+};
+
 export type CursorState = { cmd: MongoInternalCommand } & Record<
   string,
   unknown
