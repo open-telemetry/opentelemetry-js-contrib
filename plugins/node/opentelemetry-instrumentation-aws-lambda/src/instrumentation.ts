@@ -24,11 +24,9 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  Attributes,
   Context as OtelContext,
   context as otelContext,
   diag,
-  Link,
   propagation,
   ROOT_CONTEXT,
   Span,
@@ -52,40 +50,19 @@ import {
   APIGatewayProxyEventHeaders,
   Callback,
   Context,
-  EventBridgeEvent,
   Handler,
-  SQSEvent,
 } from 'aws-lambda';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
-import {
-  GatewayResult,
-  HttpApiGatewayEvent,
-  isCognitoEvent,
-  isDynamoDBStreamEvent,
-  isEventBridgeEvent,
-  isGatewayResult,
-  isHttpApiGatewayEvent,
-  isRestApiGatewayEvent,
-  isS3Event,
-  isSESEvent,
-  isSNSEvent,
-  isSQSEvent,
-  LambdaAttributes,
-  LambdaModule,
-  RestApiGatewayEvent,
-  TriggerOrigin,
-} from './internal-types';
+import { LambdaModule } from './internal-types';
 import { strict } from 'assert';
-import { isDefined } from './utils';
-import { SQSRecord } from 'aws-lambda/trigger/sqs';
-import { SNSEvent } from 'aws-lambda/trigger/sns';
-import { DynamoDBStreamEvent } from 'aws-lambda/trigger/dynamodb-stream';
-import { DbSystemValues } from '@opentelemetry/semantic-conventions/build/src/trace/SemanticAttributes';
-import { S3Event } from 'aws-lambda/trigger/s3';
-import { SESEvent } from 'aws-lambda/trigger/ses';
-import { BaseTriggerEvent as CognitoBaseTriggerEvent } from 'aws-lambda/trigger/cognito-user-pool-trigger/_common';
+import {
+  finalizeSpan,
+  getEventTrigger,
+  LambdaAttributes,
+  TriggerOrigin,
+} from './triggers';
 const awsPropagator = new AWSXRayPropagator();
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
   keys(carrier): string[] {
@@ -105,33 +82,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
-  }
-
-  private sqsAttributes: Attributes = {
-    [SemanticAttributes.FAAS_TRIGGER]: 'pubsub',
-    [SemanticAttributes.MESSAGING_OPERATION]: 'process',
-    [SemanticAttributes.MESSAGING_SYSTEM]: 'AmazonSQS',
-    'messaging.source.kind': 'queue',
-  };
-
-  private snsAttributes: Attributes = {
-    [SemanticAttributes.FAAS_TRIGGER]: 'pubsub',
-    [SemanticAttributes.MESSAGING_OPERATION]: 'process',
-    [SemanticAttributes.MESSAGING_SYSTEM]: 'AmazonSNS',
-    'messaging.source.kind': 'topic',
-  };
-
-  private static getSQSRecordLink(record: SQSRecord): Link | undefined {
-    const { AWSTraceHeader } = record?.attributes;
-    if (!AWSTraceHeader) return undefined;
-    const extractedContext = awsPropagator.extract(
-      otelContext.active(),
-      { [AWSXRAY_TRACE_ID_HEADER]: AWSTraceHeader },
-      headerGetter
-    );
-    const context = trace.getSpan(extractedContext)?.spanContext();
-    if (!context) return undefined;
-    return { context };
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
@@ -318,11 +268,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                   value => {
                     strict(triggerSpan);
 
-                    plugin._endWrapperSpan(
-                      triggerSpan,
-                      value as GatewayResult | any,
-                      undefined
-                    );
+                    plugin._endWrapperSpan(triggerSpan, value, undefined);
 
                     return value;
                   },
@@ -384,417 +330,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     if (plugin._config.detectTrigger === false) {
       return undefined;
     }
-
-    if (isRestApiGatewayEvent(event)) {
-      return {
-        triggerOrigin: TriggerOrigin.API_GATEWAY_REST,
-        triggerSpan: plugin._getRestApiGatewaySpan(event, parentContext),
-      };
-    } else if (isHttpApiGatewayEvent(event)) {
-      return {
-        triggerOrigin: TriggerOrigin.API_GATEWAY_HTTP,
-        triggerSpan: plugin._getHttpApiGatewaySpan(event, parentContext),
-      };
-    } else if (isSQSEvent(event)) {
-      return {
-        triggerOrigin: TriggerOrigin.SQS,
-        triggerSpan: plugin._getSQSSpan(event, parentContext),
-      };
-    } else if (isSNSEvent(event)) {
-      return {
-        triggerOrigin: TriggerOrigin.SNS,
-        triggerSpan: plugin._getSNSSpan(event, parentContext),
-      };
-    } else if (isDynamoDBStreamEvent(event)) {
-      return {
-        triggerOrigin: TriggerOrigin.DYNAMO_DB_STREAM,
-        triggerSpan: plugin._getDynamoDBStreamSpan(event, parentContext),
-      };
-    } else if (isS3Event(event)) {
-      return {
-        triggerOrigin: TriggerOrigin.S3,
-        triggerSpan: plugin._getS3Span(event, parentContext),
-      };
-    } else if (isSESEvent(event)) {
-      return {
-        triggerOrigin: TriggerOrigin.SES,
-        triggerSpan: plugin._getSESSpan(event, parentContext),
-      };
-    } else if (isCognitoEvent(event)) {
-      return {
-        triggerOrigin: TriggerOrigin.COGNITO,
-        triggerSpan: plugin._getCognitoSpan(event, parentContext),
-      };
-    } else if (isEventBridgeEvent(event)) {
-      return {
-        triggerOrigin: TriggerOrigin.EVENT_BRIDGE,
-        triggerSpan: plugin._getEventBridgeSpan(event, parentContext),
-      };
-    }
-    return undefined;
-  }
-
-  private _getRestApiGatewaySpan(
-    event: RestApiGatewayEvent,
-    parent: OtelContext
-  ) {
-    const {
-      resource,
-      requestContext,
-      multiValueQueryStringParameters,
-      multiValueHeaders,
-      pathParameters,
-      headers,
-    } = event;
-    const { httpMethod, domainName, path, accountId, identity, resourcePath } =
-      requestContext;
-    const attributes: Attributes = {
-      [LambdaAttributes.TRIGGER_SERVICE]: TriggerOrigin.API_GATEWAY_REST,
-      [SemanticAttributes.FAAS_TRIGGER]: 'http',
-      [SemanticAttributes.HTTP_METHOD]: httpMethod,
-      [SemanticAttributes.HTTP_ROUTE]: resourcePath,
-      [SemanticAttributes.HTTP_URL]: domainName + path,
-      [SemanticAttributes.HTTP_SERVER_NAME]: domainName,
-      [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: accountId,
-    };
-
-    if (identity?.sourceIp) {
-      attributes[SemanticAttributes.NET_PEER_IP] = identity.sourceIp;
-    }
-
-    if (headers?.[xForwardProto]) {
-      attributes[SemanticAttributes.HTTP_SCHEME] = headers[xForwardProto];
-    }
-
-    if (multiValueQueryStringParameters) {
-      Object.assign(
-        attributes,
-        Object.fromEntries(
-          Object.entries(multiValueQueryStringParameters).map(
-            ([k, v]) => [`http.request.query.${k}`, v.length == 1 ? v[0] : v] // We don't have a semantic attribute for query parameters, but would be useful nonetheless
-          )
-        )
-      );
-    }
-
-    if (multiValueHeaders) {
-      Object.assign(
-        attributes,
-        Object.fromEntries(
-          Object.entries(multiValueHeaders).map(([headerName, headerValue]) => [
-            // See https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/http/#http-request-and-response-headers
-            `http.request.header.${headerName}`,
-            headerValue.length == 1 ? headerValue[0] : headerValue,
-          ])
-        )
-      );
-    }
-    if (pathParameters) {
-      Object.assign(
-        attributes,
-        Object.fromEntries(
-          Object.entries(pathParameters).map(([paramKey, paramValue]) => [
-            `http.request.parameters.${paramKey}`,
-            paramValue,
-          ])
-        )
-      );
-    }
-
-    return this.tracer.startSpan(
-      resource,
-      {
-        kind: SpanKind.SERVER,
-        attributes: attributes,
-      },
-      parent
-    );
-  }
-
-  private _getHttpApiGatewaySpan(
-    event: HttpApiGatewayEvent,
-    parent: OtelContext
-  ) {
-    const { rawPath, headers, requestContext } = event;
-    const {
-      http: { method, userAgent, sourceIp },
-      domainName,
-      accountId,
-    } = requestContext;
-
-    const attributes: Attributes = {
-      [LambdaAttributes.TRIGGER_SERVICE]: TriggerOrigin.API_GATEWAY_HTTP,
-      [SemanticAttributes.FAAS_TRIGGER]: 'http',
-      [SemanticAttributes.HTTP_METHOD]: method,
-      [SemanticAttributes.HTTP_TARGET]: rawPath,
-      [SemanticAttributes.HTTP_URL]: domainName + rawPath,
-      [SemanticAttributes.HTTP_SERVER_NAME]: domainName,
-      [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: accountId,
-    };
-
-    if (userAgent) {
-      attributes[SemanticAttributes.HTTP_USER_AGENT] = userAgent;
-    }
-
-    if (sourceIp) {
-      attributes[SemanticAttributes.NET_PEER_IP] = sourceIp;
-    }
-
-    if (headers?.[xForwardProto]) {
-      attributes[SemanticAttributes.HTTP_SCHEME] = headers[xForwardProto];
-    }
-
-    return this.tracer.startSpan(
-      rawPath,
-      {
-        kind: SpanKind.SERVER,
-        attributes: attributes,
-      },
-      parent
-    );
-  }
-
-  private _getSQSSpan(event: SQSEvent, parent: OtelContext) {
-    const { Records: records } = event;
-
-    const sources = new Set(
-      records.map(({ eventSourceARN }) => eventSourceARN)
-    );
-
-    const source =
-      sources.size === 1 ? sources.values()!.next()!.value : 'multiple_sources';
-
-    const attributes: Attributes = {
-      [LambdaAttributes.TRIGGER_SERVICE]: TriggerOrigin.SQS,
-      ...this.sqsAttributes,
-      'messaging.source.name': source,
-      'messaging.batch.message_count': records.length,
-    };
-
-    let links: Link[] | undefined = records
-      .map(AwsLambdaInstrumentation.getSQSRecordLink)
-      .filter(isDefined);
-
-    links = links?.length === 0 ? undefined : links;
-
-    return this.tracer.startSpan(
-      `${source} process`,
-      {
-        kind: SpanKind.CONSUMER,
-        attributes,
-        links,
-      },
-      parent
-    );
-  }
-
-  private _getSNSSpan(event: SNSEvent, parent: OtelContext) {
-    const { Records: records } = event;
-
-    const sources = new Set(records.map(({ Sns }) => Sns.TopicArn));
-
-    const source =
-      sources.size === 1 ? sources.values()!.next()!.value : 'multiple_sources';
-
-    const attributes: Attributes = {
-      [LambdaAttributes.TRIGGER_SERVICE]: TriggerOrigin.SNS,
-      ...this.snsAttributes,
-      'messaging.source.name': source,
-      'messaging.batch.message_count': records.length,
-    };
-
-    return this.tracer.startSpan(
-      `${source} process`,
-      {
-        kind: SpanKind.CONSUMER,
-        attributes,
-      },
-      parent
-    );
-  }
-
-  /*
-    example of arn is:
-    arn:aws:dynamodb:us-west-2:111122223333:table/TestTable/stream/2015-05-11T21:21:33.291
-   */
-  private static _getTablesFromDynamoARN(
-    arn: string | undefined
-  ): string | undefined {
-    if (!arn) return undefined;
-    try {
-      const dynamoResource = arn.split(':')[4];
-      const [dynamoResourceType, dynamoResourceName] =
-        dynamoResource.split('/');
-      if (dynamoResourceType === 'table') {
-        return dynamoResourceName;
-      }
-      return undefined;
-    } catch (error) {
+    const trigger = getEventTrigger(event);
+    if (!trigger) {
       return undefined;
     }
-  }
-
-  private _getDynamoDBStreamSpan(
-    event: DynamoDBStreamEvent,
-    parent: OtelContext
-  ) {
-    const { Records: records } = event;
-
-    const tableNames = Array.from(
-      new Set(
-        records
-          .map(({ eventSourceARN }) =>
-            AwsLambdaInstrumentation._getTablesFromDynamoARN(eventSourceARN)
-          )
-          .filter(isDefined)
-      )
-    );
-
-    const attributes: Attributes = {
-      [LambdaAttributes.TRIGGER_SERVICE]: TriggerOrigin.DYNAMO_DB_STREAM,
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.DYNAMODB,
-    };
-
-    if (tableNames.length > 0) {
-      attributes[
-        SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES
-      ] = `[${tableNames.join(', ')}]`;
+    const { name, options, origin } = trigger;
+    if (!options.attributes) {
+      options.attributes = {};
     }
-
-    return this.tracer.startSpan(
-      'dynamo stream',
-      {
-        kind: SpanKind.CONSUMER,
-        attributes,
-      },
-      parent
-    );
-  }
-
-  private _getS3Span(event: S3Event, parent: OtelContext) {
-    const { Records: records } = event;
-
-    const eventNames = Array.from(
-      new Set(records.map(({ eventName }) => eventName).filter(isDefined))
-    );
-
-    const buckets = Array.from(
-      new Set(
-        records
-          .map(
-            ({
-              s3: {
-                bucket: { name: bucketName },
-              },
-            }) => bucketName
-          )
-          .filter(isDefined)
-      )
-    );
-
-    const s3objectKeys = Array.from(
-      new Set(
-        records
-          .map(
-            ({
-              s3: {
-                object: { key },
-              },
-            }) => key
-          )
-          .filter(isDefined)
-      )
-    );
-
-    const attributes: Attributes = {
-      [LambdaAttributes.TRIGGER_SERVICE]: TriggerOrigin.S3,
-    };
-
-    if (eventNames.length === 1) {
-      attributes['aws.s3.event.trigger'] = eventNames[0];
-    }
-
-    if (buckets.length === 1) {
-      attributes['aws.s3.bucket.name'] = buckets[0];
-    }
-
-    if (s3objectKeys.length === 1) {
-      attributes['aws.s3.object.key'] = s3objectKeys[0];
-    }
-
-    const name =
-      eventNames.length === 1 ? `${eventNames[0]}` : 's3 multi trigger';
-
-    return this.tracer.startSpan(
-      name,
-      {
-        kind: SpanKind.SERVER,
-        attributes,
-      },
-      parent
-    );
-  }
-
-  private _getSESSpan(event: SESEvent, parent: OtelContext) {
-    const { Records: records } = event;
-    const attributes: Attributes = {
-      [LambdaAttributes.TRIGGER_SERVICE]: TriggerOrigin.SES,
-    };
-
-    if (records.length === 1) {
-      const record = records[0];
-      attributes['aws.ses.email.from'] =
-        record.ses.mail.commonHeaders.from?.join(',');
-      attributes['aws.ses.email.to'] =
-        record.ses.mail.commonHeaders.to?.join(',');
-    }
-
-    return this.tracer.startSpan(
-      'email',
-      {
-        kind: SpanKind.SERVER,
-        attributes,
-      },
-      parent
-    );
-  }
-
-  private _getCognitoSpan(
-    event: CognitoBaseTriggerEvent<string>,
-    parent: OtelContext
-  ) {
-    const attributes: Attributes = {
-      [LambdaAttributes.TRIGGER_SERVICE]: TriggerOrigin.COGNITO,
-      'aws.cognito.trigger.service': event.triggerSource,
-    };
-
-    return this.tracer.startSpan(
-      `${event.triggerSource}`,
-      {
-        kind: SpanKind.SERVER,
-        attributes,
-      },
-      parent
-    );
-  }
-
-  private _getEventBridgeSpan(
-    event: EventBridgeEvent<string, any>,
-    parent: OtelContext
-  ) {
-    const attributes: Attributes = {
-      [LambdaAttributes.TRIGGER_SERVICE]: TriggerOrigin.EVENT_BRIDGE,
-      'aws.event.bridge.trigger.service': event.source,
-    };
-
-    return this.tracer.startSpan(
-      event['detail-type'] ?? 'event bridge event',
-      {
-        kind: SpanKind.SERVER,
-        attributes,
-      },
-      parent
-    );
+    options.attributes[LambdaAttributes.TRIGGER_SERVICE] = origin;
+    const triggerSpan = plugin.tracer.startSpan(name, options, parentContext);
+    return { triggerOrigin: origin, triggerSpan };
   }
 
   override setTracerProvider(tracerProvider: TracerProvider) {
@@ -804,7 +350,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   private async _endWrapperSpan(
     span: Span,
-    lambdaResponse: GatewayResult | any,
+    lambdaResponse: any,
     errorFromLambda: string | Error | null | undefined
   ) {
     if (errorFromLambda) {
@@ -825,48 +371,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         this.triggerOrigin
       )
     ) {
-      this._endAPIGatewaySpan(span, lambdaResponse);
+      finalizeSpan(this.triggerOrigin, span, lambdaResponse);
     }
     span.end();
-  }
-
-  private _endAPIGatewaySpan(span: Span, lambdaResponse: GatewayResult | any) {
-    if (!isGatewayResult(lambdaResponse)) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: 'Lambda return malformed value',
-      });
-      return;
-    }
-
-    span.setAttribute(
-      SemanticAttributes.HTTP_STATUS_CODE,
-      lambdaResponse.statusCode
-    );
-    const statusCode = lambdaResponse.statusCode;
-    const errorStatusCodes = /^[45]\d\d$/;
-    const fail = errorStatusCodes.test(String(statusCode));
-
-    if (fail) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message:
-          'Return to API Gateway with error ' + lambdaResponse.statusCode,
-      });
-    } else {
-      span.setStatus({
-        code: SpanStatusCode.OK,
-      });
-    }
-
-    const { body } = lambdaResponse;
-
-    if (body) {
-      span.setAttribute(
-        'http.response.body',
-        typeof body === 'object' ? JSON.stringify(body) : body
-      );
-    }
   }
 
   private _getForceFlush(tracerProvider: TracerProvider) {
