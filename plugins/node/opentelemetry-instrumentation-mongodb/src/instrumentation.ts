@@ -338,7 +338,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   /** Creates spans for common operations */
   private _getV3PatchOperation(operationName: 'insert' | 'update' | 'remove') {
     const instrumentation = this;
-
     return (original: WireProtocolInternal[typeof operationName]) => {
       return function patchedServerCommand(
         this: unknown,
@@ -439,7 +438,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const instrumentation = this;
     return (original: V4Connection['command']) => {
       return function patchedV4ServerCommand(
-        this: any,
+        this: unknown,
         ns: any,
         cmd: any,
         options: undefined | unknown,
