@@ -273,9 +273,17 @@ describe('DataloaderInstrumentation', () => {
       const [batchSpan, loadSpan, loadManySpan] =
         memoryExporter.getFinishedSpans();
 
-      assert.strictEqual(batchSpan.name, 'dataloader.batch test-name');
-      assert.strictEqual(loadManySpan.name, 'dataloader.loadMany test-name');
-      assert.strictEqual(loadSpan.name, 'dataloader.load test-name');
+      if ((namedDataloader as { name?: string | null }).name === undefined) {
+        // For versions of dataloader package that does not support name, we should
+        // not be adding anything to the names
+        assert.strictEqual(batchSpan.name, 'dataloader.batch');
+        assert.strictEqual(loadManySpan.name, 'dataloader.loadMany');
+        assert.strictEqual(loadSpan.name, 'dataloader.load');
+      } else {
+        assert.strictEqual(batchSpan.name, 'dataloader.batch test-name');
+        assert.strictEqual(loadManySpan.name, 'dataloader.loadMany test-name');
+        assert.strictEqual(loadSpan.name, 'dataloader.load test-name');
+      }
     });
   });
 
