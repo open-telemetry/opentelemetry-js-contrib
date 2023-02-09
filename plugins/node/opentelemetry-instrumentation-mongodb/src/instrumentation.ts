@@ -438,7 +438,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const instrumentation = this;
     return (original: V4Connection['command']) => {
       return function patchedV4ServerCommand(
-        this: unknown,
+        this: any,
         ns: any,
         cmd: any,
         options: undefined | unknown,
