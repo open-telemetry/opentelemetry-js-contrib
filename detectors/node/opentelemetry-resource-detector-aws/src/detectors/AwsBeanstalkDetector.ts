@@ -80,7 +80,7 @@ export class AwsBeanstalkDetector implements Detector {
         [SemanticResourceAttributes.SERVICE_INSTANCE_ID]:
           parsedData.deployment_id,
       });
-    } catch (e) {
+    } catch (e: any) {
       diag.debug(`AwsBeanstalkDetector failed: ${e.message}`);
       return Resource.empty();
     }

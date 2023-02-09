@@ -257,7 +257,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
               }
               span.end();
               return result;
-            } catch (err) {
+            } catch (err: any) {
               span.recordException(err);
               span.end();
               throw err;
