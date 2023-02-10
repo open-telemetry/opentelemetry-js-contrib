@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.34.1...instrumentation-aws-lambda-v0.35.0) (2023-02-08)
+
+
+### Features
+
+* **instrumentation-lambda:** Flush MeterProvider at end of handler ([#1370](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1370)) ([096129c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/096129c9c1b68c7f6cccbfab42f8d2167bc40927))
+
+
+### Bug Fixes
+
+* **instrumentation/aws-lambda:** Ensure callback is only called once ([#1384](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1384)) ([d822f75](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d822f75e10d6d0421fe8fbd4b1dca261de736e69))
+
 ## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.34.0...instrumentation-aws-lambda-v0.34.1) (2023-02-07)
 
 

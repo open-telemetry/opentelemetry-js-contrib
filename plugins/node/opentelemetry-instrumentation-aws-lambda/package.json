@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-lambda",
-  "version": "0.34.1",
+  "version": "0.35.0",
   "description": "OpenTelemetry AWS Lambda automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -49,6 +49,7 @@
     "@opentelemetry/core": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
+    "@opentelemetry/sdk-metrics": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
     "gts": "3.1.0",
