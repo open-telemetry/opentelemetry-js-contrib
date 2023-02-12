@@ -6,8 +6,8 @@
   "main": "index.js",
   "scripts": {
     "client": "node ./client.js",
-    "docker:start": "cd ./docker && docker-compose down && docker-compose up",
-    "docker:stop": "cd ./docker && docker-compose down",
+    "docker:start": "cd ./docker && docker compose down && docker compose up",
+    "docker:stop": "cd ./docker && docker compose down",
     "server": "node ./server.js"
   },
   "repository": {
