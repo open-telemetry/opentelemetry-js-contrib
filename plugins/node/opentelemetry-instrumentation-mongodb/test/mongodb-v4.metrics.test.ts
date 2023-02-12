@@ -85,9 +85,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
   const PORT = process.env.MONGODB_PORT || '27017';
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics';
   const COLLECTION_NAME = 'test-metrics';
-  // const URL = `mongodb://${HOST}:${PORT}`;
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
-  // const URL2 = "mongodb://myuser:pass123@cluster.mongodb.net/test?retryWrites=true&w=majority";
 
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;

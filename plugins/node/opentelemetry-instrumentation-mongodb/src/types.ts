@@ -63,26 +63,6 @@ export type CommandResult = {
   message?: unknown;
 };
 
-// https://github.com/mongodb/node-mongodb-native/blob/3.6/lib/topologies/server.js#L172
-// https://github.com/mongodb/node-mongodb-native/blob/2.2/lib/server.js#L174
-export type MongoInternalTopology = {
-  s?: {
-    // those are for mongodb@3
-    options?: {
-      host?: string;
-      port?: number;
-      servername?: string;
-    };
-    // those are for mongodb@2
-    host?: string;
-    port?: number;
-  };
-  // mongodb@3 with useUnifiedTopology option
-  description?: {
-    address?: string;
-  };
-};
-
 export enum MongodbCommandType {
   CREATE_INDEXES = 'createIndexes',
   FIND_AND_MODIFY = 'findAndModify',
