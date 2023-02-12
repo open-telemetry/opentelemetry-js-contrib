@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-gcp",
-  "version": "0.27.5",
+  "version": "0.28.0",
   "description": "OpenTelemetry SDK resource detector for GCP",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
