@@ -52,6 +52,12 @@
   * dependencies
     * @opentelemetry/instrumentation-express bumped from ^0.31.1 to ^0.31.2
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.34.1 to ^0.35.0
+
 ## [0.36.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.36.0...auto-instrumentations-node-v0.36.1) (2023-02-07)
 
 
