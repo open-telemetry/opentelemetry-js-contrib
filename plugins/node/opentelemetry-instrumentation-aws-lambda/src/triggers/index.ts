@@ -24,6 +24,7 @@ import { CognitoTrigger } from './cognito';
 import { EventBridgeTrigger } from './event-bridge';
 import { DynamoDBTrigger } from './dynamodb-stream';
 import { Span } from '@opentelemetry/api';
+import { CloudWatchLogsTrigger } from './cloudwatch-logs';
 
 export const LambdaAttributes = {
   TRIGGER_SERVICE: 'faas.trigger.type',
@@ -39,6 +40,7 @@ export const enum TriggerOrigin {
   SES = 'SES',
   COGNITO = 'Cognito',
   EVENT_BRIDGE = 'EventBridge',
+  CLOUDWATCH_LOGS = 'CloudWatch Logs',
 }
 
 export const lambdaTriggers: Record<TriggerOrigin, LambdaTrigger<any>> = {
@@ -51,6 +53,7 @@ export const lambdaTriggers: Record<TriggerOrigin, LambdaTrigger<any>> = {
   [TriggerOrigin.SES]: SESTrigger,
   [TriggerOrigin.COGNITO]: CognitoTrigger,
   [TriggerOrigin.EVENT_BRIDGE]: EventBridgeTrigger,
+  [TriggerOrigin.CLOUDWATCH_LOGS]: CloudWatchLogsTrigger,
 };
 
 // TODO infer from lambdaTriggers map
@@ -75,6 +78,8 @@ export const getEventTrigger = (
     return CognitoTrigger.initializer(event);
   } else if (EventBridgeTrigger.validator(event)) {
     return EventBridgeTrigger.initializer(event);
+  } else if (CloudWatchLogsTrigger.validator(event)) {
+    return CloudWatchLogsTrigger.initializer(event);
   } else {
     return undefined;
   }
