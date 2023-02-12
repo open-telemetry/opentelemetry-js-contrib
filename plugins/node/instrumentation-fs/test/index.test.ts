@@ -99,7 +99,7 @@ describe('fs instrumentation', () => {
     { error, result, resultAsError = null },
     spans
   ) => {
-    const [functionNamePart1, functionNamePart2] = splitTwoLevels(name);
+    const [functionNamePart1, functionNamePart2] = splitTwoLevels<typeof fs>(name);
     const syncName = `${functionNamePart1}Sync${
       functionNamePart2 ? `.${functionNamePart2}` : ''
     }` as FMember;
