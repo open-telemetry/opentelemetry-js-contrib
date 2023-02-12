@@ -23,7 +23,6 @@ import {
   resetIsAvailableCache,
 } from 'gcp-metadata';
 import * as nock from 'nock';
-import * as semver from 'semver';
 import { gcpDetector } from '../../src';
 import {
   assertCloudResource,
