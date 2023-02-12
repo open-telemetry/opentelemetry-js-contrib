@@ -24,14 +24,14 @@ import {
 } from '@opentelemetry/instrumentation';
 import * as semver from 'semver';
 import { AddressFamily } from './enums/AddressFamily';
-import {
-  Dns,
-  DnsInstrumentationConfig,
-  LookupCallbackSignature,
-  LookupPromiseSignature,
-} from './types';
+import { DnsInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
+import {
+  Dns,
+  LookupCallbackSignature,
+  LookupPromiseSignature,
+} from './internal-types';
 
 /**
  * Dns instrumentation for Opentelemetry

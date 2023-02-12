@@ -32,6 +32,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { SQS } from '@aws-sdk/client-sqs';
+import { SpanKind } from '@opentelemetry/api';
 
 // set aws environment variables, so tests in non aws environment are able to run
 process.env.AWS_ACCESS_KEY_ID = 'testing';
@@ -46,7 +47,7 @@ import {
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from '../src/enums';
-import * as expect from 'expect';
+import { expect } from 'expect';
 import * as fs from 'fs';
 import * as nock from 'nock';
 
@@ -78,6 +79,7 @@ describe('instrumentation-aws-sdk-v3', () => {
       expect(span.attributes[SemanticAttributes.RPC_SERVICE]).toEqual('S3');
       expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
+      expect(span.kind).toEqual(SpanKind.CLIENT);
       expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(200);
     });
 

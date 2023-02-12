@@ -29,7 +29,7 @@ import {
   ForceUpdateFunction,
   GetSnapshotBeforeUpdateFunction,
   ComponentWillUnmountFunction,
-} from './types';
+} from './internal-types';
 
 /**
  * This class is the base component for a React component with lifecycle instrumentation
@@ -127,7 +127,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
           return original();
         }
       );
-    } catch (err) {
+    } catch (err: any) {
       span.setAttribute(AttributeNames.REACT_ERROR, err.stack);
       wasError = true;
       throw err;

@@ -67,7 +67,7 @@ const DEFAULT_PGPOOL_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
   [SemanticAttributes.DB_NAME]: CONFIG.database,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.DB_CONNECTION_STRING]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SemanticAttributes.DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
   [SemanticAttributes.DB_USER]: CONFIG.user,
   [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
@@ -78,7 +78,7 @@ const DEFAULT_PG_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
   [SemanticAttributes.DB_NAME]: CONFIG.database,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.DB_CONNECTION_STRING]: `jdbc:postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SemanticAttributes.DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
   [SemanticAttributes.DB_USER]: CONFIG.user,
 };
@@ -197,11 +197,19 @@ describe('pg-pool', () => {
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await context.with(trace.setSpan(context.active(), span), async () => {
         const client = await pool.connect();
-        runCallbackTest(span, pgPoolattributes, events, unsetStatus, 1, 0);
+        runCallbackTest(span, pgPoolattributes, events, unsetStatus, 2, 1);
+
+        const [connectSpan, poolConnectSpan] =
+          memoryExporter.getFinishedSpans();
+        assert.strictEqual(
+          connectSpan.parentSpanId,
+          poolConnectSpan.spanContext().spanId
+        );
+
         assert.ok(client, 'pool.connect() returns a promise');
         try {
           await client.query('SELECT NOW()');
-          runCallbackTest(span, pgAttributes, events, unsetStatus, 2, 1);
+          runCallbackTest(span, pgAttributes, events, unsetStatus, 3, 2);
         } finally {
           client.release();
         }
@@ -260,6 +268,23 @@ describe('pg-pool', () => {
         });
         assert.strictEqual(resNoPromise, undefined, 'No promise is returned');
       });
+    });
+
+    it('should not generate traces when requireParentSpan=true is specified', async () => {
+      // The pool gets shared between tests. We need to create a separate one
+      // to test cold start, which can cause nested spans
+      const newPool = new pgPool(CONFIG);
+      create({
+        requireParentSpan: true,
+      });
+      const client = await newPool.connect();
+      try {
+        await client.query('SELECT NOW()');
+      } finally {
+        client.release();
+      }
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
     });
   });
 
@@ -332,7 +357,7 @@ describe('pg-pool', () => {
         };
 
         beforeEach(async () => {
-          const config: PgInstrumentationConfig = {
+          create({
             enhancedDatabaseReporting: true,
             responseHook: (
               span: Span,
@@ -342,9 +367,7 @@ describe('pg-pool', () => {
                 dataAttributeName,
                 JSON.stringify({ rowCount: responseInfo?.data.rowCount })
               ),
-          };
-
-          create(config);
+          });
         });
 
         it('should attach response hook data to resulting spans for query with callback ', done => {

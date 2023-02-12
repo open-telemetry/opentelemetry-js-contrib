@@ -107,7 +107,7 @@ export const setLookupAttributes = (
  * @param obj obj to inspect
  * @param pattern Match pattern
  */
-export const satisfiesPattern = <T>(
+export const satisfiesPattern = (
   constant: string,
   pattern: IgnoreMatcher
 ): boolean => {
@@ -146,7 +146,7 @@ export const isIgnored = (
         return true;
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     if (onException) {
       onException(e);
     }

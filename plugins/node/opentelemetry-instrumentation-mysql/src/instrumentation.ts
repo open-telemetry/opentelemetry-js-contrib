@@ -16,7 +16,9 @@
 
 import {
   context,
+  Context,
   diag,
+  trace,
   Span,
   SpanKind,
   SpanStatusCode,
@@ -31,11 +33,17 @@ import {
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql';
+import { AttributeNames } from './AttributeNames';
 import { MySQLInstrumentationConfig } from './types';
-import { getConnectionAttributes, getDbStatement, getSpanName } from './utils';
+import {
+  getConnectionAttributes,
+  getDbStatement,
+  getDbValues,
+  getSpanName,
+  getPoolName,
+} from './utils';
 import { VERSION } from './version';
-
-type formatType = typeof mysqlTypes.format;
+import { UpDownCounter, MeterProvider } from '@opentelemetry/api';
 
 type getConnectionCallbackType = (
   err: mysqlTypes.MysqlError,
@@ -48,9 +56,27 @@ export class MySQLInstrumentation extends InstrumentationBase<
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
+  private _connectionsUsage!: UpDownCounter;
 
   constructor(config?: MySQLInstrumentationConfig) {
     super('@opentelemetry/instrumentation-mysql', VERSION, config);
+    this._setMetricInstruments();
+  }
+
+  override setMeterProvider(meterProvider: MeterProvider) {
+    super.setMeterProvider(meterProvider);
+    this._setMetricInstruments();
+  }
+
+  private _setMetricInstruments() {
+    this._connectionsUsage = this.meter.createUpDownCounter(
+      'db.client.connections.usage', //TODO:: use semantic convention
+      {
+        description:
+          'The number of connections that are currently in the state referenced by the attribute "state".',
+        unit: '{connections}',
+      }
+    );
   }
 
   protected init() {
@@ -68,7 +94,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           this._wrap(
             moduleExports,
             'createConnection',
-            this._patchCreateConnection(moduleExports.format) as any
+            this._patchCreateConnection() as any
           );
 
           diag.debug('Patching mysql.createPool');
@@ -78,7 +104,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           this._wrap(
             moduleExports,
             'createPool',
-            this._patchCreatePool(moduleExports.format) as any
+            this._patchCreatePool() as any
           );
 
           diag.debug('Patching mysql.createPoolCluster');
@@ -88,7 +114,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           this._wrap(
             moduleExports,
             'createPoolCluster',
-            this._patchCreatePoolCluster(moduleExports.format) as any
+            this._patchCreatePoolCluster() as any
           );
 
           return moduleExports;
@@ -104,7 +130,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
   }
 
   // global export function
-  private _patchCreateConnection(format: formatType) {
+  private _patchCreateConnection() {
     return (originalCreateConnection: Function) => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation#patch: patched mysql createConnection');
@@ -118,7 +144,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
         thisPlugin._wrap(
           originalResult,
           'query',
-          thisPlugin._patchQuery(originalResult, format) as any
+          thisPlugin._patchQuery(originalResult) as any
         );
 
         return originalResult;
@@ -127,27 +153,50 @@ export class MySQLInstrumentation extends InstrumentationBase<
   }
 
   // global export function
-  private _patchCreatePool(format: formatType) {
+  private _patchCreatePool() {
     return (originalCreatePool: Function) => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation#patch: patched mysql createPool');
       return function createPool(_config: string | mysqlTypes.PoolConfig) {
         const pool = originalCreatePool(...arguments);
 
-        thisPlugin._wrap(pool, 'query', thisPlugin._patchQuery(pool, format));
+        thisPlugin._wrap(pool, 'query', thisPlugin._patchQuery(pool));
         thisPlugin._wrap(
           pool,
           'getConnection',
-          thisPlugin._patchGetConnection(pool, format)
+          thisPlugin._patchGetConnection(pool)
         );
+        thisPlugin._wrap(pool, 'end', thisPlugin._patchPoolEnd(pool));
+        thisPlugin._setPoolcallbacks(pool, thisPlugin, '');
 
         return pool;
       };
     };
   }
+  private _patchPoolEnd(pool: any) {
+    return (originalPoolEnd: Function) => {
+      const thisPlugin = this;
+      diag.debug('MySQLInstrumentation#patch: patched mysql pool end');
+      return function end(callback?: unknown) {
+        const nAll = (pool as any)._allConnections.length;
+        const nFree = (pool as any)._freeConnections.length;
+        const nUsed = nAll - nFree;
+        const poolName = getPoolName(pool);
+        thisPlugin._connectionsUsage.add(-nUsed, {
+          state: 'used',
+          name: poolName,
+        });
+        thisPlugin._connectionsUsage.add(-nFree, {
+          state: 'idle',
+          name: poolName,
+        });
+        originalPoolEnd.apply(pool, arguments);
+      };
+    };
+  }
 
   // global export function
-  private _patchCreatePoolCluster(format: formatType) {
+  private _patchCreatePoolCluster() {
     return (originalCreatePoolCluster: Function) => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation#patch: patched mysql createPoolCluster');
@@ -158,24 +207,47 @@ export class MySQLInstrumentation extends InstrumentationBase<
         thisPlugin._wrap(
           cluster,
           'getConnection',
-          thisPlugin._patchGetConnection(cluster, format)
+          thisPlugin._patchGetConnection(cluster)
         );
+        thisPlugin._wrap(cluster, 'add', thisPlugin._patchAdd(cluster));
 
         return cluster;
       };
     };
   }
+  private _patchAdd(cluster: mysqlTypes.PoolCluster) {
+    return (originalAdd: Function) => {
+      const thisPlugin = this;
+      diag.debug('MySQLInstrumentation#patch: patched mysql pool cluster add');
+      return function add(id: string, config: unknown) {
+        // Unwrap if unpatch has been called
+        if (!thisPlugin['_enabled']) {
+          thisPlugin._unwrap(cluster, 'add');
+          return originalAdd.apply(cluster, arguments);
+        }
+        originalAdd.apply(cluster, arguments);
+        const nodes = cluster['_nodes' as keyof mysqlTypes.PoolCluster] as any;
+        if (nodes) {
+          const nodeId =
+            typeof id === 'object'
+              ? 'CLUSTER::' + (cluster as any)._lastId
+              : String(id);
+
+          const pool = nodes[nodeId].pool;
+          thisPlugin._setPoolcallbacks(pool, thisPlugin, id);
+        }
+      };
+    };
+  }
 
   // method on cluster or pool
-  private _patchGetConnection(
-    pool: mysqlTypes.Pool | mysqlTypes.PoolCluster,
-    format: formatType
-  ) {
+  private _patchGetConnection(pool: mysqlTypes.Pool | mysqlTypes.PoolCluster) {
     return (originalGetConnection: Function) => {
       const thisPlugin = this;
       diag.debug(
         'MySQLInstrumentation#patch: patched mysql pool getConnection'
       );
+
       return function getConnection(
         arg1?: unknown,
         arg2?: unknown,
@@ -189,22 +261,19 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
         if (arguments.length === 1 && typeof arg1 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg1 as getConnectionCallbackType,
-            format
+            arg1 as getConnectionCallbackType
           );
           return originalGetConnection.call(pool, patchFn);
         }
         if (arguments.length === 2 && typeof arg2 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg2 as getConnectionCallbackType,
-            format
+            arg2 as getConnectionCallbackType
           );
           return originalGetConnection.call(pool, arg1, patchFn);
         }
         if (arguments.length === 3 && typeof arg3 === 'function') {
           const patchFn = thisPlugin._getConnectionCallbackPatchFn(
-            arg3 as getConnectionCallbackType,
-            format
+            arg3 as getConnectionCallbackType
           );
           return originalGetConnection.call(pool, arg1, arg2, patchFn);
         }
@@ -214,10 +283,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     };
   }
 
-  private _getConnectionCallbackPatchFn(
-    cb: getConnectionCallbackType,
-    format: formatType
-  ) {
+  private _getConnectionCallbackPatchFn(cb: getConnectionCallbackType) {
     const thisPlugin = this;
     const activeContext = context.active();
     return function (
@@ -232,7 +298,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           thisPlugin._wrap(
             connection,
             'query',
-            thisPlugin._patchQuery(connection, format)
+            thisPlugin._patchQuery(connection)
           );
         }
       }
@@ -242,10 +308,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     };
   }
 
-  private _patchQuery(
-    connection: mysqlTypes.Connection | mysqlTypes.Pool,
-    format: formatType
-  ) {
+  private _patchQuery(connection: mysqlTypes.Connection | mysqlTypes.Pool) {
     return (originalQuery: Function): mysqlTypes.QueryFunction => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation: patched mysql query');
@@ -268,28 +331,43 @@ export class MySQLInstrumentation extends InstrumentationBase<
           },
         });
 
-        let values;
-
-        if (Array.isArray(_valuesOrCallback)) {
-          values = _valuesOrCallback;
-        } else if (arguments[2]) {
-          values = [_valuesOrCallback];
-        }
-
         span.setAttribute(
           SemanticAttributes.DB_STATEMENT,
-          getDbStatement(query, format, values)
+          getDbStatement(query)
         );
+
+        const instrumentationConfig: MySQLInstrumentationConfig =
+          thisPlugin.getConfig();
+
+        if (instrumentationConfig.enhancedDatabaseReporting) {
+          let values;
+
+          if (Array.isArray(_valuesOrCallback)) {
+            values = _valuesOrCallback;
+          } else if (arguments[2]) {
+            values = [_valuesOrCallback];
+          }
+
+          span.setAttribute(
+            AttributeNames.MYSQL_VALUES,
+            getDbValues(query, values)
+          );
+        }
 
         const cbIndex = Array.from(arguments).findIndex(
           arg => typeof arg === 'function'
         );
 
+        const parentContext = context.active();
+
         if (cbIndex === -1) {
-          const streamableQuery: mysqlTypes.Query = originalQuery.apply(
-            connection,
-            arguments
+          const streamableQuery: mysqlTypes.Query = context.with(
+            trace.setSpan(context.active(), span),
+            () => {
+              return originalQuery.apply(connection, arguments);
+            }
           );
+          context.bind(parentContext, streamableQuery);
 
           return streamableQuery
             .on('error', err =>
@@ -305,16 +383,18 @@ export class MySQLInstrumentation extends InstrumentationBase<
           thisPlugin._wrap(
             arguments,
             cbIndex,
-            thisPlugin._patchCallbackQuery(span)
+            thisPlugin._patchCallbackQuery(span, parentContext)
           );
 
-          return originalQuery.apply(connection, arguments);
+          return context.with(trace.setSpan(context.active(), span), () => {
+            return originalQuery.apply(connection, arguments);
+          });
         }
       };
     };
   }
 
-  private _patchCallbackQuery(span: Span) {
+  private _patchCallbackQuery(span: Span, parentContext: Context) {
     return (originalCallback: Function) => {
       return function (
         err: mysqlTypes.MysqlError | null,
@@ -328,8 +408,47 @@ export class MySQLInstrumentation extends InstrumentationBase<
           });
         }
         span.end();
-        return originalCallback(...arguments);
+        return context.with(parentContext, () =>
+          originalCallback(...arguments)
+        );
       };
     };
+  }
+  private _setPoolcallbacks(
+    pool: mysqlTypes.Pool,
+    thisPlugin: MySQLInstrumentation,
+    id: string
+  ) {
+    //TODO:: use semantic convention
+    const poolName = id || getPoolName(pool);
+
+    pool.on('connection', connection => {
+      thisPlugin._connectionsUsage.add(1, {
+        state: 'idle',
+        name: poolName,
+      });
+    });
+
+    pool.on('acquire', connection => {
+      thisPlugin._connectionsUsage.add(-1, {
+        state: 'idle',
+        name: poolName,
+      });
+      thisPlugin._connectionsUsage.add(1, {
+        state: 'used',
+        name: poolName,
+      });
+    });
+
+    pool.on('release', connection => {
+      thisPlugin._connectionsUsage.add(-1, {
+        state: 'used',
+        name: poolName,
+      });
+      thisPlugin._connectionsUsage.add(1, {
+        state: 'idle',
+        name: poolName,
+      });
+    });
   }
 }

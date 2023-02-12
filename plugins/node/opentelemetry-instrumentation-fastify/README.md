@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 
 ### Supported Versions
 
-- `^3.0.0`
+- fastify: `^3.0.0 || ^4.0.0`
 
 ## Usage
 
@@ -44,6 +44,28 @@ registerInstrumentations({
 ```
 
 See [examples/fastify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/fastify) for a short example.
+
+## Fastify Instrumentation Options
+
+| Options | Type | Example | Description |
+| `requestHook` | `FastifyCustomAttributeFunction` | `(span, requestInfo) => {}` | Function for adding custom attributes to Fastify requests. Receives params: `Span, FastifyRequestInfo`. |
+
+### Using `requestHook`
+
+Instrumentation configuration accepts a custom "hook" function which will be called for every instrumented Fastify request. Custom attributes can be set on the span or run any custom logic per request.
+
+```javascript
+import { FastifyInstrumentation } from "@opentelemetry/instrumentation-fastify"
+
+const fastifyInstrumentation = new FastifyInstrumentation({
+  requestHook: function (span: Span, info: FastifyRequestInfo) {
+    span.setAttribute(
+      'http.method',
+      info.request.method,
+    )
+  }
+});
+```
 
 ## Useful links
 

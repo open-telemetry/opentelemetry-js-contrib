@@ -21,15 +21,17 @@ import { hrTime } from '@opentelemetry/core';
 import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
 import {
-  AsyncTask,
   EventName,
-  RunTaskFunction,
   ShouldPreventSpanCreation,
-  SpanData,
   UserInteractionInstrumentationConfig,
+} from './types';
+import {
+  AsyncTask,
+  RunTaskFunction,
+  SpanData,
   WindowWithZone,
   ZoneTypeWithPrototype,
-} from './types';
+} from './internal-types';
 import { VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';

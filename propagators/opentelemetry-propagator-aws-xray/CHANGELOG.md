@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-aws-xray-v1.1.1...propagator-aws-xray-v1.2.0) (2023-02-07)
+
+
+### Features
+
+* **propagator/aws-xray:** Extract X-Ray header in a case-insensitive fashion ([#1328](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1328)) ([4227d8a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4227d8a3df7b0782d76844e89d452e0432a704f4))
+
+## [1.1.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-aws-xray-v1.1.0...propagator-aws-xray-v1.1.1) (2022-11-02)
+
+
+### Bug Fixes
+
+* address webpack memory issue for browser tests ([#1264](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1264)) ([c7f08fe](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c7f08fed51bca68b0c522769c3c589102b98ec93))
+
 ## [1.1.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-aws-xray-v1.0.1...propagator-aws-xray-v1.1.0) (2022-05-14)
 
 

@@ -24,7 +24,7 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import * as net from 'net';
 import * as assert from 'assert';
 import { NetInstrumentation } from '../src';
-import { SocketEvent } from '../src/types';
+import { SocketEvent } from '../src/internal-types';
 import { assertIpcSpan, assertTcpSpan, IPC_PATH, HOST, PORT } from './utils';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -148,6 +148,13 @@ describe('NetInstrumentation', () => {
       });
     });
 
+    it('should create a tcp span when port is given as string', done => {
+      socket = socket.connect(String(PORT) as unknown as number, HOST, () => {
+        assertTcpSpan(getSpan(), socket);
+        done();
+      });
+    });
+
     it('should produce a span given options', done => {
       socket.connect(
         {
@@ -192,7 +199,7 @@ describe('NetInstrumentation', () => {
         // socket.connect() will not throw before node@16 only closes
         socket.once(SocketEvent.CLOSE, assertSpan);
         socket.connect(undefined as unknown as string);
-      } catch (e) {
+      } catch (e: any) {
         // socket.connect() will throw in node@16
         socket.removeListener(SocketEvent.CLOSE, assertSpan);
         assert.strictEqual(

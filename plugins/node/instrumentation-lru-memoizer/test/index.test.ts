@@ -15,7 +15,7 @@
  */
 import LruMemoizerInstrumentation from '../src';
 import { trace, context } from '@opentelemetry/api';
-import * as expect from 'expect';
+import { expect } from 'expect';
 
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 

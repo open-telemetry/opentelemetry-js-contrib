@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, trace, SpanStatusCode } from '@opentelemetry/api';
+import { context, Context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   DbSystemValues,
@@ -28,7 +28,8 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { MySQLInstrumentation } from '../src';
+import { MySQLInstrumentation, MySQLInstrumentationConfig } from '../src';
+import * as sinon from 'sinon';
 
 const port = Number(process.env.MYSQL_PORT) || 33306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
@@ -41,8 +42,9 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as mysqlTypes from 'mysql';
+import { AttributeNames } from '../src/AttributeNames';
 
-describe('mysql@2.x', () => {
+describe('mysql@2.x-Tracing', () => {
   let contextManager: AsyncHooksContextManager;
   let connection: mysqlTypes.Connection;
   let pool: mysqlTypes.Pool;
@@ -147,6 +149,89 @@ describe('mysql@2.x', () => {
         query.on('end', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans[0].name, sql);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('enhancedDatabaseReporting:true config, should track mysql.values', () => {
+    before(() => {
+      instrumentation.disable();
+      const config: MySQLInstrumentationConfig = {
+        enhancedDatabaseReporting: true,
+      };
+      instrumentation.setConfig(config);
+      instrumentation.enable();
+    });
+
+    after(() => {
+      instrumentation.disable();
+      instrumentation.setConfig({});
+      instrumentation.enable();
+    });
+
+    it('call conn.query(sqlString) with no values', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const query = connection.query(
+          'SELECT * FROM `books` WHERE `author` = "David"'
+        );
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[AttributeNames.MYSQL_VALUES],
+            ''
+          );
+          done();
+        });
+      });
+    });
+    it('call conn.query(sqlString, values)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT * FROM `books` WHERE `author` = ?';
+        const query = connection.query(sql, ['David']);
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[AttributeNames.MYSQL_VALUES],
+            '[David]'
+          );
+          done();
+        });
+      });
+    });
+    it('call conn.query(options)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql =
+          'SELECT * FROM `books` WHERE `author` = ? AND `year` > ? OR `genre` = `?`';
+        const query = connection.query({
+          sql,
+          values: ['David', 2000, 'Fiction'],
+        });
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[AttributeNames.MYSQL_VALUES],
+            '[David,2000,Fiction]'
+          );
+          done();
+        });
+      });
+    });
+    it('call conn.query(options, values)', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        const sql = 'SELECT * FROM `books` WHERE `author` = ?';
+        const query = connection.query({ sql }, ['David']);
+        query.on('end', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            spans[0].attributes[AttributeNames.MYSQL_VALUES],
+            '[David]'
+          );
           done();
         });
       });
@@ -288,6 +373,70 @@ describe('mysql@2.x', () => {
           assert.strictEqual(spans.length, 1);
           assertSpan(spans[0], sql, undefined, err!.message);
           done();
+        });
+      });
+    });
+
+    describe('active span context', () => {
+      afterEach(() => {
+        sinon.restore();
+      });
+
+      function assertParent(parentContext: Context) {
+        const anyConn = connection as any;
+        const originalImplyConnect = anyConn._implyConnect.bind(connection);
+        return sinon.stub(anyConn, '_implyConnect').callsFake(() => {
+          const activeSpan = trace.getSpan(
+            context.active()
+          ) as unknown as ReadableSpan;
+          const parentSpanContext = trace.getSpanContext(parentContext);
+          assert.strictEqual(
+            activeSpan.spanContext().traceId,
+            parentSpanContext?.traceId
+          );
+          assert.strictEqual(
+            activeSpan.parentSpanId,
+            parentSpanContext?.spanId
+          );
+          assert.notStrictEqual(
+            activeSpan.spanContext().spanId,
+            parentSpanContext?.spanId
+          );
+          originalImplyConnect();
+        });
+      }
+
+      it('should have proper context active for connection.query(text: string)', done => {
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          const parentContext = context.active();
+          const stub = assertParent(parentContext);
+
+          const query = connection.query('select 1');
+
+          query.on('result', () => {
+            assert.strictEqual(context.active(), parentContext);
+          });
+
+          query.on('end', () => {
+            assert.strictEqual(context.active(), parentContext);
+            sinon.assert.called(stub);
+            done();
+          });
+        });
+      });
+
+      it('should have proper context active for connection.query(text: string, callback)', done => {
+        const span = provider.getTracer('default').startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          const parentContext = context.active();
+          const stub = assertParent(parentContext);
+
+          connection.query('select 1', () => {
+            sinon.assert.called(stub);
+            assert.strictEqual(context.active(), parentContext);
+            done();
+          });
         });
       });
     });
@@ -727,10 +876,7 @@ function assertSpan(
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_PORT], port);
   assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], host);
   assert.strictEqual(span.attributes[SemanticAttributes.DB_USER], user);
-  assert.strictEqual(
-    span.attributes[SemanticAttributes.DB_STATEMENT],
-    mysqlTypes.format(sql, values)
-  );
+  assert.strictEqual(span.attributes[SemanticAttributes.DB_STATEMENT], sql);
   if (errorMessage) {
     assert.strictEqual(span.status.message, errorMessage);
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);

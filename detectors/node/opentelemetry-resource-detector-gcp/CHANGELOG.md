@@ -12,6 +12,32 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.32.0
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.32.0 to ^0.33.0
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
+
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.27.5...resource-detector-gcp-v0.28.0) (2023-02-08)
+
+
+### Features
+
+* **detector-gcp:** collect hostname resource attribute from GCP Metadata API ([#1364](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1364)) ([33c57cc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/33c57cc84a8b87ad3a58dde2014738deab1c375b))
+
+## [0.27.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.27.2...resource-detector-gcp-v0.27.3) (2022-11-02)
+
+
+### Bug Fixes
+
+* **deps:** update dependency gcp-metadata to v5 ([#1009](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1009)) ([d0a10eb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d0a10ebefbe3954e3a9b34e26e391eb73b53fb20))
+
 ## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.26.2...resource-detector-gcp-v0.27.0) (2022-05-14)
 
 

@@ -42,7 +42,7 @@ import {
 } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { RedisResponseCustomAttributeFunction } from '../src/types';
-import { hrTimeToMilliseconds } from '@opentelemetry/core';
+import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
 
 describe('redis@^4.0.0', () => {
   before(function () {
@@ -71,7 +71,9 @@ describe('redis@^4.0.0', () => {
     client = createClient({
       url: redisTestUrl,
     });
-    await client.connect();
+    context.with(suppressTracing(context.active()), async () => {
+      await client.connect();
+    });
   });
 
   afterEach(async () => {
@@ -97,7 +99,7 @@ describe('redis@^4.0.0', () => {
       );
       assert.strictEqual(
         setSpan?.attributes[SemanticAttributes.DB_STATEMENT],
-        'SET'
+        'SET key [1 other arguments]'
       );
       assert.strictEqual(
         setSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
@@ -122,7 +124,7 @@ describe('redis@^4.0.0', () => {
       );
       assert.strictEqual(
         getSpan?.attributes[SemanticAttributes.DB_STATEMENT],
-        'GET'
+        'GET key'
       );
       assert.strictEqual(
         getSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
@@ -147,7 +149,7 @@ describe('redis@^4.0.0', () => {
       assert.ok(setSpan);
       assert.strictEqual(
         setSpan?.attributes[SemanticAttributes.DB_STATEMENT],
-        'SET'
+        'SET key [1 other arguments]'
       );
       assert.strictEqual(
         setSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
@@ -183,6 +185,54 @@ describe('redis@^4.0.0', () => {
     });
   });
 
+  describe('client connect', () => {
+    it('produces a span', async () => {
+      const newClient = createClient({
+        url: redisTestUrl,
+      });
+
+      after(async () => {
+        await newClient.disconnect();
+      });
+
+      await newClient.connect();
+
+      const [span] = getTestSpans();
+
+      assert.strictEqual(span.name, 'redis-connect');
+
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_SYSTEM],
+        'redis'
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.NET_PEER_PORT],
+        redisTestConfig.port
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        redisTestUrl
+      );
+    });
+
+    it('sets error status on connection failure', async () => {
+      const newClient = createClient({
+        url: `redis://${redisTestConfig.host}:${redisTestConfig.port + 1}`,
+      });
+
+      await assert.rejects(newClient.connect());
+
+      const [span] = getTestSpans();
+
+      assert.strictEqual(span.name, 'redis-connect');
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+    });
+  });
+
   describe('multi (transactions) commands', () => {
     it('multi commands', async () => {
       await client.set('another-key', 'another-value');
@@ -203,7 +253,7 @@ describe('redis@^4.0.0', () => {
       assert.strictEqual(multiSetSpan.name, 'redis-SET');
       assert.strictEqual(
         multiSetSpan.attributes[SemanticAttributes.DB_STATEMENT],
-        'SET'
+        'SET key [1 other arguments]'
       );
       assert.strictEqual(
         multiSetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
@@ -222,7 +272,7 @@ describe('redis@^4.0.0', () => {
       assert.strictEqual(multiGetSpan.name, 'redis-GET');
       assert.strictEqual(
         multiGetSpan.attributes[SemanticAttributes.DB_STATEMENT],
-        'GET'
+        'GET another-key'
       );
       assert.strictEqual(
         multiGetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],
@@ -249,7 +299,7 @@ describe('redis@^4.0.0', () => {
       assert.ok(multiSetSpan);
       assert.strictEqual(
         multiSetSpan.attributes[SemanticAttributes.DB_STATEMENT],
-        'SET'
+        'SET key [1 other arguments]'
       );
       assert.strictEqual(
         multiSetSpan?.attributes[SemanticAttributes.NET_PEER_NAME],

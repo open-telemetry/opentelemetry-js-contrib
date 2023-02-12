@@ -21,7 +21,7 @@
     "tracing"
   ],
   "engines": {
-    "node": ">=8.12.0"
+    "node": ">=14"
   },
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
@@ -47,6 +47,6 @@
   "devDependencies": {
     "@types/express": "^4.17.13",
     "ts-node": "^10.6.0",
-    "typescript": "4.3.5"
+    "typescript": "4.4.4"
   }
 }

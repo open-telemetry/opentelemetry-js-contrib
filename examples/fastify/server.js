@@ -64,7 +64,6 @@ async function subsystem(fastify) {
       done();
     }, 2000);
   });
-
 }
 
 app.post('/run_test/:id', async (req, res) => {

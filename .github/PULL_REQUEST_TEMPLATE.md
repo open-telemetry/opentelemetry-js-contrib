@@ -20,7 +20,3 @@ Before creating a pull request, please make sure:
 ## Short description of the changes
 
 -
-
-## Checklist
-
-- [ ] Ran `npm run test-all-versions` for the edited package(s) on the latest commit if applicable.

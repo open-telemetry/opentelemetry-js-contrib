@@ -130,7 +130,7 @@ describe('dns.lookup()', () => {
       try {
         dns.lookup(hostname, -1, () => {});
         assert.fail();
-      } catch (error) {
+      } catch (error: any) {
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
@@ -151,7 +151,7 @@ describe('dns.lookup()', () => {
         // tslint:disable-next-line:no-any
         dns.lookup(hostname as any, 4, () => {});
         assert.fail();
-      } catch (error) {
+      } catch (error: any) {
         const spans = memoryExporter.getFinishedSpans();
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
