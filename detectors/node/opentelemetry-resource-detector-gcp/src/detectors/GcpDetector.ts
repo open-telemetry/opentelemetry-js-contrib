@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import * as semver from 'semver';
 import * as gcpMetadata from 'gcp-metadata';
 import { diag } from '@opentelemetry/api';
 import {
