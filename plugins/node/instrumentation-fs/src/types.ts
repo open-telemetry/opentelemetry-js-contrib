@@ -44,8 +44,8 @@ export type FMember =
   | FunctionPropertyNames<typeof fs>
   | FunctionPropertyNamesTwoLevels<typeof fs>;
 export type FPMember =
-  | FunctionPropertyNames<typeof fs['promises']>
-  | FunctionPropertyNamesTwoLevels<typeof fs['promises']>;
+  | FunctionPropertyNames<(typeof fs)['promises']>
+  | FunctionPropertyNamesTwoLevels<(typeof fs)['promises']>;
 
 export type CreateHook = (
   functionName: FMember | FPMember,
