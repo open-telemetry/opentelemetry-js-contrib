@@ -22,7 +22,6 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import * as semver from 'semver';
 import { AddressFamily } from './enums/AddressFamily';
 import { DnsInstrumentationConfig } from './types';
 import * as utils from './utils';
