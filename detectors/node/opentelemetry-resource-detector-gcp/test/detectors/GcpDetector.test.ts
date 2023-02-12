@@ -44,7 +44,7 @@ const ZONE_PATH = BASE_PATH + '/instance/zone';
 const CLUSTER_NAME_PATH = BASE_PATH + '/instance/attributes/cluster-name';
 const HOSTNAME_PATH = BASE_PATH + '/instance/hostname';
 
-(semver.satisfies(process.version, '>=10') ? describe : describe.skip)(
+describe(
   'gcpDetector',
   () => {
     describe('.detect', () => {

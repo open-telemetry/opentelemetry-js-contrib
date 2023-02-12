@@ -45,7 +45,6 @@ class GcpDetector implements Detector {
    */
   async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
     if (
-      !semver.satisfies(process.version, '>=10') ||
       !(await gcpMetadata.isAvailable())
     ) {
       diag.debug('GcpDetector failed: GCP Metadata unavailable.');
