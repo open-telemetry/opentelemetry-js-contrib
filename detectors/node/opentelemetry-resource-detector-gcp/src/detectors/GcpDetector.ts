@@ -43,9 +43,7 @@ class GcpDetector implements Detector {
    * @param config The resource detection config
    */
   async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
-    if (
-      !(await gcpMetadata.isAvailable())
-    ) {
+    if (!(await gcpMetadata.isAvailable())) {
       diag.debug('GcpDetector failed: GCP Metadata unavailable.');
       return Resource.empty();
     }
