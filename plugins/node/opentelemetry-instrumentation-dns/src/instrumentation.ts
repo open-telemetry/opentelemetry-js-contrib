@@ -22,13 +22,13 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import * as semver from 'semver';
 import { AddressFamily } from './enums/AddressFamily';
 import { DnsInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
 import {
   Dns,
+  DnsPromises,
   LookupCallbackSignature,
   LookupPromiseSignature,
 } from './internal-types';
@@ -41,7 +41,10 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
     super('@opentelemetry/instrumentation-dns', VERSION, _config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<Dns>[] {
+  init(): (
+    | InstrumentationNodeModuleDefinition<Dns>
+    | InstrumentationNodeModuleDefinition<DnsPromises>
+  )[] {
     return [
       new InstrumentationNodeModuleDefinition<Dns>(
         'dns',
@@ -53,25 +56,37 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
           }
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           this._wrap(moduleExports, 'lookup', this._getLookup() as any);
-          // new promise methods in node >= 10.6.0
-          // https://nodejs.org/docs/latest/api/dns.html#dns_dnspromises_lookup_hostname_options
-          if (semver.gte(process.version, '10.6.0')) {
-            this._wrap(
-              moduleExports.promises,
-              'lookup',
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              this._getLookup() as any
-            );
-          }
+          this._wrap(
+            moduleExports.promises,
+            'lookup',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this._getLookup() as any
+          );
           return moduleExports;
         },
         moduleExports => {
           if (moduleExports === undefined) return;
           diag.debug('Removing patch for dns');
           this._unwrap(moduleExports, 'lookup');
-          if (semver.gte(process.version, '10.6.0')) {
-            this._unwrap(moduleExports.promises, 'lookup');
+          this._unwrap(moduleExports.promises, 'lookup');
+        }
+      ),
+      new InstrumentationNodeModuleDefinition<DnsPromises>(
+        'dns/promises',
+        ['*'],
+        moduleExports => {
+          diag.debug('Applying patch for dns/promises');
+          if (isWrapped(moduleExports.lookup)) {
+            this._unwrap(moduleExports, 'lookup');
           }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          this._wrap(moduleExports, 'lookup', this._getLookup() as any);
+          return moduleExports;
+        },
+        moduleExports => {
+          if (moduleExports === undefined) return;
+          diag.debug('Removing patch for dns/promises');
+          this._unwrap(moduleExports, 'lookup');
         }
       ),
     ];
@@ -124,7 +139,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
           () => original.apply(this, [hostname, ...args]),
           error => {
             if (error != null) {
-              utils.setError(error, span, process.version);
+              utils.setError(error, span);
               span.end();
             }
           }
@@ -138,7 +153,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
             ]),
           error => {
             if (error != null) {
-              utils.setError(error, span, process.version);
+              utils.setError(error, span);
               span.end();
             }
           }
@@ -149,7 +164,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
             span.end();
           },
           (e: NodeJS.ErrnoException) => {
-            utils.setError(e, span, process.version);
+            utils.setError(e, span);
             span.end();
           }
         );
@@ -175,7 +190,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
       diag.debug('executing wrapped lookup callback function');
 
       if (err !== null) {
-        utils.setError(err, span, process.version);
+        utils.setError(err, span);
       } else {
         utils.setLookupAttributes(span, address, family);
       }
