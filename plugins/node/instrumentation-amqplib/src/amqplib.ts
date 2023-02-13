@@ -40,15 +40,17 @@ import {
   MessagingOperationValues,
   MessagingDestinationKindValues,
 } from '@opentelemetry/semantic-conventions';
-import {
-  AmqplibInstrumentationConfig,
+import type {
   Connection,
   ConsumeMessage,
-  DEFAULT_CONFIG,
-  EndOperation,
   Message,
   Options,
   Replies,
+} from 'amqplib';
+import {
+  AmqplibInstrumentationConfig,
+  DEFAULT_CONFIG,
+  EndOperation,
 } from './types';
 import {
   CHANNEL_CONSUME_TIMEOUT_TIMER,
@@ -368,7 +370,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
     };
   }
 
-  protected getConsumePatch(
+  private getConsumePatch(
     moduleVersion: string | undefined,
     original: Function
   ) {
@@ -466,7 +468,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
     };
   }
 
-  protected getConfirmedPublishPatch(
+  private getConfirmedPublishPatch(
     moduleVersion: string | undefined,
     original: Function
   ) {
@@ -563,7 +565,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
     };
   }
 
-  protected getPublishPatch(
+  private getPublishPatch(
     moduleVersion: string | undefined,
     original: Function
   ) {
