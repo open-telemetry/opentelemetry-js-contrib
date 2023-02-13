@@ -28,6 +28,7 @@ import * as utils from './utils';
 import { VERSION } from './version';
 import {
   Dns,
+  DnsPromises,
   LookupCallbackSignature,
   LookupPromiseSignature,
 } from './internal-types';
@@ -40,7 +41,10 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
     super('@opentelemetry/instrumentation-dns', VERSION, _config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<Dns>[] {
+  init(): (
+    | InstrumentationNodeModuleDefinition<Dns>
+    | InstrumentationNodeModuleDefinition<DnsPromises>
+  )[] {
     return [
       new InstrumentationNodeModuleDefinition<Dns>(
         'dns',
@@ -65,6 +69,24 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
           diag.debug('Removing patch for dns');
           this._unwrap(moduleExports, 'lookup');
           this._unwrap(moduleExports.promises, 'lookup');
+        }
+      ),
+      new InstrumentationNodeModuleDefinition<DnsPromises>(
+        'dns/promises',
+        ['*'],
+        moduleExports => {
+          diag.debug('Applying patch for dns/promises');
+          if (isWrapped(moduleExports.lookup)) {
+            this._unwrap(moduleExports, 'lookup');
+          }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          this._wrap(moduleExports, 'lookup', this._getLookup() as any);
+          return moduleExports;
+        },
+        moduleExports => {
+          if (moduleExports === undefined) return;
+          diag.debug('Removing patch for dns/promises');
+          this._unwrap(moduleExports, 'lookup');
         }
       ),
     ];
