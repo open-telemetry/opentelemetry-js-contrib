@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import * as semver from 'semver';
 import * as gcpMetadata from 'gcp-metadata';
 import { diag } from '@opentelemetry/api';
 import {
@@ -44,24 +43,24 @@ class GcpDetector implements Detector {
    * @param config The resource detection config
    */
   async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
-    if (
-      !semver.satisfies(process.version, '>=10') ||
-      !(await gcpMetadata.isAvailable())
-    ) {
+    if (!(await gcpMetadata.isAvailable())) {
       diag.debug('GcpDetector failed: GCP Metadata unavailable.');
       return Resource.empty();
     }
 
-    const [projectId, instanceId, zoneId, clusterName] = await Promise.all([
-      this._getProjectId(),
-      this._getInstanceId(),
-      this._getZone(),
-      this._getClusterName(),
-    ]);
+    const [projectId, instanceId, zoneId, clusterName, hostname] =
+      await Promise.all([
+        this._getProjectId(),
+        this._getInstanceId(),
+        this._getZone(),
+        this._getClusterName(),
+        this._getHostname(),
+      ]);
 
     const attributes: ResourceAttributes = {};
     attributes[SemanticResourceAttributes.CLOUD_ACCOUNT_ID] = projectId;
     attributes[SemanticResourceAttributes.HOST_ID] = instanceId;
+    attributes[SemanticResourceAttributes.HOST_NAME] = hostname;
     attributes[SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE] = zoneId;
     attributes[SemanticResourceAttributes.CLOUD_PROVIDER] =
       CloudProviderValues.GCP;
@@ -121,6 +120,15 @@ class GcpDetector implements Detector {
   private async _getClusterName(): Promise<string> {
     try {
       return await gcpMetadata.instance('attributes/cluster-name');
+    } catch {
+      return '';
+    }
+  }
+
+  /** Gets hostname from GCP instance metadata. */
+  private async _getHostname(): Promise<string> {
+    try {
+      return await gcpMetadata.instance('hostname');
     } catch {
       return '';
     }

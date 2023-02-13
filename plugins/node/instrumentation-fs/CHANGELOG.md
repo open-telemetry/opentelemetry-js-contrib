@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.6.0...instrumentation-fs-v0.7.0) (2023-02-07)
+
+
+### Features
+
+* **instrumentation-fs:** require parent span ([#1335](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1335)) ([79b2d3f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79b2d3ff08904ce84c6bc48427cd98906c2f0d79))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+
 ## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.5.1...instrumentation-fs-v0.6.0) (2022-11-16)
 
 

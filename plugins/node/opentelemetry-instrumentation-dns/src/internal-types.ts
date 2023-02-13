@@ -15,8 +15,10 @@
  */
 
 import type * as dns from 'dns';
+import type * as dnsPromises from 'dns/promises';
 
 export type Dns = typeof dns;
+export type DnsPromises = typeof dnsPromises;
 
 export type LookupFunction = ((
   hostname: string,

@@ -154,7 +154,7 @@ describe('Utility', () => {
         { spanId: '', traceId: '', traceFlags: TraceFlags.NONE },
         SpanKind.INTERNAL
       );
-      utils.setError(new Error(errorMessage), span, process.versions.node);
+      utils.setError(new Error(errorMessage), span);
       const attributes = span.attributes;
       assert.strictEqual(
         attributes[AttributeNames.DNS_ERROR_MESSAGE],
