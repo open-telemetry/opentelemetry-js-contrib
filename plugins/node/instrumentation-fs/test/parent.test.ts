@@ -25,8 +25,6 @@ import type { FsInstrumentationConfig } from '../src/types';
 import * as api from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 
-const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
-
 const provider = new BasicTracerProvider();
 const memoryExporter = new InMemorySpanExporter();
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
@@ -95,22 +93,20 @@ describe('fs instrumentation: requireParentSpan', () => {
       );
     });
 
-    if (supportsPromises) {
-      it(`${prefix} a span with the promises API`, async () => {
-        await new Promise<void>(resolve => {
-          api.context.with(ambientContext, () => {
-            fs.promises
-              .access('./test/fixtures/readtest', fs.constants.R_OK)
-              .finally(() => resolve(endRootSpan()));
-          });
+    it(`${prefix} a span with the promises API`, async () => {
+      await new Promise<void>(resolve => {
+        api.context.with(ambientContext, () => {
+          fs.promises
+            .access('./test/fixtures/readtest', fs.constants.R_OK)
+            .finally(() => resolve(endRootSpan()));
         });
-
-        assert.deepEqual(
-          memoryExporter.getFinishedSpans().length,
-          expectedSpanCount()
-        );
       });
-    }
+
+      assert.deepEqual(
+        memoryExporter.getFinishedSpans().length,
+        expectedSpanCount()
+      );
+    });
   };
 
   const withRootSpan = (fn: () => void) => {
