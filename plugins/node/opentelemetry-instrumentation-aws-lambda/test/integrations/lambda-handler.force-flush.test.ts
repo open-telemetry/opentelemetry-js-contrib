@@ -28,8 +28,17 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import { ProxyTracerProvider, TracerProvider } from '@opentelemetry/api';
+import {
+  AggregationTemporality,
+  InMemoryMetricExporter,
+  MeterProvider,
+  PeriodicExportingMetricReader,
+} from '@opentelemetry/sdk-metrics';
 
-const memoryExporter = new InMemorySpanExporter();
+const traceMemoryExporter = new InMemorySpanExporter();
+const metricMemoryExporter = new InMemoryMetricExporter(
+  AggregationTemporality.CUMULATIVE
+);
 
 describe('force flush', () => {
   let instrumentation: AwsLambdaInstrumentation;
@@ -42,11 +51,24 @@ describe('force flush', () => {
     awsRequestId: 'aws_request_id',
   } as Context;
 
-  const initializeHandler = (handler: string, provider: TracerProvider) => {
+  const initializeHandlerTracing = (
+    handler: string,
+    provider: TracerProvider
+  ) => {
     process.env._HANDLER = handler;
 
     instrumentation = new AwsLambdaInstrumentation();
     instrumentation.setTracerProvider(provider);
+  };
+
+  const initializeHandlerMetrics = (
+    handler: string,
+    provider: MeterProvider
+  ) => {
+    process.env._HANDLER = handler;
+
+    instrumentation = new AwsLambdaInstrumentation();
+    instrumentation.setMeterProvider(provider);
   };
 
   const lambdaRequire = (module: string) =>
@@ -61,12 +83,13 @@ describe('force flush', () => {
     process.env = oldEnv;
     instrumentation.disable();
 
-    memoryExporter.reset();
+    traceMemoryExporter.reset();
+    metricMemoryExporter.reset();
   });
 
   it('should force flush NodeTracerProvider', async () => {
     const provider = new NodeTracerProvider();
-    provider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
+    provider.addSpanProcessor(new BatchSpanProcessor(traceMemoryExporter));
     provider.register();
     let forceFlushed = false;
     const forceFlush = () =>
@@ -75,7 +98,7 @@ describe('force flush', () => {
         resolve();
       });
     provider.forceFlush = forceFlush;
-    initializeHandler('lambda-test/sync.handler', provider);
+    initializeHandlerTracing('lambda-test/sync.handler', provider);
 
     await new Promise((resolve, reject) => {
       lambdaRequire('lambda-test/sync').handler(
@@ -96,7 +119,9 @@ describe('force flush', () => {
 
   it('should force flush ProxyTracerProvider with NodeTracerProvider', async () => {
     const nodeTracerProvider = new NodeTracerProvider();
-    nodeTracerProvider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
+    nodeTracerProvider.addSpanProcessor(
+      new BatchSpanProcessor(traceMemoryExporter)
+    );
     nodeTracerProvider.register();
     const provider = new ProxyTracerProvider();
     provider.setDelegate(nodeTracerProvider);
@@ -107,7 +132,7 @@ describe('force flush', () => {
         resolve();
       });
     nodeTracerProvider.forceFlush = forceFlush;
-    initializeHandler('lambda-test/sync.handler', provider);
+    initializeHandlerTracing('lambda-test/sync.handler', provider);
 
     await new Promise((resolve, reject) => {
       lambdaRequire('lambda-test/sync').handler(
@@ -124,5 +149,91 @@ describe('force flush', () => {
     });
 
     assert.strictEqual(forceFlushed, true);
+  });
+
+  it('should force flush MeterProvider', async () => {
+    const provider = new MeterProvider();
+    provider.addMetricReader(
+      new PeriodicExportingMetricReader({ exporter: metricMemoryExporter })
+    );
+    let forceFlushed = false;
+    const forceFlush = () =>
+      new Promise<void>(resolve => {
+        forceFlushed = true;
+        resolve();
+      });
+    provider.forceFlush = forceFlush;
+    initializeHandlerMetrics('lambda-test/sync.handler', provider);
+
+    await new Promise((resolve, reject) => {
+      lambdaRequire('lambda-test/sync').handler(
+        'arg',
+        ctx,
+        (err: Error, res: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
+          }
+        }
+      );
+    });
+
+    assert.strictEqual(forceFlushed, true);
+  });
+
+  it('should callback once after force flush providers', async () => {
+    const nodeTracerProvider = new NodeTracerProvider();
+    nodeTracerProvider.addSpanProcessor(
+      new BatchSpanProcessor(traceMemoryExporter)
+    );
+    nodeTracerProvider.register();
+    const tracerProvider = new ProxyTracerProvider();
+    tracerProvider.setDelegate(nodeTracerProvider);
+    let tracerForceFlushed = false;
+    const tracerForceFlush = () =>
+      new Promise<void>(resolve => {
+        tracerForceFlushed = true;
+        resolve();
+      });
+    nodeTracerProvider.forceFlush = tracerForceFlush;
+
+    const meterProvider = new MeterProvider();
+    meterProvider.addMetricReader(
+      new PeriodicExportingMetricReader({ exporter: metricMemoryExporter })
+    );
+    let meterForceFlushed = false;
+    const meterForceFlush = () =>
+      new Promise<void>(resolve => {
+        meterForceFlushed = true;
+        resolve();
+      });
+    meterProvider.forceFlush = meterForceFlush;
+
+    process.env._HANDLER = 'lambda-test/sync.handler';
+
+    instrumentation = new AwsLambdaInstrumentation();
+    instrumentation.setTracerProvider(tracerProvider);
+    instrumentation.setMeterProvider(meterProvider);
+
+    let callbackCount = 0;
+    await new Promise((resolve, reject) => {
+      lambdaRequire('lambda-test/sync').handler(
+        'arg',
+        ctx,
+        (err: Error, res: any) => {
+          callbackCount++;
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res);
+          }
+        }
+      );
+    });
+
+    assert.strictEqual(tracerForceFlushed, true);
+    assert.strictEqual(meterForceFlushed, true);
+    assert.strictEqual(callbackCount, 1);
   });
 });

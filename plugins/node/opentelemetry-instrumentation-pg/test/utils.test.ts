@@ -128,58 +128,35 @@ describe('utils.ts', () => {
     });
   });
 
-  describe('.startSpan()', () => {
-    it('starts real span when requireParentSpan=false', async () => {
-      const span = utils.startSpan(tracer, instrumentationConfig, 'spanName', {
-        key: 'value',
-      });
-      span.end();
-
-      const readableSpan = getLatestSpan();
-
-      assert.strictEqual(readableSpan.name, 'spanName');
-      assert.strictEqual(readableSpan.attributes['key'], 'value');
-      assert.notDeepStrictEqual(readableSpan.spanContext, INVALID_SPAN_CONTEXT);
+  describe('.shouldSkipInstrumentation()', () => {
+    it('returns false when requireParentSpan=false', async () => {
+      assert.strictEqual(
+        utils.shouldSkipInstrumentation(instrumentationConfig),
+        false
+      );
     });
 
-    it('starts real span when requireParentSpan=true and there is a parent span', async () => {
+    it('returns false requireParentSpan=true and there is a parent span', async () => {
       const parent = tracer.startSpan('parentSpan');
       context.with(trace.setSpan(context.active(), parent), () => {
-        const childSpan = utils.startSpan(
-          tracer,
-          {
+        assert.strictEqual(
+          utils.shouldSkipInstrumentation({
             ...instrumentationConfig,
             requireParentSpan: true,
-          },
-          'childSpan',
-          { key: 'value' }
-        );
-        childSpan.end();
-
-        const readableSpan = getLatestSpan();
-        assert.strictEqual(readableSpan.name, 'childSpan');
-        assert.strictEqual(readableSpan.attributes['key'], 'value');
-        assert.notDeepStrictEqual(
-          readableSpan.spanContext,
-          INVALID_SPAN_CONTEXT
+          }),
+          false
         );
       });
     });
 
-    it('creates placeholder span when requireParentSpan=true and there is no parent span', async () => {
-      const span = utils.startSpan(
-        tracer,
-        {
+    it('returns true when requireParentSpan=true and there is no parent span', async () => {
+      assert.strictEqual(
+        utils.shouldSkipInstrumentation({
           ...instrumentationConfig,
           requireParentSpan: true,
-        },
-        'spanName',
-        { key: 'value' }
+        }),
+        true
       );
-      span.end();
-
-      const readableSpan = getLatestSpan();
-      assert.strictEqual(readableSpan, undefined);
     });
   });
 

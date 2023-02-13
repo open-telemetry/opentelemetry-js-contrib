@@ -19,30 +19,43 @@ import type * as restify from 'restify';
 
 import * as api from '@opentelemetry/api';
 import type { Server } from 'restify';
-import { LayerType } from './internal-types';
+import { LayerType } from './types';
 import * as AttributeNames from './enums/AttributeNames';
 import { VERSION } from './version';
 import * as constants from './constants';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
+  safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
+import type { RestifyInstrumentationConfig } from './types';
 
 const { diag } = api;
 
 export class RestifyInstrumentation extends InstrumentationBase<any> {
-  constructor(config: InstrumentationConfig = {}) {
-    super(`@opentelemetry/instrumentation-${constants.MODULE_NAME}`, VERSION);
+  constructor(config: RestifyInstrumentationConfig = {}) {
+    super(
+      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
+      VERSION,
+      Object.assign({}, config)
+    );
   }
 
   private _moduleVersion?: string;
   private _isDisabled = false;
+
+  override setConfig(config: RestifyInstrumentationConfig = {}) {
+    this._config = Object.assign({}, config);
+  }
+
+  override getConfig(): RestifyInstrumentationConfig {
+    return this._config as RestifyInstrumentationConfig;
+  }
 
   init() {
     const module = new InstrumentationNodeModuleDefinition<any>(
@@ -185,6 +198,26 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
           },
           api.context.active()
         );
+
+        const instrumentation = this;
+        const requestHook = instrumentation.getConfig().requestHook;
+        if (requestHook) {
+          safeExecuteInTheMiddle(
+            () => {
+              return requestHook!(span, {
+                request: req,
+                layerType: metadata.type,
+              });
+            },
+            e => {
+              if (e) {
+                instrumentation._diag.error('request hook failed', e);
+              }
+            },
+            true
+          );
+        }
+
         const patchedNext = (err?: any) => {
           span.end();
           next(err);
@@ -224,7 +257,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
               }
               span.end();
               return result;
-            } catch (err) {
+            } catch (err: any) {
               span.recordException(err);
               span.end();
               throw err;

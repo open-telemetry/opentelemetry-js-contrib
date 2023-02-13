@@ -158,7 +158,7 @@ export const getTracedInternalSendCommand = (
     try {
       // Span will be ended in callback
       return original.apply(this, arguments);
-    } catch (rethrow) {
+    } catch (rethrow: any) {
       endSpan(span, rethrow);
       throw rethrow; // rethrow after ending span
     }

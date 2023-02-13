@@ -14,6 +14,8 @@ components:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
     - willarmiros
+  packages/opentelemetry-redis-common:
+    - haddasbronfman
   plugins/node/instrumentation-amqplib:
     - blumamir
   plugins/node/instrumentation-dataloader:
@@ -44,6 +46,8 @@ components:
     - osherv
   plugins/node/opentelemetry-instrumentation-mongoose:
     - blumamir
+  plugins/node/opentelemetry-instrumentation-mysql:
+    - haddasbronfman
   plugins/node/opentelemetry-instrumentation-nestjs-core:
     - rauno56
   plugins/node/opentelemetry-instrumentation-redis:

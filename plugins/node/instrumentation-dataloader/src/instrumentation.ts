@@ -36,10 +36,13 @@ const MODULE_NAME = 'dataloader';
 type DataloaderInternal = typeof Dataloader.prototype & {
   _batchLoadFn: Dataloader.BatchLoadFn<unknown, unknown>;
   _batch: { spanLinks?: Link[] } | null;
+
+  // TODO: Remove this once types on Dataloader get fixed https://github.com/graphql/dataloader/pull/334
+  name?: string | null;
 };
 
-type LoadFn = typeof Dataloader.prototype['load'];
-type LoadManyFn = typeof Dataloader.prototype['loadMany'];
+type LoadFn = (typeof Dataloader.prototype)['load'];
+type LoadManyFn = (typeof Dataloader.prototype)['loadMany'];
 
 export class DataloaderInstrumentation extends InstrumentationBase {
   constructor(config: DataloaderInstrumentationConfig = {}) {
@@ -89,40 +92,53 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     return hasParentSpan || !config.requireParentSpan;
   }
 
+  private getSpanName(
+    dataloader: DataloaderInternal,
+    operation: 'load' | 'loadMany' | 'batch'
+  ): string {
+    const dataloaderName = dataloader.name;
+    if (dataloaderName === undefined || dataloaderName === null) {
+      return `${MODULE_NAME}.${operation}`;
+    }
+
+    return `${MODULE_NAME}.${operation} ${dataloaderName}`;
+  }
+
   private _getPatchedConstructor(
     constructor: typeof Dataloader
   ): typeof Dataloader {
     const prototype = constructor.prototype;
-    const self = this;
+    const instrumentation = this;
 
     function PatchedDataloader(
       ...args: ConstructorParameters<typeof constructor>
     ) {
       const inst = new constructor(...args) as DataloaderInternal;
 
-      if (!self.isEnabled()) {
+      if (!instrumentation.isEnabled()) {
         return inst;
       }
 
       if (isWrapped(inst._batchLoadFn)) {
-        self._unwrap(inst, '_batchLoadFn');
+        instrumentation._unwrap(inst, '_batchLoadFn');
       }
 
-      self._wrap(inst, '_batchLoadFn', original => {
+      instrumentation._wrap(inst, '_batchLoadFn', original => {
         return function patchedBatchLoadFn(
           this: DataloaderInternal,
           ...args: Parameters<Dataloader.BatchLoadFn<unknown, unknown>>
         ) {
-          if (!self.isEnabled() || !self.shouldCreateSpans()) {
+          if (
+            !instrumentation.isEnabled() ||
+            !instrumentation.shouldCreateSpans()
+          ) {
             return original.call(this, ...args);
           }
 
           const parent = context.active();
-          const span = self.tracer.startSpan(
-            `${MODULE_NAME}.batch`,
-            {
-              links: this._batch?.spanLinks as Link[] | undefined,
-            },
+          const span = instrumentation.tracer.startSpan(
+            instrumentation.getSpanName(inst, 'batch'),
+            { links: this._batch?.spanLinks as Link[] | undefined },
             parent
           );
 
@@ -164,7 +180,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     const instrumentation = this;
 
     return function patchedLoad(
-      this: typeof Dataloader.prototype,
+      this: DataloaderInternal,
       ...args: Parameters<typeof original>
     ) {
       if (!instrumentation.shouldCreateSpans()) {
@@ -173,7 +189,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
 
       const parent = context.active();
       const span = instrumentation.tracer.startSpan(
-        `${MODULE_NAME}.load`,
+        instrumentation.getSpanName(this, 'load'),
         { kind: SpanKind.CLIENT },
         parent
       );
@@ -222,7 +238,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     const instrumentation = this;
 
     return function patchedLoadMany(
-      this: typeof Dataloader.prototype,
+      this: DataloaderInternal,
       ...args: Parameters<typeof original>
     ) {
       if (!instrumentation.shouldCreateSpans()) {
@@ -231,7 +247,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
 
       const parent = context.active();
       const span = instrumentation.tracer.startSpan(
-        `${MODULE_NAME}.loadMany`,
+        instrumentation.getSpanName(this, 'loadMany'),
         { kind: SpanKind.CLIENT },
         parent
       );
