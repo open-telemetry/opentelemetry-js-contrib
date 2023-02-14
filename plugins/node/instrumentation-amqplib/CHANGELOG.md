@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.32.1...instrumentation-amqplib-v0.32.2) (2023-02-14)
+
+
+### Bug Fixes
+
+* **amqplib:** stop importing from `amqplib` directly in compiled types ([#1394](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1394)) ([9d0198c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9d0198ca104a34726a7b41dd910df275e0c5336d))
+
 ## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-amqplib-v0.32.0...instrumentation-amqplib-v0.32.1) (2023-02-07)
 
 

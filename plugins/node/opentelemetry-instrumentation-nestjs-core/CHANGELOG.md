@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.32.1...instrumentation-nestjs-core-v0.32.2) (2023-02-14)
+
+
+### Bug Fixes
+
+* **vinyl-fs:** removed unnecessary dep types/vinyl-fs ([#1390](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1390)) ([5a8df08](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5a8df0826b24c37ae5b992d5f68286f9742ce79f))
+
 ## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.32.0...instrumentation-nestjs-core-v0.32.1) (2023-02-07)
 
 
