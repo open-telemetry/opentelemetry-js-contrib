@@ -251,7 +251,7 @@ export function patchCallbackPGPool(
 
 export function patchClientConnectCallback(
   span: Span,
-  cb: PgErrorCallback
+  cb: Function
 ): PgErrorCallback {
   return function patchedClientConnectCallback(
     this: pgTypes.Client,
@@ -265,6 +265,7 @@ export function patchClientConnectCallback(
     }
     span.end();
     cb.call(this, err);
+    cb.apply(this, arguments);
   };
 }
 

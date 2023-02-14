@@ -259,6 +259,16 @@ describe('pg', () => {
       assert.strictEqual(res, undefined, 'No promise is returned');
     });
 
+    it('should pass the client connection object in the callback function', done => {
+      connClient.connect(function (err: Error, conn? : pg.Client) {
+        //the 'connect' function passes the client object as an argument
+        //in the callback function: https://github.com/brianc/node-postgres/blob/master/packages/pg/lib/client.js#L282
+        assert(arguments[1] === connClient);
+        assert(arguments[1] === conn);
+        done();
+      });
+    });
+
     it('should return a promise if callback is not provided', done => {
       const resPromise = connClient.connect();
       resPromise
