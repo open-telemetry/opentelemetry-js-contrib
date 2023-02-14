@@ -238,10 +238,7 @@ export function patchCallbackPGPool(
   };
 }
 
-export function patchClientConnectCallback(
-  span: Span,
-  cb: Function
-): Function {
+export function patchClientConnectCallback(span: Span, cb: Function): Function {
   return function patchedClientConnectCallback(
     this: pgTypes.Client,
     err: Error

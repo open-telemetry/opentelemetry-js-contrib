@@ -261,7 +261,6 @@ describe('pg', () => {
 
     it('should pass the client connection object in the callback function', done => {
       connClient.connect(function (err: Error) {
-
         // Even though the documented signature for connect() callback is `(err) => void`
         // `pg` actually also passes the client if the connection was successful and some
         // packages(`knex`) might rely on that
