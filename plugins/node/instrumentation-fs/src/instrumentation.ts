@@ -39,8 +39,6 @@ import { promisify } from 'util';
 
 type FS = typeof fs;
 
-const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
-
 export default class FsInstrumentation extends InstrumentationBase<FS> {
   constructor(config?: FsInstrumentationConfig) {
     super('@opentelemetry/instrumentation-fs', VERSION, config);
@@ -83,17 +81,15 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
               <any>this._patchCallbackFunction.bind(this, fName)
             );
           }
-          if (supportsPromises) {
-            for (const fName of PROMISE_FUNCTIONS) {
-              if (isWrapped(fs.promises[fName])) {
-                this._unwrap(fs.promises, fName);
-              }
-              this._wrap(
-                fs.promises,
-                fName,
-                <any>this._patchPromiseFunction.bind(this, fName)
-              );
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fs.promises[fName])) {
+              this._unwrap(fs.promises, fName);
             }
+            this._wrap(
+              fs.promises,
+              fName,
+              <any>this._patchPromiseFunction.bind(this, fName)
+            );
           }
           return fs;
         },
@@ -110,11 +106,9 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
               this._unwrap(fs, fName);
             }
           }
-          if (supportsPromises) {
-            for (const fName of PROMISE_FUNCTIONS) {
-              if (isWrapped(fs.promises[fName])) {
-                this._unwrap(fs.promises, fName);
-              }
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fs.promises[fName])) {
+              this._unwrap(fs.promises, fName);
             }
           }
         }
@@ -160,7 +154,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         );
         instrumentation._runEndHook(functionName, { args: args, span });
         return res;
-      } catch (error) {
+      } catch (error: any) {
         span.recordException(error);
         span.setStatus({
           message: error.message,
@@ -234,7 +228,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             this,
             ...args
           );
-        } catch (error) {
+        } catch (error: any) {
           span.recordException(error);
           span.setStatus({
             message: error.message,
@@ -307,7 +301,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
             this,
             ...args
           );
-        } catch (error) {
+        } catch (error: any) {
           span.recordException(error);
           span.setStatus({
             message: error.message,
@@ -377,7 +371,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         );
         instrumentation._runEndHook(functionName, { args: args, span });
         return res;
-      } catch (error) {
+      } catch (error: any) {
         span.recordException(error);
         span.setStatus({
           message: error.message,

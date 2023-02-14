@@ -22,8 +22,6 @@ import {
   Tracer,
   SpanKind,
   diag,
-  INVALID_SPAN_CONTEXT,
-  Attributes,
   defaultTextMapSetter,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
@@ -116,24 +114,13 @@ export function getSemanticAttributesFromConnection(
   };
 }
 
-export function startSpan(
-  tracer: Tracer,
-  instrumentationConfig: PgInstrumentationConfig,
-  name: string,
-  attributes: Attributes
-): Span {
-  // If a parent span is required but not present, use a noop span to propagate
-  // context without recording it. Adapted from opentelemetry-instrumentation-http:
-  // https://github.com/open-telemetry/opentelemetry-js/blob/597ea98e58a4f68bcd9aec5fd283852efe444cd6/experimental/packages/opentelemetry-instrumentation-http/src/http.ts#L660
-  const currentSpan = trace.getSpan(context.active());
-  if (instrumentationConfig.requireParentSpan && currentSpan === undefined) {
-    return trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
-  }
-
-  return tracer.startSpan(name, {
-    kind: SpanKind.CLIENT,
-    attributes,
-  });
+export function shouldSkipInstrumentation(
+  instrumentationConfig: PgInstrumentationConfig
+) {
+  return (
+    instrumentationConfig.requireParentSpan === true &&
+    trace.getSpan(context.active()) === undefined
+  );
 }
 
 // Create a span from our normalized queryConfig object,
@@ -149,9 +136,12 @@ export function handleConfigQuery(
   const dbName = connectionParameters.database;
 
   const spanName = getQuerySpanName(dbName, queryConfig);
-  const span = startSpan(tracer, instrumentationConfig, spanName, {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
-    ...getSemanticAttributesFromConnection(connectionParameters),
+  const span = tracer.startSpan(spanName, {
+    kind: SpanKind.CLIENT,
+    attributes: {
+      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
+      ...getSemanticAttributesFromConnection(connectionParameters),
+    },
   });
 
   if (!queryConfig) {

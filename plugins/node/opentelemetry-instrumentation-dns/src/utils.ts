@@ -26,20 +26,12 @@ import { IgnoreMatcher } from './types';
  * @param span the span to be set
  * @param nodeVersion the node version
  */
-export const setError = (
-  err: NodeJS.ErrnoException,
-  span: Span,
-  nodeVersion: string
-) => {
-  const { code, message, name } = err;
+export const setError = (err: NodeJS.ErrnoException, span: Span) => {
+  const { message, name } = err;
   const attributes = {
     [AttributeNames.DNS_ERROR_MESSAGE]: message,
     [AttributeNames.DNS_ERROR_NAME]: name,
   } as SpanAttributes;
-
-  if (nodeVersion.startsWith('v12')) {
-    attributes[AttributeNames.DNS_ERROR_CODE] = code!;
-  }
 
   span.setAttributes(attributes);
 
@@ -146,7 +138,7 @@ export const isIgnored = (
         return true;
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     if (onException) {
       onException(e);
     }

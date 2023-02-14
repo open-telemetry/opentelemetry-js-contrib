@@ -269,6 +269,23 @@ describe('pg-pool', () => {
         assert.strictEqual(resNoPromise, undefined, 'No promise is returned');
       });
     });
+
+    it('should not generate traces when requireParentSpan=true is specified', async () => {
+      // The pool gets shared between tests. We need to create a separate one
+      // to test cold start, which can cause nested spans
+      const newPool = new pgPool(CONFIG);
+      create({
+        requireParentSpan: true,
+      });
+      const client = await newPool.connect();
+      try {
+        await client.query('SELECT NOW()');
+      } finally {
+        client.release();
+      }
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+    });
   });
 
   describe('#pool.query()', () => {

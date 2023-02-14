@@ -20,7 +20,14 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 
-import { context, diag, trace, Span, SpanStatusCode } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  trace,
+  Span,
+  SpanStatusCode,
+  SpanKind,
+} from '@opentelemetry/api';
 import type * as pgTypes from 'pg';
 import type * as pgPoolTypes from 'pg-pool';
 import {
@@ -39,7 +46,6 @@ import {
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
-import { startSpan } from './utils';
 
 const PG_POOL_COMPONENT = 'pg-pool';
 
@@ -131,13 +137,18 @@ export class PgInstrumentation extends InstrumentationBase {
         this: pgTypes.Client,
         callback?: PgErrorCallback
       ) {
-        const span = startSpan(
-          plugin.tracer,
-          plugin.getConfig(),
+        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+          return original.call(this, callback);
+        }
+
+        const span = plugin.tracer.startSpan(
           `${PgInstrumentation.COMPONENT}.connect`,
           {
-            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-            ...utils.getSemanticAttributesFromConnection(this),
+            kind: SpanKind.CLIENT,
+            attributes: {
+              [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+              ...utils.getSemanticAttributesFromConnection(this),
+            },
           }
         );
 
@@ -168,6 +179,10 @@ export class PgInstrumentation extends InstrumentationBase {
         `Patching ${PgInstrumentation.COMPONENT}.Client.prototype.query`
       );
       return function query(this: PgClientExtended, ...args: unknown[]) {
+        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+          return original.apply(this, args as never);
+        }
+
         // client.query(text, cb?), client.query(text, values, cb?), and
         // client.query(configObj, cb?) are all valid signatures. We construct
         // a queryConfig obj from all (valid) signatures to build the span in a
@@ -348,19 +363,21 @@ export class PgInstrumentation extends InstrumentationBase {
     const plugin = this;
     return (originalConnect: typeof pgPoolTypes.prototype.connect) => {
       return function connect(this: PgPoolExtended, callback?: PgPoolCallback) {
+        if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
+          return originalConnect.call(this, callback as any);
+        }
+
         // setup span
-        const span = startSpan(
-          plugin.tracer,
-          plugin.getConfig(),
-          `${PG_POOL_COMPONENT}.connect`,
-          {
+        const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {
+          kind: SpanKind.CLIENT,
+          attributes: {
             [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
             ...utils.getSemanticAttributesFromConnection(this.options),
             [AttributeNames.IDLE_TIMEOUT_MILLIS]:
               this.options.idleTimeoutMillis,
             [AttributeNames.MAX_CLIENT]: this.options.maxClient,
-          }
-        );
+          },
+        });
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

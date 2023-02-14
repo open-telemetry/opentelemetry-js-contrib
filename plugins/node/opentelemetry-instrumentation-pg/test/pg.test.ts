@@ -449,7 +449,7 @@ describe('pg', () => {
         try {
           assert.ok(resPromise);
           runCallbackTest(span, attributes, events);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -472,7 +472,7 @@ describe('pg', () => {
         try {
           assert.ok(resPromise);
           runCallbackTest(span, attributes, events);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -499,7 +499,7 @@ describe('pg', () => {
           });
           assert.strictEqual(resPromise.command, 'SELECT');
           runCallbackTest(span, attributes, events);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -518,7 +518,7 @@ describe('pg', () => {
           const resPromise = await client.query(query);
           assert.ok(resPromise);
           runCallbackTest(span, attributes, events);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -585,7 +585,7 @@ describe('pg', () => {
               try {
                 assert.ok(resPromise);
                 runCallbackTest(span, attributesAfterHook, events);
-              } catch (e) {
+              } catch (e: any) {
                 assert.ok(false, e.message);
               }
             }
@@ -673,7 +673,7 @@ describe('pg', () => {
               try {
                 assert.ok(resPromise);
                 runCallbackTest(span, attributes, events);
-              } catch (e) {
+              } catch (e: any) {
                 assert.ok(false, e.message);
               }
             }
@@ -807,7 +807,7 @@ describe('pg', () => {
           assert.equal(executedQueries.length, 1);
           assert.equal(executedQueries[0].text, query);
           assert.notEqual(query, commentedQuery);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -861,7 +861,7 @@ describe('pg', () => {
           assert.equal(executedQueries.length, 1);
           assert.equal(executedQueries[0].text, commentedQuery);
           assert.notEqual(query, commentedQuery);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });

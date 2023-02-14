@@ -15,14 +15,13 @@
  */
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import type * as amqp from 'amqplib';
 
 export interface PublishInfo {
   moduleVersion: string | undefined;
   exchange: string;
   routingKey: string;
   content: Buffer;
-  options?: amqp.Options.Publish;
+  options?: AmqplibPublishOptions;
   isConfirmChannel?: boolean;
 }
 
@@ -32,11 +31,11 @@ export interface PublishConfirmedInfo extends PublishInfo {
 
 export interface ConsumeInfo {
   moduleVersion: string | undefined;
-  msg: amqp.ConsumeMessage;
+  msg: ConsumeMessage;
 }
 
 export interface ConsumeEndInfo {
-  msg: amqp.ConsumeMessage;
+  msg: ConsumeMessage;
   rejected: boolean | null;
   endOperation: EndOperation;
 }
@@ -102,3 +101,74 @@ export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
 export const DEFAULT_CONFIG: AmqplibInstrumentationConfig = {
   consumeTimeoutMs: 1000 * 60, // 1 minute
 };
+
+// The following types are vendored from `@types/amqplib@0.10.1` - commit SHA: 4205e03127692a40b4871709a7134fe4e2ed5510
+
+// Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/properties.d.ts#L108
+// This exists in `@types/amqplib` as `Options.Publish`. We're renaming things
+// here to avoid importing the whole Options namespace.
+export interface AmqplibPublishOptions {
+  expiration?: string | number;
+  userId?: string;
+  CC?: string | string[];
+
+  mandatory?: boolean;
+  persistent?: boolean;
+  deliveryMode?: boolean | number;
+  BCC?: string | string[];
+
+  contentType?: string;
+  contentEncoding?: string;
+  headers?: any;
+  priority?: number;
+  correlationId?: string;
+  replyTo?: string;
+  messageId?: string;
+  timestamp?: number;
+  type?: string;
+  appId?: string;
+}
+
+// Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/properties.d.ts#L142
+export interface Message {
+  content: Buffer;
+  fields: MessageFields;
+  properties: MessageProperties;
+}
+
+export interface ConsumeMessage extends Message {
+  fields: ConsumeMessageFields;
+}
+
+export interface CommonMessageFields {
+  deliveryTag: number;
+  redelivered: boolean;
+  exchange: string;
+  routingKey: string;
+}
+
+export interface MessageFields extends CommonMessageFields {
+  messageCount?: number;
+  consumerTag?: string;
+}
+
+export interface ConsumeMessageFields extends CommonMessageFields {
+  deliveryTag: number;
+}
+
+export interface MessageProperties {
+  contentType: any | undefined;
+  contentEncoding: any | undefined;
+  headers: any;
+  deliveryMode: any | undefined;
+  priority: any | undefined;
+  correlationId: any | undefined;
+  replyTo: any | undefined;
+  expiration: any | undefined;
+  messageId: any | undefined;
+  timestamp: any | undefined;
+  type: any | undefined;
+  userId: any | undefined;
+  appId: any | undefined;
+  clusterId: any | undefined;
+}

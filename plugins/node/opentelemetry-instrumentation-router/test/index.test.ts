@@ -128,7 +128,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.strictEqual(span.attributes['router.type'], expected.type);
       assert.strictEqual(typeof span.attributes['router.version'], 'string');
       assert.strictEqual(span.attributes['http.route'], expected.route);
-    } catch (e) {
+    } catch (e: any) {
       e.message = `At span[${idx}]: ${e.message}`;
       throw e;
     }
