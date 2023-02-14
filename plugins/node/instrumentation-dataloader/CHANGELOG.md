@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.3.1...instrumentation-dataloader-v0.4.0) (2023-02-14)
+
+
+### Features
+
+* **instrumentation-dataloader:** add dataloader name to span names ([#1345](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1345)) ([712b559](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/712b559416e0d86ef29ed06d46c180ef8360b411))
+
 ## [0.3.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.3.0...instrumentation-dataloader-v0.3.1) (2023-02-07)
 
 
