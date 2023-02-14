@@ -33,7 +33,6 @@ import type * as pgPoolTypes from 'pg-pool';
 import {
   PgClientConnect,
   PgClientExtended,
-  PgErrorCallback,
   PostgresCallback,
   PgPoolExtended,
   PgPoolCallback,
@@ -135,7 +134,7 @@ export class PgInstrumentation extends InstrumentationBase {
     return (original: PgClientConnect) => {
       return function connect(
         this: pgTypes.Client,
-        callback?: PgErrorCallback
+        callback?: Function
       ) {
         if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
           return original.call(this, callback);

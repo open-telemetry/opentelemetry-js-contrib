@@ -260,11 +260,13 @@ describe('pg', () => {
     });
 
     it('should pass the client connection object in the callback function', done => {
-      connClient.connect(function (err: Error, conn?: pg.Client) {
-        //the 'connect' function passes the client object as an argument
-        //in the callback function: https://github.com/brianc/node-postgres/blob/master/packages/pg/lib/client.js#L282
-        assert(arguments[1] === connClient);
-        assert(arguments[1] === conn);
+      connClient.connect(function (err: Error) {
+
+        // Even though the documented signature for connect() callback is `(err) => void`
+        // `pg` actually also passes the client if the connection was successful and some
+        // packages(`knex`) might rely on that
+        // https://github.com/brianc/node-postgres/blob/master/packages/pg/lib/client.js#L282
+        assert.strictEqual(arguments[1], connClient);
         done();
       });
     });
