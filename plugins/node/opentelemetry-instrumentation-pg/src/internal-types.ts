@@ -46,11 +46,6 @@ export type PgPoolCallback = (
   done: (release?: any) => void
 ) => void;
 
-// Even though the documented signature for connect() callback is `(err) => void`
-// `pg` actually also passes the client if the connection was successful and some
-// packages(`knex`) might rely on that
-export type PgErrorCallback = (err: Error, client?: pgTypes.Client) => void;
-
 export interface PgPoolOptionsParams {
   database: string;
   host: string;
