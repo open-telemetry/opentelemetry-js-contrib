@@ -59,6 +59,4 @@ export interface PgPoolExtended extends pgPoolTypes<pgTypes.Client> {
   options: PgPoolOptionsParams;
 }
 
-export type PgClientConnect = (
-  callback?: (err: Error) => void
-) => Promise<void> | void;
+export type PgClientConnect = (callback?: Function) => Promise<void> | void;

@@ -131,7 +131,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
   private _getClientConnectPatch() {
     const plugin = this;
-    return (original: Function) => {
+    return (original: PgClientConnect) => {
       return function connect(this: pgTypes.Client, callback?: Function) {
         if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
           return original.call(this, callback);
