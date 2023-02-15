@@ -57,7 +57,7 @@ export class HapiInstrumentation extends InstrumentationBase {
   protected init() {
     return new InstrumentationNodeModuleDefinition<typeof Hapi>(
       HapiComponentName,
-      ['>=17.0.0'],
+      ['>=17 <21'],
       moduleExports => {
         if (!isWrapped(moduleExports.server)) {
           api.diag.debug('Patching Hapi.server');
