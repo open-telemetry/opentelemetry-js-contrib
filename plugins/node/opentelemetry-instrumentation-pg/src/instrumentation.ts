@@ -65,7 +65,7 @@ export class PgInstrumentation extends InstrumentationBase {
   protected init() {
     const modulePG = new InstrumentationNodeModuleDefinition<typeof pgTypes>(
       'pg',
-      ['7.*', '8.*'],
+      ['8.*'],
       moduleExports => {
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');

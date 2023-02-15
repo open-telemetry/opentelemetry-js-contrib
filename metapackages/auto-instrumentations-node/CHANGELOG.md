@@ -58,6 +58,15 @@
   * dependencies
     * @opentelemetry/instrumentation-aws-lambda bumped from ^0.34.1 to ^0.35.0
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.32.1 to ^0.32.2
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.3.1 to ^0.4.0
+    * @opentelemetry/instrumentation-dns bumped from ^0.31.1 to ^0.31.2
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.32.1 to ^0.32.2
+
 ## [0.36.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.36.0...auto-instrumentations-node-v0.36.1) (2023-02-07)
 
 
