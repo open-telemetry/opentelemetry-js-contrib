@@ -44,10 +44,6 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
-import { isSupported } from './utils';
-
-const pgVersion = require('pg/package.json').version;
-const nodeVersion = process.versions.node;
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -118,8 +114,6 @@ describe('pg-pool', () => {
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
   before(function () {
-    const skipForUnsupported =
-      process.env.IN_TAV && !isSupported(nodeVersion, pgVersion);
     const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -127,12 +121,6 @@ describe('pg-pool', () => {
       this.skip();
     };
 
-    if (skipForUnsupported) {
-      console.error(
-        `  pg - skipped - node@${nodeVersion} and pg@${pgVersion} are not compatible`
-      );
-      skip();
-    }
     if (!shouldTest) {
       skip();
     }
