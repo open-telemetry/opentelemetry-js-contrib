@@ -1,3 +1,7 @@
+"@koa/router":
+  versions: "8.0.8 || 9.4.0 || 10.0.0 || 10.1.1 || 11.0.1 || ^12.0.0"
+  commands: npm run test
+
 koa:
   # Testing ^2.7.0 covers at least 97% of the downloaded koa versions
   versions: "^2.7.0"
