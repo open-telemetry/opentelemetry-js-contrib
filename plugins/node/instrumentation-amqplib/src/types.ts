@@ -21,7 +21,7 @@ export interface PublishInfo {
   exchange: string;
   routingKey: string;
   content: Buffer;
-  options?: Options.Publish;
+  options?: AmqplibPublishOptions;
   isConfirmChannel?: boolean;
 }
 
@@ -104,192 +104,29 @@ export const DEFAULT_CONFIG: AmqplibInstrumentationConfig = {
 
 // The following types are vendored from `@types/amqplib@0.10.1` - commit SHA: 4205e03127692a40b4871709a7134fe4e2ed5510
 
-// Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/properties.d.ts#LL23C18-L23C25
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Options {
-  export interface Connect {
-    /**
-     * The to be used protocol
-     *
-     * Default value: 'amqp'
-     */
-    protocol?: string;
-    /**
-     * Hostname used for connecting to the server.
-     *
-     * Default value: 'localhost'
-     */
-    hostname?: string;
-    /**
-     * Port used for connecting to the server.
-     *
-     * Default value: 5672
-     */
-    port?: number;
-    /**
-     * Username used for authenticating against the server.
-     *
-     * Default value: 'guest'
-     */
-    username?: string;
-    /**
-     * Password used for authenticating against the server.
-     *
-     * Default value: 'guest'
-     */
-    password?: string;
-    /**
-     * The desired locale for error messages. RabbitMQ only ever uses en_US
-     *
-     * Default value: 'en_US'
-     */
-    locale?: string;
-    /**
-     * The size in bytes of the maximum frame allowed over the connection. 0 means
-     * no limit (but since frames have a size field which is an unsigned 32 bit integer, it’s perforce 2^32 - 1).
-     *
-     * Default value: 0x1000 (4kb) - That's the allowed minimum, it will fit many purposes
-     */
-    frameMax?: number;
-    /**
-     * The period of the connection heartbeat in seconds.
-     *
-     * Default value: 0
-     */
-    heartbeat?: number;
-    /**
-     * What VHost shall be used.
-     *
-     * Default value: '/'
-     */
-    vhost?: string;
-  }
+// Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/properties.d.ts#L108
+// This exists in `@types/amqplib` as `Options.Publish`. We're renaming things
+// here to avoid importing the whole Options namespace.
+export interface AmqplibPublishOptions {
+  expiration?: string | number;
+  userId?: string;
+  CC?: string | string[];
 
-  export interface AssertQueue {
-    exclusive?: boolean;
-    durable?: boolean;
-    autoDelete?: boolean;
-    arguments?: any;
-    messageTtl?: number;
-    expires?: number;
-    deadLetterExchange?: string;
-    deadLetterRoutingKey?: string;
-    maxLength?: number;
-    maxPriority?: number;
-  }
-  export interface DeleteQueue {
-    ifUnused?: boolean;
-    ifEmpty?: boolean;
-  }
-  export interface AssertExchange {
-    durable?: boolean;
-    internal?: boolean;
-    autoDelete?: boolean;
-    alternateExchange?: string;
-    arguments?: any;
-  }
-  export interface DeleteExchange {
-    ifUnused?: boolean;
-  }
-  export interface Publish {
-    expiration?: string | number;
-    userId?: string;
-    CC?: string | string[];
+  mandatory?: boolean;
+  persistent?: boolean;
+  deliveryMode?: boolean | number;
+  BCC?: string | string[];
 
-    mandatory?: boolean;
-    persistent?: boolean;
-    deliveryMode?: boolean | number;
-    BCC?: string | string[];
-
-    contentType?: string;
-    contentEncoding?: string;
-    headers?: any;
-    priority?: number;
-    correlationId?: string;
-    replyTo?: string;
-    messageId?: string;
-    timestamp?: number;
-    type?: string;
-    appId?: string;
-  }
-
-  export interface Consume {
-    consumerTag?: string;
-    noLocal?: boolean;
-    noAck?: boolean;
-    exclusive?: boolean;
-    priority?: number;
-    arguments?: any;
-  }
-
-  export interface Get {
-    noAck?: boolean;
-  }
-}
-
-// Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/properties.d.ts#L214
-interface ServerProperties {
-  host: string;
-  product: string;
-  version: string;
-  platform: string;
-  copyright?: string;
-  information: string;
-  [key: string]: string | undefined;
-}
-
-// Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/properties.d.ts#L1
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Replies {
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
-  export interface Empty {}
-
-  export interface AssertQueue {
-    queue: string;
-    messageCount: number;
-    consumerCount: number;
-  }
-  export interface PurgeQueue {
-    messageCount: number;
-  }
-  export interface DeleteQueue {
-    messageCount: number;
-  }
-  export interface AssertExchange {
-    exchange: string;
-  }
-  export interface Consume {
-    consumerTag: string;
-  }
-}
-
-// Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/callback_api.d.ts#L55
-export interface ConfirmChannel {
-  publish(
-    exchange: string,
-    routingKey: string,
-    content: Buffer,
-    options?: Options.Publish,
-    callback?: (err: any, ok: Replies.Empty) => void
-  ): boolean;
-  sendToQueue(
-    queue: string,
-    content: Buffer,
-    options?: Options.Publish,
-    callback?: (err: any, ok: Replies.Empty) => void
-  ): boolean;
-
-  waitForConfirms(): Promise<void>;
-}
-
-// Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/callback_api.d.ts#L5
-export interface Connection {
-  close(): Promise<void>;
-  createChannel(): Promise<any>;
-  createConfirmChannel(): Promise<ConfirmChannel>;
-  connection: {
-    serverProperties: ServerProperties;
-  };
+  contentType?: string;
+  contentEncoding?: string;
+  headers?: any;
+  priority?: number;
+  correlationId?: string;
+  replyTo?: string;
+  messageId?: string;
+  timestamp?: number;
+  type?: string;
+  appId?: string;
 }
 
 // Vendored from: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/4205e03127692a40b4871709a7134fe4e2ed5510/types/amqplib/properties.d.ts#L142
@@ -297,10 +134,6 @@ export interface Message {
   content: Buffer;
   fields: MessageFields;
   properties: MessageProperties;
-}
-
-export interface GetMessage extends Message {
-  fields: GetMessageFields;
 }
 
 export interface ConsumeMessage extends Message {
@@ -317,10 +150,6 @@ export interface CommonMessageFields {
 export interface MessageFields extends CommonMessageFields {
   messageCount?: number;
   consumerTag?: string;
-}
-
-export interface GetMessageFields extends CommonMessageFields {
-  messageCount: number;
 }
 
 export interface ConsumeMessageFields extends CommonMessageFields {

@@ -36,10 +36,19 @@ import type {
   FsInstrumentationConfig,
 } from './types';
 import { promisify } from 'util';
+import { indexFs } from './utils';
 
 type FS = typeof fs;
 
-const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
+/**
+ * This is important for 2-level functions like `realpath.native` to retain the 2nd-level
+ * when patching the 1st-level.
+ */
+function patchedFunctionWithOriginalProperties<
+  T extends (...args: any[]) => ReturnType<T>
+>(patchedFunction: T, original: T): T {
+  return Object.assign(patchedFunction, original);
+}
 
 export default class FsInstrumentation extends InstrumentationBase<FS> {
   constructor(config?: FsInstrumentationConfig) {
@@ -54,46 +63,47 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         (fs: FS) => {
           this._diag.debug('Applying patch for fs');
           for (const fName of SYNC_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
             this._wrap(
-              fs,
-              fName,
+              objectToPatch,
+              functionNameToPatch,
               <any>this._patchSyncFunction.bind(this, fName)
             );
           }
           for (const fName of CALLBACK_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
             if (fName === 'exists') {
               // handling separately because of the inconsistent cb style:
               // `exists` doesn't have error as the first argument, but the result
               this._wrap(
-                fs,
-                fName,
+                objectToPatch,
+                functionNameToPatch,
                 <any>this._patchExistsCallbackFunction.bind(this, fName)
               );
               continue;
             }
             this._wrap(
-              fs,
-              fName,
+              objectToPatch,
+              functionNameToPatch,
               <any>this._patchCallbackFunction.bind(this, fName)
             );
           }
-          if (supportsPromises) {
-            for (const fName of PROMISE_FUNCTIONS) {
-              if (isWrapped(fs.promises[fName])) {
-                this._unwrap(fs.promises, fName);
-              }
-              this._wrap(
-                fs.promises,
-                fName,
-                <any>this._patchPromiseFunction.bind(this, fName)
-              );
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fs.promises[fName])) {
+              this._unwrap(fs.promises, fName);
             }
+            this._wrap(
+              fs.promises,
+              fName,
+              <any>this._patchPromiseFunction.bind(this, fName)
+            );
           }
           return fs;
         },
@@ -101,20 +111,20 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           if (fs === undefined) return;
           this._diag.debug('Removing patch for fs');
           for (const fName of SYNC_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
           }
           for (const fName of CALLBACK_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
           }
-          if (supportsPromises) {
-            for (const fName of PROMISE_FUNCTIONS) {
-              if (isWrapped(fs.promises[fName])) {
-                this._unwrap(fs.promises, fName);
-              }
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fs.promises[fName])) {
+              this._unwrap(fs.promises, fName);
             }
           }
         }
@@ -127,7 +137,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    return <any>function (this: any, ...args: any[]) {
+    const patchedFunction = <any>function (this: any, ...args: any[]) {
       const activeContext = api.context.active();
 
       if (!instrumentation._shouldTrace(activeContext)) {
@@ -172,6 +182,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         span.end();
       }
     };
+    return patchedFunctionWithOriginalProperties(patchedFunction, original);
   }
 
   protected _patchCallbackFunction<T extends (...args: any[]) => ReturnType<T>>(
@@ -179,7 +190,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    return <any>function (this: any, ...args: any[]) {
+    const patchedFunction = <any>function (this: any, ...args: any[]) {
       const activeContext = api.context.active();
 
       if (!instrumentation._shouldTrace(activeContext)) {
@@ -253,11 +264,12 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         return original.apply(this, args);
       }
     };
+    return patchedFunctionWithOriginalProperties(patchedFunction, original);
   }
 
   protected _patchExistsCallbackFunction<
     T extends (...args: any[]) => ReturnType<T>
-  >(functionName: FMember, original: T): T {
+  >(functionName: 'exists', original: T): T {
     const instrumentation = this;
     const patchedFunction = <any>function (this: any, ...args: any[]) {
       const activeContext = api.context.active();
@@ -325,18 +337,22 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         return original.apply(this, args);
       }
     };
+    const functionWithOriginalProperties =
+      patchedFunctionWithOriginalProperties(patchedFunction, original);
 
     // `exists` has a custom promisify function because of the inconsistent signature
     // replicating that on the patched function
     const promisified = function (path: unknown) {
-      return new Promise(resolve => patchedFunction(path, resolve));
+      return new Promise(resolve =>
+        functionWithOriginalProperties(path, resolve)
+      );
     };
     Object.defineProperty(promisified, 'name', { value: functionName });
-    Object.defineProperty(patchedFunction, promisify.custom, {
+    Object.defineProperty(functionWithOriginalProperties, promisify.custom, {
       value: promisified,
     });
 
-    return patchedFunction;
+    return functionWithOriginalProperties;
   }
 
   protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
@@ -344,7 +360,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    return <any>async function (this: any, ...args: any[]) {
+    const patchedFunction = <any>async function (this: any, ...args: any[]) {
       const activeContext = api.context.active();
 
       if (!instrumentation._shouldTrace(activeContext)) {
@@ -389,6 +405,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         span.end();
       }
     };
+    return patchedFunctionWithOriginalProperties(patchedFunction, original);
   }
 
   protected _runCreateHook(
