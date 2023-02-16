@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { Member, FunctionPropertyNames } from './types';
+import type { FunctionPropertyNames, FMember } from './types';
 import type * as fs from 'fs';
 type FS = typeof fs;
 
 export function splitTwoLevels<FSObject>(
-  functionName: Member<FSObject> & string
+  functionName: FMember
 ):
   | [FunctionPropertyNames<FSObject> & string]
   | [FunctionPropertyNames<FSObject> & string, string] {
@@ -34,7 +34,7 @@ export function splitTwoLevels<FSObject>(
 
 export function indexFs<FSObject extends FS | FS['promises']>(
   fs: FSObject,
-  member: Member<FSObject> & string
+  member: FMember
 ): { objectToPatch: any; functionNameToPatch: string } {
   if (!member) throw new Error(JSON.stringify({ member }));
   const splitResult = splitTwoLevels<FSObject>(member);

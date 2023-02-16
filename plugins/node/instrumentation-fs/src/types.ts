@@ -37,15 +37,19 @@ export type FunctionPropertyNamesTwoLevels<T> = {
   }[keyof T[K]];
 }[keyof T];
 
-export type Member<F> =
-  | FunctionPropertyNames<F>
-  | FunctionPropertyNamesTwoLevels<F>;
-export type FMember =
-  | FunctionPropertyNames<typeof fs>
-  | FunctionPropertyNamesTwoLevels<typeof fs>;
-export type FPMember =
+export type Member<F> = Exclude<
+  FunctionPropertyNames<F> | FunctionPropertyNamesTwoLevels<F>,
+  undefined
+>;
+export type FMember = Exclude<
+  FunctionPropertyNames<typeof fs> | FunctionPropertyNamesTwoLevels<typeof fs>,
+  undefined
+>;
+export type FPMember = Exclude<
   | FunctionPropertyNames<(typeof fs)['promises']>
-  | FunctionPropertyNamesTwoLevels<(typeof fs)['promises']>;
+  | FunctionPropertyNamesTwoLevels<(typeof fs)['promises']>,
+  undefined
+>;
 
 export type CreateHook = (
   functionName: FMember | FPMember,
