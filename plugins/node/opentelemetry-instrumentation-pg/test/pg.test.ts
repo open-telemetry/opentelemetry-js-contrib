@@ -247,6 +247,17 @@ describe('pg', () => {
       assert.strictEqual(res, undefined, 'No promise is returned');
     });
 
+    it('should pass the client connection object in the callback function', done => {
+      connClient.connect(function (err: Error) {
+        // Even though the documented signature for connect() callback is `(err) => void`
+        // `pg` actually also passes the client if the connection was successful and some
+        // packages(`knex`) might rely on that
+        // https://github.com/brianc/node-postgres/blob/master/packages/pg/lib/client.js#L282
+        assert.strictEqual(arguments[1], connClient);
+        done();
+      });
+    });
+
     it('should return a promise if callback is not provided', done => {
       const resPromise = connClient.connect();
       resPromise
