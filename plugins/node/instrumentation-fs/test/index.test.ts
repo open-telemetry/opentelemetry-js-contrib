@@ -28,6 +28,12 @@ import * as sinon from 'sinon';
 import type * as FSType from 'fs';
 import tests, { TestCase, TestCreator } from './definitions';
 import type { FMember, FPMember, CreateHook, EndHook } from '../src/types';
+import {
+  CALLBACK_FUNCTIONS,
+  PROMISE_FUNCTIONS,
+  SYNC_FUNCTIONS,
+} from '../src/constants';
+import { indexFs, splitTwoLevels } from '../src/utils';
 
 const TEST_ATTRIBUTE = 'test.attr';
 const TEST_VALUE = 'test.attr.value';
@@ -36,7 +42,7 @@ const createHook = <CreateHook>sinon.spy(
   (fnName: FMember | FPMember, { args, span }) => {
     // `ts-node`, which we use via `ts-mocha` also patches module loading and creates
     // a lot of unrelated spans. Filter those out.
-    if (['readFileSync', 'existsSync'].includes(fnName)) {
+    if (['readFileSync', 'existsSync'].includes(fnName as string)) {
       const filename = args[0];
       if (!/test\/fixtures/.test(filename)) {
         return false;
@@ -85,24 +91,41 @@ describe('fs instrumentation', () => {
     context.disable();
   });
 
-  const syncTest: TestCreator = (
+  const syncTest: TestCreator<FMember> = (
     name: FMember,
     args,
     { error, result, resultAsError = null },
     spans
   ) => {
-    const syncName: FMember = `${name}Sync` as FMember;
+    const [functionNamePart1, functionNamePart2] =
+      splitTwoLevels<typeof fs>(name);
+    const syncName = `${functionNamePart1}Sync${
+      functionNamePart2 ? `.${functionNamePart2}` : ''
+    }` as FMember;
     const rootSpanName = `${syncName} test span`;
     it(`${syncName} ${error ? 'error' : 'success'}`, () => {
+      const { objectToPatch, functionNameToPatch } = indexFs(fs, syncName);
       const rootSpan = tracer.startSpan(rootSpanName);
 
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       context.with(trace.setSpan(context.active(), rootSpan), () => {
         if (error) {
-          assert.throws(() => Reflect.apply(fs[syncName], fs, args), error);
+          assert.throws(
+            () =>
+              Reflect.apply(
+                objectToPatch[functionNameToPatch],
+                objectToPatch,
+                args
+              ),
+            error
+          );
         } else {
           assert.deepEqual(
-            Reflect.apply(fs[syncName], fs, args),
+            Reflect.apply(
+              objectToPatch[functionNameToPatch],
+              objectToPatch,
+              args
+            ),
             result ?? resultAsError
           );
         }
@@ -126,21 +149,32 @@ describe('fs instrumentation', () => {
       ]);
     });
   };
+  const makeRootSpanName = (name: FMember): string => {
+    let rsn: string;
+    if (Array.isArray(name)) {
+      rsn = `${name[0]}.${name[1]}`;
+    } else {
+      rsn = `${name}`;
+    }
+    rsn = `${rsn} test span`;
+    return rsn;
+  };
 
-  const callbackTest: TestCreator = (
+  const callbackTest: TestCreator<FMember> = (
     name: FMember,
     args,
     { error, result, resultAsError = null },
     spans
   ) => {
-    const rootSpanName = `${name} test span`;
+    const rootSpanName = makeRootSpanName(name);
     it(`${name} ${error ? 'error' : 'success'}`, done => {
+      const { objectToPatch, functionNameToPatch } = indexFs(fs, name);
       const rootSpan = tracer.startSpan(rootSpanName);
 
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       context.with(trace.setSpan(context.active(), rootSpan), () => {
-        (fs[name] as Function)(
+        (objectToPatch[functionNameToPatch] as Function)(
           ...args,
           (actualError: any | undefined, actualResult: any) => {
             assert.strictEqual(trace.getSpan(context.active()), rootSpan);
@@ -197,13 +231,14 @@ describe('fs instrumentation', () => {
     });
   };
 
-  const promiseTest: TestCreator = (
+  const promiseTest: TestCreator<FPMember> = (
     name: FPMember,
     args,
-    { error, result, resultAsError = null },
+    { error, result, resultAsError = null, hasPromiseVersion = true },
     spans
   ) => {
-    const rootSpanName = `${name} test span`;
+    if (!hasPromiseVersion) return;
+    const rootSpanName = makeRootSpanName(name);
     it(`promises.${name} ${error ? 'error' : 'success'}`, async () => {
       const rootSpan = tracer.startSpan(rootSpanName);
 
@@ -257,6 +292,43 @@ describe('fs instrumentation', () => {
       ]);
     });
   };
+
+  describe('Synchronous API native', () => {
+    beforeEach(() => {
+      plugin.enable();
+    });
+    it('should not remove fs functions', () => {
+      const isNode14 = process.versions.node.startsWith('14');
+      const node14MissingFunctionNames = new Set([
+        'cpSync',
+        'cp',
+        'promises.cp',
+      ]);
+      for (const fname of [...SYNC_FUNCTIONS, ...CALLBACK_FUNCTIONS]) {
+        // some function were added after node 14
+        if (node14MissingFunctionNames.has(fname) && isNode14) continue;
+
+        const { objectToPatch, functionNameToPatch } = indexFs(fs, fname);
+        assert.strictEqual(
+          typeof objectToPatch[functionNameToPatch],
+          'function',
+          `fs.${fname} is not a function`
+        );
+      }
+      for (const fname of PROMISE_FUNCTIONS) {
+        if (node14MissingFunctionNames.has(fname) && isNode14) continue;
+        const { objectToPatch, functionNameToPatch } = indexFs(
+          fs.promises,
+          fname
+        );
+        assert.strictEqual(
+          typeof objectToPatch[functionNameToPatch],
+          'function',
+          `fs.promises.${fname} is not a function`
+        );
+      }
+    });
+  });
 
   describe('Syncronous API', () => {
     const selection: TestCase[] = tests.filter(
