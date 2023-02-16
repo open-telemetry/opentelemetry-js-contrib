@@ -35,8 +35,6 @@ import {
 } from '../src/constants';
 import { indexFs, splitTwoLevels } from '../src/utils';
 
-const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
-
 const TEST_ATTRIBUTE = 'test.attr';
 const TEST_VALUE = 'test.attr.value';
 
@@ -413,29 +411,27 @@ describe('fs instrumentation', () => {
     });
   });
 
-  if (supportsPromises) {
-    describe('Promise API', () => {
-      const selection: TestCase[] = tests.filter(
-        ([, , , , options = {}]) => options.promise !== false
-      );
+  describe('Promise API', () => {
+    const selection: TestCase[] = tests.filter(
+      ([, , , , options = {}]) => options.promise !== false
+    );
 
-      describe('Instrumentation enabled', () => {
-        selection.forEach(([name, args, result, spans]) => {
-          promiseTest(name as FPMember, args, result, spans);
-        });
-      });
-
-      describe('Instrumentation disabled', () => {
-        beforeEach(() => {
-          plugin.disable();
-        });
-
-        selection.forEach(([name, args, result]) => {
-          promiseTest(name as FPMember, args, result, []);
-        });
+    describe('Instrumentation enabled', () => {
+      selection.forEach(([name, args, result, spans]) => {
+        promiseTest(name as FPMember, args, result, spans);
       });
     });
-  }
+
+    describe('Instrumentation disabled', () => {
+      beforeEach(() => {
+        plugin.disable();
+      });
+
+      selection.forEach(([name, args, result]) => {
+        promiseTest(name as FPMember, args, result, []);
+      });
+    });
+  });
 });
 
 const assertSpans = (spans: ReadableSpan[], expected: any) => {
