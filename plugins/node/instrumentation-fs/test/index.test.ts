@@ -298,7 +298,16 @@ describe('fs instrumentation', () => {
       plugin.enable();
     });
     it('should not remove fs functions', () => {
+      const isNode14 = process.versions.node.startsWith('14');
+      const node14MissingFunctionNames = new Set([
+        'cpSync',
+        'cp',
+        'promises.cp',
+      ]);
       for (const fname of [...SYNC_FUNCTIONS, ...CALLBACK_FUNCTIONS]) {
+        // some function were added after node 14
+        if (node14MissingFunctionNames.has(fname) && isNode14) continue;
+
         const { objectToPatch, functionNameToPatch } = indexFs(fs, fname);
         assert.strictEqual(
           typeof objectToPatch[functionNameToPatch],
@@ -307,6 +316,7 @@ describe('fs instrumentation', () => {
         );
       }
       for (const fname of PROMISE_FUNCTIONS) {
+        if (node14MissingFunctionNames.has(fname) && isNode14) continue;
         const { objectToPatch, functionNameToPatch } = indexFs(
           fs.promises,
           fname
