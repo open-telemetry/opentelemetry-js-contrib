@@ -34,7 +34,6 @@ import {
 import {
   PgClientExtended,
   PostgresCallback,
-  PgErrorCallback,
   PgPoolCallback,
   PgPoolExtended,
   PgParsedConnectionParams,
@@ -239,10 +238,7 @@ export function patchCallbackPGPool(
   };
 }
 
-export function patchClientConnectCallback(
-  span: Span,
-  cb: PgErrorCallback
-): PgErrorCallback {
+export function patchClientConnectCallback(span: Span, cb: Function): Function {
   return function patchedClientConnectCallback(
     this: pgTypes.Client,
     err: Error
@@ -254,7 +250,7 @@ export function patchClientConnectCallback(
       });
     }
     span.end();
-    cb.call(this, err);
+    cb.apply(this, arguments);
   };
 }
 
