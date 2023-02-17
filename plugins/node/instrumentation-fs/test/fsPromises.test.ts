@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
-  ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
@@ -26,7 +25,8 @@ import Instrumentation from '../src';
 import * as sinon from 'sinon';
 import type * as FSPromisesType from 'fs/promises';
 import tests, { FsFunction, TestCase, TestCreator } from './definitions';
-import type { FMember, FPMember, EndHook } from '../src/types';
+import type { FPMember, EndHook } from '../src/types';
+import { assertSpans, makeRootSpanName } from './utils';
 
 const supportsPromises =
   parseInt(process.versions.node.split('.')[0], 10) >= 14;
@@ -66,17 +66,6 @@ if (supportsPromises) {
       memoryExporter.reset();
       context.disable();
     });
-
-    const makeRootSpanName = (name: FMember): string => {
-      let rsn: string;
-      if (Array.isArray(name)) {
-        rsn = `${name[0]}.${name[1]}`;
-      } else {
-        rsn = `${name}`;
-      }
-      rsn = `${rsn} test span`;
-      return rsn;
-    };
 
     const promiseTest: TestCreator<FPMember> = (
       name: FPMember,
@@ -162,50 +151,3 @@ if (supportsPromises) {
     });
   });
 }
-
-const assertSpans = (spans: ReadableSpan[], expected: any) => {
-  assert.strictEqual(
-    spans.length,
-    expected.length,
-    `Expected ${expected.length} spans, got ${spans.length}(${spans
-      .map((s: any) => `"${s.name}"`)
-      .join(', ')})`
-  );
-
-  spans.forEach((span, i) => {
-    assertSpan(span, expected[i]);
-  });
-};
-
-const assertSpan = (span: ReadableSpan, expected: any) => {
-  assert(span);
-  assert.strictEqual(span.name, expected.name);
-  assert.strictEqual(
-    span.kind,
-    SpanKind.INTERNAL,
-    'Expected to be of INTERNAL kind'
-  );
-  if (expected.parentSpan) {
-    assert.strictEqual(
-      span.parentSpanId,
-      expected.parentSpan.spanContext().spanId
-    );
-  }
-  if (expected.attributes) {
-    assert.deepEqual(span.attributes, expected.attributes);
-  }
-  if (expected.error) {
-    assert(
-      expected.error.test(span.status.message),
-      `Expected "${span.status.message}" to match ${expected.error}`
-    );
-    assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-  } else {
-    assert.strictEqual(
-      span.status.code,
-      SpanStatusCode.UNSET,
-      'Expected status to be unset'
-    );
-    assert.strictEqual(span.status.message, undefined);
-  }
-};
