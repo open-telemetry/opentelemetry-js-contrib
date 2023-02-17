@@ -26,7 +26,7 @@ import Instrumentation from '../src';
 import * as sinon from 'sinon';
 import type * as FSPromisesType from 'fs/promises';
 import tests, { FsFunction, TestCase, TestCreator } from './definitions';
-import type { FPMember, EndHook } from '../src/types';
+import type { FMember, FPMember, EndHook } from '../src/types';
 
 const supportsPromises =
   parseInt(process.versions.node.split('.')[0], 10) >= 14;
@@ -67,13 +67,25 @@ if (supportsPromises) {
       context.disable();
     });
 
-    const promiseTest: TestCreator = (
+    const makeRootSpanName = (name: FMember): string => {
+      let rsn: string;
+      if (Array.isArray(name)) {
+        rsn = `${name[0]}.${name[1]}`;
+      } else {
+        rsn = `${name}`;
+      }
+      rsn = `${rsn} test span`;
+      return rsn;
+    };
+
+    const promiseTest: TestCreator<FPMember> = (
       name: FPMember,
       args,
-      { error, result, resultAsError = null },
+      { error, result, resultAsError = null, hasPromiseVersion = true },
       spans
     ) => {
-      const rootSpanName = `${name} test span`;
+      if (!hasPromiseVersion) return;
+      const rootSpanName = makeRootSpanName(name);
       it(`promises.${name} ${error ? 'error' : 'success'}`, async () => {
         const rootSpan = tracer.startSpan(rootSpanName);
 
