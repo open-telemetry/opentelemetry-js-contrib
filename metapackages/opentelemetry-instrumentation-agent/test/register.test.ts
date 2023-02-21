@@ -20,7 +20,7 @@ import * as assert from 'assert';
 const exec = promisify(childProcess.exec);
 
 describe('Register', function () {
-  this.timeout(10000);
+  this.timeout(20000);
   before(async () => {
     await exec('tsc -p .');
   });
