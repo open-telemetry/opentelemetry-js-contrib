@@ -19,12 +19,7 @@ import * as assert from 'assert';
 
 const exec = promisify(childProcess.exec);
 
-describe('Register', function () {
-  this.timeout(20000);
-  before(async () => {
-    await exec('tsc -p .');
-  });
-
+describe('Register', () => {
   it('can load the agent from command line', async () => {
     const { stdout } = await exec(
       'cd ./test/test-app ; env OTEL_LOG_LEVEL=debug node --require ../../build/src/register.js app.js ; cd ../..'
