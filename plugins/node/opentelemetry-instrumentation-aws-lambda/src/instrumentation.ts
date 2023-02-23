@@ -34,9 +34,11 @@ import {
   SpanKind,
   SpanStatusCode,
   TextMapGetter,
-  TraceFlags,
   TracerProvider,
   ROOT_CONTEXT,
+  Link,
+  isSpanContextValid,
+  TraceFlags,
 } from '@opentelemetry/api';
 import {
   AWSXRAY_TRACE_ID_HEADER,
@@ -156,10 +158,11 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       const parent = AwsLambdaInstrumentation._determineParent(
         event,
         context,
-        config.disableAwsContextPropagation === true,
         config.eventContextExtractor ||
           AwsLambdaInstrumentation._defaultEventContextExtractor
       );
+
+      const links = AwsLambdaInstrumentation._determineLinks();
 
       const name = context.functionName;
       const span = plugin.tracer.startSpan(
@@ -174,6 +177,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                 context.invokedFunctionArn
               ),
           },
+          links: links,
         },
         parent
       );
@@ -356,32 +360,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private static _determineParent(
     event: any,
     context: Context,
-    disableAwsContextPropagation: boolean,
     eventContextExtractor: EventContextExtractor
   ): OtelContext {
-    let parent: OtelContext | undefined = undefined;
-    if (!disableAwsContextPropagation) {
-      const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
-      if (lambdaTraceHeader) {
-        parent = awsPropagator.extract(
-          otelContext.active(),
-          { [AWSXRAY_TRACE_ID_HEADER]: lambdaTraceHeader },
-          headerGetter
-        );
-      }
-      if (parent) {
-        const spanContext = trace.getSpan(parent)?.spanContext();
-        if (
-          spanContext &&
-          (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED
-        ) {
-          // Trace header provided by Lambda only sampled if a sampled context was propagated from
-          // an upstream cloud service such as S3, or the user is using X-Ray. In these cases, we
-          // need to use it as the parent.
-          return parent;
-        }
-      }
-    }
     const extractedContext = safeExecuteInTheMiddle(
       () => eventContextExtractor(event, context),
       e => {
@@ -396,10 +376,32 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     if (trace.getSpan(extractedContext)?.spanContext()) {
       return extractedContext;
     }
-    if (!parent) {
-      // No context in Lambda environment or HTTP headers.
-      return ROOT_CONTEXT;
+    // No context in Lambda environment or HTTP headers.
+    return ROOT_CONTEXT;
+  }
+
+  private static _determineLinks(): Link[] {
+    let parent: OtelContext | undefined = undefined;
+    const lambdaTraceHeader = process.env[traceContextEnvironmentKey];
+    if (lambdaTraceHeader) {
+      parent = awsPropagator.extract(
+        otelContext.active(),
+        { [AWSXRAY_TRACE_ID_HEADER]: lambdaTraceHeader },
+        headerGetter
+      );
+      if (parent) {
+        const spanContext = trace.getSpan(parent)?.spanContext();
+        if (
+          spanContext &&
+          isSpanContextValid(spanContext) &&
+          spanContext.traceFlags & TraceFlags.SAMPLED
+        ) {
+          return [
+            { context: spanContext, attributes: { source: 'x-ray-env' } },
+          ];
+        }
+      }
     }
-    return parent;
+    return [];
   }
 }
