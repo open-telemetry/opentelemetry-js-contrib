@@ -33,15 +33,10 @@ import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
-import {
-  kLayerPatched,
-  KoaComponentName,
-  KoaPatchedMiddleware,
-} from './internal-types';
+import { kLayerPatched, KoaPatchedMiddleware } from './internal-types';
 
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
-  static readonly component = KoaComponentName;
   constructor(config: KoaInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-koa',
