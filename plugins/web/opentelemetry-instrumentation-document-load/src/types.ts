@@ -21,7 +21,7 @@ export interface DocumentLoadCustomAttributeFunction {
 }
 
 /**
- * DocumentLoadPlugin Config
+ * DocumentLoadInstrumentationPlugin Config
  */
 export interface DocumentLoadInstrumentationConfig
   extends InstrumentationConfig {
