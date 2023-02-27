@@ -3,7 +3,13 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-url]
 
-This module provides a simple way to initialize multiple Node instrumentations.
+## About
+
+This module provides a way to auto instrument any Node application to capture telemetry from a number of popular libraries and frameworks.
+You can export the telemetry data in a variety of formats. Exporters can be configured via environment variables.
+The net result is the ability to gather telemetry data from a Node application without any code changes.
+
+This module also provides a simple way to initialize multiple Node instrumentations.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -13,7 +19,48 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/auto-instrumentations-node
 ```
 
-## Usage
+## Usage: Auto Instrumentation
+
+This module includes auto instrumentation for all supported instrumentations and all available data exporters.
+It provides a completely automatic, out-of-the-box experience.
+
+Enable auto instrumentation by requiring this module using the --require flag:
+
+```shell
+node --require '@opentelemetry/auto-instrumentations-node/register' app.js
+```
+
+If your Node application is encapsulated in a complex run script, you can also set it via an environment variable before running Node.
+
+```shell
+env NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
+```
+
+The auto instrumentation is highly configurable using environment variables.
+Many aspects of the auto instrumentation's behavior can be configured for your needs, such as exporter choice, exporter configuration, trace context propagation headers, and much more.
+
+```shell
+export OTEL_TRACES_EXPORTER="otlp"
+export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+export OTEL_EXPORTER_OTLP_COMPRESSION="gzip"
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="https://your-endpoint"
+export OTEL_EXPORTER_OTLP_HEADERS="x-api-key=your-api-key"
+export OTEL_EXPORTER_OTLP_TRACES_HEADERS="x-api-key=your-api-key"
+export OTEL_RESOURCE_ATTRIBUTES="service.namespace=my-namespace"
+export OTEL_SERVICE_NAME="client"
+export NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
+node app.js
+```
+
+To turn on the auto instrumentation's internal debug logging for troubleshooting, set the following environment variable:
+
+```shell
+export OTEL_LOG_LEVEL=debug
+```
+
+Note: These logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
+
+## Usage: Instrumentation Initialization
 
 OpenTelemetry Meta Packages for Node automatically loads instrumentations for Node builtin modules and common packages.
 
