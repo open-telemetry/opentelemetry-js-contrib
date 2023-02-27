@@ -14,7 +14,6 @@
     "detectors/node/opentelemetry-resource-detector-instana": {},
     "metapackages/auto-instrumentations-node": {},
     "metapackages/auto-instrumentations-web": {},
-    "metapackages/opentelemetry-instrumentation-agent": {},
     "packages/opentelemetry-host-metrics": {},
     "packages/opentelemetry-id-generator-aws-xray": {},
     "packages/opentelemetry-propagation-utils": {},
