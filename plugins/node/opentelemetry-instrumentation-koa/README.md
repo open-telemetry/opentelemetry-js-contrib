@@ -17,7 +17,8 @@ npm install --save @opentelemetry/instrumentation-koa
 
 ### Supported Versions
 
-- `^2.0.0`
+- `koa`: `^2.0.0`
+- `@koa/router`: `>=8`
 
 ## Usage
 
