@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 export enum AttributeNames {
-  COMPONENT = 'graphql',
   SOURCE = 'graphql.source',
   FIELD_NAME = 'graphql.field.name',
   FIELD_PATH = 'graphql.field.path',
