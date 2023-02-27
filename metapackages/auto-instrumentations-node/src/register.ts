@@ -14,29 +14,28 @@
  * limitations under the License.
  */
 import * as opentelemetry from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { diag, DiagConsoleLogger } from '@opentelemetry/api';
-import { getEnv } from '@opentelemetry/core';
+import { getNodeAutoInstrumentations } from './utils';
 
-diag.setLogger(new DiagConsoleLogger(), getEnv().OTEL_LOG_LEVEL);
+diag.setLogger(
+  new DiagConsoleLogger(),
+  opentelemetry.core.getEnv().OTEL_LOG_LEVEL
+);
 
 const sdk = new opentelemetry.NodeSDK({
   autoDetectResources: true,
   instrumentations: [getNodeAutoInstrumentations()],
 });
 
-try {
-  sdk.start();
-
-  diag.debug('Tracing initialized');
-} catch (error) {
-  diag.error('Error initializing tracing', error);
-}
+sdk
+  .start()
+  .then(() => diag.debug('SDK initialized'))
+  .catch(error => diag.debug('Error initializing SDK', error));
 
 process.on('SIGTERM', () => {
   sdk
     .shutdown()
-    .then(() => diag.debug('Tracing terminated'))
-    .catch(error => diag.debug('Error terminating tracing', error))
+    .then(() => diag.debug('SDK terminated'))
+    .catch(error => diag.debug('Error terminating SDK', error))
     .finally(() => process.exit(0));
 });

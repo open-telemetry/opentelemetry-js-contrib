@@ -13,5 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { promisify } from 'util';
+import * as childProcess from 'child_process';
+import * as assert from 'assert';
 
-export * from './register';
+const exec = promisify(childProcess.exec);
+
+describe('Register', () => {
+  it('can load auto instrumentation from command line', async () => {
+    const { stdout } = await exec(
+      'cd ./test/test-app ; env OTEL_LOG_LEVEL=debug node --require ../../build/src/register.js app.js ; cd ../..'
+    );
+
+    assert.ok(stdout.includes('SDK initialized'));
+  });
+});
