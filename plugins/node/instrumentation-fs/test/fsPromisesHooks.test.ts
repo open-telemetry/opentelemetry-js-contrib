@@ -24,9 +24,6 @@ import * as sinon from 'sinon';
 import type * as FSPromisesType from 'fs/promises';
 import type { FsInstrumentationConfig } from '../src/types';
 
-const supportsPromises =
-  parseInt(process.versions.node.split('.')[0], 10) >= 14;
-
 const createHookError = new Error('createHook failed');
 const createHook = sinon.spy((_functionName: string) => {
   throw createHookError;
@@ -82,41 +79,39 @@ const assertFailingCallHooks = (expectedFunctionName: string) => {
 // We are hard-coding this because Node 14 and below does not include `constants` in `fsPromises`.
 const fsConstantsR_OK = 4;
 
-if (supportsPromises) {
-  describe('fs/promises instrumentation: hooks', () => {
-    let plugin: Instrumentation;
-    let fsPromises: typeof FSPromisesType;
+describe('fs/promises instrumentation: hooks', () => {
+  let plugin: Instrumentation;
+  let fsPromises: typeof FSPromisesType;
 
-    beforeEach(async () => {
-      plugin = new Instrumentation(pluginConfig);
-      plugin.setTracerProvider(provider);
-      plugin.setConfig(pluginConfig as FsInstrumentationConfig);
-      plugin.enable();
-      fsPromises = require('fs/promises');
-      createHook.resetHistory();
-      endHook.resetHistory();
-      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-    });
-
-    afterEach(() => {
-      plugin.disable();
-      memoryExporter.reset();
-    });
-
-    it('should not fail the original successful call when hooks throw', async () => {
-      // eslint-disable-next-line node/no-unsupported-features/node-builtins
-      await fsPromises.access('./test/fixtures/readtest', fsConstantsR_OK);
-
-      assertSuccessfulCallHooks('access');
-    });
-
-    it('should not shadow the error from original call when hooks throw', async () => {
-      // eslint-disable-next-line node/no-unsupported-features/node-builtins
-      await fsPromises
-        .access('./test/fixtures/readtest-404', fsConstantsR_OK)
-        .catch(assertNotHookError);
-
-      assertFailingCallHooks('access');
-    });
+  beforeEach(async () => {
+    plugin = new Instrumentation(pluginConfig);
+    plugin.setTracerProvider(provider);
+    plugin.setConfig(pluginConfig as FsInstrumentationConfig);
+    plugin.enable();
+    fsPromises = require('fs/promises');
+    createHook.resetHistory();
+    endHook.resetHistory();
+    assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
   });
-}
+
+  afterEach(() => {
+    plugin.disable();
+    memoryExporter.reset();
+  });
+
+  it('should not fail the original successful call when hooks throw', async () => {
+    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+    await fsPromises.access('./test/fixtures/readtest', fsConstantsR_OK);
+
+    assertSuccessfulCallHooks('access');
+  });
+
+  it('should not shadow the error from original call when hooks throw', async () => {
+    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+    await fsPromises
+      .access('./test/fixtures/readtest-404', fsConstantsR_OK)
+      .catch(assertNotHookError);
+
+    assertFailingCallHooks('access');
+  });
+});
