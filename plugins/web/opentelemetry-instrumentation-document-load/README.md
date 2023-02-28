@@ -82,6 +82,30 @@ Because the browser does not send a trace context header for the initial page na
 </body>
 ```
 
+
+## Optional : Add custom attributes to document load span if needed
+
+If it is needed to add custom attributes to the document load span,and/or document fetch span and/or resource fetch spans, respective functions to do so needs to be provided
+as a config to the DocumentLoad Instrumentation as shown below. The attributes will be added to the respective spans
+before the individual are spans are ended. If the function throws an error , no attributes will be added to the span and
+the rest of the process continues.
+
+```js
+const addCustomAttributesToSpan = (span: Span) => {
+  span.setAttribute('<custom.attribute.key>','<custom-attribute-value>');
+}
+registerInstrumentations({
+  instrumentations: [
+    new DocumentLoadInstrumentation({
+        applyAttributes: {
+            documentLoad: addCustomAttributesToSpan
+        }
+    })
+    ]
+})
+
+
+```
 See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/tracer-web) for a short example.
 
 ## Useful links
