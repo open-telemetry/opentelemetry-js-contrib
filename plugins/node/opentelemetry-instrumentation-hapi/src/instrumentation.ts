@@ -57,7 +57,7 @@ export class HapiInstrumentation extends InstrumentationBase {
   protected init() {
     return new InstrumentationNodeModuleDefinition<typeof Hapi>(
       HapiComponentName,
-      ['>=17.0.0'],
+      ['>=17 <21'],
       moduleExports => {
         if (!isWrapped(moduleExports.server)) {
           api.diag.debug('Patching Hapi.server');
@@ -348,7 +348,7 @@ export class HapiInstrumentation extends InstrumentationBase {
             undefined,
             ...params
           );
-        } catch (err) {
+        } catch (err: any) {
           span.recordException(err);
           span.setStatus({
             code: api.SpanStatusCode.ERROR,
@@ -401,7 +401,7 @@ export class HapiInstrumentation extends InstrumentationBase {
             api.trace.setSpan(api.context.active(), span),
             () => oldHandler(...params)
           );
-        } catch (err) {
+        } catch (err: any) {
           span.recordException(err);
           span.setStatus({
             code: api.SpanStatusCode.ERROR,

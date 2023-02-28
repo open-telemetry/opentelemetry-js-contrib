@@ -176,8 +176,8 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         };
 
         return result;
-      } catch (error: unknown) {
-        endSpan(span, error as Error);
+      } catch (error: any) {
+        endSpan(span, error);
         throw error;
       }
     };
@@ -211,8 +211,8 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         const client = original.apply(this, arguments);
         endSpan(span, null);
         return client;
-      } catch (error: unknown) {
-        endSpan(span, error as Error);
+      } catch (error: any) {
+        endSpan(span, error);
         throw error;
       }
     };

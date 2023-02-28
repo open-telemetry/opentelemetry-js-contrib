@@ -24,5 +24,3 @@ export const kLayerPatched: unique symbol = Symbol('koa-layer-patched');
 export type KoaPatchedMiddleware = KoaMiddleware & {
   [kLayerPatched]?: boolean;
 };
-
-export const KoaComponentName = 'koa';

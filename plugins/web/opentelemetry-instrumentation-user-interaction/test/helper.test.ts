@@ -76,7 +76,6 @@ export function assertInteractionSpan(
   assert.strictEqual(span.name, name);
 
   const attributes = span.attributes;
-  assert.strictEqual(attributes.component, 'user-interaction');
   assert.strictEqual(attributes.event_type, eventType);
   assert.strictEqual(attributes.target_element, 'BUTTON');
   assert.strictEqual(attributes.target_xpath, `//*[@id="${elementId}"]`);

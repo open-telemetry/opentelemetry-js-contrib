@@ -45,11 +45,7 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
-import { isSupported } from './utils';
 import { addSqlCommenterComment } from '../src/utils';
-
-const pgVersion = require('pg/package.json').version;
-const nodeVersion = process.versions.node;
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -120,8 +116,6 @@ describe('pg', () => {
   }
 
   before(async function () {
-    const skipForUnsupported =
-      process.env.IN_TAV && !isSupported(nodeVersion, pgVersion);
     const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -129,12 +123,6 @@ describe('pg', () => {
       this.skip();
     };
 
-    if (skipForUnsupported) {
-      console.error(
-        `  pg - skipped - node@${nodeVersion} and pg@${pgVersion} are not compatible`
-      );
-      skip();
-    }
     if (!shouldTest) {
       skip();
     }
@@ -257,6 +245,17 @@ describe('pg', () => {
         done();
       });
       assert.strictEqual(res, undefined, 'No promise is returned');
+    });
+
+    it('should pass the client connection object in the callback function', done => {
+      connClient.connect(function (err: Error) {
+        // Even though the documented signature for connect() callback is `(err) => void`
+        // `pg` actually also passes the client if the connection was successful and some
+        // packages(`knex`) might rely on that
+        // https://github.com/brianc/node-postgres/blob/master/packages/pg/lib/client.js#L282
+        assert.strictEqual(arguments[1], connClient);
+        done();
+      });
     });
 
     it('should return a promise if callback is not provided', done => {
@@ -439,7 +438,7 @@ describe('pg', () => {
         try {
           assert.ok(resPromise);
           runCallbackTest(span, attributes, events);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -462,7 +461,7 @@ describe('pg', () => {
         try {
           assert.ok(resPromise);
           runCallbackTest(span, attributes, events);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -489,7 +488,7 @@ describe('pg', () => {
           });
           assert.strictEqual(resPromise.command, 'SELECT');
           runCallbackTest(span, attributes, events);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -508,7 +507,7 @@ describe('pg', () => {
           const resPromise = await client.query(query);
           assert.ok(resPromise);
           runCallbackTest(span, attributes, events);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -575,7 +574,7 @@ describe('pg', () => {
               try {
                 assert.ok(resPromise);
                 runCallbackTest(span, attributesAfterHook, events);
-              } catch (e) {
+              } catch (e: any) {
                 assert.ok(false, e.message);
               }
             }
@@ -663,7 +662,7 @@ describe('pg', () => {
               try {
                 assert.ok(resPromise);
                 runCallbackTest(span, attributes, events);
-              } catch (e) {
+              } catch (e: any) {
                 assert.ok(false, e.message);
               }
             }
@@ -797,7 +796,7 @@ describe('pg', () => {
           assert.equal(executedQueries.length, 1);
           assert.equal(executedQueries[0].text, query);
           assert.notEqual(query, commentedQuery);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });
@@ -851,7 +850,7 @@ describe('pg', () => {
           assert.equal(executedQueries.length, 1);
           assert.equal(executedQueries[0].text, commentedQuery);
           assert.notEqual(query, commentedQuery);
-        } catch (e) {
+        } catch (e: any) {
           assert.ok(false, e.message);
         }
       });

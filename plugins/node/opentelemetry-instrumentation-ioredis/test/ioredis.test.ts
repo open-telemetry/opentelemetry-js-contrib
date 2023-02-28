@@ -307,7 +307,7 @@ describe('ioredis', () => {
             // should throw 'ReplyError: ERR value is not an integer or out of range'
             // because the value im the key is not numeric and we try to increment it
             await client.incr('non-int-key');
-          } catch (ex) {
+          } catch (ex: any) {
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
             const ioredisSpan = endedSpans[1];

@@ -301,7 +301,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
         span.parentSpanId,
         expected.parentSpan?.spanContext().spanId
       );
-    } catch (e) {
+    } catch (e: any) {
       e.message = `At span[${idx}]: ${e.message}`;
       throw e;
     }

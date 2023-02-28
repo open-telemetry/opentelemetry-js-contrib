@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.31.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.31.1...instrumentation-dns-v0.31.2) (2023-02-14)
+
+
+### Bug Fixes
+
+* **instrumentation-dns:** fix instrumentation of `dns/promises` ([#1377](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1377)) ([6d08157](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6d08157300faf418e886315384e6b705a0e13683))
+
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.31.0...instrumentation-dns-v0.31.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.30.1...instrumentation-dns-v0.31.0) (2022-11-16)
 
 

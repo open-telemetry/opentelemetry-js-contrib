@@ -30,7 +30,6 @@ import {
 } from '@opentelemetry/core';
 import {
   InstrumentationBase,
-  InstrumentationModuleDefinition,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
@@ -41,7 +40,13 @@ import {
   MessagingOperationValues,
   MessagingDestinationKindValues,
 } from '@opentelemetry/semantic-conventions';
-import type * as amqp from 'amqplib';
+import type {
+  Connection,
+  ConsumeMessage,
+  Message,
+  Options,
+  Replies,
+} from 'amqplib';
 import {
   AmqplibInstrumentationConfig,
   DEFAULT_CONFIG,
@@ -64,7 +69,7 @@ import {
 } from './utils';
 import { VERSION } from './version';
 
-export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
+export class AmqplibInstrumentation extends InstrumentationBase {
   protected override _config!: AmqplibInstrumentationConfig;
 
   constructor(config?: AmqplibInstrumentationConfig) {
@@ -79,31 +84,29 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
-  protected init(): InstrumentationModuleDefinition<typeof amqp> {
-    const channelModelModuleFile =
-      new InstrumentationNodeModuleFile<amqp.Channel>(
-        'amqplib/lib/channel_model.js',
-        ['>=0.5.5'],
-        this.patchChannelModel.bind(this),
-        this.unpatchChannelModel.bind(this)
-      );
+  protected init() {
+    const channelModelModuleFile = new InstrumentationNodeModuleFile(
+      'amqplib/lib/channel_model.js',
+      ['>=0.5.5'],
+      this.patchChannelModel.bind(this),
+      this.unpatchChannelModel.bind(this)
+    );
 
-    const callbackModelModuleFile =
-      new InstrumentationNodeModuleFile<amqp.Channel>(
-        'amqplib/lib/callback_model.js',
-        ['>=0.5.5'],
-        this.patchChannelModel.bind(this),
-        this.unpatchChannelModel.bind(this)
-      );
+    const callbackModelModuleFile = new InstrumentationNodeModuleFile(
+      'amqplib/lib/callback_model.js',
+      ['>=0.5.5'],
+      this.patchChannelModel.bind(this),
+      this.unpatchChannelModel.bind(this)
+    );
 
-    const connectModuleFile = new InstrumentationNodeModuleFile<amqp.Channel>(
+    const connectModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/connect.js',
       ['>=0.5.5'],
       this.patchConnect.bind(this),
       this.unpatchConnect.bind(this)
     );
 
-    const module = new InstrumentationNodeModuleDefinition<typeof amqp>(
+    const module = new InstrumentationNodeModuleDefinition(
       'amqplib',
       ['>=0.5.5'],
       undefined,
@@ -231,14 +234,14 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
 
   private getConnectPatch(
     original: (
-      url: string | amqp.Options.Connect,
+      url: string | Options.Connect,
       socketOptions: any,
-      openCallback: (err: any, connection: amqp.Connection) => void
-    ) => amqp.Connection
+      openCallback: (err: any, connection: Connection) => void
+    ) => Connection
   ) {
     return function patchedConnect(
       this: unknown,
-      url: string | amqp.Options.Connect,
+      url: string | Options.Connect,
       socketOptions: any,
       openCallback: Function
     ) {
@@ -246,7 +249,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
         this,
         url,
         socketOptions,
-        function (this: unknown, err, conn: amqp.Connection) {
+        function (this: unknown, err, conn: Connection) {
           if (err == null) {
             const urlAttributes = getConnectionAttributesFromUrl(url);
             // the type of conn in @types/amqplib is amqp.Connection, but in practice the library send the
@@ -321,7 +324,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     const self = this;
     return function ack(
       this: InstrumentationConsumeChannel,
-      message: amqp.Message,
+      message: Message,
       allUpToOrRequeue?: boolean,
       requeue?: boolean
     ): void {
@@ -330,7 +333,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
       const requeueResolved =
         endOperation === EndOperation.Reject ? allUpToOrRequeue : requeue;
 
-      const spansNotEnded: { msg: amqp.Message }[] =
+      const spansNotEnded: { msg: Message }[] =
         channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
       const msgIndex = spansNotEnded.findIndex(
         msgDetails => msgDetails.msg === message
@@ -367,7 +370,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     };
   }
 
-  protected getConsumePatch(
+  private getConsumePatch(
     moduleVersion: string | undefined,
     original: Function
   ) {
@@ -375,9 +378,9 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     return function consume(
       this: InstrumentationConsumeChannel,
       queue: string,
-      onMessage: (msg: amqp.ConsumeMessage | null) => void,
-      options?: amqp.Options.Consume
-    ): Promise<amqp.Replies.Consume> {
+      onMessage: (msg: ConsumeMessage | null) => void,
+      options?: Options.Consume
+    ): Promise<Replies.Consume> {
       const channel = this;
       if (
         !Object.prototype.hasOwnProperty.call(channel, CHANNEL_SPANS_NOT_ENDED)
@@ -451,7 +454,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
           msg[MESSAGE_STORED_SPAN] = span;
         }
 
-        context.with(trace.setSpan(context.active(), span), () => {
+        context.with(trace.setSpan(parentContext, span), () => {
           onMessage.call(this, msg);
         });
 
@@ -465,7 +468,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     };
   }
 
-  protected getConfirmedPublishPatch(
+  private getConfirmedPublishPatch(
     moduleVersion: string | undefined,
     original: Function
   ) {
@@ -475,8 +478,8 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
       exchange: string,
       routingKey: string,
       content: Buffer,
-      options?: amqp.Options.Publish,
-      callback?: (err: any, ok: amqp.Replies.Empty) => void
+      options?: Options.Publish,
+      callback?: (err: any, ok: Replies.Empty) => void
     ): boolean {
       const channel = this;
       const { span, modifiedOptions } = self.createPublishSpan(
@@ -510,7 +513,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
       const patchedOnConfirm = function (
         this: unknown,
         err: any,
-        ok: amqp.Replies.Empty
+        ok: Replies.Empty
       ) {
         try {
           callback?.call(this, err, ok);
@@ -562,7 +565,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     };
   }
 
-  protected getPublishPatch(
+  private getPublishPatch(
     moduleVersion: string | undefined,
     original: Function
   ) {
@@ -572,7 +575,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
       exchange: string,
       routingKey: string,
       content: Buffer,
-      options?: amqp.Options.Publish
+      options?: Options.Publish
     ): boolean {
       if (isConfirmChannelTracing(context.active())) {
         // work already done
@@ -623,7 +626,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     exchange: string,
     routingKey: string,
     channel: InstrumentationPublishChannel,
-    options?: amqp.Options.Publish
+    options?: Options.Publish
   ) {
     const normalizedExchange = normalizeExchange(exchange);
 
@@ -689,7 +692,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
     operation: EndOperation,
     requeue: boolean | undefined
   ) {
-    const spansNotEnded: { msg: amqp.Message }[] =
+    const spansNotEnded: { msg: Message }[] =
       channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
     spansNotEnded.forEach(msgDetails => {
       this.endConsumerSpan(msgDetails.msg, isRejected, operation, requeue);
@@ -699,7 +702,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<typeof amqp> {
 
   private callConsumeEndHook(
     span: Span,
-    msg: amqp.ConsumeMessage,
+    msg: ConsumeMessage,
     rejected: boolean | null,
     endOperation: EndOperation
   ) {

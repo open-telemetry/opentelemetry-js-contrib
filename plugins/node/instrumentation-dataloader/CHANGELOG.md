@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.3.1...instrumentation-dataloader-v0.4.0) (2023-02-14)
+
+
+### Features
+
+* **instrumentation-dataloader:** add dataloader name to span names ([#1345](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1345)) ([712b559](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/712b559416e0d86ef29ed06d46c180ef8360b411))
+
+## [0.3.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.3.0...instrumentation-dataloader-v0.3.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+
 ## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dataloader-v0.2.1...instrumentation-dataloader-v0.3.0) (2022-11-16)
 
 
