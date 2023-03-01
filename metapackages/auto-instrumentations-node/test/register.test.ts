@@ -22,7 +22,7 @@ const exec = promisify(childProcess.exec);
 describe('Register', () => {
   it('can load auto instrumentation from command line', async () => {
     const { stdout } = await exec(
-      'cd ./test/test-app ; env OTEL_LOG_LEVEL=debug node --require ../../build/src/register.js app.js ; cd ../..'
+      'cd ./test/test-app ; env OTEL_LOG_LEVEL=debug ; env OTEL_RESOURCE_DETECTORS=none ; node --require ../../build/src/register.js app.js ; cd ../..'
     );
 
     assert.ok(stdout.includes('SDK initialized'));
