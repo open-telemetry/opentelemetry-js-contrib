@@ -44,7 +44,7 @@ const serializationSubsets = [
 
 export type DbStatementSerializer = (
   cmdName: string,
-  cmdArgs: Array<string | Buffer | number | any>
+  cmdArgs: Array<string | Buffer | number | any | any[]>
 ) => string;
 
 /**

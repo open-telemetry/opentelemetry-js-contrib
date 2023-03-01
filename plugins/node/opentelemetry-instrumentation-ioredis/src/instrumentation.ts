@@ -22,9 +22,8 @@ import {
 } from '@opentelemetry/instrumentation';
 import {
   IORedisInstrumentationConfig,
-  IORedisCommand,
-  RedisInterface,
 } from './types';
+import { IORedisCommand, RedisInterface } from './internal-types';
 import {
   DbSystemValues,
   SemanticAttributes,
