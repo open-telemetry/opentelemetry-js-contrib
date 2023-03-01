@@ -54,6 +54,21 @@ import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.i
 import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 
+import { alibabaCloudEcsDetector } from '@opentelemetry/resource-detector-alibaba-cloud';
+import {
+  awsEc2Detector,
+  awsEksDetector,
+} from '@opentelemetry/resource-detector-aws';
+import { containerDetector } from '@opentelemetry/resource-detector-container';
+import { gcpDetector } from '@opentelemetry/resource-detector-gcp';
+import {
+  Detector,
+  envDetector,
+  hostDetector,
+  osDetector,
+  processDetector,
+} from '@opentelemetry/resources';
+
 const InstrumentationMap = {
   '@opentelemetry/instrumentation-amqplib': AmqplibInstrumentation,
   '@opentelemetry/instrumentation-aws-lambda': AwsLambdaInstrumentation,
@@ -135,4 +150,64 @@ export function getNodeAutoInstrumentations(
   }
 
   return instrumentations;
+}
+
+export function getResourceDetectorsFromEnv(): Detector[] {
+  const resourceDetectorsFromEnv =
+    process.env.OTEL_RESOURCE_DETECTORS?.split(',');
+
+  if (
+    resourceDetectorsFromEnv == null ||
+    resourceDetectorsFromEnv.includes('all')
+  ) {
+    return [
+      // Standard resource detectors.
+      containerDetector,
+      envDetector,
+      hostDetector,
+      osDetector,
+      processDetector,
+      // Cloud resource detectors.
+      alibabaCloudEcsDetector,
+      // Ordered AWS Resource Detectors as per:
+      // https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/resourcedetectionprocessor/README.md#ordering
+      awsEksDetector,
+      awsEc2Detector,
+      gcpDetector,
+    ];
+  }
+
+  const resourceDetectors: Detector[] = [];
+  for (const detector of resourceDetectorsFromEnv) {
+    switch (detector) {
+      case RESOURCE_DETECTOR_CONTAINER:
+        resourceDetectors.push(containerDetector);
+        break;
+      case RESOURCE_DETECTOR_ENVIRONMENT:
+        resourceDetectors.push(envDetector);
+        break;
+      case RESOURCE_DETECTOR_HOST:
+        resourceDetectors.push(hostDetector);
+        break;
+      case RESOURCE_DETECTOR_OS:
+        resourceDetectors.push(osDetector);
+        break;
+      case RESOURCE_DETECTOR_PROCESS:
+        resourceDetectors.push(processDetector);
+        break;
+      case RESOURCE_DETECTOR_ALIBABA:
+        resourceDetectors.push(alibabaCloudEcsDetector);
+        break;
+      case RESOURCE_DETECTOR_AWS:
+        resourceDetectors.push(awsEksDetector);
+        resourceDetectors.push(awsEc2Detector);
+        break;
+      case RESOURCE_DETECTOR_GCP:
+        resourceDetectors.push(gcpDetector);
+        break;
+      default:
+    }
+  }
+
+  return resourceDetectors;
 }

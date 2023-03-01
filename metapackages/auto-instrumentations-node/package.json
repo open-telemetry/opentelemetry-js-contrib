@@ -51,7 +51,6 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/sdk-node": "^0.35.1",
     "@opentelemetry/instrumentation": "^0.35.1",
     "@opentelemetry/instrumentation-amqplib": "^0.32.2",
     "@opentelemetry/instrumentation-aws-lambda": "^0.35.0",
@@ -62,8 +61,8 @@
     "@opentelemetry/instrumentation-dataloader": "^0.4.0",
     "@opentelemetry/instrumentation-dns": "^0.31.2",
     "@opentelemetry/instrumentation-express": "^0.32.1",
-    "@opentelemetry/instrumentation-fs": "^0.7.0",
     "@opentelemetry/instrumentation-fastify": "^0.31.1",
+    "@opentelemetry/instrumentation-fs": "^0.7.0",
     "@opentelemetry/instrumentation-generic-pool": "^0.31.1",
     "@opentelemetry/instrumentation-graphql": "^0.33.1",
     "@opentelemetry/instrumentation-grpc": "^0.35.1",
@@ -88,6 +87,12 @@
     "@opentelemetry/instrumentation-router": "^0.32.1",
     "@opentelemetry/instrumentation-socket.io": "^0.33.1",
     "@opentelemetry/instrumentation-tedious": "^0.5.1",
-    "@opentelemetry/instrumentation-winston": "^0.31.1"
+    "@opentelemetry/instrumentation-winston": "^0.31.1",
+    "@opentelemetry/resource-detector-alibaba-cloud": "^0.27.4",
+    "@opentelemetry/resource-detector-aws": "^1.2.2",
+    "@opentelemetry/resource-detector-container": "^0.2.2",
+    "@opentelemetry/resource-detector-gcp": "^0.28.0",
+    "@opentelemetry/resources": "^1.9.1",
+    "@opentelemetry/sdk-node": "^0.35.1"
   }
 }

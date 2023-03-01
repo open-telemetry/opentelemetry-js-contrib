@@ -19,6 +19,7 @@ import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { getNodeAutoInstrumentations } from '../src';
+import { getResourceDetectorsFromEnv } from '../src/utils';
 
 describe('utils', () => {
   describe('getNodeAutoInstrumentations', () => {
@@ -87,6 +88,44 @@ describe('utils', () => {
         spy.args[0][0],
         `Provided instrumentation name "${name}" not found`
       );
+    });
+  });
+
+  describe('getResourceDetectorsFromEnv', () => {
+    it('should return all resource detectors by default', () => {
+      assert.equal(getResourceDetectorsFromEnv().length, 9);
+    });
+
+    it('should return all resource detectors when OTEL_RESOURCE_DETECTORS contains "all"', () => {
+      process.env.OTEL_RESOURCE_DETECTORS = 'all';
+
+      assert.equal(getResourceDetectorsFromEnv().length, 9);
+
+      delete process.env.OTEL_RESOURCE_DETECTORS;
+    });
+
+    it('should return specific resource detectors depending on OTEL_RESOURCE_DETECTORS', () => {
+      process.env.OTEL_RESOURCE_DETECTORS = 'env,host';
+
+      const resourceDetectors = getResourceDetectorsFromEnv();
+
+      assert.equal(resourceDetectors.length, 2);
+      assert.equal(resourceDetectors[0].constructor.name, 'EnvDetector');
+      assert.equal(resourceDetectors[1].constructor.name, 'HostDetector');
+
+      delete process.env.OTEL_RESOURCE_DETECTORS;
+    });
+
+    it('should return no resource detectors when OTEL_RESOURCE_DETECTORS contains "none" or a typo', () => {
+      process.env.OTEL_RESOURCE_DETECTORS = 'none';
+
+      assert.equal(getResourceDetectorsFromEnv().length, 0);
+
+      process.env.OTEL_RESOURCE_DETECTORS = 'test';
+
+      assert.equal(getResourceDetectorsFromEnv().length, 0);
+
+      delete process.env.OTEL_RESOURCE_DETECTORS;
     });
   });
 });

@@ -15,7 +15,10 @@
  */
 import * as opentelemetry from '@opentelemetry/sdk-node';
 import { diag, DiagConsoleLogger } from '@opentelemetry/api';
-import { getNodeAutoInstrumentations } from './utils';
+import {
+  getNodeAutoInstrumentations,
+  getResourceDetectorsFromEnv,
+} from './utils';
 
 diag.setLogger(
   new DiagConsoleLogger(),
@@ -23,8 +26,8 @@ diag.setLogger(
 );
 
 const sdk = new opentelemetry.NodeSDK({
-  autoDetectResources: true,
   instrumentations: [getNodeAutoInstrumentations()],
+  resourceDetectors: getResourceDetectorsFromEnv(),
 });
 
 sdk
