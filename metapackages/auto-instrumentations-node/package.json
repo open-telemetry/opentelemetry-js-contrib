@@ -27,7 +27,6 @@
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "yarn test -- --watch-extensions ts --watch",
-    "pretest": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
     "watch": "tsc -w"
   },
