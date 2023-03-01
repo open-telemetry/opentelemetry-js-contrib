@@ -20,9 +20,7 @@ import {
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import {
-  IORedisInstrumentationConfig,
-} from './types';
+import { IORedisInstrumentationConfig } from './types';
 import { IORedisCommand, RedisInterface } from './internal-types';
 import {
   DbSystemValues,

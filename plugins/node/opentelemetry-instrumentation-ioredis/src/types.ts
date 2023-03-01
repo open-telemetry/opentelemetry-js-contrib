@@ -51,12 +51,7 @@ export interface RedisRequestCustomAttributeFunction {
  *  The type of the response varies depending on the specific command.
  */
 export interface RedisResponseCustomAttributeFunction {
-  (
-    span: Span,
-    cmdName: string,
-    cmdArgs: CommandArgs,
-    response: unknown
-  ): void;
+  (span: Span, cmdName: string, cmdArgs: CommandArgs, response: unknown): void;
 }
 
 /**
