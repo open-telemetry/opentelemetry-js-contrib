@@ -69,6 +69,15 @@ import {
   processDetector,
 } from '@opentelemetry/resources';
 
+const RESOURCE_DETECTOR_CONTAINER = 'container';
+const RESOURCE_DETECTOR_ENVIRONMENT = 'env';
+const RESOURCE_DETECTOR_HOST = 'host';
+const RESOURCE_DETECTOR_OS = 'os';
+const RESOURCE_DETECTOR_PROCESS = 'process';
+const RESOURCE_DETECTOR_ALIBABA = 'alibaba';
+const RESOURCE_DETECTOR_AWS = 'aws';
+const RESOURCE_DETECTOR_GCP = 'gcp';
+
 const InstrumentationMap = {
   '@opentelemetry/instrumentation-amqplib': AmqplibInstrumentation,
   '@opentelemetry/instrumentation-aws-lambda': AwsLambdaInstrumentation,
