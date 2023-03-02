@@ -23,7 +23,7 @@ describe('Register', function () {
   this.timeout(0);
   it('can load auto instrumentation from command line', async () => {
     const { stdout } = await exec(
-      'export OTEL_LOG_LEVEL=debug ; export OTEL_RESOURCE_DETECTORS=none ; node --require ./build/src/register.js ./test/test-app/app.js'
+      'env OTEL_LOG_LEVEL=debug env OTEL_RESOURCE_DETECTORS=none node --require ./build/src/register.js ./test/test-app/app.js'
     );
 
     assert.ok(stdout.includes('SDK initialized'));
