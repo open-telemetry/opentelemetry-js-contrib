@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-ioredis
 
 ### Supported Versions
 
-- `>=2.0.0 <5`
+- `>=2.0.0 <6`
 
 ## Usage
 
@@ -47,7 +47,7 @@ registerInstrumentations({
 IORedis instrumentation has few options available to choose from. You can set the following:
 
 | Options                 | Type                                              | Description                                                                                                       |
-| ----------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+|-------------------------|---------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
 | `dbStatementSerializer` | `DbStatementSerializer`                           | IORedis instrumentation will serialize db.statement using the specified function.                                 |
 | `requestHook`           | `RedisRequestCustomAttributeFunction` (function)  | Function for adding custom attributes on db request. Receives params: `span, { moduleVersion, cmdName, cmdArgs }` |
 | `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response                                                              |
