@@ -20,7 +20,7 @@ import * as assert from 'assert';
 const exec = promisify(childProcess.exec);
 
 describe('Register', function () {
-  this.timeout(0);
+  this.timeout(4000);
   it('can load auto instrumentation from command line', async () => {
     const { stdout } = await exec(
       'env OTEL_LOG_LEVEL=debug env OTEL_RESOURCE_DETECTORS=none node --require ./build/src/register.js ./test/test-app/app.js'
