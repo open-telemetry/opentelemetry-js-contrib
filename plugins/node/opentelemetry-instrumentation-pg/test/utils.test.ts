@@ -29,6 +29,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as pg from 'pg';
 import { PgInstrumentationConfig } from '../src';
@@ -124,6 +125,23 @@ describe('utils.ts', () => {
       assert.strictEqual(
         utils.getQuerySpanName('db-name-ignored', undefined),
         'pg.query'
+      );
+    });
+  });
+
+  describe('.getSemanticAttributesFromConnection()', () => {
+    const expectedAtributes = {
+      [SemanticAttributes.DB_NAME]: CONFIG.database,
+      [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
+      [SemanticAttributes.DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+      [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
+      [SemanticAttributes.DB_USER]: CONFIG.user,
+    };
+
+    it('returns attributes from connection object', () => {
+      assert.deepStrictEqual(
+        utils.getSemanticAttributesFromConnection(CONFIG),
+        expectedAtributes
       );
     });
   });
