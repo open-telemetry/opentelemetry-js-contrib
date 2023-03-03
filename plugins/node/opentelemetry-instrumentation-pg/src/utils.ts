@@ -37,6 +37,7 @@ import {
   PgPoolCallback,
   PgPoolExtended,
   PgParsedConnectionParams,
+  PgPoolOptionsParams,
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
@@ -102,7 +103,7 @@ export function getConnectionString(params: PgParsedConnectionParams) {
 }
 
 export function getSemanticAttributesFromConnection(
-  params: PgParsedConnectionParams
+  params: PgParsedConnectionParams | PgPoolOptionsParams
 ) {
   return {
     [SemanticAttributes.DB_NAME]: params.database, // required

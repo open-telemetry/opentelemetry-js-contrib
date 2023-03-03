@@ -144,6 +144,17 @@ describe('utils.ts', () => {
         expectedAtributes
       );
     });
+
+    it('returns attributes from pool object', () => {
+      assert.deepStrictEqual(
+        utils.getSemanticAttributesFromConnection({
+          ...CONFIG,
+          maxClient: 1,
+          idleTimeoutMillis: 10000,
+        }),
+        expectedAtributes
+      );
+    });
   });
 
   describe('.shouldSkipInstrumentation()', () => {
