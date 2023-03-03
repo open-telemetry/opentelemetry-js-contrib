@@ -32,7 +32,10 @@ module.exports = {
         test: /\.ts$/,
         use: {
           loader: '@jsdevtools/coverage-istanbul-loader',
-          options: { esModules: true }
+          options: {
+            produceSourceMap: false,
+            esModules: true
+          }
         }
       },
       // This setting configures Node polyfills for the browser that will be

@@ -81,7 +81,7 @@ const sanitizeEventForAssertion = (span: ReadableSpan) => {
 
 describe('ioredis', () => {
   const provider = new NodeTracerProvider();
-  let ioredis: typeof ioredisTypes;
+  let ioredis: typeof ioredisTypes.default;
   let instrumentation: IORedisInstrumentation;
   const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
@@ -188,14 +188,14 @@ describe('ioredis', () => {
       name: string;
       args: Array<string>;
       expectedDbStatement: string;
-      method: (cb: ioredisTypes.CallbackFunction<unknown>) => unknown;
+      method: (cb: ioredisTypes.Callback<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         name: 'hset',
         args: [hashKeyName, 'testField', 'testValue'],
         expectedDbStatement: `${hashKeyName} testField [1 other arguments]`,
-        method: (cb: ioredisTypes.CallbackFunction<number>) =>
+        method: (cb: ioredisTypes.Callback<number>) =>
           client.hset(hashKeyName, 'testField', 'testValue', cb),
       },
       {
@@ -203,7 +203,7 @@ describe('ioredis', () => {
         name: 'get',
         args: [testKeyName],
         expectedDbStatement: `${testKeyName}`,
-        method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
+        method: (cb: ioredisTypes.Callback<string | null>) =>
           client.get(testKeyName, cb),
       },
     ];
@@ -960,7 +960,7 @@ describe('ioredis', () => {
     describe('setConfig - custom dbStatementSerializer config', () => {
       const dbStatementSerializer = (
         cmdName: string,
-        cmdArgs: Array<string | Buffer | number>
+        cmdArgs: Array<string | Buffer | number | any>
       ) => {
         return Array.isArray(cmdArgs) && cmdArgs.length
           ? `FooBar_${cmdName} ${cmdArgs.join(',')}`
