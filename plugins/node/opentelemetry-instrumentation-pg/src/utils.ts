@@ -24,6 +24,7 @@ import {
   diag,
   defaultTextMapSetter,
   ROOT_CONTEXT,
+  Attributes,
 } from '@opentelemetry/api';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { AttributeNames } from './enums/AttributeNames';
@@ -104,13 +105,50 @@ export function getConnectionString(params: PgParsedConnectionParams) {
 
 export function getSemanticAttributesFromConnection(
   params: PgParsedConnectionParams | PgPoolOptionsParams
-) {
+): Attributes {
+  if (
+    'connectionString' in params &&
+    typeof params.connectionString === 'string'
+  ) {
+    const parsedParams = parseConnectionString(params.connectionString);
+    if (parsedParams !== null) {
+      // NOTE: We don't just return connectionString as a value of
+      // SemanticAttributes.DB_CONNECTION_STRING because of the following reasons:
+      // - Parameter connectionString may contain password, which must not be recorded.
+      // - Users would expect the same attributes to be recorded in two different
+      //   spans: pg.connect and pg-pool.connect.
+      return getSemanticAttributesFromConnection(parsedParams);
+    }
+    // If the connectionString cannot be parsed, we ignore it and fallback.
+    // In this case, incorrect attributes may be returned.
+  }
+
   return {
     [SemanticAttributes.DB_NAME]: params.database, // required
     [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
     [SemanticAttributes.NET_PEER_NAME]: params.host, // required
     [SemanticAttributes.NET_PEER_PORT]: params.port,
     [SemanticAttributes.DB_USER]: params.user,
+  };
+}
+
+// Parse connectionString and return PgParsedConnectionParams object. If parsing failed, return null.
+// The logic of this function is much simpler than it actually is. See: https://github.com/brianc/node-postgres/blob/pg-connection-string%402.5.0/packages/pg-connection-string/index.js#L11
+function parseConnectionString(
+  connectionString: string
+): PgParsedConnectionParams | null {
+  let url: URL;
+  try {
+    url = new URL(connectionString);
+  } catch {
+    return null;
+  }
+
+  return {
+    database: url.pathname.slice(1), // Trim first '/'
+    host: url.hostname,
+    port: Number(url.port),
+    user: url.username,
   };
 }
 

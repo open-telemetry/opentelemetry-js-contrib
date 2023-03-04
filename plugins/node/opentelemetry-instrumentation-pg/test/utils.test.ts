@@ -155,6 +155,17 @@ describe('utils.ts', () => {
         expectedAtributes
       );
     });
+
+    it('returns attributes from pool object having connectionString', () => {
+      assert.deepStrictEqual(
+        utils.getSemanticAttributesFromConnection({
+          connectionString: `postgresql://${CONFIG.user}:password@${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+          maxClient: 1,
+          idleTimeoutMillis: 10000,
+        }),
+        expectedAtributes
+      );
+    });
   });
 
   describe('.shouldSkipInstrumentation()', () => {

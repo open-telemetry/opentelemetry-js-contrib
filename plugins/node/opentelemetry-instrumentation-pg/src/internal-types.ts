@@ -47,10 +47,11 @@ export type PgPoolCallback = (
 ) => void;
 
 export interface PgPoolOptionsParams {
-  database: string;
-  host: string;
-  port: number;
-  user: string;
+  database?: string;
+  host?: string;
+  port?: number;
+  user?: string;
+  connectionString?: string;
   idleTimeoutMillis: number; // the minimum amount of time that an object may sit idle in the pool before it is eligible for eviction due to idle time
   maxClient: number; // maximum size of the pool
 }
