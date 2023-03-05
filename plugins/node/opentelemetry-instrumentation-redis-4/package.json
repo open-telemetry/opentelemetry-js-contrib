@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-redis-4",
-  "version": "0.34.2",
+  "version": "0.34.3",
   "description": "Automatic OpenTelemetry instrumentation for redis package version 4",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -71,7 +71,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.35.1",
-    "@opentelemetry/redis-common": "^0.34.0",
+    "@opentelemetry/redis-common": "^0.35.0",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis-4#readme"
