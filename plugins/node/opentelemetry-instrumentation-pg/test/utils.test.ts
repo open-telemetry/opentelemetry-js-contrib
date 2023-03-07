@@ -166,6 +166,25 @@ describe('utils.ts', () => {
         expectedAtributes
       );
     });
+
+    it('does not throw exception when connectionString is not a URL', () => {
+      assert.deepStrictEqual(
+        utils.getSemanticAttributesFromConnection({
+          connectionString: '/path/to/socket',
+          maxClient: 1,
+          idleTimeoutMillis: 10000,
+        }),
+        // This is not an ideal result, but acceptable as a corner case.
+        {
+          [SemanticAttributes.DB_NAME]: undefined,
+          [SemanticAttributes.NET_PEER_NAME]: undefined,
+          [SemanticAttributes.DB_CONNECTION_STRING]:
+            'postgresql://localhost:5432/',
+          [SemanticAttributes.NET_PEER_PORT]: undefined,
+          [SemanticAttributes.DB_USER]: undefined,
+        }
+      );
+    });
   });
 
   describe('.shouldSkipInstrumentation()', () => {
