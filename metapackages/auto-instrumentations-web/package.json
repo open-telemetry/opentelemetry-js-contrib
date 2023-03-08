@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-web",
-  "version": "0.31.1",
+  "version": "0.31.2",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-web#readme",
@@ -50,7 +50,7 @@
     "karma-webpack": "4.0.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "3.0.2",
+    "rimraf": "4.2.0",
     "sinon": "15.0.1",
     "ts-loader": "8.3.0",
     "ts-mocha": "10.0.0",
@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.35.1",
-    "@opentelemetry/instrumentation-document-load": "^0.31.1",
+    "@opentelemetry/instrumentation-document-load": "^0.31.2",
     "@opentelemetry/instrumentation-fetch": "^0.35.1",
     "@opentelemetry/instrumentation-user-interaction": "^0.32.1",
     "@opentelemetry/instrumentation-xml-http-request": "^0.35.1"
