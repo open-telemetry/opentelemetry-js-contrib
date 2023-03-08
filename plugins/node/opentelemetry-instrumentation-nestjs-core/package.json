@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@nestjs/common": "8.2.6",
-    "@nestjs/core": "8.2.6",
+    "@nestjs/core": "9.0.5",
     "@nestjs/microservices": "8.2.6",
     "@nestjs/platform-express": "8.2.6",
     "@nestjs/websockets": "8.2.6",
