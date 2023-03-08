@@ -119,7 +119,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
             addSpanNetworkEvents(fetchSpan, entries);
             this._addCustomAttributesOnSpan(
               fetchSpan,
-              this._getConfig().applyAttributes?.documentFetch
+              this._getConfig().applyCustomAttributesOnSpan?.documentFetch
             );
             this._endSpan(fetchSpan, PTN.RESPONSE_END, entries);
           });
@@ -151,7 +151,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       addSpanPerformancePaintEvents(rootSpan);
       this._addCustomAttributesOnSpan(
         rootSpan,
-        this._getConfig().applyAttributes?.documentLoad
+        this._getConfig().applyCustomAttributesOnSpan?.documentLoad
       );
       this._endSpan(rootSpan, PTN.LOAD_EVENT_END, entries);
     });
@@ -199,7 +199,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       addSpanNetworkEvents(span, resource);
       this._addCustomAttributesOnSpan(
         span,
-        this._getConfig().applyAttributes?.resourceFetch
+        this._getConfig().applyCustomAttributesOnSpan?.resourceFetch
       );
       this._endSpan(span, PTN.RESPONSE_END, resource);
     }

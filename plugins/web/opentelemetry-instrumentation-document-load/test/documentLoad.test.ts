@@ -669,7 +669,7 @@ describe('DocumentLoad Instrumentation', () => {
     it('should add attribute to document load span', done => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
-        applyAttributes: {
+        applyCustomAttributesOnSpan: {
           documentLoad: span => {
             span.setAttribute('custom-key', 'custom-val');
           },
@@ -687,7 +687,7 @@ describe('DocumentLoad Instrumentation', () => {
     it('should add attribute to document fetch span', done => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
-        applyAttributes: {
+        applyCustomAttributesOnSpan: {
           documentFetch: span => {
             span.setAttribute('custom-key', 'custom-val');
           },
@@ -705,7 +705,7 @@ describe('DocumentLoad Instrumentation', () => {
     it('should add attribute to resource fetch spans', done => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
-        applyAttributes: {
+        applyCustomAttributesOnSpan: {
           resourceFetch: span => {
             span.setAttribute('custom-key', 'custom-val');
           },
@@ -730,7 +730,7 @@ describe('DocumentLoad Instrumentation', () => {
     it('should still create the spans if the function throws error', done => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
-        applyAttributes: {
+        applyCustomAttributesOnSpan: {
           documentLoad: span => {
             throw new Error('test error');
           },
