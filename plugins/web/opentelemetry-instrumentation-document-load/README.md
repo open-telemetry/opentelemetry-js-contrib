@@ -97,7 +97,7 @@ const addCustomAttributesToSpan = (span: Span) => {
 registerInstrumentations({
   instrumentations: [
     new DocumentLoadInstrumentation({
-        applyAttributes: {
+        applyCustomAttributesOnSpan: {
             documentLoad: addCustomAttributesToSpan
         }
     })
