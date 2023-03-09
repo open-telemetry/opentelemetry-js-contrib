@@ -82,7 +82,6 @@ Because the browser does not send a trace context header for the initial page na
 </body>
 ```
 
-
 ## Optional : Add custom attributes to document load span if needed
 
 If it is needed to add custom attributes to the document load span,and/or document fetch span and/or resource fetch spans, respective functions to do so needs to be provided
@@ -103,9 +102,8 @@ registerInstrumentations({
     })
     ]
 })
-
-
 ```
+
 See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/tracer-web) for a short example.
 
 ## Useful links
