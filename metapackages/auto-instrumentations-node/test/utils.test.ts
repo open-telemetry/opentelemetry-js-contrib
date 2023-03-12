@@ -96,16 +96,16 @@ describe('utils', () => {
       assert.equal(getResourceDetectorsFromEnv().length, 9);
     });
 
-    it('should return all resource detectors when OTEL_RESOURCE_DETECTORS contains "all"', () => {
-      process.env.OTEL_RESOURCE_DETECTORS = 'all';
+    it('should return all resource detectors when OTEL_NODE_RESOURCE_DETECTORS contains "all"', () => {
+      process.env.OTEL_NODE_RESOURCE_DETECTORS = 'all';
 
       assert.equal(getResourceDetectorsFromEnv().length, 9);
 
-      delete process.env.OTEL_RESOURCE_DETECTORS;
+      delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
 
-    it('should return specific resource detectors depending on OTEL_RESOURCE_DETECTORS', () => {
-      process.env.OTEL_RESOURCE_DETECTORS = 'env,host';
+    it('should return specific resource detectors depending on OTEL_NODE_RESOURCE_DETECTORS', () => {
+      process.env.OTEL_NODE_RESOURCE_DETECTORS = 'env,host';
 
       const resourceDetectors = getResourceDetectorsFromEnv();
 
@@ -113,19 +113,19 @@ describe('utils', () => {
       assert.equal(resourceDetectors[0].constructor.name, 'EnvDetector');
       assert.equal(resourceDetectors[1].constructor.name, 'HostDetector');
 
-      delete process.env.OTEL_RESOURCE_DETECTORS;
+      delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
 
-    it('should return no resource detectors when OTEL_RESOURCE_DETECTORS contains "none" or a typo', () => {
-      process.env.OTEL_RESOURCE_DETECTORS = 'none';
+    it('should return no resource detectors when OTEL_NODE_RESOURCE_DETECTORS contains "none" or a typo', () => {
+      process.env.OTEL_NODE_RESOURCE_DETECTORS = 'none';
 
       assert.equal(getResourceDetectorsFromEnv().length, 0);
 
-      process.env.OTEL_RESOURCE_DETECTORS = 'test';
+      process.env.OTEL_NODE_RESOURCE_DETECTORS = 'test';
 
       assert.equal(getResourceDetectorsFromEnv().length, 0);
 
-      delete process.env.OTEL_RESOURCE_DETECTORS;
+      delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
   });
 });

@@ -163,7 +163,7 @@ export function getNodeAutoInstrumentations(
 
 export function getResourceDetectorsFromEnv(): Detector[] {
   const resourceDetectorsFromEnv =
-    process.env.OTEL_RESOURCE_DETECTORS?.split(',');
+    process.env.OTEL_NODE_RESOURCE_DETECTORS?.split(',');
 
   if (
     resourceDetectorsFromEnv == null ||
