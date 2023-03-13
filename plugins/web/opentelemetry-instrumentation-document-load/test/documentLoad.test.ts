@@ -18,8 +18,6 @@ import { context, HrTime, propagation, Attributes } from '@opentelemetry/api';
 import {
   W3CTraceContextPropagator,
   TRACE_PARENT_HEADER,
-  //W3CBaggagePropagator,
-  //CompositePropagator,
 } from '@opentelemetry/core';
 import {
   BasicTracerProvider,
@@ -248,7 +246,6 @@ describe('DocumentLoad Instrumentation', () => {
 
   before(() => {
     propagation.setGlobalPropagator(new W3CTraceContextPropagator());
-    //propagation.setGlobalPropagator(new CompositePropagator({propagators:[new W3CTraceContextPropagator, new W3CBaggagePropagator]}));
   });
 
   describe('constructor', () => {
