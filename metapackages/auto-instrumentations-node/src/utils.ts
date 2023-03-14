@@ -63,10 +63,11 @@ import { containerDetector } from '@opentelemetry/resource-detector-container';
 import { gcpDetector } from '@opentelemetry/resource-detector-gcp';
 import {
   Detector,
-  envDetector,
-  hostDetector,
-  osDetector,
-  processDetector,
+  DetectorSync,
+  envDetectorSync,
+  hostDetectorSync,
+  osDetectorSync,
+  processDetectorSync,
 } from '@opentelemetry/resources';
 
 const RESOURCE_DETECTOR_CONTAINER = 'container';
@@ -161,7 +162,7 @@ export function getNodeAutoInstrumentations(
   return instrumentations;
 }
 
-export function getResourceDetectorsFromEnv(): Detector[] {
+export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
   const resourceDetectorsFromEnv =
     process.env.OTEL_NODE_RESOURCE_DETECTORS?.split(',');
 
@@ -172,10 +173,10 @@ export function getResourceDetectorsFromEnv(): Detector[] {
     return [
       // Standard resource detectors.
       containerDetector,
-      envDetector,
-      hostDetector,
-      osDetector,
-      processDetector,
+      envDetectorSync,
+      hostDetectorSync,
+      osDetectorSync,
+      processDetectorSync,
       // Cloud resource detectors.
       alibabaCloudEcsDetector,
       // Ordered AWS Resource Detectors as per:
@@ -186,23 +187,23 @@ export function getResourceDetectorsFromEnv(): Detector[] {
     ];
   }
 
-  const resourceDetectors: Detector[] = [];
+  const resourceDetectors: Array<Detector | DetectorSync> = [];
   for (const detector of resourceDetectorsFromEnv) {
     switch (detector) {
       case RESOURCE_DETECTOR_CONTAINER:
         resourceDetectors.push(containerDetector);
         break;
       case RESOURCE_DETECTOR_ENVIRONMENT:
-        resourceDetectors.push(envDetector);
+        resourceDetectors.push(envDetectorSync);
         break;
       case RESOURCE_DETECTOR_HOST:
-        resourceDetectors.push(hostDetector);
+        resourceDetectors.push(hostDetectorSync);
         break;
       case RESOURCE_DETECTOR_OS:
-        resourceDetectors.push(osDetector);
+        resourceDetectors.push(osDetectorSync);
         break;
       case RESOURCE_DETECTOR_PROCESS:
-        resourceDetectors.push(processDetector);
+        resourceDetectors.push(processDetectorSync);
         break;
       case RESOURCE_DETECTOR_ALIBABA:
         resourceDetectors.push(alibabaCloudEcsDetector);

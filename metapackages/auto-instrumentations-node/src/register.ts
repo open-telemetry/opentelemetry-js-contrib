@@ -30,15 +30,17 @@ const sdk = new opentelemetry.NodeSDK({
   resourceDetectors: getResourceDetectorsFromEnv(),
 });
 
-sdk
-  .start()
-  .then(() => diag.debug('SDK initialized'))
-  .catch(error => diag.debug('Error initializing SDK', error));
+try {
+  sdk.start();
+  diag.debug('SDK initialized');
+} catch (error) {
+  diag.error('Error initializing SDK', error);
+}
 
 process.on('SIGTERM', () => {
   sdk
     .shutdown()
     .then(() => diag.debug('SDK terminated'))
-    .catch(error => diag.debug('Error terminating SDK', error))
+    .catch(error => diag.error('Error terminating SDK', error))
     .finally(() => process.exit(0));
 });
