@@ -19,6 +19,3 @@ import { Instrumentation } from './instrumentation';
 export * from './instrumentation';
 export default Instrumentation;
 export { Instrumentation as PulsarInstrumentation };
-export { ConsumerProxy } from './proxies/consumer';
-export { ProducerProxy } from './proxies/producer';
-export { ClientProxy } from './proxies/client';
