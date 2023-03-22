@@ -110,8 +110,8 @@ describe('utils', () => {
       const resourceDetectors = getResourceDetectorsFromEnv();
 
       assert.equal(resourceDetectors.length, 2);
-      assert.equal(resourceDetectors[0].constructor.name, 'EnvDetector');
-      assert.equal(resourceDetectors[1].constructor.name, 'HostDetector');
+      assert.equal(resourceDetectors[0].constructor.name, 'EnvDetectorSync');
+      assert.equal(resourceDetectors[1].constructor.name, 'HostDetectorSync');
 
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
