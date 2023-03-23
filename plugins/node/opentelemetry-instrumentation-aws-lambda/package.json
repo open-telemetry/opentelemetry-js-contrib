@@ -50,6 +50,7 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@opentelemetry/sdk-metrics": "^1.8.0",
+    "@types/aws-lambda": "8.10.81",
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
     "gts": "3.1.0",
@@ -63,8 +64,7 @@
     "@opentelemetry/instrumentation": "^0.35.1",
     "@opentelemetry/propagator-aws-xray": "^1.2.0",
     "@opentelemetry/resources": "^1.8.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/aws-lambda": "8.10.81"
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-aws-lambda#readme"
 }

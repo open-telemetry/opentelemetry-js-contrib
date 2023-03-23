@@ -51,6 +51,7 @@
     "@opentelemetry/context-async-hooks": "^1.8.0",
     "@opentelemetry/contrib-test-utils": "^0.33.1",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
+    "@types/mysql": "2.15.19",
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
     "@types/sinon": "10.0.13",
@@ -65,8 +66,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.35.1",
     "@opentelemetry/semantic-conventions": "^1.0.0",
-    "mysql": "2.18.1",
-    "@types/mysql": "2.15.19"
+    "mysql": "2.18.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql#readme"
 }

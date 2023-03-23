@@ -99,7 +99,7 @@ To support this use case, you can choose one of the following options:
     // package.json
     {
         ...
-        "dependencies": {
+        "devDependencies": {
             "@types/foo": "1.2.3"
         },
         ...

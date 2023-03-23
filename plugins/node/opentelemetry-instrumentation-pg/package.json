@@ -60,6 +60,8 @@
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
+    "@types/pg": "8.6.1",
+    "@types/pg-pool": "2.0.3",
     "@types/sinon": "10.0.2",
     "cross-env": "7.0.3",
     "gts": "3.1.0",
@@ -77,9 +79,7 @@
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
     "@opentelemetry/instrumentation": "^0.35.1",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/pg": "8.6.1",
-    "@types/pg-pool": "2.0.3"
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pg#readme"
 }
