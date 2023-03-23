@@ -38,8 +38,8 @@ import { VERSION } from './version';
 const hooks = ['Before', 'BeforeStep', 'AfterStep', 'After'] as const;
 const steps = ['Given', 'When', 'Then'] as const;
 type Cucumber = typeof cucumber;
-type Hook = typeof hooks[number];
-type Step = typeof steps[number];
+type Hook = (typeof hooks)[number];
+type Step = (typeof steps)[number];
 
 export class CucumberInstrumentation extends InstrumentationBase {
   private module: Cucumber | undefined;
