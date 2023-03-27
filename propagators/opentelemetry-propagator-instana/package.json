@@ -55,7 +55,6 @@
     "@types/node": "18.11.7",
     "@types/webpack-env": "1.16.2",
     "assert": "2.0.0",
-    "gts": "3.1.0",
     "karma": "6.3.17",
     "karma-chrome-launcher": "3.1.1",
     "karma-coverage-istanbul-reporter": "3.0.3",
