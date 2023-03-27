@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.7.0...instrumentation-fs-v0.7.1) (2023-03-03)
+
+
+### Bug Fixes
+
+* **instrumentation-fs:** allow realpath.native and realpathSync.native ([#1332](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1332)) ([ee0a59a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ee0a59a59e94743b9411e10c09720a82c6586eb4))
+* **instrumentation-fs:** fix instrumentation of `fs/promises` ([#1375](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1375)) ([3ca874e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3ca874e45ebf4623e76cbe9305e55e820b6e03fd))
+
 ## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.6.0...instrumentation-fs-v0.7.0) (2023-02-07)
 
 

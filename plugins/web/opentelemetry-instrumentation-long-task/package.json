@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-long-task",
-  "version": "0.32.1",
+  "version": "0.32.2",
   "description": "OpenTelemetry long task API automatic instrumentation package.",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",

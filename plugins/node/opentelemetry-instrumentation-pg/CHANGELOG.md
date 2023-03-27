@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.34.1...instrumentation-pg-v0.35.0) (2023-03-03)
+
+
+### Features
+
+* **pg:** remove support for pg v7 ([#1393](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1393)) ([ae6d4f3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ae6d4f39fc882d16e65e846218a69fb72586de3e))
+
+
+### Bug Fixes
+
+* **postgres:** pass 'arguments' to the connect callback ([#1395](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1395)) ([b02775f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b02775f0d9e84dea5463bb9a3883d0ad6ff1f500))
+
 ## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.34.0...instrumentation-pg-v0.34.1) (2023-02-07)
 
 
