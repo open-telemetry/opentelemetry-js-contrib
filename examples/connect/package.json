@@ -1,7 +1,7 @@
 {
   "name": "connect-example",
   "private": true,
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "Example of Connect integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
@@ -41,7 +41,7 @@
     "@opentelemetry/exporter-zipkin": "^0.25.0",
     "@opentelemetry/exporter-collector": "^0.25.0",
     "@opentelemetry/instrumentation": "^0.25.0",
-    "@opentelemetry/instrumentation-connect": "^0.24.0",
+    "@opentelemetry/instrumentation-connect": "^0.25.0",
     "@opentelemetry/instrumentation-http": "^0.25.0",
     "@opentelemetry/sdk-trace-node": "^0.25.0",
     "@opentelemetry/resources": "^0.25.0",

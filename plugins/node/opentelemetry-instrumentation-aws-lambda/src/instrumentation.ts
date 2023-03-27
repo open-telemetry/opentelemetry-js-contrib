@@ -15,6 +15,7 @@
  */
 
 import * as path from 'path';
+import * as fs from 'fs';
 
 import {
   InstrumentationBase,
@@ -95,12 +96,22 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     const moduleRoot = handlerDef.substr(0, handlerDef.length - handler.length);
 
     const [module, functionName] = handler.split('.', 2);
-
     // Lambda loads user function using an absolute path.
     let filename = path.resolve(taskRoot, moduleRoot, module);
     if (!filename.endsWith('.js')) {
+      // its impossible to know in advance if the user has a cjs or js file.
+      // getting a list of all the files means we can correctly select the extension.
+      const files = fs.readdirSync(path.resolve(taskRoot, moduleRoot));
+
+      // find the potential files that lambda will load
+      const matchedFiles = files.filter(file => path.parse(file).name === module);
+
+      // if we find a .js file that will be loaded first, otherwise .cjs will be loaded by the lambda runtime
+      // fallsback to {module}.js incase of issue.
+      const name = matchedFiles.find(file => path.parse(file).ext === '.js') || matchedFiles.find(file => path.parse(file).ext === '.cjs') || `${module}.js`
+      
       // Patching infrastructure currently requires a filename when requiring with an absolute path.
-      filename += '.js';
+      filename = path.resolve(taskRoot, moduleRoot, name);
     }
 
     return [
