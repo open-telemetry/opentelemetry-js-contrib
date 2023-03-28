@@ -90,6 +90,7 @@ describe('GetSamplingRules', () => {
 
     let clock: sinon.SinonFakeTimers;
     let sampler: AWSXRayRemoteSampler;
+    let axiosPostSpy: sinon.SinonSpy;
 
     before(() => {
         nock('http://127.0.0.1:2000')
@@ -97,39 +98,55 @@ describe('GetSamplingRules', () => {
             .post('/GetSamplingRules')
             .reply(200, getSamplingRulesResponseStub);
 
-   
+
     });
 
     beforeEach(() => {
         clock = sinon.useFakeTimers();
+        axiosPostSpy = sinon.spy(axios, 'post');
+        sampler = new AWSXRayRemoteSampler('http://127.0.0.1:2000', 60 * 1000);
     });
 
     afterEach(() => {
         clock.restore();
+        axiosPostSpy.restore();
+    });
+
+    it('should throw TypeError when an invalid polling interval is passed in', async () => {
+        assert.throws(() => new AWSXRayRemoteSampler('http://127.0.0.1:2000', 0), TypeError);
+        assert.throws(() => new AWSXRayRemoteSampler('http://127.0.0.1:2000', 1.5), TypeError);
+
     });
 
 
     it('should make a POST request to the /GetSamplingRules endpoint', async () => {
-        const axiosPostSpy = sinon.spy(axios, 'post');
-        sampler = new AWSXRayRemoteSampler('http://127.0.0.1:2000', 60 * 1000);  
-   
+
         clock.tick(60 * 1000);
         sinon.assert.calledOnce(axiosPostSpy);
 
     });
 
+
+    it('should make 3 POST requests to the /GetSamplingRules endpoint after 3 intervals have passed', async () => {
+
+        clock.tick(60 * 1000);
+        clock.tick(60 * 1000);
+        clock.tick(60 * 1000);
+
+        sinon.assert.calledThrice(axiosPostSpy);
+
+    });
+
     it('should initialize endpoint and polling interval correctly', async () => {
-        sampler = new AWSXRayRemoteSampler('http://127.0.0.1:2000', 60 * 1000);  
-   
         assert.equal(sampler.getEndpoint(), "http://127.0.0.1:2000");
         assert.equal(sampler.getPollingInterval(), 60 * 1000);
 
     });
 
     it('should fall back to default polling interval if not specified', async () => {
-        sampler = new AWSXRayRemoteSampler('http://127.0.0.1:2000');  
+        let sampler = new AWSXRayRemoteSampler('http://127.0.0.1:2000');
 
-        assert.equal(sampler.getPollingInterval(), 5* 60 * 1000);
+        assert.equal(sampler.getPollingInterval(), 5 * 60 * 1000);
 
     });
 
