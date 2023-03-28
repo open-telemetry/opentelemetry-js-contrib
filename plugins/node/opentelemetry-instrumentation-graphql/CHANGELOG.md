@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.33.1...instrumentation-graphql-v0.33.2) (2023-03-03)
+
+
+### Bug Fixes
+
+* remove component attribute from instrumentations ([#1399](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1399)) ([e93a192](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e93a192b672c8db361bac83ad60294ca49b95361))
+
 ## [0.33.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.33.0...instrumentation-graphql-v0.33.1) (2023-02-07)
 
 

@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { KoaMiddleware } from './types';
+import type { Command, Redis } from 'ioredis';
+import type * as LegacyIORedis from 'ioredis4';
 
-/**
- * This symbol is used to mark a Koa layer as being already instrumented
- * since its possible to use a given layer multiple times (ex: middlewares)
- */
-export const kLayerPatched: unique symbol = Symbol('koa-layer-patched');
+interface LegacyIORedisCommand {
+  reject: (err: Error) => void;
+  resolve: (result: {}) => void;
+  promise: Promise<{}>;
+  args: Array<string | Buffer | number>;
+  callback: LegacyIORedis.CallbackFunction<unknown>;
+  name: string;
+}
 
-export type KoaPatchedMiddleware = KoaMiddleware & {
-  [kLayerPatched]?: boolean;
-};
+export type IORedisCommand = Command | LegacyIORedisCommand;
+export type RedisInterface = Redis | LegacyIORedis.Redis;

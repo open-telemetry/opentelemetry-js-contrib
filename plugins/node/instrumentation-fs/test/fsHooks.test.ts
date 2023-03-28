@@ -24,8 +24,6 @@ import * as sinon from 'sinon';
 import type * as FSType from 'fs';
 import type { FsInstrumentationConfig } from '../src/types';
 
-const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
-
 const createHookError = new Error('createHook failed');
 const createHook = sinon.spy((_functionName: string) => {
   throw createHookError;
@@ -142,23 +140,21 @@ describe('fs instrumentation: hooks', () => {
     });
   });
 
-  if (supportsPromises) {
-    describe('Promise API', () => {
-      it('should not fail the original successful call when hooks throw', async () => {
-        // eslint-disable-next-line node/no-unsupported-features/node-builtins
-        await fs.promises.access('./test/fixtures/readtest', fs.constants.R_OK);
+  describe('Promise API', () => {
+    it('should not fail the original successful call when hooks throw', async () => {
+      // eslint-disable-next-line node/no-unsupported-features/node-builtins
+      await fs.promises.access('./test/fixtures/readtest', fs.constants.R_OK);
 
-        assertSuccessfulCallHooks('access');
-      });
-
-      it('should not shadow the error from original call when hooks throw', async () => {
-        // eslint-disable-next-line node/no-unsupported-features/node-builtins
-        await fs.promises
-          .access('./test/fixtures/readtest-404', fs.constants.R_OK)
-          .catch(assertNotHookError);
-
-        assertFailingCallHooks('access');
-      });
+      assertSuccessfulCallHooks('access');
     });
-  }
+
+    it('should not shadow the error from original call when hooks throw', async () => {
+      // eslint-disable-next-line node/no-unsupported-features/node-builtins
+      await fs.promises
+        .access('./test/fixtures/readtest-404', fs.constants.R_OK)
+        .catch(assertNotHookError);
+
+      assertFailingCallHooks('access');
+    });
+  });
 });

@@ -51,7 +51,7 @@
     "null-loader": "4.0.1",
     "nyc": "15.1.0",
     "responsive-loader": "2.3.0",
-    "rimraf": "3.0.2",
+    "rimraf": "4.2.0",
     "sinon": "15.0.1",
     "sinon-chrome": "3.0.1",
     "ts-loader": "9.2.5",
