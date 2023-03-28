@@ -55,7 +55,7 @@ const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
 const isSQSEvent = validateRecordsEvent<SQSEvent>('aws:sqs');
 
 function getSQSRecordLink(record: SQSRecord): Link | undefined {
-  const { AWSTraceHeader } = record?.attributes;
+  const { AWSTraceHeader } = record?.attributes ?? {};
   if (!AWSTraceHeader) return undefined;
   const extractedContext = awsPropagator.extract(
     otelContext.active(),
@@ -73,7 +73,8 @@ function sqsSpanInitializer(event: SQSEvent): TriggerSpanInitializerResult {
   const sources = new Set(records.map(({ eventSourceARN }) => eventSourceARN));
 
   const source =
-    sources.size === 1 ? sources.values()!.next()!.value : 'multiple_sources';
+    (sources.size === 1 && sources.values()!.next()!.value) ||
+    'multiple_sources';
 
   const attributes: Attributes = {
     ...sqsAttributes,

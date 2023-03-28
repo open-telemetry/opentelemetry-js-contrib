@@ -1,6 +1,6 @@
 {
-  "name": "@opentelemetry/instrumentation-aws-sdk",
-  "version": "0.33.0",
+  "name": "@coralogix/instrumentation-aws-sdk",
+  "version": "0.33.1",
   "description": "OpenTelemetry automatic instrumentation for the `aws-sdk` package",
   "keywords": [
     "aws",
@@ -33,7 +33,7 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-aws-sdk --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @coralogix/instrumentation-aws-sdk --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",

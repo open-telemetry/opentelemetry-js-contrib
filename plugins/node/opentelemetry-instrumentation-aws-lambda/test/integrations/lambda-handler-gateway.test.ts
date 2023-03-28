@@ -38,6 +38,7 @@ import {
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { assertSpanSuccess } from './lambda-handler.test';
 import { APIGatewayProxyEventV2 } from 'aws-lambda/trigger/api-gateway-proxy';
+import { LambdaAttributes, TriggerOrigin } from '../../src/triggers';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -143,6 +144,11 @@ describe('gateway API handler', () => {
       assert.strictEqual(span.status.message, undefined);
 
       assert.strictEqual(
+        span.attributes[LambdaAttributes.TRIGGER_SERVICE],
+        TriggerOrigin.API_GATEWAY_REST
+      );
+
+      assert.strictEqual(
         span.attributes[SemanticAttributes.HTTP_METHOD],
         event.requestContext.httpMethod
       );
@@ -162,6 +168,10 @@ describe('gateway API handler', () => {
     };
 
     const assertRestGatewaySpanFailure = (span: ReadableSpan) => {
+      assert.strictEqual(
+        span.attributes[LambdaAttributes.TRIGGER_SERVICE],
+        TriggerOrigin.API_GATEWAY_REST
+      );
       assert.strictEqual(span.kind, SpanKind.SERVER);
       assert.strictEqual(span.name, event.resource);
 
@@ -389,7 +399,10 @@ describe('gateway API handler', () => {
 
         assert.strictEqual(span.status.code, SpanStatusCode.OK);
         assert.strictEqual(span.status.message, undefined);
-
+        assert.strictEqual(
+          span.attributes[LambdaAttributes.TRIGGER_SERVICE],
+          TriggerOrigin.API_GATEWAY_HTTP
+        );
         assert.strictEqual(
           span.attributes[SemanticAttributes.HTTP_METHOD],
           event.requestContext.http.method
@@ -413,6 +426,10 @@ describe('gateway API handler', () => {
         assert.strictEqual(span.kind, SpanKind.SERVER);
         assert.strictEqual(span.name, event.rawPath);
 
+        assert.strictEqual(
+          span.attributes[LambdaAttributes.TRIGGER_SERVICE],
+          TriggerOrigin.API_GATEWAY_HTTP
+        );
         assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
       };
 
@@ -602,7 +619,6 @@ describe('gateway API handler', () => {
         const spans = memoryExporter.getFinishedSpans();
         assert.strictEqual(spans.length, 1);
       });
-
     });
   });
 });

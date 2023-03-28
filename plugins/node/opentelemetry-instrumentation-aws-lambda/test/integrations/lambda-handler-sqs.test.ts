@@ -47,6 +47,7 @@ import {
   AWSXRAY_TRACE_ID_HEADER,
   AWSXRayPropagator,
 } from '@opentelemetry/propagator-aws-xray';
+import { LambdaAttributes, TriggerOrigin } from '../../src/triggers';
 
 const awsPropagator = new AWSXRayPropagator();
 const memoryExporter = new InMemorySpanExporter();
@@ -139,6 +140,11 @@ const sqsRecordWithLink: SQSRecord = {
 
 const assertSQSEventSpan = (span: ReadableSpan, sourceName?: string) => {
   assert.strictEqual(span.kind, SpanKind.CONSUMER);
+
+  assert.strictEqual(
+    span.attributes[LambdaAttributes.TRIGGER_SERVICE],
+    TriggerOrigin.SQS
+  );
 
   assert.strictEqual(
     span.attributes[SemanticAttributes.MESSAGING_OPERATION],

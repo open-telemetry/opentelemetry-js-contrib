@@ -16,13 +16,13 @@
 
 import { SpanOptions } from '@opentelemetry/api/build/src/trace/SpanOptions';
 import { Span } from '@opentelemetry/api';
-import {TriggerOrigin} from "./index";
+import { TriggerOrigin } from './index';
 
 export type TriggerValidator<T> = (event: any) => event is T;
 export interface TriggerSpanInitializerResult {
   name: string;
   options: SpanOptions;
-  origin: TriggerOrigin
+  origin: TriggerOrigin;
 }
 export type TriggerSpanInitializer<T> = (
   event: T
@@ -38,15 +38,17 @@ export interface LambdaTrigger<T> {
 export const validateRecord =
   (recordSource: string, additionalRecordFields?: string[]) =>
   (record: any) => {
-    return record &&
+    return (
+      record &&
       typeof record === 'object' &&
       'eventSource' in record &&
       record.eventSource === recordSource &&
-      additionalRecordFields
-      ? additionalRecordFields.every(
-          field => field in record && typeof record[field] === 'object'
-        )
-      : true;
+      (additionalRecordFields
+        ? additionalRecordFields.every(
+            field => field in record && typeof record[field] === 'object'
+          )
+        : true)
+    );
   };
 
 export const validateRecordsEvent =

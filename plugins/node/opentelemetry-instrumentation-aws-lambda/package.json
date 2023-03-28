@@ -1,6 +1,6 @@
 {
   "name": "@coralogix/instrumentation-aws-lambda",
-  "version": "0.34.6-SNAPSHOT",
+  "version": "0.34.9-SNAPSHOT",
   "description": "OpenTelemetry AWS Lambda automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
