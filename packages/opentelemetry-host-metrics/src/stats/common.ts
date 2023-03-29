@@ -16,7 +16,7 @@
 
 import * as os from 'os';
 
-import { CpuUsageData, MemoryData } from '../types';
+import { CpuUsageData, MemoryData, ProcessCpuUsageData } from '../types';
 
 const MILLISECOND = 1 / 1e3;
 let cpuUsageTime: number | undefined = undefined;
@@ -62,6 +62,25 @@ export function getCpuUsageData(): CpuUsageData[] {
 }
 
 /**
+ * It returns process cpu load delta from last time - to be used with SumObservers.
+ * When called first time it will return 0 and then delta will be calculated
+ */
+export function getProcessCpuUsageData(): ProcessCpuUsageData {
+  if (typeof cpuUsageTime !== 'number') {
+    cpuUsageTime = new Date().getTime() - process.uptime() * 1000;
+  }
+  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000;
+  const cpuUsage: NodeJS.CpuUsage = process.cpuUsage();
+  const user = cpuUsage.user * MILLISECOND;
+  const system = cpuUsage.system * MILLISECOND;
+  const userP = user / timeElapsed;
+  const systemP = system / timeElapsed;
+  return {
+    user, system, userP, systemP
+  };
+}
+
+/**
  * Returns memory data as absolute values
  */
 export function getMemoryData(): MemoryData {
@@ -79,4 +98,13 @@ export function getMemoryData(): MemoryData {
     usedP: usedP, // this is frac part (0-1)
     freeP: freeP, // this is frac part (0-1)
   };
+}
+
+/**
+ * Returns process memory RSS
+ * The Resident Set Size, is the amount of space occupied in the main memory device (that is a subset of the total allocated memory) for the process, 
+ * including all C++ and JavaScript objects and code.
+ */
+export function getProcessMemoryData(): number {
+  return process.memoryUsage.rss();
 }
