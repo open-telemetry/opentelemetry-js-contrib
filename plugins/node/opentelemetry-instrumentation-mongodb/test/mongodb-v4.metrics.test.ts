@@ -119,7 +119,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
 
     assert.strictEqual(
       metrics[0].descriptor.description,
-      'The number of connections that are currently in state described by the state attribute.'
+      'The number of connections that are currently in the state referenced by the attribute "state".'
     );
     assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
     assert.strictEqual(
@@ -131,14 +131,14 @@ describe('MongoDBInstrumentation-Metrics', () => {
     assert.strictEqual(metrics[0].dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
       metrics[0].dataPoints[0].attributes['pool.name'],
-      `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
+      `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
 
     assert.strictEqual(metrics[0].dataPoints[1].value, 1);
     assert.strictEqual(metrics[0].dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
       metrics[0].dataPoints[1].attributes['pool.name'],
-      `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
+      `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
     await client.close();
 
@@ -150,20 +150,20 @@ describe('MongoDBInstrumentation-Metrics', () => {
 
     assert.strictEqual(
       metrics[0].descriptor.description,
-      'The number of connections that are currently in state described by the state attribute.'
+      'The number of connections that are currently in the state referenced by the attribute "state".'
     );
     assert.strictEqual(metrics[0].dataPoints.length, 2);
     assert.strictEqual(metrics[0].dataPoints[0].value, 0);
     assert.strictEqual(metrics[0].dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
       metrics[0].dataPoints[0].attributes['pool.name'],
-      `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
+      `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
     assert.strictEqual(metrics[0].dataPoints[1].value, 0);
     assert.strictEqual(metrics[0].dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
       metrics[0].dataPoints[1].attributes['pool.name'],
-      `host: '${HOST}', port: ${PORT}, database: '${DB_NAME}'`
+      `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
   });
 });

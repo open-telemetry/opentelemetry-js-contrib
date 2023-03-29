@@ -761,6 +761,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       [SemanticAttributes.DB_NAME]: dbName,
       [SemanticAttributes.DB_MONGODB_COLLECTION]: dbCollection,
       [SemanticAttributes.DB_OPERATION]: operation,
+      [SemanticAttributes.DB_CONNECTION_STRING]: `mongodb://${host}:${port}/${dbName}`,
     });
 
     if (host && port) {
@@ -868,14 +869,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const host = options.hostAddress?.host;
     const port = options.hostAddress?.port;
     const database = options.dbName;
-
-    let poolName = '';
-    poolName += host ? `host: '${host}', ` : '';
-    poolName += port ? `port: ${port}, ` : '';
-    poolName += database ? `database: '${database}' ` : '';
-    if (!database) {
-      poolName = poolName.substring(0, poolName.length - 2); //omit last comma
-    }
-    this._poolName = poolName.trim();
+    const poolName = `mongodb://${host}:${port}/${database}`;
+    console.log('poolName: ', poolName);
+    this._poolName = poolName;
   }
 }
