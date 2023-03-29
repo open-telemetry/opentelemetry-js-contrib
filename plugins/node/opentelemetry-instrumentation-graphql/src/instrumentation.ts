@@ -404,19 +404,21 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
     const span = this.tracer.startSpan(SpanNames.EXECUTE, {});
     if (operation) {
-      const operationDefinition =
+      const { operation: operationType, name: nameNode } =
         operation as graphqlTypes.OperationDefinitionNode;
-      span.setAttribute(
-        AttributeNames.OPERATION_TYPE,
-        operationDefinition.operation
-      );
 
-      if (operationDefinition.name) {
-        span.setAttribute(
-          AttributeNames.OPERATION_NAME,
-          operationDefinition.name.value
-        );
+      span.setAttribute(AttributeNames.OPERATION_TYPE, operationType);
+
+      const operationName = nameNode?.value;
+
+      if (operationName) {
+        span.setAttribute(AttributeNames.OPERATION_NAME, operationName);
       }
+
+      // https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/instrumentation/graphql/
+      // > The span name MUST be of the format <graphql.operation.type> <graphql.operation.name> provided that graphql.operation.type and graphql.operation.name are available.
+      // > If graphql.operation.name is not available, the span SHOULD be named <graphql.operation.type>.
+      span.updateName(`${operationType} ${operationName ?? ''}`.trim());
     } else {
       let operationName = ' ';
       if (processedArgs.operationName) {
