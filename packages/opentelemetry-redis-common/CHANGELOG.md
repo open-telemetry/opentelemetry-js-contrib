@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.34.0...redis-common-v0.35.0) (2023-03-03)
+
+
+### Features
+
+* **ioredis:** Update instrumentation-ioredis to version 5.x.x ([#1121](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1121)) ([f5f7ac6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f5f7ac6196b5422e030a6913c491117a6a3a0690))
+
 ## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.33.0...redis-common-v0.34.0) (2022-12-20)
 
 
