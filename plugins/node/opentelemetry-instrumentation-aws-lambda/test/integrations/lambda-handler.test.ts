@@ -861,11 +861,10 @@ describe('lambda handler', () => {
         assert.strictEqual(span.attributes[ERR_ATTR], error!.message);
       });
     });
-    
+
     describe('.cjs lambda bundle', () => {
       it('should export a valid span', async () => {
         initializeHandler('lambda-test/commonjs.handler');
-        console.log('loading stuff')
         const result = await lambdaRequire('lambda-test/commonjs.cjs').handler(
           'arg',
           ctx
