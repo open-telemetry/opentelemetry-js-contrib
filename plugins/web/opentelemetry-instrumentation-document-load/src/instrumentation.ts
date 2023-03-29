@@ -214,7 +214,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
         },
         parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
       );
-      span.setAttribute(AttributeNames.COMPONENT, this.component);
       return span;
     }
     return undefined;

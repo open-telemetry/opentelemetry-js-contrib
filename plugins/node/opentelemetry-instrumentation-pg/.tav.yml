@@ -4,7 +4,3 @@ pg:
     peerDependencies: pg-pool@^3
     pretest: npm run --prefix ../../../ lerna:link
     commands: npm run test
-  - versions: "7.3.0 || 7.12.1 || 7.18.2"
-    peerDependencies: pg-pool@^2
-    pretest: npm run --prefix ../../../ lerna:link
-    commands: npm run test
