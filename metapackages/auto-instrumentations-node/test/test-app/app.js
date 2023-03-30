@@ -14,4 +14,5 @@
  * limitations under the License.
  */
 
-require('http');
+//Used in register.test.ts to mimic a JS app.
+require("http");
