@@ -27,7 +27,7 @@ import {
 import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
-import { DEFAULT_MAX_TIMEOUT_UPDATE_MS, HostMetrics } from '../src';
+import { HostMetrics } from '../src';
 
 const cpuJson = require('./mocks/cpu.json');
 const networkJson = require('./mocks/network.json');
@@ -138,7 +138,6 @@ describe('Host Metrics', () => {
       dateStub.returns(process.uptime() * 1000 + INTERVAL);
 
       // invalidates throttles
-      sandbox.clock.tick(DEFAULT_MAX_TIMEOUT_UPDATE_MS);
       countSI = 0;
     });
     afterEach(() => {
