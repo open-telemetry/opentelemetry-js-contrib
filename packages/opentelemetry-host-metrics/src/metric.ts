@@ -18,9 +18,19 @@ import { BaseMetrics } from './BaseMetrics';
 import * as api from '@opentelemetry/api';
 import * as enums from './enum';
 
-import { getCpuUsageData, getMemoryData, getProcessCpuUsageData, getProcessMemoryData } from './stats/common';
+import {
+  getCpuUsageData,
+  getMemoryData,
+  getProcessCpuUsageData,
+  getProcessMemoryData,
+} from './stats/common';
 import { getNetworkData } from './stats/si';
-import { CpuUsageData, MemoryData, NetworkData, ProcessCpuUsageData } from './types';
+import {
+  CpuUsageData,
+  MemoryData,
+  NetworkData,
+  ProcessCpuUsageData,
+} from './types';
 import { throttle } from './util';
 
 /**
@@ -267,7 +277,10 @@ export class HostMetrics extends BaseMetrics {
       })
       .addCallback(observableResult => {
         const processCpuUsageData = this._getProcessCpuUsageData();
-        this._updateProcessCpuUtilization(observableResult, processCpuUsageData);
+        this._updateProcessCpuUtilization(
+          observableResult,
+          processCpuUsageData
+        );
       });
     this._meter
       .createObservableGauge(enums.METRIC_NAMES.PROCESS_MEMORY_USAGE, {
@@ -296,5 +309,8 @@ export class HostMetrics extends BaseMetrics {
     getProcessCpuUsageData,
     this._maxTimeoutUpdateMS
   );
-  private _getProcessMemoryData = throttle(getProcessMemoryData, this._maxTimeoutUpdateMS);
+  private _getProcessMemoryData = throttle(
+    getProcessMemoryData,
+    this._maxTimeoutUpdateMS
+  );
 }

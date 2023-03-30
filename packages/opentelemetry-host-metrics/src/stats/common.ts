@@ -76,7 +76,10 @@ export function getProcessCpuUsageData(): ProcessCpuUsageData {
   const userP = user / timeElapsed;
   const systemP = system / timeElapsed;
   return {
-    user, system, userP, systemP
+    user,
+    system,
+    userP,
+    systemP,
   };
 }
 
@@ -102,7 +105,7 @@ export function getMemoryData(): MemoryData {
 
 /**
  * Returns process memory RSS
- * The Resident Set Size, is the amount of space occupied in the main memory device (that is a subset of the total allocated memory) for the process, 
+ * The Resident Set Size, is the amount of space occupied in the main memory device (that is a subset of the total allocated memory) for the process,
  * including all C++ and JavaScript objects and code.
  */
 export function getProcessMemoryData(): number {
