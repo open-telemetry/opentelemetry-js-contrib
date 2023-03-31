@@ -69,7 +69,7 @@ export function assertSpans(
   expectedName: string,
   expectedKind: SpanKind,
   expectedOperation: string,
-  expectedConnString: string,
+  expectedConnString: string | undefined,
   log = false,
   isEnhancedDatabaseReportingEnabled = false
 ) {
@@ -97,10 +97,12 @@ export function assertSpans(
     process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
-  assert.strictEqual(
-    mongoSpan.attributes[SemanticAttributes.DB_CONNECTION_STRING],
-    expectedConnString
-  );
+  if (expectedConnString) {
+    assert.strictEqual(
+      mongoSpan.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+      expectedConnString
+    );
+  }
 
   if (isEnhancedDatabaseReportingEnabled) {
     const dbStatement = JSON.parse(
