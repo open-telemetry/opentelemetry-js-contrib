@@ -83,6 +83,20 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           ),
         ]
       ),
+      new InstrumentationNodeModuleDefinition<any>(
+        'mongodb',
+        ['5.*'],
+        undefined,
+        undefined,
+        [
+          new InstrumentationNodeModuleFile<V4Connection>(
+            'mongodb/lib/cmap/connection.js',
+            ['5.*'],
+            v4Patch,
+            v4Unpatch
+          ),
+        ]
+      ),
     ];
   }
 

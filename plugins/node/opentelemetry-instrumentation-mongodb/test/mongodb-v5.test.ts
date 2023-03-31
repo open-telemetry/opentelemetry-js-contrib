@@ -25,7 +25,6 @@ import {
   getTestSpans,
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
-import { lookup } from 'dns';
 
 const instrumentation = registerInstrumentationTesting(
   new MongoDBInstrumentation()
@@ -74,7 +73,7 @@ describe('MongoDBInstrumentation', () => {
       });
   });
 
-  beforeEach(function mongoBeforeEach(done) {
+  beforeEach(async function mongoBeforeEach() {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work
     // properly when skipping tests in before() on nested describe() calls.
     // https://github.com/mochajs/mocha/issues/2819
@@ -83,17 +82,14 @@ describe('MongoDBInstrumentation', () => {
     }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    collection.insertMany(insertData, (err: any, result: any) => {
-      resetMemoryExporter();
-      done();
-    });
+    await collection.insertMany(insertData);
+    resetMemoryExporter();
   });
 
-  afterEach(done => {
+  afterEach(async () => {
     if (shouldTest) {
-      return collection.deleteMany({}, done);
+      await collection.deleteMany({});
     }
-    done();
   });
 
   after(() => {
@@ -156,9 +152,9 @@ describe('MongoDBInstrumentation', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              'mongodb.remove',
+              'mongodb.delete',
               SpanKind.CLIENT,
-              'remove'
+              'delete'
             );
             done();
           })
@@ -378,10 +374,7 @@ describe('MongoDBInstrumentation', () => {
       beforeEach(() => {
         create({
           responseHook: (span: Span, result: MongoResponseHookInformation) => {
-            span.setAttribute(
-              dataAttributeName,
-              JSON.stringify(result.data.result)
-            );
+            span.setAttribute(dataAttributeName, JSON.stringify(result.data));
           },
         });
       });
@@ -396,10 +389,10 @@ describe('MongoDBInstrumentation', () => {
               span.end();
               const spans = getTestSpans();
               const insertSpan = spans[0];
-
               assert.deepStrictEqual(
-                JSON.parse(insertSpan.attributes[dataAttributeName] as string),
-                (<any>results)?.result
+                JSON.parse(insertSpan.attributes[dataAttributeName] as string)
+                  .n,
+                results?.insertedCount
               );
 
               done();
@@ -489,7 +482,6 @@ describe('MongoDBInstrumentation', () => {
               .then(() => {
                 const spans2 = getTestSpans();
                 spans2.push(mainSpan);
-
                 assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT, 'find');
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
@@ -504,60 +496,6 @@ describe('MongoDBInstrumentation', () => {
           .catch(err => {
             done(err);
           });
-      });
-    });
-  });
-
-  describe('MongoDb useUnifiedTopology enabled', () => {
-    let client: mongodb.MongoClient;
-    let collection: mongodb.Collection;
-    before(done => {
-      accessCollection(URL, DB_NAME, COLLECTION_NAME, {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        useUnifiedTopology: true,
-      })
-        .then(result => {
-          client = result.client;
-          collection = result.collection;
-          done();
-        })
-        .catch((err: Error) => {
-          console.log(
-            'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-          );
-          shouldTest = false;
-          done();
-        });
-    });
-    after(() => {
-      if (client) {
-        client.close();
-      }
-    });
-    it('should generate correct span attributes', done => {
-      const span = trace.getTracer('default').startSpan('findRootSpan');
-      context.with(trace.setSpan(context.active(), span), () => {
-        collection.find({ a: 1 }).toArray((err, results) => {
-          span.end();
-          const [mongoSpan] = getTestSpans();
-          assert.ifError(err);
-          lookup(
-            process.env.MONGODB_HOST || DEFAULT_MONGO_HOST,
-            (err, address) => {
-              if (err) return done(err);
-              assert.strictEqual(
-                mongoSpan.attributes[SemanticAttributes.NET_PEER_NAME],
-                address
-              );
-              assert.strictEqual(
-                mongoSpan.attributes[SemanticAttributes.NET_PEER_PORT],
-                process.env.MONGODB_PORT || '27017'
-              );
-              done();
-            }
-          );
-        });
       });
     });
   });

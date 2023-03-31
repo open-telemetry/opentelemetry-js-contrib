@@ -82,7 +82,7 @@ describe('MongoDBInstrumentation', () => {
     }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    collection.insertMany(insertData, (err, result) => {
+    collection.insertMany(insertData, (err: any, result: any) => {
       resetMemoryExporter();
       done();
     });
