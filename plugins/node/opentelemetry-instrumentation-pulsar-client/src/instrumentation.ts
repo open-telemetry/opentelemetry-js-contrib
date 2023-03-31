@@ -18,24 +18,24 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
-} from '@opentelemetry/instrumentation';
-import type * as Pulsar from 'pulsar-client';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { VERSION } from './version';
-import { ClientProxy } from './proxies/client';
+} from "@opentelemetry/instrumentation";
+import type * as Pulsar from "pulsar-client";
+import {SemanticAttributes} from "@opentelemetry/semantic-conventions";
+import {VERSION} from "./version";
+import {ClientProxy} from "./proxies/client";
+import {PulsarInstrumentationConfig} from "./types";
 
 type PulsarConstructor = new (config: Pulsar.ClientConfig) => Pulsar.Client;
 
 export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
-  static readonly COMPONENT = 'pulsar';
+  static readonly COMPONENT = "pulsar";
   static readonly COMMON_ATTRIBUTES = {
-    [SemanticAttributes.MESSAGING_SYSTEM]: 'pulsar',
+    [SemanticAttributes.MESSAGING_SYSTEM]: "pulsar",
   };
 
-  constructor(config: InstrumentationConfig = {}) {
+  constructor(config: PulsarInstrumentationConfig) {
     super(
-      '@opentelemetry/instrumentation-pulsar-client',
+      "@opentelemetry/instrumentation-pulsar-client",
       VERSION,
       Object.assign({}, config)
     );
@@ -44,8 +44,8 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
   init() {
     return [
       new InstrumentationNodeModuleDefinition<typeof Pulsar>(
-        'pulsar-client',
-        ['>=1.0'],
+        "pulsar-client",
+        [">=1.0"],
         (moduleExports, moduleVersion) => {
           this._diag.debug(
             `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
@@ -53,8 +53,8 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
           this.ensureWrapped(
             moduleVersion,
             moduleExports,
-            'Client',
-            this.wrapClient.bind(this, moduleVersion) as any
+            "Client",
+            this.wrapClient.bind(this, moduleVersion, this._config as PulsarInstrumentationConfig) as any
           );
           return moduleExports;
         },
@@ -64,16 +64,16 @@ export class Instrumentation extends InstrumentationBase<typeof Pulsar.Client> {
           );
           if (moduleExports === undefined) return;
 
-          this._unwrap(moduleExports, 'Client');
+          this._unwrap(moduleExports, "Client");
         }
       ),
     ];
   }
 
-  wrapClient(moduleVersion: undefined | string, original: PulsarConstructor) {
+  wrapClient(moduleVersion: undefined | string, instrumentationConfig: PulsarInstrumentationConfig, original: PulsarConstructor) {
     const tracer = this.tracer;
     return function (config: Pulsar.ClientConfig) {
-      return new ClientProxy(tracer, moduleVersion, new original(config));
+      return new ClientProxy(tracer, instrumentationConfig, moduleVersion, new original(config));
     };
   }
 

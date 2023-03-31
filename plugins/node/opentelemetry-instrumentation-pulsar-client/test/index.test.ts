@@ -22,22 +22,25 @@ import {
 } from '@opentelemetry/api';
 import * as assert from 'assert';
 import Instrumentation from '../src';
-import * as testUtils from '@opentelemetry/contrib-test-utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {SemanticAttributes} from '@opentelemetry/semantic-conventions';
 import type * as Pulsar from 'pulsar-client';
 import {
   getTestSpans,
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
+import {InstrumentationConfig} from "@opentelemetry/instrumentation";
 
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
-
-registerInstrumentationTesting(new Instrumentation());
 
 const CONFIG = {
   host: process.env.OPENTELEMETRY_PULSAR_HOST || 'localhost',
   port: process.env.OPENTELEMETRY_PULSAR_PORT || '6650',
 };
+
+const instrumentation = new Instrumentation({});
+instrumentation.disable();
+instrumentation.enable();
+registerInstrumentationTesting(instrumentation);
 
 const getClient = (config: Pulsar.ClientConfig): Pulsar.Client => {
   const pulsar = require('pulsar-client');
@@ -47,7 +50,21 @@ const getClient = (config: Pulsar.ClientConfig): Pulsar.Client => {
 const shouldTestLocal = process.env.RUN_PULSAR_TESTS_LOCAL;
 const shouldTest = process.env.RUN_PULSAR_TESTS || shouldTestLocal;
 
+async function waitForNSpans(n: number): Promise<any[]> {
+  let spans: any[] = [];
+  for (let i = 0; i < 10; i++) {
+    spans = getTestSpans();
+    if (spans.length == n) {
+      return spans;
+    }
+    await new Promise((resolve, _) => setTimeout(resolve, 100));
+  }
+  const spanNames = spans.map(span => span.name);
+  throw new Error(`Waited for ${n} spans but only ${spans.length} returned ${spanNames}`);
+}
+
 describe('pulsar@1.7.x', () => {
+
   before(function () {
     // needs to be "function" to have MochaContext "this" context
     if (!shouldTest) {
@@ -73,6 +90,7 @@ describe('pulsar@1.7.x', () => {
     let topic: string;
 
     beforeEach(function () {
+      instrumentation.enable();
       client = getClient({
         serviceUrl: `pulsar://${CONFIG.host}:${CONFIG.port}`,
       });
@@ -85,6 +103,7 @@ describe('pulsar@1.7.x', () => {
 
     afterEach(() => {
       client.close();
+      instrumentation.disable();
     });
 
     async function getProducer() {
@@ -168,22 +187,8 @@ describe('pulsar@1.7.x', () => {
       assert.ok(receivedMessage);
 
       assert.deepEqual(receivedMessage?.getData(), sampleMessage.data);
-      let spans: any[] = [];
-      for (let i = 0; i < 10; i++) {
-        spans = getTestSpans();
-        if (spans.length == 1) {
-          // This means that the await in the wrapped function signed the node executor that it is waiting for something
-          // and the messaged is resolved before the wrapped listener finished as it awaits the callback and then on finally
-          // ends the span
-          await new Promise((resolve, _) => setTimeout(resolve, 100));
-          spans = getTestSpans();
-        }
-      }
-      if (spans.length < 2) {
-        throw new Error('Receive span was never ended');
-      }
 
-      const [produceSpan, receiveSpan] = spans;
+      const [produceSpan, receiveSpan] = await waitForNSpans(2);
 
       // The receiveSpan gets the parent
       assert.equal(
@@ -191,5 +196,97 @@ describe('pulsar@1.7.x', () => {
         receiveSpan.spanContext().traceId
       );
     });
+  });
+
+  describe('track before and after consume', () => {
+    let client: Pulsar.Client;
+    let topic: string;
+
+    beforeEach(function () {
+      instrumentation.setConfig({trackBeforeAndAfterConsume: true} as InstrumentationConfig);
+      instrumentation.enable();
+
+      client = getClient({
+        serviceUrl: `pulsar://${CONFIG.host}:${CONFIG.port}`,
+      });
+      const title = this.currentTest
+        ?.fullTitle()
+        .replace(/\W/g, '')
+        .toLowerCase();
+      topic = `${title}-${Math.random()}`;
+    });
+
+    afterEach(() => {
+      client.close();
+      instrumentation.disable();
+    });
+
+    async function getProducer() {
+      return await client.createProducer({
+        topic,
+      });
+    }
+
+    async function assertSpans() {
+      const [produceSpan, beforeConsume, receiveSpan, afterConsume] = await waitForNSpans(4);
+
+      assert.equal(
+        produceSpan.spanContext().traceId,
+        receiveSpan.spanContext().traceId
+      );
+      assert.equal(beforeConsume.name, "beforeConsume");
+      assert.equal(afterConsume.name, "afterConsume");
+    }
+
+    const sampleMessage = {
+      data: Buffer.from('produced message'),
+    };
+
+    it('should should allow to track before and after consume', async () => {
+      const producer = await getProducer();
+      const messageId = await producer.send(sampleMessage);
+      assert.ok(messageId);
+
+      const consumer = await client.subscribe({
+        topic,
+        subscription: 'test-receive-message',
+        subscriptionInitialPosition: 'Earliest',
+      });
+
+      const receivedMessage = await consumer.receive();
+      assert.deepEqual(receivedMessage.getData(), sampleMessage.data);
+
+      // force the span to be released
+      await consumer.close();
+      await assertSpans();
+    });
+
+
+    it('should should allow to track before and after consume async', async () => {
+      const producer = await getProducer();
+      const messageId = await producer.send(sampleMessage);
+      assert.ok(messageId);
+
+      let doneWithListener: (message: Pulsar.Message) => void;
+      const receiveMessage: Promise<Pulsar.Message> = new Promise((resolve) => {
+        doneWithListener = resolve;
+      })
+
+      const consumer = await client.subscribe({
+        topic,
+        subscription: 'test-receive-message',
+        subscriptionInitialPosition: 'Earliest',
+        listener: message => {
+          doneWithListener(message);
+        }
+      });
+
+      const receivedMessage: Pulsar.Message = await receiveMessage;
+      await consumer.close();
+
+      assert.deepEqual(receivedMessage.getData(), sampleMessage.data);
+      await assertSpans();
+    });
+
   });
 });

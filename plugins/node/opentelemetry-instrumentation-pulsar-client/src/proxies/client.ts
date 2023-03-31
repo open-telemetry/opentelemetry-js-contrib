@@ -17,18 +17,22 @@ import type * as Pulsar from 'pulsar-client';
 import * as api from '@opentelemetry/api';
 import { ProducerProxy } from './producer';
 import { ConsumerProxy, wrappedListener } from './consumer';
+import {PulsarInstrumentationConfig} from "../types";
 
 export class ClientProxy implements Pulsar.Client {
   private _client: Pulsar.Client;
   private readonly _tracer: api.Tracer;
+  private readonly _instrumentationConfig: PulsarInstrumentationConfig;
   private readonly _moduleVersion: undefined | string;
 
   constructor(
     tracer: api.Tracer,
+    instrumentationConfig: PulsarInstrumentationConfig,
     moduleVersion: undefined | string,
-    client: Pulsar.Client
+    client: Pulsar.Client,
   ) {
     this._tracer = tracer;
+    this._instrumentationConfig = instrumentationConfig;
     this._moduleVersion = moduleVersion;
     this._client = client;
   }
@@ -43,6 +47,7 @@ export class ClientProxy implements Pulsar.Client {
     const producer = await this._client.createProducer(config);
     return new ProducerProxy(
       this._tracer,
+      this._instrumentationConfig,
       this._moduleVersion,
       config,
       producer
@@ -53,6 +58,7 @@ export class ClientProxy implements Pulsar.Client {
     if (config.listener) {
       config.listener = wrappedListener(
         this._tracer,
+        this._instrumentationConfig,
         this._moduleVersion,
         config,
         config.listener
@@ -61,6 +67,7 @@ export class ClientProxy implements Pulsar.Client {
     const consumer = await this._client.subscribe(config);
     return new ConsumerProxy(
       this._tracer,
+      this._instrumentationConfig,
       this._moduleVersion,
       config,
       consumer

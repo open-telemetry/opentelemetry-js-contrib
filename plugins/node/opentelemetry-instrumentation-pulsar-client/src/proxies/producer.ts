@@ -17,20 +17,24 @@ import type * as Pulsar from 'pulsar-client';
 import * as api from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { Instrumentation } from '../instrumentation';
+import {PulsarInstrumentationConfig} from "../types";
 
 export class ProducerProxy implements Pulsar.Producer {
   private _producer: Pulsar.Producer;
   private _tracer: api.Tracer;
+  private _instrumentationConfig: PulsarInstrumentationConfig;
   private readonly _moduleVersion: undefined | string;
   private _config: Pulsar.ProducerConfig;
 
   constructor(
     tracer: api.Tracer,
+    instrumentationConfig: PulsarInstrumentationConfig,
     moduleVersion: undefined | string,
     config: Pulsar.ProducerConfig,
     producer: Pulsar.Producer
   ) {
     this._tracer = tracer;
+    this._instrumentationConfig = instrumentationConfig;
     this._moduleVersion = moduleVersion;
     this._config = config;
     this._producer = producer;
@@ -60,7 +64,7 @@ export class ProducerProxy implements Pulsar.Producer {
     const parentContext = api.context.active();
 
     const span = this._tracer.startSpan(
-      `send ${this._config.topic}`,
+      'send',
       {
         kind: api.SpanKind.PRODUCER,
         attributes: {

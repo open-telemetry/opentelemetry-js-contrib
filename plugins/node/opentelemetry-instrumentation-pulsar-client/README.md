@@ -36,7 +36,7 @@ provider.register();
 registerInstrumentations({
   instrumentations: [
     new PulsarInstrumentation({
-      enhancedDatabaseReporting: false,
+      trackBeforeAndAfterConsume: false,
     }),
   ],
 });

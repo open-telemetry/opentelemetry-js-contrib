@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 import type * as Pulsar from 'pulsar-client';
-import type { ConsumerConfig } from 'pulsar-client';
+import type {ConsumerConfig} from 'pulsar-client';
 import * as api from '@opentelemetry/api';
-import { Span, SpanStatusCode, Tracer } from '@opentelemetry/api';
-import { Instrumentation } from '../instrumentation';
+import {Attributes, Span, SpanStatusCode, Tracer} from '@opentelemetry/api';
+import {Instrumentation} from '../instrumentation';
+import {SemanticAttributes} from "@opentelemetry/semantic-conventions";
+import {PulsarInstrumentationConfig} from "../types";
+
+const spanNames = {
+  beforeConsume: 'beforeConsume',
+  afterConsume: 'afterConsume',
+};
 
 type ConsumerListener = (
   message: Pulsar.Message,
@@ -26,19 +33,23 @@ type ConsumerListener = (
 
 export class ConsumerProxy implements Pulsar.Consumer {
   private readonly _tracer: Tracer;
+  private readonly _instrumentationConfig: PulsarInstrumentationConfig;
   private readonly _moduleVersion: string | undefined;
   private readonly config: Pulsar.ConsumerConfig;
   private consumer: Pulsar.Consumer;
 
   private _lastSpan: Span | undefined;
+  private _lastAttributes: Attributes | undefined;
 
   constructor(
     _tracer: Tracer,
+    _instrumentationConfig: PulsarInstrumentationConfig,
     _moduleVersion: string | undefined,
     config: Pulsar.ConsumerConfig,
     consumer: Pulsar.Consumer
   ) {
     this._tracer = _tracer;
+    this._instrumentationConfig = _instrumentationConfig;
     this._moduleVersion = _moduleVersion;
     this.config = config;
     this.consumer = consumer;
@@ -51,10 +62,12 @@ export class ConsumerProxy implements Pulsar.Consumer {
     // Postpone the span ending for the next time the user calls receive
     this._lastSpan = extractSpanFromMessage(
       this._tracer,
+      this._instrumentationConfig,
       this._moduleVersion,
       this.config,
       message
     );
+    this._lastAttributes = getAttributesFromMessage(message);
     return message;
   }
 
@@ -62,6 +75,9 @@ export class ConsumerProxy implements Pulsar.Consumer {
     // User is done with the last message and called receive again.
     if (this._lastSpan) {
       this._lastSpan.end();
+      if (this._instrumentationConfig.trackBeforeAndAfterConsume) {
+        trackBeforeAndAfterConsume(this._tracer, spanNames.afterConsume, this._lastAttributes!);
+      }
     }
   }
 
@@ -110,8 +126,22 @@ export class ConsumerProxy implements Pulsar.Consumer {
   }
 }
 
+function trackBeforeAndAfterConsume(tracer: Tracer, spanName: string, extraAttributes: Attributes) {
+  tracer.startActiveSpan(spanName, {attributes: extraAttributes}, span => {
+    span.end()
+  });
+}
+
+function getAttributesFromMessage(message: Pulsar.Message) {
+  return {
+    [SemanticAttributes.MESSAGING_DESTINATION]: message.getTopicName(),
+    [SemanticAttributes.MESSAGING_MESSAGE_ID]: message.getMessageId().toString(),
+  };
+}
+
 function extractSpanFromMessage(
   tracer: api.Tracer,
+  instrumentationConfig: PulsarInstrumentationConfig,
   moduleVersion: string | undefined,
   config: Pulsar.ConsumerConfig,
   message: Pulsar.Message
@@ -120,13 +150,19 @@ function extractSpanFromMessage(
     api.context.active(),
     message.getProperties()
   );
+
+  const extraAttributes = getAttributesFromMessage(message);
+  if (instrumentationConfig.trackBeforeAndAfterConsume) {
+    trackBeforeAndAfterConsume(tracer, spanNames.beforeConsume, extraAttributes);
+  }
+
   const span = tracer.startSpan(
-    `receive ${config.topic}`,
+    'receive',
     {
       kind: api.SpanKind.CONSUMER,
       attributes: {
         'pulsar.version': moduleVersion,
-        topic: config.topic,
+        ...extraAttributes,
         ...Instrumentation.COMMON_ATTRIBUTES,
       },
     },
@@ -134,25 +170,30 @@ function extractSpanFromMessage(
   );
 
   api.trace.setSpan(remoteContext, span);
+
   return span;
 }
 
 export function wrappedListener(
   tracer: Tracer,
+  instrumentationConfig: PulsarInstrumentationConfig,
   moduleVersion: string | undefined,
   config: ConsumerConfig,
   listener: ConsumerListener
 ): ConsumerListener {
   return async (message: Pulsar.Message, consumer: Pulsar.Consumer) => {
-    const span = extractSpanFromMessage(tracer, moduleVersion, config, message);
+    const span = extractSpanFromMessage(tracer, instrumentationConfig, moduleVersion, config, message);
     try {
       await callback(listener, message, consumer);
     } catch (error) {
       span.recordException(error);
-      span.setStatus({ code: SpanStatusCode.ERROR });
+      span.setStatus({code: SpanStatusCode.ERROR});
       throw error;
     } finally {
       span.end();
+      if (instrumentationConfig.trackBeforeAndAfterConsume) {
+        trackBeforeAndAfterConsume(tracer, spanNames.afterConsume, getAttributesFromMessage(message));
+      }
     }
   };
 }
