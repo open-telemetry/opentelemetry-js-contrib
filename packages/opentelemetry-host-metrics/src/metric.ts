@@ -18,9 +18,19 @@ import { BaseMetrics } from './BaseMetrics';
 import * as api from '@opentelemetry/api';
 import * as enums from './enum';
 
-import { getCpuUsageData, getMemoryData } from './stats/common';
+import {
+  getCpuUsageData,
+  getMemoryData,
+  getProcessCpuUsageData,
+  getProcessMemoryData,
+} from './stats/common';
 import { getNetworkData } from './stats/si';
-import { CpuUsageData, MemoryData, NetworkData } from './types';
+import {
+  CpuUsageData,
+  MemoryData,
+  NetworkData,
+  ProcessCpuUsageData,
+} from './types';
 import { throttle } from './util';
 
 /**
@@ -56,7 +66,19 @@ export class HostMetrics extends BaseMetrics {
     }
   }
 
-  private _updateCpuUtilisation(
+  private _updateProcessCpuTime(
+    observableResult: api.ObservableResult,
+    processCpuUsage: ProcessCpuUsageData
+  ): void {
+    observableResult.observe(processCpuUsage.user, {
+      state: enums.CPU_LABELS.USER,
+    });
+    observableResult.observe(processCpuUsage.system, {
+      state: enums.CPU_LABELS.SYSTEM,
+    });
+  }
+
+  private _updateCpuUtilization(
     observableResult: api.ObservableResult,
     cpuUsages: CpuUsageData[]
   ): void {
@@ -85,6 +107,18 @@ export class HostMetrics extends BaseMetrics {
     }
   }
 
+  private _updateProcessCpuUtilization(
+    observableResult: api.ObservableResult,
+    processCpuUsage: ProcessCpuUsageData
+  ): void {
+    observableResult.observe(processCpuUsage.userP, {
+      state: enums.CPU_LABELS.USER,
+    });
+    observableResult.observe(processCpuUsage.systemP, {
+      state: enums.CPU_LABELS.SYSTEM,
+    });
+  }
+
   private _updateMemUsage(
     observableResult: api.ObservableResult,
     memUsage: MemoryData
@@ -107,6 +141,13 @@ export class HostMetrics extends BaseMetrics {
     observableResult.observe(memUsage.freeP, {
       state: enums.MEMORY_LABELS.FREE,
     });
+  }
+
+  private _updateProcessMemUsage(
+    observableResult: api.ObservableResult,
+    memoryUsage: number
+  ): void {
+    observableResult.observe(memoryUsage);
   }
 
   private _updateNetworkDropped(
@@ -179,7 +220,7 @@ export class HostMetrics extends BaseMetrics {
       })
       .addCallback(observableResult => {
         const cpuUsageData = this._getCpuUsageData();
-        this._updateCpuUtilisation(observableResult, cpuUsageData);
+        this._updateCpuUtilization(observableResult, cpuUsageData);
       });
     this._meter
       .createObservableGauge(enums.METRIC_NAMES.MEMORY_USAGE, {
@@ -221,6 +262,34 @@ export class HostMetrics extends BaseMetrics {
         const networkData = await this._getNetworkData();
         this._updateNetworkIO(observableResult, networkData);
       });
+    this._meter
+      .createObservableCounter(enums.METRIC_NAMES.PROCESS_CPU_TIME, {
+        description: 'Process Cpu time in seconds',
+        unit: 's',
+      })
+      .addCallback(observableResult => {
+        const processCpuUsageData = this._getProcessCpuUsageData();
+        this._updateProcessCpuTime(observableResult, processCpuUsageData);
+      });
+    this._meter
+      .createObservableGauge(enums.METRIC_NAMES.PROCESS_CPU_UTILIZATION, {
+        description: 'Process Cpu usage time 0-1',
+      })
+      .addCallback(observableResult => {
+        const processCpuUsageData = this._getProcessCpuUsageData();
+        this._updateProcessCpuUtilization(
+          observableResult,
+          processCpuUsageData
+        );
+      });
+    this._meter
+      .createObservableGauge(enums.METRIC_NAMES.PROCESS_MEMORY_USAGE, {
+        description: 'Process Memory usage in bytes',
+      })
+      .addCallback(observableResult => {
+        const processMemoryData = this._getProcessMemoryData();
+        this._updateProcessMemUsage(observableResult, processMemoryData);
+      });
   }
 
   /**
@@ -236,4 +305,12 @@ export class HostMetrics extends BaseMetrics {
     this._maxTimeoutUpdateMS
   );
   private _getNetworkData = throttle(getNetworkData, this._maxTimeoutUpdateMS);
+  private _getProcessCpuUsageData = throttle(
+    getProcessCpuUsageData,
+    this._maxTimeoutUpdateMS
+  );
+  private _getProcessMemoryData = throttle(
+    getProcessMemoryData,
+    this._maxTimeoutUpdateMS
+  );
 }
