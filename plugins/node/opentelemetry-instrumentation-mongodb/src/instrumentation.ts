@@ -71,13 +71,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition<any>(
         'mongodb',
-        ['4.*', '5.*'],
+        ['>=4 <6'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile<V4Connection>(
             'mongodb/lib/cmap/connection.js',
-            ['4.*', '5.*'],
+            ['>=4 <6'],
             v4Patch,
             v4Unpatch
           ),
