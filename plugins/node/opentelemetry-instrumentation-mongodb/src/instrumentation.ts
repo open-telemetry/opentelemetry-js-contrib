@@ -21,19 +21,19 @@ import {
   Span,
   SpanKind,
   SpanStatusCode,
-} from '@opentelemetry/api';
+} from "@opentelemetry/api";
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
-} from '@opentelemetry/instrumentation';
+} from "@opentelemetry/instrumentation";
 import {
   DbSystemValues,
   SemanticAttributes,
-} from '@opentelemetry/semantic-conventions';
-import { MongoDBInstrumentationConfig, CommandResult } from './types';
+} from "@opentelemetry/semantic-conventions";
+import { MongoDBInstrumentationConfig, CommandResult } from "./types";
 import {
   CursorState,
   MongodbCommandType,
@@ -41,13 +41,13 @@ import {
   MongoInternalTopology,
   WireProtocolInternal,
   V4Connection,
-} from './internal-types';
-import { VERSION } from './version';
+} from "./internal-types";
+import { VERSION } from "./version";
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase {
   constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
+    super("@opentelemetry/instrumentation-mongodb", VERSION, _config);
   }
 
   init() {
@@ -56,42 +56,28 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
     return [
       new InstrumentationNodeModuleDefinition<any>(
-        'mongodb',
-        ['>=3.3 <4'],
+        "mongodb",
+        [">=3.3 <4"],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile<WireProtocolInternal>(
-            'mongodb/lib/core/wireprotocol/index.js',
-            ['>=3.3 <4'],
+            "mongodb/lib/core/wireprotocol/index.js",
+            [">=3.3 <4"],
             v3Patch,
             v3Unpatch
           ),
         ]
       ),
       new InstrumentationNodeModuleDefinition<any>(
-        'mongodb',
-        ['4.*'],
+        "mongodb",
+        ["4.*", "5.*"],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile<V4Connection>(
-            'mongodb/lib/cmap/connection.js',
-            ['4.*'],
-            v4Patch,
-            v4Unpatch
-          ),
-        ]
-      ),
-      new InstrumentationNodeModuleDefinition<any>(
-        'mongodb',
-        ['5.*'],
-        undefined,
-        undefined,
-        [
-          new InstrumentationNodeModuleFile<V4Connection>(
-            'mongodb/lib/cmap/connection.js',
-            ['5.*'],
+            "mongodb/lib/cmap/connection.js",
+            ["4.*", "5.*"],
             v4Patch,
             v4Unpatch
           ),
@@ -106,57 +92,57 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.insert)) {
-          this._unwrap(moduleExports, 'insert');
+          this._unwrap(moduleExports, "insert");
         }
         this._wrap(
           moduleExports,
-          'insert',
-          this._getV3PatchOperation('insert')
+          "insert",
+          this._getV3PatchOperation("insert")
         );
         // patch remove operation
         if (isWrapped(moduleExports.remove)) {
-          this._unwrap(moduleExports, 'remove');
+          this._unwrap(moduleExports, "remove");
         }
         this._wrap(
           moduleExports,
-          'remove',
-          this._getV3PatchOperation('remove')
+          "remove",
+          this._getV3PatchOperation("remove")
         );
         // patch update operation
         if (isWrapped(moduleExports.update)) {
-          this._unwrap(moduleExports, 'update');
+          this._unwrap(moduleExports, "update");
         }
         this._wrap(
           moduleExports,
-          'update',
-          this._getV3PatchOperation('update')
+          "update",
+          this._getV3PatchOperation("update")
         );
         // patch other command
         if (isWrapped(moduleExports.command)) {
-          this._unwrap(moduleExports, 'command');
+          this._unwrap(moduleExports, "command");
         }
-        this._wrap(moduleExports, 'command', this._getV3PatchCommand());
+        this._wrap(moduleExports, "command", this._getV3PatchCommand());
         // patch query
         if (isWrapped(moduleExports.query)) {
-          this._unwrap(moduleExports, 'query');
+          this._unwrap(moduleExports, "query");
         }
-        this._wrap(moduleExports, 'query', this._getV3PatchFind());
+        this._wrap(moduleExports, "query", this._getV3PatchFind());
         // patch get more operation on cursor
         if (isWrapped(moduleExports.getMore)) {
-          this._unwrap(moduleExports, 'getMore');
+          this._unwrap(moduleExports, "getMore");
         }
-        this._wrap(moduleExports, 'getMore', this._getV3PatchCursor());
+        this._wrap(moduleExports, "getMore", this._getV3PatchCursor());
         return moduleExports;
       },
       v3Unpatch: (moduleExports?: T, moduleVersion?: string) => {
         if (moduleExports === undefined) return;
         diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
-        this._unwrap(moduleExports, 'insert');
-        this._unwrap(moduleExports, 'remove');
-        this._unwrap(moduleExports, 'update');
-        this._unwrap(moduleExports, 'command');
-        this._unwrap(moduleExports, 'query');
-        this._unwrap(moduleExports, 'getMore');
+        this._unwrap(moduleExports, "insert");
+        this._unwrap(moduleExports, "remove");
+        this._unwrap(moduleExports, "update");
+        this._unwrap(moduleExports, "command");
+        this._unwrap(moduleExports, "query");
+        this._unwrap(moduleExports, "getMore");
       },
     };
   }
@@ -168,12 +154,12 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
-          this._unwrap(moduleExports.Connection.prototype, 'command');
+          this._unwrap(moduleExports.Connection.prototype, "command");
         }
 
         this._wrap(
           moduleExports.Connection.prototype,
-          'command',
+          "command",
           this._getV4PatchCommand()
         );
         return moduleExports;
@@ -181,13 +167,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       v4Unpatch: (moduleExports?: any, moduleVersion?: string) => {
         if (moduleExports === undefined) return;
         diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
-        this._unwrap(moduleExports.Connection.prototype, 'command');
+        this._unwrap(moduleExports.Connection.prototype, "command");
       },
     };
   }
 
   /** Creates spans for common operations */
-  private _getV3PatchOperation(operationName: 'insert' | 'update' | 'remove') {
+  private _getV3PatchOperation(operationName: "insert" | "update" | "remove") {
     const instrumentation = this;
     return (original: WireProtocolInternal[typeof operationName]) => {
       return function patchedServerCommand(
@@ -200,13 +186,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ) {
         const currentSpan = trace.getSpan(context.active());
         const resultHandler =
-          typeof options === 'function' ? options : callback;
+          typeof options === "function" ? options : callback;
         if (
           !currentSpan ||
-          typeof resultHandler !== 'function' ||
-          typeof ops !== 'object'
+          typeof resultHandler !== "function" ||
+          typeof ops !== "object"
         ) {
-          if (typeof options === 'function') {
+          if (typeof options === "function") {
             return original.call(this, server, ns, ops, options);
           } else {
             return original.call(this, server, ns, ops, options, callback);
@@ -229,7 +215,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
-        if (typeof options === 'function') {
+        if (typeof options === "function") {
           return original.call(this, server, ns, ops, patchedCallback);
         } else {
           return original.call(this, server, ns, ops, options, patchedCallback);
@@ -241,7 +227,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   /** Creates spans for command operation */
   private _getV3PatchCommand() {
     const instrumentation = this;
-    return (original: WireProtocolInternal['command']) => {
+    return (original: WireProtocolInternal["command"]) => {
       return function patchedServerCommand(
         this: unknown,
         server: MongoInternalTopology,
@@ -252,13 +238,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ) {
         const currentSpan = trace.getSpan(context.active());
         const resultHandler =
-          typeof options === 'function' ? options : callback;
+          typeof options === "function" ? options : callback;
         if (
           !currentSpan ||
-          typeof resultHandler !== 'function' ||
-          typeof cmd !== 'object'
+          typeof resultHandler !== "function" ||
+          typeof cmd !== "object"
         ) {
-          if (typeof options === 'function') {
+          if (typeof options === "function") {
             return original.call(this, server, ns, cmd, options);
           } else {
             return original.call(this, server, ns, cmd, options, callback);
@@ -266,7 +252,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         }
         const commandType = MongoDBInstrumentation._getCommandType(cmd);
         const type =
-          commandType === MongodbCommandType.UNKNOWN ? 'command' : commandType;
+          commandType === MongodbCommandType.UNKNOWN ? "command" : commandType;
         const span = instrumentation.tracer.startSpan(`mongodb.${type}`, {
           kind: SpanKind.CLIENT,
         });
@@ -275,7 +261,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         instrumentation._populateV3Attributes(span, ns, server, cmd, operation);
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
-        if (typeof options === 'function') {
+        if (typeof options === "function") {
           return original.call(this, server, ns, cmd, patchedCallback);
         } else {
           return original.call(this, server, ns, cmd, options, patchedCallback);
@@ -287,7 +273,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   /** Creates spans for command operation */
   private _getV4PatchCommand() {
     const instrumentation = this;
-    return (original: V4Connection['command']) => {
+    return (original: V4Connection["command"]) => {
       return function patchedV4ServerCommand(
         this: unknown,
         ns: any,
@@ -299,8 +285,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         const resultHandler = callback;
         if (
           !currentSpan ||
-          typeof resultHandler !== 'function' ||
-          typeof cmd !== 'object' ||
+          typeof resultHandler !== "function" ||
+          typeof cmd !== "object" ||
           cmd.ismaster ||
           cmd.hello
         ) {
@@ -323,7 +309,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   /** Creates spans for find operation */
   private _getV3PatchFind() {
     const instrumentation = this;
-    return (original: WireProtocolInternal['query']) => {
+    return (original: WireProtocolInternal["query"]) => {
       return function patchedServerCommand(
         this: unknown,
         server: MongoInternalTopology,
@@ -335,13 +321,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ) {
         const currentSpan = trace.getSpan(context.active());
         const resultHandler =
-          typeof options === 'function' ? options : callback;
+          typeof options === "function" ? options : callback;
         if (
           !currentSpan ||
-          typeof resultHandler !== 'function' ||
-          typeof cmd !== 'object'
+          typeof resultHandler !== "function" ||
+          typeof cmd !== "object"
         ) {
-          if (typeof options === 'function') {
+          if (typeof options === "function") {
             return original.call(this, server, ns, cmd, cursorState, options);
           } else {
             return original.call(
@@ -355,13 +341,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             );
           }
         }
-        const span = instrumentation.tracer.startSpan('mongodb.find', {
+        const span = instrumentation.tracer.startSpan("mongodb.find", {
           kind: SpanKind.CLIENT,
         });
-        instrumentation._populateV3Attributes(span, ns, server, cmd, 'find');
+        instrumentation._populateV3Attributes(span, ns, server, cmd, "find");
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
-        if (typeof options === 'function') {
+        if (typeof options === "function") {
           return original.call(
             this,
             server,
@@ -388,7 +374,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   /** Creates spans for find operation */
   private _getV3PatchCursor() {
     const instrumentation = this;
-    return (original: WireProtocolInternal['getMore']) => {
+    return (original: WireProtocolInternal["getMore"]) => {
       return function patchedServerCommand(
         this: unknown,
         server: MongoInternalTopology,
@@ -400,9 +386,9 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ) {
         const currentSpan = trace.getSpan(context.active());
         const resultHandler =
-          typeof options === 'function' ? options : callback;
-        if (!currentSpan || typeof resultHandler !== 'function') {
-          if (typeof options === 'function') {
+          typeof options === "function" ? options : callback;
+        if (!currentSpan || typeof resultHandler !== "function") {
+          if (typeof options === "function") {
             return original.call(
               this,
               server,
@@ -423,7 +409,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             );
           }
         }
-        const span = instrumentation.tracer.startSpan('mongodb.getMore', {
+        const span = instrumentation.tracer.startSpan("mongodb.getMore", {
           kind: SpanKind.CLIENT,
         });
         instrumentation._populateV3Attributes(
@@ -431,11 +417,11 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           ns,
           server,
           cursorState.cmd,
-          'getMore'
+          "getMore"
         );
         const patchedCallback = instrumentation._patchEnd(span, resultHandler);
         // handle when options is the callback to send the correct number of args
-        if (typeof options === 'function') {
+        if (typeof options === "function") {
           return original.call(
             this,
             server,
@@ -496,9 +482,9 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     let host, port: undefined | string;
     if (connectionCtx) {
       const hostParts =
-        typeof connectionCtx.address === 'string'
-          ? connectionCtx.address.split(':')
-          : '';
+        typeof connectionCtx.address === "string"
+          ? connectionCtx.address.split(":")
+          : "";
       if (hostParts.length === 2) {
         host = hostParts[0];
         port = hostParts[1];
@@ -548,7 +534,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       if (host == null || port == null) {
         const address = topology.description?.address;
         if (address) {
-          const addressSegments = address.split(':');
+          const addressSegments = address.split(":");
           host = addressSegments[0];
           port = addressSegments[1];
         }
@@ -559,7 +545,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     // collection or index, like so: [database-name].[collection-or-index-name].
     // It could be a string or an instance of MongoDBNamespace, as such we
     // always coerce to a string to extract db and collection.
-    const [dbName, dbCollection] = ns.toString().split('.');
+    const [dbName, dbCollection] = ns.toString().split(".");
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     const commandObj = command?.query ?? command?.q ?? command;
 
@@ -599,7 +585,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     }
     if (!commandObj) return;
     const dbStatementSerializer =
-      typeof this._config.dbStatementSerializer === 'function'
+      typeof this._config.dbStatementSerializer === "function"
         ? this._config.dbStatementSerializer
         : this._defaultDbStatementSerializer.bind(this);
 
@@ -608,9 +594,9 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         const query = dbStatementSerializer(commandObj);
         span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
       },
-      err => {
+      (err) => {
         if (err) {
-          this._diag.error('Error running dbStatementSerializer hook', err);
+          this._diag.error("Error running dbStatementSerializer hook", err);
         }
       },
       true
@@ -622,7 +608,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const resultObj = enhancedDbReporting
       ? commandObj
       : Object.keys(commandObj).reduce((obj, key) => {
-          obj[key] = '?';
+          obj[key] = "?";
           return obj;
         }, {} as { [key: string]: unknown });
     return JSON.stringify(resultObj);
@@ -635,14 +621,14 @@ export class MongoDBInstrumentation extends InstrumentationBase {
    */
   private _handleExecutionResult(span: Span, result: CommandResult) {
     const config: MongoDBInstrumentationConfig = this.getConfig();
-    if (typeof config.responseHook === 'function') {
+    if (typeof config.responseHook === "function") {
       safeExecuteInTheMiddle(
         () => {
           config.responseHook!(span, { data: result });
         },
-        err => {
+        (err) => {
           if (err) {
-            this._diag.error('Error running response hook', err);
+            this._diag.error("Error running response hook", err);
           }
         },
         true
