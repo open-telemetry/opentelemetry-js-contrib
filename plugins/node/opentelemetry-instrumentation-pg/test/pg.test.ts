@@ -513,6 +513,35 @@ describe('pg', () => {
       });
     });
 
+    describe('Check configuration enhancedDatabaseReporting:true', () => {
+      const query = 'SELECT $1::text as message1, $2::text as message2';
+      const values = ['Hello,World', 'foo,bar'];
+      const events: TimedEvent[] = [];
+
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [SemanticAttributes.DB_STATEMENT]: query,
+        [AttributeNames.PG_VALUES]: JSON.stringify(values),
+      };
+      beforeEach(async () => {
+        create({
+          enhancedDatabaseReporting: true,
+        });
+      });
+
+      it('When enhancedDatabaseReporting:true, values should be equal to JSON.stringify', done => {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query(query, values, (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            runCallbackTest(span, attributes, events, unsetStatus, 2, 1);
+            done();
+          });
+        });
+      });
+    });
+
     describe('when specifying a requestHook configuration', () => {
       const dataAttributeName = 'pg_data';
       const query = 'SELECT 0::text';
