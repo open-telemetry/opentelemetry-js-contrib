@@ -43,6 +43,9 @@ import type * as pgTypes from 'pg';
 import { PgInstrumentation } from './';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
+function arrayStringifyHelper(arr: Array<unknown>): string {
+  return '[' + arr.toString() + ']';
+}
 
 /**
  * Helper function to get a low cardinality span name from whatever info we have
@@ -155,7 +158,7 @@ export function handleConfigQuery(
   ) {
     span.setAttribute(
       AttributeNames.PG_VALUES,
-      JSON.stringify(queryConfig.values)
+      arrayStringifyHelper(queryConfig.values)
     );
   }
 
