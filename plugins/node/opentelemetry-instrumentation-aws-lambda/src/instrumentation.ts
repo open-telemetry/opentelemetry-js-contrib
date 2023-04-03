@@ -108,7 +108,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       } catch (e) { 
          // fallback to .cjs
         filename += '.cjs';
-       
       }
     }
 
