@@ -535,7 +535,7 @@ describe('pg', () => {
           client.query(query, values, (err, res) => {
             assert.strictEqual(err, null);
             assert.ok(res);
-            runCallbackTest(span, attributes, events, unsetStatus, 2, 1);
+            runCallbackTest(span, attributes, events);
             done();
           });
         });
