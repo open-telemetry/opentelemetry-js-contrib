@@ -43,7 +43,6 @@ import type * as pgTypes from 'pg';
 import { PgInstrumentation } from './';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
-
 /**
  * Helper function to get a low cardinality span name from whatever info we have
  * about the query.
