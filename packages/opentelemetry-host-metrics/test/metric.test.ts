@@ -117,6 +117,15 @@ describe('Host Metrics', () => {
       sandbox.stub(SI, 'networkStats').callsFake(() => {
         return mockedSI.networkStats();
       });
+      sandbox.stub(process, 'cpuUsage').callsFake(() => {
+        return {
+          user: 90713560,
+          system: 63192630,
+        };
+      });
+      sandbox.stub(process.memoryUsage, 'rss').callsFake(() => {
+        return 123456;
+      });
 
       reader = new TestMetricReader();
 
@@ -209,6 +218,26 @@ describe('Host Metrics', () => {
 
       ensureValue(metric, { direction: 'receive', device: 'eth0' }, 123123);
       ensureValue(metric, { direction: 'transmit', device: 'eth0' }, 321321);
+    });
+
+    it('should export Process CPU time metrics', async () => {
+      const metric = await getRecords(reader, 'process.cpu.time');
+
+      ensureValue(metric, { state: 'user' }, 90713.56);
+      ensureValue(metric, { state: 'system' }, 63192.630000000005);
+    });
+
+    it('should export Process CPU utilization metrics', async () => {
+      const metric = await getRecords(reader, 'process.cpu.utilization');
+
+      ensureValue(metric, { state: 'user' }, 30247.935978659552);
+      ensureValue(metric, { state: 'system' }, 21071.23374458153);
+    });
+
+    it('should export Process Memory usage metrics', async () => {
+      const metric = await getRecords(reader, 'process.memory.usage');
+
+      ensureValue(metric, {}, 123456);
     });
   });
 });

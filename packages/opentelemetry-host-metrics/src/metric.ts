@@ -18,9 +18,19 @@ import { BaseMetrics } from './BaseMetrics';
 import * as api from '@opentelemetry/api';
 import * as enums from './enum';
 
-import { getCpuUsageData, getMemoryData } from './stats/common';
+import {
+  getCpuUsageData,
+  getMemoryData,
+  getProcessCpuUsageData,
+  getProcessMemoryData,
+} from './stats/common';
 import { getNetworkData } from './stats/si';
-import { CpuUsageData, MemoryData, NetworkData } from './types';
+import {
+  CpuUsageData,
+  MemoryData,
+  NetworkData,
+  ProcessCpuUsageData,
+} from './types';
 
 /**
  * Metrics Collector - collects metrics for CPU, Memory, Network
@@ -76,7 +86,34 @@ export class HostMetrics extends BaseMetrics {
     }
   }
 
-  private _updateMemUsage(
+  private _batchUpdateProcessCpuUsages(
+    observableResult: api.BatchObservableResult,
+    processCpuUsage: ProcessCpuUsageData
+  ): void {
+    observableResult.observe(this._processCpuTime, processCpuUsage.user, {
+      state: enums.CPU_LABELS.USER,
+    });
+    observableResult.observe(this._processCpuTime, processCpuUsage.system, {
+      state: enums.CPU_LABELS.SYSTEM,
+    });
+
+    observableResult.observe(
+      this._processCpuUtilization,
+      processCpuUsage.userP,
+      {
+        state: enums.CPU_LABELS.USER,
+      }
+    );
+    observableResult.observe(
+      this._processCpuUtilization,
+      processCpuUsage.systemP,
+      {
+        state: enums.CPU_LABELS.SYSTEM,
+      }
+    );
+  }
+
+  private _batchUpdateMemUsages(
     observableResult: api.BatchObservableResult,
     memUsage: MemoryData
   ): void {
@@ -95,7 +132,14 @@ export class HostMetrics extends BaseMetrics {
     });
   }
 
-  private _updateNetworkData(
+  private _batchUpdateProcessMemUsage(
+    observableResult: api.BatchObservableResult,
+    memoryUsage: number
+  ): void {
+    observableResult.observe(this._processMemoryUsage, memoryUsage);
+  }
+
+  private _batchUpdateNetworkData(
     observableResult: api.BatchObservableResult,
     networkUsages: NetworkData[]
   ): void {
@@ -180,21 +224,48 @@ export class HostMetrics extends BaseMetrics {
       }
     );
 
+    this._processCpuTime = this._meter.createObservableCounter(
+      enums.METRIC_NAMES.PROCESS_CPU_TIME,
+      {
+        description: 'Process Cpu time in seconds',
+        unit: 's',
+      }
+    );
+    this._processCpuUtilization = this._meter.createObservableGauge(
+      enums.METRIC_NAMES.PROCESS_CPU_UTILIZATION,
+      {
+        description: 'Process Cpu usage time 0-1',
+      }
+    );
+    this._processMemoryUsage = this._meter.createObservableGauge(
+      enums.METRIC_NAMES.PROCESS_MEMORY_USAGE,
+      {
+        description: 'Process Memory usage in bytes',
+      }
+    );
+
     this._meter.addBatchObservableCallback(
       async observableResult => {
         const cpuUsages = getCpuUsageData();
-        const memoryUsage = getMemoryData();
+        const memoryUsages = getMemoryData();
+        const processCpuUsages = getProcessCpuUsageData();
+        const processMemoryUsages = getProcessMemoryData();
         const networkData = await getNetworkData();
 
         this._batchUpdateCpuUsages(observableResult, cpuUsages);
-        this._updateMemUsage(observableResult, memoryUsage);
-        this._updateNetworkData(observableResult, networkData);
+        this._batchUpdateMemUsages(observableResult, memoryUsages);
+        this._batchUpdateProcessCpuUsages(observableResult, processCpuUsages);
+        this._batchUpdateProcessMemUsage(observableResult, processMemoryUsages);
+        this._batchUpdateNetworkData(observableResult, networkData);
       },
       [
         this._cpuTime,
         this._cpuUtilization,
         this._memoryUsage,
         this._memoryUtilization,
+        this._processCpuTime,
+        this._processCpuUtilization,
+        this._processMemoryUsage,
         this._networkDropped,
         this._networkErrors,
         this._networkIo,
@@ -214,6 +285,9 @@ export class HostMetrics extends BaseMetrics {
   private _cpuUtilization!: api.ObservableGauge;
   private _memoryUsage!: api.ObservableGauge;
   private _memoryUtilization!: api.ObservableGauge;
+  private _processCpuTime!: api.ObservableCounter;
+  private _processCpuUtilization!: api.ObservableGauge;
+  private _processMemoryUsage!: api.ObservableGauge;
   private _networkDropped!: api.ObservableCounter;
   private _networkErrors!: api.ObservableCounter;
   private _networkIo!: api.ObservableCounter;
