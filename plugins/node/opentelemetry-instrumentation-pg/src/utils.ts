@@ -47,6 +47,8 @@ function arrayStringifyHelper(arr: Array<unknown>): string {
   return '[' + arr.toString() + ']';
 }
 
+type SqlCommenterAttributes = Record<string, string>;
+
 /**
  * Helper function to get a low cardinality span name from whatever info we have
  * about the query.
@@ -284,7 +286,11 @@ function fixedEncodeURIComponent(str: string) {
   );
 }
 
-export function addSqlCommenterComment(span: Span, query: string): string {
+export function addSqlCommenterComment(
+  span: Span,
+  query: string,
+  customAttributes: SqlCommenterAttributes = {}
+): string {
   if (typeof query !== 'string' || query.length === 0) {
     return query;
   }
@@ -296,7 +302,7 @@ export function addSqlCommenterComment(span: Span, query: string): string {
   }
 
   const propagator = new W3CTraceContextPropagator();
-  const headers: { [key: string]: string } = {};
+  const headers: SqlCommenterAttributes = customAttributes;
   propagator.inject(
     trace.setSpan(ROOT_CONTEXT, span),
     headers,
@@ -311,9 +317,10 @@ export function addSqlCommenterComment(span: Span, query: string): string {
   }
 
   const commentString = sortedKeys
-    .map(key => {
+    .map((key) => {
+      const encodedKey = fixedEncodeURIComponent(key);
       const encodedValue = fixedEncodeURIComponent(headers[key]);
-      return `${key}='${encodedValue}'`;
+      return `${encodedKey}='${encodedValue}'`;
     })
     .join(',');
 
