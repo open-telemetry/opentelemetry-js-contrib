@@ -197,7 +197,7 @@ describe('utils.ts', () => {
       const readableSpan = getLatestSpan();
 
       const pgValues = readableSpan.attributes[AttributeNames.PG_VALUES];
-      assert.strictEqual(pgValues, '[0]');
+      assert.strictEqual(pgValues, '["0"]');
     });
   });
 
