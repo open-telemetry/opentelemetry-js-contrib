@@ -153,10 +153,14 @@ export function handleConfigQuery(
     instrumentationConfig.enhancedDatabaseReporting &&
     Array.isArray(queryConfig.values)
   ) {
-    span.setAttribute(
-      AttributeNames.PG_VALUES,
-      JSON.stringify(queryConfig.values)
-    );
+    try {
+      span.setAttribute(
+        AttributeNames.PG_VALUES,
+        JSON.stringify(queryConfig.values)
+      );
+    } catch {
+      diag.error('failed to stringity ', queryConfig.values);
+    }
   }
 
   // Set plan name attribute, if present
