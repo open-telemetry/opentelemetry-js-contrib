@@ -47,7 +47,7 @@ function arrayStringifyHelper(arr: Array<unknown>): string {
   return '[' + arr.toString() + ']';
 }
 
-type SqlCommenterAttributes = Record<string, string>;
+export type SqlCommenterAttributes = Record<string, string>;
 
 /**
  * Helper function to get a low cardinality span name from whatever info we have
