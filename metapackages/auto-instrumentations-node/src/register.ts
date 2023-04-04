@@ -32,9 +32,12 @@ const sdk = new opentelemetry.NodeSDK({
 
 try {
   sdk.start();
-  diag.debug('SDK initialized');
+  diag.info('OpenTelemetry automatic instrumentation started successfully');
 } catch (error) {
-  diag.error('Error initializing SDK', error);
+  diag.error(
+    'Error initializing OpenTelemetry SDK. Your application is not instrumented and will not produce telemetry',
+    error
+  );
 }
 
 process.on('SIGTERM', () => {
