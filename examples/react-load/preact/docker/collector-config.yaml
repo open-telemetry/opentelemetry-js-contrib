@@ -1,18 +1,26 @@
 receivers:
   otlp:
-    endpoint: 0.0.0.0:55678
+    protocols:
+      http:
+        cors:
+          allowed_origins:
+            - http://*
+            - https://*
+
 
 exporters:
   zipkin:
-    url: "http://zipkin-all-in-one:9411/api/v2/spans"
+    endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
 
 processors:
   batch:
-  queued_retry:
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       exporters: [zipkin]
-      processors: [batch, queued_retry]
+      processors: [batch]
+  telemetry:
+    logs:
+      level: "debug"
