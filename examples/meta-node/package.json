@@ -39,8 +39,8 @@
     "@opentelemetry/auto-instrumentations-node": "^0.24.0",
     "@opentelemetry/exporter-collector": "^0.25.0",
     "@opentelemetry/instrumentation": "^0.25.0",
-    "@opentelemetry/sdk-trace-node": "^0.25.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@opentelemetry/sdk-trace-node": "^1.0.0",
+    "@opentelemetry/sdk-trace-base": "^1.0.0",
     "axios": "^0.21.1",
     "express": "^4.17.1"
   }

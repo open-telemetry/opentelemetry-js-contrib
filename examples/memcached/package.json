@@ -31,8 +31,8 @@
     "@opentelemetry/api": "^1.0.2",
     "@opentelemetry/instrumentation": "^0.25.0",
     "@opentelemetry/instrumentation-memcached": "^0.23.0",
-    "@opentelemetry/sdk-trace-node": "^0.25.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@opentelemetry/sdk-trace-node": "^1.0.0",
+    "@opentelemetry/sdk-trace-base": "^1.0.0",
     "memcached": "^2.2.2"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"

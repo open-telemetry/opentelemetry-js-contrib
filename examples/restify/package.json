@@ -29,13 +29,13 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.0.2",
-    "@opentelemetry/exporter-jaeger": "^0.25.0",
-    "@opentelemetry/exporter-zipkin": "^0.25.0",
+    "@opentelemetry/exporter-jaeger": "^1.0.0",
+    "@opentelemetry/exporter-zipkin": "^1.0.0",
     "@opentelemetry/instrumentation": "^0.25.0",
     "@opentelemetry/instrumentation-http": "^0.25.0",
     "@opentelemetry/instrumentation-restify": "^0.23.0",
-    "@opentelemetry/sdk-trace-node": "^0.25.0",
-    "@opentelemetry/sdk-trace-base": "^0.25.0",
+    "@opentelemetry/sdk-trace-node": "^1.0.0",
+    "@opentelemetry/sdk-trace-base": "^1.0.0",
     "restify": "^4.3.4"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
