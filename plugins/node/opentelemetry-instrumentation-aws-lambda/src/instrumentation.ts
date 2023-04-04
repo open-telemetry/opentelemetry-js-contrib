@@ -105,8 +105,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       try {
         fs.statSync(`${filename}.js`);
         filename += '.js';
-      } catch (e) { 
-         // fallback to .cjs
+      } catch (e) {
+        // fallback to .cjs
         filename += '.cjs';
       }
     }
