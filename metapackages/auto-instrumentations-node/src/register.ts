@@ -26,7 +26,7 @@ diag.setLogger(
 );
 
 const sdk = new opentelemetry.NodeSDK({
-  instrumentations: [getNodeAutoInstrumentations()],
+  instrumentations: getNodeAutoInstrumentations(),
   resourceDetectors: getResourceDetectorsFromEnv(),
 });
 
