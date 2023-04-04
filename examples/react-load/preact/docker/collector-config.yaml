@@ -7,7 +7,6 @@ receivers:
             - http://*
             - https://*
 
-
 exporters:
   zipkin:
     endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
