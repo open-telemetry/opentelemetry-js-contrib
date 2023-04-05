@@ -1,14 +1,15 @@
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { BaseOpenTelemetryComponent } from '@opentelemetry/plugin-react-load';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
-import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 
 export default (serviceName) => {
+  diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
   const provider = new WebTracerProvider();
-
-  const exporter = new CollectorTraceExporter({
-    url: 'http://localhost:55678/v1/trace',
+  const exporter = new OTLPTraceExporter({
+    url: 'http://localhost:4318/v1/traces',
   });
 
   provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
@@ -21,7 +22,6 @@ export default (serviceName) => {
   const tracer = provider.getTracer(serviceName);
 
   BaseOpenTelemetryComponent.setTracer(serviceName)
-  BaseOpenTelemetryComponent.setLogger(provider.logger)
 
   return tracer;
 }
