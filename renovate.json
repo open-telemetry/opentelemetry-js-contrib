@@ -26,7 +26,7 @@
     }
   ],
   "ignoreDeps": ["lerna", "lerna-changelog"],
-  "ignorePaths": ["archive/**"],
+  "ignorePaths": ["archive/**", "examples/**"],
   "assignees": ["@blumamir", "@dyladan", "@legendecas", "@Rauno56", "@vmarchaud"],
   "schedule": [
     "before 3am on Friday"
