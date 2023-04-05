@@ -56,8 +56,11 @@ import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 
 import { alibabaCloudEcsDetector } from '@opentelemetry/resource-detector-alibaba-cloud';
 import {
+  awsBeanstalkDetector,
   awsEc2Detector,
+  awsEcsDetector,
   awsEksDetector,
+  awsLambdaDetector,
 } from '@opentelemetry/resource-detector-aws';
 import { containerDetector } from '@opentelemetry/resource-detector-container';
 import { gcpDetector } from '@opentelemetry/resource-detector-gcp';
@@ -167,7 +170,7 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
     process.env.OTEL_NODE_RESOURCE_DETECTORS?.split(',');
 
   if (
-    resourceDetectorsFromEnv == null ||
+    resourceDetectorsFromEnv === undefined ||
     resourceDetectorsFromEnv.includes('all')
   ) {
     return [
@@ -181,14 +184,17 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
       alibabaCloudEcsDetector,
       // Ordered AWS Resource Detectors as per:
       // https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/resourcedetectionprocessor/README.md#ordering
+      awsLambdaDetector,
+      awsBeanstalkDetector,
       awsEksDetector,
+      awsEcsDetector,
       awsEc2Detector,
       gcpDetector,
     ];
   }
 
   const resourceDetectors: Array<Detector | DetectorSync> = [];
-  for (const detector of resourceDetectorsFromEnv) {
+  resourceDetectorsFromEnv.forEach(detector => {
     switch (detector) {
       case RESOURCE_DETECTOR_CONTAINER:
         resourceDetectors.push(containerDetector);
@@ -209,15 +215,21 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
         resourceDetectors.push(alibabaCloudEcsDetector);
         break;
       case RESOURCE_DETECTOR_AWS:
+        resourceDetectors.push(awsLambdaDetector);
+        resourceDetectors.push(awsBeanstalkDetector);
         resourceDetectors.push(awsEksDetector);
+        resourceDetectors.push(awsEcsDetector);
         resourceDetectors.push(awsEc2Detector);
         break;
       case RESOURCE_DETECTOR_GCP:
         resourceDetectors.push(gcpDetector);
         break;
       default:
+        diag.error(
+          `Invalid resource detector "${detector}" specified in the environment variable OTEL_NODE_RESOURCE_DETECTORS`
+        );
     }
-  }
+  });
 
   return resourceDetectors;
 }
