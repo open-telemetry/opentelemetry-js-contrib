@@ -93,13 +93,13 @@ describe('utils', () => {
 
   describe('getResourceDetectorsFromEnv', () => {
     it('should return all resource detectors by default', () => {
-      assert.equal(getResourceDetectorsFromEnv().length, 9);
+      assert.equal(getResourceDetectorsFromEnv().length, 12);
     });
 
     it('should return all resource detectors when OTEL_NODE_RESOURCE_DETECTORS contains "all"', () => {
       process.env.OTEL_NODE_RESOURCE_DETECTORS = 'all';
 
-      assert.equal(getResourceDetectorsFromEnv().length, 9);
+      assert.equal(getResourceDetectorsFromEnv().length, 12);
 
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
