@@ -58,10 +58,12 @@ describe('[Integration] instanaAgentDetector', () => {
       resource: globalResource,
     });
 
-    // attributes are automatically merged!
-    await sdk.detectResources();
+    sdk.detectResources();
 
     const resource = sdk['_resource'];
+    // await sdk.detectResources(); [< @opentelemetry/sdk-node@0.37.0]
+    // await resource.waitForAsyncAttributes?.(); [>= @opentelemetry/sdk-node@0.37.0]
+    await resource.waitForAsyncAttributes?.();
 
     assert.equal(resource.attributes['process.pid'], 123);
     assert.equal(resource.attributes['process.runtime.name'], 'nodejs');

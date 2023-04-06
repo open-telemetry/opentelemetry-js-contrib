@@ -40,10 +40,11 @@ const sdk = new NodeSDK({
    resource: globalResource,
 });
 
-(async () => {
-   await sdk.detectResources();
+sdk.start()
 
-   await sdk.start();
+(async () => {
+   const resource = sdk["_resource"];
+   await resource.waitForAsyncAttributes?.();
 }());
 ```
 
