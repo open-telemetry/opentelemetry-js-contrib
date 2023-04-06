@@ -12,6 +12,20 @@
   * dependencies
     * @opentelemetry/instrumentation-document-load bumped from ^0.31.1 to ^0.31.2
 
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.31.2...auto-instrumentations-web-v0.32.0) (2023-04-06)
+
+
+### Features
+
+* **instrumenation-document-load:** Add custom attributes to document load ([#1414](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1414)) ([98609c6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/98609c69d951951edcaa3234914d04d7ae87e9b5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.31.2 to ^0.32.0
+
 ## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.31.0...auto-instrumentations-web-v0.31.1) (2023-02-07)
 
 
