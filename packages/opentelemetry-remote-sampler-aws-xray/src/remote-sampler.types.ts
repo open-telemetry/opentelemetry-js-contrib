@@ -15,10 +15,10 @@
  */
 
 
-// cast to interface type to validate JSON 
-// e.g: const jsonData = {}
-// const rule: SamplingRule = JSON.parse(jsonData) as SamplingRule;
-export interface SamplingRule {
+import { SamplingRule } from "./sampling-rule";
+import { Resource } from '@opentelemetry/resources';
+
+export interface ISamplingRule {
     // a unique name for the rule 
     RuleName: string;
 
@@ -53,6 +53,9 @@ export interface SamplingRule {
     // (Optional) segment attributes that are known when the sampling decision is made. 
     Attributes?: {[key: string]: string};
     Version: number;
+
+    matches(samplingRequest: any, resource: Resource): boolean; 
+
 }
 
 export interface SamplingRuleRecord {
@@ -65,6 +68,17 @@ export interface SamplingRuleRecord {
 export interface GetSamplingRulesResponse {
     NextToken?: string;
     SamplingRuleRecords? : SamplingRuleRecord[];
+}
+
+export interface ISamplingStatistics {
+    // matchedRequests is the number of requests matched against specific rule.
+	matchedRequests: number;
+
+	// sampledRequests is the number of requests sampled using specific rule.
+	sampledRequests: number;
+
+	// borrowedRequests is the number of requests borrowed using specific rule.
+	borrowedRequests: number;
 }
 
 

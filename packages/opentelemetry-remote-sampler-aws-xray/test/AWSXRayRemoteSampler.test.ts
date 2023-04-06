@@ -20,6 +20,7 @@ import * as nock from 'nock';
 import * as assert from 'assert';
 
 import { AWSXRayRemoteSampler } from "../src";
+import {Resource} from '@opentelemetry/resources';
 
 describe('GetSamplingRules', () => {
     const getSamplingRulesResponseStub: any = {
@@ -93,7 +94,7 @@ describe('GetSamplingRules', () => {
     let axiosPostSpy: sinon.SinonSpy;
 
     before(() => {
-        nock('http://127.0.0.1:2000')
+        nock('http://localhost:2000')
             .persist()
             .post('/GetSamplingRules')
             .reply(200, getSamplingRulesResponseStub);
@@ -104,7 +105,7 @@ describe('GetSamplingRules', () => {
     beforeEach(() => {
         clock = sinon.useFakeTimers();
         axiosPostSpy = sinon.spy(axios, 'post');
-        sampler = new AWSXRayRemoteSampler('http://127.0.0.1:2000', 60 * 1000);
+        sampler = new AWSXRayRemoteSampler(new Resource({}), 'http://localhost:2000', 60 * 1000);
     });
 
     afterEach(() => {
@@ -113,8 +114,8 @@ describe('GetSamplingRules', () => {
     });
 
     it('should throw TypeError when an invalid polling interval is passed in', async () => {
-        assert.throws(() => new AWSXRayRemoteSampler('http://127.0.0.1:2000', 0), TypeError);
-        assert.throws(() => new AWSXRayRemoteSampler('http://127.0.0.1:2000', 1.5), TypeError);
+        assert.throws(() => new AWSXRayRemoteSampler(new Resource({}), 'http://localhost:2000', 0), TypeError);
+        assert.throws(() => new AWSXRayRemoteSampler(new Resource({}), 'http://localhost:2000', 1.5), TypeError);
 
     });
 
@@ -138,14 +139,15 @@ describe('GetSamplingRules', () => {
     });
 
     it('should initialize endpoint and polling interval correctly', async () => {
-        assert.equal(sampler.getEndpoint(), "http://127.0.0.1:2000");
+        assert.equal(sampler.getEndpoint(), "http://localhost:2000");
         assert.equal(sampler.getPollingInterval(), 60 * 1000);
 
     });
 
-    it('should fall back to default polling interval if not specified', async () => {
-        let sampler = new AWSXRayRemoteSampler('http://127.0.0.1:2000');
+    it('should fall back to default endpoint and polling interval if not specified', async () => {
+        let sampler = new AWSXRayRemoteSampler(new Resource({}));
 
+        assert.equal(sampler.getEndpoint(), "http://localhost:2000");
         assert.equal(sampler.getPollingInterval(), 5 * 60 * 1000);
 
     });

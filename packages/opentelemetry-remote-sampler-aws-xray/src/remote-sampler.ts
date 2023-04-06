@@ -14,9 +14,18 @@
  * limitations under the License.
  */
 
-import { Sampler, SamplingDecision, SamplingResult } from '@opentelemetry/sdk-trace-base';
-import { SamplingRule } from './remote-sampler.types';
+import { Sampler, SamplingResult } from '@opentelemetry/sdk-trace-base';
+import { SamplingRule } from './sampling-rule';
 import axios from 'axios';
+import { Resource } from '@opentelemetry/resources';
+import { RuleCache } from './rule-cache';
+import {
+    Context,
+    Link,
+    Attributes,
+    SpanKind,
+  } from '@opentelemetry/api';
+import { FallbackSampler } from './fallback-sampler';
 
 const DEFAULT_INTERVAL = 5 * 60 * 1000;// 5 minutes on sampling rules fetch (default polling interval)
 
@@ -26,8 +35,11 @@ export class AWSXRayRemoteSampler implements Sampler {
     private _pollingInterval: number;
     private _endpoint: string;
     private _samplingRulesEndpoint: string;
+    private resource: Resource; 
+    private _ruleCache: RuleCache; 
+    private _fallBackSampler: FallbackSampler;
 
-    constructor(endpoint: string, pollingInterval: number = DEFAULT_INTERVAL) {
+    constructor(resource: Resource, endpoint: string = "http://localhost:2000", pollingInterval: number = DEFAULT_INTERVAL) {
 
         if (pollingInterval <= 0 || !Number.isInteger(pollingInterval)) {
             throw new TypeError('pollingInterval must be a positive integer');
@@ -35,15 +47,39 @@ export class AWSXRayRemoteSampler implements Sampler {
 
         this._pollingInterval = pollingInterval;
         this._endpoint = endpoint;
+        this.resource = resource;
         this._samplingRulesEndpoint = "/GetSamplingRules";
+        this._ruleCache = new RuleCache();
+        this._fallBackSampler = new FallbackSampler();
 
         // execute first get Sampling rules update using polling interval
         this.getSamplingRules();
     }
 
-    shouldSample(): SamplingResult {
-        // Implementation to be added
-        return { decision: SamplingDecision.NOT_RECORD };
+    shouldSample(    
+        context: Context,
+        traceId: string,
+        spanName: string,
+        spanKind: SpanKind,
+        attributes: Attributes,
+        links: Link[]): SamplingResult {
+       
+        if (this._ruleCache.isExpired()){
+            // go to fallback sampler .shouldSample
+            return this._fallBackSampler.shouldSample(context, traceId, spanName, spanKind, attributes, links)
+        }
+
+        let matchedRule = this._ruleCache.getMatchedRule(attributes, this.resource);
+
+        // TODO: update after verifying if default rule will always match, 
+        // this means that this method will always return return { decision: matchedRule.sample(attributes) }
+        // as long as the rule cache has not expired. 
+        if (matchedRule) {
+            return { decision: matchedRule.sample(attributes) }
+        }
+        
+        return this._fallBackSampler.shouldSample(context, traceId, spanName, spanKind, attributes, links)
+
     }
 
     toString(): string {
@@ -81,6 +117,8 @@ export class AWSXRayRemoteSampler implements Sampler {
                         samplingRules.push(record.SamplingRule);
                     }
                 });
+
+                this._ruleCache.updateRules(samplingRules);
             } catch (error) {
                 // Log error
                 console.log("Error fetching sampling rules: ", error);
