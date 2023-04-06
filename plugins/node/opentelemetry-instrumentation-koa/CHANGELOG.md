@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.34.2...instrumentation-koa-v0.34.3) (2023-04-06)
+
+
+### Bug Fixes
+
+* **@types/koa:** update @types/koa version to latest ([#1447](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1447)) ([5f180aa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5f180aa05d3140010642287de933c708e915b619))
+
 ## [0.34.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.34.1...instrumentation-koa-v0.34.2) (2023-03-03)
 
 
