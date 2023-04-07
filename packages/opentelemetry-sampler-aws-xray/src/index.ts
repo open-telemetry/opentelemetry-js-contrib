@@ -14,4 +14,3 @@
  * limitations under the License.
  */
 export * from './remote-sampler';
-export * from './remote-sampler.types';

@@ -15,30 +15,29 @@
  */
 
 import { Sampler, SamplingDecision, SamplingResult } from '@opentelemetry/sdk-trace-base';
+import { diag } from '@opentelemetry/api';
 import { SamplingRule } from './remote-sampler.types';
 import axios from 'axios';
 
-const DEFAULT_INTERVAL = 5 * 60 * 1000;// 5 minutes on sampling rules fetch (default polling interval)
-
+const DEFAULT_INTERVAL_MS = 5 * 60 * 1000;// 5 minutes on sampling rules fetch (default polling interval)
+const SAMPLING_RULES_ENDPOINT = "/GetSamplingRules";
 
 // IN PROGRESS - SKELETON CLASS 
 export class AWSXRayRemoteSampler implements Sampler {
     private _pollingInterval: number;
     private _endpoint: string;
-    private _samplingRulesEndpoint: string;
 
-    constructor(endpoint: string, pollingInterval: number = DEFAULT_INTERVAL) {
+    constructor(endpoint: string, pollingInterval: number = DEFAULT_INTERVAL_MS) {
 
-        if (pollingInterval <= 0 || !Number.isInteger(pollingInterval)) {
+        if (pollingInterval <= 0) {
             throw new TypeError('pollingInterval must be a positive integer');
         }
 
         this._pollingInterval = pollingInterval;
-        this._endpoint = endpoint;
-        this._samplingRulesEndpoint = "/GetSamplingRules";
+        this._endpoint = endpoint + SAMPLING_RULES_ENDPOINT;
 
         // execute first get Sampling rules update using polling interval
-        this.getSamplingRules();
+        this.getAndUpdateSamplingRules();
     }
 
     shouldSample(): SamplingResult {
@@ -58,32 +57,27 @@ export class AWSXRayRemoteSampler implements Sampler {
         return this._pollingInterval;
     }
 
-
     // fetch sampling rules every polling interval
-    public async getSamplingRules(): Promise<void> {
-        const endpoint = this._endpoint + this._samplingRulesEndpoint;
+    private getAndUpdateSamplingRules(): void {
 
         setInterval(async () => {
-            const samplingRules: SamplingRule[] = []; // reset rules array
+            let samplingRules: SamplingRule[] = []; // reset rules array
 
-            const headers = {
+            const requestConfig = {
                 headers: {
                     'Content-Type': 'application/json',
                 }
             };
 
             try {
-                const response = await axios.post(endpoint, null, headers);
+                const response = await axios.post(this._endpoint, null, requestConfig);
                 const responseJson = response.data;
 
-                responseJson?.SamplingRuleRecords.forEach((record: any) => {
-                    if (record.SamplingRule) {
-                        samplingRules.push(record.SamplingRule);
-                    }
-                });
+                samplingRules = responseJson?.SamplingRuleRecords.map((record: any) => record.SamplingRule).filter(Boolean) ?? [];
+
             } catch (error) {
                 // Log error
-                console.log("Error fetching sampling rules: ", error);
+                diag.warn("Error fetching sampling rules: ", error);
             }
         }, this._pollingInterval);
 

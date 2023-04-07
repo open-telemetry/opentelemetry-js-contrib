@@ -15,9 +15,7 @@
  */
 
 
-// cast to interface type to validate JSON 
-// e.g: const jsonData = {}
-// const rule: SamplingRule = JSON.parse(jsonData) as SamplingRule;
+// X-Ray Sampling rule reference: https://docs.aws.amazon.com/xray/latest/api/API_GetSamplingRules.html
 export interface SamplingRule {
     // a unique name for the rule 
     RuleName: string;

@@ -1,9 +1,10 @@
 {
-  "name": "@opentelemetry/remote-sampler-aws-xray",
+  "name": "@opentelemetry/sampler-aws-xray",
   "version": "0.34.0",
   "description": "OpenTelemetry remote sampler for AWS X-Ray",
   "keywords": [
     "aws",
+    "sampler",
     "nodejs",
     "opentelemetry"
   ],
@@ -28,12 +29,11 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/remote-sampler-aws-xray --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/sampler-aws-xray --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
-    "test-all-versions": "tav",
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc -w"
   },
@@ -42,9 +42,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.35.1",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@opentelemetry/propagation-utils": "^0.29.2"
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
@@ -55,15 +53,11 @@
     "@types/sinon": "10.0.6",
     "eslint": "8.7.0",
     "expect": "29.2.0",
-    "gts": "3.1.0",
     "mocha": "7.2.0",
     "nock": "13.2.1",
-    "nyc": "15.1.0",
-    "rimraf": "4.2.0",
     "sinon": "15.0.1",
-    "test-all-versions": "5.0.1",
     "ts-mocha": "10.0.0",
-    "typescript": "4.3.4"
+    "typescript": "4.4.4"
   },
   "engines": {
     "node": ">=14"
