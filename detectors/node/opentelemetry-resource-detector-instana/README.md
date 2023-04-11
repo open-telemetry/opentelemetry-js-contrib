@@ -35,7 +35,28 @@ const globalResource = new Resource({
 });
 
 const sdk = new NodeSDK({
-   autoDetectResources: false,
+   resourceDetectors: [envDetector, processDetector, instanaAgentDetector],
+   resource: globalResource,
+});
+
+sdk.start()
+```
+
+```typescript
+import {
+  Resource,
+  processDetector,
+  envDetector,
+} from "@opentelemetry/resources";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { instanaAgentDetector } from "@opentelemetry/resource-detector-instana";
+
+const globalResource = new Resource({
+   [SemanticResourceAttributes.SERVICE_NAME]: "TestService",
+});
+
+const sdk = new NodeSDK({
    resourceDetectors: [envDetector, processDetector, instanaAgentDetector],
    resource: globalResource,
 });
