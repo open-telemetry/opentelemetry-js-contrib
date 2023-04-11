@@ -14,73 +14,76 @@
  * limitations under the License.
  */
 
-import { Sampler, SamplingDecision, SamplingResult } from '@opentelemetry/sdk-trace-base';
+import {
+  Sampler,
+  SamplingDecision,
+  SamplingResult,
+} from '@opentelemetry/sdk-trace-base';
 import { diag } from '@opentelemetry/api';
-import { SamplingRule } from './remote-sampler.types';
+import { SamplingRule, AWSXRaySamplerConfig } from './remote-sampler.types';
 import axios from 'axios';
 
-const DEFAULT_INTERVAL_MS = 5 * 60 * 1000;// 5 minutes on sampling rules fetch (default polling interval)
-const SAMPLING_RULES_ENDPOINT = "/GetSamplingRules";
+const DEFAULT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes on sampling rules fetch (default polling interval)
+const DEFAULT_ENDPOINT = 'http://localhost:2000';
+const SAMPLING_RULES_ENDPOINT = '/GetSamplingRules';
 
-// IN PROGRESS - SKELETON CLASS 
+// IN PROGRESS - SKELETON CLASS
 export class AWSXRayRemoteSampler implements Sampler {
-    private _pollingInterval: number;
-    private _endpoint: string;
+  private _pollingInterval: number;
+  private _endpoint: string;
 
-    constructor(endpoint: string, pollingInterval: number = DEFAULT_INTERVAL_MS) {
+  constructor(samplerConfig: AWSXRaySamplerConfig) {
+    this._pollingInterval =
+      samplerConfig.pollingInterval ?? DEFAULT_INTERVAL_MS;
+    this._endpoint = samplerConfig.endpoint
+      ? samplerConfig.endpoint + SAMPLING_RULES_ENDPOINT
+      : DEFAULT_ENDPOINT + SAMPLING_RULES_ENDPOINT;
 
-        if (pollingInterval <= 0) {
-            throw new TypeError('pollingInterval must be a positive integer');
-        }
-
-        this._pollingInterval = pollingInterval;
-        this._endpoint = endpoint + SAMPLING_RULES_ENDPOINT;
-
-        // execute first get Sampling rules update using polling interval
-        this.getAndUpdateSamplingRules();
+    if (this._pollingInterval <= 0) {
+      throw new TypeError('pollingInterval must be a positive integer');
     }
 
-    shouldSample(): SamplingResult {
-        // Implementation to be added
-        return { decision: SamplingDecision.NOT_RECORD };
-    }
+    // execute first get Sampling rules update using polling interval
+    this.getAndUpdateSamplingRules();
+  }
 
-    toString(): string {
-        return `AWSXRayRemoteSampler`;
-    }
+  shouldSample(): SamplingResult {
+    // Implementation to be added
+    return { decision: SamplingDecision.NOT_RECORD };
+  }
 
-    getEndpoint(): string {
-        return this._endpoint;
-    }
+  toString(): string {
+    return `AWSXRayRemoteSampler{endpoint=${this._endpoint}, pollingInterval=${this._pollingInterval}}`;
+  }
 
-    getPollingInterval(): number {
-        return this._pollingInterval;
-    }
+  // fetch sampling rules every polling interval
+  private getAndUpdateSamplingRules(): void {
+    setInterval(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      let samplingRules: SamplingRule[] = []; // reset rules array
 
-    // fetch sampling rules every polling interval
-    private getAndUpdateSamplingRules(): void {
+      const requestConfig = {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
 
-        setInterval(async () => {
-            let samplingRules: SamplingRule[] = []; // reset rules array
+      try {
+        const response = await axios.post(this._endpoint, null, requestConfig);
+        const responseJson = response.data;
 
-            const requestConfig = {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        samplingRules =
+          responseJson?.SamplingRuleRecords.map(
+            (record: any) => record.SamplingRule
+          ).filter(Boolean) ?? [];
 
-            try {
-                const response = await axios.post(this._endpoint, null, requestConfig);
-                const responseJson = response.data;
-
-                samplingRules = responseJson?.SamplingRuleRecords.map((record: any) => record.SamplingRule).filter(Boolean) ?? [];
-
-            } catch (error) {
-                // Log error
-                diag.warn("Error fetching sampling rules: ", error);
-            }
-        }, this._pollingInterval);
-
-    }
-
+        // TODO: pass samplingRules to rule cache, temporarily logging the samplingRules array
+        diag.debug('sampling rules: ', samplingRules);
+      } catch (error) {
+        // Log error
+        diag.warn('Error fetching sampling rules: ', error);
+      }
+    }, this._pollingInterval);
+  }
 }
