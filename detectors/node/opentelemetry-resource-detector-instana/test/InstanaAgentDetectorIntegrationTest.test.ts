@@ -41,7 +41,7 @@ describe('[Integration] instanaAgentDetector', () => {
     nock.cleanAll();
   });
 
-  it('should return merged resource', async () => {
+  it('#1 should return merged resource', async () => {
     const mockedReply = {
       pid: 123,
       agentUuid: '14:7d:da:ff:fe:e4:08:d5',
@@ -80,7 +80,7 @@ describe('[Integration] instanaAgentDetector', () => {
     scope.done();
   });
 
-  it('[autoDetectResources:true] should return merged resource', async () => {
+  it('#2 should return merged resource', async () => {
     const mockedReply = {
       pid: 123,
       agentUuid: '14:7d:da:ff:fe:e4:08:d5',
