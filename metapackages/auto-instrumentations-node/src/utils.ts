@@ -166,70 +166,40 @@ export function getNodeAutoInstrumentations(
 }
 
 export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
-  const resourceDetectorsFromEnv =
-    process.env.OTEL_NODE_RESOURCE_DETECTORS?.split(',');
+  const resourceDetectors = new Map<string, any>([
+    [RESOURCE_DETECTOR_CONTAINER, containerDetector],
+    [RESOURCE_DETECTOR_ENVIRONMENT, envDetectorSync],
+    [RESOURCE_DETECTOR_HOST, hostDetectorSync],
+    [RESOURCE_DETECTOR_OS, osDetectorSync],
+    [RESOURCE_DETECTOR_PROCESS, processDetectorSync],
+    [RESOURCE_DETECTOR_ALIBABA, alibabaCloudEcsDetector],
+    [RESOURCE_DETECTOR_GCP, gcpDetector],
+    [
+      RESOURCE_DETECTOR_AWS,
+      [
+        awsLambdaDetector,
+        awsBeanstalkDetector,
+        awsEksDetector,
+        awsEcsDetector,
+        awsEc2Detector,
+      ],
+    ],
+  ]);
 
-  if (
-    resourceDetectorsFromEnv === undefined ||
-    resourceDetectorsFromEnv.includes('all')
-  ) {
-    return [
-      // Standard resource detectors.
-      containerDetector,
-      envDetectorSync,
-      hostDetectorSync,
-      osDetectorSync,
-      processDetectorSync,
-      // Cloud resource detectors.
-      alibabaCloudEcsDetector,
-      // Ordered AWS Resource Detectors as per:
-      // https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/resourcedetectionprocessor/README.md#ordering
-      awsLambdaDetector,
-      awsBeanstalkDetector,
-      awsEksDetector,
-      awsEcsDetector,
-      awsEc2Detector,
-      gcpDetector,
-    ];
+  const resourceDetectorsFromEnv =
+    process.env.OTEL_NODE_RESOURCE_DETECTORS?.split(',') ?? ['all'];
+
+  if (resourceDetectorsFromEnv.includes('all')) {
+    return [...resourceDetectors.values()].flat();
   }
 
-  const resourceDetectors: Array<Detector | DetectorSync> = [];
-  resourceDetectorsFromEnv.forEach(detector => {
-    switch (detector) {
-      case RESOURCE_DETECTOR_CONTAINER:
-        resourceDetectors.push(containerDetector);
-        break;
-      case RESOURCE_DETECTOR_ENVIRONMENT:
-        resourceDetectors.push(envDetectorSync);
-        break;
-      case RESOURCE_DETECTOR_HOST:
-        resourceDetectors.push(hostDetectorSync);
-        break;
-      case RESOURCE_DETECTOR_OS:
-        resourceDetectors.push(osDetectorSync);
-        break;
-      case RESOURCE_DETECTOR_PROCESS:
-        resourceDetectors.push(processDetectorSync);
-        break;
-      case RESOURCE_DETECTOR_ALIBABA:
-        resourceDetectors.push(alibabaCloudEcsDetector);
-        break;
-      case RESOURCE_DETECTOR_AWS:
-        resourceDetectors.push(awsLambdaDetector);
-        resourceDetectors.push(awsBeanstalkDetector);
-        resourceDetectors.push(awsEksDetector);
-        resourceDetectors.push(awsEcsDetector);
-        resourceDetectors.push(awsEc2Detector);
-        break;
-      case RESOURCE_DETECTOR_GCP:
-        resourceDetectors.push(gcpDetector);
-        break;
-      default:
-        diag.error(
-          `Invalid resource detector "${detector}" specified in the environment variable OTEL_NODE_RESOURCE_DETECTORS`
-        );
+  return resourceDetectorsFromEnv.flatMap(detector => {
+    const resourceDetector = resourceDetectors.get(detector);
+    if (!resourceDetector) {
+      diag.error(
+        `Invalid resource detector "${detector}" specified in the environment variable OTEL_NODE_RESOURCE_DETECTORS`
+      );
     }
+    return resourceDetector || [];
   });
-
-  return resourceDetectors;
 }
