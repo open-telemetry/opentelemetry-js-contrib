@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 import { SamplingRule } from "./sampling-rule";
-import { Attributes } from '@opentelemetry/api'; 
+import { Attributes, diag } from '@opentelemetry/api'; 
 import { Resource } from '@opentelemetry/resources';
+import { SamplingTargetDocument, UnprocessedStatistic, SamplingStatisticsDocument } from "./remote-sampler.types";
 
 const RuleCacheTTL_SECONDS = 60 * 60; // The cache expires 1 hour after the last refresh time. (in seconds)
 
 export class RuleCache {
     public rules: SamplingRule[];
-    private lastUpdated: number | undefined = undefined;
+    public lastUpdated: number | undefined = undefined;
 
     constructor() {
         this.rules = []; 
@@ -84,6 +85,77 @@ export class RuleCache {
         this.lastUpdated = Math.floor(new Date().getTime() / 1000)
 
         return; 
+    }
+
+    public createSamplingStatisticsDocuments = (): SamplingStatisticsDocument[] => {
+        let statisticsDocuments: SamplingStatisticsDocument[] = []
+
+        this.rules.forEach((rule: SamplingRule) => {
+            let statistics = rule.snapshotStatistics(); 
+            let now = Math.floor(new Date().getTime() / 1000);
+
+            let samplingStatisticsDoc: SamplingStatisticsDocument = {
+                ClientID: "randomString", // TODO: change this!! 
+                RuleName: rule.RuleName, 
+                RequestCount: statistics.matchedRequests,
+                BorrowCount: statistics.borrowedRequests,
+                SampledCount: statistics.sampledRequests,
+                Timestamp: now
+            }
+
+            statisticsDocuments.push(samplingStatisticsDoc);
+        })
+        return statisticsDocuments;
+    }
+
+    // update rules based on the targets fetched from the X-Ray service 
+    public updateTargets = (targetDocuments: any, unprocessedStatistics: UnprocessedStatistic[]): boolean => {
+        // update the reservoir of each rule based on the targets 
+        // https://github.com/open-telemetry/opentelemetry-go-contrib/blob/0dd27453a1ce8e433cb632e175a27f28ee83998d/samplers/aws/xray/internal/manifest.go#L251
+
+        this.rules.forEach((rule: SamplingRule) => {
+            let target: SamplingTargetDocument = targetDocuments[rule.RuleName]; 
+
+            if(target) {
+                
+                if (!target.FixedRate) {
+                    diag.warn(`Invalid sampling target for rule ${target.RuleName}: missing fixed rate`)
+                    return;
+                }
+                // update reservoir for that rule 
+                rule.reservoir.updateReservoir(target);
+
+                // update FixedRate 
+                rule.FixedRate = target.FixedRate;
+                
+            } else {
+                diag.warn("Invalid sampling target: missing rule name");
+            }
+        })
+
+        // Consume unprocessed statistics messages.
+        // https://github.com/open-telemetry/opentelemetry-go-contrib/blob/0dd27453a1ce8e433cb632e175a27f28ee83998d/samplers/aws/xray/internal/manifest.go#L214
+    
+        let refreshSamplingRules: boolean = false; 
+
+        unprocessedStatistics.forEach((unprocessedStat: UnprocessedStatistic) => {
+            diag.info(`${unprocessedStat.ErrorCode} Error ocurred while updating sampling target
+            for rule ${unprocessedStat.RuleName}. Message: ${unprocessedStat.Message}`);
+
+            // 5xx error
+            if (unprocessedStat.ErrorCode?.startsWith("5")) diag.error(`Sampling statistics returned ${unprocessedStat.ErrorCode} error`)
+        
+            // 4xx error 
+            if (unprocessedStat.ErrorCode?.startsWith("4")) {
+                // refresh and call /GetSamplingRules again?
+                refreshSamplingRules = true; 
+            }
+        
+        })
+
+        return refreshSamplingRules
+
+
     }
 
 }

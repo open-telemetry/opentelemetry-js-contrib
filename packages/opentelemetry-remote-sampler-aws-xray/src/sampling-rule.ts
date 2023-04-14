@@ -15,10 +15,10 @@
  */
 
 
-import { ISamplingRule } from "./remote-sampler.types";
+import { ISamplingRule, SamplingStatisticsDocument } from "./remote-sampler.types";
 import { wildcardMatch, attributeMatch } from "./utils";
-import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
-import { Attributes, AttributeValue } from '@opentelemetry/api'; 
+import { SamplingDecision, SamplingResult, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
+import { Attributes, AttributeValue, Context } from '@opentelemetry/api'; 
 import { SemanticAttributes, SemanticResourceAttributes} from '@opentelemetry/semantic-conventions';
 import { Resource } from '@opentelemetry/resources';
 import { Reservoir } from "./reservoir";
@@ -59,6 +59,7 @@ export class SamplingRule implements ISamplingRule {
 
         this.reservoir = new Reservoir(this.ReservoirSize);
         this.statistics = new Statistics();
+        this.statistics.resetStatistics(); 
     }
 
     public matches = (attributes: Attributes, resource: Resource): boolean => {
@@ -81,11 +82,53 @@ export class SamplingRule implements ISamplingRule {
         && (!serviceType || wildcardMatch(this.ServiceType, serviceType));
     }
 
-    public sample = (attributes: Attributes): SamplingDecision => {
-        // Returning a drop sample decision 
-        // TODO: use reservoir in next PR to make this decision 
-        return SamplingDecision.NOT_RECORD;
+    public sample = (context: Context, traceId: string, now: number): SamplingDecision => {
 
-    }  
+        // Fallback sampling logic if quota for a given rule is expired.
+        if(this.reservoir.isExpired(now)){
+            // borrow 1 request every second 
+
+            if (this.reservoir.take(now, true, 1)) {
+                // update statistics for this rule 
+                this.statistics.borrowedRequests += 1; 
+
+                return SamplingDecision.RECORD_AND_SAMPLED;
+            }
+
+            // if cannot borrow, use traceIDRatioBased sampler to sample using fixed rate.
+            let samplingResult: SamplingResult  =  new TraceIdRatioBasedSampler(this.FixedRate).shouldSample(context, traceId);
+            
+            if(samplingResult.decision === SamplingDecision.RECORD_AND_SAMPLED) {
+                this.statistics.sampledRequests += 1; 
+            }
+
+            return samplingResult.decision;
+
+        }
+
+
+        // If reservoir is not expired and can take 
+        if (this.reservoir.take(now, false, 1)) {
+            this.statistics.sampledRequests += 1; 
+            return SamplingDecision.RECORD_AND_SAMPLED;
+        }
+
+        // if reservoir is not expired but cannot take, use traceIdRatioBased sampler 
+        let samplingResult: SamplingResult  =  new TraceIdRatioBasedSampler(this.FixedRate).shouldSample(context, traceId);
+            
+        if(samplingResult.decision === SamplingDecision.RECORD_AND_SAMPLED) {
+            this.statistics.sampledRequests += 1; 
+        }
+
+        return samplingResult.decision;
+
+    }   
+
+    public snapshotStatistics = ():  Statistics => {
+        let statisticsCopy = this.statistics; 
+        this.statistics.resetStatistics();
+        return statisticsCopy;
+
+    }
 
 }

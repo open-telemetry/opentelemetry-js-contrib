@@ -99,7 +99,33 @@ export interface SamplingStatisticsDocument {
 
 }
 
+export interface SamplingTargetDocument {
+    // The percentage of matching requests to instrument, after the reservoir is exhausted.
+    FixedRate: number;
+    // The number of seconds to wait before fetching sampling targets again 
+    Interval: number;
+    // The number of requests per second that X-Ray allocated this service.
+    ReservoirQuota: number; 
+    // Time before the reservoir quota expires
+    ReservoirQuotaTTL: number; 
+    // The name of the sampling rule
+    RuleName: string;
+}
+
+export interface UnprocessedStatistic {
+    ErrorCode: string; 
+    Message: string; 
+    RuleName: string;
+}
 
 
+export interface GetSamplingTargetsInput {
+    samplingStatisticsDocument: SamplingStatisticsDocument
+}
 
+export interface GetSamplingTargetsOutput {
+    lastRuleModification: number, 
+    samplingTargetDocuments: SamplingTargetDocument[], 
+    unprocessedStatistics: UnprocessedStatistic[]
+}
 
