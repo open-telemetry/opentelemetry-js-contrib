@@ -23,6 +23,7 @@ npm install --save @opentelemetry/auto-instrumentations-node
 
 This module includes auto instrumentation for all supported instrumentations and all available data exporters.
 It provides a completely automatic, out-of-the-box experience.
+Please see the [Supported Instrumentations](#supported-instrumentations) section for more information.
 
 Enable auto instrumentation by requiring this module using the --require flag:
 
