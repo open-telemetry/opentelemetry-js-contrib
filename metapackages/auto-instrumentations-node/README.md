@@ -79,7 +79,9 @@ To turn on the auto instrumentation's internal debug logging for troubleshooting
 export OTEL_LOG_LEVEL=debug
 ```
 
-Note: These logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
+Notes:
+* Logs are always sent to console, no matter the environment, or debug level.
+* These logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
 
 ## Usage: Instrumentation Initialization
 
