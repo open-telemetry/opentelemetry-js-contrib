@@ -158,7 +158,7 @@ export function handleConfigQuery(
         JSON.stringify(queryConfig.values)
       );
     } catch {
-      diag.error('failed to stringity ', queryConfig.values);
+      diag.error('failed to stringify ', queryConfig.values);
     }
   }
 
