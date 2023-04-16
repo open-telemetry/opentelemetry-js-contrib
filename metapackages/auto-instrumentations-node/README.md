@@ -37,9 +37,9 @@ If your Node application is encapsulated in a complex run script, you can also s
 env NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 ```
 
-The auto instrumentation is highly configurable using environment variables.
+The module is highly configurable using environment variables.
 Many aspects of the auto instrumentation's behavior can be configured for your needs, such as resource detectors, exporter choice, exporter configuration, trace context propagation headers, and much more.
-
+Instrumentation configuration is not yet supported through environment variables. Users that require instrumentation configuration must initialize OpenTelemetry programmatically.
 ```shell
 export OTEL_TRACES_EXPORTER="otlp"
 export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
