@@ -6,7 +6,7 @@
 ## About
 
 This module provides a way to auto instrument any Node application to capture telemetry from a number of popular libraries and frameworks.
-You can export the telemetry data in a variety of formats. Exporters can be configured via environment variables.
+You can export the telemetry data in a variety of formats. Exporters, samplers, and more can be configured via [environment variables][env-var-url].
 The net result is the ability to gather telemetry data from a Node application without any code changes.
 
 This module also provides a simple way to initialize multiple Node instrumentations.
@@ -168,3 +168,4 @@ APACHE 2.0 - See [LICENSE][license-url] for more information.
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fauto-instrumentations-node.svg
+[env-var-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md#general-sdk-configuration
