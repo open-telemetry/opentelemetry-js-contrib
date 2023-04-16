@@ -6,6 +6,14 @@
   * dependencies
     * @opentelemetry/redis-common bumped from ^0.34.0 to ^0.35.0
 
+## [0.34.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.34.3...instrumentation-redis-v0.34.4) (2023-04-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency redis to v3 [security] ([#1423](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1423)) ([31664ca](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/31664cac53f5a8c2ba57919cea594603021fdc9b))
+* **instrumentation-redis:** remove redis types from public API ([#1424](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1424)) ([861b867](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/861b867f5ff7e9b0891650f004462b88e2c707de))
+
 ## [0.34.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.34.1...instrumentation-redis-v0.34.2) (2023-02-07)
 
 
