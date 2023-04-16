@@ -25,7 +25,7 @@ This module includes auto instrumentation for all supported instrumentations and
 It provides a completely automatic, out-of-the-box experience.
 Please see the [Supported Instrumentations](#supported-instrumentations) section for more information.
 
-Enable auto instrumentation by requiring this module using the --require flag:
+Enable auto instrumentation by requiring this module using the [--require flag][require-url]:
 
 ```shell
 node --require '@opentelemetry/auto-instrumentations-node/register' app.js
@@ -169,3 +169,4 @@ APACHE 2.0 - See [LICENSE][license-url] for more information.
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fauto-instrumentations-node.svg
 [env-var-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md#general-sdk-configuration
+[require-url]: https://nodejs.org/api/cli.html#-r---require-module
