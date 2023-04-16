@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.31.2...instrumentation-document-load-v0.32.0) (2023-04-06)
+
+
+### Features
+
+* **instrumenation-document-load:** Add custom attributes to document load ([#1414](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1414)) ([98609c6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/98609c69d951951edcaa3234914d04d7ae87e9b5))
+
 ## [0.31.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.31.1...instrumentation-document-load-v0.31.2) (2023-03-03)
 
 
