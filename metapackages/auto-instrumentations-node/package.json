@@ -37,6 +37,7 @@
     "@opentelemetry/api": "^1.4.1"
   },
   "devDependencies": {
+    "@opentelemetry/api": "^1.4.1",
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
     "@types/sinon": "10.0.2",
@@ -49,7 +50,6 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.4.1",
     "@opentelemetry/instrumentation": "^0.36.0",
     "@opentelemetry/instrumentation-amqplib": "^0.32.2",
     "@opentelemetry/instrumentation-aws-lambda": "^0.35.0",
