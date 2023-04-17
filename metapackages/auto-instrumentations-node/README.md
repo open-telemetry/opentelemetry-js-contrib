@@ -81,8 +81,9 @@ export OTEL_LOG_LEVEL=debug
 ```
 
 Notes:
- - Logs are always sent to console, no matter the environment, or debug level.
- - These logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
+
+- Logs are always sent to console, no matter the environment, or debug level.
+- These logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
 
 ## Usage: Instrumentation Initialization
 
