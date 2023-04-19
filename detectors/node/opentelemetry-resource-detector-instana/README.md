@@ -35,16 +35,11 @@ const globalResource = new Resource({
 });
 
 const sdk = new NodeSDK({
-   autoDetectResources: false,
    resourceDetectors: [envDetector, processDetector, instanaAgentDetector],
    resource: globalResource,
 });
 
-(async () => {
-   await sdk.detectResources();
-
-   await sdk.start();
-}());
+sdk.start()
 ```
 
 ## Useful links
