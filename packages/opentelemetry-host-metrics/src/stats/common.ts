@@ -109,5 +109,10 @@ export function getMemoryData(): MemoryData {
  * including all C++ and JavaScript objects and code.
  */
 export function getProcessMemoryData(): number {
-  return process.memoryUsage.rss();
+  // `process.memoryUsage.rss` is a faster alternative introduced in v14.18.0.
+  // Prefer it if available.
+  if (process.memoryUsage.rss) {
+    return process.memoryUsage.rss();
+  }
+  return process.memoryUsage().rss;
 }
