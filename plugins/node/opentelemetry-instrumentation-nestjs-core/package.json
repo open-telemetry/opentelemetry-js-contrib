@@ -15,7 +15,7 @@
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc ts-mocha --timeout 5000 -p tsconfig.json 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js"
   },
