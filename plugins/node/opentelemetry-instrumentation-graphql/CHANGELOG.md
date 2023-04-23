@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.33.2...instrumentation-graphql-v0.34.0) (2023-04-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gql:** conform GraphQL span name to spec ([#1444](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1444))
+
+### Bug Fixes
+
+* **gql:** conform GraphQL span name to spec ([#1444](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1444)) ([7d070db](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7d070db276dffd82faa906e8e4a8ed8dcb790c6d))
+
 ## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.33.1...instrumentation-graphql-v0.33.2) (2023-03-03)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-redis",
-  "version": "0.34.3",
+  "version": "0.34.4",
   "description": "Automatic OpenTelemetry instrumentation for redis package version 2 and 3",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

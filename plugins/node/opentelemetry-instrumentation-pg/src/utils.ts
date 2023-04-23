@@ -167,7 +167,7 @@ export function handleConfigQuery(
       });
       span.setAttribute(AttributeNames.PG_VALUES, convertedValues);
     } catch {
-      diag.error('failed to stringity ', queryConfig.values);
+      diag.error('failed to stringify ', queryConfig.values);
     }
   }
 
