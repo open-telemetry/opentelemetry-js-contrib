@@ -514,14 +514,25 @@ describe('pg', () => {
     });
 
     describe('Check configuration enhancedDatabaseReporting:true', () => {
-      const query = 'SELECT $1::text as message1, $2::text as message2';
-      const values = ['Hello,World', 'foo,bar'];
+      const obj = { type: 'Fiat', model: '500', color: 'white' };
+      const buf = Buffer.from('abc');
+      const query =
+        'SELECT $1::text as msg1, $2::bytea as bufferParam, $3::integer as numberParam, $4::jsonb as objectParam, $5::text as msg2, $6::text as msg3';
+      const values = ['Hello,World', buf, 6, obj, null, undefined];
+
       const events: TimedEvent[] = [];
 
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
         [SemanticAttributes.DB_STATEMENT]: query,
-        [AttributeNames.PG_VALUES]: JSON.stringify(values),
+        [AttributeNames.PG_VALUES]: [
+          'Hello,World',
+          'abc',
+          '6',
+          '{"type":"Fiat","model":"500","color":"white"}',
+          'null',
+          'null',
+        ],
       };
       beforeEach(async () => {
         create({
@@ -529,7 +540,7 @@ describe('pg', () => {
         });
       });
 
-      it('When enhancedDatabaseReporting:true, values should be equal to JSON.stringify', done => {
+      it('When enhancedDatabaseReporting:true, values should appear as parsable array of strings', done => {
         const span = tracer.startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
           client.query(query, values, (err, res) => {

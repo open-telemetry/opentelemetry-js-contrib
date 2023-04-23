@@ -153,10 +153,19 @@ export function handleConfigQuery(
     Array.isArray(queryConfig.values)
   ) {
     try {
-      span.setAttribute(
-        AttributeNames.PG_VALUES,
-        JSON.stringify(queryConfig.values)
-      );
+      const convertedValues = queryConfig.values.map(value => {
+        if (!value) {
+          return 'null';
+        } else if (value instanceof Buffer) {
+          return value.toString();
+        } else if (typeof value === 'object') {
+          return JSON.stringify(value);
+        } else {
+          //string, number
+          return value.toString();
+        }
+      });
+      span.setAttribute(AttributeNames.PG_VALUES, convertedValues);
     } catch {
       diag.error('failed to stringity ', queryConfig.values);
     }
