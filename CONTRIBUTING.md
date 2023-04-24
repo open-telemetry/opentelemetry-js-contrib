@@ -147,7 +147,7 @@ In order for a package to be marked stable, it must meet the following requireme
 - All relevant specification relating to the component MUST be stable. For example, telemetry emitted by an instrumentation library should rely on a stable semantic convention.
 - It MUST be reviewed and approved by a member of @open-telemetry/javascript-maintainers.
 
-Beta components MUST have their major version set to `1` or greater.
+Stable components MUST have their major version set to `1` or greater.
 
 ### Unmaintained
 
