@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-express",
-  "version": "0.32.1",
+  "version": "0.32.2",
   "description": "OpenTelemetry express automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
