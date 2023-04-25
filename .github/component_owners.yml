@@ -6,6 +6,9 @@ components:
     - carolabadeer
   detectors/node/opentelemetry-resource-detector-container:
     - abhee11
+  detectors/node/opentelemetry-resource-detector-instana:
+    - basti1302
+    - kirrg001
   metapackages/auto-instrumentations-node:
     - obecny
   metapackages/auto-instrumentations-web:
