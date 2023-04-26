@@ -177,10 +177,10 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
     [
       RESOURCE_DETECTOR_AWS,
       [
-        awsBeanstalkDetector,
-        awsEksDetector,
-        awsEcsDetector,
         awsEc2Detector,
+        awsEcsDetector,
+        awsEksDetector,
+        awsBeanstalkDetector,
         awsLambdaDetector,
       ],
     ],
