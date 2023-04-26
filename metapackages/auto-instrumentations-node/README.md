@@ -16,6 +16,7 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 ## Installation
 
 ```bash
+npm install --save @opentelemetry/api
 npm install --save @opentelemetry/auto-instrumentations-node
 ```
 
