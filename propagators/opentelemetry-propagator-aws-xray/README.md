@@ -9,9 +9,9 @@ This propagator translates the OpenTelemetry SpanContext into the equivalent AWS
 
 ## Status
 
-| Maturity                                  | Maintainer                                             | Compatibility         |
-| ----------------------------------------- | ------------------------------------------------------ | --------------------- |
-| [Stable](../../../CONTRIBUTING.md#stable) | [@carolabadeer](../../.github/component_owners.yml) | API 1.0+<br/>SDK 1.0+ |
+| Maturity                                  | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
+| ----------------------------------------- | ----------------------------------------------------- | --------------------- |
+| [Stable](../../../CONTRIBUTING.md#stable) | @carolabadeer                                         | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 
