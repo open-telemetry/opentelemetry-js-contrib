@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.32.1...instrumentation-router-v0.32.2) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
 ## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-router-v0.32.0...instrumentation-router-v0.32.1) (2023-02-07)
 
 
