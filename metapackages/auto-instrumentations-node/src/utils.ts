@@ -166,7 +166,10 @@ export function getNodeAutoInstrumentations(
 }
 
 export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
-  const resourceDetectors = new Map<string, any>([
+  const resourceDetectors = new Map<
+    string,
+    Detector | DetectorSync | Detector[]
+  >([
     [RESOURCE_DETECTOR_CONTAINER, containerDetector],
     [RESOURCE_DETECTOR_ENVIRONMENT, envDetectorSync],
     [RESOURCE_DETECTOR_HOST, hostDetectorSync],
