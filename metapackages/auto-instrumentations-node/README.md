@@ -21,7 +21,7 @@ npm install --save @opentelemetry/auto-instrumentations-node
 
 ## Usage: Auto Instrumentation
 
-This module includes auto instrumentation for all supported instrumentations and all available data exporters.
+This module includes auto instrumentation for all supported instrumentations and [all available data exporters][exporter-url].
 It provides a completely automatic, out-of-the-box experience.
 Please see the [Supported Instrumentations](#supported-instrumentations) section for more information.
 
@@ -172,5 +172,6 @@ APACHE 2.0 - See [LICENSE][license-url] for more information.
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fauto-instrumentations-node.svg
-[env-var-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md#general-sdk-configuration
+[env-var-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/configuration/sdk-environment-variables.md#general-sdk-configuration
+[exporter-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/configuration/sdk-environment-variables.md#otlp-exporter
 [require-url]: https://nodejs.org/api/cli.html#-r---require-module
