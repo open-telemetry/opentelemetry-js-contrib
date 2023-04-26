@@ -44,6 +44,5 @@ process.on('SIGTERM', () => {
   sdk
     .shutdown()
     .then(() => diag.debug('SDK terminated'))
-    .catch(error => diag.error('Error terminating SDK', error))
-    .finally(() => process.exit(0));
+    .catch(error => diag.error('Error terminating SDK', error));
 });
