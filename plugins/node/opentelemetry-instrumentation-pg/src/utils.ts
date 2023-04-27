@@ -157,8 +157,11 @@ export function handleConfigQuery(
         if (value == null) {
           return 'null';
         } else if (value instanceof Buffer) {
-          return value.toString();
+          return value.toString("hex");
         } else if (typeof value === 'object') {
+          if (typeof value.toPostgres === 'function'){
+            return value.toPostgres();
+          }
           return JSON.stringify(value);
         } else {
           //string, number
@@ -166,8 +169,8 @@ export function handleConfigQuery(
         }
       });
       span.setAttribute(AttributeNames.PG_VALUES, convertedValues);
-    } catch {
-      diag.error('failed to stringify ', queryConfig.values);
+    } catch (e) {
+      diag.error('failed to stringify ', queryConfig.values, e);
     }
   }
 
