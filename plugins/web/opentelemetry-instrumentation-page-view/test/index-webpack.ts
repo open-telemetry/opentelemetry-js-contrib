@@ -13,14 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { LoggerProvider } from '@opentelemetry/sdk-logs';
+const testsContext = require.context('.', true, /test$/);
+testsContext.keys().forEach(testsContext);
 
-/**
- * PageViewInstrumentationConfig
- */
-export interface PageViewInstrumentationConfig
-  extends InstrumentationConfig {
-  /** The logger provider to emit logs */
-  provider?: LoggerProvider;
-}
+const srcContext = require.context('.', true, /src$/);
+srcContext.keys().forEach(srcContext);

@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-import {
-  InstrumentationBase,
-} from '@opentelemetry/instrumentation';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import { LogRecord, Logger } from '@opentelemetry/api-logs';
 import { VERSION } from './version';
-import {PageViewInstrumentationConfig} from "./types";
+import { PageViewInstrumentationConfig } from './types';
 
 /**
  * This class represents a Page View Event plugin
@@ -73,7 +71,10 @@ export class PageViewEventInstrumentation extends InstrumentationBase<unknown> {
   override enable() {
     // remove previously attached load to avoid adding the same event twice
     // in case of multiple enable calling.
-    document.removeEventListener('DOMContentLoaded', this._onPageView.bind(this));
+    document.removeEventListener(
+      'DOMContentLoaded',
+      this._onPageView.bind(this)
+    );
     this._waitForPageLoad();
   }
 
@@ -81,6 +82,9 @@ export class PageViewEventInstrumentation extends InstrumentationBase<unknown> {
    * implements disable function
    */
   override disable() {
-    document.removeEventListener('DOMContentLoaded', this._onPageView.bind(this));
+    document.removeEventListener(
+      'DOMContentLoaded',
+      this._onPageView.bind(this)
+    );
   }
 }

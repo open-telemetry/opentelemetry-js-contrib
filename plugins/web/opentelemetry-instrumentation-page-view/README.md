@@ -50,10 +50,6 @@ registerInstrumentations({
 
 ```
 
-## Example
-
-### Page view instrumentation Options
-
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
