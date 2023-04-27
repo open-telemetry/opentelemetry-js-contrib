@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.32.0...host-metrics-v0.32.1) (2023-04-25)
+
+
+### Bug Fixes
+
+* **host-metrics:** fallback to process.memoryUsage() ([#1471](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1471)) ([4d11d61](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4d11d61b709cf12d7d02d31960cd7ccb67404b14))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.31.0...host-metrics-v0.32.0) (2023-04-06)
 
 
