@@ -43,7 +43,7 @@ import {
   WireProtocolInternal,
   V4Connection,
 } from './internal-types';
-import { V4Connect, V4Session } from './types';
+import { V4Connect, V4Session } from './internal-types';
 import { VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api';
 

@@ -183,3 +183,14 @@ export type V4Connection = {
     callback: any
   ): void;
 };
+
+// https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connect.ts
+export type V4Connect = {
+  connect: (options: any, callback: any) => void;
+};
+
+// https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/sessions.ts
+export type V4Session = {
+  acquire: () => ServerSession;
+  release: (session: ServerSession) => void;
+};
