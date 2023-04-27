@@ -117,13 +117,21 @@ describe('utils', () => {
     });
 
     it('should return no resource detectors when OTEL_NODE_RESOURCE_DETECTORS contains "none" or a typo', () => {
+      const spy = sinon.stub(diag, 'error');
       process.env.OTEL_NODE_RESOURCE_DETECTORS = 'none';
 
       assert.equal(getResourceDetectorsFromEnv().length, 0);
 
+      assert.strictEqual(spy.callCount, 0);
+
       process.env.OTEL_NODE_RESOURCE_DETECTORS = 'test';
 
       assert.equal(getResourceDetectorsFromEnv().length, 0);
+
+      assert.strictEqual(
+        spy.args[0][0],
+        'Invalid resource detector "test" specified in the environment variable OTEL_NODE_RESOURCE_DETECTORS'
+      );
 
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });

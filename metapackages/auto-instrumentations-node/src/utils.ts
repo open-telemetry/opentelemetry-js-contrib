@@ -196,6 +196,10 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
     return [...resourceDetectors.values()].flat();
   }
 
+  if (resourceDetectorsFromEnv.includes('none')) {
+    return [];
+  }
+
   return resourceDetectorsFromEnv.flatMap(detector => {
     const resourceDetector = resourceDetectors.get(detector);
     if (!resourceDetector) {
