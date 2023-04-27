@@ -51,6 +51,10 @@ This project includes:
 
 **Resource Detectors**: OpenTelemetry can collect resource attributes of the entity that producing telemetry. For example, a process producing telemetry that is running in a container on Kubernetes has a Pod name, it is in a namespace and possibly is part of a Deployment which also has a name. All three of these attributes can be included in the `Resource`.
 
+## Stability levels
+
+Stability level for components in this repository follow the definitions in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## Supported Runtimes
 
 Packages in this repository have a variable range of support for Node.JS and browser versions which for each package depend on

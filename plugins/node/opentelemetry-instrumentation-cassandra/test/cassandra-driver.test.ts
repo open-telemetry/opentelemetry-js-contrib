@@ -109,6 +109,7 @@ function assertErrorSpan(
   const events = [
     {
       name: 'exception',
+      droppedAttributesCount: 0,
       attributes: {
         [SemanticAttributes.EXCEPTION_STACKTRACE]: error.stack,
         [SemanticAttributes.EXCEPTION_MESSAGE]: error.message,
