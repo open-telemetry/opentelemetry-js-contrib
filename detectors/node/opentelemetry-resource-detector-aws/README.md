@@ -7,7 +7,11 @@
 
 Resource detector for Amazon Web Services.
 
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+## Status
+
+| Maturity                                  | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
+| ----------------------------------------- | ----------------------------------------------------- | --------------------- |
+| [Stable](../../../CONTRIBUTING.md#stable) | @carolabadeer                                         | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 
