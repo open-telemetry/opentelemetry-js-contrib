@@ -154,7 +154,7 @@ export function handleConfigQuery(
   ) {
     try {
       const convertedValues = queryConfig.values.map(value => {
-        if (!value) {
+        if (value == null) {
           return 'null';
         } else if (value instanceof Buffer) {
           return value.toString();
