@@ -81,8 +81,10 @@ export interface SamplingStatisticsDocument {
 
 export interface AWSXRaySamplerConfig {
   // endpoint of awsproxy - for more information see https://aws-otel.github.io/docs/getting-started/remote-sampling
+  // defaults to localhost:2000 if not specified
   endpoint?: string;
 
-  // interval of polling sampling rules (in ms) - default is 5 minutes if not specified
-  pollingInterval?: number;
+  // interval of polling sampling rules (in ms)
+  // defaults to 5 minutes if not specified
+  pollingIntervalMs?: number;
 }

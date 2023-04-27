@@ -19,32 +19,43 @@ import {
   SamplingDecision,
   SamplingResult,
 } from '@opentelemetry/sdk-trace-base';
-import { diag } from '@opentelemetry/api';
-import { SamplingRule, AWSXRaySamplerConfig } from './remote-sampler.types';
+import { diag, DiagLogger } from '@opentelemetry/api';
+import {
+  SamplingRule,
+  AWSXRaySamplerConfig,
+  SamplingRuleRecord,
+} from './types';
 import axios from 'axios';
 
-const DEFAULT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes on sampling rules fetch (default polling interval)
-const DEFAULT_ENDPOINT = 'http://localhost:2000';
-const SAMPLING_RULES_ENDPOINT = '/GetSamplingRules';
+// 5 minute interval on sampling rules fetch (default polling interval)
+const DEFAULT_INTERVAL_MS = 5 * 60 * 1000;
+// Default endpoint for awsproxy : https://aws-otel.github.io/docs/getting-started/remote-sampling#enable-awsproxy-extension
+const DEFAULT_AWS_PROXY_ENDPOINT = 'http://localhost:2000';
+const SAMPLING_RULES_PATH = '/GetSamplingRules';
 
 // IN PROGRESS - SKELETON CLASS
 export class AWSXRayRemoteSampler implements Sampler {
   private _pollingInterval: number;
-  private _endpoint: string;
+  private _awsProxyEndpoint: string;
+  private _samplerDiag: DiagLogger;
 
   constructor(samplerConfig: AWSXRaySamplerConfig) {
     this._pollingInterval =
-      samplerConfig.pollingInterval ?? DEFAULT_INTERVAL_MS;
-    this._endpoint = samplerConfig.endpoint
-      ? samplerConfig.endpoint + SAMPLING_RULES_ENDPOINT
-      : DEFAULT_ENDPOINT + SAMPLING_RULES_ENDPOINT;
+      samplerConfig.pollingIntervalMs ?? DEFAULT_INTERVAL_MS;
+    this._awsProxyEndpoint = samplerConfig.endpoint
+      ? samplerConfig.endpoint
+      : DEFAULT_AWS_PROXY_ENDPOINT;
 
     if (this._pollingInterval <= 0) {
       throw new TypeError('pollingInterval must be a positive integer');
     }
 
+    this._samplerDiag = diag.createComponentLogger({
+      namespace: '@opentelemetry/sampler-aws-xray',
+    });
+
     // execute first get Sampling rules update using polling interval
-    this.getAndUpdateSamplingRules();
+    this.startRulePoller();
   }
 
   shouldSample(): SamplingResult {
@@ -53,37 +64,50 @@ export class AWSXRayRemoteSampler implements Sampler {
   }
 
   toString(): string {
-    return `AWSXRayRemoteSampler{endpoint=${this._endpoint}, pollingInterval=${this._pollingInterval}}`;
+    return `AWSXRayRemoteSampler{endpoint=${this._awsProxyEndpoint}, pollingInterval=${this._pollingInterval}}`;
   }
 
+  private getAndUpdateSamplingRules = async (): Promise<void> => {
+    let samplingRules: SamplingRule[] = []; // reset rules array
+
+    const requestConfig = {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    try {
+      const samplingRulesEndpoint =
+        this._awsProxyEndpoint + SAMPLING_RULES_PATH;
+      const response = await axios.post(
+        samplingRulesEndpoint,
+        null,
+        requestConfig
+      );
+      const responseJson = response.data;
+
+      samplingRules =
+        responseJson?.SamplingRuleRecords.map(
+          (record: SamplingRuleRecord) => record.SamplingRule
+        ).filter(Boolean) ?? [];
+
+      // TODO: pass samplingRules to rule cache, temporarily logging the samplingRules array
+      this._samplerDiag.debug('sampling rules: ', samplingRules);
+    } catch (error) {
+      // Log error
+      this._samplerDiag.warn('Error fetching sampling rules: ', error);
+    }
+  };
+
   // fetch sampling rules every polling interval
-  private getAndUpdateSamplingRules(): void {
-    setInterval(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      let samplingRules: SamplingRule[] = []; // reset rules array
-
-      const requestConfig = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
-
-      try {
-        const response = await axios.post(this._endpoint, null, requestConfig);
-        const responseJson = response.data;
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        samplingRules =
-          responseJson?.SamplingRuleRecords.map(
-            (record: any) => record.SamplingRule
-          ).filter(Boolean) ?? [];
-
-        // TODO: pass samplingRules to rule cache, temporarily logging the samplingRules array
-        diag.debug('sampling rules: ', samplingRules);
-      } catch (error) {
-        // Log error
-        diag.warn('Error fetching sampling rules: ', error);
-      }
-    }, this._pollingInterval);
+  private startRulePoller(): void {
+    // execute first update
+    this.getAndUpdateSamplingRules();
+    // Update sampling rules every 5 minutes (or user-defined polling interval)
+    const rulePoller = setInterval(
+      () => this.getAndUpdateSamplingRules(),
+      this._pollingInterval
+    );
+    rulePoller.unref();
   }
 }

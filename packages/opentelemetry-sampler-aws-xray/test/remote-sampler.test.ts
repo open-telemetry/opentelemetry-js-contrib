@@ -93,11 +93,11 @@ describe('GetSamplingRules', () => {
   let sampler: AWSXRayRemoteSampler;
   let axiosPostSpy: sinon.SinonSpy;
 
-  const defaultEndpoint = 'http://localhost:2000';
+  const defaultEndpoint = 'http://localhost:1234';
   const pollingInterval = 60 * 1000;
   const config = {
     endpoint: defaultEndpoint,
-    pollingInterval: pollingInterval,
+    pollingIntervalMs: pollingInterval,
   };
 
   before(() => {
@@ -120,12 +120,10 @@ describe('GetSamplingRules', () => {
 
   it('should throw TypeError when an invalid polling interval is passed in', async () => {
     const configWithZeroPollingInterval = {
-      endpoint: 'http://localhost:2000',
-      pollingInterval: 0,
+      pollingIntervalMs: 0,
     };
     const configWithNegativeInterval = {
-      endpoint: 'http://localhost:2000',
-      pollingInterval: -5,
+      pollingIntervalMs: -5,
     };
 
     assert.throws(
@@ -138,13 +136,16 @@ describe('GetSamplingRules', () => {
     );
   });
 
-  it('should make a POST request to the /GetSamplingRules endpoint', async () => {
-    clock.tick(pollingInterval);
+  it('should make a POST request to the /GetSamplingRules endpoint upon initialization', async () => {
     sinon.assert.calledOnce(axiosPostSpy);
   });
 
-  it('should make 3 POST requests to the /GetSamplingRules endpoint after 3 intervals have passed', async () => {
+  it('should make a POST request to the /GetSamplingRules endpoint', async () => {
     clock.tick(pollingInterval);
+    sinon.assert.calledTwice(axiosPostSpy);
+  });
+
+  it('should make 3 POST requests to the /GetSamplingRules endpoint after 3 intervals have passed', async () => {
     clock.tick(pollingInterval);
     clock.tick(pollingInterval);
 
@@ -154,21 +155,19 @@ describe('GetSamplingRules', () => {
   it('should initialize endpoint and polling interval from config correctly', async () => {
     assert.strictEqual(
       sampler.toString(),
-      `AWSXRayRemoteSampler{endpoint=${
-        defaultEndpoint + '/GetSamplingRules'
-      }, pollingInterval=${pollingInterval}}`
+      `AWSXRayRemoteSampler{endpoint=${defaultEndpoint}, pollingInterval=${pollingInterval}}`
     );
   });
 
   it('should fall back to default polling interval and endpoint if not specified in config', async () => {
     const sampler = new AWSXRayRemoteSampler({});
 
-    // default polling interval (5 minutes) = 5 * 60 * 100
+    // default polling interval (5 minutes) = 5 * 60 * 1000
     assert.strictEqual(
       sampler.toString(),
-      `AWSXRayRemoteSampler{endpoint=${
-        defaultEndpoint + '/GetSamplingRules'
-      }, pollingInterval=${5 * 60 * 1000}}`
+      `AWSXRayRemoteSampler{endpoint=http://localhost:2000, pollingInterval=${
+        5 * 60 * 1000
+      }}`
     );
   });
 });

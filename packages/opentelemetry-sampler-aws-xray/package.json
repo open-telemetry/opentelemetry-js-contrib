@@ -1,6 +1,7 @@
 {
   "name": "@opentelemetry/sampler-aws-xray",
   "version": "0.34.0",
+  "private": true,
   "description": "OpenTelemetry remote sampler for AWS X-Ray",
   "keywords": [
     "aws",
@@ -44,9 +45,9 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
-    "axios": "^0.21.1"
+    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "axios": "^1.3.5"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
