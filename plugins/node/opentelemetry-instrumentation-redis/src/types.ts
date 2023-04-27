@@ -16,15 +16,14 @@
 
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import type * as redisTypes from 'redis';
 
 // exported from
-// https://github.com/NodeRedis/node_redis/blob/master/lib/command.js
+// https://github.com/redis/node-redis/blob/v3.1.2/lib/command.js
 export interface RedisCommand {
   command: string;
   args: string[];
   buffer_args: boolean;
-  callback: redisTypes.Callback<unknown>;
+  callback: (err: Error | null, reply: unknown) => void;
   call_on_write: boolean;
 }
 

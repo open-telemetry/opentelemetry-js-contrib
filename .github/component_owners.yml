@@ -3,9 +3,12 @@ components:
   detectors/node/opentelemetry-resource-detector-alibaba-cloud:
     - legendecas
   detectors/node/opentelemetry-resource-detector-aws:
-    - willarmiros
-  detectors/node/opentelemetry-resource-detector-docker:
+    - carolabadeer
+  detectors/node/opentelemetry-resource-detector-container:
     - abhee11
+  detectors/node/opentelemetry-resource-detector-instana:
+    - basti1302
+    - kirrg001
   metapackages/auto-instrumentations-node:
     - obecny
   metapackages/auto-instrumentations-web:
@@ -13,7 +16,7 @@ components:
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
-    - willarmiros
+    - carolabadeer
   packages/opentelemetry-sampler-aws-xray:
     - carolabadeer
   packages/opentelemetry-redis-common:
@@ -27,9 +30,9 @@ components:
   plugins/node/instrumentation-tedious:
     - rauno56
   plugins/node/opentelemetry-instrumentation-aws-lambda:
-    - willarmiros
+    - carolabadeer
   plugins/node/opentelemetry-instrumentation-aws-sdk:
-    - willarmiros
+    - carolabadeer
     - blumamir
   plugins/node/opentelemetry-instrumentation-generic-pool:
     - rauno56
@@ -73,7 +76,7 @@ components:
   plugins/web/opentelemetry-instrumentation-user-interaction:
     - obecny
   propagators/opentelemetry-propagator-aws-xray:
-    - willarmiros
+    - carolabadeer
   propagators/opentelemetry-propagator-instana:
     - basti1302
     - kirrg001
