@@ -1,0 +1,88 @@
+{
+  "name": "@opentelemetry/instrumentation-page-view",
+  "version": "0.37.0",
+  "description": "OpenTelemetry page view automatic instrumentation package.",
+  "main": "build/src/index.js",
+  "module": "build/esm/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "scripts": {
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-document-load --include-dependencies",
+    "prewatch": "npm run precompile",
+    "version:update": "node ../../../scripts/version-update.js",
+    "compile": "npm run version:update && tsc --build tsconfig.json tsconfig.esm.json",
+    "prepare": "npm run compile",
+    "tdd": "karma start",
+    "test:browser": "nyc karma start --single-run",
+    "watch": "tsc --build -watch tsconfig.json tsconfig.esm.json"
+  },
+  "keywords": [
+    "opentelemetry",
+    "page-view",
+    "nodejs",
+    "event",
+    "profiling",
+    "instrumentation"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=14"
+  },
+  "files": [
+    "build/esm/**/*.js",
+    "build/esm/**/*.map",
+    "build/esm/**/*.d.ts",
+    "build/src/**/*.js",
+    "build/src/**/*.map",
+    "build/src/**/*.d.ts",
+    "doc",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "1.4.1"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "1.4.1",
+    "@opentelemetry/context-async-hooks": "1.12.0",
+    "@opentelemetry/sdk-metrics": "1.12.0",
+    "@opentelemetry/sdk-trace-base": "1.12.0",
+    "@opentelemetry/sdk-trace-node": "1.12.0",
+    "@opentelemetry/api-logs": "0.38.0",
+    "@opentelemetry/sdk-logs": "0.38.0",
+    "@opentelemetry/exporter-logs-otlp-proto" : "0.38.0",
+    "@types/mocha": "10.0.0",
+    "@types/node": "18.6.5",
+    "@types/request-promise-native": "1.0.18",
+    "@types/semver": "7.3.9",
+    "@types/sinon": "10.0.13",
+    "@types/superagent": "4.1.13",
+    "axios": "0.24.0",
+    "codecov": "3.8.3",
+    "mocha": "10.0.0",
+    "nock": "13.0.11",
+    "nyc": "15.1.0",
+    "request": "2.88.2",
+    "request-promise-native": "1.0.9",
+    "rimraf": "4.1.2",
+    "sinon": "15.0.0",
+    "superagent": "8.0.0",
+    "ts-mocha": "10.0.0",
+    "typescript": "4.4.4"
+  },
+  "dependencies": {
+    "@opentelemetry/core": "1.12.0",
+    "@opentelemetry/instrumentation": "0.38.0",
+    "@opentelemetry/semantic-conventions": "1.12.0",
+    "semver": "^7.3.5"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http",
+  "sideEffects": false
+}
