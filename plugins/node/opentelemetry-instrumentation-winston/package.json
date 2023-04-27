@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-winston",
-  "version": "0.31.1",
+  "version": "0.31.2",
   "description": "OpenTelemetry instrumentation for winston",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -67,7 +67,7 @@
     "winston2": "npm:winston@2.4.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.35.1"
+    "@opentelemetry/instrumentation": "^0.38.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston#readme"
 }
