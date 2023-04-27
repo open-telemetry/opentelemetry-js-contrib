@@ -80,5 +80,3 @@ export type V4Connection = {
     callback: any
   ): void;
 };
-
-
