@@ -4,7 +4,7 @@ components:
     - legendecas
   detectors/node/opentelemetry-resource-detector-aws:
     - carolabadeer
-  detectors/node/opentelemetry-resource-detector-docker:
+  detectors/node/opentelemetry-resource-detector-container:
     - abhee11
   detectors/node/opentelemetry-resource-detector-instana:
     - basti1302
