@@ -62,7 +62,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       {
         description:
           'The number of connections that are currently in the state referenced by the attribute "state".',
-        unit: '{connections}',
+        unit: '{connection}',
       }
     );
   }
