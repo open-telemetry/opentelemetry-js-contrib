@@ -82,8 +82,8 @@ components:
     # Unmaintained?
   plugins/node/opentelemetry-instrumentation-nestjs-core:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-net: []
-    # Unmaintained?
+  plugins/node/opentelemetry-instrumentation-net:
+    - seemk
   plugins/node/opentelemetry-instrumentation-pg:
     - rauno56
   plugins/node/opentelemetry-instrumentation-pino: []
