@@ -47,8 +47,8 @@ components:
   plugins/node/opentelemetry-instrumentation-aws-sdk:
     - carolabadeer
     - blumamir
-  plugins/node/opentelemetry-instrumentation-bunyan: []
-    # Unmaintained?
+  plugins/node/opentelemetry-instrumentation-bunyan:
+    - seemk
   plugins/node/opentelemetry-instrumentation-cassandra: []
     # Unmaintained?
   plugins/node/opentelemetry-instrumentation-connect: []
