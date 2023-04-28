@@ -46,8 +46,8 @@ export class PageViewEventInstrumentation extends InstrumentationBase<unknown> {
       attributes: {
         'event.domain': 'browser',
         'event.name': 'page_view',
-        'event.type': 0,
         'event.data': {
+          type: 0,
           url: document.documentURI as string,
           referrer: document.referrer,
           title: document.title,
