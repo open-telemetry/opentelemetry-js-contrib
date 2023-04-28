@@ -1,14 +1,15 @@
 # AWS X-Ray Remote Sampler
 
-> This component is still in development and has not been released as an npm package. 
+> This component is still in development and has not been released as an npm package.
 
-component owner: @carolabadeer 
+component owner: @carolabadeer
 
-This module provides the remote/centralized sampler for AWS X-Ray. 
+This module provides the remote/centralized sampler for AWS X-Ray.
 
+## Usage
 
-## Usage 
-```js 
+```js
+
 const { AWSXRayRemoteSampler } = require('@opentelemetry/sampler-aws-xray');
 const opentelemetry = require("@opentelemetry/sdk-node");
 const { Resource } = require("@opentelemetry/resources");
@@ -25,6 +26,8 @@ const _resource = Resource.default().merge(new Resource({
 const _traceExporter = new OTLPTraceExporter();
 const _spanProcessor = new BatchSpanProcessor(_traceExporter);
 const _tracerConfig = {
+    // add x-ray remote sampler
+    sampler: new AWSXRayRemoteSampler(),
     idGenerator: new AWSXRayIdGenerator(),
 }
 
@@ -39,20 +42,22 @@ const sdk = new opentelemetry.NodeSDK({
         resource: _resource,
         spanProcessor: _spanProcessor,
         traceExporter: _traceExporter,
-        // add remote sampler
-        sampler: new AWSXRayRemoteSampler(),
     });
 
     sdk.configureTracerProvider(_tracerConfig, _spanProcessor);
 
 ```
+
 For more details on setting up the global tracer provider to send traces to AWS X-Ray, refer to [this documentation](https://aws-otel.github.io/docs/getting-started/js-sdk/trace-manual-instr#setting-up-the-global-tracer).
 
+Please note that AWS Lambda does not support X-Ray remote sampling.
 
-## Useful links 
-- For more information on OpenTelemetry, visit: https://opentelemetry.io/
-- For more about OpenTelemetry JavaScript: https://github.com/open-telemetry/opentelemetry-js
-- For more in-depth documentation on setting up OpenTelemetry to send traces to AWS X-Ray: https://aws-otel.github.io/docs/getting-started/javascript-sdk
+## Useful links
 
-## License 
+- [More information on OpenTelemetry](https://opentelemetry.io/)
+- [More about OpenTelemetry JavaScript](https://github.com/open-telemetry/opentelemetry-js)
+- [More in-depth documentation on setting up OpenTelemetry to send traces to AWS X-Ray](https://aws-otel.github.io/docs/getting-started/javascript-sdk)
+
+## License
+
 Apache 2.0 - See [LICENSE](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE) for more information.

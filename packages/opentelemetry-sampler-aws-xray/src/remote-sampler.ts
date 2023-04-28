@@ -81,7 +81,7 @@ export class AWSXRayRemoteSampler implements Sampler {
         this._awsProxyEndpoint + SAMPLING_RULES_PATH;
       const response = await axios.post(
         samplingRulesEndpoint,
-        null,
+        {},
         requestConfig
       );
       const responseJson = response.data;
