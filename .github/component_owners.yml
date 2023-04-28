@@ -78,8 +78,8 @@ components:
     - osherv
   plugins/node/opentelemetry-instrumentation-mysql:
     - haddasbronfman
-  plugins/node/opentelemetry-instrumentation-mysql2: []
-    # Unmaintained?
+  plugins/node/opentelemetry-instrumentation-mysql2:
+    - haddasbronfman
   plugins/node/opentelemetry-instrumentation-nestjs-core:
     - rauno56
   plugins/node/opentelemetry-instrumentation-net:
