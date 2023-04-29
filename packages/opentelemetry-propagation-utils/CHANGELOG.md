@@ -12,6 +12,12 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.28.0...propagation-utils-v0.29.0) (2022-09-27)
 
 
