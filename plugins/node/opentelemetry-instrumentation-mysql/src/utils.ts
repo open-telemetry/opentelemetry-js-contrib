@@ -22,7 +22,7 @@ import type {
   Query,
   QueryOptions,
 } from 'mysql';
-import * as mysqlTypes from 'mysql';
+import type * as mysqlTypes from 'mysql';
 
 /**
  * Get an SpanAttributes map from a mysql connection config object

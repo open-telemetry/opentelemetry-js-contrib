@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.34.0...instrumentation-graphql-v0.34.1) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.33.2...instrumentation-graphql-v0.34.0) (2023-04-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gql:** conform GraphQL span name to spec ([#1444](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1444))
+
+### Bug Fixes
+
+* **gql:** conform GraphQL span name to spec ([#1444](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1444)) ([7d070db](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7d070db276dffd82faa906e8e4a8ed8dcb790c6d))
+
 ## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.33.1...instrumentation-graphql-v0.33.2) (2023-03-03)
 
 
