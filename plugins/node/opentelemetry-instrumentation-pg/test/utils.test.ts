@@ -289,5 +289,59 @@ describe('utils.ts', () => {
         "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01',tracestate='foo%3D%27bar%2Cbaz%3D%27qux%21%28%29%2A%27%2Chack%3D%27DROP%20TABLE'*/"
       );
     });
+
+    it('supports custom attributes', () => {
+      const spanContext: SpanContext = {
+        traceId: 'd4cda95b652f4a1592b449d5929fda1b',
+        spanId: '6e0c63257de34c92',
+        traceFlags: TraceFlags.SAMPLED,
+      };
+
+      const query = 'SELECT * from FOO;';
+      assert.strictEqual(
+        utils.addSqlCommenterComment(
+          trace.wrapSpanContext(spanContext),
+          query,
+          { controller: 'foo', action: 'bar' }
+        ),
+        "SELECT * from FOO; /*action='bar',controller='foo',traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01'*/"
+      );
+    });
+
+    it('escapes special characters in keys', () => {
+      const spanContext: SpanContext = {
+        traceId: 'd4cda95b652f4a1592b449d5929fda1b',
+        spanId: '6e0c63257de34c92',
+        traceFlags: TraceFlags.SAMPLED,
+      };
+
+      const query = 'SELECT * from FOO;';
+      assert.strictEqual(
+        utils.addSqlCommenterComment(
+          trace.wrapSpanContext(spanContext),
+          query,
+          { "'DROP TABLE": 'foo' }
+        ),
+        "SELECT * from FOO; /*%27DROP%20TABLE='foo',traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01'*/"
+      );
+    });
+
+    it('overwrites custom attributes with trace context keys', () => {
+      const spanContext: SpanContext = {
+        traceId: 'd4cda95b652f4a1592b449d5929fda1b',
+        spanId: '6e0c63257de34c92',
+        traceFlags: TraceFlags.SAMPLED,
+      };
+
+      const query = 'SELECT * from FOO;';
+      assert.strictEqual(
+        utils.addSqlCommenterComment(
+          trace.wrapSpanContext(spanContext),
+          query,
+          { traceparent: 'foo' }
+        ),
+        "SELECT * from FOO; /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01'*/"
+      );
+    });
   });
 });

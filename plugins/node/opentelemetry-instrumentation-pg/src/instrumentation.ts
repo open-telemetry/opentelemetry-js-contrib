@@ -215,18 +215,28 @@ export class PgInstrumentation extends InstrumentationBase {
         // Modify query text w/ a tracing comment before invoking original for
         // tracing, but only if args[0] has one of our expected shapes.
         //
-        // TODO: remove the `as ...` casts below when the TS version is upgraded.
+        // TODO: remove the `as ...` casts on `arg0` below when the TS version is upgraded.
         // Newer TS versions will use the result of firstArgIsQueryObjectWithText
         // to properly narrow arg0, but TS 4.3.5 does not.
         if (instrumentationConfig.addSqlCommenterCommentToQueries) {
+          const customSqlCommenterAttributes = context
+            .active()
+            .getValue(
+              Symbol('customSqlCommenterAttributes')
+            ) as utils.SqlCommenterAttributes;
           args[0] = firstArgIsString
-            ? utils.addSqlCommenterComment(span, arg0 as string)
+            ? utils.addSqlCommenterComment(
+                span,
+                arg0 as string,
+                customSqlCommenterAttributes
+              )
             : firstArgIsQueryObjectWithText
             ? {
                 ...(arg0 as utils.ObjectWithText),
                 text: utils.addSqlCommenterComment(
                   span,
-                  (arg0 as utils.ObjectWithText).text
+                  (arg0 as utils.ObjectWithText).text,
+                  customSqlCommenterAttributes
                 ),
               }
             : args[0];
