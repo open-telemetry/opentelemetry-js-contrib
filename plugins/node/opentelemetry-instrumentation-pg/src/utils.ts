@@ -157,7 +157,7 @@ export function handleConfigQuery(
         if (value == null) {
           return 'null';
         } else if (value instanceof Buffer) {
-          return value.toString('hex');
+          return value.toString();
         } else if (typeof value === 'object') {
           if (typeof value.toPostgres === 'function') {
             return value.toPostgres();

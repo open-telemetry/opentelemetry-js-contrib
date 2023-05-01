@@ -516,9 +516,22 @@ describe('pg', () => {
     describe('Check configuration enhancedDatabaseReporting:true', () => {
       const obj = { type: 'Fiat', model: '500', color: 'white' };
       const buf = Buffer.from('abc');
+      const objWithToPostgres = {
+        toPostgres: () => {
+          return 'custom value';
+        },
+      };
       const query =
-        'SELECT $1::text as msg1, $2::bytea as bufferParam, $3::integer as numberParam, $4::jsonb as objectParam, $5::text as msg2, $6::text as msg3';
-      const values = ['Hello,World', buf, 6, obj, null, undefined];
+        'SELECT $1::text as msg1, $2::bytea as bufferParam, $3::integer as numberParam, $4::jsonb as objectParam, $5::text as objToPostgres, $6::text as msg2, $7::text as msg3';
+      const values = [
+        'Hello,World',
+        buf,
+        6,
+        obj,
+        objWithToPostgres,
+        null,
+        undefined,
+      ];
 
       const events: TimedEvent[] = [];
 
@@ -530,6 +543,7 @@ describe('pg', () => {
           'abc',
           '6',
           '{"type":"Fiat","model":"500","color":"white"}',
+          'custom value',
           'null',
           'null',
         ],
