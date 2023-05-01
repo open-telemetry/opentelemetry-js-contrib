@@ -75,18 +75,23 @@ For example, to enable only the `env`, `host` detectors:
 export OTEL_NODE_RESOURCE_DETECTORS="env,host"
 ```
 
-To turn on the auto instrumentation's internal debug logging for troubleshooting, set the following environment variable:
+To enable logging for troubleshooting, set the log level by setting the `OTEL_LOG_LEVEL` environment variable to one of the following:
 
-```shell
-export OTEL_LOG_LEVEL=debug
-```
+- `none`
+- `error`
+- `warn`
+- `info`
+- `debug`
+- `verbose`
+- `all`
+
+The default level is `info`.
 
 Notes:
 
-- Other log levels that are available: `all`, `debug`, `info` (default), `warn`, `error`, `none`.
-- In a production environment, it is recommended to set `OTEL_LOG_LEVEL`to `info` which is the default value.
+- In a production environment, it is recommended to set `OTEL_LOG_LEVEL`to `info`.
 - Logs are always sent to console, no matter the environment, or debug level.
-- These logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
+- Debug logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
 
 ## Usage: Instrumentation Initialization
 
