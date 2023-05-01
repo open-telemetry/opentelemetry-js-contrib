@@ -88,6 +88,8 @@ describe('utils', () => {
         spy.args[0][0],
         `Provided instrumentation name "${name}" not found`
       );
+
+      spy.restore();
     });
   });
 
@@ -133,6 +135,7 @@ describe('utils', () => {
         'Invalid resource detector "test" specified in the environment variable OTEL_NODE_RESOURCE_DETECTORS'
       );
 
+      spy.restore();
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
   });
