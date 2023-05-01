@@ -43,6 +43,6 @@ try {
 process.on('SIGTERM', () => {
   sdk
     .shutdown()
-    .then(() => diag.debug('SDK terminated'))
-    .catch(error => diag.error('Error terminating SDK', error));
+    .then(() => diag.debug('OpenTelemetry SDK terminated'))
+    .catch(error => diag.error('Error terminating OpenTelemetry SDK', error));
 });
