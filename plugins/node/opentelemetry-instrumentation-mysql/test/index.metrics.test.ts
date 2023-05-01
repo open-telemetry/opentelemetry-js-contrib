@@ -159,9 +159,9 @@ describe('mysql@2.x-Metrics', () => {
 
           assert.strictEqual(
             metrics[0].descriptor.description,
-            'The number of connections that are currently in the state referenced by the attribute "state".'
+            'The number of connections that are currently in state described by the state attribute.'
           );
-          assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
+          assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
           assert.strictEqual(
             metrics[0].descriptor.name,
             'db.client.connections.usage'
@@ -248,9 +248,9 @@ describe('mysql@2.x-Metrics', () => {
         assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
         assert.strictEqual(
           metrics[0].descriptor.description,
-          'The number of connections that are currently in the state referenced by the attribute "state".'
+          'The number of connections that are currently in state described by the state attribute.'
         );
-        assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
+        assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
         assert.strictEqual(
           metrics[0].descriptor.name,
           'db.client.connections.usage'
@@ -325,9 +325,9 @@ describe('mysql@2.x-Metrics', () => {
 
           assert.strictEqual(
             metrics[0].descriptor.description,
-            'The number of connections that are currently in the state referenced by the attribute "state".'
+            'The number of connections that are currently in state described by the state attribute.'
           );
-          assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
+          assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
           assert.strictEqual(
             metrics[0].descriptor.name,
             'db.client.connections.usage'
