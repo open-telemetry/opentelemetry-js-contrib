@@ -20,10 +20,13 @@ import * as assert from 'assert';
 const exec = promisify(childProcess.exec);
 
 describe('Register', function () {
-  this.timeout(7000);
+  this.timeout(5000);
   it('can load auto instrumentation from command line', async () => {
+    process.env.OTEL_NODE_RESOURCE_DETECTORS = 'none';
+    process.env.OTEL_TRACES_EXPORTER = 'console';
+
     const { stdout } = await exec(
-      'env OTEL_LOG_LEVEL=debug env OTEL_RESOURCE_DETECTORS=none node --require ./build/src/register.js ./test/test-app/app.js'
+      'node --require ./build/src/register.js ./test/test-app/app.js'
     );
 
     assert.ok(
@@ -31,5 +34,11 @@ describe('Register', function () {
         'OpenTelemetry automatic instrumentation started successfully'
       )
     );
+
+    //Check a span has been generated for the GET request done in app.js
+    assert.ok(stdout.includes("name: 'GET'"));
+
+    delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
+    delete process.env.OTEL_TRACES_EXPORTER;
   });
 });

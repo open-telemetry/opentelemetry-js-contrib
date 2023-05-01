@@ -15,4 +15,15 @@
  */
 
 //Used in register.test.ts to mimic a JS app.
-require("http");
+const http = require('http');
+
+const options = {
+  hostname: 'example.com',
+  port: 80,
+  path: '/',
+  method: 'GET'
+};
+
+const req = http.request(options);
+
+req.end();
