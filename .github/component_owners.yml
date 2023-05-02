@@ -6,7 +6,9 @@ components:
     - carolabadeer
   detectors/node/opentelemetry-resource-detector-container:
     - abhee11
-  detectors/node/opentelemetry-resource-detector-gcp: []
+  detectors/node/opentelemetry-resource-detector-gcp:
+    - aabmass
+    - punya
     # Unmaintained?
   detectors/node/opentelemetry-resource-detector-github: []
     # Unmaintained?
@@ -21,8 +23,11 @@ components:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
     - carolabadeer
-  packages/opentelemetry-propagation-utils: []
-    # Unmaintained?
+  packages/opentelemetry-propagation-utils:
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
   packages/opentelemetry-redis-common:
     - haddasbronfman
   packages/opentelemetry-test-utils:
