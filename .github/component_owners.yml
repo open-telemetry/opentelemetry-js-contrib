@@ -57,8 +57,8 @@ components:
     - blumamir
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
-  plugins/node/opentelemetry-instrumentation-cassandra: []
-    # Unmaintained?
+  plugins/node/opentelemetry-instrumentation-cassandra:
+    - seemk
   plugins/node/opentelemetry-instrumentation-connect: []
     # Unmaintained?
   plugins/node/opentelemetry-instrumentation-dns: []
@@ -94,8 +94,8 @@ components:
     - seemk
   plugins/node/opentelemetry-instrumentation-pg:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-pino: []
-    # Unmaintained?
+  plugins/node/opentelemetry-instrumentation-pino:
+    - seemk
   plugins/node/opentelemetry-instrumentation-redis-4:
     - blumamir
   plugins/node/opentelemetry-instrumentation-redis:
@@ -104,8 +104,8 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-router:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-winston: []
-    # Unmaintained?
+  plugins/node/opentelemetry-instrumentation-winston:
+    - seemk
   plugins/web/opentelemetry-instrumentation-document-load:
     - obecny
   plugins/web/opentelemetry-instrumentation-long-task:
