@@ -25,8 +25,11 @@ components:
     # Unmaintained?
   packages/opentelemetry-redis-common:
     - haddasbronfman
-  packages/opentelemetry-test-utils: []
-    # Unmaintained?
+  packages/opentelemetry-test-utils:
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
   plugins/node/instrumentation-amqplib:
     - blumamir
   plugins/node/instrumentation-dataloader:
