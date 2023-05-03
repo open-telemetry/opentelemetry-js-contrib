@@ -12,10 +12,7 @@ module.exports = {
   },
   rules: {
     "quotes": ["error", "single", { "avoidEscape": true }],
-    "eqeqeq": [
-      "error",
-      "smart"
-    ],
+    "eqeqeq": "off",
     "prefer-rest-params": "off",
     "no-shadow": "off",
     "node/no-deprecated-api": ["warn"],

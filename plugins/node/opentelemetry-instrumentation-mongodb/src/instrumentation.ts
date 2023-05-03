@@ -531,7 +531,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     if (topology && topology.s) {
       host = topology.s.options?.host ?? topology.s.host;
       port = (topology.s.options?.port ?? topology.s.port)?.toString();
-      if (host === null || port === null) {
+      if (host == null || port == null) {
         const address = topology.description?.address;
         if (address) {
           const addressSegments = address.split(':');

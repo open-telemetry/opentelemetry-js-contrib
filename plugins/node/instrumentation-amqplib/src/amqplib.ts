@@ -250,7 +250,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         url,
         socketOptions,
         function (this: unknown, err, conn: Connection) {
-          if (err === null) {
+          if (err == null) {
             const urlAttributes = getConnectionAttributesFromUrl(url);
             // the type of conn in @types/amqplib is amqp.Connection, but in practice the library send the
             // `serverProperties` on the `conn` and not in a property `connection`.

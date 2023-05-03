@@ -1179,7 +1179,7 @@ describe('graphql', () => {
 
       it('should attach response hook data to the resulting spans', () => {
         const querySpan = spans.find(
-          span => span.attributes[AttributeNames.OPERATION_TYPE] === 'query'
+          span => span.attributes[AttributeNames.OPERATION_TYPE] == 'query'
         );
         const instrumentationResult = querySpan?.attributes[dataAttributeName];
         assert.deepStrictEqual(

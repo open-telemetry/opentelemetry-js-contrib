@@ -41,7 +41,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
       ),
     };
 
-    if (operation === 'BatchGetItem') {
+    if (operation == 'BatchGetItem') {
       spanAttributes[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES] = Object.keys(
         normalizedRequest.commandInput.RequestItems
       );

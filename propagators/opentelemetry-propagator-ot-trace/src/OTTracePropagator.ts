@@ -87,7 +87,7 @@ export class OTTracePropagator implements TextMapPropagator {
 
   extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
     let traceId = readHeader(carrier, getter, OT_TRACE_ID_HEADER);
-    if (traceId.length === 16) traceId = `${PADDING}${traceId}`;
+    if (traceId.length == 16) traceId = `${PADDING}${traceId}`;
     const spanId = readHeader(carrier, getter, OT_SPAN_ID_HEADER);
     const sampled = readHeader(carrier, getter, OT_SAMPLED_HEADER);
     const traceFlags =
