@@ -44,10 +44,6 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
-import { isSupported } from './utils';
-
-const pgVersion = require('pg/package.json').version;
-const nodeVersion = process.versions.node;
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -118,8 +114,6 @@ describe('pg-pool', () => {
   const shouldTest = testPostgres || testPostgresLocally; // Skips these tests if false (default)
 
   before(function () {
-    const skipForUnsupported =
-      process.env.IN_TAV && !isSupported(nodeVersion, pgVersion);
     const skip = () => {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
@@ -127,12 +121,6 @@ describe('pg-pool', () => {
       this.skip();
     };
 
-    if (skipForUnsupported) {
-      console.error(
-        `  pg - skipped - node@${nodeVersion} and pg@${pgVersion} are not compatible`
-      );
-      skip();
-    }
     if (!shouldTest) {
       skip();
     }
@@ -268,6 +256,23 @@ describe('pg-pool', () => {
         });
         assert.strictEqual(resNoPromise, undefined, 'No promise is returned');
       });
+    });
+
+    it('should not generate traces when requireParentSpan=true is specified', async () => {
+      // The pool gets shared between tests. We need to create a separate one
+      // to test cold start, which can cause nested spans
+      const newPool = new pgPool(CONFIG);
+      create({
+        requireParentSpan: true,
+      });
+      const client = await newPool.connect();
+      try {
+        await client.query('SELECT NOW()');
+      } finally {
+        client.release();
+      }
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
     });
   });
 

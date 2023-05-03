@@ -109,6 +109,7 @@ function assertErrorSpan(
   const events = [
     {
       name: 'exception',
+      droppedAttributesCount: 0,
       attributes: {
         [SemanticAttributes.EXCEPTION_STACKTRACE]: error.stack,
         [SemanticAttributes.EXCEPTION_MESSAGE]: error.message,
@@ -204,7 +205,7 @@ describe('CassandraDriverInstrumentation', () => {
     it('creates an error span', async () => {
       try {
         await client.execute('selec * from');
-      } catch (e) {
+      } catch (e: any) {
         assertErrorSpan('cassandra-driver.execute', e);
         return;
       }
@@ -322,7 +323,7 @@ describe('CassandraDriverInstrumentation', () => {
       const query = 'insert into foobar';
       try {
         await client.batch([query]);
-      } catch (e) {
+      } catch (e: any) {
         assertErrorSpan('cassandra-driver.batch', e);
         return;
       }

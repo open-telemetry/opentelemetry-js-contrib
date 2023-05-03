@@ -27,10 +27,12 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import type { HookHandlerDoneFunction } from 'fastify/types/hooks';
-import type { FastifyInstance } from 'fastify/types/instance';
-import type { FastifyReply } from 'fastify/types/reply';
-import type { FastifyRequest } from 'fastify/types/request';
+import type {
+  HookHandlerDoneFunction,
+  FastifyInstance,
+  FastifyRequest,
+  FastifyReply,
+} from 'fastify';
 import { applicationHookNames } from './constants';
 import {
   AttributeNames,

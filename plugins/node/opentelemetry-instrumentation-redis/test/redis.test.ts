@@ -133,12 +133,14 @@ describe('redis@2.x', () => {
       description: string;
       command: string;
       args: string[];
+      expectedDbStatement: string;
       method: (cb: redisTypes.Callback<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         command: 'hset',
         args: ['hash', 'random', 'random'],
+        expectedDbStatement: 'hash random [1 other arguments]',
         method: (cb: redisTypes.Callback<number>) =>
           client.hset('hash', 'random', 'random', cb),
       },
@@ -146,6 +148,7 @@ describe('redis@2.x', () => {
         description: 'get',
         command: 'get',
         args: ['test'],
+        expectedDbStatement: 'test',
         method: (cb: redisTypes.Callback<string | null>) =>
           client.get('test', cb),
       },
@@ -153,6 +156,7 @@ describe('redis@2.x', () => {
         description: 'delete',
         command: 'del',
         args: ['test'],
+        expectedDbStatement: 'test',
         method: (cb: redisTypes.Callback<number>) => client.del('test', cb),
       },
     ];
@@ -188,7 +192,7 @@ describe('redis@2.x', () => {
         it(`should create a child span for ${operation.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: operation.command,
+            [SemanticAttributes.DB_STATEMENT]: `${operation.command} ${operation.expectedDbStatement}`,
           };
           const span = tracer.startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {

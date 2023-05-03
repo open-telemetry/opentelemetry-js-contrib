@@ -34,11 +34,12 @@
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/exporter-jaeger": "^1.0.0",
     "@opentelemetry/exporter-zipkin": "^1.0.0",
-    "@opentelemetry/instrumentation": "^0.32.0",
-    "@opentelemetry/instrumentation-http": "^0.32.0",
+    "@opentelemetry/instrumentation": "^0.38.0",
+    "@opentelemetry/instrumentation-http": "^0.38.0",
     "@opentelemetry/instrumentation-mysql": "^0.31.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
+    "@opentelemetry/exporter-metrics-otlp-grpc": "0.33.0",
     "mysql": "^2.18.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
@@ -46,6 +47,6 @@
     "@types/mysql": "^2.15.21",
     "cross-env": "^6.0.0",
     "ts-node": "^10.6.0",
-    "typescript": "4.3.5"
+    "typescript": "4.4.4"
   }
 }

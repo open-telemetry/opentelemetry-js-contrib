@@ -45,6 +45,16 @@ export interface CpuUsageData {
 }
 
 /**
+ * Process CPU usage data
+ */
+export interface ProcessCpuUsageData {
+  system: number;
+  user: number;
+  systemP: number;
+  userP: number;
+}
+
+/**
  * Memory data
  */
 export interface MemoryData {

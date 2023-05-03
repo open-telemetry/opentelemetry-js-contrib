@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.31.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.31.1...instrumentation-fastify-v0.31.2) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.31.0...instrumentation-fastify-v0.31.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.30.1...instrumentation-fastify-v0.31.0) (2022-11-16)
+
+
+### Features
+
+* **fastify:** add requestHook support ([#1255](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1255)) ([c9923e3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c9923e3636649c67e5122531f164909b48dbb58d))
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
+
+### Bug Fixes
+
+* **instrumentation-fastify:** stop using fastify types in public api ([#1267](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1267)) ([40515c3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/40515c3dca81d1c177d71af2663fce3b8813bbf2))
+
 ## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.30.0...instrumentation-fastify-v0.30.1) (2022-11-02)
 
 

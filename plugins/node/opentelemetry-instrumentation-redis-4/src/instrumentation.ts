@@ -28,7 +28,8 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
-import { defaultDbStatementSerializer, getClientAttributes } from './utils';
+import { getClientAttributes } from './utils';
+import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -174,6 +175,15 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
           this._getPatchRedisClientMulti()
         );
 
+        if (isWrapped(redisClientPrototype?.MULTI)) {
+          this._unwrap(redisClientPrototype, 'MULTI');
+        }
+        this._wrap(
+          redisClientPrototype,
+          'MULTI',
+          this._getPatchRedisClientMulti()
+        );
+
         if (isWrapped(redisClientPrototype?.sendCommand)) {
           this._unwrap(redisClientPrototype, 'sendCommand');
         }
@@ -196,6 +206,9 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         const redisClientPrototype = moduleExports?.default?.prototype;
         if (isWrapped(redisClientPrototype?.multi)) {
           this._unwrap(redisClientPrototype, 'multi');
+        }
+        if (isWrapped(redisClientPrototype?.MULTI)) {
+          this._unwrap(redisClientPrototype, 'MULTI');
         }
         if (isWrapped(redisClientPrototype?.sendCommand)) {
           this._unwrap(redisClientPrototype, 'sendCommand');

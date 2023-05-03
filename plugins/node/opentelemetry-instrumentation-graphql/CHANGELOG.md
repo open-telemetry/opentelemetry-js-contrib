@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.34.0...instrumentation-graphql-v0.34.1) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.33.2...instrumentation-graphql-v0.34.0) (2023-04-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **gql:** conform GraphQL span name to spec ([#1444](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1444))
+
+### Bug Fixes
+
+* **gql:** conform GraphQL span name to spec ([#1444](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1444)) ([7d070db](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7d070db276dffd82faa906e8e4a8ed8dcb790c6d))
+
+## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.33.1...instrumentation-graphql-v0.33.2) (2023-03-03)
+
+
+### Bug Fixes
+
+* remove component attribute from instrumentations ([#1399](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1399)) ([e93a192](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e93a192b672c8db361bac83ad60294ca49b95361))
+
+## [0.33.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.33.0...instrumentation-graphql-v0.33.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.32.0...instrumentation-graphql-v0.33.0) (2022-11-16)
+
+
+### Features
+
+* **graphql:** add ignoreTrivialResolveSpans config option ([#1256](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1256)) ([aff84bb](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/aff84bba1d391ec2061b8d0121ac8dd36fc1980c))
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
+
+### Bug Fixes
+
+* **instrumentation-graphql:** stop using types from `graphql` library in public api ([#1268](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1268)) ([f8cabf3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f8cabf306faa3e3eb4b9ce38ccdde842abdb2b82))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.31.0...instrumentation-graphql-v0.32.0) (2022-11-02)
 
 

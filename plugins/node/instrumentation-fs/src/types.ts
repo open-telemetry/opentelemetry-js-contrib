@@ -18,13 +18,40 @@ import type * as fs from 'fs';
 import type * as api from '@opentelemetry/api';
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export type FunctionPropertyNames<T> = {
-  [K in keyof T]: T[K] extends Function ? K : never;
-}[keyof T];
+export type FunctionPropertyNames<T> = Exclude<
+  {
+    [K in keyof T]: T[K] extends Function ? K : never;
+  }[keyof T],
+  undefined
+>;
 export type FunctionProperties<T> = Pick<T, FunctionPropertyNames<T>>;
 
-export type FMember = FunctionPropertyNames<typeof fs>;
-export type FPMember = FunctionPropertyNames<typeof fs['promises']>;
+export type FunctionPropertyNamesTwoLevels<T> = Exclude<
+  {
+    [K in keyof T]: {
+      [L in keyof T[K]]: L extends string
+        ? T[K][L] extends Function
+          ? K extends string
+            ? L extends string
+              ? `${K}.${L}`
+              : never
+            : never
+          : never
+        : never;
+    }[keyof T[K]];
+  }[keyof T],
+  undefined
+>;
+
+export type Member<F> =
+  | FunctionPropertyNames<F>
+  | FunctionPropertyNamesTwoLevels<F>;
+export type FMember =
+  | FunctionPropertyNames<typeof fs>
+  | FunctionPropertyNamesTwoLevels<typeof fs>;
+export type FPMember =
+  | FunctionPropertyNames<(typeof fs)['promises']>
+  | FunctionPropertyNamesTwoLevels<(typeof fs)['promises']>;
 
 export type CreateHook = (
   functionName: FMember | FPMember,
@@ -38,4 +65,5 @@ export type EndHook = (
 export interface FsInstrumentationConfig extends InstrumentationConfig {
   createHook?: CreateHook;
   endHook?: EndHook;
+  requireParentSpan?: boolean;
 }

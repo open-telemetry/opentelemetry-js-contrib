@@ -25,6 +25,11 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { instanaAgentDetector } from '../src';
 
+const delay = (ms: number) =>
+  new Promise<void>(resolve => {
+    setTimeout(resolve, ms);
+  });
+
 describe('[Integration] instanaAgentDetector', () => {
   beforeEach(() => {
     nock.disableNetConnect();
@@ -36,7 +41,7 @@ describe('[Integration] instanaAgentDetector', () => {
     nock.cleanAll();
   });
 
-  it('should return merged resource', async () => {
+  it('#1 should return merged resource', async () => {
     const mockedReply = {
       pid: 123,
       agentUuid: '14:7d:da:ff:fe:e4:08:d5',
@@ -53,16 +58,53 @@ describe('[Integration] instanaAgentDetector', () => {
     });
 
     const sdk = new NodeSDK({
-      autoDetectResources: false,
+      resourceDetectors: [envDetector, processDetector, instanaAgentDetector],
       resource: globalResource,
     });
 
-    // attributes are automatically merged!
-    await sdk.detectResources({
-      detectors: [envDetector, processDetector, instanaAgentDetector],
-    });
+    sdk.start();
 
     const resource = sdk['_resource'];
+    // await sdk.detectResources(); [< @opentelemetry/sdk-node@0.37.0]
+    // await resource.waitForAsyncAttributes?.(); [>= @opentelemetry/sdk-node@0.37.0]
+    await resource.waitForAsyncAttributes?.();
+
+    assert.equal(resource.attributes['process.pid'], 123);
+    assert.equal(resource.attributes['process.runtime.name'], 'nodejs');
+    assert.equal(resource.attributes['service.name'], 'TestService');
+    assert.equal(
+      resource.attributes['service.instance.id'],
+      '14:7d:da:ff:fe:e4:08:d5'
+    );
+
+    scope.done();
+  });
+
+  it('#2 should return merged resource', async () => {
+    const mockedReply = {
+      pid: 123,
+      agentUuid: '14:7d:da:ff:fe:e4:08:d5',
+    };
+
+    const scope = nock('http://localhost:42699')
+      .persist()
+      .put('/com.instana.plugin.nodejs.discovery')
+      .reply(200, () => mockedReply);
+
+    const serviceName = 'TestService';
+    const globalResource = new Resource({
+      [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+    });
+
+    const sdk = new NodeSDK({
+      resourceDetectors: [envDetector, processDetector, instanaAgentDetector],
+      resource: globalResource,
+    });
+
+    sdk.start();
+    const resource = sdk['_resource'];
+
+    await delay(500);
 
     assert.equal(resource.attributes['process.pid'], 123);
     assert.equal(resource.attributes['process.runtime.name'], 'nodejs');

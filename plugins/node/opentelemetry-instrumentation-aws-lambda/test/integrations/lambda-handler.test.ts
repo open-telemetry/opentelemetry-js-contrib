@@ -51,9 +51,6 @@ import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
-provider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
-provider.register();
 
 const assertSpanSuccess = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
@@ -118,8 +115,14 @@ describe('lambda handler', () => {
   ) => {
     process.env._HANDLER = handler;
 
+    const provider = new NodeTracerProvider();
+    provider.addSpanProcessor(new BatchSpanProcessor(memoryExporter));
+    provider.register();
+
     instrumentation = new AwsLambdaInstrumentation(config);
     instrumentation.setTracerProvider(provider);
+
+    return provider;
   };
 
   const lambdaRequire = (module: string) =>
@@ -214,7 +217,7 @@ describe('lambda handler', () => {
       let err: Error;
       try {
         await lambdaRequire('lambda-test/async').error('arg', ctx);
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!.message, 'handler error');
@@ -231,7 +234,7 @@ describe('lambda handler', () => {
       let err: string;
       try {
         await lambdaRequire('lambda-test/async').stringerror('arg', ctx);
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!, 'handler error');
@@ -301,7 +304,7 @@ describe('lambda handler', () => {
           ctx,
           (err: Error, res: any) => {}
         );
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!.message, 'handler error');
@@ -330,7 +333,7 @@ describe('lambda handler', () => {
             }
           );
         });
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!.message, 'handler error');
@@ -351,7 +354,7 @@ describe('lambda handler', () => {
           ctx,
           (err: Error, res: any) => {}
         );
-      } catch (e) {
+      } catch (e: any) {
         err = e;
       }
       assert.strictEqual(err!, 'handler error');
@@ -423,7 +426,7 @@ describe('lambda handler', () => {
           }
         );
       });
-    } catch (e) {
+    } catch (e: any) {
       err = e;
     }
     assert.strictEqual(err!, 'handler error');
@@ -667,7 +670,7 @@ describe('lambda handler', () => {
         return propagation.extract(context.active(), event.contextCarrier);
       };
 
-      initializeHandler('lambda-test/async.handler', {
+      const provider = initializeHandler('lambda-test/async.handler', {
         disableAwsContextPropagation: true,
         eventContextExtractor: customExtractor,
       });
@@ -806,7 +809,7 @@ describe('lambda handler', () => {
         let err: Error;
         try {
           await lambdaRequire('lambda-test/async').error('arg', ctx);
-        } catch (e) {
+        } catch (e: any) {
           err = e;
         }
         const [span] = memoryExporter.getFinishedSpans();
@@ -833,7 +836,7 @@ describe('lambda handler', () => {
         let err: Error;
         try {
           lambdaRequire('lambda-test/sync').error('arg', ctx, () => {});
-        } catch (e) {
+        } catch (e: any) {
           err = e;
         }
         const [span] = memoryExporter.getFinishedSpans();
@@ -856,6 +859,22 @@ describe('lambda handler', () => {
         });
         const [span] = memoryExporter.getFinishedSpans();
         assert.strictEqual(span.attributes[ERR_ATTR], error!.message);
+      });
+    });
+
+    describe('.cjs lambda bundle', () => {
+      it('should export a valid span', async () => {
+        initializeHandler('lambda-test/commonjs.handler');
+        const result = await lambdaRequire('lambda-test/commonjs.cjs').handler(
+          'arg',
+          ctx
+        );
+        assert.strictEqual(result, 'ok');
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assertSpanSuccess(span);
+        assert.strictEqual(span.parentSpanId, undefined);
       });
     });
   });

@@ -15,7 +15,6 @@
  */
 
 import * as api from '@opentelemetry/api';
-import * as apiMetrics from '@opentelemetry/api-metrics';
 import * as metrics from '@opentelemetry/sdk-metrics';
 
 import { VERSION } from './version';
@@ -24,8 +23,6 @@ import { VERSION } from './version';
  * Metrics Collector Configuration
  */
 export interface MetricsCollectorConfig {
-  // maximum timeout to wait for stats collection default is 500ms
-  maxTimeoutUpdateMS?: number;
   // Meter Provider
   meterProvider?: metrics.MeterProvider;
   // Character to be used to join metrics - default is "."
@@ -36,7 +33,6 @@ export interface MetricsCollectorConfig {
   url?: string;
 }
 
-export const DEFAULT_MAX_TIMEOUT_UPDATE_MS = 500;
 const DEFAULT_NAME = 'opentelemetry-host-metrics';
 
 /**
@@ -44,16 +40,13 @@ const DEFAULT_NAME = 'opentelemetry-host-metrics';
  */
 export abstract class BaseMetrics {
   protected _logger = api.diag;
-  protected _maxTimeoutUpdateMS: number;
-  protected _meter: apiMetrics.Meter;
+  protected _meter: api.Meter;
   private _name: string;
 
   constructor(config: MetricsCollectorConfig) {
     this._name = config.name || DEFAULT_NAME;
-    this._maxTimeoutUpdateMS =
-      config.maxTimeoutUpdateMS || DEFAULT_MAX_TIMEOUT_UPDATE_MS;
     const meterProvider =
-      config.meterProvider! || apiMetrics.metrics.getMeterProvider();
+      config.meterProvider! || api.metrics.getMeterProvider();
     if (!config.meterProvider) {
       this._logger.warn('No meter provider, using default');
     }

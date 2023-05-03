@@ -36,17 +36,30 @@ import type {
   FsInstrumentationConfig,
 } from './types';
 import { promisify } from 'util';
+import { indexFs } from './utils';
 
 type FS = typeof fs;
+type FSPromises = (typeof fs)['promises'];
 
-const supportsPromises = parseInt(process.versions.node.split('.')[0], 10) > 8;
+/**
+ * This is important for 2-level functions like `realpath.native` to retain the 2nd-level
+ * when patching the 1st-level.
+ */
+function patchedFunctionWithOriginalProperties<
+  T extends (...args: any[]) => ReturnType<T>
+>(patchedFunction: T, original: T): T {
+  return Object.assign(patchedFunction, original);
+}
 
 export default class FsInstrumentation extends InstrumentationBase<FS> {
   constructor(config?: FsInstrumentationConfig) {
     super('@opentelemetry/instrumentation-fs', VERSION, config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<FS>[] {
+  init(): (
+    | InstrumentationNodeModuleDefinition<FS>
+    | InstrumentationNodeModuleDefinition<FSPromises>
+  )[] {
     return [
       new InstrumentationNodeModuleDefinition<FS>(
         'fs',
@@ -54,46 +67,47 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         (fs: FS) => {
           this._diag.debug('Applying patch for fs');
           for (const fName of SYNC_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
             this._wrap(
-              fs,
-              fName,
+              objectToPatch,
+              functionNameToPatch,
               <any>this._patchSyncFunction.bind(this, fName)
             );
           }
           for (const fName of CALLBACK_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
             if (fName === 'exists') {
               // handling separately because of the inconsistent cb style:
               // `exists` doesn't have error as the first argument, but the result
               this._wrap(
-                fs,
-                fName,
+                objectToPatch,
+                functionNameToPatch,
                 <any>this._patchExistsCallbackFunction.bind(this, fName)
               );
               continue;
             }
             this._wrap(
-              fs,
-              fName,
+              objectToPatch,
+              functionNameToPatch,
               <any>this._patchCallbackFunction.bind(this, fName)
             );
           }
-          if (supportsPromises) {
-            for (const fName of PROMISE_FUNCTIONS) {
-              if (isWrapped(fs.promises[fName])) {
-                this._unwrap(fs.promises, fName);
-              }
-              this._wrap(
-                fs.promises,
-                fName,
-                <any>this._patchPromiseFunction.bind(this, fName)
-              );
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fs.promises[fName])) {
+              this._unwrap(fs.promises, fName);
             }
+            this._wrap(
+              fs.promises,
+              fName,
+              <any>this._patchPromiseFunction.bind(this, fName)
+            );
           }
           return fs;
         },
@@ -101,20 +115,47 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           if (fs === undefined) return;
           this._diag.debug('Removing patch for fs');
           for (const fName of SYNC_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
           }
           for (const fName of CALLBACK_FUNCTIONS) {
-            if (isWrapped(fs[fName])) {
-              this._unwrap(fs, fName);
+            const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
+            if (isWrapped(objectToPatch[functionNameToPatch])) {
+              this._unwrap(objectToPatch, functionNameToPatch);
             }
           }
-          if (supportsPromises) {
-            for (const fName of PROMISE_FUNCTIONS) {
-              if (isWrapped(fs.promises[fName])) {
-                this._unwrap(fs.promises, fName);
-              }
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fs.promises[fName])) {
+              this._unwrap(fs.promises, fName);
+            }
+          }
+        }
+      ),
+      new InstrumentationNodeModuleDefinition<FSPromises>(
+        'fs/promises',
+        ['*'],
+        (fsPromises: FSPromises) => {
+          this._diag.debug('Applying patch for fs/promises');
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fsPromises[fName])) {
+              this._unwrap(fsPromises, fName);
+            }
+            this._wrap(
+              fsPromises,
+              fName,
+              <any>this._patchPromiseFunction.bind(this, fName)
+            );
+          }
+          return fsPromises;
+        },
+        (fsPromises: FSPromises) => {
+          if (fsPromises === undefined) return;
+          this._diag.debug('Removing patch for fs/promises');
+          for (const fName of PROMISE_FUNCTIONS) {
+            if (isWrapped(fsPromises[fName])) {
+              this._unwrap(fsPromises, fName);
             }
           }
         }
@@ -127,10 +168,10 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    return <any>function (this: any, ...args: any[]) {
-      if (isTracingSuppressed(api.context.active())) {
-        // Performance optimization. Avoid creating additional contexts and spans
-        // if we already know that the tracing is being suppressed.
+    const patchedFunction = <any>function (this: any, ...args: any[]) {
+      const activeContext = api.context.active();
+
+      if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
       }
       if (
@@ -139,7 +180,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }) === false
       ) {
         return api.context.with(
-          suppressTracing(api.context.active()),
+          suppressTracing(activeContext),
           original,
           this,
           ...args
@@ -153,14 +194,14 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
       try {
         // Suppress tracing for internal fs calls
         const res = api.context.with(
-          suppressTracing(api.trace.setSpan(api.context.active(), span)),
+          suppressTracing(api.trace.setSpan(activeContext, span)),
           original,
           this,
           ...args
         );
         instrumentation._runEndHook(functionName, { args: args, span });
         return res;
-      } catch (error) {
+      } catch (error: any) {
         span.recordException(error);
         span.setStatus({
           message: error.message,
@@ -172,6 +213,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         span.end();
       }
     };
+    return patchedFunctionWithOriginalProperties(patchedFunction, original);
   }
 
   protected _patchCallbackFunction<T extends (...args: any[]) => ReturnType<T>>(
@@ -179,10 +221,10 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    return <any>function (this: any, ...args: any[]) {
-      if (isTracingSuppressed(api.context.active())) {
-        // Performance optimization. Avoid creating additional contexts and spans
-        // if we already know that the tracing is being suppressed.
+    const patchedFunction = <any>function (this: any, ...args: any[]) {
+      const activeContext = api.context.active();
+
+      if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
       }
       if (
@@ -191,7 +233,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }) === false
       ) {
         return api.context.with(
-          suppressTracing(api.context.active()),
+          suppressTracing(activeContext),
           original,
           this,
           ...args
@@ -207,7 +249,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
 
         // Return to the context active during the call in the callback
         args[lastIdx] = api.context.bind(
-          api.context.active(),
+          activeContext,
           function (this: unknown, error?: Error) {
             if (error) {
               span.recordException(error);
@@ -229,12 +271,12 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         try {
           // Suppress tracing for internal fs calls
           return api.context.with(
-            suppressTracing(api.trace.setSpan(api.context.active(), span)),
+            suppressTracing(api.trace.setSpan(activeContext, span)),
             original,
             this,
             ...args
           );
-        } catch (error) {
+        } catch (error: any) {
           span.recordException(error);
           span.setStatus({
             message: error.message,
@@ -253,16 +295,17 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         return original.apply(this, args);
       }
     };
+    return patchedFunctionWithOriginalProperties(patchedFunction, original);
   }
 
   protected _patchExistsCallbackFunction<
     T extends (...args: any[]) => ReturnType<T>
-  >(functionName: FMember, original: T): T {
+  >(functionName: 'exists', original: T): T {
     const instrumentation = this;
     const patchedFunction = <any>function (this: any, ...args: any[]) {
-      if (isTracingSuppressed(api.context.active())) {
-        // Performance optimization. Avoid creating additional contexts and spans
-        // if we already know that the tracing is being suppressed.
+      const activeContext = api.context.active();
+
+      if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
       }
       if (
@@ -271,7 +314,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }) === false
       ) {
         return api.context.with(
-          suppressTracing(api.context.active()),
+          suppressTracing(activeContext),
           original,
           this,
           ...args
@@ -287,7 +330,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
 
         // Return to the context active during the call in the callback
         args[lastIdx] = api.context.bind(
-          api.context.active(),
+          activeContext,
           function (this: unknown) {
             // `exists` never calls the callback with an error
             instrumentation._runEndHook(functionName, {
@@ -302,12 +345,12 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         try {
           // Suppress tracing for internal fs calls
           return api.context.with(
-            suppressTracing(api.trace.setSpan(api.context.active(), span)),
+            suppressTracing(api.trace.setSpan(activeContext, span)),
             original,
             this,
             ...args
           );
-        } catch (error) {
+        } catch (error: any) {
           span.recordException(error);
           span.setStatus({
             message: error.message,
@@ -325,18 +368,22 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         return original.apply(this, args);
       }
     };
+    const functionWithOriginalProperties =
+      patchedFunctionWithOriginalProperties(patchedFunction, original);
 
     // `exists` has a custom promisify function because of the inconsistent signature
     // replicating that on the patched function
     const promisified = function (path: unknown) {
-      return new Promise(resolve => patchedFunction(path, resolve));
+      return new Promise(resolve =>
+        functionWithOriginalProperties(path, resolve)
+      );
     };
     Object.defineProperty(promisified, 'name', { value: functionName });
-    Object.defineProperty(patchedFunction, promisify.custom, {
+    Object.defineProperty(functionWithOriginalProperties, promisify.custom, {
       value: promisified,
     });
 
-    return patchedFunction;
+    return functionWithOriginalProperties;
   }
 
   protected _patchPromiseFunction<T extends (...args: any[]) => ReturnType<T>>(
@@ -344,10 +391,10 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     original: T
   ): T {
     const instrumentation = this;
-    return <any>async function (this: any, ...args: any[]) {
-      if (isTracingSuppressed(api.context.active())) {
-        // Performance optimization. Avoid creating additional contexts and spans
-        // if we already know that the tracing is being suppressed.
+    const patchedFunction = <any>async function (this: any, ...args: any[]) {
+      const activeContext = api.context.active();
+
+      if (!instrumentation._shouldTrace(activeContext)) {
         return original.apply(this, args);
       }
       if (
@@ -356,7 +403,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         }) === false
       ) {
         return api.context.with(
-          suppressTracing(api.context.active()),
+          suppressTracing(activeContext),
           original,
           this,
           ...args
@@ -370,14 +417,14 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
       try {
         // Suppress tracing for internal fs calls
         const res = await api.context.with(
-          suppressTracing(api.trace.setSpan(api.context.active(), span)),
+          suppressTracing(api.trace.setSpan(activeContext, span)),
           original,
           this,
           ...args
         );
         instrumentation._runEndHook(functionName, { args: args, span });
         return res;
-      } catch (error) {
+      } catch (error: any) {
         span.recordException(error);
         span.setStatus({
           message: error.message,
@@ -389,6 +436,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         span.end();
       }
     };
+    return patchedFunctionWithOriginalProperties(patchedFunction, original);
   }
 
   protected _runCreateHook(
@@ -414,5 +462,23 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
         this._diag.error('caught endHook error', e);
       }
     }
+  }
+
+  protected _shouldTrace(context: api.Context): boolean {
+    if (isTracingSuppressed(context)) {
+      // Performance optimization. Avoid creating additional contexts and spans
+      // if we already know that the tracing is being suppressed.
+      return false;
+    }
+
+    const { requireParentSpan } = this.getConfig() as FsInstrumentationConfig;
+    if (requireParentSpan) {
+      const parentSpan = api.trace.getSpan(context);
+      if (parentSpan == null) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

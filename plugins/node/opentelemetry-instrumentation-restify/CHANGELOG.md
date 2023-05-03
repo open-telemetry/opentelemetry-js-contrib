@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.32.1...instrumentation-restify-v0.32.2) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.32.0...instrumentation-restify-v0.32.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.31.0...instrumentation-restify-v0.32.0) (2022-12-20)
+
+
+### Features
+
+* **restify:** add requestHook support ([#1312](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1312)) ([4098e6a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4098e6a3d4257e5da9b8cece430bde7d70319cf3))
+
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.30.1...instrumentation-restify-v0.31.0) (2022-11-16)
+
+
+### Features
+
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
 ## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.30.0...instrumentation-restify-v0.30.1) (2022-11-02)
 
 

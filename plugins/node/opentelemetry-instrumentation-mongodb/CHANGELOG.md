@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.34.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.34.1...instrumentation-mongodb-v0.34.2) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
+
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.34.0...instrumentation-mongodb-v0.34.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.33.0...instrumentation-mongodb-v0.34.0) (2022-12-20)
+
+
+### Features
+
+* **mongodb:** add db.operation span attribute ([#1321](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1321)) ([97305e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/97305e1880ecbfb3b87d6c38f0c6521570583510))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.32.2...instrumentation-mongodb-v0.33.0) (2022-11-16)
+
+
+### Features
+
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.32.0 to ^0.33.0
+
 ## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.32.1...instrumentation-mongodb-v0.32.2) (2022-11-02)
 
 

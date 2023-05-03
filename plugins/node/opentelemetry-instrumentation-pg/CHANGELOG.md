@@ -1,5 +1,73 @@
 # Changelog
 
+## [0.35.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.35.0...instrumentation-pg-v0.35.1) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
+
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.34.1...instrumentation-pg-v0.35.0) (2023-03-03)
+
+
+### Features
+
+* **pg:** remove support for pg v7 ([#1393](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1393)) ([ae6d4f3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ae6d4f39fc882d16e65e846218a69fb72586de3e))
+
+
+### Bug Fixes
+
+* **postgres:** pass 'arguments' to the connect callback ([#1395](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1395)) ([b02775f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b02775f0d9e84dea5463bb9a3883d0ad6ff1f500))
+
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.34.0...instrumentation-pg-v0.34.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+* **pg:** update requireParentSpan to skip instrumentation when parent not present ([#1343](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1343)) ([d23c329](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d23c329a1581709ddc0f336fddfa1aa930f90c3f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.33.0...instrumentation-pg-v0.34.0) (2022-12-20)
+
+
+### Features
+
+* add sqlcommenter comment with trace context to queries in pg instrumentation ([#1286](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1286)) ([a0003e7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a0003e76fc46afbbee2558a7d21906be7c9cb1d1))
+* **pg:** support requestHook hook ([#1307](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1307)) ([f0a9368](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f0a93685cfb43543b7ca577dd370d56576b49e3f))
+
+
+### Bug Fixes
+
+* pg span names ([#1306](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1306)) ([8a375f5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8a375f59f3043a7d3749b1e8af5603b9ed30f08f))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.32.0...instrumentation-pg-v0.33.0) (2022-11-16)
+
+
+### Features
+
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.32.0 to ^0.33.0
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.31.1...instrumentation-pg-v0.32.0) (2022-11-02)
 
 

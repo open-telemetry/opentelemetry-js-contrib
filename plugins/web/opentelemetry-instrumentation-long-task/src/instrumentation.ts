@@ -25,9 +25,7 @@ import type {
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 
 export class LongTaskInstrumentation extends InstrumentationBase {
-  readonly component: string = 'long-task';
   readonly version: string = VERSION;
-  moduleName = this.component;
 
   private _observer?: PerformanceObserver;
   override _config!: LongtaskInstrumentationConfig;
@@ -66,7 +64,6 @@ export class LongTaskInstrumentation extends InstrumentationBase {
         diag.error('longtask instrumentation: observer callback failed', err);
       }
     }
-    span.setAttribute('component', this.component);
     span.setAttribute('longtask.name', entry.name);
     span.setAttribute('longtask.entry_type', entry.entryType);
     span.setAttribute('longtask.duration', entry.duration);

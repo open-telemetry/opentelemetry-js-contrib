@@ -15,28 +15,27 @@
  */
 
 import { diag, trace, context, SpanKind } from '@opentelemetry/api';
-import type * as ioredisTypes from 'ioredis';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { IORedisInstrumentationConfig, IORedisCommand } from './types';
+import { IORedisInstrumentationConfig } from './types';
+import { IORedisCommand, RedisInterface } from './internal-types';
 import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import { endSpan, defaultDbStatementSerializer } from './utils';
+import { endSpan } from './utils';
+import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
 };
 
-export class IORedisInstrumentation extends InstrumentationBase<
-  typeof ioredisTypes
-> {
+export class IORedisInstrumentation extends InstrumentationBase<any> {
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-ioredis',
@@ -45,11 +44,11 @@ export class IORedisInstrumentation extends InstrumentationBase<
     );
   }
 
-  init(): InstrumentationNodeModuleDefinition<typeof ioredisTypes>[] {
+  init(): InstrumentationNodeModuleDefinition<any>[] {
     return [
-      new InstrumentationNodeModuleDefinition<typeof ioredisTypes>(
+      new InstrumentationNodeModuleDefinition<any>(
         'ioredis',
-        ['>1 <5'],
+        ['>1', '<6'],
         (moduleExports, moduleVersion?: string) => {
           diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
@@ -97,7 +96,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
 
   private traceSendCommand = (original: Function, moduleVersion?: string) => {
     const instrumentation = this;
-    return function (this: ioredisTypes.Redis, cmd?: IORedisCommand) {
+    return function (this: RedisInterface, cmd?: IORedisCommand) {
       if (arguments.length < 1 || typeof cmd !== 'object') {
         return original.apply(this, arguments);
       }
@@ -174,7 +173,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
         };
 
         return result;
-      } catch (error) {
+      } catch (error: any) {
         endSpan(span, error);
         throw error;
       }
@@ -183,7 +182,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
 
   private traceConnection = (original: Function) => {
     const instrumentation = this;
-    return function (this: ioredisTypes.Redis) {
+    return function (this: RedisInterface) {
       const config =
         instrumentation.getConfig() as IORedisInstrumentationConfig;
       const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
@@ -209,7 +208,7 @@ export class IORedisInstrumentation extends InstrumentationBase<
         const client = original.apply(this, arguments);
         endSpan(span, null);
         return client;
-      } catch (error) {
+      } catch (error: any) {
         endSpan(span, error);
         throw error;
       }

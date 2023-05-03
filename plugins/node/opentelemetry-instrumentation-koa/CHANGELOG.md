@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.34.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.34.3...instrumentation-koa-v0.34.4) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+## [0.34.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.34.2...instrumentation-koa-v0.34.3) (2023-04-06)
+
+
+### Bug Fixes
+
+* **@types/koa:** update @types/koa version to latest ([#1447](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1447)) ([5f180aa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5f180aa05d3140010642287de933c708e915b619))
+
+## [0.34.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.34.1...instrumentation-koa-v0.34.2) (2023-03-03)
+
+
+### Bug Fixes
+
+* remove component attribute from instrumentations ([#1399](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1399)) ([e93a192](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e93a192b672c8db361bac83ad60294ca49b95361))
+
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.34.0...instrumentation-koa-v0.34.1) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.33.0...instrumentation-koa-v0.34.0) (2022-11-16)
+
+
+### Features
+
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
 ## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.32.0...instrumentation-koa-v0.33.0) (2022-11-02)
 
 

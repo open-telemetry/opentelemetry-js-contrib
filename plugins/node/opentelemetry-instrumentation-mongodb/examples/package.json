@@ -33,8 +33,8 @@
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/exporter-jaeger": "^1.0.0",
     "@opentelemetry/exporter-zipkin": "^1.0.0",
-    "@opentelemetry/instrumentation": "^0.32.0",
-    "@opentelemetry/instrumentation-http": "^0.32.0",
+    "@opentelemetry/instrumentation": "^0.38.0",
+    "@opentelemetry/instrumentation-http": "^0.38.0",
     "@opentelemetry/instrumentation-mongodb": "^0.32.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
@@ -44,6 +44,6 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "ts-node": "^10.6.0",
-    "typescript": "4.3.5"
+    "typescript": "4.4.4"
   }
 }

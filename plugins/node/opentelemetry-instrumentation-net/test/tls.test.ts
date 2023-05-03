@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { SpanStatusCode } from '@opentelemetry/api';
+import { SpanStatusCode, context } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
 import * as tls from 'tls';
 import { NetInstrumentation } from '../src';
@@ -48,12 +49,16 @@ function getTLSSpans() {
 
 describe('NetInstrumentation', () => {
   let instrumentation: NetInstrumentation;
+  let contextManager: AsyncHooksContextManager;
+
   let tlsServer: tls.Server;
   let tlsSocket: tls.TLSSocket;
 
   before(() => {
     instrumentation = new NetInstrumentation();
     instrumentation.setTracerProvider(provider);
+    contextManager = new AsyncHooksContextManager().enable();
+    context.setGlobalContextManager(contextManager.enable());
     require('net');
   });
 

@@ -15,7 +15,10 @@
  */
 
 import { diag } from '@opentelemetry/api';
-import { Instrumentation } from '@opentelemetry/instrumentation';
+import {
+  Instrumentation,
+  InstrumentationConfig,
+} from '@opentelemetry/instrumentation';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
@@ -34,7 +37,7 @@ const InstrumentationMap = {
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
 export type InstrumentationConfigMap = {
   [Name in keyof typeof InstrumentationMap]?: ConfigArg<
-    typeof InstrumentationMap[Name]
+    (typeof InstrumentationMap)[Name]
   >;
 };
 
@@ -55,7 +58,7 @@ export function getWebAutoInstrumentations(
   >) {
     const Instance = InstrumentationMap[name];
     // Defaults are defined by the instrumentation itself
-    const userConfig = inputConfigs[name] ?? {};
+    const userConfig: InstrumentationConfig = inputConfigs[name] ?? {};
 
     if (userConfig.enabled === false) {
       diag.debug(`Disabling instrumentation for ${name}`);
@@ -65,7 +68,7 @@ export function getWebAutoInstrumentations(
     try {
       diag.debug(`Loading instrumentation for ${name}`);
       instrumentations.push(new Instance(userConfig));
-    } catch (e) {
+    } catch (e: any) {
       diag.error(e);
     }
   }

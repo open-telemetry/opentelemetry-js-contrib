@@ -14,11 +14,19 @@
     },
     {
       "groupName": "Otel Core experimental",
-      "matchPackageNames": ["@opentelemetry/sdk-node", "@opentelemetry/instrumentation", "@opentelemetry/instrumentation-grpc", "@opentelemetry/instrumentation-http", "@opentelemetry/instrumentation-fetch", "@opentelemetry/instrumentation-xml-http-request", "@opentelemetry/api-metrics", "@opentelemetry/sdk-metrics" ],
+      "matchPackageNames": [
+        "@opentelemetry/instrumentation",
+        "@opentelemetry/instrumentation-grpc",
+        "@opentelemetry/instrumentation-http",
+        "@opentelemetry/instrumentation-fetch",
+        "@opentelemetry/instrumentation-xml-http-request",
+        "@opentelemetry/sdk-node"
+      ],
       "rangeStrategy": "bump"
     }
   ],
   "ignoreDeps": ["lerna", "lerna-changelog"],
+  "ignorePaths": ["archive/**", "examples/**"],
   "assignees": ["@blumamir", "@dyladan", "@legendecas", "@Rauno56", "@vmarchaud"],
   "schedule": [
     "before 3am on Friday"

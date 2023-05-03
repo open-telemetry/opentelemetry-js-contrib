@@ -169,7 +169,7 @@ describe('graphql', () => {
           executeSpan.attributes[AttributeNames.OPERATION_NAME],
           undefined
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+        assert.deepStrictEqual(executeSpan.name, 'query');
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
@@ -297,7 +297,7 @@ describe('graphql', () => {
           executeSpan.attributes[AttributeNames.OPERATION_NAME],
           undefined
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+        assert.deepStrictEqual(executeSpan.name, 'query');
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
@@ -395,7 +395,7 @@ describe('graphql', () => {
           executeSpan.attributes[`${AttributeNames.VARIABLES}id`],
           undefined
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+        assert.deepStrictEqual(executeSpan.name, 'query Query1');
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
@@ -487,7 +487,7 @@ describe('graphql', () => {
           executeSpan.attributes[AttributeNames.OPERATION_NAME],
           undefined
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+        assert.deepStrictEqual(executeSpan.name, 'query');
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
     });
@@ -555,7 +555,7 @@ describe('graphql', () => {
           executeSpan.attributes[AttributeNames.OPERATION_NAME],
           undefined
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+        assert.deepStrictEqual(executeSpan.name, 'query');
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
     });
@@ -752,7 +752,7 @@ describe('graphql', () => {
           executeSpan.attributes[AttributeNames.OPERATION_NAME],
           undefined
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+        assert.deepStrictEqual(executeSpan.name, 'query');
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
@@ -848,7 +848,7 @@ describe('graphql', () => {
           executeSpan.attributes[AttributeNames.OPERATION_NAME],
           'AddBook'
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+        assert.deepStrictEqual(executeSpan.name, 'mutation AddBook');
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
@@ -946,7 +946,7 @@ describe('graphql', () => {
           executeSpan.attributes[`${AttributeNames.VARIABLES}id`],
           2
         );
-        assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+        assert.deepStrictEqual(executeSpan.name, 'query Query1');
         assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
       });
 
@@ -1044,7 +1044,7 @@ describe('graphql', () => {
         executeSpan.attributes[AttributeNames.OPERATION_NAME],
         'AddBook'
       );
-      assert.deepStrictEqual(executeSpan.name, SpanNames.EXECUTE);
+      assert.deepStrictEqual(executeSpan.name, 'mutation AddBook');
       assert.deepStrictEqual(executeSpan.parentSpanId, undefined);
     });
 
@@ -1317,7 +1317,7 @@ describe('graphql', () => {
 
       // validate execute span is present
       const spans = exporter.getFinishedSpans();
-      const executeSpans = spans.filter(s => s.name === SpanNames.EXECUTE);
+      const executeSpans = spans.filter(s => s.name === 'query');
       assert.deepStrictEqual(executeSpans.length, 1);
       const [executeSpan] = executeSpans;
       assert.deepStrictEqual(
@@ -1371,7 +1371,7 @@ describe('graphql', () => {
       );
 
       // single execute span
-      const executeSpans = spans.filter(s => s.name === SpanNames.EXECUTE);
+      const executeSpans = spans.filter(s => s.name === 'query');
       assert.deepStrictEqual(executeSpans.length, 1);
     });
   });

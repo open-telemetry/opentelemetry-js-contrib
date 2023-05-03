@@ -43,7 +43,6 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import { defaultDbStatementSerializer } from '../src/utils';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -82,7 +81,7 @@ const sanitizeEventForAssertion = (span: ReadableSpan) => {
 
 describe('ioredis', () => {
   const provider = new NodeTracerProvider();
-  let ioredis: typeof ioredisTypes;
+  let ioredis: typeof ioredisTypes.default;
   let instrumentation: IORedisInstrumentation;
   const shouldTestLocal = process.env.RUN_REDIS_TESTS_LOCAL;
   const shouldTest = process.env.RUN_REDIS_TESTS || shouldTestLocal;
@@ -188,23 +187,23 @@ describe('ioredis', () => {
       description: string;
       name: string;
       args: Array<string>;
-      serializedArgs: Array<string>;
-      method: (cb: ioredisTypes.CallbackFunction<unknown>) => unknown;
+      expectedDbStatement: string;
+      method: (cb: ioredisTypes.Callback<unknown>) => unknown;
     }> = [
       {
         description: 'insert',
         name: 'hset',
         args: [hashKeyName, 'testField', 'testValue'],
-        serializedArgs: [hashKeyName, 'testField', '[1 other arguments]'],
-        method: (cb: ioredisTypes.CallbackFunction<number>) =>
+        expectedDbStatement: `${hashKeyName} testField [1 other arguments]`,
+        method: (cb: ioredisTypes.Callback<number>) =>
           client.hset(hashKeyName, 'testField', 'testValue', cb),
       },
       {
         description: 'get',
         name: 'get',
         args: [testKeyName],
-        serializedArgs: [testKeyName],
-        method: (cb: ioredisTypes.CallbackFunction<string | null>) =>
+        expectedDbStatement: `${testKeyName}`,
+        method: (cb: ioredisTypes.Callback<string | null>) =>
           client.get(testKeyName, cb),
       },
     ];
@@ -245,9 +244,7 @@ describe('ioredis', () => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `${
-              command.name
-            } ${command.serializedArgs.join(' ')}`,
+            [SemanticAttributes.DB_STATEMENT]: `${command.name} ${command.expectedDbStatement}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -310,7 +307,7 @@ describe('ioredis', () => {
             // should throw 'ReplyError: ERR value is not an integer or out of range'
             // because the value im the key is not numeric and we try to increment it
             await client.incr('non-int-key');
-          } catch (ex) {
+          } catch (ex: any) {
             const endedSpans = memoryExporter.getFinishedSpans();
             assert.strictEqual(endedSpans.length, 2);
             const ioredisSpan = endedSpans[1];
@@ -963,7 +960,7 @@ describe('ioredis', () => {
     describe('setConfig - custom dbStatementSerializer config', () => {
       const dbStatementSerializer = (
         cmdName: string,
-        cmdArgs: Array<string | Buffer | number>
+        cmdArgs: Array<string | Buffer | number | any>
       ) => {
         return Array.isArray(cmdArgs) && cmdArgs.length
           ? `FooBar_${cmdName} ${cmdArgs.join(',')}`
@@ -999,43 +996,6 @@ describe('ioredis', () => {
             });
           });
         });
-      });
-    });
-  });
-
-  describe('#defaultDbStatementSerializer()', () => {
-    [
-      {
-        cmdName: 'UNKNOWN',
-        cmdArgs: ['something'],
-        expected: 'UNKNOWN [1 other arguments]',
-      },
-      {
-        cmdName: 'ECHO',
-        cmdArgs: ['echo'],
-        expected: 'ECHO [1 other arguments]',
-      },
-      {
-        cmdName: 'LPUSH',
-        cmdArgs: ['list', 'value'],
-        expected: 'LPUSH list [1 other arguments]',
-      },
-      {
-        cmdName: 'HSET',
-        cmdArgs: ['hash', 'field', 'value'],
-        expected: 'HSET hash field [1 other arguments]',
-      },
-      {
-        cmdName: 'INCRBY',
-        cmdArgs: ['key', 5],
-        expected: 'INCRBY key 5',
-      },
-    ].forEach(({ cmdName, cmdArgs, expected }) => {
-      it(`should serialize the correct number of arguments for ${cmdName}`, () => {
-        assert.strictEqual(
-          defaultDbStatementSerializer(cmdName, cmdArgs),
-          expected
-        );
       });
     });
   });

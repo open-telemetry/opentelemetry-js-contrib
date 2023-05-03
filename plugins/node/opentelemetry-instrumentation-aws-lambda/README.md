@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-[component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @willarmiros
+[component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @carolabadeer
 
 This module provides automatic instrumentation for the [`AWS Lambda`](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
@@ -60,11 +60,11 @@ const { AwsLambdaInstrumentation } = require('@opentelemetry/instrumentation-aws
 
 new AwsLambdaInstrumentation({
     requestHook: (span, { event, context }) => {
-        span.setAttributes('faas.name', context.functionName);
+        span.setAttribute('faas.name', context.functionName);
     },
     responseHook: (span, { err, res }) => {
-        if (err instanceof Error) span.setAttributes('faas.error', err.message);
-        if (res) span.setAttributes('faas.res', res);
+        if (err instanceof Error) span.setAttribute('faas.error', err.message);
+        if (res) span.setAttribute('faas.res', res);
     }
 })
 ```

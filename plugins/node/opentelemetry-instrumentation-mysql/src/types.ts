@@ -16,4 +16,10 @@
 
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export type MySQLInstrumentationConfig = InstrumentationConfig;
+export interface MySQLInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * If true, an attribute containing the query's parameters will be attached
+   * the spans generated to represent the query.
+   */
+  enhancedDatabaseReporting?: boolean;
+}

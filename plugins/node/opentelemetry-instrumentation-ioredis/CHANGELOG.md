@@ -1,5 +1,75 @@
 # Changelog
 
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.34.0...instrumentation-ioredis-v0.34.1) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.33.2...instrumentation-ioredis-v0.34.0) (2023-03-03)
+
+
+### Features
+
+* **ioredis:** Update instrumentation-ioredis to version 5.x.x ([#1121](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1121)) ([f5f7ac6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f5f7ac6196b5422e030a6913c491117a6a3a0690))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/redis-common bumped from ^0.34.0 to ^0.35.0
+
+## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.33.1...instrumentation-ioredis-v0.33.2) (2023-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.35.1 ([#1358](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1358)) ([ff109b7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff109b77928cc9a139a21c63d6b54399bb017fa4))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
+
+## [0.33.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.33.0...instrumentation-ioredis-v0.33.1) (2022-12-20)
+
+
+### Bug Fixes
+
+* **redis:** serialize non sensitive arguments into db.statement attribute ([#1299](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1299)) ([092a250](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/092a2509bcf884e1b997e0eaec3a6ca02cfd2058))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/redis-common bumped from ^0.33.0 to ^0.34.0
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.32.2...instrumentation-ioredis-v0.33.0) (2022-11-16)
+
+
+### Features
+
+* update experimental deps to `^0.34.0`, core deps to `^1.8.0`, api to `^1.3.0` ([#1278](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1278)) ([e9fe8e1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e9fe8e13e34f54e96c50525cadeb74ac048c5624))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.32.0 to ^0.33.0
+
 ## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.32.1...instrumentation-ioredis-v0.32.2) (2022-11-02)
 
 

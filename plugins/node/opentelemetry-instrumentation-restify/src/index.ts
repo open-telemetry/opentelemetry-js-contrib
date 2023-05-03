@@ -20,3 +20,4 @@ export * from './instrumentation';
 export default RestifyInstrumentation;
 
 export * from './enums/AttributeNames';
+export * from './types';
