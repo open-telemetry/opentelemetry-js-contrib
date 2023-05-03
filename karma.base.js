@@ -18,7 +18,7 @@ module.exports = {
   listenAddress: 'localhost',
   hostname: 'localhost',
   browsers: ['ChromeHeadless'],
-  frameworks: ['mocha'],
+  frameworks: ['mocha', 'webpack'],
   coverageIstanbulReporter: {
     reports: ['json'],
     dir: '.nyc_output',
@@ -26,6 +26,5 @@ module.exports = {
   },
   reporters: ['spec', 'coverage-istanbul'],
   files: ['test/index-webpack.ts'],
-  preprocessors: { 'test/index-webpack.ts': ['webpack'] },
-  webpackMiddleware: { noInfo: true }
+  preprocessors: { 'test/index-webpack.ts': ['webpack'] }
 };

@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-const webpackNodePolyfills = require('./webpack.node-polyfills.js');
+const path = require('path');
+const os = require('os');
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
+
 
 // This is the webpack configuration for browser Karma tests with coverage.
 module.exports = {
   mode: 'development',
   target: 'web',
-  output: { filename: 'bundle.js' },
+  output: {
+    filename: '[name].js',
+    path: path.join(os.tmpdir(), '_karma_22_webpack_') + Math.floor(Math.random() * 1000000) ,
+  },
   resolve: { extensions: ['.ts', '.js', '.tsx'] },
   devtool: 'inline-source-map',
   module: {
@@ -37,10 +43,14 @@ module.exports = {
             esModules: true
           }
         }
-      },
-      // This setting configures Node polyfills for the browser that will be
-      // added to the webpack bundle for Karma tests.
-      { parser: { node: webpackNodePolyfills } }
+      }
     ]
+  },
+  plugins: [
+		new NodePolyfillPlugin()
+	],
+  optimization: {
+    runtimeChunk: false,
+    splitChunks: false
   }
 };
