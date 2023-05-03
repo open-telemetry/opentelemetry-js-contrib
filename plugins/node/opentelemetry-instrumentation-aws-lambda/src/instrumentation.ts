@@ -132,7 +132,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
               return moduleExports;
             },
             (moduleExports?: LambdaModule) => {
-              if (moduleExports == undefined) return;
+              if (moduleExports === undefined) return;
               diag.debug('Removing patch for lambda handler');
               this._unwrap(moduleExports, functionName);
             }
