@@ -119,7 +119,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
 
     assert.strictEqual(
       metrics[0].descriptor.description,
-      'The number of connections that are currently in the state referenced by the attribute "state".'
+      'The number of connections that are currently in state described by the state attribute.'
     );
     assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
     assert.strictEqual(
@@ -150,7 +150,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
 
     assert.strictEqual(
       metrics[0].descriptor.description,
-      'The number of connections that are currently in the state referenced by the attribute "state".'
+      'The number of connections that are currently in state described by the state attribute.'
     );
     assert.strictEqual(metrics[0].dataPoints.length, 2);
     assert.strictEqual(metrics[0].dataPoints[0].value, 0);
