@@ -38,7 +38,7 @@ export const isPromise = (value: any): value is Promise<unknown> => {
 
 // https://github.com/graphql/graphql-js/blob/main/src/jsutils/isObjectLike.ts
 const isObjectLike = (value: unknown): value is { [key: string]: unknown } => {
-  return typeof value == 'object' && value !== null;
+  return typeof value === 'object' && value !== null;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

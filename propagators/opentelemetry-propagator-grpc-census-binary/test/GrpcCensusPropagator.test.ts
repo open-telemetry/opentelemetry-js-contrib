@@ -272,7 +272,7 @@ function makeGetter() {
       }
     },
     keys(carrier) {
-      if (carrier == null) {
+      if (carrier === null) {
         return [];
       }
       return Object.keys(carrier);

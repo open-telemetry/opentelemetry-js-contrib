@@ -470,7 +470,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       };
     }
 
-    const isUsingDefaultResolver = fieldResolver == null;
+    const isUsingDefaultResolver = fieldResolver === null;
     // follows graphql implementation here:
     // https://github.com/graphql/graphql-js/blob/0b7daed9811731362c71900e12e5ea0d1ecc7f1f/src/execution/execute.ts#L494
     const fieldResolverForExecute = fieldResolver ?? defaultFieldResolved;

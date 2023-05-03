@@ -474,7 +474,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
     const { requireParentSpan } = this.getConfig() as FsInstrumentationConfig;
     if (requireParentSpan) {
       const parentSpan = api.trace.getSpan(context);
-      if (parentSpan == null) {
+      if (parentSpan === null) {
         return false;
       }
     }

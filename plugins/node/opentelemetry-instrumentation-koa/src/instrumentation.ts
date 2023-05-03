@@ -58,7 +58,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       'koa',
       ['^2.0.0'],
       moduleExports => {
-        if (moduleExports == null) {
+        if (moduleExports === null) {
           return moduleExports;
         }
         api.diag.debug('Patching Koa');
