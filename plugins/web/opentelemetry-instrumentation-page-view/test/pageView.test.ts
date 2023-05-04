@@ -38,8 +38,8 @@ describe('PageView Instrumentation', () => {
   beforeEach(() => {
     plugin = new PageViewEventInstrumentation({
       enabled: false,
+      loggerProvider: provider,
     });
-    plugin.setLoggerProvider(provider);
 
     exporter.reset();
   });

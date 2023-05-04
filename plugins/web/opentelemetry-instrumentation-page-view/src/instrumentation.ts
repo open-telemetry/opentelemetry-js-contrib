@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { InstrumentationBase } from '@opentelemetry/instrumentation/src';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import { LogRecord, Logger } from '@opentelemetry/api-logs';
 import { VERSION } from './version';
 import { PageViewInstrumentationConfig } from './types';
