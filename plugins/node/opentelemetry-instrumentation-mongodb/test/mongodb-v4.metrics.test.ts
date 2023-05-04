@@ -121,7 +121,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
       metrics[0].descriptor.description,
       'The number of connections that are currently in state described by the state attribute.'
     );
-    assert.strictEqual(metrics[0].descriptor.unit, '{connections}');
+    assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
     assert.strictEqual(
       metrics[0].descriptor.name,
       'db.client.connections.usage'
