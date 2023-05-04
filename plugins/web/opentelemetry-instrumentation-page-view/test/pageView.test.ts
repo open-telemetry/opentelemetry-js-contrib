@@ -36,43 +36,34 @@ describe('PageView Instrumentation', () => {
   const sandbox = sinon.createSandbox();
 
   beforeEach(() => {
-    Object.defineProperty(window.document, 'readyState', {
-      writable: true,
-      value: 'complete',
-    });
     plugin = new PageViewEventInstrumentation({
       enabled: false,
-      provider: provider,
     });
+    plugin.setLoggerProvider(provider);
+
     exporter.reset();
   });
 
   afterEach(async () => {
     sandbox.restore();
-    Object.defineProperty(window.document, 'readyState', {
-      writable: true,
-      value: 'complete',
-    });
     plugin.disable();
   });
 
   describe('constructor', () => {
     it('should construct an instance', () => {
-      plugin = new PageViewEventInstrumentation({
-        enabled: false,
-        provider: provider,
-      });
       assert.ok(plugin instanceof PageViewEventInstrumentation);
     });
   });
 
-  describe('add custom attributes to spans', () => {
-    it('should add attribute to document load span', done => {
-      plugin = new PageViewEventInstrumentation({
-        enabled: false,
-        provider: provider,
-      });
+  describe('export page_view LogRecord', () => {
+    it('should export LogRecord for page_view event', done => {
+      const spy = sandbox.spy(document, 'addEventListener');
       plugin.enable();
+
+      assert.ok(spy.calledOnce);
+
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+
       setTimeout(() => {
         assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
 
@@ -86,11 +77,11 @@ describe('PageView Instrumentation', () => {
           pageViewLogRecord.attributes['event.name'],
           'page_view'
         );
-        assert.strictEqual(pageViewLogRecord.attributes['event.type'], 0);
-        assert.strictEqual(pageViewLogRecord.attributes['event.data'], {
-          url: 'document.documentURI as string',
-          referrer: 'document.referrer',
-          title: 'document.title',
+        assert.deepEqual(pageViewLogRecord.attributes['event.data'], {
+          type: 0,
+          url: document.documentURI as string,
+          referrer: document.referrer,
+          title: document.title,
         });
         done();
       });

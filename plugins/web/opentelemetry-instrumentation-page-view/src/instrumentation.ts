@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-import { InstrumentationBase } from '@opentelemetry/instrumentation';
-import { LogRecord, Logger } from '@opentelemetry/api-logs';
+import {
+  InstrumentationBase,
+  InstrumentationConfig,
+} from '@opentelemetry/instrumentation';
+import { LogRecord } from '@opentelemetry/api-logs';
 import { VERSION } from './version';
-import { PageViewInstrumentationConfig } from './types';
 
 /**
  * This class represents a Page View Event plugin
@@ -25,15 +27,13 @@ import { PageViewInstrumentationConfig } from './types';
 export class PageViewEventInstrumentation extends InstrumentationBase<unknown> {
   readonly component: string = 'page-view-event';
   readonly version: string = '1';
-  readonly logger?: Logger;
 
   /**
    *
    * @param config
    */
-  constructor(config: PageViewInstrumentationConfig = {}) {
+  constructor(config: InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-page-view', VERSION, config);
-    this.logger = config.provider?.getLogger('page_view');
   }
 
   init() {}
