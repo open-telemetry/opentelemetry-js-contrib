@@ -58,20 +58,20 @@ export class DynamodbServiceExtension implements ServiceExtension {
   responseHook(
     response: NormalizedResponse,
     span: Span,
-    tracer: Tracer,
-    config: AwsSdkInstrumentationConfig
+    _tracer: Tracer,
+    _config: AwsSdkInstrumentationConfig
   ) {
-    const operation = response.request.commandName;
-
-    if (operation === 'BatchGetItem') {
-      if (Array.isArray(response.data?.ConsumedCapacity)) {
-        span.setAttribute(
-          SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY,
-          response.data.ConsumedCapacity.map(
-            (x: { [DictionaryKey: string]: any }) => JSON.stringify(x)
-          )
-        );
-      }
+    if (response.data?.ConsumedCapacity) {
+      span.setAttribute(
+        SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY,
+        toArray(response.data.ConsumedCapacity).map(
+          (x: { [DictionaryKey: string]: any }) => JSON.stringify(x)
+        )
+      );
     }
   }
+}
+
+function toArray<T>(values: T | T[]): T[] {
+  return Array.isArray(values) ? values : [values];
 }
