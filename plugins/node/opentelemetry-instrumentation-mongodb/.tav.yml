@@ -1,7 +1,7 @@
 mongodb:
   jobs:
     - versions: ">=3.3 <4"
-      commands: npm run test
+      commands: npm run test-v3
     - versions: ">=4 <5"
       commands: npm run test-v4
     - versions: ">=5 <6"
