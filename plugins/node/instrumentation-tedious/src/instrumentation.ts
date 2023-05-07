@@ -226,12 +226,7 @@ export class TediousInstrumentation extends InstrumentationBase<
 
   private _patchCallbackQuery(endSpan: Function) {
     return (originalCallback: Function) => {
-      return function (
-        this: any,
-        err: Error | undefined | null,
-        rowCount?: number,
-        rows?: any
-      ) {
+      return function (this: any, err: Error | undefined | null) {
         endSpan(err);
         return originalCallback.apply(this, arguments);
       };

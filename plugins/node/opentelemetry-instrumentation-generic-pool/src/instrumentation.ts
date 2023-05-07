@@ -17,7 +17,6 @@
 import * as api from '@opentelemetry/api';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
@@ -34,7 +33,7 @@ export default class Instrumentation extends InstrumentationBase<
   // only used for v2 - v2.3)
   private _isDisabled = false;
 
-  constructor(config: InstrumentationConfig = {}) {
+  constructor() {
     super(`@opentelemetry/instrumentation-${MODULE_NAME}`, VERSION);
   }
 

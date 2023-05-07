@@ -191,11 +191,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
 
   private _patchCallbackQuery(endSpan: Function) {
     return (originalCallback: Function) => {
-      return function (
-        err: mysqlTypes.QueryError | null,
-        results?: any,
-        fields?: mysqlTypes.FieldPacket[]
-      ) {
+      return function (err: mysqlTypes.QueryError | null, results?: any) {
         endSpan(err, results);
         return originalCallback(...arguments);
       };

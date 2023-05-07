@@ -37,6 +37,7 @@ module.exports = {
           }
         ],
         "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-unused-vars": ["error", {"argsIgnorePattern": "^_", "args": "after-used"}],
         "@typescript-eslint/no-inferrable-types": ["error", { ignoreProperties: true }],
         "@typescript-eslint/no-empty-function": ["off"],
         "@typescript-eslint/ban-types": ["warn", {

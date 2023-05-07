@@ -17,7 +17,6 @@
 import * as api from '@opentelemetry/api';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
@@ -35,7 +34,7 @@ export class Instrumentation extends InstrumentationBase<any> {
     component: Instrumentation.COMPONENT,
   };
 
-  constructor(config: InstrumentationConfig = {}) {
+  constructor() {
     super('@opentelemetry/instrumentation-nestjs-core', VERSION);
   }
 
@@ -166,12 +165,7 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
     ) {
       arguments[1] = createWrapHandler(tracer, moduleVersion, callback);
       const handler = original.apply(this, arguments as any);
-      return function (
-        this: any,
-        req: any,
-        res: any,
-        next: (...args: any[]) => unknown
-      ) {
+      return function (this: any, req: any) {
         const callbackName = callback.name;
         const instanceName =
           instance.constructor && instance.constructor.name

@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span, Tracer, SpanKind } from '@opentelemetry/api';
+import { SpanKind } from '@opentelemetry/api';
 import {
   MessagingDestinationKindValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import {
-  NormalizedRequest,
-  NormalizedResponse,
-  AwsSdkInstrumentationConfig,
-} from '../types';
+import { NormalizedRequest } from '../types';
 import { injectPropagationContext } from './MessageAttributes';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
@@ -70,12 +66,7 @@ export class SnsServiceExtension implements ServiceExtension {
     }
   }
 
-  responseHook(
-    response: NormalizedResponse,
-    span: Span,
-    tracer: Tracer,
-    config: AwsSdkInstrumentationConfig
-  ): void {}
+  responseHook(): void {}
 
   extractDestinationName(
     topicArn: string,

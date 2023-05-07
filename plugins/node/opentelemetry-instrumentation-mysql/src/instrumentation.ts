@@ -177,7 +177,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     return (originalPoolEnd: Function) => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation#patch: patched mysql pool end');
-      return function end(callback?: unknown) {
+      return function end() {
         const nAll = (pool as any)._allConnections.length;
         const nFree = (pool as any)._freeConnections.length;
         const nUsed = nAll - nFree;
@@ -219,7 +219,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     return (originalAdd: Function) => {
       const thisPlugin = this;
       diag.debug('MySQLInstrumentation#patch: patched mysql pool cluster add');
-      return function add(id: string, config: unknown) {
+      return function add(id: string) {
         // Unwrap if unpatch has been called
         if (!thisPlugin['_enabled']) {
           thisPlugin._unwrap(cluster, 'add');
@@ -396,11 +396,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
   private _patchCallbackQuery(span: Span, parentContext: Context) {
     return (originalCallback: Function) => {
-      return function (
-        err: mysqlTypes.MysqlError | null,
-        results?: any,
-        fields?: mysqlTypes.FieldInfo[]
-      ) {
+      return function (err: mysqlTypes.MysqlError | null) {
         if (err) {
           span.setStatus({
             code: SpanStatusCode.ERROR,
@@ -422,14 +418,14 @@ export class MySQLInstrumentation extends InstrumentationBase<
     //TODO:: use semantic convention
     const poolName = id || getPoolName(pool);
 
-    pool.on('connection', connection => {
+    pool.on('connection', () => {
       thisPlugin._connectionsUsage.add(1, {
         state: 'idle',
         name: poolName,
       });
     });
 
-    pool.on('acquire', connection => {
+    pool.on('acquire', () => {
       thisPlugin._connectionsUsage.add(-1, {
         state: 'idle',
         name: poolName,
@@ -440,7 +436,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
       });
     });
 
-    pool.on('release', connection => {
+    pool.on('release', () => {
       thisPlugin._connectionsUsage.add(-1, {
         state: 'used',
         name: poolName,

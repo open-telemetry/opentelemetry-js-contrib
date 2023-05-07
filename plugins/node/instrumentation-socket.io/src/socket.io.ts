@@ -252,7 +252,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           if (isWrapped(moduleExports?.Server?.prototype?.on)) {
             this._unwrap(moduleExports.Server.prototype, 'on');
           }
@@ -287,7 +287,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           if (isWrapped(moduleExports?.prototype?.on)) {
             this._unwrap(moduleExports.prototype, 'on');
           }

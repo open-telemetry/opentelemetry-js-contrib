@@ -13,19 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  Span,
-  SpanKind,
-  Tracer,
-  diag,
-  SpanAttributes,
-} from '@opentelemetry/api';
+import { Span, SpanKind, diag, SpanAttributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import {
-  AwsSdkInstrumentationConfig,
-  NormalizedRequest,
-  NormalizedResponse,
-} from '../types';
+import { NormalizedRequest, NormalizedResponse } from '../types';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 import { context, propagation } from '@opentelemetry/api';
 
@@ -75,12 +65,7 @@ export class LambdaServiceExtension implements ServiceExtension {
     }
   };
 
-  responseHook(
-    response: NormalizedResponse,
-    span: Span,
-    tracer: Tracer,
-    config: AwsSdkInstrumentationConfig
-  ) {
+  responseHook(response: NormalizedResponse, span: Span) {
     switch (response.request.commandName) {
       case LambdaCommands.Invoke:
         {

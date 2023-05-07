@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span, SpanKind, Tracer } from '@opentelemetry/api';
+import { Span, SpanKind } from '@opentelemetry/api';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import {
-  AwsSdkInstrumentationConfig,
-  NormalizedRequest,
-  NormalizedResponse,
-} from '../types';
+import { NormalizedRequest, NormalizedResponse } from '../types';
 
 export class DynamodbServiceExtension implements ServiceExtension {
   requestPreSpanHook(normalizedRequest: NormalizedRequest): RequestMetadata {
@@ -55,12 +51,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
     };
   }
 
-  responseHook(
-    response: NormalizedResponse,
-    span: Span,
-    tracer: Tracer,
-    config: AwsSdkInstrumentationConfig
-  ) {
+  responseHook(response: NormalizedResponse, span: Span) {
     const operation = response.request.commandName;
 
     if (operation === 'BatchGetItem') {
