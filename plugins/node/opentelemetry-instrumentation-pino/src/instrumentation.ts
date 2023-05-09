@@ -45,13 +45,13 @@ export class PinoInstrumentation extends InstrumentationBase {
           diag.debug(`Applying patch for pino@${moduleVersion}`);
           const instrumentation = this;
           const patchedPino = Object.assign((...args: unknown[]) => {
-            if (args.length == 0) {
+            if (args.length === 0) {
               return pinoModule({
                 mixin: instrumentation._getMixinFunction(),
               });
             }
 
-            if (args.length == 1) {
+            if (args.length === 1) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const optsOrStream = args[0] as any;
               if (
