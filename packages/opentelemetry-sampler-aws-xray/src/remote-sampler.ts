@@ -102,7 +102,8 @@ export class AWSXRayRemoteSampler implements Sampler {
   // fetch sampling rules every polling interval
   private startRulePoller(): void {
     // execute first update
-    this.getAndUpdateSamplingRules();
+    // this.getAndUpdateSamplingRules() never rejects. Using void operator to suppress @typescript-eslint/no-floating-promises.
+    void this.getAndUpdateSamplingRules();
     // Update sampling rules every 5 minutes (or user-defined polling interval)
     const rulePoller = setInterval(
       () => this.getAndUpdateSamplingRules(),
