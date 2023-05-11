@@ -6,6 +6,20 @@
   * dependencies
     * @opentelemetry/redis-common bumped from ^0.34.0 to ^0.35.0
 
+## [0.34.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.34.3...instrumentation-redis-4-v0.34.4) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
+
 ## [0.34.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.34.1...instrumentation-redis-4-v0.34.2) (2023-02-07)
 
 
