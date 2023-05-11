@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dns",
-  "version": "0.31.2",
+  "version": "0.31.3",
   "description": "OpenTelemetry dns automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -54,7 +54,6 @@
     "@types/semver": "7.3.8",
     "@types/shimmer": "1.0.2",
     "@types/sinon": "10.0.2",
-    "gts": "3.1.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "4.2.0",
@@ -63,7 +62,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.35.1",
+    "@opentelemetry/instrumentation": "^0.38.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "semver": "^7.3.2"
   },

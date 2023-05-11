@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-koa",
-  "version": "0.34.3",
+  "version": "0.34.4",
   "description": "OpenTelemetry Koa automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -57,7 +57,6 @@
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
     "@types/sinon": "10.0.9",
-    "gts": "3.1.0",
     "koa": "2.13.1",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
@@ -69,7 +68,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.35.1",
+    "@opentelemetry/instrumentation": "^0.38.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/koa": "2.13.6",
     "@types/koa__router": "8.0.7"
