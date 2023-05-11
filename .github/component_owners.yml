@@ -23,6 +23,8 @@ components:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
     - carolabadeer
+  packages/opentelemetry-sampler-aws-xray:
+    - carolabadeer
   packages/opentelemetry-propagation-utils:
     - dyladan
     - pichlermarc
