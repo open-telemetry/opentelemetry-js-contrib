@@ -20,6 +20,7 @@ import type * as Hapi from '@hapi/hapi';
 import {
   HapiLayerType,
   HapiLifecycleMethodNames,
+  HapiPluginObject,
   PatchableExtMethod,
   ServerExtDirectInput,
 } from './internal-types';
@@ -133,3 +134,12 @@ export const getExtMetadata = (
     name: `ext - ${extPoint}`,
   };
 };
+
+export const getPluginFromInput = <T>(
+  pluginObj: HapiPluginObject<T>
+): Hapi.Plugin<T, void> =>
+  'plugin' in pluginObj
+    ? 'plugin' in pluginObj.plugin
+      ? pluginObj.plugin.plugin
+      : pluginObj.plugin
+    : pluginObj;
