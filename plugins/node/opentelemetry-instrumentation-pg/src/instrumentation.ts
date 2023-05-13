@@ -263,9 +263,7 @@ export class PgInstrumentation extends InstrumentationBase {
               callback = context.bind(context.active(), callback);
             }
 
-            // Copy the callback instead of writing to args.callback so that we
-            // don't modify user's original callback reference
-            args[0] = { ...(args[0] as object), callback };
+            (args[0] as { callback?: PostgresCallback }).callback = callback;
           }
         }
 
