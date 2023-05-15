@@ -33,6 +33,8 @@ import { AttributeNames } from '../src/enums';
 import { mockV2AwsSend } from './testing-utils';
 import { expect } from 'expect';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+//just to match the name, even if it changes. if path change this will crash
+import { ExceptionEventName } from '@opentelemetry/sdk-trace-base/build/src/enums';
 
 describe('instrumentation-aws-sdk-v2', () => {
   const responseMockSuccess = {
@@ -275,9 +277,21 @@ describe('instrumentation-aws-sdk-v2', () => {
         const awsSpans = getAwsSpans();
         expect(awsSpans.length).toBe(1);
         const [spanCreateBucket] = awsSpans;
-        expect(spanCreateBucket.attributes[AttributeNames.AWS_ERROR]).toBe(
-          responseMockWithError.error
+        const exceptionEvent = spanCreateBucket.events.filter(
+          event => event.name === ExceptionEventName
         );
+        //need to handle test differently if more than one exception
+        expect(exceptionEvent.length).toBe(1);
+
+        expect(exceptionEvent[0]).toStrictEqual(
+          expect.objectContaining({
+            name: 'exception',
+            attributes: {
+              'exception.message': 'something went wrong',
+            },
+          })
+        );
+
         expect(
           spanCreateBucket.attributes[SemanticAttributes.HTTP_STATUS_CODE]
         ).toBe(400);
