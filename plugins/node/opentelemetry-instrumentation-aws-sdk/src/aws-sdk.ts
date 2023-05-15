@@ -321,6 +321,7 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
         self._callUserResponseHook(span, normalizedResponse);
         if (response.error) {
           span.setAttribute(AttributeNames.AWS_ERROR, `[${response.error.code}] ${response.error.message}`);
+          span.recordException(response.error);
         } else {
           this.servicesExtensions.responseHook(
             normalizedResponse,
