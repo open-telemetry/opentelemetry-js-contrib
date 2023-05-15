@@ -58,7 +58,7 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "pino": "8.3.1",
-    "rimraf": "4.2.0",
+    "rimraf": "5.0.0",
     "semver": "7.3.5",
     "sinon": "15.0.1",
     "test-all-versions": "5.0.1",
