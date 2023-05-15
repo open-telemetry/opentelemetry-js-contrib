@@ -66,7 +66,7 @@
     "winston2": "npm:winston@2.4.5"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.38.0"
+    "@opentelemetry/instrumentation": "^0.39.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston#readme"
 }
