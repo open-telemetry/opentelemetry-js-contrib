@@ -33,8 +33,8 @@ import { AttributeNames } from '../src/enums';
 import { mockV2AwsSend } from './testing-utils';
 import { expect } from 'expect';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-//just to match the name, even if it changes. if path change this will crash
-import { ExceptionEventName } from '@opentelemetry/sdk-trace-base/build/src/enums';
+import { AWSError } from 'aws-sdk';
+import { HttpResponse } from 'aws-sdk/lib/http_response';
 
 describe('instrumentation-aws-sdk-v2', () => {
   const responseMockSuccess = {
@@ -45,9 +45,20 @@ describe('instrumentation-aws-sdk-v2', () => {
     },
   };
 
-  const responseMockWithError = {
+  const error: AWSError = {
+    name: 'error',
+    message: 'something went wrong',
+    stack: 'fakeStack',
+    code: 'errorCode',
+    time: new Date(),
+  };
+
+  const responseMockWithError: Pick<
+    AWS.Response<any, AWSError>,
+    'requestId' | 'error'
+  > & { httpResponse: Partial<HttpResponse> } = {
     requestId: '0000000000000',
-    error: 'something went wrong',
+    error,
     httpResponse: {
       statusCode: 400,
     },
@@ -278,9 +289,8 @@ describe('instrumentation-aws-sdk-v2', () => {
         expect(awsSpans.length).toBe(1);
         const [spanCreateBucket] = awsSpans;
         const exceptionEvent = spanCreateBucket.events.filter(
-          event => event.name === ExceptionEventName
+          event => event.name === 'exception'
         );
-        //need to handle test differently if more than one exception
         expect(exceptionEvent.length).toBe(1);
 
         expect(exceptionEvent[0]).toStrictEqual(
@@ -288,6 +298,8 @@ describe('instrumentation-aws-sdk-v2', () => {
             name: 'exception',
             attributes: {
               'exception.message': 'something went wrong',
+              'exception.stacktrace': 'fakeStack',
+              'exception.type': 'errorCode',
             },
           })
         );
