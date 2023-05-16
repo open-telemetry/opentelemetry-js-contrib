@@ -71,12 +71,11 @@ In addition to the above attributes, the instrumentation also collect the follow
 | `aws.service.identifier` | string | Identifier for the service in the sdk | "sqs" |
 | `aws.service.name` | string | Abbreviation name for the service | "Amazon SQS" |
 | `aws.request.id` | uuid | Request unique id, as returned from aws on response | "01234567-89ab-cdef-0123-456789abcdef" |
-| `aws.error` | string | information about a service or networking error, as returned from AWS | "UriParameterError: Expected uri parameter to have length >= 1, but found "" for params.Bucket" |
 
 ### Custom User Attributes
 
-The instrumentation user can configure a `preRequestHook` function which will be called before each request, with a normalized request object (across v2 and v3) and the corresponding span.  
-This hook can be used to add custom attributes to the span with any logic.  
+The instrumentation user can configure a `preRequestHook` function which will be called before each request, with a normalized request object (across v2 and v3) and the corresponding span.
+This hook can be used to add custom attributes to the span with any logic.
 For example, user can add interesting attributes from the `request.params`, and write custom logic based on the service and operation.
 Usage example:
 

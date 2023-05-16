@@ -60,7 +60,7 @@
     "koa": "2.13.1",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "4.2.0",
+    "rimraf": "5.0.0",
     "sinon": "15.0.1",
     "test-all-versions": "5.0.1",
     "ts-mocha": "10.0.0",
@@ -68,7 +68,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.38.0",
+    "@opentelemetry/instrumentation": "^0.39.1",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/koa": "2.13.6",
     "@types/koa__router": "8.0.7"

@@ -66,7 +66,7 @@
     "nyc": "15.1.0",
     "pg": "8.7.1",
     "pg-pool": "3.4.1",
-    "rimraf": "4.2.0",
+    "rimraf": "5.0.0",
     "safe-stable-stringify": "^2.4.1",
     "sinon": "15.0.1",
     "test-all-versions": "5.0.1",
@@ -75,7 +75,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.38.0",
+    "@opentelemetry/instrumentation": "^0.39.1",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/pg": "8.6.1",
     "@types/pg-pool": "2.0.3"
