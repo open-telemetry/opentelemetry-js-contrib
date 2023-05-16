@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-connect",
-  "version": "0.31.2",
+  "version": "0.31.3",
   "description": "OpenTelemetry connect automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
