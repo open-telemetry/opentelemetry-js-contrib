@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.31.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.31.2...instrumentation-net-v0.31.3) (2023-05-16)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.39.1 ([#1493](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1493)) ([8ef95bc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8ef95bccc2d03302089f256f3d0ee091869b4c44))
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
 ## [0.31.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.31.1...instrumentation-net-v0.31.2) (2023-04-25)
 
 
