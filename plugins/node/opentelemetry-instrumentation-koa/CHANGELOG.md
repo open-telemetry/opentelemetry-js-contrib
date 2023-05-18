@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.34.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.34.4...instrumentation-koa-v0.34.5) (2023-05-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @koa/router to v12 ([#1483](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1483)) ([b5b951e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b5b951e5d943d9ef9df7ae3acefe8ea40b8e514f))
+* **deps:** update otel core experimental to ^0.39.1 ([#1493](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1493)) ([8ef95bc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8ef95bccc2d03302089f256f3d0ee091869b4c44))
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
 ## [0.34.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.34.3...instrumentation-koa-v0.34.4) (2023-04-25)
 
 

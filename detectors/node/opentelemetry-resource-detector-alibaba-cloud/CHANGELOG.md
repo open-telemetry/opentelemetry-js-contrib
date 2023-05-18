@@ -30,6 +30,20 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
 
+## [0.27.6](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.27.5...resource-detector-alibaba-cloud-v0.27.6) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.2 to ^0.33.3
+
 ## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.26.2...resource-detector-alibaba-cloud-v0.27.0) (2022-05-14)
 
 
