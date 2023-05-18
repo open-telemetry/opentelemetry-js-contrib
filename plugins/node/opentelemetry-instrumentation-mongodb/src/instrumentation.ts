@@ -223,9 +223,9 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const instrumentation = this;
     return (original: V4Session['acquire']) => {
       return function patchAcquire(this: any) {
-        const nSessionsBeforeAcquire = this.sessions.count;
+        const nSessionsBeforeAcquire = this.sessions.length;
         const session = original.call(this);
-        const nSessionsAfterAcquire = this.sessions.count;
+        const nSessionsAfterAcquire = this.sessions.length;
 
         if (nSessionsBeforeAcquire === nSessionsAfterAcquire) {
           //no session in the pool. a new session was created and used
@@ -870,7 +870,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const port = options.hostAddress?.port;
     const database = options.dbName;
     const poolName = `mongodb://${host}:${port}/${database}`;
-    console.log('poolName: ', poolName);
     this._poolName = poolName;
   }
 }
