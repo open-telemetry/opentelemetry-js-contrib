@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/plugin-react-load",
-  "version": "0.28.1",
+  "version": "0.28.2",
   "description": "OpenTelemetry React loading automatic instrumentation package.",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",

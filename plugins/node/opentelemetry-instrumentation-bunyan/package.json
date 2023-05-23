@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-bunyan",
-  "version": "0.31.2",
+  "version": "0.31.3",
   "description": "OpenTelemetry instrumentation for bunyan",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
