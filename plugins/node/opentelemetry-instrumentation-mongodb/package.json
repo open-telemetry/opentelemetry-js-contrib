@@ -8,7 +8,7 @@
   "scripts": {
     "docker:start": "docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=127.0.0.1 -p 27017:27017 --rm mongo",
     "test": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/mongodb-v3.test.ts'",
-    "test-new-versions": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**mongodb-v4.test.ts'",
+    "test-new-versions": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/mongodb-v4**.test.ts'",
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
@@ -68,6 +68,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
+    "@opentelemetry/sdk-metrics": "^1.9.1",
     "@opentelemetry/instrumentation": "^0.39.1",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
