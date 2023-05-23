@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-redis",
-  "version": "0.34.5",
+  "version": "0.34.6",
   "description": "Automatic OpenTelemetry instrumentation for redis package version 2 and 3",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -54,7 +54,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/contrib-test-utils": "^0.33.2",
+    "@opentelemetry/contrib-test-utils": "^0.33.3",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
@@ -63,15 +63,15 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "redis": "3.1.2",
-    "rimraf": "4.2.0",
+    "rimraf": "5.0.0",
     "test-all-versions": "5.0.1",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4",
     "@types/redis": "2.8.31"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.38.0",
-    "@opentelemetry/redis-common": "^0.35.0",
+    "@opentelemetry/instrumentation": "^0.39.1",
+    "@opentelemetry/redis-common": "^0.35.1",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis#readme"

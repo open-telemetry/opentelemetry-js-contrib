@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.35.0...redis-common-v0.35.1) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
 ## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.34.0...redis-common-v0.35.0) (2023-03-03)
 
 
