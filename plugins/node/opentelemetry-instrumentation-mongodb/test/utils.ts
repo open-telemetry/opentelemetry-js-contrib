@@ -43,6 +43,7 @@ export function accessCollection(
   return new Promise((resolve, reject) => {
     mongodb.MongoClient.connect(url, {
       serverSelectionTimeoutMS: 1000,
+      useUnifiedTopology: true
     })
       .then(client => {
         const db = client.db(dbName);
