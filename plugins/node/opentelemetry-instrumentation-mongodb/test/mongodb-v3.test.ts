@@ -36,6 +36,7 @@ import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation', () => {
+  console.log('run mongo 3 tests: ', process.env.RUN_MONGODB_TESTS);
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
   }
@@ -51,6 +52,7 @@ describe('MongoDBInstrumentation', () => {
   const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
     process.env.MONGODB_PORT || '27017'
   }`;
+  console.log('mongodb url: ', URL);
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
   const COLLECTION_NAME = 'test';
 
