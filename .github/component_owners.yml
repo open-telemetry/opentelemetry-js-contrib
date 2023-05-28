@@ -65,8 +65,9 @@ components:
     # Unmaintained?
   plugins/node/opentelemetry-instrumentation-dns: []
     # Unmaintained?
-  plugins/node/opentelemetry-instrumentation-express: []
-    # Unmaintained?
+  plugins/node/opentelemetry-instrumentation-express:
+    - JamieDanielson
+    - pkanal
   plugins/node/opentelemetry-instrumentation-fastify: []
     # Unmaintained?
   plugins/node/opentelemetry-instrumentation-generic-pool:

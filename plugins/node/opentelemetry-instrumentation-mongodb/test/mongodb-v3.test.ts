@@ -116,7 +116,8 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.insert',
               SpanKind.CLIENT,
-              'insert'
+              'insert',
+              undefined
             );
             done();
           })
@@ -137,7 +138,8 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.update',
               SpanKind.CLIENT,
-              'update'
+              'update',
+              undefined
             );
             done();
           })
@@ -158,7 +160,8 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.remove',
               SpanKind.CLIENT,
-              'remove'
+              'remove',
+              undefined
             );
             done();
           })
@@ -183,7 +186,8 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.find',
               SpanKind.CLIENT,
-              'find'
+              'find',
+              undefined
             );
             done();
           })
@@ -211,7 +215,8 @@ describe('MongoDBInstrumentation', () => {
                 ),
                 'mongodb.find',
                 SpanKind.CLIENT,
-                'find'
+                'find',
+                undefined
               );
               // assert that we correctly got the first as a find
               assertSpans(
@@ -220,7 +225,8 @@ describe('MongoDBInstrumentation', () => {
                 ),
                 'mongodb.getMore',
                 SpanKind.CLIENT,
-                'getMore'
+                'getMore',
+                undefined
               );
               done();
             })
@@ -245,7 +251,8 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.createIndexes',
               SpanKind.CLIENT,
-              'createIndexes'
+              'createIndexes',
+              undefined
             );
             done();
           })
@@ -281,6 +288,7 @@ describe('MongoDBInstrumentation', () => {
               operationName,
               SpanKind.CLIENT,
               'insert',
+              undefined,
               false,
               false
             );
@@ -326,6 +334,7 @@ describe('MongoDBInstrumentation', () => {
                 operationName,
                 SpanKind.CLIENT,
                 'insert',
+                undefined,
                 false,
                 true
               );
@@ -361,7 +370,13 @@ describe('MongoDBInstrumentation', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT, 'insert');
+              assertSpans(
+                spans,
+                'mongodb.insert',
+                SpanKind.CLIENT,
+                'insert',
+                undefined
+              );
               done();
             })
             .catch(err => {
@@ -458,7 +473,13 @@ describe('MongoDBInstrumentation', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(spans, 'mongodb.find', SpanKind.CLIENT, 'find');
+              assertSpans(
+                spans,
+                'mongodb.find',
+                SpanKind.CLIENT,
+                'find',
+                undefined
+              );
               done();
             })
             .catch(err => {
@@ -480,7 +501,13 @@ describe('MongoDBInstrumentation', () => {
             span.end();
             const spans = getTestSpans();
             const mainSpan = spans[spans.length - 1];
-            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT, 'insert');
+            assertSpans(
+              spans,
+              'mongodb.insert',
+              SpanKind.CLIENT,
+              'insert',
+              undefined
+            );
             resetMemoryExporter();
 
             collection
@@ -490,7 +517,13 @@ describe('MongoDBInstrumentation', () => {
                 const spans2 = getTestSpans();
                 spans2.push(mainSpan);
 
-                assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT, 'find');
+                assertSpans(
+                  spans2,
+                  'mongodb.find',
+                  SpanKind.CLIENT,
+                  'find',
+                  undefined
+                );
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
                   spans2[0].parentSpanId
