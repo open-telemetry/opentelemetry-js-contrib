@@ -51,6 +51,24 @@ export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
   dbStatementSerializer?: DbStatementSerializer;
 }
 
+export type Func<T> = (...args: unknown[]) => T;
+export type MongoInternalCommand = {
+  findandmodify: boolean;
+  createIndexes: boolean;
+  count: boolean;
+  ismaster: boolean;
+  indexes?: unknown[];
+  query?: Record<string, unknown>;
+  limit?: number;
+  q?: Record<string, unknown>;
+  u?: Record<string, unknown>;
+};
+
+export type CursorState = { cmd: MongoInternalCommand } & Record<
+  string,
+  unknown
+>;
+
 export interface MongoResponseHookInformation {
   data: CommandResult;
 }
@@ -60,6 +78,80 @@ export type CommandResult = {
   result?: unknown;
   connection?: unknown;
   message?: unknown;
+};
+
+// https://github.com/mongodb/node-mongodb-native/blob/3.6/lib/core/wireprotocol/index.js
+export type WireProtocolInternal = {
+  insert: (
+    server: MongoInternalTopology,
+    ns: string,
+    ops: unknown[],
+    options: unknown | Function,
+    callback?: Function
+  ) => unknown;
+  update: (
+    server: MongoInternalTopology,
+    ns: string,
+    ops: unknown[],
+    options: unknown | Function,
+    callback?: Function
+  ) => unknown;
+  remove: (
+    server: MongoInternalTopology,
+    ns: string,
+    ops: unknown[],
+    options: unknown | Function,
+    callback?: Function
+  ) => unknown;
+  killCursors: (
+    server: MongoInternalTopology,
+    ns: string,
+    cursorState: CursorState,
+    callback: Function
+  ) => unknown;
+  getMore: (
+    server: MongoInternalTopology,
+    ns: string,
+    cursorState: CursorState,
+    batchSize: number,
+    options: unknown | Function,
+    callback?: Function
+  ) => unknown;
+  query: (
+    server: MongoInternalTopology,
+    ns: string,
+    cmd: MongoInternalCommand,
+    cursorState: CursorState,
+    options: unknown | Function,
+    callback?: Function
+  ) => unknown;
+  command: (
+    server: MongoInternalTopology,
+    ns: string,
+    cmd: MongoInternalCommand,
+    options: unknown | Function,
+    callback?: Function
+  ) => unknown;
+};
+
+// https://github.com/mongodb/node-mongodb-native/blob/3.6/lib/topologies/server.js#L172
+// https://github.com/mongodb/node-mongodb-native/blob/2.2/lib/server.js#L174
+export type MongoInternalTopology = {
+  s?: {
+    // those are for mongodb@3
+    options?: {
+      host?: string;
+      port?: number;
+      servername?: string;
+    };
+    // those are for mongodb@2
+    host?: string;
+    port?: number;
+  };
+  // mongodb@3 with useUnifiedTopology option
+  description?: {
+    address?: string;
+  };
 };
 
 export enum MongodbCommandType {
@@ -72,7 +164,6 @@ export enum MongodbCommandType {
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
 export type V4Connection = {
-  id: number | '<monitor>';
   command(
     ns: any,
     cmd: Document,

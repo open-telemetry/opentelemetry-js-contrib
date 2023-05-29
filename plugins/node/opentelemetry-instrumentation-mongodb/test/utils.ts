@@ -41,10 +41,7 @@ export function accessCollection(
   options: mongodb.MongoClientOptions = {}
 ): Promise<MongoDBAccess> {
   return new Promise((resolve, reject) => {
-    mongodb.MongoClient.connect(url, {
-      serverSelectionTimeoutMS: 1000,
-      useUnifiedTopology: true
-    })
+    mongodb.MongoClient.connect(url, { serverSelectionTimeoutMS: 1000 })
       .then(client => {
         const db = client.db(dbName);
         const collection = db.collection(collectionName);
@@ -68,8 +65,6 @@ export function assertSpans(
   spans: ReadableSpan[],
   expectedName: string,
   expectedKind: SpanKind,
-  expectedOperation: string,
-  expectedConnString: string | undefined,
   log = false,
   isEnhancedDatabaseReportingEnabled = false
 ) {
@@ -85,24 +80,14 @@ export function assertSpans(
   assert.strictEqual(mongoSpan.name, expectedName);
   assert.strictEqual(mongoSpan.kind, expectedKind);
   assert.strictEqual(
-    mongoSpan.attributes[SemanticAttributes.DB_OPERATION],
-    expectedOperation
-  );
-  assert.strictEqual(
     mongoSpan.attributes[SemanticAttributes.DB_SYSTEM],
     'mongodb'
   );
   assert.strictEqual(
-    mongoSpan.attributes[SemanticAttributes.NET_PEER_NAME],
+    mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
     process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
-  if (expectedConnString) {
-    assert.strictEqual(
-      mongoSpan.attributes[SemanticAttributes.DB_CONNECTION_STRING],
-      expectedConnString
-    );
-  }
 
   if (isEnhancedDatabaseReportingEnabled) {
     const dbStatement = JSON.parse(

@@ -35,31 +35,22 @@ import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
-console.log('before test');
-// 1. run test 4 instead of 3. change deps
-// 2. take an old test dir (after Osher inst for 4) and check if it runs
-// 3. delete this test dir and create another one that only assert(true, false)
-// 4. copy another testing dir and chage its content
-
 describe('MongoDBInstrumentation', () => {
-  assert.strictEqual(true, false);
-  console.log('run mongo 3 tests: ');
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
   }
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
   // these tests.
-  // const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
+  const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
   let shouldTest = true;
-  // if (!RUN_MONGODB_TESTS) {
-  //   console.log('Skipping test-mongodb. Run MongoDB to test');
-  //   shouldTest = false;
-  // }
+  if (!RUN_MONGODB_TESTS) {
+    console.log('Skipping test-mongodb. Run MongoDB to test');
+    shouldTest = false;
+  }
 
   const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
     process.env.MONGODB_PORT || '27017'
   }`;
-  console.log('mongodb url: ', URL);
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
   const COLLECTION_NAME = 'test';
 
@@ -87,12 +78,12 @@ describe('MongoDBInstrumentation', () => {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work
     // properly when skipping tests in before() on nested describe() calls.
     // https://github.com/mochajs/mocha/issues/2819
-    // if (!shouldTest) {
-    //   this.skip();
-    // }
+    if (!shouldTest) {
+      this.skip();
+    }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    collection.insertMany(insertData, (err: any, result: any) => {
+    collection.insertMany(insertData, (err, result) => {
       resetMemoryExporter();
       done();
     });
@@ -121,13 +112,7 @@ describe('MongoDBInstrumentation', () => {
           .insertMany(insertData)
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.insert',
-              SpanKind.CLIENT,
-              'insert',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'mongodb.insert', SpanKind.CLIENT);
             done();
           })
           .catch(err => {
@@ -143,13 +128,7 @@ describe('MongoDBInstrumentation', () => {
           .updateOne({ a: 2 }, { $set: { b: 1 } })
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.update',
-              SpanKind.CLIENT,
-              'update',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'mongodb.update', SpanKind.CLIENT);
             done();
           })
           .catch(err => {
@@ -165,13 +144,7 @@ describe('MongoDBInstrumentation', () => {
           .deleteOne({ a: 3 })
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.remove',
-              SpanKind.CLIENT,
-              'remove',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'mongodb.remove', SpanKind.CLIENT);
             done();
           })
           .catch(err => {
@@ -191,13 +164,7 @@ describe('MongoDBInstrumentation', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.find',
-              SpanKind.CLIENT,
-              'find',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'mongodb.find', SpanKind.CLIENT);
             done();
           })
           .catch(err => {
@@ -223,9 +190,7 @@ describe('MongoDBInstrumentation', () => {
                   span => !span.name.includes('mongodb.getMore')
                 ),
                 'mongodb.find',
-                SpanKind.CLIENT,
-                'find',
-                undefined
+                SpanKind.CLIENT
               );
               // assert that we correctly got the first as a find
               assertSpans(
@@ -233,9 +198,7 @@ describe('MongoDBInstrumentation', () => {
                   span => !span.name.includes('mongodb.find')
                 ),
                 'mongodb.getMore',
-                SpanKind.CLIENT,
-                'getMore',
-                undefined
+                SpanKind.CLIENT
               );
               done();
             })
@@ -259,9 +222,7 @@ describe('MongoDBInstrumentation', () => {
             assertSpans(
               getTestSpans(),
               'mongodb.createIndexes',
-              SpanKind.CLIENT,
-              'createIndexes',
-              undefined
+              SpanKind.CLIENT
             );
             done();
           })
@@ -292,15 +253,7 @@ describe('MongoDBInstrumentation', () => {
             span.end();
             const spans = getTestSpans();
             const operationName = 'mongodb.insert';
-            assertSpans(
-              spans,
-              operationName,
-              SpanKind.CLIENT,
-              'insert',
-              undefined,
-              false,
-              false
-            );
+            assertSpans(spans, operationName, SpanKind.CLIENT, false, false);
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
               mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
@@ -338,15 +291,7 @@ describe('MongoDBInstrumentation', () => {
               span.end();
               const spans = getTestSpans();
               const operationName = 'mongodb.insert';
-              assertSpans(
-                spans,
-                operationName,
-                SpanKind.CLIENT,
-                'insert',
-                undefined,
-                false,
-                true
-              );
+              assertSpans(spans, operationName, SpanKind.CLIENT, false, true);
               const mongoSpan = spans.find(s => s.name === operationName);
               const dbStatement = JSON.parse(
                 mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
@@ -379,13 +324,7 @@ describe('MongoDBInstrumentation', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(
-                spans,
-                'mongodb.insert',
-                SpanKind.CLIENT,
-                'insert',
-                undefined
-              );
+              assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
               done();
             })
             .catch(err => {
@@ -482,13 +421,7 @@ describe('MongoDBInstrumentation', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(
-                spans,
-                'mongodb.find',
-                SpanKind.CLIENT,
-                'find',
-                undefined
-              );
+              assertSpans(spans, 'mongodb.find', SpanKind.CLIENT);
               done();
             })
             .catch(err => {
@@ -510,13 +443,7 @@ describe('MongoDBInstrumentation', () => {
             span.end();
             const spans = getTestSpans();
             const mainSpan = spans[spans.length - 1];
-            assertSpans(
-              spans,
-              'mongodb.insert',
-              SpanKind.CLIENT,
-              'insert',
-              undefined
-            );
+            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT);
             resetMemoryExporter();
 
             collection
@@ -526,13 +453,7 @@ describe('MongoDBInstrumentation', () => {
                 const spans2 = getTestSpans();
                 spans2.push(mainSpan);
 
-                assertSpans(
-                  spans2,
-                  'mongodb.find',
-                  SpanKind.CLIENT,
-                  'find',
-                  undefined
-                );
+                assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT);
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
                   spans2[0].parentSpanId
@@ -589,11 +510,11 @@ describe('MongoDBInstrumentation', () => {
             (err, address) => {
               if (err) return done(err);
               assert.strictEqual(
-                mongoSpan.attributes[SemanticAttributes.NET_PEER_NAME],
+                mongoSpan.attributes[SemanticAttributes.NET_HOST_NAME],
                 address
               );
               assert.strictEqual(
-                mongoSpan.attributes[SemanticAttributes.NET_PEER_PORT],
+                mongoSpan.attributes[SemanticAttributes.NET_HOST_PORT],
                 process.env.MONGODB_PORT || '27017'
               );
               done();
