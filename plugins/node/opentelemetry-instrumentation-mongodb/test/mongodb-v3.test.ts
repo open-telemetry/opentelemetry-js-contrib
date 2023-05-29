@@ -36,7 +36,10 @@ import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 console.log('before test');
-
+// 1. run test 4 instead of 3. change deps
+// 2. take an old test dir (after Osher inst for 4) and check if it runs
+// 3. delete this test dir and create another one that only assert(true, false)
+// 4. copy another testing dir and chage its content
 
 describe('MongoDBInstrumentation', () => {
   assert.strictEqual(true, false);
