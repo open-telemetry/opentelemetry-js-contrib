@@ -35,19 +35,23 @@ import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
+console.log('before test');
+
+
 describe('MongoDBInstrumentation', () => {
-  console.log('run mongo 3 tests: ', process.env.RUN_MONGODB_TESTS);
+  assert.strictEqual(true, false);
+  console.log('run mongo 3 tests: ');
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
   }
   // For these tests, mongo must be running. Add RUN_MONGODB_TESTS to run
   // these tests.
-  const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
+  // const RUN_MONGODB_TESTS = process.env.RUN_MONGODB_TESTS as string;
   let shouldTest = true;
-  if (!RUN_MONGODB_TESTS) {
-    console.log('Skipping test-mongodb. Run MongoDB to test');
-    shouldTest = false;
-  }
+  // if (!RUN_MONGODB_TESTS) {
+  //   console.log('Skipping test-mongodb. Run MongoDB to test');
+  //   shouldTest = false;
+  // }
 
   const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
     process.env.MONGODB_PORT || '27017'
@@ -80,9 +84,9 @@ describe('MongoDBInstrumentation', () => {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work
     // properly when skipping tests in before() on nested describe() calls.
     // https://github.com/mochajs/mocha/issues/2819
-    if (!shouldTest) {
-      this.skip();
-    }
+    // if (!shouldTest) {
+    //   this.skip();
+    // }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
     collection.insertMany(insertData, (err: any, result: any) => {
