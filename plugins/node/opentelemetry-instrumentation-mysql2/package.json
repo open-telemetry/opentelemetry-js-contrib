@@ -51,6 +51,7 @@
     "@opentelemetry/context-async-hooks": "^1.8.0",
     "@opentelemetry/contrib-test-utils": "^0.33.3",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
+    "@opentelemetry/sql-common": "^0.39.0",
     "@types/mocha": "7.0.2",
     "@types/mysql2": "github:types/mysql2",
     "@types/node": "18.11.7",
