@@ -14,31 +14,29 @@
  * limitations under the License.
  */
 
-import { Sampler, SamplingResult, AlwaysOnSampler } from '@opentelemetry/sdk-trace-base';
 import {
-    Context,
-    Link,
-    Attributes,
-    SpanKind,
-  } from '@opentelemetry/api';
+  Sampler,
+  SamplingResult,
+  AlwaysOnSampler,
+} from '@opentelemetry/sdk-trace-base';
+import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api';
 
 export class FallbackSampler implements Sampler {
+  private _alwaysOnSampler = new AlwaysOnSampler();
 
-    private _alwaysOnSampler = new AlwaysOnSampler();
+  shouldSample(
+    context: Context,
+    traceId: string,
+    spanName: string,
+    spanKind: SpanKind,
+    attributes: Attributes,
+    links: Link[]
+  ): SamplingResult {
+    // This will be updated to be a rate limiting sampler in the next PR
+    return this._alwaysOnSampler.shouldSample();
+  }
 
-    shouldSample(    
-        context: Context,
-        traceId: string,
-        spanName: string,
-        spanKind: SpanKind,
-        attributes: Attributes,
-        links: Link[]): SamplingResult {
-
-        // This will be updated to be a rate limiting sampler in the next PR 
-        return this._alwaysOnSampler.shouldSample();
-    }
-
-    public toString = () : string => {
-        return "FallbackSampler"
-    }
+  public toString = (): string => {
+    return 'FallbackSampler';
+  };
 }

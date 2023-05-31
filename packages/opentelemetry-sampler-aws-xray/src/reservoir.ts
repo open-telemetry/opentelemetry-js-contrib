@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-
 export class Reservoir {
-    // This class will be implemented in the next PR
-    private _quota: number; 
+  // This class will be implemented in the next PR
+  private _quota: number;
 
-    constructor (quota: number) {
-        this._quota = quota;
-    }
+  constructor(quota: number) {
+    this._quota = quota;
+  }
 }

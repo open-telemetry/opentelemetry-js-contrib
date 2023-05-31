@@ -15,7 +15,10 @@
  */
 
 // X-Ray Sampling rule reference: https://docs.aws.amazon.com/xray/latest/api/API_GetSamplingRules.html
-export interface SamplingRule {
+import { SamplingRule } from './sampling-rule';
+import { Resource } from '@opentelemetry/resources';
+
+export interface ISamplingRule {
   // a unique name for the rule
   RuleName: string;
 
@@ -50,12 +53,25 @@ export interface SamplingRule {
   // (Optional) segment attributes that are known when the sampling decision is made.
   Attributes?: { [key: string]: string };
   Version: number;
+
+  matches(samplingRequest: any, resource: Resource): boolean;
 }
 
 export interface SamplingRuleRecord {
   CreatedAt: number;
   ModifiedAt: number;
   SamplingRule?: SamplingRule;
+}
+
+export interface ISamplingStatistics {
+  // matchedRequests is the number of requests matched against specific rule.
+  matchedRequests: number;
+
+  // sampledRequests is the number of requests sampled using specific rule.
+  sampledRequests: number;
+
+  // borrowedRequests is the number of requests borrowed using specific rule.
+  borrowedRequests: number;
 }
 
 export interface GetSamplingRulesResponse {
@@ -80,6 +96,7 @@ export interface SamplingStatisticsDocument {
 }
 
 export interface AWSXRaySamplerConfig {
+  resource: Resource;
   // endpoint of awsproxy - for more information see https://aws-otel.github.io/docs/getting-started/remote-sampling
   // defaults to localhost:2000 if not specified
   endpoint?: string;
