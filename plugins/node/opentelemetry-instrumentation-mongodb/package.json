@@ -61,7 +61,7 @@
     "@types/mongodb": "3.6.20",
     "@types/node": "18.11.7",
     "mocha": "7.2.0",
-    "mongodb": "^4",
+    "mongodb": "3.6.11",
     "nyc": "15.1.0",
     "rimraf": "5.0.0",
     "test-all-versions": "5.0.1",
