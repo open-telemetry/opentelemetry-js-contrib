@@ -37,6 +37,7 @@ const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
 const user = process.env.MYSQL_USER || 'otel';
 const password = process.env.MYSQL_PASSWORD || 'secret';
+const rootPassword = process.env.MYSQL_ROOT_PASSWORD || 'rootpw';
 
 const instrumentation = new MySQL2Instrumentation();
 instrumentation.enable();
@@ -48,9 +49,10 @@ interface Result extends mysqlTypes.RowDataPacket {
   solution: number;
 }
 
-describe('mysql@2.x', () => {
+describe('mysql2@2.x', () => {
   let contextManager: AsyncHooksContextManager;
   let connection: mysqlTypes.Connection;
+  let rootConnection: mysqlTypes.Connection;
   let pool: mysqlTypes.Pool;
   let poolCluster: mysqlTypes.PoolCluster;
   const provider = new BasicTracerProvider();
@@ -58,6 +60,24 @@ describe('mysql@2.x', () => {
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
   const memoryExporter = new InMemorySpanExporter();
+
+  const getLastQueries = (count: number) =>
+    new Promise<string[]>(res => {
+      const queries: string[] = [];
+      const query = rootConnection.query({
+        sql: "SELECT * FROM mysql.general_log WHERE command_type = 'Query' ORDER BY event_time DESC LIMIT ? OFFSET 1",
+        values: [count],
+      });
+
+      query.on('result', (row: { argument: string | Buffer }) => {
+        if (typeof row.argument === 'string') {
+          queries.push(row.argument);
+        } else {
+          queries.push(row.argument.toString('utf-8'));
+        }
+      });
+      query.on('end', () => res(queries));
+    });
 
   before(function (done) {
     if (!shouldTest) {
@@ -67,6 +87,13 @@ describe('mysql@2.x', () => {
       this.skip();
     }
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+    rootConnection = mysqlTypes.createConnection({
+      port,
+      user: 'root',
+      host,
+      password: rootPassword,
+      database,
+    });
     if (testMysqlLocally) {
       testUtils.startDocker('mysql');
       // wait 15 seconds for docker container to start
@@ -77,10 +104,13 @@ describe('mysql@2.x', () => {
     }
   });
 
-  after(function () {
+  after(function (done) {
     if (testMysqlLocally) {
       this.timeout(5000);
-      testUtils.cleanUpDocker('mysql');
+      rootConnection.end(() => {
+        testUtils.cleanUpDocker('mysql');
+        done();
+      });
     }
   });
 
@@ -119,6 +149,7 @@ describe('mysql@2.x', () => {
   afterEach(done => {
     context.disable();
     memoryExporter.reset();
+    instrumentation.setConfig();
     instrumentation.disable();
     connection.end(() => {
       pool.end(() => {
@@ -296,6 +327,71 @@ describe('mysql@2.x', () => {
           assert.strictEqual(spans.length, 1);
           assertSpan(spans[0], sql, undefined, err!.message);
           done();
+        });
+      });
+    });
+
+    it('should not add comment by default', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        connection.query('SELECT 1+1 as solution', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          getLastQueries(1).then(([query]) => {
+            assert.doesNotMatch(query, /.*traceparent.*/);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not add comment when specified if existing block comment', done => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      } as any);
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        connection.query('SELECT 1+1 as solution /*block comment*/', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          getLastQueries(1).then(([query]) => {
+            assert.doesNotMatch(query, /.*traceparent.*/);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not add comment when specified if existing line comment', done => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      } as any);
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        connection.query('SELECT 1+1 as solution -- line comment', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          getLastQueries(1).then(([query]) => {
+            assert.doesNotMatch(query, /.*traceparent.*/);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should add comment when specified if no existing comment', done => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      } as any);
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        connection.query('SELECT 1+1 as solution', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          getLastQueries(1).then(([query]) => {
+            assert.match(query, /.*traceparent.*/);
+            done();
+          });
         });
       });
     });
@@ -584,6 +680,71 @@ describe('mysql@2.x', () => {
           assert.strictEqual(spans.length, 1);
           assertSpan(spans[0], sql, undefined, err!.message);
           done();
+        });
+      });
+    });
+
+    it('should not add comment by default', done => {
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        pool.query('SELECT 1+1 as solution', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          getLastQueries(1).then(([query]) => {
+            assert.doesNotMatch(query, /.*traceparent.*/);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not add comment when specified if existing block comment', done => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      } as any);
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        pool.query('SELECT 1+1 as solution /*block comment*/', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          getLastQueries(1).then(([query]) => {
+            assert.doesNotMatch(query, /.*traceparent.*/);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not add comment when specified if existing line comment', done => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      } as any);
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        pool.query('SELECT 1+1 as solution -- line comment', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          getLastQueries(1).then(([query]) => {
+            assert.doesNotMatch(query, /.*traceparent.*/);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should add comment when specified if no existing comment', done => {
+      instrumentation.setConfig({
+        addSqlCommenterCommentToQueries: true,
+      } as any);
+      const span = provider.getTracer('default').startSpan('test span');
+      context.with(trace.setSpan(context.active(), span), () => {
+        pool.query('SELECT 1+1 as solution', () => {
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          getLastQueries(1).then(([query]) => {
+            assert.match(query, /.*traceparent.*/);
+            done();
+          });
         });
       });
     });

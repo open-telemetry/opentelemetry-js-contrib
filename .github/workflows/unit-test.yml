@@ -9,9 +9,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14", "16", "18"]
+        node: ['14', '16', '18']
         include:
-          - node: "18"
+          - node: '18'
             lerna-extra-args: >-
               --ignore @opentelemetry/resource-detector-alibaba-cloud
               --ignore @opentelemetry/instrumentation-fastify
@@ -21,18 +21,18 @@ jobs:
       memcached:
         image: memcached:1.6.9-alpine
         ports:
-        - 11211:11211
+          - 11211:11211
       mongo:
         image: mongo
         ports:
-        - 27017:27017
+          - 27017:27017
       mssql:
         image: mcr.microsoft.com/mssql/server:2017-latest
         env:
           SA_PASSWORD: mssql_passw0rd
           ACCEPT_EULA: Y
         ports:
-        - 1433:1433
+          - 1433:1433
         options: >-
           --health-cmd "/opt/mssql-tools/bin/sqlcmd -U sa -P $SA_PASSWORD -Q 'select 1' -b -o /dev/null"
           --health-interval 1s
@@ -47,7 +47,7 @@ jobs:
           MYSQL_DATABASE: otel_mysql_database
           MYSQL_ROOT_PASSWORD: rootpw
         ports:
-        - 3306:3306
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping"
           --health-interval 10s
@@ -60,7 +60,7 @@ jobs:
           POSTGRES_DB: otel_pg_database
           POSTGRES_PASSWORD: postgres
         ports:
-        - 5432:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -69,7 +69,7 @@ jobs:
       redis:
         image: redis
         ports:
-        - 6379:6379
+          - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -78,11 +78,11 @@ jobs:
       cassandra:
         image: bitnami/cassandra:3
         ports:
-        - 9042:9042
+          - 9042:9042
       rabbitmq:
         image: rabbitmq:3
         ports:
-        - 22221:5672
+          - 22221:5672
         env:
           RABBITMQ_DEFAULT_USER: username
           RABBITMQ_DEFAULT_PASS: password
@@ -101,8 +101,9 @@ jobs:
       MONGODB_PORT: 27017
       MSSQL_PASSWORD: mssql_passw0rd
       MYSQL_DATABASE: otel_mysql_database
-      MYSQL_HOST: localhost
+      MYSQL_HOST: 127.0.0.1
       MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootpw
       MYSQL_PORT: 3306
       MYSQL_USER: otel
       OPENTELEMETRY_MEMCACHED_HOST: localhost
@@ -163,7 +164,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14"]
+        node: ['14']
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
@@ -176,6 +177,8 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
+      - name: Set MySQL variables
+        run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
       - name: Cache Dependencies
         uses: actions/cache@v3
         with:
