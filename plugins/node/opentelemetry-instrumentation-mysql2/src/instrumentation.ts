@@ -92,7 +92,6 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
   private _patchQuery(format: formatType, isPrepared: boolean) {
     return (originalQuery: Function): Function => {
       const thisPlugin = this;
-      const thisPluginConfig: MySQL2InstrumentationConfig = thisPlugin._config;
       api.diag.debug('MySQL2Instrumentation: patched mysql query/execute');
 
       return function query(
@@ -101,6 +100,9 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
         _valuesOrCallback?: unknown[] | Function,
         _callback?: Function
       ) {
+        const thisPluginConfig: MySQL2InstrumentationConfig =
+          thisPlugin._config;
+
         let values;
         if (Array.isArray(_valuesOrCallback)) {
           values = _valuesOrCallback;
@@ -122,10 +124,12 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
         });
 
         if (!isPrepared && thisPluginConfig.addSqlCommenterCommentToQueries) {
-          query =
+          arguments[0] = query =
             typeof query === 'string'
               ? addSqlCommenterComment(span, query)
-              : { ...query, sql: addSqlCommenterComment(span, query.sql) };
+              : Object.assign(query, {
+                  sql: addSqlCommenterComment(span, query.sql),
+                });
         }
 
         const endSpan = once((err?: any, results?: any) => {
