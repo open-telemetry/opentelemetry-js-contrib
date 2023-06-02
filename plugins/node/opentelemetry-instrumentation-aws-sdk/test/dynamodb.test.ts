@@ -69,7 +69,14 @@ describe('DynamoDB', () => {
         ExpressionAttributeValues: {
           ':v': 'val1',
         },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
       };
+
       dynamodb.query(
         params,
         (err: AWSError, data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
@@ -81,6 +88,102 @@ describe('DynamoDB', () => {
           );
           expect(attrs[SemanticAttributes.DB_NAME]).toStrictEqual('test-table');
           expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual('Query');
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_SCAN_FORWARD]
+          ).toStrictEqual(true);
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_CONSISTENT_READ]
+          ).toStrictEqual(true);
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_INDEX_NAME]
+          ).toStrictEqual('name_to_group');
+          expect(attrs[SemanticAttributes.AWS_DYNAMODB_SELECT]).toStrictEqual(
+            'ALL_ATTRIBUTES'
+          );
+          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(
+            10
+          );
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
+          ).toStrictEqual(['test-table']);
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_PROJECTION]
+          ).toStrictEqual('id');
+          expect(
+            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
+          ).toEqual(params);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+  });
+
+  describe('Scan', () => {
+    beforeEach(() =>
+      mockV2AwsSend(responseMockSuccess, {
+        ConsumedCapacity: {
+          TableName: 'test-table',
+          CapacityUnits: 0.5,
+          Table: { CapacityUnits: 0.5 },
+        },
+        Count: 10,
+        ScannedCount: 50,
+      } as AWS.DynamoDB.Types.ScanOutput)
+    );
+
+    it('should populate specific Scan attributes', done => {
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        Item: { key1: 'val1' },
+        ProjectionExpression: 'id',
+        ConsistentRead: true,
+        Segment: 10,
+        TotalSegments: 100,
+        IndexName: 'index_name',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.scan(
+        params,
+        (err: AWSError, data: AWS.DynamoDB.DocumentClient.ScanOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
+            DbSystemValues.DYNAMODB
+          );
+          expect(attrs[SemanticAttributes.DB_NAME]).toStrictEqual('test-table');
+          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual('Scan');
+          expect(attrs[SemanticAttributes.AWS_DYNAMODB_SEGMENT]).toStrictEqual(
+            10
+          );
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_TOTAL_SEGMENTS]
+          ).toStrictEqual(100);
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_INDEX_NAME]
+          ).toStrictEqual('index_name');
+          expect(attrs[SemanticAttributes.AWS_DYNAMODB_SELECT]).toStrictEqual(
+            'ALL_ATTRIBUTES'
+          );
+          expect(attrs[SemanticAttributes.AWS_DYNAMODB_COUNT]).toStrictEqual(
+            10
+          );
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_SCANNED_COUNT]
+          ).toStrictEqual(50);
+          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(
+            10
+          );
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
+          ).toStrictEqual(['test-table']);
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_PROJECTION]
+          ).toStrictEqual('id');
           expect(
             JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
           ).toEqual(params);
