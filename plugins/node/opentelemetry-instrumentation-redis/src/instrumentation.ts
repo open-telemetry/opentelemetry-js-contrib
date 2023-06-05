@@ -20,7 +20,6 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import type * as redisTypes from 'redis';
 import {
   getTracedCreateClient,
   getTracedCreateStreamTrace,
@@ -33,9 +32,7 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
 };
 
-export class RedisInstrumentation extends InstrumentationBase<
-  typeof redisTypes
-> {
+export class RedisInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'redis';
 
   constructor(protected override _config: RedisInstrumentationConfig = {}) {
@@ -48,7 +45,7 @@ export class RedisInstrumentation extends InstrumentationBase<
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof redisTypes>(
+      new InstrumentationNodeModuleDefinition<any>(
         'redis',
         ['^2.6.0', '^3.0.0'],
         (moduleExports, moduleVersion) => {

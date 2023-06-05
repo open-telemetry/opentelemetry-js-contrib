@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Detector, Resource } from '@opentelemetry/resources';
+import { Detector, Resource, IResource } from '@opentelemetry/resources';
 import { diag } from '@opentelemetry/api';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import * as http from 'http';
@@ -22,7 +22,7 @@ class InstanaAgentDetector implements Detector {
   readonly INSTANA_AGENT_DEFAULT_HOST = 'localhost';
   readonly INSTANA_AGENT_DEFAULT_PORT = 42699;
 
-  async detect(): Promise<Resource> {
+  async detect(): Promise<IResource> {
     const host =
       process.env.INSTANA_AGENT_HOST || this.INSTANA_AGENT_DEFAULT_HOST;
     const port = Number(
@@ -112,7 +112,6 @@ class InstanaAgentDetector implements Detector {
 
           try {
             const data = JSON.parse(rawData);
-
             if (data.pid && data.agentUuid) {
               return resolve(data);
             }

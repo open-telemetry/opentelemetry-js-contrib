@@ -253,13 +253,18 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     }
 
     if (isPromise(result)) {
-      (result as Promise<graphqlTypes.ExecutionResult>).then(resultData => {
-        if (typeof config.responseHook !== 'function') {
-          endSpan(span);
-          return;
+      (result as Promise<graphqlTypes.ExecutionResult>).then(
+        resultData => {
+          if (typeof config.responseHook !== 'function') {
+            endSpan(span);
+            return;
+          }
+          this._executeResponseHook(span, resultData);
+        },
+        error => {
+          endSpan(span, error);
         }
-        this._executeResponseHook(span, resultData);
-      });
+      );
     } else {
       if (typeof config.responseHook !== 'function') {
         endSpan(span);
@@ -404,18 +409,21 @@ export class GraphQLInstrumentation extends InstrumentationBase {
 
     const span = this.tracer.startSpan(SpanNames.EXECUTE, {});
     if (operation) {
-      const operationDefinition =
+      const { operation: operationType, name: nameNode } =
         operation as graphqlTypes.OperationDefinitionNode;
-      span.setAttribute(
-        AttributeNames.OPERATION_TYPE,
-        operationDefinition.operation
-      );
 
-      if (operationDefinition.name) {
-        span.setAttribute(
-          AttributeNames.OPERATION_NAME,
-          operationDefinition.name.value
-        );
+      span.setAttribute(AttributeNames.OPERATION_TYPE, operationType);
+
+      const operationName = nameNode?.value;
+
+      // https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/instrumentation/graphql/
+      // > The span name MUST be of the format <graphql.operation.type> <graphql.operation.name> provided that graphql.operation.type and graphql.operation.name are available.
+      // > If graphql.operation.name is not available, the span SHOULD be named <graphql.operation.type>.
+      if (operationName) {
+        span.setAttribute(AttributeNames.OPERATION_NAME, operationName);
+        span.updateName(`${operationType} ${operationName}`);
+      } else {
+        span.updateName(operationType);
       }
     } else {
       let operationName = ' ';
