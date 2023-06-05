@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-grpc-census-binary-v0.26.0...propagator-grpc-census-binary-v0.26.1) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
 ## [0.26.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-grpc-census-binary-v0.25.1...propagator-grpc-census-binary-v0.26.0) (2022-05-14)
 
 

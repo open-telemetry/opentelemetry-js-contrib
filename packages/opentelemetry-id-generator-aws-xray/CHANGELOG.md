@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/id-generator-aws-xray-v1.1.1...id-generator-aws-xray-v1.1.2) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
 ## [1.1.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/id-generator-aws-xray-v1.1.0...id-generator-aws-xray-v1.1.1) (2022-11-02)
 
 

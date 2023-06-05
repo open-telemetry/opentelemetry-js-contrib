@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.34.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.34.1...instrumentation-graphql-v0.34.2) (2023-05-16)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.39.1 ([#1493](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1493)) ([8ef95bc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8ef95bccc2d03302089f256f3d0ee091869b4c44))
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+* **eslint-eqeqeq:** updated the `eqeqeq` rule to match the core repo ([#1485](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1485)) ([5709008](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5709008dfa4d05cae0c2226b9926e36cdf60c631))
+* **eslint-no-floating-promises:** added no-floating-promises rule ([#1488](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1488)) ([4eb405e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4eb405ee4875b17f8368d9a88d68c10f24d9987e))
+
 ## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.34.0...instrumentation-graphql-v0.34.1) (2023-04-25)
 
 

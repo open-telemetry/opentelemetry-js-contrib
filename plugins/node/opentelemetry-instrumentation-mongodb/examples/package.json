@@ -33,12 +33,12 @@
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/exporter-jaeger": "^1.0.0",
     "@opentelemetry/exporter-zipkin": "^1.0.0",
-    "@opentelemetry/instrumentation": "^0.38.0",
-    "@opentelemetry/instrumentation-http": "^0.38.0",
+    "@opentelemetry/instrumentation": "^0.39.1",
+    "@opentelemetry/instrumentation-http": "^0.39.1",
     "@opentelemetry/instrumentation-mongodb": "^0.32.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
-    "mongodb": "^3.5.7"
+    "mongodb": "^3.7.3"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
   "devDependencies": {
