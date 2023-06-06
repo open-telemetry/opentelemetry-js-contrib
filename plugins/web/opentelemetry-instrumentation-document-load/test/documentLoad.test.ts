@@ -706,8 +706,10 @@ describe('DocumentLoad Instrumentation', () => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         applyCustomAttributesOnSpan: {
-          resourceFetch: span => {
+          resourceFetch: (span, resource) => {
+            console.log(resource.connectEnd - resource.connectStart);
             span.setAttribute('custom-key', 'custom-val');
+            span.setAttribute('resource.tcp.duration_ms', resource.connectEnd - resource.connectStart,)
           },
         },
       });
@@ -723,6 +725,8 @@ describe('DocumentLoad Instrumentation', () => {
           resourceSpan2.attributes['custom-key'],
           'custom-val'
         );
+        assert.strictEqual(resourceSpan1.attributes['resource.tcp.duration_ms'], 0)
+        assert.strictEqual(resourceSpan2.attributes['resource.tcp.duration_ms'], 0)
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
         done();
       });
