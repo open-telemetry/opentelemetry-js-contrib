@@ -21,15 +21,12 @@ import { MongoDBInstrumentation } from '../src';
 // TODO: use test-utils after the new package has released.
 import {
   AggregationTemporality,
-  DataPoint,
   DataPointType,
   InMemoryMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
   ResourceMetrics,
 } from '@opentelemetry/sdk-metrics';
-
-import * as mongodb from 'mongodb';
 
 const otelTestingMeterProvider = new MeterProvider();
 const inMemoryMetricsExporter = new InMemoryMetricExporter(
@@ -41,53 +38,31 @@ const metricReader = new PeriodicExportingMetricReader({
   exportTimeoutMillis: 100,
 });
 
-import { getInstrumentation } from '@opentelemetry/contrib-test-utils';
-
-const instrumentation: MongoDBInstrumentation | undefined =
-  getInstrumentation();
+import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
+const instrumentation = registerInstrumentationTesting(
+  new MongoDBInstrumentation()
+);
 
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
-
+import * as mongodb from 'mongodb';
 import * as assert from 'assert';
 
 async function waitForNumberOfExports(
   exporter: InMemoryMetricExporter,
-  numberOfExports: number,
-  numberOfDataPoints = 0
+  numberOfExports: number
 ): Promise<ResourceMetrics[]> {
   if (numberOfExports <= 0) {
     throw new Error('numberOfExports must be greater than or equal to 0');
   }
 
   let totalExports = 0;
-  let totalDataPoints = 0;
-  while (
-    totalExports < numberOfExports ||
-    totalDataPoints < numberOfDataPoints
-  ) {
+  while (totalExports < numberOfExports) {
     await new Promise(resolve => setTimeout(resolve, 20));
     const exportedMetrics = exporter.getMetrics();
     totalExports = exportedMetrics.length;
-    if (totalExports > 0) {
-      totalDataPoints =
-        exportedMetrics[0].scopeMetrics[0].metrics[0].dataPoints.length;
-    }
   }
 
   return exporter.getMetrics();
-}
-
-function filterDataPointsForDB(
-  dataPoints: DataPoint<Number>[],
-  dbName: string
-): DataPoint<Number>[] {
-  return dataPoints.filter(v => {
-    const poolName = v?.attributes?.['pool.name'];
-    if (poolName && typeof poolName === 'string') {
-      return poolName.includes(dbName);
-    }
-    return false;
-  });
 }
 
 describe('MongoDBInstrumentation-Metrics', () => {
@@ -108,7 +83,6 @@ describe('MongoDBInstrumentation-Metrics', () => {
   let client: mongodb.MongoClient;
 
   before(() => {
-    instrumentation?.enable();
     otelTestingMeterProvider.addMetricReader(metricReader);
     instrumentation?.setMeterProvider(otelTestingMeterProvider);
   });
@@ -153,7 +127,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
     );
 
     // Checking dataPoints
-    const dataPoints = filterDataPointsForDB(metrics[0].dataPoints, DB_NAME);
+    const dataPoints = metrics[0].dataPoints;
     assert.strictEqual(dataPoints.length, 2);
     assert.strictEqual(dataPoints[0].value, 0);
     assert.strictEqual(dataPoints[0].attributes['state'], 'used');
@@ -188,7 +162,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
     );
 
     // Checking dataPoints
-    const dataPoints = filterDataPointsForDB(metrics[0].dataPoints, DB_NAME);
+    const dataPoints = metrics[0].dataPoints;
     assert.strictEqual(dataPoints.length, 2);
     assert.strictEqual(dataPoints[0].value, 0);
     assert.strictEqual(dataPoints[0].attributes['state'], 'used');
