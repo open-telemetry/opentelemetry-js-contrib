@@ -21,6 +21,7 @@ import { MongoDBInstrumentation } from '../src';
 // TODO: use test-utils after the new package has released.
 import {
   AggregationTemporality,
+  DataPoint,
   DataPointType,
   InMemoryMetricExporter,
   MeterProvider,
@@ -28,27 +29,7 @@ import {
   ResourceMetrics,
 } from '@opentelemetry/sdk-metrics';
 
-import {
-  getInstrumentation,
-  registerInstrumentationTesting,
-} from '@opentelemetry/contrib-test-utils';
-
-import * as assert from 'assert';
-
-// Get instrumentation (singleton)
-let instrumentation: MongoDBInstrumentation;
-{
-  const instance: MongoDBInstrumentation | undefined = getInstrumentation();
-  if (!instance) {
-    instrumentation = new MongoDBInstrumentation();
-    registerInstrumentationTesting(instrumentation);
-  } else {
-    instrumentation = instance;
-  }
-}
-
-import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import { MongoClient } from 'mongodb';
+import * as mongodb from 'mongodb';
 
 const otelTestingMeterProvider = new MeterProvider();
 const inMemoryMetricsExporter = new InMemoryMetricExporter(
@@ -60,26 +41,53 @@ const metricReader = new PeriodicExportingMetricReader({
   exportTimeoutMillis: 100,
 });
 
-otelTestingMeterProvider.addMetricReader(metricReader);
+import { getInstrumentation } from '@opentelemetry/contrib-test-utils';
 
-instrumentation.setMeterProvider(otelTestingMeterProvider);
+const instrumentation: MongoDBInstrumentation | undefined =
+  getInstrumentation();
+
+import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
+
+import * as assert from 'assert';
 
 async function waitForNumberOfExports(
   exporter: InMemoryMetricExporter,
-  numberOfExports: number
+  numberOfExports: number,
+  numberOfDataPoints = 0
 ): Promise<ResourceMetrics[]> {
   if (numberOfExports <= 0) {
     throw new Error('numberOfExports must be greater than or equal to 0');
   }
 
   let totalExports = 0;
-  while (totalExports < numberOfExports) {
+  let totalDataPoints = 0;
+  while (
+    totalExports < numberOfExports ||
+    totalDataPoints < numberOfDataPoints
+  ) {
     await new Promise(resolve => setTimeout(resolve, 20));
     const exportedMetrics = exporter.getMetrics();
     totalExports = exportedMetrics.length;
+    if (totalExports > 0) {
+      totalDataPoints =
+        exportedMetrics[0].scopeMetrics[0].metrics[0].dataPoints.length;
+    }
   }
 
   return exporter.getMetrics();
+}
+
+function filterDataPointsForDB(
+  dataPoints: DataPoint<Number>[],
+  dbName: string
+): DataPoint<Number>[] {
+  return dataPoints.filter(v => {
+    const poolName = v?.attributes?.['pool.name'];
+    if (poolName && typeof poolName === 'string') {
+      return poolName.includes(dbName);
+    }
+    return false;
+  });
 }
 
 describe('MongoDBInstrumentation-Metrics', () => {
@@ -94,10 +102,16 @@ describe('MongoDBInstrumentation-Metrics', () => {
 
   const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
   const PORT = process.env.MONGODB_PORT || '27017';
-  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
+  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics';
   const COLLECTION_NAME = 'test-metrics';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
-  let client: MongoClient;
+  let client: mongodb.MongoClient;
+
+  before(() => {
+    instrumentation?.enable();
+    otelTestingMeterProvider.addMetricReader(metricReader);
+    instrumentation?.setMeterProvider(otelTestingMeterProvider);
+  });
 
   beforeEach(function mongoBeforeEach(done) {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work
@@ -137,18 +151,21 @@ describe('MongoDBInstrumentation-Metrics', () => {
       metrics[0].descriptor.name,
       'db.client.connections.usage'
     );
-    assert.strictEqual(metrics[0].dataPoints.length, 2);
-    assert.strictEqual(metrics[0].dataPoints[0].value, 0);
-    assert.strictEqual(metrics[0].dataPoints[0].attributes['state'], 'used');
+
+    // Checking dataPoints
+    const dataPoints = filterDataPointsForDB(metrics[0].dataPoints, DB_NAME);
+    assert.strictEqual(dataPoints.length, 2);
+    assert.strictEqual(dataPoints[0].value, 0);
+    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
-      metrics[0].dataPoints[0].attributes['pool.name'],
+      dataPoints[0].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
 
-    assert.strictEqual(metrics[0].dataPoints[1].value, 1);
-    assert.strictEqual(metrics[0].dataPoints[1].attributes['state'], 'idle');
+    assert.strictEqual(dataPoints[1].value, 1);
+    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
-      metrics[0].dataPoints[1].attributes['pool.name'],
+      dataPoints[1].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
   });
@@ -169,17 +186,20 @@ describe('MongoDBInstrumentation-Metrics', () => {
       metrics[0].descriptor.description,
       'The number of connections that are currently in state described by the state attribute.'
     );
-    assert.strictEqual(metrics[0].dataPoints.length, 2);
-    assert.strictEqual(metrics[0].dataPoints[0].value, 0);
-    assert.strictEqual(metrics[0].dataPoints[0].attributes['state'], 'used');
+
+    // Checking dataPoints
+    const dataPoints = filterDataPointsForDB(metrics[0].dataPoints, DB_NAME);
+    assert.strictEqual(dataPoints.length, 2);
+    assert.strictEqual(dataPoints[0].value, 0);
+    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
-      metrics[0].dataPoints[0].attributes['pool.name'],
+      dataPoints[0].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
-    assert.strictEqual(metrics[0].dataPoints[1].value, 0);
-    assert.strictEqual(metrics[0].dataPoints[1].attributes['state'], 'idle');
+    assert.strictEqual(dataPoints[1].value, 0);
+    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
-      metrics[0].dataPoints[1].attributes['pool.name'],
+      dataPoints[1].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
   });

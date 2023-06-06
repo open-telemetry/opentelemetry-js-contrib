@@ -24,23 +24,14 @@ import {
   MongoResponseHookInformation,
 } from '../src';
 import {
-  getInstrumentation,
   registerInstrumentationTesting,
   getTestSpans,
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
 
-// Get instrumentation (singleton)
-let instrumentation: MongoDBInstrumentation;
-{
-  const instance: MongoDBInstrumentation | undefined = getInstrumentation();
-  if (!instance) {
-    instrumentation = new MongoDBInstrumentation();
-    registerInstrumentationTesting(instrumentation);
-  } else {
-    instrumentation = instance;
-  }
-}
+const instrumentation = registerInstrumentationTesting(
+  new MongoDBInstrumentation()
+);
 
 import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
@@ -61,7 +52,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
 
   const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
   const PORT = process.env.MONGODB_PORT || '27017';
-  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
+  const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-traces';
   const COLLECTION_NAME = 'test-traces';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
 
