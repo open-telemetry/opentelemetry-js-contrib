@@ -99,7 +99,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
 
   afterEach(async () => {
     if (shouldTest) {
-      await collection.deleteMany();
+      await collection.deleteMany({});
     }
   });
 
