@@ -1,7 +1,7 @@
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-otlp-http';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
