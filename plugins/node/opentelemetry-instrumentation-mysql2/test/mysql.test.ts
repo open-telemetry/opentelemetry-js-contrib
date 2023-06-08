@@ -105,13 +105,13 @@ describe('mysql2@2.x', () => {
   });
 
   after(function (done) {
-    if (testMysqlLocally) {
-      this.timeout(5000);
-      rootConnection.end(() => {
+    rootConnection.end(() => {
+      if (testMysqlLocally) {
+        this.timeout(5000);
         testUtils.cleanUpDocker('mysql');
-        done();
-      });
-    }
+      }
+      done();
+    });
   });
 
   beforeEach(() => {
