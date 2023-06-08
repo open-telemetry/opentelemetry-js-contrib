@@ -1,4 +1,4 @@
-# Redis Common Utils for OpenTelemetry SQL packages
+# Common Utils for OpenTelemetry SQL packages
 
 This is an internal utils package used for the different SQL instrumentations:
 
