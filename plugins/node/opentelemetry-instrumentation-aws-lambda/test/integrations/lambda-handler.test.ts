@@ -862,9 +862,22 @@ describe('lambda handler', () => {
       });
     });
 
-    describe('.cjs lambda bundle', () => {
-      it('should export a valid span', async () => {
+    describe('different extensions', () => {
+      it('.cjs should export a valid span', async () => {
         initializeHandler('lambda-test/commonjs.handler');
+        const result = await lambdaRequire('lambda-test/commonjs.cjs').handler(
+          'arg',
+          ctx
+        );
+        assert.strictEqual(result, 'ok');
+        const spans = memoryExporter.getFinishedSpans();
+        const [span] = spans;
+        assert.strictEqual(spans.length, 1);
+        assertSpanSuccess(span);
+        assert.strictEqual(span.parentSpanId, undefined);
+      });
+      it('.mjs should export a valid span', async () => {
+        initializeHandler('lambda-test/es-module.handler');
         const result = await lambdaRequire('lambda-test/commonjs.cjs').handler(
           'arg',
           ctx

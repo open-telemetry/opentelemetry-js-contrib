@@ -99,18 +99,21 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     // Lambda loads user function using an absolute path.
     let filename = path.resolve(taskRoot, moduleRoot, module);
-    if (!filename.endsWith('.js')) {
-      // its impossible to know in advance if the user has a cjs or js file.
-      // check that the .js file exists otherwise fallback to next known possibility
+  
+    // we can't tell in advance if a user has a .js/.cjs/.mjs extension
+    // 2 fs.statSync calls gives us the fastest implementation
+    try {
+      fs.statSync(`${filename}.js`);
+      filename += '.js';
+    } catch (e) {
       try {
-        fs.statSync(`${filename}.js`);
-        filename += '.js';
+        fs.statSync(`${filename}.mjs`);
+        filename += '.mjs';
       } catch (e) {
         // fallback to .cjs
         filename += '.cjs';
       }
     }
-
     return [
       new InstrumentationNodeModuleDefinition(
         // NB: The patching infrastructure seems to match names backwards, this must be the filename, while
@@ -151,7 +154,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _getPatchHandler(original: Handler) {
     diag.debug('patch handler function');
     const plugin = this;
-
     return function patchedHandler(
       this: never,
       // The event can be a user type, it truly is any.
