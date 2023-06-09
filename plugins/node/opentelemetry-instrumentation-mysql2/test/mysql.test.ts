@@ -1101,21 +1101,14 @@ describe('mysql2@2.x', () => {
   describe('#responseHook', () => {
     const queryResultAttribute = 'query_result';
 
-    after(() => {
-      instrumentation.setConfig({});
-    });
-
     describe('invalid repsonse hook', () => {
-      before(() => {
-        instrumentation.disable();
-        instrumentation.setTracerProvider(provider);
+      beforeEach(() => {
         const config: MySQL2InstrumentationConfig = {
           responseHook: (span, responseHookInfo) => {
             throw new Error('random failure!');
           },
         };
         instrumentation.setConfig(config);
-        instrumentation.enable();
       });
 
       it('should not affect the behavior of the query', done => {
@@ -1133,9 +1126,7 @@ describe('mysql2@2.x', () => {
     });
 
     describe('valid response hook', () => {
-      before(() => {
-        instrumentation.disable();
-        instrumentation.setTracerProvider(provider);
+      beforeEach(() => {
         const config: MySQL2InstrumentationConfig = {
           responseHook: (span, responseHookInfo) => {
             span.setAttribute(
@@ -1145,7 +1136,6 @@ describe('mysql2@2.x', () => {
           },
         };
         instrumentation.setConfig(config);
-        instrumentation.enable();
       });
 
       it('should extract data from responseHook - connection', done => {
