@@ -30,6 +30,12 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
+
 ## [0.27.6](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-alibaba-cloud-v0.27.5...resource-detector-alibaba-cloud-v0.27.6) (2023-05-16)
 
 

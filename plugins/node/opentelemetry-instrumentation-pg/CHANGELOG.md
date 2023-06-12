@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.35.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.35.2...instrumentation-pg-v0.35.3) (2023-06-12)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.40.0 ([#1527](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1527)) ([4e18a46](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4e18a46396eb2f06e86790dbbd68075c4c2dc83b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
+
 ## [0.35.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.35.1...instrumentation-pg-v0.35.2) (2023-05-16)
 
 
