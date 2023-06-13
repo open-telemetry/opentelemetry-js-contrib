@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-fs",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "OpenTelemetry automatic instrumentation package for fs",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
