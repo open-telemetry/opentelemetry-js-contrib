@@ -12,6 +12,66 @@
   * dependencies
     * @opentelemetry/instrumentation-document-load bumped from ^0.31.1 to ^0.31.2
 
+## [0.32.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.32.2...auto-instrumentations-web-v0.32.3) (2023-06-12)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.40.0 ([#1527](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1527)) ([4e18a46](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4e18a46396eb2f06e86790dbbd68075c4c2dc83b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.32.2 to ^0.32.3
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.32.3 to ^0.32.4
+
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.32.1...auto-instrumentations-web-v0.32.2) (2023-05-16)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.39.1 ([#1493](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1493)) ([8ef95bc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8ef95bccc2d03302089f256f3d0ee091869b4c44))
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.32.1 to ^0.32.2
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.32.2 to ^0.32.3
+
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.32.0...auto-instrumentations-web-v0.32.1) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.32.0 to ^0.32.1
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.32.1 to ^0.32.2
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.31.2...auto-instrumentations-web-v0.32.0) (2023-04-06)
+
+
+### Features
+
+* **instrumenation-document-load:** Add custom attributes to document load ([#1414](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1414)) ([98609c6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/98609c69d951951edcaa3234914d04d7ae87e9b5))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.31.2 to ^0.32.0
+
 ## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.31.0...auto-instrumentations-web-v0.31.1) (2023-02-07)
 
 

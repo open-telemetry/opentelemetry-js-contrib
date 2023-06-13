@@ -50,7 +50,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
     return [
       new InstrumentationNodeModuleDefinition<any>(
         'mysql2',
-        ['>= 1.4.2 < 3.0'],
+        ['>= 1.4.2 < 4.0'],
         (moduleExports: any, moduleVersion) => {
           api.diag.debug(`Patching mysql@${moduleVersion}`);
 

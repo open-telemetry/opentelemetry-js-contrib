@@ -17,18 +17,3 @@
 export function ObjectKeys<T>(t: T) {
   return Object.keys(t) as (keyof T)[];
 }
-
-export function throttle<T>(fn: () => T, ms: number): () => T {
-  let memoized: T | undefined = undefined;
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return () => {
-    if (timeout !== null) {
-      return memoized!;
-    }
-    memoized = fn();
-    timeout = setTimeout(() => {
-      timeout = null;
-    }, ms);
-    return memoized;
-  };
-}

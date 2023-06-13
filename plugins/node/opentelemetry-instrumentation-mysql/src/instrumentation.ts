@@ -73,8 +73,8 @@ export class MySQLInstrumentation extends InstrumentationBase<
       'db.client.connections.usage', //TODO:: use semantic convention
       {
         description:
-          'The number of connections that are currently in the state referenced by the attribute "state".',
-        unit: '{connections}',
+          'The number of connections that are currently in state described by the state attribute.',
+        unit: '{connection}',
       }
     );
   }

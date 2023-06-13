@@ -22,6 +22,9 @@ export enum METRIC_NAMES {
   NETWORK_DROPPED = 'system.network.dropped',
   NETWORK_ERRORS = 'system.network.errors',
   NETWORK_IO = 'system.network.io',
+  PROCESS_CPU_TIME = 'process.cpu.time',
+  PROCESS_CPU_UTILIZATION = 'process.cpu.utilization',
+  PROCESS_MEMORY_USAGE = 'process.memory.usage',
 }
 
 export enum CPU_LABELS {
