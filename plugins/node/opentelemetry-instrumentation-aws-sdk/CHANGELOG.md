@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.34.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.34.2...instrumentation-aws-sdk-v0.34.3) (2023-06-12)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.40.0 ([#1527](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1527)) ([4e18a46](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4e18a46396eb2f06e86790dbbd68075c4c2dc83b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.29.4 to ^0.29.5
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
+
 ## [0.34.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.34.1...instrumentation-aws-sdk-v0.34.2) (2023-05-16)
 
 
