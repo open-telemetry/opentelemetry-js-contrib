@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 export enum AttributeNames {
-  AWS_ERROR = 'aws.error',
   AWS_OPERATION = 'aws.operation',
   AWS_REGION = 'aws.region',
   AWS_SERVICE_API = 'aws.service.api',

@@ -18,6 +18,32 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
+
+## [0.2.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.2.3...resource-detector-container-v0.2.4) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.2 to ^0.33.3
+
 ## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.1.2...resource-detector-container-v0.2.0) (2022-11-02)
 
 
