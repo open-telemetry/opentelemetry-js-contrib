@@ -78,13 +78,17 @@ export class DynamodbServiceExtension implements ServiceExtension {
       operation === 'Scan' ||
       operation === 'Query'
     ) {
-      spanAttributes[SemanticAttributes.AWS_DYNAMODB_CONSISTENT_READ] =
-        normalizedRequest.commandInput.ConsistentRead;
+      if (normalizedRequest.commandInput?.ConsistentRead) {
+        spanAttributes[SemanticAttributes.AWS_DYNAMODB_CONSISTENT_READ] =
+          normalizedRequest.commandInput.ConsistentRead;
+      }
     }
 
     if (operation === 'Query' || operation === 'Scan') {
-      spanAttributes[SemanticAttributes.AWS_DYNAMODB_PROJECTION] =
-        normalizedRequest.commandInput.ProjectionExpression;
+      if (normalizedRequest.commandInput?.ProjectionExpression) {
+        spanAttributes[SemanticAttributes.AWS_DYNAMODB_PROJECTION] =
+          normalizedRequest.commandInput.ProjectionExpression;
+      }
     }
 
     if (operation === 'CreateTable') {
@@ -206,42 +210,34 @@ export class DynamodbServiceExtension implements ServiceExtension {
       }
     }
 
-    if (
-      operation === 'BatchWriteItem' ||
-      operation === 'CreateTable' ||
-      operation === 'DeleteItem' ||
-      operation === 'PutItem' ||
-      operation === 'UpdateItem'
-    ) {
+    if (response.data?.ItemCollectionMetrics) {
       span.setAttribute(
         SemanticAttributes.AWS_DYNAMODB_ITEM_COLLECTION_METRICS,
-        response.data.ItemCollectionMetrics
+        this.toArray(response.data.ItemCollectionMetrics).map(
+          (x: { [DictionaryKey: string]: any }) => JSON.stringify(x)
+        )
       );
     }
 
-    if (operation === 'ListTables') {
-      if (response.data?.TableNames) {
-        span.setAttribute(
-          SemanticAttributes.AWS_DYNAMODB_TABLE_COUNT,
-          response.data?.TableNames.length
-        );
-      }
+    if (response.data?.TableNames) {
+      span.setAttribute(
+        SemanticAttributes.AWS_DYNAMODB_TABLE_COUNT,
+        response.data?.TableNames.length
+      );
     }
 
-    if (operation === 'Scan') {
-      if (response.data?.Count) {
-        span.setAttribute(
-          SemanticAttributes.AWS_DYNAMODB_COUNT,
-          response.data?.Count
-        );
-      }
+    if (response.data?.Count) {
+      span.setAttribute(
+        SemanticAttributes.AWS_DYNAMODB_COUNT,
+        response.data?.Count
+      );
+    }
 
-      if (response.data?.ScannedCount) {
-        span.setAttribute(
-          SemanticAttributes.AWS_DYNAMODB_SCANNED_COUNT,
-          response.data?.ScannedCount
-        );
-      }
+    if (response.data?.ScannedCount) {
+      span.setAttribute(
+        SemanticAttributes.AWS_DYNAMODB_SCANNED_COUNT,
+        response.data?.ScannedCount
+      );
     }
   }
 }
