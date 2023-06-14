@@ -78,7 +78,7 @@ export function getQuerySpanName(
       ? queryConfig.name
       : parseNormalizedOperationName(queryConfig.text);
 
-  return `${PgInstrumentation.BASE_SPAN_NAME}:${command}${
+  return `${command}${
     dbName ? ` ${dbName}` : ''
   }`;
 }

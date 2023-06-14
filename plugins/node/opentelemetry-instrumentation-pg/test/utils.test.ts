@@ -85,14 +85,14 @@ describe('utils.ts', () => {
     it('uses prepared statement name when given, over query text', () => {
       assert.strictEqual(
         utils.getQuerySpanName('dbName', dummyQuery),
-        'pg.query:select-placeholder-val dbName'
+        'select-placeholder-val dbName'
       );
     });
 
     it('falls back to parsing query text when no (valid) name is available', () => {
       assert.strictEqual(
         utils.getQuerySpanName('dbName', { ...dummyQuery, name: undefined }),
-        'pg.query:SELECT dbName'
+        'SELECT dbName'
       );
     });
 
@@ -109,21 +109,21 @@ describe('utils.ts', () => {
     it('ignores trailing semicolons when parsing operation names', () => {
       assert.strictEqual(
         utils.getQuerySpanName('dbName', { text: 'COMMIT;' }),
-        'pg.query:COMMIT dbName'
+        'COMMIT dbName'
       );
     });
 
     it('omits db name if missing', () => {
       assert.strictEqual(
         utils.getQuerySpanName(undefined, dummyQuery),
-        'pg.query:select-placeholder-val'
+        'select-placeholder-val'
       );
     });
 
     it('should omit all info if the queryConfig is invalid', () => {
       assert.strictEqual(
         utils.getQuerySpanName('db-name-ignored', undefined),
-        'pg.query'
+        'query'
       );
     });
   });

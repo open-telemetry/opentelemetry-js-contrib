@@ -46,12 +46,10 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
 
-const PG_POOL_COMPONENT = 'pg-pool';
-
 export class PgInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'pg';
 
-  static readonly BASE_SPAN_NAME = PgInstrumentation.COMPONENT + '.query';
+  static readonly BASE_SPAN_NAME = 'query';
 
   constructor(config: PgInstrumentationConfig = {}) {
     super(
@@ -138,7 +136,7 @@ export class PgInstrumentation extends InstrumentationBase {
         }
 
         const span = plugin.tracer.startSpan(
-          `${PgInstrumentation.COMPONENT}.connect`,
+          `connect${this.database ? ` ${this.database}` : ''}`,
           {
             kind: SpanKind.CLIENT,
             attributes: {
@@ -362,16 +360,19 @@ export class PgInstrumentation extends InstrumentationBase {
         }
 
         // setup span
-        const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-            ...utils.getSemanticAttributesFromConnection(this.options),
-            [AttributeNames.IDLE_TIMEOUT_MILLIS]:
-              this.options.idleTimeoutMillis,
-            [AttributeNames.MAX_CLIENT]: this.options.maxClient,
-          },
-        });
+        const span = plugin.tracer.startSpan(
+          `connect ${this.options.database}`,
+          {
+            kind: SpanKind.CLIENT,
+            attributes: {
+              [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+              ...utils.getSemanticAttributesFromConnection(this.options),
+              [AttributeNames.IDLE_TIMEOUT_MILLIS]:
+                this.options.idleTimeoutMillis,
+              [AttributeNames.MAX_CLIENT]: this.options.maxClient,
+            },
+          }
+        );
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
