@@ -48,9 +48,8 @@ function defaultShouldPreventSpanCreation() {
  * addEventListener of HTMLElement
  */
 export class UserInteractionInstrumentation extends InstrumentationBase<unknown> {
-  readonly component: string = 'user-interaction';
   readonly version = VERSION;
-  moduleName = this.component;
+  readonly moduleName: string = 'user-interaction';
   private _spansData = new WeakMap<api.Span, SpanData>();
   private _zonePatched?: boolean;
   // for addEventListener/removeEventListener state
@@ -134,12 +133,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
         eventName,
         {
           attributes: {
-            [AttributeNames.COMPONENT]: this.component,
             [AttributeNames.EVENT_TYPE]: eventName,
             [AttributeNames.TARGET_ELEMENT]: element.tagName,
             [AttributeNames.TARGET_XPATH]: xpath,
             [AttributeNames.HTTP_URL]: window.location.href,
-            [AttributeNames.HTTP_USER_AGENT]: navigator.userAgent,
           },
         },
         parentSpan
@@ -157,7 +154,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
 
       return span;
     } catch (e) {
-      api.diag.error(this.component, e);
+      this._diag.error('failed to start create new user interaction span', e);
     }
     return undefined;
   }
@@ -575,7 +572,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    */
   override enable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
-    api.diag.debug(
+    this._diag.debug(
       'applying patch to',
       this.moduleName,
       this.version,
@@ -585,15 +582,15 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
     if (ZoneWithPrototype) {
       if (isWrapped(ZoneWithPrototype.prototype.runTask)) {
         this._unwrap(ZoneWithPrototype.prototype, 'runTask');
-        api.diag.debug('removing previous patch from method runTask');
+        this._diag.debug('removing previous patch from method runTask');
       }
       if (isWrapped(ZoneWithPrototype.prototype.scheduleTask)) {
         this._unwrap(ZoneWithPrototype.prototype, 'scheduleTask');
-        api.diag.debug('removing previous patch from method scheduleTask');
+        this._diag.debug('removing previous patch from method scheduleTask');
       }
       if (isWrapped(ZoneWithPrototype.prototype.cancelTask)) {
         this._unwrap(ZoneWithPrototype.prototype, 'cancelTask');
-        api.diag.debug('removing previous patch from method cancelTask');
+        this._diag.debug('removing previous patch from method cancelTask');
       }
 
       this._zonePatched = true;
@@ -618,13 +615,13 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       targets.forEach(target => {
         if (isWrapped(target.addEventListener)) {
           this._unwrap(target, 'addEventListener');
-          api.diag.debug(
+          this._diag.debug(
             'removing previous patch from method addEventListener'
           );
         }
         if (isWrapped(target.removeEventListener)) {
           this._unwrap(target, 'removeEventListener');
-          api.diag.debug(
+          this._diag.debug(
             'removing previous patch from method removeEventListener'
           );
         }
@@ -645,7 +642,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    */
   override disable() {
     const ZoneWithPrototype = this.getZoneWithPrototype();
-    api.diag.debug(
+    this._diag.debug(
       'removing patch from',
       this.moduleName,
       this.version,

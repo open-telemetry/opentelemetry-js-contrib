@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cassandra-driver",
-  "version": "0.32.1",
+  "version": "0.32.3",
   "description": "OpenTelemetry instrumentation for cassandra-driver",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -48,7 +48,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/contrib-test-utils": "^0.33.1",
+    "@opentelemetry/contrib-test-utils": "^0.33.3",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
@@ -56,16 +56,15 @@
     "@types/semver": "7.3.8",
     "@types/sinon": "10.0.2",
     "cassandra-driver": "4.6.3",
-    "gts": "3.1.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "3.0.2",
+    "rimraf": "5.0.0",
     "sinon": "15.0.1",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.35.1",
+    "@opentelemetry/instrumentation": "^0.39.1",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-cassandra#readme"

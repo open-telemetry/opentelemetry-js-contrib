@@ -304,7 +304,6 @@ describe('UserInteractionInstrumentation', () => {
             );
 
             const attributes = spanClick.attributes;
-            assert.equal(attributes.component, 'user-interaction');
             assert.equal(attributes.event_type, 'click');
             assert.equal(attributes.target_element, 'BUTTON');
             assert.equal(attributes.target_xpath, '//*[@id="testBtn"]');

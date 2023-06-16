@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-pg
 
 ### Supported Versions
 
-- `>=7 <9`
+- `>=8 <9`
 
 ## Usage
 

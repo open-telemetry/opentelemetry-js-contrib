@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.35.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.35.1...instrumentation-pg-v0.35.2) (2023-05-16)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.39.1 ([#1493](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1493)) ([8ef95bc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8ef95bccc2d03302089f256f3d0ee091869b4c44))
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+* **pg-values:** values should be parsable when enhancedDatabaseRepoting:true ([#1453](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1453)) ([49a0389](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/49a03892c05dbeda98badeb07847240869442384))
+* **pg:** do not replace argument with plain object ([#1432](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1432)) ([e691537](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e6915373aaa8c1226f6dc122b49ae6bfb2fc1ddd))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.2 to ^0.33.3
+
+## [0.35.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.35.0...instrumentation-pg-v0.35.1) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
+
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.34.1...instrumentation-pg-v0.35.0) (2023-03-03)
+
+
+### Features
+
+* **pg:** remove support for pg v7 ([#1393](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1393)) ([ae6d4f3](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ae6d4f39fc882d16e65e846218a69fb72586de3e))
+
+
+### Bug Fixes
+
+* **postgres:** pass 'arguments' to the connect callback ([#1395](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1395)) ([b02775f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b02775f0d9e84dea5463bb9a3883d0ad6ff1f500))
+
 ## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.34.0...instrumentation-pg-v0.34.1) (2023-02-07)
 
 

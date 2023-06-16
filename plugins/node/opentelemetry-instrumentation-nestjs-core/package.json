@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-nestjs-core",
-  "version": "0.32.1",
+  "version": "0.32.4",
   "description": "OpenTelemetry NestJS automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -15,7 +15,7 @@
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "nyc ts-mocha --timeout 5000 -p tsconfig.json 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js"
   },
@@ -60,13 +60,11 @@
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
     "@types/semver": "7.3.8",
-    "@types/vinyl-fs": "2.4.12",
     "cross-env": "7.0.3",
-    "gts": "3.1.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "reflect-metadata": "0.1.13",
-    "rimraf": "3.0.2",
+    "rimraf": "5.0.0",
     "rxjs": "7.3.0",
     "rxjs-compat": "6.6.7",
     "semver": "7.3.5",
@@ -75,7 +73,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.35.1",
+    "@opentelemetry/instrumentation": "^0.39.1",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-nestjs-core#readme"
