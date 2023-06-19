@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v3
         # Need lerna to list all packages
       - name: Install lerna
-        run: npm install -g lerna
+        run: npm install -g lerna@5.5.2
       - name: Parse labels into lerna scope arguments
         id: lerna-args
         run: |
