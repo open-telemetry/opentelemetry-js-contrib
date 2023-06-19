@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install lerna
-        run: npm install -g lerna
+        run: npm install -g lerna@5.5.2
 
       - name: Install script dependencies
         run: npm install
