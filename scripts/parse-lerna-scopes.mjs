@@ -14,7 +14,7 @@ import { readFileSync } from 'fs';
 
 const labels = JSON.parse(process.argv[2]);
 const lernaList = JSON.parse(
-	childProcess.spawnSync('npx lerna', ['list', '--json']).stdout
+	childProcess.spawnSync('npx', ['lerna', 'list', '--json']).stdout
 		.toString('utf8')
 );
 const packageList = new Map(
