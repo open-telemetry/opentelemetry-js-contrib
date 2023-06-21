@@ -143,6 +143,6 @@ jobs:
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
-        run: lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
+        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Run test-all-versions
-        run: lerna run test-all-versions ${{ inputs.lerna-args }} ${{ matrix.lerna-extra-args }} --stream --concurrency 1
+        run: npx lerna run test-all-versions ${{ inputs.lerna-args }} ${{ matrix.lerna-extra-args }} --stream --concurrency 1
