@@ -93,8 +93,9 @@ jobs:
       MONGODB_PORT: 27017
       MSSQL_PASSWORD: mssql_passw0rd
       MYSQL_DATABASE: otel_mysql_database
-      MYSQL_HOST: localhost
+      MYSQL_HOST: 127.0.0.1
       MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootpw
       MYSQL_PORT: 3306
       MYSQL_USER: otel
       OPENTELEMETRY_REDIS_HOST: localhost
@@ -118,6 +119,8 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
+      - name: Set MySQL variables
+        run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
       - name: Cache Dependencies
         uses: actions/cache@v3
         with:
