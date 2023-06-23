@@ -33,4 +33,10 @@ export interface MySQL2InstrumentationConfig extends InstrumentationConfig {
    * @default undefined
    */
   responseHook?: MySQL2InstrumentationExecutionResponseHook;
+
+  /**
+   * If true, queries are modified to also include a comment with
+   * the tracing context, following the {@link https://github.com/open-telemetry/opentelemetry-sqlcommenter sqlcommenter} format
+   */
+  addSqlCommenterCommentToQueries?: boolean;
 }
