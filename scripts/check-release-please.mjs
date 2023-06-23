@@ -30,7 +30,7 @@ const getProcessOutput = (cmd, args) => {
 }
 
 const lernaList = JSON.parse(
-	getProcessOutput('lerna', ['list', '--json'])
+	getProcessOutput('npx', ['lerna', 'list', '--json'])
 );
 const manifest = readJson('.release-please-manifest.json');
 const config = readJson('release-please-config.json');
