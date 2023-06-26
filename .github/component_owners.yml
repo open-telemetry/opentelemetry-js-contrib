@@ -109,7 +109,8 @@ components:
   plugins/node/opentelemetry-instrumentation-winston:
     - seemk
   plugins/web/opentelemetry-instrumentation-document-load:
-    - obecny
+    - pkanal
+    - martinkuba 
   plugins/web/opentelemetry-instrumentation-long-task:
     - mhennoch
     - t2t2
