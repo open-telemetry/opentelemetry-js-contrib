@@ -198,8 +198,11 @@ describe('DynamoDB', () => {
     beforeEach(() =>
       mockV2AwsSend(responseMockSuccess, {
         UnprocessedItems: {},
-        ItemCollectionMetrics: {"ItemCollectionKey": [], "SizeEstimateRangeGB": [0]},
-        ConsumedCapacity: undefined,  
+        ItemCollectionMetrics: {
+          ItemCollectionKey: [],
+          SizeEstimateRangeGB: [0],
+        },
+        ConsumedCapacity: undefined,
       } as AWS.DynamoDB.Types.BatchWriteItemOutput)
     );
 
@@ -208,12 +211,15 @@ describe('DynamoDB', () => {
       const params = {
         RequestItems: {},
         ReturnConsumedCapacity: 'INDEXES',
-        ReturnItemCollectionMetrics: 'SIZE'
+        ReturnItemCollectionMetrics: 'SIZE',
       };
 
       dynamodb.batchWrite(
         params,
-        (err: AWSError, data: AWS.DynamoDB.DocumentClient.BatchWriteItemOutput) => {
+        (
+          err: AWSError,
+          data: AWS.DynamoDB.DocumentClient.BatchWriteItemOutput
+        ) => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
@@ -223,7 +229,7 @@ describe('DynamoDB', () => {
           expect(
             attrs[SemanticAttributes.AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
           ).toStrictEqual([
-            JSON.stringify({"ItemCollectionKey": [], "SizeEstimateRangeGB": [0]}),
+            JSON.stringify({ ItemCollectionKey: [], SizeEstimateRangeGB: [0] }),
           ]);
 
           expect(
@@ -239,77 +245,78 @@ describe('DynamoDB', () => {
   describe('CreateTable', () => {
     beforeEach(() =>
       mockV2AwsSend(responseMockSuccess, {
-        TableName: "test_table",
-        ItemCollectionMetrics: {"ItemCollectionKey": [], "SizeEstimateRangeGB": [0]},
-        ConsumedCapacity: undefined,  
+        TableName: 'test_table',
+        ItemCollectionMetrics: {
+          ItemCollectionKey: [],
+          SizeEstimateRangeGB: [0],
+        },
+        ConsumedCapacity: undefined,
       } as AWS.DynamoDB.Types.CreateTableOutput)
     );
 
     it('should populate specific CreateTable attributes', done => {
-
-      const globalSecondaryIndexMockData = { 
-        IndexName: "test_index", 
-        KeySchema: [ 
+      const globalSecondaryIndexMockData = {
+        IndexName: 'test_index',
+        KeySchema: [
           {
-            AttributeName: "attribute1", 
-            KeyType: "HASH",
+            AttributeName: 'attribute1',
+            KeyType: 'HASH',
           },
         ],
         Projection: {
-          ProjectionType: "ALL",
-          NonKeyAttributes: [
-            "non_key_attr",
-          ],
+          ProjectionType: 'ALL',
+          NonKeyAttributes: ['non_key_attr'],
         },
         ProvisionedThroughput: {
           ReadCapacityUnits: 5,
           WriteCapacityUnits: 10,
         },
-      }
+      };
 
-      const localSecondaryIndexMockData = { 
-        IndexName: "test_index",
+      const localSecondaryIndexMockData = {
+        IndexName: 'test_index',
         KeySchema: [
           {
-            AttributeName: "test_attribute",
-            KeyType: "HASH",
+            AttributeName: 'test_attribute',
+            KeyType: 'HASH',
           },
         ],
-        Projection: { 
-          ProjectionType: "ALL",
-          NonKeyAttributes: [ 
-            "STRING_VALUE",
-          ],
+        Projection: {
+          ProjectionType: 'ALL',
+          NonKeyAttributes: ['STRING_VALUE'],
         },
-      }
+      };
 
       const dynamodb = new AWS.DynamoDB();
       const params = {
-        AttributeDefinitions: [ 
-          { 
-            AttributeName: "test_attribute",
-            AttributeType: "S", 
+        AttributeDefinitions: [
+          {
+            AttributeName: 'test_attribute',
+            AttributeType: 'S',
           },
         ],
-        TableName: "test_table",
-        KeySchema: [ 
-          { 
-            AttributeName: "test_attribute", 
-            KeyType: "HASH", 
+        TableName: 'test_table',
+        KeySchema: [
+          {
+            AttributeName: 'test_attribute',
+            KeyType: 'HASH',
           },
         ],
         LocalSecondaryIndexes: [localSecondaryIndexMockData],
         GlobalSecondaryIndexes: [globalSecondaryIndexMockData],
-        BillingMode: "PROVISIONED",
+        BillingMode: 'PROVISIONED',
         ProvisionedThroughput: {
-          ReadCapacityUnits: 20, 
+          ReadCapacityUnits: 20,
           WriteCapacityUnits: 30,
         },
       };
 
       dynamodb.createTable(
         params,
-        (err: AWSError, data: AWS.DynamoDB.DocumentClient.CreateTableOutput) => {
+        (
+          err: AWSError,
+          data: AWS.DynamoDB.DocumentClient.CreateTableOutput
+        ) => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
@@ -319,7 +326,7 @@ describe('DynamoDB', () => {
           expect(
             attrs[SemanticAttributes.AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
           ).toStrictEqual([
-            JSON.stringify({"ItemCollectionKey": [], "SizeEstimateRangeGB": [0]}),
+            JSON.stringify({ ItemCollectionKey: [], SizeEstimateRangeGB: [0] }),
           ]);
 
           expect(
@@ -348,31 +355,31 @@ describe('DynamoDB', () => {
   describe('UpdateTable', () => {
     beforeEach(() =>
       mockV2AwsSend(responseMockSuccess, {
-        TableName: "test_table"
+        TableName: 'test_table',
       } as AWS.DynamoDB.Types.UpdateTableOutput)
     );
 
     it('should populate specific CreateTable attributes', done => {
       const dynamodb = new AWS.DynamoDB();
-      const params = { 
-        AttributeDefinitions: [ 
-          { 
-            AttributeName: "test_attr", 
-            AttributeType: "S", 
+      const params = {
+        AttributeDefinitions: [
+          {
+            AttributeName: 'test_attr',
+            AttributeType: 'S',
           },
         ],
-        TableName: "test_table",
-        ProvisionedThroughput: { 
-          ReadCapacityUnits: 10, 
-          WriteCapacityUnits: 15, 
+        TableName: 'test_table',
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 10,
+          WriteCapacityUnits: 15,
         },
         GlobalSecondaryIndexUpdates: [
-          { 
-            Update: { 
-              IndexName: "test_index", 
+          {
+            Update: {
+              IndexName: 'test_index',
               ProvisionedThroughput: {
-                ReadCapacityUnits: 1, 
-                WriteCapacityUnits: 5, 
+                ReadCapacityUnits: 1,
+                WriteCapacityUnits: 5,
               },
             },
           },
@@ -381,7 +388,10 @@ describe('DynamoDB', () => {
 
       dynamodb.updateTable(
         params,
-        (err: AWSError, data: AWS.DynamoDB.DocumentClient.UpdateTableOutput) => {
+        (
+          err: AWSError,
+          data: AWS.DynamoDB.DocumentClient.UpdateTableOutput
+        ) => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
@@ -390,24 +400,28 @@ describe('DynamoDB', () => {
           );
 
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES]
-          ).toStrictEqual([JSON.stringify({ 
-            Update: { 
-              IndexName: "test_index", 
-              ProvisionedThroughput: {
-                ReadCapacityUnits: 1, 
-                WriteCapacityUnits: 5, 
+            attrs[
+              SemanticAttributes.AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES
+            ]
+          ).toStrictEqual([
+            JSON.stringify({
+              Update: {
+                IndexName: 'test_index',
+                ProvisionedThroughput: {
+                  ReadCapacityUnits: 1,
+                  WriteCapacityUnits: 5,
+                },
               },
-            },
-          })]);
+            }),
+          ]);
           expect(
             attrs[SemanticAttributes.AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS]
-          ).toStrictEqual([JSON.stringify(
-            { 
-              AttributeName: "test_attr", 
-              AttributeType: "S", 
-            }
-          )]);
+          ).toStrictEqual([
+            JSON.stringify({
+              AttributeName: 'test_attr',
+              AttributeType: 'S',
+            }),
+          ]);
           expect(
             attrs[SemanticAttributes.AWS_DYNAMODB_PROVISIONED_READ_CAPACITY]
           ).toStrictEqual(10);
@@ -427,14 +441,14 @@ describe('DynamoDB', () => {
   describe('ListTables', () => {
     beforeEach(() =>
       mockV2AwsSend(responseMockSuccess, {
-        TableNames: ["test_table", "test_table_2", "start_table"]
+        TableNames: ['test_table', 'test_table_2', 'start_table'],
       } as AWS.DynamoDB.Types.ListTablesOutput)
     );
 
     it('should populate specific ListTables attributes', done => {
       const dynamodb = new AWS.DynamoDB();
       const params = {
-        ExclusiveStartTableName: "start_table",
+        ExclusiveStartTableName: 'start_table',
         Limit: 10,
       };
 
@@ -448,9 +462,15 @@ describe('DynamoDB', () => {
             DbSystemValues.DYNAMODB
           );
 
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_EXCLUSIVE_START_TABLE]).toStrictEqual("start_table")
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(10);
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_COUNT]).toStrictEqual(3);
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_EXCLUSIVE_START_TABLE]
+          ).toStrictEqual('start_table');
+          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(
+            10
+          );
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_COUNT]
+          ).toStrictEqual(3);
 
           expect(
             JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
