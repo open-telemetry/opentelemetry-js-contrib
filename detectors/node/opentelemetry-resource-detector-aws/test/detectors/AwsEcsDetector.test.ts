@@ -37,6 +37,9 @@ import * as os from 'os';
 import { join } from 'path';
 
 interface EcsResourceAttributes {
+  readonly accountId?: string;
+  readonly region?: string;
+  readonly zone?: string;
   readonly clusterArn?: string;
   readonly containerArn?: string;
   readonly launchType?: 'ec2' | 'fargate';
@@ -55,6 +58,9 @@ const assertEcsResource = (
 ) => {
   assertCloudResource(resource, {
     provider: CloudProviderValues.AWS,
+    accountId: validations.accountId,
+    region: validations.region,
+    zone: validations.zone,
   });
   assert.strictEqual(
     resource.attributes[SemanticResourceAttributes.CLOUD_PLATFORM],
@@ -336,6 +342,9 @@ describe('AwsEcsResourceDetector', () => {
       describe('on Fargate', () => {
         describe('with AWS CloudWatch as log driver', () => {
           generateLaunchTypeTests({
+            accountId: '111122223333',
+            region: 'us-west-2',
+            zone: 'us-west-2a',
             clusterArn: 'arn:aws:ecs:us-west-2:111122223333:cluster/default',
             containerArn:
               'arn:aws:ecs:us-west-2:111122223333:container/05966557-f16c-49cb-9352-24b3a0dcd0e1',
