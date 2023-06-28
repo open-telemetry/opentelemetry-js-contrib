@@ -109,11 +109,12 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
    * Creates a new span
    * @param element
    * @param eventName
+   * @param parentSpan
    */
   private _createSpan(
     element: EventTarget | null | undefined,
     eventName: EventName,
-    parentSpan?: api.Span | undefined
+    parentSpan?: api.Span
   ): api.Span | undefined {
     if (!(element instanceof HTMLElement)) {
       return undefined;

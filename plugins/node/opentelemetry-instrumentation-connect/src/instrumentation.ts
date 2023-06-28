@@ -17,7 +17,7 @@
 import { context, diag, Span, SpanOptions } from '@opentelemetry/api';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { HandleFunction, NextFunction, Server } from 'connect';
-import type { IncomingMessage, ServerResponse } from 'http';
+import type { ServerResponse } from 'http';
 import {
   AttributeNames,
   ConnectNames,
@@ -120,16 +120,13 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
       if (!instrumentation.isEnabled()) {
         return (middleWare as any).apply(this, arguments);
       }
-      const [reqArgIdx, resArgIdx, nextArgIdx] = isErrorMiddleware
-        ? [1, 2, 3]
-        : [0, 1, 2];
-      const req = arguments[reqArgIdx] as IncomingMessage;
+      const [resArgIdx, nextArgIdx] = isErrorMiddleware ? [2, 3] : [1, 2];
       const res = arguments[resArgIdx] as ServerResponse;
       const next = arguments[nextArgIdx] as NextFunction;
 
       const rpcMetadata = getRPCMetadata(context.active());
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
-        rpcMetadata.span.updateName(`${req.method} ${routeName || '/'}`);
+        rpcMetadata.route = routeName;
       }
       let spanName = '';
       if (routeName) {
