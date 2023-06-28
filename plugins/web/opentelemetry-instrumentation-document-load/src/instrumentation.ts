@@ -274,7 +274,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
   }
 
   /**
-   * adds custom attributes to root span if configured
+   * adds custom attributes to span if configured
    */
   private _addCustomAttributesOnResourceSpan(
     span: Span,
@@ -291,7 +291,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
             return;
           }
 
-          this._diag.error('addCustomAttributesOnSpan', error);
+          this._diag.error('addCustomAttributesOnResourceSpan', error);
         },
         true
       );
