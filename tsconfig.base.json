@@ -18,7 +18,8 @@
     "strictNullChecks": true,
     "target": "es2017",
     "incremental": true,
-    "newLine": "LF"
+    "newLine": "LF",
+    "importHelpers": true
   },
   "exclude": [
     "node_modules"
