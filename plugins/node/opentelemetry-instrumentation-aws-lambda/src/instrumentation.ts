@@ -77,10 +77,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _metricForceFlusher?: () => Promise<void>;
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
-    // shallow copy to prevent modification of original object
-    _config = { ..._config };
-
-    if (_config.disableAwsContextPropagation == null) {
+    super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+    if (this._config.disableAwsContextPropagation == null) {
       if (
         typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
           'string' &&
@@ -88,11 +86,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
           'OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'
         ].toLocaleLowerCase() === 'true'
       ) {
-        _config.disableAwsContextPropagation = true;
+        this._config.disableAwsContextPropagation = true;
       }
     }
-
-    super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
