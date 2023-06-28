@@ -45,7 +45,7 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
-import { addSqlCommenterComment } from '../src/utils';
+import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 
 const memoryExporter = new InMemorySpanExporter();
 
