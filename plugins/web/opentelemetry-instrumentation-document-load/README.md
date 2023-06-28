@@ -82,7 +82,7 @@ Because the browser does not send a trace context header for the initial page na
 </body>
 ```
 
-## Optional : Add custom attributes to document load span if needed
+## Optional : Add custom attributes to spans if needed
 
 If it is needed to add custom attributes to the document load span,and/or document fetch span and/or resource fetch spans, respective functions to do so needs to be provided
 as a config to the DocumentLoad Instrumentation as shown below. The attributes will be added to the respective spans
@@ -93,11 +93,16 @@ the rest of the process continues.
 const addCustomAttributesToSpan = (span: Span) => {
   span.setAttribute('<custom.attribute.key>','<custom-attribute-value>');
 }
+const addCustomAttributesToResourceFetchSpan = (span: Span, resource: PerformanceResourceTiming) => {
+  span.setAttribute('<custom.attribute.key>','<custom-attribute-value>');
+  span.setAttribute('resource.tcp.duration_ms', resource.connectEnd - resource.connectStart);
+}
 registerInstrumentations({
   instrumentations: [
     new DocumentLoadInstrumentation({
         applyCustomAttributesOnSpan: {
-            documentLoad: addCustomAttributesToSpan
+            documentLoad: addCustomAttributesToSpan,
+            resourceFetch: addCustomAttributesToResourceFetchSpan
         }
     })
     ]
