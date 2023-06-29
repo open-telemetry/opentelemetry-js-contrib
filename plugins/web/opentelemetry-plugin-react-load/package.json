@@ -89,7 +89,8 @@
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-web": "^1.0.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
-    "shimmer": "^1.2.1"
+    "shimmer": "^1.2.1",
+    "tslib": "^2.3.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-plugin-react-load#readme"
 }

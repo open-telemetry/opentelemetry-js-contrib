@@ -57,6 +57,7 @@ import {
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
+import { env } from 'process';
 import { LambdaModule } from './internal-types';
 
 const awsPropagator = new AWSXRayPropagator();
@@ -77,6 +78,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+    if (this._config.disableAwsContextPropagation == null) {
+      if (
+        typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
+          'string' &&
+        env[
+          'OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'
+        ].toLocaleLowerCase() === 'true'
+      ) {
+        this._config.disableAwsContextPropagation = true;
+      }
+    }
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
