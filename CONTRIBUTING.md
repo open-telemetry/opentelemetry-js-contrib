@@ -175,7 +175,6 @@ Pull requests MAY be merged by an approver OR a maintainer provided they meet al
   - technical committee members
   - component owners
   - subject-matter experts
-- No unresolved conversations
 - New or changed functionality is tested by unit tests
 - New or changed functionality is documented if appropriate
 - Substantial changes should not be merged within 24 hours of opening in order to allow reviewers from all time zones to have a chance to review
