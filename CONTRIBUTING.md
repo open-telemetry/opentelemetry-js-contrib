@@ -180,8 +180,6 @@ Pull requests MAY be merged by an approver OR a maintainer provided they meet al
 - New or changed functionality is documented if appropriate
 - Substantial changes should not be merged within 24 hours of opening in order to allow reviewers from all time zones to have a chance to review
 
-If all of the above requirements are met a pull request may be merged by either a maintainer or an approver.
-
 All requirements are at the discretion of the maintainers.
 Maintainers MAY merge pull requests which have not strictly met these requirements.
 Maintainers MAY close, block, or put on hold pull requests even if they have strictly met these requirements.
