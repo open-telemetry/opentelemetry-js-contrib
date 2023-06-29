@@ -164,6 +164,7 @@ Any packages released from their source will be marked as deprecated in NPM.
 ## Pull Request Merge Requirements
 
 Pull requests MAY be merged by an approver OR a maintainer provided they meet all the following requirements:
+
 - Approved by
   - at least one component owner if one is defined in [.github/component_owners.yml](.github/component_owners.yml)
   - OR one maintainer
