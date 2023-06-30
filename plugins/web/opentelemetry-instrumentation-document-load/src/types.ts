@@ -20,6 +20,10 @@ export interface DocumentLoadCustomAttributeFunction {
   (span: Span): void;
 }
 
+export interface ResourceFetchCustomAttributeFunction {
+  (span: Span, resource: PerformanceResourceTiming): void;
+}
+
 /**
  * DocumentLoadInstrumentationPlugin Config
  */
@@ -29,6 +33,6 @@ export interface DocumentLoadInstrumentationConfig
   applyCustomAttributesOnSpan?: {
     documentLoad?: DocumentLoadCustomAttributeFunction;
     documentFetch?: DocumentLoadCustomAttributeFunction;
-    resourceFetch?: DocumentLoadCustomAttributeFunction;
+    resourceFetch?: ResourceFetchCustomAttributeFunction;
   };
 }
