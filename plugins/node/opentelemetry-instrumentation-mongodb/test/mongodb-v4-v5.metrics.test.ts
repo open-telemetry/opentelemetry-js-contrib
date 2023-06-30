@@ -112,7 +112,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
     );
 
     assert.strictEqual(exportedMetrics.length, 1);
-    let metrics = exportedMetrics[0].scopeMetrics[0].metrics;
+    const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
     assert.strictEqual(metrics.length, 1);
     assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
