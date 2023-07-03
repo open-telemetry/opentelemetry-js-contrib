@@ -23,7 +23,13 @@ import {
   ConnectNames,
   ConnectTypes,
 } from './enums/AttributeNames';
-import { Use, UseArgs, UseArgs2 } from './internal-types';
+import {
+  _LAYERS_STORE_PROPERTY,
+  PatchedRequest,
+  Use,
+  UseArgs,
+  UseArgs2,
+} from './internal-types';
 import { VERSION } from './version';
 import {
   InstrumentationBase,
@@ -34,6 +40,22 @@ import {
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 export const ANONYMOUS_NAME = 'anonymous';
+
+const addNewStackLayer = (request: PatchedRequest) => {
+  if (Array.isArray(request[_LAYERS_STORE_PROPERTY]) === false) {
+    Object.defineProperty(request, _LAYERS_STORE_PROPERTY, {
+      enumerable: false,
+      value: [],
+    });
+  }
+  request[_LAYERS_STORE_PROPERTY].push('/');
+};
+
+const replaceCurrentStackRoute = (request: PatchedRequest, value?: string) => {
+  if (value) {
+    request[_LAYERS_STORE_PROPERTY].splice(-1, 1, value);
+  }
+};
 
 /** Connect instrumentation for OpenTelemetry */
 export class ConnectInstrumentation extends InstrumentationBase<Server> {
@@ -64,6 +86,9 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
   private _patchApp(patchedApp: Server) {
     if (!isWrapped(patchedApp.use)) {
       this._wrap(patchedApp, 'use', this._patchUse.bind(this));
+    }
+    if (!isWrapped(patchedApp.handle)) {
+      this._wrap(patchedApp, 'handle', this._patchHandle.bind(this));
     }
   }
 
@@ -120,13 +145,20 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
       if (!instrumentation.isEnabled()) {
         return (middleWare as any).apply(this, arguments);
       }
-      const [resArgIdx, nextArgIdx] = isErrorMiddleware ? [2, 3] : [1, 2];
+      const [reqArgIdx, resArgIdx, nextArgIdx] = isErrorMiddleware
+        ? [1, 2, 3]
+        : [0, 1, 2];
+      const req = arguments[reqArgIdx] as PatchedRequest;
       const res = arguments[resArgIdx] as ServerResponse;
       const next = arguments[nextArgIdx] as NextFunction;
 
+      replaceCurrentStackRoute(req, routeName);
+
       const rpcMetadata = getRPCMetadata(context.active());
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
-        rpcMetadata.route = routeName;
+        rpcMetadata.route = req[_LAYERS_STORE_PROPERTY].reduce(
+          (acc, sub) => acc.replace(/\/+$/, '') + sub
+        );
       }
       let spanName = '';
       if (routeName) {
@@ -178,6 +210,35 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
       );
 
       return original.apply(this, args as UseArgs2);
+    };
+  }
+
+  public _patchHandle(original: Server['handle']): Server['handle'] {
+    const instrumentation = this;
+    return function (
+      this: Server,
+      req: PatchedRequest,
+      res: ServerResponse,
+      out?: Function
+    ): ReturnType<Server['handle']> {
+      addNewStackLayer(req);
+
+      function completeStack() {
+        req[_LAYERS_STORE_PROPERTY].pop();
+      }
+      const done = out
+        ? instrumentation._patchOut(out as NextFunction, completeStack)
+        : undefined;
+
+      return original.apply(this, [req, res, done as Function]);
+    };
+  }
+
+  public _patchOut(out: NextFunction, completeStack: () => void): NextFunction {
+    return function nextFunction(this: NextFunction, err?: any): void {
+      completeStack();
+      const result = out.apply(this, [err]);
+      return result;
     };
   }
 }
