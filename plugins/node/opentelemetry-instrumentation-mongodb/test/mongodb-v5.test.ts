@@ -24,20 +24,29 @@ import {
   MongoResponseHookInformation,
 } from '../src';
 import {
+  getInstrumentation,
   registerInstrumentationTesting,
   getTestSpans,
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
 
-const instrumentation = registerInstrumentationTesting(
-  new MongoDBInstrumentation()
-);
+// Get instrumentation (singleton)
+let instrumentation: MongoDBInstrumentation;
+{
+  const instance: MongoDBInstrumentation | undefined = getInstrumentation();
+  if (!instance) {
+    instrumentation = new MongoDBInstrumentation();
+    registerInstrumentationTesting(instrumentation);
+  } else {
+    instrumentation = instance;
+  }
+}
 
 import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
-describe('MongoDBInstrumentation-Tracing-v4', () => {
+describe('MongoDBInstrumentation-Tracing-v5', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
   }
@@ -75,7 +84,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
       });
   });
 
-  beforeEach(function mongoBeforeEach(done) {
+  beforeEach(async function mongoBeforeEach() {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work
     // properly when skipping tests in before() on nested describe() calls.
     // https://github.com/mochajs/mocha/issues/2819
@@ -84,17 +93,14 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
     }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    collection.insertMany(insertData, (err: any, result: any) => {
-      resetMemoryExporter();
-      done();
-    });
+    await collection.insertMany(insertData);
+    resetMemoryExporter();
   });
 
-  afterEach(done => {
+  afterEach(async () => {
     if (shouldTest) {
-      return collection.deleteMany({}, done);
+      await collection.deleteMany({});
     }
-    done();
   });
 
   after(async () => {
