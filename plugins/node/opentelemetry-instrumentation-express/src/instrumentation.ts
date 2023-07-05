@@ -198,8 +198,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         // once we reach the request handler
         const rpcMetadata = getRPCMetadata(context.active());
         if (
-          metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
-            ExpressLayerType.REQUEST_HANDLER &&
+          type === ExpressLayerType.REQUEST_HANDLER &&
           rpcMetadata?.type === RPCType.HTTP
         ) {
           rpcMetadata.route = route || '/';
