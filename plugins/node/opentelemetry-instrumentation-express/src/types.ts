@@ -27,7 +27,7 @@ export type ExpressRequestInfo = {
   /**
    * If layerType is undefined, SpanNameHook is being invoked to rename the original root HTTP span.
    */
-  layerType?: ExpressLayerType;
+  layerType: ExpressLayerType;
 };
 
 export type SpanNameHook = (
