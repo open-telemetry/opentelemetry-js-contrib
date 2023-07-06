@@ -13,6 +13,7 @@ jobs:
         include:
           - node: "18"
             lerna-extra-args: >-
+              --concurrency 5
               --ignore @opentelemetry/resource-detector-alibaba-cloud
               --ignore @opentelemetry/instrumentation-fastify
               --ignore @opentelemetry/instrumentation-restify
@@ -153,8 +154,6 @@ jobs:
       - name: Install Root Dependencies
         run: npm install
       - name: Unit tests
-        env:
-          NODE_OPTIONS: ${{ matrix.node == '18' && '--max_old_space_size=4096' || '' }} 
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
       - name: Build examples
         run: npm run compile:examples
