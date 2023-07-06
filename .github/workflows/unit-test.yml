@@ -154,7 +154,7 @@ jobs:
         run: npm install
       - name: Unit tests
         env:
-          NODE_OPTIONS: "--max_old_space_size=4096"
+          NODE_OPTIONS: ${{ matrix.node == '18' && '--max_old_space_size=4096' || '' }} 
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
       - name: Build examples
         run: npm run compile:examples
