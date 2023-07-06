@@ -35,7 +35,7 @@
     "@opentelemetry/exporter-zipkin": "^1.0.0",
     "@opentelemetry/instrumentation": "^0.41.2",
     "@opentelemetry/instrumentation-http": "^0.41.2",
-    "@opentelemetry/instrumentation-mongodb": "^0.32.0",
+    "@opentelemetry/instrumentation-mongodb": "^0.36.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "mongodb": "^3.7.3"

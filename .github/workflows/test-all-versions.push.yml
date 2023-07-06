@@ -5,6 +5,7 @@ on:
       - "main"
       - "release/**"
       - "release-please/**"
+      - feat-lerna-bootstrap-deprecate
 
 jobs:
   tav:

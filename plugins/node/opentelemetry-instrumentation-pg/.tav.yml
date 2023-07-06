@@ -2,5 +2,4 @@ pg:
     # a sample from supported versions
   - versions: "8.5.1 || 8.6.0 || 8.7.1"
     peerDependencies: pg-pool@^3
-    pretest: npm run --prefix ../../../ lerna:link
     commands: npm run test

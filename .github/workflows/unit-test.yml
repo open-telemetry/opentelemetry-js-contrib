@@ -1,7 +1,8 @@
 name: Unit Tests
 on:
   push:
-    branches: [main]
+    branches: 
+      - feat-lerna-bootstrap-deprecate
   pull_request:
 
 jobs:
@@ -13,6 +14,7 @@ jobs:
         include:
             - node: 14
               code-coverage: true
+              npm: 7
     runs-on: ubuntu-latest
     services:
       memcached:
@@ -121,40 +123,30 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package.json
+            detectors/node/*/package.json
+            metapackages/*/package.json
+            packages/*/package.json
+            plugins/node/*/package.json
+            plugins/web/*/package.json
+            propagators/*/package.json
+      - name: Install minimum npm 7
+        if: matrix.npm
+        run: npm install -g npm@${{matrix.npm}}
       - name: Set MySQL variables
         run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            detectors/node/*/node_modules
-            detectors/node/*/package-lock.json
-            metapackages/*/node_modules
-            metapackages/*/package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            plugins/node/*/node_modules
-            plugins/node/*/package-lock.json
-            plugins/web/*/node_modules
-            plugins/web/*/package-lock.json
-            propagators/*/node_modules
-            propagators/*/package-lock.json
-          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
       - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
-      - name: Install Root Dependencies
-        run: npm install --ignore-scripts
-      - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
+      - name: Install Dependencies
+        run: npm install
       - name: Unit tests (Full)
         if: matrix.code-coverage
-        run: npm run test -- ${{ matrix.lerna-extra-args }}
+        run: npx lerna run test ${{ matrix.lerna-extra-args }}
       - name: Unit tests (Delta)
         if: ${{ !matrix.code-coverage }}
-        run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
+        run: npx lerna run test ${{ matrix.lerna-extra-args }} --since origin/main
       - name: Build examples
         run: npm run compile:examples
       - name: Report Coverage
@@ -168,6 +160,9 @@ jobs:
       fail-fast: false
       matrix:
         node: ["14"]
+        include:          
+          - node: 14
+            npm: 7
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
@@ -180,31 +175,24 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            detectors/node/*/node_modules
-            detectors/node/*/package-lock.json
-            metapackages/*/node_modules
-            metapackages/*/package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            plugins/node/*/node_modules
-            plugins/node/*/package-lock.json
-            plugins/web/*/node_modules
-            plugins/web/*/package-lock.json
-            propagators/*/node_modules
-            propagators/*/package-lock.json
-          key: ${{ runner.os }}${{ matrix.node }}-browser-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package.json
+            detectors/node/*/package.json
+            metapackages/*/package.json
+            packages/*/package.json
+            plugins/node/*/package.json
+            plugins/web/*/package.json
+            propagators/*/package.json
+      - name: Install minimum npm@${{matrix.npm}}
+        if: matrix.npm
+        run: npm install -g npm@${{matrix.npm}}
+      - name: Legacy Peer Dependencies for npm>7
+        run: npm config set legacy-peer-deps=true
       - name: Install Root Dependencies
-        run: npm install --ignore-scripts
-      - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci
+        run: npm install --legacy-bundling
       - name: Unit tests
-        run: npm run test:browser
+        run: npx lerna run --no-bail test:browser
       - name: Report Coverage
         uses: codecov/codecov-action@v3
         with:

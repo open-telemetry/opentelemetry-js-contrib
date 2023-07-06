@@ -13,7 +13,7 @@
   "types": "build/src/index.d.ts",
   "scripts": {
     "clean": "lerna run clean",
-    "postinstall": "npm run bootstrap",
+    "postinstall": "lerna run compile",
     "prepare": "husky install",
     "precompile": "tsc --version && npm run version:update",
     "version:update": "lerna run version:update",
@@ -23,15 +23,12 @@
     "test": "lerna run test",
     "test:ci:changed": "lerna run test --since origin/main",
     "test:browser": "lerna run test:browser --concurrency 1",
-    "bootstrap": "lerna bootstrap --no-ci",
     "bump": "lerna publish",
     "changelog": "lerna-changelog",
-    "lerna:link": "lerna link",
     "lint": "lerna run lint",
     "lint:fix": "lerna run lint:fix",
     "lint:examples": "eslint ./examples/**/*.js",
-    "lint:examples:fix": "eslint ./examples/**/*.js --fix",
-    "lerna:scope": "lerna bootstrap --include-dependents --include-dependencies --scope"
+    "lint:examples:fix": "eslint ./examples/**/*.js --fix"
   },
   "keywords": [
     "opentelemetry",
@@ -56,11 +53,21 @@
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
     "husky": "7.0.4",
-    "lerna": "5.5.2",
+    "lerna": "7.1.1",
     "lerna-changelog": "2.2.0",
     "prettier": "2.8.8",
     "typescript": "4.4.4"
   },
+  "workspaces": [
+    "packages/*",
+    "metapackages/*",
+    "plugins/node/*",
+    "plugins/node/*/examples",
+    "plugins/web/*",
+    "plugins/web/*/examples",
+    "propagators/*",
+    "detectors/node/*"
+  ],
   "changelog": {
     "labels": {
       "breaking": ":boom: Breaking Change",

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feat-lerna-bootstrap-deprecate
   pull_request:
 
 jobs:
@@ -21,26 +22,21 @@ jobs:
           ignore: "./**/CHANGELOG.md"
           args: "./**/*.md"
 
-      - name: restore lerna
-        uses: actions/cache@master # must use unreleased master to cache multiple paths
-        id: cache
+      - uses: actions/setup-node@v3
         with:
-          path: |
-            ./node_modules
-            ./package-lock.json
-            node_modules
-            detectors/node/*/node_modules
-            metapackages/*/node_modules
-            packages/*/node_modules
-            plugins/node/*/node_modules
-            plugins/web/*/node_modules
-            propagators/*/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package.json
+            detectors/node/*/package.json
+            metapackages/*/package.json
+            packages/*/package.json
+            plugins/node/*/package.json
+            plugins/web/*/package.json
+            propagators/*/package.json
 
       - name: Bootstrap
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           npm install --only=dev --ignore-scripts
-          npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='gts' --ignore-scripts -- --only=dev
       - name: Lint
         run: npm run lint

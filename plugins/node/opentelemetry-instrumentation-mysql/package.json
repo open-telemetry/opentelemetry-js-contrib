@@ -12,7 +12,6 @@
     "lint": "eslint . --ext .ts",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-mysql --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha tsconfig.json 'test/**/*.test.ts'",
     "version:update": "node ../../../scripts/version-update.js",

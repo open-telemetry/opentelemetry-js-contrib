@@ -12,7 +12,6 @@
     "lint": "eslint . --ext .ts",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-tedious --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "test-all-versions": "tav",

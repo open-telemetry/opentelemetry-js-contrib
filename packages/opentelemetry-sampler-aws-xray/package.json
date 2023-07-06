@@ -34,7 +34,6 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/sampler-aws-xray --include-dependencies",
     "prewatch": "npm run precompile",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "version:update": "node ../../scripts/version-update.js",
@@ -63,7 +62,6 @@
     "ts-mocha": "10.0.0",
     "nyc": "15.1.0",
     "typescript": "4.4.4",
-    "gts": "3.1.1",
     "@typescript-eslint/eslint-plugin": "5.8.1",
     "@typescript-eslint/parser": "5.8.1"
   },

@@ -13,7 +13,6 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-net --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc -p ."
   },
