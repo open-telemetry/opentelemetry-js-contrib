@@ -41,6 +41,5 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           npm install --only=dev --ignore-scripts
-          npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='gts' --ignore-scripts -- --only=dev
       - name: Lint
         run: npm run lint

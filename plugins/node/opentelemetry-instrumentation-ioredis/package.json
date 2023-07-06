@@ -18,8 +18,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-ioredis --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "tsc -p .",
-    "prepare": "npm run compile"
+    "compile": "tsc -p ."
   },
   "keywords": [
     "instrumentation",
@@ -56,7 +55,7 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
-    "@types/sinon": "10.0.9",
+    "@types/sinon": "10.0.15",
     "@types/node": "18.11.7",
     "cross-env": "7.0.3",
     "ioredis": "5.2.2",

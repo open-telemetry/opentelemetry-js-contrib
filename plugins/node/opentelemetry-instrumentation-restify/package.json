@@ -11,7 +11,6 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-restify --include-dependencies",
-    "prepare": "npm run compile",
     "prewatch": "npm run precompile",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",

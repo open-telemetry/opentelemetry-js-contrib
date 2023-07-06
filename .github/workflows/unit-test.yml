@@ -149,9 +149,7 @@ jobs:
         if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
       - name: Install Root Dependencies
-        run: npm install --ignore-scripts
-      - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
+        run: npm install
       - name: Unit tests
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
       - name: Build examples
@@ -199,9 +197,7 @@ jobs:
             propagators/*/package-lock.json
           key: ${{ runner.os }}${{ matrix.node }}-browser-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
       - name: Install Root Dependencies
-        run: npm install --ignore-scripts
-      - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci
+        run: npm install
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage

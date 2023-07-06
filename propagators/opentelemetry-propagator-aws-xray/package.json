@@ -15,8 +15,7 @@
     "test:browser": "nyc karma start --single-run",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json",
-    "prepare": "npm run compile"
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "keywords": [
     "opentelemetry",

@@ -14,7 +14,6 @@
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc --build tsconfig.json tsconfig.esm.json",
-    "prepare": "npm run compile",
     "tdd": "karma start",
     "test:browser": "nyc karma start --single-run",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
@@ -56,7 +55,7 @@
     "@types/react-addons-test-utils": "0.14.26",
     "@types/react-dom": "18.0.2",
     "@types/shimmer": "1.0.2",
-    "@types/sinon": "10.0.2",
+    "@types/sinon": "10.0.15",
     "@types/webpack-env": "1.16.2",
     "babel-loader": "8.2.2",
     "@jsdevtools/coverage-istanbul-loader": "3.0.5",

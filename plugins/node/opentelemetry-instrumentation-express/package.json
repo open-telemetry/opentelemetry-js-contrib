@@ -17,7 +17,6 @@
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc -p .",
     "compile:examples": "cd examples && npm run compile",
-    "prepare": "npm run compile",
     "watch": "tsc -w"
   },
   "keywords": [
@@ -54,7 +53,7 @@
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
-    "@types/sinon": "10.0.9",
+    "@types/sinon": "10.0.15",
     "express": "4.17.3",
     "mocha": "7.2.0",
     "nyc": "15.1.0",

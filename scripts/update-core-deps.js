@@ -27,7 +27,7 @@
  *  `CORE_REPOSITORY=../../otel-core node scripts/update-core-deps.js
  * 
  * Note that this only updates the versions in the package.json for each package
- * and you will still need to run `lerna bootstrap` and make any necessary
+ * and you will still need to run `npm run compile` and make any necessary
  * code changes.
  */
 

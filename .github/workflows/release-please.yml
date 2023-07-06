@@ -37,7 +37,6 @@ jobs:
       - name: Build Packages
         run: |
           npm install
-          npx lerna bootstrap --no-ci
 
       - uses: google-github-actions/release-please-action@v3
         id: release
