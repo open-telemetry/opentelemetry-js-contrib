@@ -23,6 +23,26 @@ export function getClientAttributes(options: any) {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
     [SemanticAttributes.NET_PEER_NAME]: options?.socket?.host,
     [SemanticAttributes.NET_PEER_PORT]: options?.socket?.port,
-    [SemanticAttributes.DB_CONNECTION_STRING]: options?.url,
+    [SemanticAttributes.DB_CONNECTION_STRING]: removeCredentialsFromDBConnectionStringAttribute(options?.url),
   };
+}
+
+/**
+ * removeCredentialsFromDBConnectionStringAttribute removes basic auth from url and user_pwd from query string
+ *
+ * Examples:
+ *   redis://user:pass@localhost:6379/mydb => redis://localhost:6379/mydb
+ *   redis://localhost:6379?db=mydb&user_pwd=pass => redis://localhost:6379?db=mydb
+*/
+function removeCredentialsFromDBConnectionStringAttribute(url?: unknown): string | undefined {
+  if (typeof url !== "string" ) {
+    return
+  }
+
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("user_pwd")
+    return `${u.protocol}//${u.host}${u.pathname}${u.search}${u.hash}`
+  } catch (e) {}
+  return
 }
