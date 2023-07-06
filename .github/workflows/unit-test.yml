@@ -124,6 +124,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
+      - name: Install minimum npm 7
+        if: matrix.node == '14'
+        run: npm install -g npm@7
       - name: Set MySQL variables
         run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
       - name: Cache Dependencies
@@ -146,7 +149,6 @@ jobs:
             propagators/*/package-lock.json
           key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
       - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
       - name: Install Root Dependencies
         run: npm install
@@ -177,6 +179,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
+      - name: Install minimum npm 7
+        if: matrix.node == '14'
+        run: npm install -g npm@7
       - name: Cache Dependencies
         uses: actions/cache@v3
         with:
@@ -196,6 +201,8 @@ jobs:
             propagators/*/node_modules
             propagators/*/package-lock.json
           key: ${{ runner.os }}${{ matrix.node }}-browser-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
+      - name: Legacy Peer Dependencies for npm 7
+        run: npm config set legacy-peer-deps=true
       - name: Install Root Dependencies
         run: npm install
       - name: Unit tests
