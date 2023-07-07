@@ -42,7 +42,9 @@ function removeCredentialsFromDBConnectionStringAttribute(url?: unknown): string
   try {
     const u = new URL(url);
     u.searchParams.delete("user_pwd")
-    return `${u.protocol}//${u.host}${u.pathname}${u.search}${u.hash}`
+    u.username = ""
+    u.password = ""
+    return u.href
   } catch (e) {}
   return
 }
