@@ -43,9 +43,6 @@ typings/
 # Optional eslint cache
 .eslintcache
 
-# Optional nx task run cache
-.nxcache
-
 # Optional REPL history
 .node_repl_history
 
@@ -88,4 +85,3 @@ package.json.lerna_backup
 # version.ts file is automatically generated at compile time
 version.ts
 /.vs
-
