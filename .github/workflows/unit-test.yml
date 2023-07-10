@@ -144,7 +144,7 @@ jobs:
             plugins/web/*/package-lock.json
             propagators/*/node_modules
             propagators/*/package-lock.json
-          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json')  }}-v2
+          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
       - name: Legacy Peer Dependencies for npm 7
         if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
@@ -197,7 +197,7 @@ jobs:
             plugins/web/*/package-lock.json
             propagators/*/node_modules
             propagators/*/package-lock.json
-          key: ${{ runner.os }}${{ matrix.node }}-browser-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}-v2
+          key: ${{ runner.os }}${{ matrix.node }}-browser-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
