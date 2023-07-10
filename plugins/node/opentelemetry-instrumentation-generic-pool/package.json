@@ -49,6 +49,7 @@
     "@opentelemetry/context-async-hooks": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
+    "@types/generic-pool": "^3.1.9",
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
     "@types/semver": "7.3.8",
@@ -63,7 +64,6 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.40.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/generic-pool": "^3.1.9",
     "tslib": "^2.3.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-generic-pool#readme"
