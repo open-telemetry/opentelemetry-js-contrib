@@ -369,7 +369,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fsEvents[7].name, PTN.LOAD_EVENT_START);
         assert.strictEqual(fsEvents[8].name, PTN.LOAD_EVENT_END);
 
-        assert.strictEqual(rsEvents.length, 9);
+        assert.strictEqual(rsEvents.length, 8);
         assert.strictEqual(fsEvents.length, 11);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
@@ -561,7 +561,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rsEvents[7].name, PTN.LOAD_EVENT_START);
         assert.strictEqual(rsEvents[8].name, PTN.LOAD_EVENT_END);
 
-        assert.strictEqual(fsEvents.length, 9);
+        assert.strictEqual(fsEvents.length, 8);
         assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
