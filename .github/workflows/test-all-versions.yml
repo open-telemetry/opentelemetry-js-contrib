@@ -121,25 +121,6 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Set MySQL variables
         run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            detectors/node/*/node_modules
-            detectors/node/*/package-lock.json
-            metapackages/*/node_modules
-            metapackages/*/package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            plugins/node/*/node_modules
-            plugins/node/*/package-lock.json
-            plugins/web/*/node_modules
-            plugins/web/*/package-lock.json
-            propagators/*/node_modules
-            propagators/*/package-lock.json
-          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
       - name: Legacy Peer Dependencies for npm 7
         if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
