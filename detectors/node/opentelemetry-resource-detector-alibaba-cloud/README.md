@@ -30,4 +30,4 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 - `alibabaCloudEcsDetector`: Populates `cloud` and `host` for processes running on [Alibaba Cloud ECS](https://www.alibabacloud.com/product/ecs).
 
-[resource-semantic_conventions]: https://github.com/open-telemetry/opentelemetry-specification/tree/master/specification/resource/semantic_conventions
+[resource-semantic_conventions]: https://github.com/open-telemetry/semantic-conventions/tree/main/docs/resource
