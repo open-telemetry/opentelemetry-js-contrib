@@ -32,7 +32,7 @@ import {
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
-import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import { kLayerPatched, KoaPatchedMiddleware } from './internal-types';
 
 /** Koa instrumentation for OpenTelemetry */
@@ -176,19 +176,10 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
 
       if (
         metadata.attributes[AttributeNames.KOA_TYPE] === KoaLayerType.ROUTER &&
-        rpcMetadata?.type === RPCType.HTTP
+        rpcMetadata?.type === RPCType.HTTP &&
+        context._matchedRoute
       ) {
-        rpcMetadata.span.updateName(
-          `${context.method} ${context._matchedRoute}`
-        );
-      }
-
-      let newContext = api.trace.setSpan(api.context.active(), span);
-      if (rpcMetadata?.type === RPCType.HTTP) {
-        newContext = setRPCMetadata(
-          newContext,
-          Object.assign(rpcMetadata, { route: context._matchedRoute })
-        );
+        rpcMetadata.route = context._matchedRoute.toString();
       }
 
       if (this.getConfig().requestHook) {
@@ -208,6 +199,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         );
       }
 
+      const newContext = api.trace.setSpan(api.context.active(), span);
       return api.context.with(newContext, async () => {
         try {
           return await middlewareLayer(context, next);
