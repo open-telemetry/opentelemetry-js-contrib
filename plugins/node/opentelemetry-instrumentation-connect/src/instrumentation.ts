@@ -215,19 +215,20 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
 
   public _patchHandle(original: Server['handle']): Server['handle'] {
     const instrumentation = this;
-    return function (
-      this: Server
-    ): ReturnType<Server['handle']> {
-      const [reqIdx, outIdx] = [0, 2]
-      const req = arguments[reqIdx] as PatchedRequest
-      const out = arguments[outIdx]
+    return function (this: Server): ReturnType<Server['handle']> {
+      const [reqIdx, outIdx] = [0, 2];
+      const req = arguments[reqIdx] as PatchedRequest;
+      const out = arguments[outIdx];
       addNewStackLayer(req);
 
       function completeStack() {
         req[_LAYERS_STORE_PROPERTY].pop();
       }
       if (typeof out === 'function') {
-        arguments[outIdx] = instrumentation._patchOut(out as NextFunction, completeStack)
+        arguments[outIdx] = instrumentation._patchOut(
+          out as NextFunction,
+          completeStack
+        );
       }
 
       return (original as any).apply(this, arguments);
