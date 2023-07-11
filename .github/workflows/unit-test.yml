@@ -125,14 +125,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: 'npm'
-          cache-dependency-path: |
-            'package.json'
-            'detectors/node/*/package.json'
-            'metapackages/*/package.json'
-            'packages/*/package.json'
-            'plugins/node/*/package.json'
-            'plugins/web/*/package.json'
-            'propagators/*/package.json'
+          cache-dependency-path: '**/package.json'
       - name: Install minimum npm 7
         if: matrix.node == '14'
         run: npm install -g npm@7
@@ -172,14 +165,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: 'npm'
-          cache-dependency-path: |
-            'package.json'
-            'detectors/node/*/package.json'
-            'metapackages/*/package.json'
-            'packages/*/package.json'
-            'plugins/node/*/package.json'
-            'plugins/web/*/package.json'
-            'propagators/*/package.json'
+          cache-dependency-path: '**/package.json'
       - name: Install minimum npm 7
         if: matrix.node == '14'
         run: npm install -g npm@7
