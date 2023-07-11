@@ -16,7 +16,7 @@
 
 import type { HandleFunction, IncomingMessage, Server } from 'connect';
 
-export const _LAYERS_STORE_PROPERTY = '__ot_middlewares';
+export const _LAYERS_STORE_PROPERTY: unique symbol = Symbol('__ot_middlewares');
 
 export type UseArgs1 = [HandleFunction];
 export type UseArgs2 = [string, HandleFunction];

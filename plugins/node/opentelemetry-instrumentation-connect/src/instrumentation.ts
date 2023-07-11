@@ -216,29 +216,28 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
   public _patchHandle(original: Server['handle']): Server['handle'] {
     const instrumentation = this;
     return function (
-      this: Server,
-      req: PatchedRequest,
-      res: ServerResponse,
-      out?: Function
+      this: Server
     ): ReturnType<Server['handle']> {
+      const [reqIdx, outIdx] = [0, 2]
+      const req = arguments[reqIdx] as PatchedRequest
+      const out = arguments[outIdx]
       addNewStackLayer(req);
 
       function completeStack() {
         req[_LAYERS_STORE_PROPERTY].pop();
       }
-      const done = out
-        ? instrumentation._patchOut(out as NextFunction, completeStack)
-        : undefined;
+      if (typeof out === 'function') {
+        arguments[outIdx] = instrumentation._patchOut(out as NextFunction, completeStack)
+      }
 
-      return original.apply(this, [req, res, done as Function]);
+      return (original as any).apply(this, arguments);
     };
   }
 
   public _patchOut(out: NextFunction, completeStack: () => void): NextFunction {
-    return function nextFunction(this: NextFunction, err?: any): void {
+    return function nextFunction(this: NextFunction, ...args: any[]): void {
       completeStack();
-      const result = out.apply(this, [err]);
-      return result;
+      return Reflect.apply(out, this, args);
     };
   }
 }
