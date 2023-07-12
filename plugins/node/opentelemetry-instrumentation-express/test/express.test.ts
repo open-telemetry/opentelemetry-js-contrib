@@ -32,6 +32,8 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as express from 'express';
+import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
+import { Server } from 'http';
 
 describe('ExpressInstrumentation', () => {
   const provider = new NodeTracerProvider();
@@ -54,6 +56,11 @@ describe('ExpressInstrumentation', () => {
   });
 
   describe('Instrumenting normal get operations', () => {
+    let server: Server, port: number;
+    afterEach(() => {
+      server?.close();
+    });
+
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const customMiddleware: express.RequestHandler = (req, res, next) => {
@@ -63,22 +70,22 @@ describe('ExpressInstrumentation', () => {
         return next();
       };
       let finishListenerCount: number | undefined;
-      const { server, port } = await serverWithMiddleware(
-        tracer,
-        rootSpan,
-        app => {
-          app.use(express.json());
-          app.use((req, res, next) => {
-            res.on('finish', () => {
-              finishListenerCount = res.listenerCount('finish');
-            });
-            next();
+      let rpcMetadata: RPCMetadata | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
           });
-          for (let index = 0; index < 15; index++) {
-            app.use(customMiddleware);
-          }
+          next();
+        });
+        for (let index = 0; index < 15; index++) {
+          app.use(customMiddleware);
         }
-      );
+      });
+      server = httpServer.server;
+      port = httpServer.port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -113,39 +120,34 @@ describe('ExpressInstrumentation', () => {
             requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
             'request_handler'
           );
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /toto/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata?.route, '/toto/:id');
         }
       );
-      server.close();
     });
 
     it('supports sync middlewares directly responding', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let finishListenerCount: number | undefined;
-      const { server, port } = await serverWithMiddleware(
-        tracer,
-        rootSpan,
-        app => {
-          app.use((req, res, next) => {
-            res.on('finish', () => {
-              finishListenerCount = res.listenerCount('finish');
-            });
-            next();
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
           });
-          const syncMiddleware: express.RequestHandler = (req, res, next) => {
-            for (let i = 0; i < 1000000; i++) {
-              continue;
-            }
-            res.status(200).end('middleware');
-          };
-          for (let index = 0; index < 15; index++) {
-            app.use(syncMiddleware);
+          next();
+        });
+        const syncMiddleware: express.RequestHandler = (req, res, next) => {
+          for (let i = 0; i < 1000000; i++) {
+            continue;
           }
+          res.status(200).end('middleware');
+        };
+        for (let index = 0; index < 15; index++) {
+          app.use(syncMiddleware);
         }
-      );
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -165,32 +167,30 @@ describe('ExpressInstrumentation', () => {
           );
         }
       );
-      server.close();
     });
 
     it('supports async middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let finishListenerCount: number | undefined;
-      const { server, port } = await serverWithMiddleware(
-        tracer,
-        rootSpan,
-        app => {
-          app.use((req, res, next) => {
-            res.on('finish', () => {
-              finishListenerCount = res.listenerCount('finish');
-            });
-            next();
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
           });
-          const asyncMiddleware: express.RequestHandler = (req, res, next) => {
-            setTimeout(() => {
-              next();
-            }, 50);
-          };
-          for (let index = 0; index < 15; index++) {
-            app.use(asyncMiddleware);
-          }
+          next();
+        });
+        const asyncMiddleware: express.RequestHandler = (req, res, next) => {
+          setTimeout(() => {
+            next();
+          }, 50);
+        };
+        for (let index = 0; index < 15; index++) {
+          app.use(asyncMiddleware);
         }
-      );
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -210,32 +210,30 @@ describe('ExpressInstrumentation', () => {
           );
         }
       );
-      server.close();
     });
 
     it('supports async middlewares directly responding', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let finishListenerCount: number | undefined;
-      const { server, port } = await serverWithMiddleware(
-        tracer,
-        rootSpan,
-        app => {
-          app.use((req, res, next) => {
-            res.on('finish', () => {
-              finishListenerCount = res.listenerCount('finish');
-            });
-            next();
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
           });
-          const asyncMiddleware: express.RequestHandler = (req, res, next) => {
-            setTimeout(() => {
-              res.status(200).end('middleware');
-            }, 50);
-          };
-          for (let index = 0; index < 15; index++) {
-            app.use(asyncMiddleware);
-          }
+          next();
+        });
+        const asyncMiddleware: express.RequestHandler = (req, res, next) => {
+          setTimeout(() => {
+            res.status(200).end('middleware');
+          }, 50);
+        };
+        for (let index = 0; index < 15; index++) {
+          app.use(asyncMiddleware);
         }
-      );
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -255,7 +253,6 @@ describe('ExpressInstrumentation', () => {
           );
         }
       );
-      server.close();
     });
 
     it('should not create span because there are no parent', async () => {
@@ -270,33 +267,36 @@ describe('ExpressInstrumentation', () => {
       router.get('/:id', (req, res, next) => {
         return res.status(200).end('test');
       });
-      const { server, port } = await createServer(app);
+      const httpServer = await createServer(app);
+      server = httpServer.server;
+      port = httpServer.port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       const res = await httpRequest.get(`http://localhost:${port}/toto/tata`);
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       assert.strictEqual(res, 'test');
-      server.close();
     });
   });
 
   describe('Disabling plugin', () => {
+    let server: Server, port: number;
+    afterEach(() => {
+      server?.close();
+    });
     it('should not create new spans', async () => {
       instrumentation.disable();
       const rootSpan = tracer.startSpan('rootSpan');
-      const { server, port } = await serverWithMiddleware(
-        tracer,
-        rootSpan,
-        app => {
-          app.use(express.json());
-          const customMiddleware: express.RequestHandler = (req, res, next) => {
-            for (let i = 0; i < 1000; i++) {
-              continue;
-            }
-            return next();
-          };
-          app.use(customMiddleware);
-        }
-      );
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        const customMiddleware: express.RequestHandler = (req, res, next) => {
+          for (let i = 0; i < 1000; i++) {
+            continue;
+          }
+          return next();
+        };
+        app.use(customMiddleware);
+      });
+      server = httpServer.server;
+      port = httpServer.port;
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
@@ -312,7 +312,6 @@ describe('ExpressInstrumentation', () => {
           );
         }
       );
-      server.close();
     });
   });
 });
