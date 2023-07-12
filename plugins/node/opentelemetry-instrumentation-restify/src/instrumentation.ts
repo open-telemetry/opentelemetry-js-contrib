@@ -32,7 +32,7 @@ import {
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { isPromise, isAsyncFunction } from './utils';
-import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
 
 const { diag } = api;
