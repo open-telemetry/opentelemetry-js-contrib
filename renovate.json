@@ -4,9 +4,15 @@
   ],
   "packageRules": [
     {
-      "groupName": "all non-major dependencies",
-      "updateTypes": ["patch", "minor"],
-      "groupSlug": "all-minor-patch"
+      "groupName": "all patch versions",
+      "groupSlug": "all-patch",
+      "matchUpdateTypes": ["patch"],
+      "excludePackageNames": ["prettier"],
+      "schedule": ["before 3am every weekday"]
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "dependencyDashboardApproval": true
     },
     {
       "matchPackageNames": ["@opentelemetry/api"],
