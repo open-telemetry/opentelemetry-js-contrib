@@ -56,7 +56,7 @@
     "@types/semver": "^7.3.12",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "restify": "8.6.1",
+    "restify": "^9.1.0",
     "rimraf": "5.0.0",
     "semver": "^7.3.7",
     "test-all-versions": "^5.0.1",
