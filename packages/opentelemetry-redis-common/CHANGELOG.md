@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.35.1...redis-common-v0.36.0) (2023-07-12)
+
+
+### Features
+
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+
 ## [0.35.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.35.0...redis-common-v0.35.1) (2023-05-16)
 
 
