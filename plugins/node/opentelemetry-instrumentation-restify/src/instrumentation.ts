@@ -176,7 +176,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
         // replace HTTP instrumentations name with one that contains a route
         const httpMetadata = getRPCMetadata(api.context.active());
         if (httpMetadata?.type === RPCType.HTTP) {
-          httpMetadata.span.updateName(`${req.method} ${route}`);
+          httpMetadata.route = route;
         }
 
         const fnName = handler.name || undefined;
@@ -237,13 +237,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
             });
         };
 
-        let newContext = api.trace.setSpan(api.context.active(), span);
-        if (httpMetadata) {
-          newContext = setRPCMetadata(
-            newContext,
-            Object.assign(httpMetadata, { route })
-          );
-        }
+        const newContext = api.trace.setSpan(api.context.active(), span);
         return api.context.with(
           newContext,
           (req: types.Request, res: restify.Response, next: restify.Next) => {
