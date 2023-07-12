@@ -26,6 +26,7 @@
         "@opentelemetry/instrumentation-http",
         "@opentelemetry/instrumentation-fetch",
         "@opentelemetry/instrumentation-xml-http-request",
+        "@opentelemetry/exporter-metrics-otlp-grpc",
         "@opentelemetry/sdk-node"
       ],
       "rangeStrategy": "bump"
@@ -33,7 +34,7 @@
   ],
   "ignoreDeps": ["lerna", "lerna-changelog"],
   "ignorePaths": ["archive/**", "examples/**"],
-  "assignees": ["@blumamir", "@dyladan", "@legendecas", "@Rauno56", "@vmarchaud"],
+  "assignees": ["@blumamir", "@dyladan", "@legendecas", "@pichlermarc" ],
   "schedule": [
     "before 3am on Friday"
   ],
