@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pino",
-  "version": "0.33.4",
+  "version": "0.34.0",
   "description": "OpenTelemetry instrumentation for pino",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -65,7 +65,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.40.0",
+    "@opentelemetry/instrumentation": "^0.41.0",
     "tslib": "^2.3.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pino#readme"

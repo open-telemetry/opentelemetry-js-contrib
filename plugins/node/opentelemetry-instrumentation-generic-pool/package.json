@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-generic-pool",
-  "version": "0.31.4",
+  "version": "0.32.0",
   "description": "OpenTelemetry Generic Pool automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -60,7 +60,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.40.0",
+    "@opentelemetry/instrumentation": "^0.41.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/generic-pool": "^3.1.9",
     "tslib": "^2.3.1"
