@@ -13,7 +13,6 @@ jobs:
         include:
           - node: "18"
             lerna-extra-args: >-
-              --ignore @opentelemetry/resource-detector-alibaba-cloud
               --ignore @opentelemetry/instrumentation-restify
     runs-on: ubuntu-latest
     services:
