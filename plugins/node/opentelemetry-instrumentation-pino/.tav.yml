@@ -3,11 +3,7 @@ pino:
     node: ">=14"
     commands: npm run test
 
-    # Fix missing `contrib-test-utils` package
-    pretest: npm run --prefix ../../../ lerna:link
   - versions: "^7.11.0 || 7.8.0 || 7.2.0 || ^6.13.1 || 5.17.0 || 5.14.0"
     node: ">=8 <14"
     commands: npm run test
 
-    # Fix missing `contrib-test-utils` package
-    pretest: npm run --prefix ../../../ lerna:link
