@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-document-load",
-  "version": "0.32.3",
+  "version": "0.33.0",
   "description": "OpenTelemetry document-load automatic instrumentation package.",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -77,7 +77,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.40.0",
+    "@opentelemetry/instrumentation": "^0.41.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-web": "^1.15.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
