@@ -152,13 +152,8 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
       - name: Unit Test
-        if: github.event.pull_request
         run: |
-          run: npm run test:ci -- --since ${{github.event.pull_request.base.ref }} ${{ matrix.lerna-extra-args }}
-      - name: Unit Test
-        if: github.event.push
-        run: |
-          run: npm run test:ci -- --since ${{github.event.push.before }} ${{ matrix.lerna-extra-args }}
+          run: npm run test:ci -- --since ${{github.event.pull_request.base.ref || github.event.push.before }} ${{ matrix.lerna-extra-args }}
       - name: Build examples
         run: npm run compile:examples
       - name: Report Coverage
@@ -208,7 +203,7 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci
       - name: Unit tests
-      run: npm run test:browser
+        run: npm run test:browser
       - name: Report Coverage
         uses: codecov/codecov-action@v3
         with:
