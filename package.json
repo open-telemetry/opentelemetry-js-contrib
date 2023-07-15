@@ -21,7 +21,6 @@
     "compile:examples": "lerna run compile:examples",
     "prewatch": "npm run precompile",
     "test": "lerna run test",
-    "test:ci": "lerna run test",
     "test:browser": "lerna run test:browser --concurrency 1",
     "bootstrap": "lerna bootstrap --no-ci",
     "bump": "lerna publish",
