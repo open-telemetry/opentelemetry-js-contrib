@@ -160,7 +160,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           verbose: true
-          flags: node
+          flags: node-${{ matrix.node }}
 
   browser-test:
     strategy:
@@ -208,4 +208,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           verbose: true
-          flags: node
+          flags: browser-${{ matrix.node }}

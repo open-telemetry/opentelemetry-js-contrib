@@ -13,3 +13,6 @@ coverage:
       default:
         target: auto
         threshold: 1%
+flag_management:
+  default_rules:
+    carryforward: true
