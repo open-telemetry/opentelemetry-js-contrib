@@ -27,19 +27,6 @@
     "README.md"
   ],
   "repository": "open-telemetry/opentelemetry-js-contrib",
-  "scripts": {
-    "compile": "tsc -p .",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/sampler-aws-xray --include-dependencies",
-    "prewatch": "npm run precompile",
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "prepare": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
-    "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
-  },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"
   },
@@ -52,21 +39,20 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/contrib-test-utils": "^0.34.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.11.7",
     "@types/sinon": "10.0.6",
+    "@typescript-eslint/eslint-plugin": "5.8.1",
+    "@typescript-eslint/parser": "5.8.1",
     "eslint": "8.7.0",
     "expect": "29.2.0",
+    "gts": "3.1.0",
     "mocha": "7.2.0",
-    "nock": "13.2.1",
+    "nock": "13.3.2",
+    "nyc": "15.1.0",
     "sinon": "15.0.1",
     "ts-mocha": "10.0.0",
-    "nyc": "15.1.0",
-    "typescript": "4.4.4",
-    "gts": "3.1.0",
-    "@typescript-eslint/eslint-plugin": "5.8.1",
-    "@typescript-eslint/parser": "5.8.1"
+    "typescript": "4.4.4"
   },
   "engines": {
     "node": ">=14"
