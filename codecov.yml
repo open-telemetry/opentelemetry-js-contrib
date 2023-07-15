@@ -4,6 +4,7 @@ codecov:
 comment:
   layout: "header, changes, diff, files"
   behavior: default
+  show_carryforward_flags: true
 coverage:
   status:
     patch:
