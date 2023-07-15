@@ -113,7 +113,9 @@ describe('[UNIT] instanaAgentDetector', () => {
       process.env.INSTANA_AGENT_TIMEOUT_MS = '200';
       const expectedError = new Error('Instana Agent request timed out.');
 
-      nock(`http://${process.env.INSTANA_AGENT_HOST}:${process.env.INSTANA_AGENT_PORT}`)
+      nock(
+        `http://${process.env.INSTANA_AGENT_HOST}:${process.env.INSTANA_AGENT_PORT}`
+      )
         .persist()
         .put('/com.instana.plugin.nodejs.discovery')
         .delay(500)
