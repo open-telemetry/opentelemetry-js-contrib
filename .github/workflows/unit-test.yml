@@ -203,7 +203,7 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci
       - name: Unit tests
-        run: npm run test:browser
+        run: npm run test:browser -- --since ${{github.event.pull_request.base.sha || github.event.push.before }}
       - name: Report Coverage
         uses: codecov/codecov-action@v3
         with:
