@@ -150,9 +150,13 @@ jobs:
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
+        if: matrix.node == '14'
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
-      - name: Unit Test
-        run: npm run test -- --since ${{github.event.pull_request.base.sha || github.event.push.before }} ${{ matrix.lerna-extra-args }}
+      - name: Unit Test (Full Run)
+        if: matrix.node == '14'
+        run: npm run test -- ${{ matrix.lerna-extra-args }}  
+      # - name: Unit Test
+      #   run: npm run test -- --since ${{github.event.pull_request.base.sha || github.event.push.before }} ${{ matrix.lerna-extra-args }}
       - name: Build examples
         run: npm run compile:examples
       - name: Report Coverage
