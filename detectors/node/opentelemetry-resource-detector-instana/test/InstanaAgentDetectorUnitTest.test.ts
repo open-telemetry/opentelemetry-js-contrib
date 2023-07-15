@@ -65,7 +65,7 @@ describe('[UNIT] instanaAgentDetector', () => {
     });
 
     it('should return agent resource with env variables', async () => {
-      process.env.INSTANA_AGENT_PORT = '88866';
+      process.env.INSTANA_AGENT_PORT = '56001';
       process.env.INSTANA_AGENT_HOST = 'instanaagent';
 
       const mockedReply = {
@@ -108,12 +108,12 @@ describe('[UNIT] instanaAgentDetector', () => {
     });
 
     it('agent timeout', async () => {
-      process.env.INSTANA_AGENT_PORT = '878787';
+      process.env.INSTANA_AGENT_PORT = '56002';
       process.env.INSTANA_AGENT_HOST = 'instanaagent';
       process.env.INSTANA_AGENT_TIMEOUT_MS = '200';
       const expectedError = new Error('Instana Agent request timed out.');
 
-      nock('http://instanaagent:878787')
+      nock(`http://${process.env.INSTANA_AGENT_HOST}:${process.env.INSTANA_AGENT_PORT}`)
         .persist()
         .put('/com.instana.plugin.nodejs.discovery')
         .delay(500)
