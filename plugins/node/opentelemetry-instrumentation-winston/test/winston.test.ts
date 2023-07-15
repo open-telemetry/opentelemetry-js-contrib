@@ -118,7 +118,7 @@ describe('WinstonInstrumentation', () => {
     });
 
     it('calls the users log hook', () => {
-      const span = tracer.startSpan('abcd');
+      const span = tracer.startSpan('abc');
       instrumentation.setConfig({
         enabled: true,
         logHook: (_span, record) => {
