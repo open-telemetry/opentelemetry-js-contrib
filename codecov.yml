@@ -4,7 +4,6 @@ codecov:
 comment:
   layout: "header, changes, diff, files"
   behavior: default
-  show_carryforward_flags: true
 coverage:
   status:
     patch:
@@ -14,6 +13,3 @@ coverage:
       default:
         target: auto
         threshold: 1%
-flag_management:
-  default_rules:
-    carryforward: true

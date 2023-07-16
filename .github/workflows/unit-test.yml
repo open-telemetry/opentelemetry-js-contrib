@@ -165,7 +165,6 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           verbose: true
-          flags: node-${{ matrix.node }}
 
   browser-test:
     strategy:
@@ -213,4 +212,3 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           verbose: true
-          flags: browser-${{ matrix.node }}
