@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-restify
 
 ### Supported Versions
 
-- `>=4.0.0 <9`
+- `>=4.0.0 <12`
 
 ## Usage
 

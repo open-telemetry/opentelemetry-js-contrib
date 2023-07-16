@@ -13,9 +13,6 @@ jobs:
         include:
           - node: "14"
             code-coverage: true
-          - node: "18"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/instrumentation-restify
     runs-on: ubuntu-latest
     services:
       memcached:
