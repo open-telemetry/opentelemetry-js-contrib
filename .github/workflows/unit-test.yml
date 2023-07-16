@@ -13,6 +13,9 @@ jobs:
         include:
           - node: "14"
             code-coverage: true
+          - node: "18"
+            lerna-extra-args: >-
+              --ignore @opentelemetry/instrumentation-restify
     runs-on: ubuntu-latest
     services:
       memcached:
@@ -153,7 +156,7 @@ jobs:
         if: matrix.code-coverage
         run: npm run test -- ${{ matrix.lerna-extra-args }}
       - name: Unit Test (Delta Run)
-        if: !matrix.code-coverage
+        if: ${{!matrix.code-coverage}}
         run: npm run test -- --since ${{github.event.pull_request.base.sha || github.event.push.before }} ${{ matrix.lerna-extra-args }}
       - name: Build examples
         run: npm run compile:examples
