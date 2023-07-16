@@ -11,9 +11,8 @@ jobs:
       matrix:
         node: ["14", "16", "18"]
         include:
-          - node: "18"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/instrumentation-restify
+          - node: "14"
+            code-coverage: true
     runs-on: ubuntu-latest
     services:
       memcached:
@@ -150,12 +149,16 @@ jobs:
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
-      - name: Unit Test
+      - name: Unit Test (Full Run)
+        if: matrix.code-coverage
+        run: npm run test -- ${{ matrix.lerna-extra-args }}
+      - name: Unit Test (Delta Run)
+        if: !matrix.code-coverage
         run: npm run test -- --since ${{github.event.pull_request.base.sha || github.event.push.before }} ${{ matrix.lerna-extra-args }}
       - name: Build examples
         run: npm run compile:examples
       - name: Report Coverage
-        if: matrix.node == '14'
+        if: matrix.code-coverage
         uses: codecov/codecov-action@v3
         with:
           verbose: true
@@ -202,7 +205,7 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci
       - name: Unit tests
-        run: npm run test:browser -- --since ${{github.event.pull_request.base.sha || github.event.push.before }}
+        run: npm run test:browser
       - name: Report Coverage
         uses: codecov/codecov-action@v3
         with:
