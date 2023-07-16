@@ -50,7 +50,7 @@
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.11.7",
-    "@types/semver": "7.3.8",
+    "@types/semver": "7.5.0",
     "@types/shimmer": "1.0.2",
     "@types/sinon": "10.0.15",
     "mocha": "7.2.0",
