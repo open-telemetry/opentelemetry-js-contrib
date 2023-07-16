@@ -10,10 +10,6 @@ jobs:
       fail-fast: false
       matrix:
         node: ["14", "16", "18"]
-        include:
-          - node: "18"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/instrumentation-restify
     runs-on: ubuntu-latest
     services:
       memcached:
