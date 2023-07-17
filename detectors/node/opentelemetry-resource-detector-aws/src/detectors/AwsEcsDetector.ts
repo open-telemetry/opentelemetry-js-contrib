@@ -15,7 +15,11 @@
  */
 
 import { diag } from '@opentelemetry/api';
-import { Detector, Resource } from '@opentelemetry/resources';
+import {
+  Detector,
+  Resource,
+  ResourceAttributes,
+} from '@opentelemetry/resources';
 import {
   CloudProviderValues,
   CloudPlatformValues,
@@ -128,14 +132,19 @@ export class AwsEcsDetector implements Detector {
     const baseArn: string = taskArn.substring(0, taskArn.lastIndexOf(':'));
     const cluster: string = taskMetadata['Cluster'];
 
+    const accountId: string = AwsEcsDetector._getAccountFromArn(taskArn);
+    const region: string = AwsEcsDetector._getRegionFromArn(taskArn);
+    const availabilityZone: string | undefined =
+      taskMetadata?.['AvailabilityZone'];
+
     const clusterArn = cluster.startsWith('arn:')
       ? cluster
       : `${baseArn}:cluster/${cluster}`;
 
     const containerArn: string = containerMetadata['ContainerARN'];
 
-    // https://github.com/open-telemetry/opentelemetry-specification/blob/main/semantic_conventions/resource/cloud_provider/aws/ecs.yaml
-    return new Resource({
+    // https://github.com/open-telemetry/semantic-conventions/blob/main/semantic_conventions/resource/cloud_provider/aws/ecs.yaml
+    const attributes: ResourceAttributes = {
       [SemanticResourceAttributes.AWS_ECS_CONTAINER_ARN]: containerArn,
       [SemanticResourceAttributes.AWS_ECS_CLUSTER_ARN]: clusterArn,
       [SemanticResourceAttributes.AWS_ECS_LAUNCHTYPE]:
@@ -144,7 +153,18 @@ export class AwsEcsDetector implements Detector {
       [SemanticResourceAttributes.AWS_ECS_TASK_FAMILY]: taskMetadata['Family'],
       [SemanticResourceAttributes.AWS_ECS_TASK_REVISION]:
         taskMetadata['Revision'],
-    });
+
+      [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: accountId,
+      [SemanticResourceAttributes.CLOUD_REGION]: region,
+    };
+
+    // The availability zone is not available in all Fargate runtimes
+    if (availabilityZone) {
+      attributes[SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE] =
+        availabilityZone;
+    }
+
+    return new Resource(attributes);
   }
 
   private static async _getLogResource(

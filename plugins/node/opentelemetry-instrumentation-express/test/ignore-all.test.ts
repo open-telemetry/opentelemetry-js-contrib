@@ -22,7 +22,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import { RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation, ExpressLayerType } from '../src';
 import { createServer, httpRequest } from './utils';
@@ -64,13 +64,14 @@ describe('ExpressInstrumentation', () => {
     let server: http.Server;
     let port: number;
     let rootSpan: Span;
+    let rpcMetadata: RPCMetadata;
 
     beforeEach(async () => {
       rootSpan = tracer.startSpan('rootSpan');
       const app = express();
 
       app.use((req, res, next) => {
-        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
         return context.with(
           setRPCMetadata(
             trace.setSpan(context.active(), rootSpan),
@@ -126,17 +127,14 @@ describe('ExpressInstrumentation', () => {
       );
     });
 
-    it('root span name should be modified to GET /todo/:id', async () => {
+    it('rpcMetadata.route should be modified to /todo/:id', async () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
           await httpRequest.get(`http://localhost:${port}/toto/tata`);
           rootSpan.end();
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /toto/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata.route, '/toto/:id');
         }
       );
     });

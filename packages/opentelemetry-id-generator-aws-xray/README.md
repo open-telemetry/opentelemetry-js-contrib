@@ -3,20 +3,22 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-[component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @willarmiros
-
 The OpenTelemetry IdGenerator for AWS X-Ray generates trace IDs with its first four bytes set to the start time of the
 trace followed by a unique identifier consisting of 12 bytes of randomly generated numbers. OpenTelemetry offers an
 extension point which allows the usage of this custom IdGenerator as opposed to the out-of-the-box random IdGenerator,
 enabling compatibility with AWS X-Ray.
 
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+## Status
+
+| Maturity                               | [Component Owner](../../.github/component_owners.yml) | Compatibility         |
+| -------------------------------------- | ----------------------------------------------------- | --------------------- |
+| [Stable](../../CONTRIBUTING.md#stable) | @carolabadeer                                         | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 
-`
+```bash
 npm install --save @opentelemetry/id-generator-aws-xray
-`
+```
 
 ## Usage
 

@@ -15,6 +15,7 @@
  */
 
 import * as path from 'path';
+import * as fs from 'fs';
 
 import {
   InstrumentationBase,
@@ -56,6 +57,7 @@ import {
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
+import { env } from 'process';
 import { LambdaModule } from './internal-types';
 
 const awsPropagator = new AWSXRayPropagator();
@@ -76,6 +78,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+    if (this._config.disableAwsContextPropagation == null) {
+      if (
+        typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
+          'string' &&
+        env[
+          'OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'
+        ].toLocaleLowerCase() === 'true'
+      ) {
+        this._config.disableAwsContextPropagation = true;
+      }
+    }
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
@@ -99,8 +112,15 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
     // Lambda loads user function using an absolute path.
     let filename = path.resolve(taskRoot, moduleRoot, module);
     if (!filename.endsWith('.js')) {
-      // Patching infrastructure currently requires a filename when requiring with an absolute path.
-      filename += '.js';
+      // its impossible to know in advance if the user has a cjs or js file.
+      // check that the .js file exists otherwise fallback to next known possibility
+      try {
+        fs.statSync(`${filename}.js`);
+        filename += '.js';
+      } catch (e) {
+        // fallback to .cjs
+        filename += '.cjs';
+      }
     }
 
     return [
@@ -124,7 +144,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
               return moduleExports;
             },
             (moduleExports?: LambdaModule) => {
-              if (moduleExports == undefined) return;
+              if (moduleExports == null) return;
               diag.debug('Removing patch for lambda handler');
               this._unwrap(moduleExports, functionName);
             }

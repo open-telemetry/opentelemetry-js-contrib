@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-bunyan",
-  "version": "0.31.1",
+  "version": "0.32.0",
   "description": "OpenTelemetry instrumentation for bunyan",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -55,18 +55,18 @@
     "@types/node": "18.11.7",
     "@types/sinon": "10.0.2",
     "bunyan": "1.8.15",
-    "gts": "3.1.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "3.0.2",
+    "rimraf": "5.0.0",
     "sinon": "15.0.1",
     "test-all-versions": "5.0.1",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.35.1",
-    "@types/bunyan": "1.8.7"
+    "@opentelemetry/instrumentation": "^0.41.0",
+    "@types/bunyan": "1.8.7",
+    "tslib": "^2.3.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-bunyan#readme"
 }

@@ -210,11 +210,10 @@ function ensureNetworkEventsExists(events: TimedEvent[]) {
   assert.strictEqual(events[1].name, PTN.DOMAIN_LOOKUP_START);
   assert.strictEqual(events[2].name, PTN.DOMAIN_LOOKUP_END);
   assert.strictEqual(events[3].name, PTN.CONNECT_START);
-  assert.strictEqual(events[4].name, PTN.SECURE_CONNECTION_START);
-  assert.strictEqual(events[5].name, PTN.CONNECT_END);
-  assert.strictEqual(events[6].name, PTN.REQUEST_START);
-  assert.strictEqual(events[7].name, PTN.RESPONSE_START);
-  assert.strictEqual(events[8].name, PTN.RESPONSE_END);
+  assert.strictEqual(events[4].name, PTN.CONNECT_END);
+  assert.strictEqual(events[5].name, PTN.REQUEST_START);
+  assert.strictEqual(events[6].name, PTN.RESPONSE_START);
+  assert.strictEqual(events[7].name, PTN.RESPONSE_END);
 }
 
 describe('DocumentLoad Instrumentation', () => {
@@ -370,7 +369,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fsEvents[7].name, PTN.LOAD_EVENT_START);
         assert.strictEqual(fsEvents[8].name, PTN.LOAD_EVENT_END);
 
-        assert.strictEqual(rsEvents.length, 9);
+        assert.strictEqual(rsEvents.length, 8);
         assert.strictEqual(fsEvents.length, 11);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
@@ -486,15 +485,7 @@ describe('DocumentLoad Instrumentation', () => {
           'http://localhost:8090/bundle.js'
         );
 
-        assert.strictEqual(srEvents1[0].name, PTN.FETCH_START);
-        assert.strictEqual(srEvents1[1].name, PTN.DOMAIN_LOOKUP_START);
-        assert.strictEqual(srEvents1[2].name, PTN.DOMAIN_LOOKUP_END);
-        assert.strictEqual(srEvents1[3].name, PTN.CONNECT_START);
-        assert.strictEqual(srEvents1[4].name, PTN.SECURE_CONNECTION_START);
-        assert.strictEqual(srEvents1[5].name, PTN.CONNECT_END);
-        assert.strictEqual(srEvents1[6].name, PTN.REQUEST_START);
-        assert.strictEqual(srEvents1[7].name, PTN.RESPONSE_START);
-        assert.strictEqual(srEvents1[8].name, PTN.RESPONSE_END);
+        ensureNetworkEventsExists(srEvents1);
 
         assert.strictEqual(exporter.getFinishedSpans().length, 3);
         done();
@@ -570,7 +561,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rsEvents[7].name, PTN.LOAD_EVENT_START);
         assert.strictEqual(rsEvents[8].name, PTN.LOAD_EVENT_END);
 
-        assert.strictEqual(fsEvents.length, 9);
+        assert.strictEqual(fsEvents.length, 8);
         assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
@@ -652,6 +643,108 @@ describe('DocumentLoad Instrumentation', () => {
       sandbox.restore();
     });
     shouldExportCorrectSpan();
+  });
+
+  describe('add custom attributes to spans', () => {
+    let spyEntries: any;
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resources);
+      spyEntries.withArgs('paint').returns([]);
+    });
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should add attribute to document load span', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        applyCustomAttributesOnSpan: {
+          documentLoad: span => {
+            span.setAttribute('custom-key', 'custom-val');
+          },
+        },
+      });
+      plugin.enable();
+      setTimeout(() => {
+        const rootSpan = exporter.getFinishedSpans()[3] as ReadableSpan;
+        assert.strictEqual(rootSpan.attributes['custom-key'], 'custom-val');
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+
+    it('should add attribute to document fetch span', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        applyCustomAttributesOnSpan: {
+          documentFetch: span => {
+            span.setAttribute('custom-key', 'custom-val');
+          },
+        },
+      });
+      plugin.enable();
+      setTimeout(() => {
+        const fetchSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+        assert.strictEqual(fetchSpan.attributes['custom-key'], 'custom-val');
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+
+    it('should add attribute to resource fetch spans', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        applyCustomAttributesOnSpan: {
+          resourceFetch: (span, resource) => {
+            span.setAttribute('custom-key', 'custom-val');
+            span.setAttribute(
+              'resource.tcp.duration_ms',
+              resource.connectEnd - resource.connectStart
+            );
+          },
+        },
+      });
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan1 = exporter.getFinishedSpans()[1] as ReadableSpan;
+        const resourceSpan2 = exporter.getFinishedSpans()[2] as ReadableSpan;
+        assert.strictEqual(
+          resourceSpan1.attributes['custom-key'],
+          'custom-val'
+        );
+        assert.strictEqual(
+          resourceSpan2.attributes['custom-key'],
+          'custom-val'
+        );
+        assert.strictEqual(
+          resourceSpan1.attributes['resource.tcp.duration_ms'],
+          0
+        );
+        assert.strictEqual(
+          resourceSpan2.attributes['resource.tcp.duration_ms'],
+          0
+        );
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+    it('should still create the spans if the function throws error', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        applyCustomAttributesOnSpan: {
+          documentLoad: span => {
+            throw new Error('test error');
+          },
+        },
+      });
+      plugin.enable();
+      setTimeout(() => {
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
   });
 });
 

@@ -24,10 +24,7 @@ export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 export type ExpressRequestInfo = {
   request: Request;
   route: string;
-  /**
-   * If layerType is undefined, SpanNameHook is being invoked to rename the original root HTTP span.
-   */
-  layerType?: ExpressLayerType;
+  layerType: ExpressLayerType;
 };
 
 export type SpanNameHook = (

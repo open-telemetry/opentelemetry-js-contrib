@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.27.1...resource-detector-github-v0.28.0) (2023-07-12)
+
+
+### Features
+
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+
+## [0.27.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.27.0...resource-detector-github-v0.27.1) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
 ## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.26.1...resource-detector-github-v0.27.0) (2022-05-14)
 
 

@@ -33,6 +33,8 @@ import { AttributeNames } from '../src/enums';
 import { mockV2AwsSend } from './testing-utils';
 import { expect } from 'expect';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { AWSError } from 'aws-sdk';
+import { HttpResponse } from 'aws-sdk/lib/http_response';
 
 describe('instrumentation-aws-sdk-v2', () => {
   const responseMockSuccess = {
@@ -43,9 +45,20 @@ describe('instrumentation-aws-sdk-v2', () => {
     },
   };
 
-  const responseMockWithError = {
+  const error: AWSError = {
+    name: 'error',
+    message: 'something went wrong',
+    stack: 'fakeStack',
+    code: 'errorCode',
+    time: new Date(),
+  };
+
+  const responseMockWithError: Pick<
+    AWS.Response<any, AWSError>,
+    'requestId' | 'error'
+  > & { httpResponse: Partial<HttpResponse> } = {
     requestId: '0000000000000',
-    error: 'something went wrong',
+    error,
     httpResponse: {
       statusCode: 400,
     },
@@ -275,9 +288,22 @@ describe('instrumentation-aws-sdk-v2', () => {
         const awsSpans = getAwsSpans();
         expect(awsSpans.length).toBe(1);
         const [spanCreateBucket] = awsSpans;
-        expect(spanCreateBucket.attributes[AttributeNames.AWS_ERROR]).toBe(
-          responseMockWithError.error
+        const exceptionEvent = spanCreateBucket.events.filter(
+          event => event.name === 'exception'
         );
+        expect(exceptionEvent.length).toBe(1);
+
+        expect(exceptionEvent[0]).toStrictEqual(
+          expect.objectContaining({
+            name: 'exception',
+            attributes: {
+              'exception.message': 'something went wrong',
+              'exception.stacktrace': 'fakeStack',
+              'exception.type': 'errorCode',
+            },
+          })
+        );
+
         expect(
           spanCreateBucket.attributes[SemanticAttributes.HTTP_STATUS_CODE]
         ).toBe(400);

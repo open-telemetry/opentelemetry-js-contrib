@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.32.3...instrumentation-document-load-v0.33.0) (2023-07-12)
+
+
+### Features
+
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+* **opentelemetry-instrumentation-document-load:** Add access to performance resource timing object for custom attributes ([#1529](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1529)) ([7c7294c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7c7294ce0591a3c8d4c12b5f135f4fcd24b79762))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.41.0 ([#1566](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1566)) ([84a2377](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/84a2377845c313f0ca68b4de7f3e7a464be68885))
+* **document-load:** compatibility issue with @opentelemetry/sdk-trace-web@1.15.0 ([#1565](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1565)) ([774d254](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/774d25463bdbf7f290d99a07f627237888137e24))
+
+## [0.32.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.32.2...instrumentation-document-load-v0.32.3) (2023-06-12)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.40.0 ([#1527](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1527)) ([4e18a46](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4e18a46396eb2f06e86790dbbd68075c4c2dc83b))
+
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.32.1...instrumentation-document-load-v0.32.2) (2023-05-16)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.39.1 ([#1493](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1493)) ([8ef95bc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8ef95bccc2d03302089f256f3d0ee091869b4c44))
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.32.0...instrumentation-document-load-v0.32.1) (2023-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.38.0 ([#1468](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1468)) ([565a2b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/565a2b2c6fde88af3f5401ef6a5a9643d0d66349))
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.31.2...instrumentation-document-load-v0.32.0) (2023-04-06)
+
+
+### Features
+
+* **instrumenation-document-load:** Add custom attributes to document load ([#1414](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1414)) ([98609c6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/98609c69d951951edcaa3234914d04d7ae87e9b5))
+
+## [0.31.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.31.1...instrumentation-document-load-v0.31.2) (2023-03-03)
+
+
+### Bug Fixes
+
+* remove component attribute from instrumentations ([#1399](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1399)) ([e93a192](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e93a192b672c8db361bac83ad60294ca49b95361))
+
 ## [0.31.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.31.0...instrumentation-document-load-v0.31.1) (2023-02-07)
 
 
