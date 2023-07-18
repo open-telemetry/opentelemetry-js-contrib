@@ -11,7 +11,7 @@
     "prewatch": "npm run precompile",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require source-map-support/register --recursive test/**/*.test.ts",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

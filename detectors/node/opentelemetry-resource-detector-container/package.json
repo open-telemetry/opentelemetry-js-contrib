@@ -14,7 +14,7 @@
     "precompile": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-container --include-dependencies",
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
-    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require source-map-support/register --recursive 'test/**/*.test.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"

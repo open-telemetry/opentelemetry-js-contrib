@@ -16,7 +16,7 @@
     "prepare": "npm run compile",
     "prewatch": "npm run precompile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require source-map-support/register --recursive 'test/**/*.test.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha 'test/**/*.test.ts'",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
   "repository": "open-telemetry/opentelemetry-js-contrib",

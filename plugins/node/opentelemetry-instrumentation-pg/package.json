@@ -14,10 +14,10 @@
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require source-map-support/register --recursive 'test/**/*.test.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha 'test/**/*.test.ts'",
     "test-all-versions": "cross-env IN_TAV=true tav",
     "test-all-versions:local": "cross-env IN_TAV=true RUN_POSTGRES_TESTS_LOCAL=true npm run test-all-versions",
-    "test:debug": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require source-map-support/register --recursive --inspect-brk --no-timeouts 'test/**/*.test.ts'",
+    "test:debug": "TS_NODE_PROJECT=tsconfig.json nyc mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_POSTGRES_TESTS_LOCAL=true npm run test",
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
