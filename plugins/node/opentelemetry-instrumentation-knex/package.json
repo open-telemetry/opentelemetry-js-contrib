@@ -56,7 +56,6 @@
     "nyc": "15.1.0",
     "rimraf": "5.0.0",
     "sqlite3": "5.1.5",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {

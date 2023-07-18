@@ -60,7 +60,6 @@
     "rimraf": "5.0.0",
     "sinon": "15.0.1",
     "test-all-versions": "5.0.1",
-    "ts-mocha": "10.0.0",
     "typescript": "4.4.4",
     "winston": "3.3.3",
     "winston2": "npm:winston@2.4.5"
