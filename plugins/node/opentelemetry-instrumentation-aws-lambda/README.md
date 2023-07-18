@@ -50,7 +50,6 @@ In your Lambda function configuration, add or update the `NODE_OPTIONS` environm
 | --- | --- | --- |
 | `requestHook` | `RequestHook` (function) | Hook for adding custom attributes before lambda starts handling the request. Receives params: `span, { event, context }` |
 | `responseHook` | `ResponseHook` (function) | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }` |
-| `disableAwsContextPropagation` | `boolean` | By default, this instrumentation will try to read the context from the `_X_AMZN_TRACE_ID` environment variable set by Lambda, set this to `true` or set the environment variable `OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION=true` to disable this behavior |
 | `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway). Applied only when `disableAwsContextPropagation` is set to `true`. Receives params: `event, context` |
 
 ### Hooks Usage Example
