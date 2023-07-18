@@ -1,6 +1,6 @@
 {
   "extension": [
-    ".js"
+    ".ts"
   ],
   "include": [
     "src/**"
