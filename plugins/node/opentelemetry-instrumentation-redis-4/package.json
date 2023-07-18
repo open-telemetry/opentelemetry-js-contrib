@@ -6,8 +6,8 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/redis.test.ts'",
-    "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/redis.test.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require '@opentelemetry/contrib-test-utils' 'test/redis.test.ts'",
+    "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --inspect-brk --no-timeouts 'test/redis.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
     "test:docker:run": "docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine",
     "test:docker:stop": "docker stop otel-redis",
@@ -53,18 +53,19 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/core": "^1.8.0",
     "@opentelemetry/contrib-test-utils": "^0.34.0",
+    "@opentelemetry/core": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "10.0.1",
     "@types/node": "18.16.19",
     "cross-env": "7.0.3",
-    "mocha": "7.2.0",
+    "mocha": "10.2.0",
     "nyc": "15.1.0",
     "redis": "4.1.0",
     "rimraf": "5.0.0",
     "test-all-versions": "5.0.1",
+    "ts-node": "10.9.1",
     "typescript": "4.4.4"
   },
   "dependencies": {

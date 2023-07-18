@@ -6,7 +6,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register 'test/**/*.ts'",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
@@ -49,14 +49,15 @@
     "@opentelemetry/context-async-hooks": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "10.0.1",
     "@types/node": "18.16.19",
     "@types/semver": "7.5.0",
     "generic-pool": "3.8.2",
-    "mocha": "7.2.0",
+    "mocha": "10.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.0",
     "semver": "7.5.4",
+    "ts-node": "10.9.1",
     "typescript": "4.4.4"
   },
   "dependencies": {

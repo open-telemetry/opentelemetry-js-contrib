@@ -6,7 +6,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register 'test/**/*.test.ts'",
     "tdd": "npm run tdd:node",
     "tdd:node": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
@@ -46,10 +46,10 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "10.0.1",
     "@types/node": "18.16.19",
     "grpc": "1.24.11",
-    "mocha": "7.2.0",
+    "mocha": "10.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.0",
     "ts-loader": "8.3.0",

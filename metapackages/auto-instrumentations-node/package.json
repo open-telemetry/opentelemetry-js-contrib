@@ -27,7 +27,7 @@
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "yarn test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register 'test/**/*.ts'",
     "watch": "tsc -w"
   },
   "bugs": {
@@ -38,13 +38,14 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.4.1",
-    "@types/mocha": "7.0.2",
+    "@types/mocha": "10.0.1",
     "@types/node": "18.16.19",
     "@types/sinon": "10.0.2",
-    "mocha": "7.2.0",
+    "mocha": "10.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.0",
     "sinon": "15.0.1",
+    "ts-node": "10.9.1",
     "typescript": "4.4.4"
   },
   "dependencies": {
@@ -58,8 +59,8 @@
     "@opentelemetry/instrumentation-dataloader": "^0.5.0",
     "@opentelemetry/instrumentation-dns": "^0.32.0",
     "@opentelemetry/instrumentation-express": "^0.33.0",
-    "@opentelemetry/instrumentation-fs": "^0.8.0",
     "@opentelemetry/instrumentation-fastify": "^0.32.0",
+    "@opentelemetry/instrumentation-fs": "^0.8.0",
     "@opentelemetry/instrumentation-generic-pool": "^0.32.0",
     "@opentelemetry/instrumentation-graphql": "^0.35.0",
     "@opentelemetry/instrumentation-grpc": "^0.41.0",
