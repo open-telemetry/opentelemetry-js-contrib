@@ -1,4 +1,4 @@
 'amqplib':
   versions: ">=0.5.5"
   commands:
-    - yarn test
+    - npm run test

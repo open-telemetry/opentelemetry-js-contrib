@@ -13,7 +13,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-restify --include-dependencies",
     "prepare": "npm run compile",
     "prewatch": "npm run precompile",
-    "tdd": "yarn test -- --watch-extensions ts --watch",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register 'test/**/*.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
