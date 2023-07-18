@@ -151,7 +151,7 @@ jobs:
       - name: Build examples
         run: npm run compile:examples
       - name: Report Coverage
-        if: matrix.node == '14'
+        if: ${{ matrix.node == '14' && !cancelled() }}
         uses: codecov/codecov-action@v3
         with:
           verbose: true
