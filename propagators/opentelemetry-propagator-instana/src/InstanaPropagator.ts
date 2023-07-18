@@ -70,7 +70,7 @@ export class InstanaPropagator implements TextMapPropagator {
     setter.set(carrier, INSTANA_TRACE_ID_HEADER, spanContext.traceId);
     setter.set(carrier, INSTANA_SPAN_ID_HEADER, spanContext.spanId);
     const sampled =
-      (spanContext.traceFlags & TraceFlags.SAMPLED) == TraceFlags.SAMPLED;
+      (spanContext.traceFlags & TraceFlags.SAMPLED) === TraceFlags.SAMPLED;
     setter.set(carrier, INSTANA_LEVEL_HEADER, sampled ? '1' : '0');
   }
 

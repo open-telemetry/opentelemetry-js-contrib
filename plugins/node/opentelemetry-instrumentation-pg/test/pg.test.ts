@@ -45,7 +45,7 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
-import { addSqlCommenterComment } from '../src/utils';
+import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -510,6 +510,60 @@ describe('pg', () => {
         } catch (e: any) {
           assert.ok(false, e.message);
         }
+      });
+    });
+
+    describe('Check configuration enhancedDatabaseReporting:true', () => {
+      const obj = { type: 'Fiat', model: '500', color: 'white' };
+      const buf = Buffer.from('abc');
+      const objWithToPostgres = {
+        toPostgres: () => {
+          return 'custom value';
+        },
+      };
+      const query =
+        'SELECT $1::text as msg1, $2::bytea as bufferParam, $3::integer as numberParam, $4::jsonb as objectParam, $5::text as objToPostgres, $6::text as msg2, $7::text as msg3';
+      const values = [
+        'Hello,World',
+        buf,
+        6,
+        obj,
+        objWithToPostgres,
+        null,
+        undefined,
+      ];
+
+      const events: TimedEvent[] = [];
+
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [SemanticAttributes.DB_STATEMENT]: query,
+        [AttributeNames.PG_VALUES]: [
+          'Hello,World',
+          'abc',
+          '6',
+          '{"type":"Fiat","model":"500","color":"white"}',
+          'custom value',
+          'null',
+          'null',
+        ],
+      };
+      beforeEach(async () => {
+        create({
+          enhancedDatabaseReporting: true,
+        });
+      });
+
+      it('When enhancedDatabaseReporting:true, values should appear as parsable array of strings', done => {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query(query, values, (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            runCallbackTest(span, attributes, events);
+            done();
+          });
+        });
       });
     });
 

@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   BasicTracerProvider,
   InMemorySpanExporter,
-  ReadableSpan,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
@@ -34,6 +33,7 @@ import {
   SYNC_FUNCTIONS,
 } from '../src/constants';
 import { indexFs, splitTwoLevels } from '../src/utils';
+import { assertSpans, makeRootSpanName } from './utils';
 
 const TEST_ATTRIBUTE = 'test.attr';
 const TEST_VALUE = 'test.attr.value';
@@ -148,16 +148,6 @@ describe('fs instrumentation', () => {
         { name: rootSpanName },
       ]);
     });
-  };
-  const makeRootSpanName = (name: FMember): string => {
-    let rsn: string;
-    if (Array.isArray(name)) {
-      rsn = `${name[0]}.${name[1]}`;
-    } else {
-      rsn = `${name}`;
-    }
-    rsn = `${rsn} test span`;
-    return rsn;
   };
 
   const callbackTest: TestCreator<FMember> = (
@@ -443,50 +433,3 @@ describe('fs instrumentation', () => {
     });
   });
 });
-
-const assertSpans = (spans: ReadableSpan[], expected: any) => {
-  assert.strictEqual(
-    spans.length,
-    expected.length,
-    `Expected ${expected.length} spans, got ${spans.length}(${spans
-      .map((s: any) => `"${s.name}"`)
-      .join(', ')})`
-  );
-
-  spans.forEach((span, i) => {
-    assertSpan(span, expected[i]);
-  });
-};
-
-const assertSpan = (span: ReadableSpan, expected: any) => {
-  assert(span);
-  assert.strictEqual(span.name, expected.name);
-  assert.strictEqual(
-    span.kind,
-    SpanKind.INTERNAL,
-    'Expected to be of INTERNAL kind'
-  );
-  if (expected.parentSpan) {
-    assert.strictEqual(
-      span.parentSpanId,
-      expected.parentSpan.spanContext().spanId
-    );
-  }
-  if (expected.attributes) {
-    assert.deepEqual(span.attributes, expected.attributes);
-  }
-  if (expected.error) {
-    assert(
-      expected.error.test(span.status.message),
-      `Expected "${span.status.message}" to match ${expected.error}`
-    );
-    assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-  } else {
-    assert.strictEqual(
-      span.status.code,
-      SpanStatusCode.UNSET,
-      'Expected status to be unset'
-    );
-    assert.strictEqual(span.status.message, undefined);
-  }
-};

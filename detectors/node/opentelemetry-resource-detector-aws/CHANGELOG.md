@@ -24,6 +24,47 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
+
+## [1.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.2.5...resource-detector-aws-v1.3.0) (2023-07-12)
+
+
+### Features
+
+* **aws-ecs:** add cloud resource attributes for fargate ([#1543](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1543)) ([de17f77](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/de17f77bd7f75fc2fc8a92d35dfcfbf749b50f71))
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.4 to ^0.34.0
+
+## [1.2.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.2.3...resource-detector-aws-v1.2.4) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.2 to ^0.33.3
+
 ## [1.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.1.2...resource-detector-aws-v1.2.0) (2022-11-02)
 
 

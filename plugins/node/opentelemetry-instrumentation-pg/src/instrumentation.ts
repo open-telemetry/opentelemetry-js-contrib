@@ -44,6 +44,7 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
+import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import { VERSION } from './version';
 
 const PG_POOL_COMPONENT = 'pg-pool';
@@ -214,20 +215,13 @@ export class PgInstrumentation extends InstrumentationBase {
 
         // Modify query text w/ a tracing comment before invoking original for
         // tracing, but only if args[0] has one of our expected shapes.
-        //
-        // TODO: remove the `as ...` casts below when the TS version is upgraded.
-        // Newer TS versions will use the result of firstArgIsQueryObjectWithText
-        // to properly narrow arg0, but TS 4.3.5 does not.
         if (instrumentationConfig.addSqlCommenterCommentToQueries) {
           args[0] = firstArgIsString
-            ? utils.addSqlCommenterComment(span, arg0 as string)
+            ? addSqlCommenterComment(span, arg0)
             : firstArgIsQueryObjectWithText
             ? {
-                ...(arg0 as utils.ObjectWithText),
-                text: utils.addSqlCommenterComment(
-                  span,
-                  (arg0 as utils.ObjectWithText).text
-                ),
+                ...arg0,
+                text: addSqlCommenterComment(span, arg0.text),
               }
             : args[0];
         }
@@ -263,9 +257,7 @@ export class PgInstrumentation extends InstrumentationBase {
               callback = context.bind(context.active(), callback);
             }
 
-            // Copy the callback instead of writing to args.callback so that we
-            // don't modify user's original callback reference
-            args[0] = { ...(args[0] as object), callback };
+            (args[0] as { callback?: PostgresCallback }).callback = callback;
           }
         }
 

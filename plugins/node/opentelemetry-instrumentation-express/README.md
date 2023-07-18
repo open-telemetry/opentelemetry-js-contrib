@@ -76,7 +76,7 @@ Express instrumentation has few options available to choose from. You can set th
 
 `spanNameHook` is invoked with 2 arguments:
 
-- `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer or undefined when renaming the root HTTP instrumentation span.
+- `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer.
 - `defaultName: string` - original name proposed by the instrumentation.
 
 #### Ignore a whole Express route

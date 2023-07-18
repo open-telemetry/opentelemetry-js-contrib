@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-mysql2
 
 ## Supported Versions
 
-- `>= 1.4.2, < 3.0`
+- `>= 1.4.2, < 4.0`
 
 ## Usage
 
@@ -47,6 +47,7 @@ You can set the following instrumentation options:
 | Options | Type | Description |
 | ------- | ---- | ----------- |
 | `responseHook` | `MySQL2InstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
+| `addSqlCommenterCommentToQueries` | `boolean` | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
 
 ## Useful links
 
