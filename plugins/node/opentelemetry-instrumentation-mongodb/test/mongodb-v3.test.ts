@@ -127,29 +127,6 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
       });
     });
 
-    it('should create a child span for insert - copy', done => {
-      const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-      const span = trace.getTracer('default').startSpan('insertRootSpan');
-      context.with(trace.setSpan(context.active(), span), () => {
-        collection
-          .insertMany(insertData)
-          .then(() => {
-            span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.insert',
-              SpanKind.CLIENT,
-              'insert',
-              undefined
-            );
-            done();
-          })
-          .catch(err => {
-            done(err);
-          });
-      });
-    });
-
     it('should create a child span for update', done => {
       const span = trace.getTracer('default').startSpan('updateRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
@@ -159,7 +136,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             assertSpans(
               getTestSpans(),
-              'mongodb.update',
+              'mongodb.update111',
               SpanKind.CLIENT,
               'update',
               undefined
