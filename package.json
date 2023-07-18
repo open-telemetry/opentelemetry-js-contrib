@@ -76,5 +76,8 @@
       "renovate-bot",
       "dependabot"
     ]
+  },
+  "dependencies": {
+    "source-map-support": "^0.5.21"
   }
 }

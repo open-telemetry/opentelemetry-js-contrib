@@ -6,8 +6,8 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register 'test/**/*.test.ts'",
-    "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --inspect-brk --no-timeouts 'test/**/*.test.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require source-map-support/register --recursive 'test/**/*.test.ts'",
+    "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require source-map-support/register --recursive --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
     "test-all-versions": "tav",
     "test-all-versions:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test-all-versions",

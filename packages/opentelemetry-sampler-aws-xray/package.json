@@ -36,7 +36,7 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register 'test/**/*.test.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require source-map-support/register --recursive 'test/**/*.test.ts'",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },

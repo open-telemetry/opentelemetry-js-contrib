@@ -27,7 +27,7 @@
     "prewatch": "npm run precompile",
     "prepare": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register 'test/**/*.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require ts-node/register --require source-map-support/register --recursive 'test/**/*.ts'",
     "watch": "tsc -w"
   },
   "bugs": {
