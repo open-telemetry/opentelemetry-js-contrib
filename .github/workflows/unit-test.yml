@@ -10,13 +10,6 @@ jobs:
       fail-fast: false
       matrix:
         node: ["14", "16", "18"]
-        include: 
-          - lerna-extra-args: >-
-              --scope @opentelemetry/instrumentation-amqplib
-              --scope @opentelemetry/instrumentation-aws-sdk
-              --scope @opentelemetry/instrumentation-graphql
-              --scope @opentelemetry/instrumentation-mongodb
-              --scope @opentelemetry/instrumentation-redis-4
     runs-on: ubuntu-latest
     services:
       memcached:
@@ -151,7 +144,7 @@ jobs:
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --nohoist='**'
       - name: Unit tests
-        run: npx lerna run test --since origin/main --no-bail ${{ matrix.lerna-extra-args }}
+        run: npx lerna run test --no-bail ${{ matrix.lerna-extra-args }}
       - name: Build examples
         run: npm run compile:examples
       - name: Report Coverage
