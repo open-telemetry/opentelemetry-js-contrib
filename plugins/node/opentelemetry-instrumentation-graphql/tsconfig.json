@@ -7,7 +7,6 @@
   "ts-node": {
     "files": true,
     "transpileOnly": true,
-    "module": "commonjs",
   },
   "include": [
     "src/**/*.ts",
