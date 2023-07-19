@@ -10,6 +10,13 @@ jobs:
       fail-fast: false
       matrix:
         node: ["14", "16", "18"]
+        with: 
+          - lerna-extra-args: >-
+              --scope @opentelemetry/instrumentation-amqplib
+              --scope @opentelemetry/instrumentation-aws-sdk
+              --scope @opentelemetry/instrumentation-graphql
+              --scope @opentelemetry/instrumentation-mongodb
+              --scope @opentelemetry/instrumentation-redis-4
     runs-on: ubuntu-latest
     services:
       memcached:
@@ -139,9 +146,6 @@ jobs:
             propagators/*/node_modules
             propagators/*/package-lock.json
           key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
-      - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == '16'
-        run: npm config set legacy-peer-deps=true
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
