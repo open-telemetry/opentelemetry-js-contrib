@@ -4,10 +4,6 @@
     "rootDir": ".",
     "outDir": "build"
   },
-  "ts-node": {
-    "files": true,
-    "transpileOnly": true,
-  },
   "include": [
     "src/**/*.ts",
     "test/**/*.ts"
