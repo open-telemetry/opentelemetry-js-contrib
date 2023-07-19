@@ -1,4 +1,4 @@
 {
     "require": [ "ts-node/register/transpile-only" ],
-    "loader": "ts-node/esm"
+    "loader": "ts-node/esm/transpile-only"
 }

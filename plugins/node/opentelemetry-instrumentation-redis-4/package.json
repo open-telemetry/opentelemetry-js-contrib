@@ -6,8 +6,8 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha 'test/redis.test.ts'",
-    "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true TS_NODE_PROJECT=tsconfig.json nyc mocha --inspect-brk --no-timeouts 'test/redis.test.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json nyc mocha --require @opentelemetry/contrib-test-utils 'test/redis.test.ts'",
+    "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true TS_NODE_PROJECT=tsconfig.json nyc mocha --require @opentelemetry/contrib-test-utils  --inspect-brk --no-timeouts 'test/redis.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
     "test:docker:run": "docker run --rm -d --name otel-redis -p 63790:6379 redis:alpine",
     "test:docker:stop": "docker stop otel-redis",

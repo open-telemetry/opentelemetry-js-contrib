@@ -7,7 +7,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "docker:start": "docker run -e MONGODB_DB=opentelemetry-tests -e MONGODB_PORT=27017 -e MONGODB_HOST=127.0.0.1 -p 27017:27017 --rm mongo",
-    "test": "TS_NODE_PROJECT=tsconfig.json mocha 'test/**/*.test.ts'",
+    "test": "TS_NODE_PROJECT=tsconfig.json mocha --require @opentelemetry/contrib-test-utils 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
