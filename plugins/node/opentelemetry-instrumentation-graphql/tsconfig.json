@@ -4,6 +4,10 @@
     "rootDir": ".",
     "outDir": "build"
   },
+  "ts-node": {
+    "files": true,
+    "module": "commonjs",
+  },
   "include": [
     "src/**/*.ts",
     "test/**/*.ts"

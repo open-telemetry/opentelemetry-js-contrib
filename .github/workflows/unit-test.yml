@@ -149,7 +149,7 @@ jobs:
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha'
+        run: npx lerna bootstrap --no-ci --nohoist='**'
       - name: Unit tests
         run: npx lerna run test --since origin/main --no-bail ${{ matrix.lerna-extra-args }}
       - name: Build examples
