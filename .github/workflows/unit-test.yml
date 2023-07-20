@@ -10,6 +10,9 @@ jobs:
       fail-fast: false
       matrix:
         node: ["14", "16", "18"]
+        include:
+            - node: 14
+              code-coverage: true
     runs-on: ubuntu-latest
     services:
       memcached:
@@ -145,13 +148,17 @@ jobs:
       - name: Install Root Dependencies
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
-      - name: Unit tests
+        run: npx lerna bootstrap --no-ci --nohoist='**'
+      - name: Unit tests (Full)
+        if: matrix.code-coverage
+        run: npm run test -- ${{ matrix.lerna-extra-args }}
+      - name: Unit tests (Delta)
+        if: ${{ !matrix.code-coverage }}
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
       - name: Build examples
         run: npm run compile:examples
       - name: Report Coverage
-        if: matrix.node == '14'
+        if: ${{ matrix.code-coverage || !cancelled()}}
         uses: codecov/codecov-action@v3
         with:
           verbose: true
