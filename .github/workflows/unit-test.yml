@@ -134,8 +134,8 @@ jobs:
         run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
       - name: Legacy Peer Dependencies for npm 7
         run: npm config set legacy-peer-deps=true
-      - name: Install Root Dependencies
-        run: npm install
+      - name: Install Workspaces
+        run: npm install --legacy-bundling
       - name: Unit tests
         env:
           NODE_OPTIONS: --max_old_space_size=4096
