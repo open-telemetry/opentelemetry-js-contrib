@@ -60,7 +60,7 @@
     "@types/bson": "4.0.5",
     "@types/mocha": "7.0.2",
     "@types/mongodb": "3.6.20",
-    "@types/node": "18.11.7",
+    "@types/node": "18.16.19",
     "mocha": "7.2.0",
     "mongodb": "3.6.11",
     "nyc": "15.1.0",
