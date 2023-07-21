@@ -127,15 +127,14 @@ jobs:
             plugins/node/*/package.json
             plugins/web/*/package.json
             propagators/*/package.json
-      - name: Install minimum npm 7
-        if: matrix.node == '14'
-        run: npm install -g npm@7
+      - name: Install minimum npm 9
+        run: npm install -g npm@9
       - name: Set MySQL variables
         run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
       - name: Legacy Peer Dependencies for npm 7
         run: npm config set legacy-peer-deps=true
       - name: Install Workspaces
-        run: npm install --global-style
+        run: npm install --install-strategy=linked
       - name: Unit tests
         env:
           NODE_OPTIONS: --max_old_space_size=4096
