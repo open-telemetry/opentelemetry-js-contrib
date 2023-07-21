@@ -134,7 +134,7 @@ jobs:
       - name: Legacy Peer Dependencies for npm 7
         run: npm config set legacy-peer-deps=true
       - name: Install Workspaces
-        run: npm install --install-strategy=linked
+        run: npm install
       - name: Unit tests
         env:
           NODE_OPTIONS: --max_old_space_size=4096
