@@ -46,8 +46,8 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
     "@types/mocha": "8.2.3",
-    "@types/node": "18.11.7",
-    "@types/sinon": "10.0.15",
+    "@types/node": "18.16.19",
+    "@types/sinon": "10.0.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.0",
