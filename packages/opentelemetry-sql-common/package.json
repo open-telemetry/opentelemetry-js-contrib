@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/sql-common",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "description": "Utilities for SQL instrumentations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -48,7 +48,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.1.0",
     "@types/mocha": "^7.0.2",
-    "@types/node": "18.11.7",
+    "@types/node": "18.16.19",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "ts-mocha": "10.0.0",

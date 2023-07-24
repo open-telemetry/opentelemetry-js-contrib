@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-socket.io",
-  "version": "0.33.4",
+  "version": "0.34.0",
   "description": "OpenTelemetry automatic instrumentation package for socket.io",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -43,10 +43,10 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/contrib-test-utils": "^0.33.4",
+    "@opentelemetry/contrib-test-utils": "^0.34.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@types/mocha": "8.2.3",
-    "@types/node": "18.11.7",
+    "@types/node": "18.16.19",
     "expect": "27.4.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
@@ -58,7 +58,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.40.0",
+    "@opentelemetry/instrumentation": "^0.41.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "tslib": "^2.3.1"
   },
