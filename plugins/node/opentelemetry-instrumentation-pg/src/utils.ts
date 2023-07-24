@@ -88,10 +88,36 @@ function parseNormalizedOperationName(queryText: string) {
 }
 
 export function getConnectionString(params: PgParsedConnectionParams) {
+  if (params.connectionString) {
+    return removeCredentialsFromDBConnectionStringAttribute(
+      params.connectionString
+    );
+  }
+
   const host = params.host || 'localhost';
   const port = params.port || 5432;
   const database = params.database || '';
   return `postgresql://${host}:${port}/${database}`;
+}
+
+/**
+ * removeCredentialsFromDBConnectionStringAttribute removes basic auth from url.
+ * e.g: postgresql://user:pass@localhost:3211/mydb => postgresql://localhost:3211/mydb
+ */
+function removeCredentialsFromDBConnectionStringAttribute(
+  connectionString: string
+) {
+  if (typeof connectionString !== 'string') return;
+  try {
+    const u = new URL(connectionString);
+    u.searchParams.delete('user_pwd');
+    u.username = '';
+    u.password = '';
+    return u.href;
+  } catch (e) {
+    diag.error('failed to remove credentials from db connection string');
+    return '';
+  }
 }
 
 export function getSemanticAttributesFromConnection(
