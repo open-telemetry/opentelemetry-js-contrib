@@ -23,7 +23,7 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/auto-instrumentations-node --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/auto-instrumentations-node",
     "prewatch": "npm run precompile",
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.ts'",

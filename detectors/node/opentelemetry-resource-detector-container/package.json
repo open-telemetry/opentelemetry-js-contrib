@@ -11,7 +11,7 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-container --include-dependencies",
+    "precompile": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-container",
     "prewatch": "npm run precompile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",

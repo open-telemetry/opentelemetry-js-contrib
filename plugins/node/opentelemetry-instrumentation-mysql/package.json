@@ -10,7 +10,7 @@
     "compile": "tsc -p .",
     "lint:fix": "eslint . --ext .ts --fix",
     "lint": "eslint . --ext .ts",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-mysql --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-mysql",
     "prewatch": "npm run precompile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha tsconfig.json 'test/**/*.test.ts'",

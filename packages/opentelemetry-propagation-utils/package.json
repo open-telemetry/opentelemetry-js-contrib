@@ -12,7 +12,7 @@
     "compile": "tsc --build tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/propagation-utils --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/propagation-utils",
     "prewatch": "npm run precompile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",

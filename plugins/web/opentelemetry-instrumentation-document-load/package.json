@@ -10,7 +10,7 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-document-load --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-document-load",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "npm run version:update && tsc --build tsconfig.json tsconfig.esm.json",
@@ -49,7 +49,7 @@
     "@opentelemetry/api": "^1.3.0"
   },
   "devDependencies": {
-    "@babel/core": "7.15.0",
+    "@babel/core": "7.22.9",
     "@opentelemetry/api": "^1.3.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.16.19",

@@ -31,7 +31,7 @@
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/sampler-aws-xray --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/sampler-aws-xray",
     "prewatch": "npm run precompile",
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
     "tdd": "npm run test -- --watch-extensions ts --watch",

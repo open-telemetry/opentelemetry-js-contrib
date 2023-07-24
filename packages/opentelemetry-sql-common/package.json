@@ -11,7 +11,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "compile": "tsc --build tsconfig.json",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/sql-common --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/sql-common",
     "prewatch": "npm run precompile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "watch": "tsc -w"
