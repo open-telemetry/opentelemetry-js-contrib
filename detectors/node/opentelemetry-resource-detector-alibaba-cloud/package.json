@@ -60,8 +60,7 @@
   },
   "dependencies": {
     "@opentelemetry/resources": "^1.0.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "tslib": "^2.3.1"
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/detectors/node/opentelemetry-resource-detector-alibaba-cloud#readme"
 }

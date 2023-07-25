@@ -71,8 +71,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.41.0",
     "@opentelemetry/redis-common": "^0.36.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "tslib": "^2.3.1"
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis-4#readme"
 }

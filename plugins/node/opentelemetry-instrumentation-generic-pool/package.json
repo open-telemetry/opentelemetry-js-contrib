@@ -63,8 +63,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.41.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/generic-pool": "^3.1.9",
-    "tslib": "^2.3.1"
+    "@types/generic-pool": "^3.1.9"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-generic-pool#readme"
 }
