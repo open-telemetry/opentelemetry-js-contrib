@@ -476,33 +476,13 @@ describe('pg-pool', () => {
       });
     });
   });
+
   describe('pg - creat Pool from pg', () => {
     const { Pool } = require('pg');
-
-    it('should return empty DB_CONNECTION_STRING when failed to parse connetion url', async () => {
-      const pg_url = 'postgresql.wrong_url';
-      pool = new Pool({ connectionString: pg_url });
-
-      const span = provider.getTracer('test-pg-pool').startSpan('test span');
-      await context.with(trace.setSpan(context.active(), span), async () => {
-        await pool.connect();
-        const [connectSpan, poolConnectSpan] =
-          memoryExporter.getFinishedSpans();
-        assert.strictEqual(
-          connectSpan.parentSpanId,
-          poolConnectSpan.spanContext().spanId
-        );
-        assert.strictEqual(
-          poolConnectSpan.attributes[SemanticAttributes.DB_CONNECTION_STRING],
-          ''
-        );
-      });
-    });
+    const pg_url = `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`;
 
     it('should create DB_CONNECTION_STRING attribute based on given connetion string url', async () => {
-      const pg_url = 'postgresql://localhost:54320/postgres';
       pool = new Pool({ connectionString: pg_url });
-
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
       await context.with(trace.setSpan(context.active(), span), async () => {
         await pool.connect();
@@ -519,10 +499,8 @@ describe('pg-pool', () => {
       });
     });
 
-    it('should omits user and password from DB_CONNECTION_STRING span attribute', async () => {
-      const pg_url_with_credentials =
-        'postgresql://postgres:postgres@localhost:54320/postgres';
-      const expectAttributeConnString = 'postgresql://localhost:54320/postgres';
+    it('should omit user and password from DB_CONNECTION_STRING span attribute', async () => {
+      const pg_url_with_credentials = `postgresql://${CONFIG.user}:${CONFIG.password}@${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`;
       pool = new Pool({ connectionString: pg_url_with_credentials });
 
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
@@ -536,7 +514,7 @@ describe('pg-pool', () => {
         );
         assert.strictEqual(
           poolConnectSpan.attributes[SemanticAttributes.DB_CONNECTION_STRING],
-          expectAttributeConnString
+          pg_url
         );
       });
     });

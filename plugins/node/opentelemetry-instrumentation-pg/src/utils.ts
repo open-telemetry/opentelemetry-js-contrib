@@ -104,7 +104,7 @@ export function getConnectionString(params: PgParsedConnectionParams) {
  * removeCredentialsFromDBConnectionStringAttribute removes basic auth from url.
  * e.g: postgresql://user:pass@localhost:3211/mydb => postgresql://localhost:3211/mydb
  */
-function removeCredentialsFromDBConnectionStringAttribute(
+export function removeCredentialsFromDBConnectionStringAttribute(
   connectionString: string
 ) {
   if (typeof connectionString !== 'string') return;
