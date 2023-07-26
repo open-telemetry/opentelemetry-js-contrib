@@ -269,7 +269,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
               req.res?.removeListener('finish', onResponseFinish);
               span.end();
             }
-            if (!(req.route && arguments[0] instanceof Error)) {
+            if (!(req.route && arguments[0] instanceof Error) && layerPath) {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;

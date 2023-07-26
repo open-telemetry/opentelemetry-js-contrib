@@ -34,6 +34,7 @@ instrumentation.disable();
 import * as express from 'express';
 import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
 import { Server } from 'http';
+import { nextTick } from 'process';
 
 describe('ExpressInstrumentation', () => {
   const provider = new NodeTracerProvider();
@@ -274,6 +275,80 @@ describe('ExpressInstrumentation', () => {
       const res = await httpRequest.get(`http://localhost:${port}/toto/tata`);
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       assert.strictEqual(res, 'test');
+    });
+
+    it('should full route with route use(<middleware>)', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const customMiddleware: express.RequestHandler = (req, res, next) => {
+        for (let i = 0; i < 1000000; i++) {
+          continue;
+        }
+        return next();
+      };
+      let finishListenerCount: number | undefined;
+      let rpcMetadata: RPCMetadata | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
+          });
+          next();
+        });
+        const router = express.Router();
+        app.use('/users', router);
+        router.get('/:userId', (req, res) => {
+          res.status(200).end('user-' + req.params.userId);
+        });
+        router.use(customMiddleware);
+        const bookRouter = express.Router({ mergeParams: true });
+        router.use('/:userId/books', bookRouter);
+        bookRouter.get('/:bookId', (req, res) => {
+          setImmediate(() => {
+            res.status(200).end('book-' + req.params.bookId);
+          });
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/users/1/books/2`
+          );
+          assert.strictEqual(response, 'book-2');
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 2);
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('customMiddleware')),
+            undefined
+          );
+          assert.notStrictEqual(
+            memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name.includes('jsonParser')),
+            undefined
+          );
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('request handler'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/users/:userId/books/:bookId'
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
+            'request_handler'
+          );
+          assert.strictEqual(rpcMetadata?.route,  '/users/:userId/books/:bookId');
+        }
+      );
     });
   });
 
