@@ -383,15 +383,23 @@ export class PgInstrumentation extends InstrumentationBase {
           trace.setSpan(context.active(), span),
           () => {
             const returnValue = originalConnect.call(this, callback as any);
-            if ((this as any)._clients.length > 0 && (this.options as any).connectionString) {
+            if (
+              (this as any)._clients.length > 0 &&
+              (this.options as any).connectionString
+            ) {
               //in case we have connectionString, the 'getSemanticAttributesFromConnection' called above
               //won't be able to build it because postgres parses the connectionString only in
               //the connect() function. So only after calling the connect() we'll have access to the
               //host, port, database and all the rest parameters that build connectionString.
-              const connStr = utils.getConnectionString((this as any)._clients[0]);
-              span.setAttribute(SemanticAttributes.DB_CONNECTION_STRING, connStr);
+              const connStr = utils.getConnectionString(
+                (this as any)._clients[0]
+              );
+              span.setAttribute(
+                SemanticAttributes.DB_CONNECTION_STRING,
+                connStr
+              );
             }
-            return returnValue
+            return returnValue;
           }
         );
 

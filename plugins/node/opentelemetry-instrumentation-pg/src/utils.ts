@@ -88,7 +88,6 @@ function parseNormalizedOperationName(queryText: string) {
 }
 
 export function getConnectionString(params: PgParsedConnectionParams) {
-
   const host = params.host || 'localhost';
   const port = params.port || 5432;
   const database = params.database || '';
