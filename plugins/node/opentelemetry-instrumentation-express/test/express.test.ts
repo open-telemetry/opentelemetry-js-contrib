@@ -346,7 +346,10 @@ describe('ExpressInstrumentation', () => {
             requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
             'request_handler'
           );
-          assert.strictEqual(rpcMetadata?.route,  '/users/:userId/books/:bookId');
+          assert.strictEqual(
+            rpcMetadata?.route,
+            '/users/:userId/books/:bookId'
+          );
         }
       );
     });
