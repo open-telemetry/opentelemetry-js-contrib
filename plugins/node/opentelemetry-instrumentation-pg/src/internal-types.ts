@@ -34,7 +34,6 @@ export interface PgParsedConnectionParams {
   host?: string;
   port?: number;
   user?: string;
-  connectionString?: string;
 }
 
 export interface PgClientExtended extends pgTypes.Client {

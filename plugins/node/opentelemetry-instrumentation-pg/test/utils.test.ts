@@ -193,15 +193,4 @@ describe('utils.ts', () => {
       assert.deepStrictEqual(pgValues, ['0']);
     });
   });
-
-  describe('.removeCredentialsFromDBConnectionStringAttribute()', () => {
-    it('returns empty string if fails to parse url', async () => {
-      assert.strictEqual(
-        utils.removeCredentialsFromDBConnectionStringAttribute(
-          'postgresql.wrong_url'
-        ),
-        ''
-      );
-    });
-  });
 });

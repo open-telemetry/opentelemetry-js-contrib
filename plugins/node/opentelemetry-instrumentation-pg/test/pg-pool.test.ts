@@ -477,30 +477,12 @@ describe('pg-pool', () => {
     });
   });
 
-  describe('pg - creat Pool from pg', () => {
+  describe('pg - create Pool from pg', () => {
     const { Pool } = require('pg');
-    const pg_url = `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`;
 
-    it('should create DB_CONNECTION_STRING attribute based on given connetion string url', async () => {
-      pool = new Pool({ connectionString: pg_url });
-      const span = provider.getTracer('test-pg-pool').startSpan('test span');
-      await context.with(trace.setSpan(context.active(), span), async () => {
-        await pool.connect();
-        const [connectSpan, poolConnectSpan] =
-          memoryExporter.getFinishedSpans();
-        assert.strictEqual(
-          connectSpan.parentSpanId,
-          poolConnectSpan.spanContext().spanId
-        );
-        assert.strictEqual(
-          poolConnectSpan.attributes[SemanticAttributes.DB_CONNECTION_STRING],
-          pg_url
-        );
-      });
-    });
-
-    it('should omit user and password from DB_CONNECTION_STRING span attribute', async () => {
+    it('should retrieve DB_CONNECTION_STRING attribute when using a connectionString and omit user and password', async () => {
       const pg_url_with_credentials = `postgresql://${CONFIG.user}:${CONFIG.password}@${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`;
+      const pg_url = `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`;
       pool = new Pool({ connectionString: pg_url_with_credentials });
 
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
