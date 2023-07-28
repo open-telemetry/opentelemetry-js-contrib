@@ -34,7 +34,6 @@ instrumentation.disable();
 import * as express from 'express';
 import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
 import { Server } from 'http';
-import { nextTick } from 'process';
 
 describe('ExpressInstrumentation', () => {
   const provider = new NodeTracerProvider();
