@@ -182,6 +182,20 @@ export class ExpressInstrumentation extends InstrumentationBase<
         req: PatchedRequest,
         res: express.Response
       ) {
+        if (trace.getSpan(context.active()) === undefined) {
+          return original.apply(this, arguments);
+        }
+
+        const metadata = getLayerMetadata(layer, layerPath);
+        const type = metadata.attributes[
+          AttributeNames.EXPRESS_TYPE
+        ] as ExpressLayerType;
+
+        // verify against the config if the layer should be ignored
+        if (isLayerIgnored(metadata.name, type, instrumentation._config)) {
+          return original.apply(this, arguments);
+        }
+
         storeLayerPath(req, layerPath);
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
@@ -189,30 +203,12 @@ export class ExpressInstrumentation extends InstrumentationBase<
         const attributes: SpanAttributes = {
           [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
         };
-        const metadata = getLayerMetadata(layer, layerPath);
-        const type = metadata.attributes[
-          AttributeNames.EXPRESS_TYPE
-        ] as ExpressLayerType;
 
         // Rename the root http span in case we haven't done it already
         // once we reach the request handler
         const rpcMetadata = getRPCMetadata(context.active());
-        if (
-          type === ExpressLayerType.REQUEST_HANDLER &&
-          rpcMetadata?.type === RPCType.HTTP
-        ) {
+        if (rpcMetadata?.type === RPCType.HTTP) {
           rpcMetadata.route = route || '/';
-        }
-
-        // verify against the config if the layer should be ignored
-        if (isLayerIgnored(metadata.name, type, instrumentation._config)) {
-          if (type === ExpressLayerType.MIDDLEWARE) {
-            (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
-          }
-          return original.apply(this, arguments);
-        }
-        if (trace.getSpan(context.active()) === undefined) {
-          return original.apply(this, arguments);
         }
 
         const spanName = instrumentation._getSpanName(

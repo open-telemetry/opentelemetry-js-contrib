@@ -275,6 +275,39 @@ describe('ExpressInstrumentation', () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       assert.strictEqual(res, 'test');
     });
+
+    it.only('should update rpcMetadata.route with the latest middleware layer', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let finishListenerCount: number | undefined;
+      let rpcMetadata: RPCMetadata | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
+          });
+          next();
+        });
+        
+        app.use("/bare_middleware", (req, res) => {
+          return res.status(200).end('test');
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;  
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/bare_middleware`
+          );
+          assert.strictEqual(response, 'test');
+          rootSpan.end();
+          assert.strictEqual(rpcMetadata?.route, '/bare_middleware');
+        }
+      );
+    });
   });
 
   describe('Disabling plugin', () => {
