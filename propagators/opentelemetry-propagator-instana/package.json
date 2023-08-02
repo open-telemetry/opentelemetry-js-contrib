@@ -59,7 +59,7 @@
     "karma-chrome-launcher": "3.1.1",
     "karma-coverage-istanbul-reporter": "3.0.3",
     "karma-mocha": "2.0.1",
-    "karma-spec-reporter": "0.0.33",
+    "karma-spec-reporter": "0.0.36",
     "karma-webpack": "4.0.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",

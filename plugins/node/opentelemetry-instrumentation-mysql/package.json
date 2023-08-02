@@ -53,11 +53,11 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.16.19",
-    "@types/sinon": "10.0.13",
+    "@types/sinon": "10.0.15",
     "mocha": "7.2.0",
     "mysql": "2.18.1",
     "nyc": "15.1.0",
-    "rimraf": "5.0.0",
+    "rimraf": "5.0.1",
     "sinon": "15.0.1",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
@@ -65,7 +65,7 @@
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.41.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/mysql": "2.15.19"
+    "@types/mysql": "2.15.21"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql#readme"
 }
