@@ -276,6 +276,7 @@ export class HapiInstrumentation extends InstrumentationBase {
     const oldHandler = plugin.register;
     const self = this;
     const newRegisterHandler = function (server: Hapi.Server, options: T) {
+      server.route;
       self._wrap(server, 'route', original => {
         return instrumentation._getServerRoutePatch.bind(instrumentation)(
           original,
@@ -332,7 +333,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         ...params: Parameters<Hapi.Lifecycle.Method>
       ) {
         if (api.trace.getSpan(api.context.active()) === undefined) {
-          return await method(...params);
+          return await method.apply(this, params);
         }
         const metadata = getExtMetadata(extPoint, pluginName);
         const span = instrumentation.tracer.startSpan(metadata.name, {
