@@ -276,7 +276,7 @@ describe('ExpressInstrumentation', () => {
       assert.strictEqual(res, 'test');
     });
 
-    it.only('should update rpcMetadata.route with the latest middleware layer', async () => {
+    it('should update rpcMetadata.route with the latest middleware layer', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let finishListenerCount: number | undefined;
       let rpcMetadata: RPCMetadata | undefined;
