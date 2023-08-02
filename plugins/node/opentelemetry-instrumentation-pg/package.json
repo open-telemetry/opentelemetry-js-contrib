@@ -79,8 +79,7 @@
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@opentelemetry/sql-common": "^0.40.0",
     "@types/pg": "8.6.1",
-    "@types/pg-pool": "2.0.3",
-    "tslib": "^2.3.1"
+    "@types/pg-pool": "2.0.3"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pg#readme"
 }
