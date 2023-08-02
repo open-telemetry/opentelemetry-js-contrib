@@ -289,13 +289,13 @@ describe('ExpressInstrumentation', () => {
           });
           next();
         });
-        
-        app.use("/bare_middleware", (req, res) => {
+
+        app.use('/bare_middleware', (req, res) => {
           return res.status(200).end('test');
         });
       });
       server = httpServer.server;
-      port = httpServer.port;  
+      port = httpServer.port;
       await context.with(
         trace.setSpan(context.active(), rootSpan),
         async () => {
