@@ -33,7 +33,7 @@ export type HapiServerRouteInput =
   | PatchableServerRoute
   | PatchableServerRoute[];
 
-export type PatchableServerRoute = Hapi.ServerRoute & {
+export type PatchableServerRoute = Hapi.ServerRoute<any> & {
   [handlerPatched]?: boolean;
   options?: {
     handler?: Hapi.Lifecycle.Method;
