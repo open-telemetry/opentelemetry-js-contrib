@@ -252,8 +252,6 @@ export class ExpressInstrumentation extends InstrumentationBase<
           }
         };
 
-        // Rename the root http span in case we haven't done it already
-        // once we reach the request handler
         const rpcMetadata = getRPCMetadata(context.active());
         if (rpcMetadata?.type === RPCType.HTTP) {
           rpcMetadata.route = route || '/';
