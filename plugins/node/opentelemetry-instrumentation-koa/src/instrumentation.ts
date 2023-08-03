@@ -174,11 +174,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
 
       const rpcMetadata = getRPCMetadata(api.context.active());
 
-      if (
-        metadata.attributes[AttributeNames.KOA_TYPE] === KoaLayerType.ROUTER &&
-        rpcMetadata?.type === RPCType.HTTP &&
-        context._matchedRoute
-      ) {
+      if (rpcMetadata?.type === RPCType.HTTP && context._matchedRoute) {
         rpcMetadata.route = context._matchedRoute.toString();
       }
 
