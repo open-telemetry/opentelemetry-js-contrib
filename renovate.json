@@ -8,7 +8,7 @@
       "groupSlug": "all-patch",
       "matchUpdateTypes": ["patch"],
       "excludePackageNames": ["prettier"],
-      "schedule": ["before 3am every weekday"]
+      "schedule": ["before 3am on Monday"]
     },
     {
       "matchUpdateTypes": ["minor"],
