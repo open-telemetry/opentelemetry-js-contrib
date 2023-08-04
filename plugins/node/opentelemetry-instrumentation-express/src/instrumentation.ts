@@ -195,6 +195,11 @@ export class ExpressInstrumentation extends InstrumentationBase<
           AttributeNames.EXPRESS_TYPE
         ] as ExpressLayerType;
 
+        const rpcMetadata = getRPCMetadata(context.active());
+        if (rpcMetadata?.type === RPCType.HTTP) {
+          rpcMetadata.route = route || '/';
+        }
+
         // verify against the config if the layer should be ignored
         if (isLayerIgnored(metadata.name, type, instrumentation._config)) {
           if (type === ExpressLayerType.MIDDLEWARE) {
@@ -251,11 +256,6 @@ export class ExpressInstrumentation extends InstrumentationBase<
             span.end();
           }
         };
-
-        const rpcMetadata = getRPCMetadata(context.active());
-        if (rpcMetadata?.type === RPCType.HTTP) {
-          rpcMetadata.route = route || '/';
-        }
 
         // verify we have a callback
         const args = Array.from(arguments);
