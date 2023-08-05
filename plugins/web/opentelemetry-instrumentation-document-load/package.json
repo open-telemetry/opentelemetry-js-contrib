@@ -80,8 +80,7 @@
     "@opentelemetry/instrumentation": "^0.41.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-web": "^1.15.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "tslib": "^2.3.1"
+    "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-document-load#readme"
 }
