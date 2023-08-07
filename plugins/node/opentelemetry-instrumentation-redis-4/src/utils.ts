@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { DiagLogger } from '@opentelemetry/api';
 import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 
-export function getClientAttributes(options: any) {
+export function getClientAttributes(diag: DiagLogger, options: any) {
   return {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
     [SemanticAttributes.NET_PEER_NAME]: options?.socket?.host,
     [SemanticAttributes.NET_PEER_PORT]: options?.socket?.port,
     [SemanticAttributes.DB_CONNECTION_STRING]:
-      removeCredentialsFromDBConnectionStringAttribute(options?.url),
+      removeCredentialsFromDBConnectionStringAttribute(diag, options?.url),
   };
 }
 
@@ -36,6 +37,7 @@ export function getClientAttributes(options: any) {
  *   redis://localhost:6379?db=mydb&user_pwd=pass => redis://localhost:6379?db=mydb
  */
 function removeCredentialsFromDBConnectionStringAttribute(
+  diag: DiagLogger,
   url?: unknown
 ): string | undefined {
   if (typeof url !== 'string') {
@@ -48,6 +50,8 @@ function removeCredentialsFromDBConnectionStringAttribute(
     u.username = '';
     u.password = '';
     return u.href;
-  } catch (e) {}
+  } catch (err) {
+    diag.error('failed to sanitize redis connection url', err);
+  }
   return;
 }
