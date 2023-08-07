@@ -198,13 +198,13 @@ export class FastifyInstrumentation extends InstrumentationBase {
   }
 
   private _patchConstructor(
-    original: () => FastifyInstance
-  ): () => FastifyInstance {
+    moduleExports: { fastify: () => FastifyInstance },
+    ): () => FastifyInstance {
     const instrumentation = this;
     this._diag.debug('Patching fastify constructor function');
 
     function fastify(this: FastifyInstance, ...args: any) {
-      const app: FastifyInstance = original.apply(this, args);
+      const app: FastifyInstance = moduleExports.fastify.apply(this, args);
       app.addHook('onRequest', instrumentation._hookOnRequest());
       app.addHook('preHandler', instrumentation._hookPreHandler());
 
