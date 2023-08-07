@@ -75,12 +75,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
         ['^3.0.0', '^4.0.0'],
         (moduleExports, moduleVersion) => {
           this._diag.debug(`Applying patch for fastify@${moduleVersion}`);
-          const wrappedFastify = this._wrapFastify();
-
-          this._wrap(moduleExports, 'fastify', wrappedFastify);
-          this._wrap(moduleExports, 'default', wrappedFastify);
-
-          return moduleExports;
+          return this._patchConstructor(moduleExports);
         }
       ),
     ];
@@ -202,22 +197,25 @@ export class FastifyInstrumentation extends InstrumentationBase {
     };
   }
 
-  private _wrapFastify(): (
-    original: () => FastifyInstance
-  ) => () => FastifyInstance {
+  private _patchConstructor(
+    moduleExports: { fastify: () => FastifyInstance },
+    ): () => FastifyInstance {
     const instrumentation = this;
+    this._diag.debug('Patching fastify constructor function');
 
-    return function (original): () => FastifyInstance {
-      return function wrappedFastify(this: FastifyInstance, ...args: any) {
-        const app: FastifyInstance = original.apply(this, args);
-        app.addHook('onRequest', instrumentation._hookOnRequest());
-        app.addHook('preHandler', instrumentation._hookPreHandler());
+    function fastify(this: FastifyInstance, ...args: any) {
+      const app: FastifyInstance = moduleExports.fastify.apply(this, args);
+      app.addHook('onRequest', instrumentation._hookOnRequest());
+      app.addHook('preHandler', instrumentation._hookPreHandler());
 
-        instrumentation._wrap(app, 'addHook', instrumentation._wrapAddHook());
+      instrumentation._wrap(app, 'addHook', instrumentation._wrapAddHook());
 
-        return app;
-      };
-    };
+      return app;
+    }
+
+    fastify.fastify = fastify;
+    fastify.default = fastify;
+    return fastify;
   }
 
   private _patchSend() {
