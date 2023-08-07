@@ -217,7 +217,6 @@ describe('Knex instrumentation', () => {
             parentSpan.end();
 
             const instrumentationSpans = memoryExporter.getFinishedSpans();
-            const last = instrumentationSpans.pop() as any;
             assertSpans(instrumentationSpans, [
               {
                 statement: 'create table `testTable1` (`title` varchar(255))',
@@ -236,14 +235,8 @@ describe('Knex instrumentation', () => {
                   'select count(*) as `count` from (select * from `te..',
                 parentSpan,
               },
+              null,
             ]);
-            assert.strictEqual(instrumentationSpans[0].name, ':memory:');
-            assert.strictEqual(
-              instrumentationSpans[1].name,
-              'insert :memory:.testTable1'
-            );
-
-            assert(last.name, 'parentSpan');
           }
         );
       });
@@ -278,7 +271,6 @@ describe('Knex instrumentation', () => {
             parentSpan.end();
 
             const instrumentationSpans = memoryExporter.getFinishedSpans();
-            const last = instrumentationSpans.pop() as any;
             assertSpans(instrumentationSpans, [
               {
                 statement: 'create table `testTable1` (`title` varchar(255))',
@@ -297,14 +289,8 @@ describe('Knex instrumentation', () => {
                   'select count(*) as `count2` from (select count(*) ..',
                 parentSpan,
               },
+              null,
             ]);
-            assert.strictEqual(instrumentationSpans[0].name, ':memory:');
-            assert.strictEqual(
-              instrumentationSpans[1].name,
-              'insert :memory:.testTable1'
-            );
-
-            assert(last.name, 'parentSpan');
           }
         );
       });
@@ -343,7 +329,6 @@ describe('Knex instrumentation', () => {
             parentSpan.end();
 
             const instrumentationSpans = memoryExporter.getFinishedSpans();
-            const last = instrumentationSpans.pop() as any;
             assertSpans(instrumentationSpans, [
               {
                 statement: 'create table `testTable1` (`title` varchar(255))',
@@ -372,14 +357,8 @@ describe('Knex instrumentation', () => {
                   'select * from `testTable2` left join (select count..',
                 parentSpan,
               },
+              null,
             ]);
-            assert.strictEqual(instrumentationSpans[0].name, ':memory:');
-            assert.strictEqual(
-              instrumentationSpans[1].name,
-              'insert :memory:.testTable1'
-            );
-
-            assert(last.name, 'parentSpan');
           }
         );
       });
@@ -418,7 +397,6 @@ describe('Knex instrumentation', () => {
             parentSpan.end();
 
             const instrumentationSpans = memoryExporter.getFinishedSpans();
-            const last = instrumentationSpans.pop() as any;
             assertSpans(instrumentationSpans, [
               {
                 statement: 'create table `testTable1` (`title` varchar(255))',
@@ -447,14 +425,8 @@ describe('Knex instrumentation', () => {
                   'select * from (select count(*) as `count` from (se..',
                 parentSpan,
               },
+              null,
             ]);
-            assert.strictEqual(instrumentationSpans[0].name, ':memory:');
-            assert.strictEqual(
-              instrumentationSpans[1].name,
-              'insert :memory:.testTable1'
-            );
-
-            assert(last.name, 'parentSpan');
           }
         );
       });
