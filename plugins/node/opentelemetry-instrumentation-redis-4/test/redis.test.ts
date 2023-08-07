@@ -220,9 +220,11 @@ describe('redis@^4.0.0', () => {
     });
 
     it('sets error status on connection failure', async () => {
-      const redisURL = `redis://${redisTestConfig.host}:${redisTestConfig.port + 1}`
+      const redisURL = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }`;
       const newClient = createClient({
-        url: redisURL
+        url: redisURL,
       });
 
       await assert.rejects(newClient.connect());
@@ -231,14 +233,21 @@ describe('redis@^4.0.0', () => {
 
       assert.strictEqual(span.name, 'redis-connect');
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(span.attributes[SemanticAttributes.DB_CONNECTION_STRING], redisURL)
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        redisURL
+      );
     });
 
     it('omits basic auth from DB_CONNECTION_STRING span attribute', async () => {
-      const redisURL = `redis://myuser:mypassword@${redisTestConfig.host}:${redisTestConfig.port + 1}`
-      const expectAttributeConnString = `redis://${redisTestConfig.host}:${redisTestConfig.port + 1}`
+      const redisURL = `redis://myuser:mypassword@${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }`;
+      const expectAttributeConnString = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }`;
       const newClient = createClient({
-        url: redisURL
+        url: redisURL,
       });
 
       await assert.rejects(newClient.connect());
@@ -247,15 +256,25 @@ describe('redis@^4.0.0', () => {
 
       assert.strictEqual(span.name, 'redis-connect');
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], redisTestConfig.host)
-      assert.strictEqual(span.attributes[SemanticAttributes.DB_CONNECTION_STRING], expectAttributeConnString)
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        expectAttributeConnString
+      );
     });
 
     it('omits user_pwd query parameter from DB_CONNECTION_STRING span attribute', async () => {
-      const redisURL = `redis://${redisTestConfig.host}:${redisTestConfig.port + 1}?db=mydb&user_pwd=mypassword`
-      const expectAttributeConnString = `redis://${redisTestConfig.host}:${redisTestConfig.port + 1}?db=mydb`
+      const redisURL = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }?db=mydb&user_pwd=mypassword`;
+      const expectAttributeConnString = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }?db=mydb`;
       const newClient = createClient({
-        url: redisURL
+        url: redisURL,
       });
 
       await assert.rejects(newClient.connect());
@@ -264,8 +283,14 @@ describe('redis@^4.0.0', () => {
 
       assert.strictEqual(span.name, 'redis-connect');
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], redisTestConfig.host)
-      assert.strictEqual(span.attributes[SemanticAttributes.DB_CONNECTION_STRING], expectAttributeConnString)
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        expectAttributeConnString
+      );
     });
   });
 

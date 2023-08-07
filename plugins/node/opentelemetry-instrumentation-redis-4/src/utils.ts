@@ -23,7 +23,8 @@ export function getClientAttributes(options: any) {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
     [SemanticAttributes.NET_PEER_NAME]: options?.socket?.host,
     [SemanticAttributes.NET_PEER_PORT]: options?.socket?.port,
-    [SemanticAttributes.DB_CONNECTION_STRING]: removeCredentialsFromDBConnectionStringAttribute(options?.url),
+    [SemanticAttributes.DB_CONNECTION_STRING]:
+      removeCredentialsFromDBConnectionStringAttribute(options?.url),
   };
 }
 
@@ -33,18 +34,20 @@ export function getClientAttributes(options: any) {
  * Examples:
  *   redis://user:pass@localhost:6379/mydb => redis://localhost:6379/mydb
  *   redis://localhost:6379?db=mydb&user_pwd=pass => redis://localhost:6379?db=mydb
-*/
-function removeCredentialsFromDBConnectionStringAttribute(url?: unknown): string | undefined {
-  if (typeof url !== "string" ) {
-    return
+ */
+function removeCredentialsFromDBConnectionStringAttribute(
+  url?: unknown
+): string | undefined {
+  if (typeof url !== 'string') {
+    return;
   }
 
   try {
     const u = new URL(url);
-    u.searchParams.delete("user_pwd")
-    u.username = ""
-    u.password = ""
-    return u.href
+    u.searchParams.delete('user_pwd');
+    u.username = '';
+    u.password = '';
+    return u.href;
   } catch (e) {}
-  return
+  return;
 }
