@@ -97,10 +97,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   init() {
     const taskRoot = process.env.LAMBDA_TASK_ROOT;
-    const handlerDef = process.env._HANDLER;
+    const handlerDef = this._config.lambdaHandler ?? process.env._HANDLER;
 
     // _HANDLER and LAMBDA_TASK_ROOT are always defined in Lambda but guard bail out if in the future this changes.
     if (!taskRoot || !handlerDef) {
+      diag.debug(
+        'Unable to initialize instrumentation for lambda. Cannot identify lambda handler.'
+      );
       return [];
     }
 
@@ -122,6 +125,18 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         filename += '.cjs';
       }
     }
+
+    diag.debug(
+      `Instrumenting lambda handler: ${JSON.stringify({
+        taskRoot,
+        handlerDef,
+        handler,
+        moduleRoot,
+        module,
+        filename,
+        functionName,
+      })}`
+    );
 
     return [
       new InstrumentationNodeModuleDefinition(
