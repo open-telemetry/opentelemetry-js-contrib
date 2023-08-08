@@ -52,12 +52,12 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "18.11.7",
-    "@types/sinon": "10.0.2",
+    "@types/node": "18.16.19",
+    "@types/sinon": "10.0.15",
     "bunyan": "1.8.15",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "5.0.0",
+    "rimraf": "5.0.1",
     "sinon": "15.0.1",
     "test-all-versions": "5.0.1",
     "ts-mocha": "10.0.0",
@@ -65,8 +65,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.41.0",
-    "@types/bunyan": "1.8.7",
-    "tslib": "^2.3.1"
+    "@types/bunyan": "1.8.8"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-bunyan#readme"
 }
