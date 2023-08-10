@@ -60,7 +60,7 @@
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.16.19",
-    "@types/sinon": "10.0.15",
+    "@types/sinon": "10.0.16",
     "cross-env": "7.0.3",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
