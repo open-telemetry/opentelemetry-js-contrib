@@ -96,8 +96,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
       const rpcMetadata = getRPCMetadata(context.active());
       const routeName = request.routerPath;
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
-        rpcMetadata.span.setAttribute(SemanticAttributes.HTTP_ROUTE, routeName);
-        rpcMetadata.span.updateName(`${request.method} ${routeName}`);
+        rpcMetadata.route = routeName;
       }
       done();
     };

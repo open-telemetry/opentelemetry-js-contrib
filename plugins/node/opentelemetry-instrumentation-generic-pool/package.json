@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-generic-pool",
-  "version": "0.31.4",
+  "version": "0.32.0",
   "description": "OpenTelemetry Generic Pool automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -50,18 +50,18 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "18.11.7",
-    "@types/semver": "7.3.8",
+    "@types/node": "18.16.19",
+    "@types/semver": "7.5.0",
     "generic-pool": "3.8.2",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "5.0.0",
-    "semver": "7.3.5",
+    "rimraf": "5.0.1",
+    "semver": "7.5.4",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.40.0",
+    "@opentelemetry/instrumentation": "^0.41.2",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/generic-pool": "^3.1.9"
   },

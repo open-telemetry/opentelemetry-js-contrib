@@ -38,6 +38,8 @@ components:
     - blumamir
   plugins/node/instrumentation-amqplib:
     - blumamir
+  plugins/node/instrumentation-cucumber:
+    - Ugzuzg
   plugins/node/instrumentation-dataloader:
     - henrinormak
   plugins/node/instrumentation-fs:
@@ -109,7 +111,8 @@ components:
   plugins/node/opentelemetry-instrumentation-winston:
     - seemk
   plugins/web/opentelemetry-instrumentation-document-load:
-    - obecny
+    - pkanal
+    - martinkuba 
   plugins/web/opentelemetry-instrumentation-long-task:
     - mhennoch
     - t2t2
