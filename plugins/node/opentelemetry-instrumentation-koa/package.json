@@ -68,7 +68,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.41.0",
+    "@opentelemetry/instrumentation": "^0.41.2",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/koa": "2.13.8",
     "@types/koa__router": "8.0.11"
