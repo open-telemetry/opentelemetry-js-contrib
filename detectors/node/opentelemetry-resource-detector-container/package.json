@@ -39,7 +39,7 @@
     "@opentelemetry/contrib-test-utils": "^0.34.0",
     "@types/mocha": "8.2.3",
     "@types/node": "^18.0.0",
-    "@types/sinon": "10.0.15",
+    "@types/sinon": "10.0.16",
     "eslint-plugin-header": "^3.1.1",
     "mocha": "7.2.0",
     "nock": "13.3.2",
