@@ -11,15 +11,12 @@ jobs:
       matrix:
         node: ["14", "16", "18"]
         include:
-          - node: "18"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/resource-detector-alibaba-cloud
-              --ignore @opentelemetry/instrumentation-fastify
-              --ignore @opentelemetry/instrumentation-restify
+            - node: 14
+              code-coverage: true
     runs-on: ubuntu-latest
     services:
       memcached:
-        image: memcached:1.6.9-alpine
+        image: memcached:1.6.21-alpine
         ports:
         - 11211:11211
       mongo:
@@ -101,8 +98,9 @@ jobs:
       MONGODB_PORT: 27017
       MSSQL_PASSWORD: mssql_passw0rd
       MYSQL_DATABASE: otel_mysql_database
-      MYSQL_HOST: localhost
+      MYSQL_HOST: 127.0.0.1
       MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootpw
       MYSQL_PORT: 3306
       MYSQL_USER: otel
       OPENTELEMETRY_MEMCACHED_HOST: localhost
@@ -123,6 +121,8 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
+      - name: Set MySQL variables
+        run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
       - name: Cache Dependencies
         uses: actions/cache@v3
         with:
@@ -149,12 +149,16 @@ jobs:
         run: npm install --ignore-scripts
       - name: Bootstrap Dependencies
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
-      - name: Unit tests
+      - name: Unit tests (Full)
+        if: matrix.code-coverage
+        run: npm run test -- ${{ matrix.lerna-extra-args }}
+      - name: Unit tests (Delta)
+        if: ${{ !matrix.code-coverage }}
         run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
       - name: Build examples
         run: npm run compile:examples
       - name: Report Coverage
-        if: matrix.node == '14'
+        if: ${{ matrix.code-coverage && !cancelled()}}
         uses: codecov/codecov-action@v3
         with:
           verbose: true

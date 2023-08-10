@@ -18,8 +18,11 @@
 
 import { context, trace, SpanKind, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
-import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
-import { MongoResponseHookInformation } from '../src';
+import {
+  MongoDBInstrumentation,
+  MongoDBInstrumentationConfig,
+  MongoResponseHookInformation,
+} from '../src';
 import {
   registerInstrumentationTesting,
   getTestSpans,
@@ -34,7 +37,7 @@ import * as mongodb from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
-describe('MongoDBInstrumentation-Tracing', () => {
+describe('MongoDBInstrumentation-Tracing-v4', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
   }
@@ -47,12 +50,11 @@ describe('MongoDBInstrumentation-Tracing', () => {
     shouldTest = false;
   }
 
-  const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
-    process.env.MONGODB_PORT || '27017'
-  }`;
+  const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
+  const PORT = process.env.MONGODB_PORT || '27017';
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-traces';
   const COLLECTION_NAME = 'test-traces';
-  const conn_string = `${URL}/${DB_NAME}`;
+  const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
 
   let client: mongodb.MongoClient;
   let collection: mongodb.Collection;
@@ -95,9 +97,9 @@ describe('MongoDBInstrumentation-Tracing', () => {
     done();
   });
 
-  after(() => {
+  after(async () => {
     if (client) {
-      client.close();
+      await client.close();
     }
   });
 
@@ -116,7 +118,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
               'mongodb.insert',
               SpanKind.CLIENT,
               'insert',
-              conn_string
+              URL
             );
             done();
           })
@@ -138,7 +140,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
               'mongodb.update',
               SpanKind.CLIENT,
               'update',
-              conn_string
+              URL
             );
             done();
           })
@@ -160,7 +162,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
               'mongodb.delete',
               SpanKind.CLIENT,
               'delete',
-              conn_string
+              URL
             );
             done();
           })
@@ -186,7 +188,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
               'mongodb.find',
               SpanKind.CLIENT,
               'find',
-              conn_string
+              URL
             );
             done();
           })
@@ -215,7 +217,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
                 'mongodb.find',
                 SpanKind.CLIENT,
                 'find',
-                conn_string
+                URL
               );
               // assert that we correctly got the first as a find
               assertSpans(
@@ -225,7 +227,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
                 'mongodb.getMore',
                 SpanKind.CLIENT,
                 'getMore',
-                conn_string
+                URL
               );
               done();
             })
@@ -251,7 +253,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
               'mongodb.createIndexes',
               SpanKind.CLIENT,
               'createIndexes',
-              conn_string
+              URL
             );
             done();
           })
@@ -287,7 +289,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
               operationName,
               SpanKind.CLIENT,
               'insert',
-              conn_string,
+              URL,
               false,
               false
             );
@@ -333,7 +335,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
                 operationName,
                 SpanKind.CLIENT,
                 'insert',
-                conn_string,
+                URL,
                 false,
                 true
               );
@@ -374,7 +376,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
                 'mongodb.insert',
                 SpanKind.CLIENT,
                 'insert',
-                conn_string
+                URL
               );
               done();
             })
@@ -469,13 +471,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(
-                spans,
-                'mongodb.find',
-                SpanKind.CLIENT,
-                'find',
-                conn_string
-              );
+              assertSpans(spans, 'mongodb.find', SpanKind.CLIENT, 'find', URL);
               done();
             })
             .catch(err => {
@@ -502,7 +498,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
               'mongodb.insert',
               SpanKind.CLIENT,
               'insert',
-              conn_string
+              URL
             );
             resetMemoryExporter();
 
@@ -517,7 +513,7 @@ describe('MongoDBInstrumentation-Tracing', () => {
                   'mongodb.find',
                   SpanKind.CLIENT,
                   'find',
-                  conn_string
+                  URL
                 );
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,

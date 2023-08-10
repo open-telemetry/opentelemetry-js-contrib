@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.35.0...instrumentation-mongodb-v0.36.0) (2023-07-12)
+
+
+### Features
+
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+* **mongodb:** support v5 ([#1451](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1451)) ([05c4e9e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/05c4e9ee3e740b3bfba609b3e8a4c02ca7119a1c))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.41.0 ([#1566](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1566)) ([84a2377](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/84a2377845c313f0ca68b4de7f3e7a464be68885))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.4 to ^0.34.0
+
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.34.3...instrumentation-mongodb-v0.35.0) (2023-06-12)
+
+
+### Features
+
+* **mongodb:** collect mongodb4 metrics ([#1170](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1170)) ([988e1f8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/988e1f8ea5fbce055d8ef73e40827f750da935d6))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.40.0 ([#1527](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1527)) ([4e18a46](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4e18a46396eb2f06e86790dbbd68075c4c2dc83b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
+
 ## [0.34.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.34.2...instrumentation-mongodb-v0.34.3) (2023-05-16)
 
 

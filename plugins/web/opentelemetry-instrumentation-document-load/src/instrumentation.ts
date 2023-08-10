@@ -36,6 +36,7 @@ import {
 import {
   DocumentLoadCustomAttributeFunction,
   DocumentLoadInstrumentationConfig,
+  ResourceFetchCustomAttributeFunction,
 } from './types';
 import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
@@ -197,8 +198,9 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
     if (span) {
       span.setAttribute(SemanticAttributes.HTTP_URL, resource.name);
       addSpanNetworkEvents(span, resource);
-      this._addCustomAttributesOnSpan(
+      this._addCustomAttributesOnResourceSpan(
         span,
+        resource,
         this._getConfig().applyCustomAttributesOnSpan?.resourceFetch
       );
       this._endSpan(span, PTN.RESPONSE_END, resource);
@@ -265,6 +267,31 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
           }
 
           this._diag.error('addCustomAttributesOnSpan', error);
+        },
+        true
+      );
+    }
+  }
+
+  /**
+   * adds custom attributes to span if configured
+   */
+  private _addCustomAttributesOnResourceSpan(
+    span: Span,
+    resource: PerformanceResourceTiming,
+    applyCustomAttributesOnSpan:
+      | ResourceFetchCustomAttributeFunction
+      | undefined
+  ) {
+    if (applyCustomAttributesOnSpan) {
+      safeExecuteInTheMiddle(
+        () => applyCustomAttributesOnSpan(span, resource),
+        error => {
+          if (!error) {
+            return;
+          }
+
+          this._diag.error('addCustomAttributesOnResourceSpan', error);
         },
         true
       );
