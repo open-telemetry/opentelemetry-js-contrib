@@ -54,7 +54,7 @@
     "@types/mocha": "7.0.2",
     "@types/node": "18.16.19",
     "@types/semver": "7.5.0",
-    "@types/sinon": "10.0.15",
+    "@types/sinon": "10.0.16",
     "cassandra-driver": "4.6.4",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
