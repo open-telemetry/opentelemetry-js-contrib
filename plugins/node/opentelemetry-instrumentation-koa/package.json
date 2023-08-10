@@ -56,7 +56,7 @@
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.16.19",
-    "@types/sinon": "10.0.15",
+    "@types/sinon": "10.0.16",
     "koa": "2.13.1",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
@@ -70,7 +70,7 @@
     "@opentelemetry/core": "^1.8.0",
     "@opentelemetry/instrumentation": "^0.41.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/koa": "2.13.6",
+    "@types/koa": "2.13.8",
     "@types/koa__router": "8.0.11"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa#readme"
