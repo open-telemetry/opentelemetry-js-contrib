@@ -80,3 +80,11 @@ export const limitLength = (str: string, maxLength: number) => {
   }
   return str;
 };
+
+export const extractTableName = (builder: any): string => {
+  const table = builder?._single?.table;
+  if (typeof table === 'object') {
+    return extractTableName(table);
+  }
+  return table;
+};
