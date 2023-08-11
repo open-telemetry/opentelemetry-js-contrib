@@ -39,7 +39,7 @@ jobs:
           --health-start-period 10s
           --health-retries 20
       mysql:
-        image: mysql:5.7
+        image: mysql:8.0
         env:
           MYSQL_USER: otel
           MYSQL_PASSWORD: secret

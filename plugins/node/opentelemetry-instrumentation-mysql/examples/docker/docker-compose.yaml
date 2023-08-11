@@ -3,7 +3,7 @@ services:
 
 # mysql
   mysql:
-    image: mysql:5.7
+    image: mysql:8.0
     command: --init-file /etc/mysql/init.sql
     volumes:
         - ./mysql/init.sql:/etc/mysql/init.sql
