@@ -51,7 +51,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         volumes:
-          - "./.github/workflows/mysql.cnf:/etc/mysql/conf.d/mysql.cnf"
+          - "/github/workspace/packages/opentelemetry-test-utils/configs/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf"
       postgres:
         image: postgres:15-alpine
         env:
