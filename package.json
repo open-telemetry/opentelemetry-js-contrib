@@ -54,7 +54,7 @@
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-prettier": "4.2.1",
+    "eslint-plugin-prettier": "5.0.0",
     "husky": "7.0.4",
     "lerna": "5.5.2",
     "lerna-changelog": "2.2.0",
