@@ -24,7 +24,6 @@ import {
   ConnectTypes,
 } from './enums/AttributeNames';
 import {
-  _LAYERS_STORE_PROPERTY,
   PatchedRequest,
   Use,
   UseArgs,
@@ -38,24 +37,9 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { replaceCurrentStackRoute, addNewStackLayer, generateRoute } from './utils';
 
 export const ANONYMOUS_NAME = 'anonymous';
-
-const addNewStackLayer = (request: PatchedRequest) => {
-  if (Array.isArray(request[_LAYERS_STORE_PROPERTY]) === false) {
-    Object.defineProperty(request, _LAYERS_STORE_PROPERTY, {
-      enumerable: false,
-      value: [],
-    });
-  }
-  request[_LAYERS_STORE_PROPERTY].push('/');
-};
-
-const replaceCurrentStackRoute = (request: PatchedRequest, value?: string) => {
-  if (value) {
-    request[_LAYERS_STORE_PROPERTY].splice(-1, 1, value);
-  }
-};
 
 /** Connect instrumentation for OpenTelemetry */
 export class ConnectInstrumentation extends InstrumentationBase<Server> {
@@ -156,10 +140,9 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
 
       const rpcMetadata = getRPCMetadata(context.active());
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
-        rpcMetadata.route = req[_LAYERS_STORE_PROPERTY].reduce(
-          (acc, sub) => acc.replace(/\/+$/, '') + sub
-        );
+        rpcMetadata.route = generateRoute(req);
       }
+
       let spanName = '';
       if (routeName) {
         spanName = `request handler - ${routeName}`;
@@ -219,11 +202,8 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
       const [reqIdx, outIdx] = [0, 2];
       const req = arguments[reqIdx] as PatchedRequest;
       const out = arguments[outIdx];
-      addNewStackLayer(req);
+      const completeStack = addNewStackLayer(req);
 
-      function completeStack() {
-        req[_LAYERS_STORE_PROPERTY].pop();
-      }
       if (typeof out === 'function') {
         arguments[outIdx] = instrumentation._patchOut(
           out as NextFunction,
