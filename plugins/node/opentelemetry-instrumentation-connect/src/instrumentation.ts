@@ -17,13 +17,13 @@
 import { context, diag, Span, SpanOptions } from '@opentelemetry/api';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { HandleFunction, NextFunction, Server } from 'connect';
-import type { IncomingMessage, ServerResponse } from 'http';
+import type { ServerResponse } from 'http';
 import {
   AttributeNames,
   ConnectNames,
   ConnectTypes,
 } from './enums/AttributeNames';
-import { Use, UseArgs, UseArgs2 } from './internal-types';
+import { PatchedRequest, Use, UseArgs, UseArgs2 } from './internal-types';
 import { VERSION } from './version';
 import {
   InstrumentationBase,
@@ -32,6 +32,11 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  replaceCurrentStackRoute,
+  addNewStackLayer,
+  generateRoute,
+} from './utils';
 
 export const ANONYMOUS_NAME = 'anonymous';
 
@@ -64,6 +69,9 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
   private _patchApp(patchedApp: Server) {
     if (!isWrapped(patchedApp.use)) {
       this._wrap(patchedApp, 'use', this._patchUse.bind(this));
+    }
+    if (!isWrapped(patchedApp.handle)) {
+      this._wrap(patchedApp, 'handle', this._patchHandle.bind(this));
     }
   }
 
@@ -123,14 +131,17 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
       const [reqArgIdx, resArgIdx, nextArgIdx] = isErrorMiddleware
         ? [1, 2, 3]
         : [0, 1, 2];
-      const req = arguments[reqArgIdx] as IncomingMessage;
+      const req = arguments[reqArgIdx] as PatchedRequest;
       const res = arguments[resArgIdx] as ServerResponse;
       const next = arguments[nextArgIdx] as NextFunction;
 
+      replaceCurrentStackRoute(req, routeName);
+
       const rpcMetadata = getRPCMetadata(context.active());
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
-        rpcMetadata.span.updateName(`${req.method} ${routeName || '/'}`);
+        rpcMetadata.route = generateRoute(req);
       }
+
       let spanName = '';
       if (routeName) {
         spanName = `request handler - ${routeName}`;
@@ -181,6 +192,32 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
       );
 
       return original.apply(this, args as UseArgs2);
+    };
+  }
+
+  public _patchHandle(original: Server['handle']): Server['handle'] {
+    const instrumentation = this;
+    return function (this: Server): ReturnType<Server['handle']> {
+      const [reqIdx, outIdx] = [0, 2];
+      const req = arguments[reqIdx] as PatchedRequest;
+      const out = arguments[outIdx];
+      const completeStack = addNewStackLayer(req);
+
+      if (typeof out === 'function') {
+        arguments[outIdx] = instrumentation._patchOut(
+          out as NextFunction,
+          completeStack
+        );
+      }
+
+      return (original as any).apply(this, arguments);
+    };
+  }
+
+  public _patchOut(out: NextFunction, completeStack: () => void): NextFunction {
+    return function nextFunction(this: NextFunction, ...args: any[]): void {
+      completeStack();
+      return Reflect.apply(out, this, args);
     };
   }
 }

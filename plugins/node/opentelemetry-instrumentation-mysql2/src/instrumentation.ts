@@ -25,6 +25,7 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
+import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
 import {
@@ -52,7 +53,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
         'mysql2',
         ['>= 1.4.2 < 4.0'],
         (moduleExports: any, moduleVersion) => {
-          api.diag.debug(`Patching mysql@${moduleVersion}`);
+          api.diag.debug(`Patching mysql2@${moduleVersion}`);
 
           const ConnectionPrototype: mysqlTypes.Connection =
             moduleExports.Connection.prototype;
@@ -63,7 +64,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
           this._wrap(
             ConnectionPrototype,
             'query',
-            this._patchQuery(moduleExports.format) as any
+            this._patchQuery(moduleExports.format, false) as any
           );
 
           if (isWrapped(ConnectionPrototype.execute)) {
@@ -72,7 +73,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
           this._wrap(
             ConnectionPrototype,
             'execute',
-            this._patchQuery(moduleExports.format) as any
+            this._patchQuery(moduleExports.format, true) as any
           );
 
           return moduleExports;
@@ -88,7 +89,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
     ];
   }
 
-  private _patchQuery(format: formatType) {
+  private _patchQuery(format: formatType, isPrepared: boolean) {
     return (originalQuery: Function): Function => {
       const thisPlugin = this;
       api.diag.debug('MySQL2Instrumentation: patched mysql query/execute');
@@ -99,6 +100,9 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
         _valuesOrCallback?: unknown[] | Function,
         _callback?: Function
       ) {
+        const thisPluginConfig: MySQL2InstrumentationConfig =
+          thisPlugin._config;
+
         let values;
         if (Array.isArray(_valuesOrCallback)) {
           values = _valuesOrCallback;
@@ -118,6 +122,16 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
             ),
           },
         });
+
+        if (!isPrepared && thisPluginConfig.addSqlCommenterCommentToQueries) {
+          arguments[0] = query =
+            typeof query === 'string'
+              ? addSqlCommenterComment(span, query)
+              : Object.assign(query, {
+                  sql: addSqlCommenterComment(span, query.sql),
+                });
+        }
+
         const endSpan = once((err?: any, results?: any) => {
           if (err) {
             span.setStatus({
@@ -125,11 +139,12 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
               message: err.message,
             });
           } else {
-            const config: MySQL2InstrumentationConfig = thisPlugin._config;
-            if (typeof config.responseHook === 'function') {
+            if (typeof thisPluginConfig.responseHook === 'function') {
               safeExecuteInTheMiddle(
                 () => {
-                  config.responseHook!(span, { queryResults: results });
+                  thisPluginConfig.responseHook!(span, {
+                    queryResults: results,
+                  });
                 },
                 err => {
                   if (err) {

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-ot-trace-v0.26.3...propagator-ot-trace-v0.27.0) (2023-07-12)
+
+
+### Features
+
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+
 ## [0.26.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-ot-trace-v0.26.2...propagator-ot-trace-v0.26.3) (2023-05-16)
 
 

@@ -544,6 +544,92 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 0);
     });
 
+    it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "true"', async () => {
+      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'true';
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {});
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.notDeepStrictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "TRUE"', async () => {
+      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'TRUE';
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {});
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.notDeepStrictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "True"', async () => {
+      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'True';
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {});
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.notDeepStrictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('ignores OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION if `config.disableAwsContextPropagation` is set', async () => {
+      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'true';
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsContextPropagation: false,
+      });
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+    });
+
     it('ignores sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
       process.env[traceContextEnvironmentKey] = sampledAwsHeader;
       initializeHandler('lambda-test/async.handler', {

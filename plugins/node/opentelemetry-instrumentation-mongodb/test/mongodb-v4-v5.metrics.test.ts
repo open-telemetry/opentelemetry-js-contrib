@@ -28,8 +28,6 @@ import {
   ResourceMetrics,
 } from '@opentelemetry/sdk-metrics';
 
-import * as mongodb from 'mongodb';
-
 const otelTestingMeterProvider = new MeterProvider();
 const inMemoryMetricsExporter = new InMemoryMetricExporter(
   AggregationTemporality.CUMULATIVE
@@ -40,17 +38,13 @@ const metricReader = new PeriodicExportingMetricReader({
   exportTimeoutMillis: 100,
 });
 
-otelTestingMeterProvider.addMetricReader(metricReader);
-
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 const instrumentation = registerInstrumentationTesting(
   new MongoDBInstrumentation()
 );
 
-instrumentation.setMeterProvider(otelTestingMeterProvider);
-
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
-
+import * as mongodb from 'mongodb';
 import * as assert from 'assert';
 
 async function waitForNumberOfExports(
@@ -86,9 +80,13 @@ describe('MongoDBInstrumentation-Metrics', () => {
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics';
   const COLLECTION_NAME = 'test-metrics';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
-
   let client: mongodb.MongoClient;
-  let collection: mongodb.Collection;
+
+  before(() => {
+    otelTestingMeterProvider.addMetricReader(metricReader);
+    instrumentation?.setMeterProvider(otelTestingMeterProvider);
+  });
+
   beforeEach(function mongoBeforeEach(done) {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work
     // properly when skipping tests in before() on nested describe() calls.
@@ -96,6 +94,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
     if (!shouldTest) {
       this.skip();
     }
+
     inMemoryMetricsExporter.reset();
     done();
   });
@@ -103,17 +102,17 @@ describe('MongoDBInstrumentation-Metrics', () => {
   it('Should add connection usage metrics', async () => {
     const result = await accessCollection(URL, DB_NAME, COLLECTION_NAME);
     client = result.client;
-    collection = result.collection;
+    const collection = result.collection;
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
     await collection.insertMany(insertData);
     await collection.deleteMany({});
-    let exportedMetrics = await waitForNumberOfExports(
+    const exportedMetrics = await waitForNumberOfExports(
       inMemoryMetricsExporter,
       1
     );
 
     assert.strictEqual(exportedMetrics.length, 1);
-    let metrics = exportedMetrics[0].scopeMetrics[0].metrics;
+    const metrics = exportedMetrics[0].scopeMetrics[0].metrics;
     assert.strictEqual(metrics.length, 1);
     assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
@@ -126,25 +125,34 @@ describe('MongoDBInstrumentation-Metrics', () => {
       metrics[0].descriptor.name,
       'db.client.connections.usage'
     );
-    assert.strictEqual(metrics[0].dataPoints.length, 2);
-    assert.strictEqual(metrics[0].dataPoints[0].value, 0);
-    assert.strictEqual(metrics[0].dataPoints[0].attributes['state'], 'used');
+
+    // Checking dataPoints
+    const dataPoints = metrics[0].dataPoints;
+    assert.strictEqual(dataPoints.length, 2);
+    assert.strictEqual(dataPoints[0].value, 0);
+    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
-      metrics[0].dataPoints[0].attributes['pool.name'],
+      dataPoints[0].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
 
-    assert.strictEqual(metrics[0].dataPoints[1].value, 1);
-    assert.strictEqual(metrics[0].dataPoints[1].attributes['state'], 'idle');
+    assert.strictEqual(dataPoints[1].value, 1);
+    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
-      metrics[0].dataPoints[1].attributes['pool.name'],
+      dataPoints[1].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
+  });
+
+  it('Should add disconnection usage metrics', async () => {
     await client.close();
 
-    exportedMetrics = await waitForNumberOfExports(inMemoryMetricsExporter, 2);
+    const exportedMetrics = await waitForNumberOfExports(
+      inMemoryMetricsExporter,
+      2
+    );
     assert.strictEqual(exportedMetrics.length, 2);
-    metrics = exportedMetrics[1].scopeMetrics[0].metrics;
+    const metrics = exportedMetrics[1].scopeMetrics[0].metrics;
     assert.strictEqual(metrics.length, 1);
     assert.strictEqual(metrics[0].dataPointType, DataPointType.SUM);
 
@@ -152,17 +160,20 @@ describe('MongoDBInstrumentation-Metrics', () => {
       metrics[0].descriptor.description,
       'The number of connections that are currently in state described by the state attribute.'
     );
-    assert.strictEqual(metrics[0].dataPoints.length, 2);
-    assert.strictEqual(metrics[0].dataPoints[0].value, 0);
-    assert.strictEqual(metrics[0].dataPoints[0].attributes['state'], 'used');
+
+    // Checking dataPoints
+    const dataPoints = metrics[0].dataPoints;
+    assert.strictEqual(dataPoints.length, 2);
+    assert.strictEqual(dataPoints[0].value, 0);
+    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
-      metrics[0].dataPoints[0].attributes['pool.name'],
+      dataPoints[0].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
-    assert.strictEqual(metrics[0].dataPoints[1].value, 0);
-    assert.strictEqual(metrics[0].dataPoints[1].attributes['state'], 'idle');
+    assert.strictEqual(dataPoints[1].value, 0);
+    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
-      metrics[0].dataPoints[1].attributes['pool.name'],
+      dataPoints[1].attributes['pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
   });
