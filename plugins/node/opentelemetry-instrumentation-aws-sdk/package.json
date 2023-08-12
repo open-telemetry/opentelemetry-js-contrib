@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.41.0",
+    "@opentelemetry/instrumentation": "^0.41.2",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@opentelemetry/propagation-utils": "^0.30.0"
   },
@@ -63,7 +63,7 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.16.19",
-    "@types/sinon": "10.0.15",
+    "@types/sinon": "10.0.16",
     "aws-sdk": "2.1008.0",
     "eslint": "8.7.0",
     "expect": "29.2.0",
