@@ -354,7 +354,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       return function patchedConnect(this: any): Promise<void> {
         const options = this.options;
 
-        const attributes = getClientAttributes(options);
+        const attributes = getClientAttributes(this._diag, options);
 
         const span = plugin.tracer.startSpan(
           `${RedisInstrumentation.COMPONENT}-connect`,
@@ -405,7 +405,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     const dbStatementSerializer =
       this._config?.dbStatementSerializer || defaultDbStatementSerializer;
 
-    const attributes = getClientAttributes(clientOptions);
+    const attributes = getClientAttributes(this._diag, clientOptions);
 
     try {
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
