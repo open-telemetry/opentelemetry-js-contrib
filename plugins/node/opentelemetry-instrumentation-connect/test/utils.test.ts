@@ -83,7 +83,7 @@ describe('utils', () => {
   });
 
   describe('generateRoute', () => {
-    it('should combine the stack and striped anu slash between layer', () => {
+    it('should combine the stack and striped any slash between layer', () => {
       const fakeRequest = {
         [_LAYERS_STORE_PROPERTY]: ['/first/', '/second', '/third/'],
       } as PatchedRequest;
