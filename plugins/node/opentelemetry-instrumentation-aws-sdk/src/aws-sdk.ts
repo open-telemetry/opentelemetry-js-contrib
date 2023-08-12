@@ -112,9 +112,32 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       v3MiddlewareStackFileNewVersions,
     ]);
 
+    // patch for @smithy/middleware-stack for aws-sdk packages v3.363.0+
+    const v3SmithyMiddlewareStackFile = new InstrumentationNodeModuleFile(
+      '@smithy/middleware-stack/dist-cjs/MiddlewareStack.js',
+      ['>=1.0.1'],
+      this.patchV3ConstructStack.bind(this),
+      this.unpatchV3ConstructStack.bind(this)
+    );
+    const v3SmithyMiddlewareStack = new InstrumentationNodeModuleDefinition(
+      '@smithy/middleware-stack',
+      ['>=2.0.0'],
+      undefined,
+      undefined,
+      [v3SmithyMiddlewareStackFile]
+    );
+
     const v3SmithyClient = new InstrumentationNodeModuleDefinition<typeof AWS>(
       '@aws-sdk/smithy-client',
       ['^3.1.0'],
+      this.patchV3SmithyClient.bind(this),
+      this.unpatchV3SmithyClient.bind(this)
+    );
+
+    // patch for new @smithy/smithy-client for aws-sdk packages v3.363.0+
+    const v3NewSmithyClient = new InstrumentationNodeModuleDefinition(
+      '@smithy/smithy-client',
+      ['>=1.0.3'],
       this.patchV3SmithyClient.bind(this),
       this.unpatchV3SmithyClient.bind(this)
     );
@@ -134,7 +157,13 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       [v2Request]
     );
 
-    return [v2Module, v3MiddlewareStack, v3SmithyClient];
+    return [
+      v2Module,
+      v3MiddlewareStack,
+      v3SmithyMiddlewareStack,
+      v3SmithyClient,
+      v3NewSmithyClient,
+    ];
   }
 
   protected patchV3ConstructStack(moduleExports: any, moduleVersion?: string) {
