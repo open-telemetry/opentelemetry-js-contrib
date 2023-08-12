@@ -15,84 +15,82 @@
  */
 import * as assert from 'assert';
 
-import { PatchedRequest, _LAYERS_STORE_PROPERTY } from "../src/internal-types";
-import { addNewStackLayer, generateRoute, replaceCurrentStackRoute } from "../src/utils";
+import { PatchedRequest, _LAYERS_STORE_PROPERTY } from '../src/internal-types';
+import {
+  addNewStackLayer,
+  generateRoute,
+  replaceCurrentStackRoute,
+} from '../src/utils';
 
 describe('utils', () => {
   describe('addNewStackLayer', () => {
-    it("should inject new array to symbol property if not exist", () => {
-      const fakeRequest = {
+    it('should inject new array to symbol property if not exist', () => {
+      const fakeRequest = {} as PatchedRequest;
 
-      } as PatchedRequest
-
-      addNewStackLayer(fakeRequest)
+      addNewStackLayer(fakeRequest);
 
       assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 1);
-    })
+    });
 
-    it("should append new stack item if private symbol already exists", () => {
-      const stack = ["/first"]
+    it('should append new stack item if private symbol already exists', () => {
+      const stack = ['/first'];
       const fakeRequest = {
-        [_LAYERS_STORE_PROPERTY]: stack
-      } as PatchedRequest
+        [_LAYERS_STORE_PROPERTY]: stack,
+      } as PatchedRequest;
 
-      addNewStackLayer(fakeRequest)
+      addNewStackLayer(fakeRequest);
 
       assert.equal(fakeRequest[_LAYERS_STORE_PROPERTY], stack);
       assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 2);
-    })
+    });
 
-    it("should return pop method to remove newly add stack", () => {
-      const fakeRequest = {
+    it('should return pop method to remove newly add stack', () => {
+      const fakeRequest = {} as PatchedRequest;
 
-      } as PatchedRequest
-
-      const pop = addNewStackLayer(fakeRequest)
+      const pop = addNewStackLayer(fakeRequest);
 
       assert.notStrictEqual(pop, undefined);
 
-      pop()
+      pop();
 
       assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 0);
-    })
+    });
 
-    it("should prevent pop the same stack item multiple time", () => {
-      const fakeRequest = {
+    it('should prevent pop the same stack item multiple time', () => {
+      const fakeRequest = {} as PatchedRequest;
 
-      } as PatchedRequest
+      addNewStackLayer(fakeRequest); // add first stack item
+      const pop = addNewStackLayer(fakeRequest); // add second stack item
 
-      addNewStackLayer(fakeRequest) // add first stack item
-      const pop = addNewStackLayer(fakeRequest) // add second stack item
-
-      pop()
-      pop()
+      pop();
+      pop();
 
       assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 1);
-    })
-  })
+    });
+  });
 
   describe('replaceCurrentStackRoute', () => {
     it('should replace the last stack item with new value', () => {
       const fakeRequest = {
-        [_LAYERS_STORE_PROPERTY]: ["/first", "/second"]
-      } as PatchedRequest
+        [_LAYERS_STORE_PROPERTY]: ['/first', '/second'],
+      } as PatchedRequest;
 
-      replaceCurrentStackRoute(fakeRequest, "/new_route")
+      replaceCurrentStackRoute(fakeRequest, '/new_route');
 
       assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY].length, 2);
-      assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY][1], "/new_route");
-    })
-  })
+      assert.strictEqual(fakeRequest[_LAYERS_STORE_PROPERTY][1], '/new_route');
+    });
+  });
 
   describe('generateRoute', () => {
     it('should combine the stack and striped anu slash between layer', () => {
       const fakeRequest = {
-        [_LAYERS_STORE_PROPERTY]: ["/first/", "/second", "/third/"]
-      } as PatchedRequest
+        [_LAYERS_STORE_PROPERTY]: ['/first/', '/second', '/third/'],
+      } as PatchedRequest;
 
-      const route = generateRoute(fakeRequest)
+      const route = generateRoute(fakeRequest);
 
-      assert.strictEqual(route, "/first/second/third/");
-    })
-  })
+      assert.strictEqual(route, '/first/second/third/');
+    });
+  });
 });

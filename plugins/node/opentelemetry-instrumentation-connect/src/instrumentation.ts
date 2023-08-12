@@ -23,12 +23,7 @@ import {
   ConnectNames,
   ConnectTypes,
 } from './enums/AttributeNames';
-import {
-  PatchedRequest,
-  Use,
-  UseArgs,
-  UseArgs2,
-} from './internal-types';
+import { PatchedRequest, Use, UseArgs, UseArgs2 } from './internal-types';
 import { VERSION } from './version';
 import {
   InstrumentationBase,
@@ -37,7 +32,11 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { replaceCurrentStackRoute, addNewStackLayer, generateRoute } from './utils';
+import {
+  replaceCurrentStackRoute,
+  addNewStackLayer,
+  generateRoute,
+} from './utils';
 
 export const ANONYMOUS_NAME = 'anonymous';
 
