@@ -315,7 +315,7 @@ describe('ExpressInstrumentation', () => {
           next();
         });
 
-        const router = express.Router()
+        const router = express.Router();
 
         app.use('/router', router);
 
