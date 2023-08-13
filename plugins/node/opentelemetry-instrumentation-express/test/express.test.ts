@@ -275,6 +275,97 @@ describe('ExpressInstrumentation', () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       assert.strictEqual(res, 'test');
     });
+
+    it('should update rpcMetadata.route with the bare middleware layer', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let rpcMetadata: RPCMetadata | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          next();
+        });
+
+        app.use('/bare_middleware', (req, res) => {
+          return res.status(200).end('test');
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/bare_middleware/ignore_route_segment`
+          );
+          assert.strictEqual(response, 'test');
+          rootSpan.end();
+          assert.strictEqual(rpcMetadata?.route, '/bare_middleware');
+        }
+      );
+    });
+
+    it('should update rpcMetadata.route with the latest middleware layer', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let rpcMetadata: RPCMetadata | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          next();
+        });
+
+        const router = express.Router();
+
+        app.use('/router', router);
+
+        router.use('/router_middleware', (req, res) => {
+          return res.status(200).end('test');
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/router/router_middleware/ignore_route_segment`
+          );
+          assert.strictEqual(response, 'test');
+          rootSpan.end();
+          assert.strictEqual(rpcMetadata?.route, '/router/router_middleware');
+        }
+      );
+    });
+
+    it('should update rpcMetadata.route with the bare request handler layer', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let rpcMetadata: RPCMetadata | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          next();
+        });
+
+        app.get('/bare_route', (req, res) => {
+          return res.status(200).end('test');
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/bare_route`
+          );
+          assert.strictEqual(response, 'test');
+          rootSpan.end();
+          assert.strictEqual(rpcMetadata?.route, '/bare_route');
+        }
+      );
+    });
   });
 
   describe('Disabling plugin', () => {
