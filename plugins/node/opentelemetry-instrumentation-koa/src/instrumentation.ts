@@ -29,7 +29,6 @@ import {
   KoaLayerType,
   KoaInstrumentationConfig,
 } from './types';
-import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
