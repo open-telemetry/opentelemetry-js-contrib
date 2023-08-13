@@ -130,7 +130,9 @@ jobs:
             metapackages/*/package.json
             packages/*/package.json
             plugins/node/*/package.json
+            plugins/node/*/examples/package.json
             plugins/web/*/package.json
+            plugins/web/*/examples/package.json
             propagators/*/package.json
       - name: Install minimum npm 7
         if: matrix.npm

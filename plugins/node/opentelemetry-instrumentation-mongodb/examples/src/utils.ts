@@ -28,15 +28,17 @@ export function accessDB(
   options: mongodb.MongoClientOptions = {}
 ): Promise<mongodb.Db> {
   return new Promise((resolve, reject) => {
-    mongodb.MongoClient.connect(url, {
-      serverSelectionTimeoutMS: 1000,
-      useUnifiedTopology: true
-    })
-      .then(client => {
-        resolve(client.db(dbName));
+    try {
+      const client = new mongodb.MongoClient(url, {
+        serverSelectionTimeoutMS: 1000
       })
-      .catch(reason => {
-        reject(reason);
-      });
+
+      const db = client.db(dbName)
+
+      resolve(db)
+    } catch (reason) {
+
+      reject(reason);
+    }
   });
 }

@@ -38,7 +38,7 @@
     "@opentelemetry/instrumentation-mongodb": "^0.36.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
-    "mongodb": "^3.7.3"
+    "mongodb": "^4.16.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
   "devDependencies": {
