@@ -132,7 +132,7 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
 
-        const table = this.builder?._single?.table;
+        const table = utils.extractTableName(this.builder);
         // `method` actually refers to the knex API method - Not exactly "operation"
         // in the spec sense, but matches most of the time.
         const operation = query?.method;
