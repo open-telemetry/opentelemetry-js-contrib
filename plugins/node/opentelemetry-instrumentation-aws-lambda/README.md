@@ -76,9 +76,9 @@ The instrumentation will attempt to automatically determine the Lambda handler f
 
 There exist use cases where the `_HANDLER` environment variable does not accurately represent the module that should be targeted by this instrumentation. For these use cases, the `lambdaHandler` option can be used to explicitly specify the Lambda handler that should be instrumented.
 
-The `lambdaHandler` should be specified as a string in the format `<file>.<handler>`, where `<file>` is the name of the file that contains the handler and `<handler>` is the name of the handler function. For example, if the handler is defined in the file `index.js` and the handler function is named `handler`, the `lambdaHandler` should be specified as `index.handler`.
-
 To better explain when `lambdaHandler` should be specified, consider how some telemetry tools, such as [Datadog](https://www.datadoghq.com/), are instrumented into the Lambda runtime. Datadog does this by overriding the handler function with a wrapper function that is loaded via a [Lambda Layer](https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html). In these examples, the Lambda's handler will point to the Datadog wrapper and not to the actual handler that should be instrumented. In cases like this, `lambdaHandler` should be used to explicitly specify the handler that should be instrumented.
+
+The `lambdaHandler` should be specified as a string in the format `<file>.<handler>`, where `<file>` is the name of the file that contains the handler and `<handler>` is the name of the handler function. For example, if the handler is defined in the file `index.js` and the handler function is named `handler`, the `lambdaHandler` should be specified as `index.handler`.
 
 One way to determine if the `lambdaHandler` option should be used is to check the handler defined on your Lambda. This can be done by determining the value of the `_HANDLER` environment variable or by viewing the **Runtime Settings** of your Lambda in AWS Console. If the handler is what you expect, then the instrumentation should work without the `lambdaHandler` option. If the handler points to something else, then the `lambdaHandler` option should be used to explicitly specify the handler that should be instrumented.
 
