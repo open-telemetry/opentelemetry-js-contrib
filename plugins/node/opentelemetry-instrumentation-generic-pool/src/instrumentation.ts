@@ -28,9 +28,7 @@ import { VERSION } from './version';
 
 const MODULE_NAME = 'generic-pool';
 
-export default class Instrumentation extends InstrumentationBase<
-  typeof genericPool
-> {
+export default class Instrumentation extends InstrumentationBase<any> {
   // only used for v2 - v2.3)
   private _isDisabled = false;
 
@@ -40,7 +38,7 @@ export default class Instrumentation extends InstrumentationBase<
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof genericPool>(
+      new InstrumentationNodeModuleDefinition<any>(
         MODULE_NAME,
         ['>=3'],
         (moduleExports, moduleVersion) => {
@@ -63,7 +61,7 @@ export default class Instrumentation extends InstrumentationBase<
           return moduleExports;
         }
       ),
-      new InstrumentationNodeModuleDefinition<typeof genericPool>(
+      new InstrumentationNodeModuleDefinition<any>(
         MODULE_NAME,
         ['^2.4'],
         (moduleExports, moduleVersion) => {
