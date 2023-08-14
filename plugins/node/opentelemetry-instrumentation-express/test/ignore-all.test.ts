@@ -127,7 +127,7 @@ describe('ExpressInstrumentation', () => {
       );
     });
 
-    it('rpcMetadata.route should be modified to /todo/:id', async () => {
+    it('rpcMetadata.route still capture correct route', async () => {
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
       await context.with(
         trace.setSpan(context.active(), rootSpan),
