@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.35.0...instrumentation-aws-sdk-v0.36.0) (2023-08-14)
+
+
+### Features
+
+* Add capacity information when applicable to dynamodb spans ([#1365](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1365)) ([ad94c5c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ad94c5c4fcb1125e91bcaf365365954944b6f9db))
+
+
+### Bug Fixes
+
+* **aws-sdk-instrumentation:** Patch new smithy client and middleware packages ([#1626](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1626)) ([3f2bfe8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3f2bfe8ed6feada3f1acc23677862501e8c06304))
+* **deps:** update otel core experimental to v0.41.2 ([#1628](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1628)) ([4f11245](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4f1124524aee565c3cfbf3975aa5d3d039377621))
+* fix typescript compilation issue with koa types ([a53f643](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a53f6438d616a6e07b35ff98d063e520adfda5d0))
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.30.0 to ^0.30.1
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.0 to ^0.34.1
+
 ## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.34.3...instrumentation-aws-sdk-v0.35.0) (2023-07-12)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/redis-common",
-  "version": "0.36.0",
+  "version": "0.36.1",
   "description": "Redis utilities for redis instrumentations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
