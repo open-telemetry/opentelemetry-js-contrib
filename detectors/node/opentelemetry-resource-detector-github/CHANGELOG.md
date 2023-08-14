@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.28.0...resource-detector-github-v0.28.1) (2023-08-14)
+
+
+### Bug Fixes
+
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
 ## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.27.1...resource-detector-github-v0.28.0) (2023-07-12)
 
 
