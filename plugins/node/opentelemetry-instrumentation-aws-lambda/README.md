@@ -52,7 +52,7 @@ In your Lambda function configuration, add or update the `NODE_OPTIONS` environm
 | `responseHook` | `ResponseHook` (function) | Hook for adding custom attributes before lambda returns the response. Receives params: `span, { err?, res? }` |
 | `disableAwsContextPropagation` | `boolean` | By default, this instrumentation will try to read the context from the `_X_AMZN_TRACE_ID` environment variable set by Lambda, set this to `true` or set the environment variable `OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION=true` to disable this behavior |
 | `eventContextExtractor` | `EventContextExtractor` (function) | Function for providing custom context extractor in order to support different event types that are handled by AWS Lambda (e.g., SQS, CloudWatch, Kinesis, API Gateway). Applied only when `disableAwsContextPropagation` is set to `true`. Receives params: `event, context` |
-| `lambdaHandler` | `string` | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Layer](#specifying-the-lambda-handler) for additional information. |
+| `lambdaHandler` | `string` | By default, this instrumentation automatically determines the Lambda handler function to instrument. This option is used to override that behavior by explicitly specifying the Lambda handler to instrument. See [Specifying the Lambda Handler](#specifying-the-lambda-handler) for additional information. |
 
 ### Hooks Usage Example
 
@@ -74,7 +74,7 @@ new AwsLambdaInstrumentation({
 
 The instrumentation will attempt to automatically determine the Lambda handler function to instrument. To do this, it relies on the `_HANDLER` environment variable which is [set by the Lambda runtime](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime). For most use cases, this will accurately represent the handler that should be targeted by this instrumentation.
 
-There exist use cases where the instrumetation's default behavior will not work. For these use cases, the `lambdaHandler` option should be used to explicitly specify the Lambda handler.
+There exist use cases where the `_HANDLER` environment variable does not accurately represent the module that should be targeted by this instrumentation. For these use cases, the `lambdaHandler` option can be used to explicitly specify the Lambda handler that should be instrumented.
 
 The `lambdaHandler` should be specified as a string in the format `<file>.<handler>`, where `<file>` is the name of the file that contains the handler and `<handler>` is the name of the handler function. For example, if the handler is defined in the file `index.js` and the handler function is named `handler`, the `lambdaHandler` should be specified as `index.handler`.
 
