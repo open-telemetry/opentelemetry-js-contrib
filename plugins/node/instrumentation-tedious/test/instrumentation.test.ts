@@ -32,7 +32,9 @@ import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
 import makeApi from './api';
 import type { Connection, ConnectionConfig } from 'tedious';
+import * as semver from 'semver';
 
+const LIB_VERSION = testUtils.getPackageVersion('tedious');
 const port = Number(process.env.MSSQL_PORT) || 1433;
 const database = process.env.MSSQL_DATABASE || 'master';
 const host = process.env.MSSQL_HOST || '127.0.0.1';
@@ -66,6 +68,12 @@ const config: ConnectionConfig & { userName: string; password: string } = {
 };
 
 describe('tedious', () => {
+
+  const isNode14 = process.versions.node.startsWith('14');
+  if (semver.gte(LIB_VERSION, '16') && isNode14) {
+    return;
+  }  
+
   let tedious: any;
   let contextManager: AsyncHooksContextManager;
   let connection: Connection;

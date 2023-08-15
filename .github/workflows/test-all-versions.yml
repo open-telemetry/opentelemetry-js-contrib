@@ -19,10 +19,6 @@ jobs:
       fail-fast: false
       matrix:
         node: ["14", "16", "18"]
-        include:
-          - node: "14"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/instrumentation-tedious
     runs-on: ubuntu-latest
     services:
       mongo:
