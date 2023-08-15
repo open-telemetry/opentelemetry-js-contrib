@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pino",
-  "version": "0.34.0",
+  "version": "0.34.1",
   "description": "OpenTelemetry instrumentation for pino",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
