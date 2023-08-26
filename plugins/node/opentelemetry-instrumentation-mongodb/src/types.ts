@@ -69,14 +69,3 @@ export enum MongodbCommandType {
   COUNT = 'count',
   UNKNOWN = 'unknown',
 }
-
-// https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
-export type V4Connection = {
-  id: number | '<monitor>';
-  command(
-    ns: any,
-    cmd: Document,
-    options: undefined | unknown,
-    callback: any
-  ): void;
-};
