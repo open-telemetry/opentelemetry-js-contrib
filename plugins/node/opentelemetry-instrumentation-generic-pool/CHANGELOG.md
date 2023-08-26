@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.32.1...instrumentation-generic-pool-v0.32.2) (2023-08-16)
+
+
+### Bug Fixes
+
+* **generic-pool:** remove deps on types package for ts5 compatibility ([#1637](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1637)) ([651b4f8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/651b4f8bdc18110aeafa22faa1fe2e0a49dbff91))
+
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.32.0...instrumentation-generic-pool-v0.32.1) (2023-08-14)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to v0.41.2 ([#1628](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1628)) ([4f11245](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4f1124524aee565c3cfbf3975aa5d3d039377621))
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-generic-pool-v0.31.4...instrumentation-generic-pool-v0.32.0) (2023-07-12)
 
 

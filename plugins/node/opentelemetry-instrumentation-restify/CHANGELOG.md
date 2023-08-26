@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.33.0...instrumentation-restify-v0.34.0) (2023-08-14)
+
+
+### Features
+
+* **restify:** Skip update HTTP's span name and update RpcMetadata's route instead ([#1571](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1571)) ([7d4b13e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7d4b13eb1391c3fb774254bf651f95a834d0b1c8))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to v0.41.2 ([#1628](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1628)) ([4f11245](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4f1124524aee565c3cfbf3975aa5d3d039377621))
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
 ## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.32.4...instrumentation-restify-v0.33.0) (2023-07-12)
 
 

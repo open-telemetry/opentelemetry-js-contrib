@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.36.0...instrumentation-aws-lambda-v0.37.0) (2023-08-14)
+
+
+### Features
+
+* **instrumentation-aws-lambda:** Adds lambdaHandler config option ([#1627](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1627)) ([c4a8e82](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c4a8e8238d5876c030676fd53cb8718f95653993))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to v0.41.2 ([#1628](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1628)) ([4f11245](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4f1124524aee565c3cfbf3975aa5d3d039377621))
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagator-aws-xray bumped from ^1.3.0 to ^1.3.1
+
 ## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.35.3...instrumentation-aws-lambda-v0.36.0) (2023-07-12)
 
 

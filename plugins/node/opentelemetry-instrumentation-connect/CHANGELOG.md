@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.32.0...instrumentation-connect-v0.32.1) (2023-08-14)
+
+
+### Bug Fixes
+
+* **connect:** fix wrong rpcMetada.route value not handle nested route ([#1555](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1555)) ([704f76f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/704f76f5b84793238bfb9f44ce018f02948738ce))
+* **deps:** update otel core experimental to v0.41.2 ([#1628](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1628)) ([4f11245](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4f1124524aee565c3cfbf3975aa5d3d039377621))
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.31.4...instrumentation-connect-v0.32.0) (2023-07-12)
 
 

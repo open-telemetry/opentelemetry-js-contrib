@@ -16,7 +16,7 @@
 
 import { context, trace, Span } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -292,14 +292,14 @@ describe('Restify Instrumentation', () => {
       );
     });
 
-    it('should rename HTTP span', async () => {
+    it('should update rpcMetadata.route', async () => {
       const httpSpan: types.InstrumentationSpan = tracer.startSpan('HTTP GET');
+      const rpcMetadata: RPCMetadata = {
+        type: RPCType.HTTP,
+        span: httpSpan,
+      };
 
       const testLocalServer = await createServer((server: restify.Server) => {
-        const rpcMetadata = {
-          type: RPCType.HTTP,
-          span: httpSpan,
-        };
         server.pre((req, res, next) => {
           // to simulate HTTP instrumentation
           context.with(
@@ -320,7 +320,7 @@ describe('Restify Instrumentation', () => {
         );
         httpSpan.end();
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
-        assert.strictEqual(httpSpan.name, 'GET /route/:param');
+        assert.strictEqual(rpcMetadata.route, '/route/:param');
         assert.strictEqual(res, '{"route":"hello"}');
       } finally {
         testLocalServer.close();
