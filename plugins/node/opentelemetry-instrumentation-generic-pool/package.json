@@ -51,7 +51,7 @@
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/generic-pool": "^3.1.9",
     "@types/mocha": "7.0.2",
-    "@types/node": "18.16.19",
+    "@types/node": "18.17.12",
     "@types/semver": "7.5.0",
     "generic-pool": "3.8.2",
     "mocha": "7.2.0",

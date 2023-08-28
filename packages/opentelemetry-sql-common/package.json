@@ -48,7 +48,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.1.0",
     "@types/mocha": "^7.0.2",
-    "@types/node": "18.16.19",
+    "@types/node": "18.17.12",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "ts-mocha": "10.0.0",

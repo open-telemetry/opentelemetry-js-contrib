@@ -52,7 +52,7 @@
     "@opentelemetry/contrib-test-utils": "^0.34.1",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "18.16.19",
+    "@types/node": "18.17.12",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.1",
