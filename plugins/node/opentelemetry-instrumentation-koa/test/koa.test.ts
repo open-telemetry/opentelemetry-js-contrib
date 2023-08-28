@@ -34,7 +34,7 @@ import * as sinon from 'sinon';
 import { AddressInfo } from 'net';
 import { KoaLayerType, KoaRequestInfo } from '../src/types';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
@@ -134,7 +134,7 @@ describe('Koa Instrumentation', () => {
   describe('Instrumenting @koa/router calls', () => {
     it('should create a child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
         context.with(
           setRPCMetadata(
@@ -174,17 +174,14 @@ describe('Koa Instrumentation', () => {
             '/post/:id'
           );
 
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /post/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata.route, '/post/:id');
         }
       );
     });
 
     it('should create a named child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
         context.with(
           setRPCMetadata(
@@ -224,17 +221,14 @@ describe('Koa Instrumentation', () => {
             '/post/:id'
           );
 
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /post/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata.route, '/post/:id');
         }
       );
     });
 
     it('should correctly instrument nested routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
         context.with(
           setRPCMetadata(
@@ -276,17 +270,14 @@ describe('Koa Instrumentation', () => {
             '/:first/post/:id'
           );
 
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /:first/post/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata.route, '/:first/post/:id');
         }
       );
     });
 
     it('should correctly instrument prefixed routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
         context.with(
           setRPCMetadata(
@@ -326,10 +317,7 @@ describe('Koa Instrumentation', () => {
             '/:first/post/:id'
           );
 
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /:first/post/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata.route, '/:first/post/:id');
         }
       );
     });
@@ -364,7 +352,9 @@ describe('Koa Instrumentation', () => {
             .find(span => span.name.includes('spanCreateMiddleware'));
           assert.notStrictEqual(fooParentSpan, undefined);
 
-          const fooSpan = memoryExporter.getFinishedSpans().find(span => 'foo');
+          const fooSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'foo');
           assert.notStrictEqual(fooSpan, undefined);
           assert.strictEqual(
             fooSpan!.parentSpanId,

@@ -633,4 +633,78 @@ describe('DynamoDB', () => {
       );
     });
   });
+
+  describe('ConsumedCapacity', () => {
+    it('should populate ConsumedCapacity attributes when they exist', done => {
+      mockV2AwsSend(responseMockSuccess, {
+        ConsumedCapacity: {
+          TableName: 'test-table',
+          CapacityUnits: 0.5,
+          Table: { CapacityUnits: 0.5 },
+        },
+      } as AWS.DynamoDB.Types.PutItemOutput);
+
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      dynamodb.put(
+        {
+          TableName: 'test-table',
+          Item: { key1: 'val1' },
+          ReturnConsumedCapacity: 'INDEXES',
+        },
+        (err: AWSError, data: AWS.DynamoDB.DocumentClient.PutItemOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
+            DbSystemValues.DYNAMODB
+          );
+          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
+            'PutItem'
+          );
+          expect(
+            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
+          ).toStrictEqual([
+            JSON.stringify({
+              TableName: 'test-table',
+              CapacityUnits: 0.5,
+              Table: { CapacityUnits: 0.5 },
+            }),
+          ]);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should not populate ConsumedCapacity attributes when it is not returned', done => {
+      mockV2AwsSend(responseMockSuccess, {
+        ConsumedCapacity: undefined,
+      } as AWS.DynamoDB.Types.PutItemOutput);
+
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      dynamodb.put(
+        {
+          TableName: 'test-table',
+          Item: { key1: 'val1' },
+          ReturnConsumedCapacity: 'NONE',
+        },
+        (err: AWSError, data: AWS.DynamoDB.DocumentClient.PutItemOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
+            DbSystemValues.DYNAMODB
+          );
+          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
+            'PutItem'
+          );
+          expect(attrs).not.toHaveProperty(
+            SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY
+          );
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+  });
 });

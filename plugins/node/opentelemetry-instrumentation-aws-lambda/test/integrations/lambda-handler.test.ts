@@ -964,4 +964,25 @@ describe('lambda handler', () => {
       });
     });
   });
+
+  describe('custom handler', () => {
+    it('prioritizes instrumenting the handler specified on the config over the handler implied from the _HANDLER env var', async () => {
+      initializeHandler('not-a-real-handler', {
+        lambdaHandler: 'lambda-test/async.handler',
+      });
+
+      const otherEvent = {};
+      const result = await lambdaRequire('lambda-test/async').handler(
+        otherEvent,
+        ctx
+      );
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+  });
 });
