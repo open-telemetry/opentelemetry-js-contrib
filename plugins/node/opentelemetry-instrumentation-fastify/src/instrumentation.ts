@@ -197,9 +197,9 @@ export class FastifyInstrumentation extends InstrumentationBase {
     };
   }
 
-  private _patchConstructor(
-    moduleExports: { fastify: () => FastifyInstance },
-    ): () => FastifyInstance {
+  private _patchConstructor(moduleExports: {
+    fastify: () => FastifyInstance;
+  }): () => FastifyInstance {
     const instrumentation = this;
     this._diag.debug('Patching fastify constructor function');
 
