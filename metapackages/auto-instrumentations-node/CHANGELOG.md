@@ -87,6 +87,12 @@
     * @opentelemetry/instrumentation-koa bumped from ^0.34.2 to ^0.34.3
     * @opentelemetry/instrumentation-redis bumped from ^0.34.3 to ^0.34.4
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.32.1 to ^0.32.2
+
 ## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.38.0...auto-instrumentations-node-v0.39.0) (2023-08-14)
 
 
