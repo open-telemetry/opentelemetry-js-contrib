@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-restify",
-  "version": "0.33.0",
+  "version": "0.34.0",
   "description": "OpenTelemetry restify automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -51,21 +51,21 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "18.16.19",
+    "@types/node": "18.6.5",
     "@types/restify": "4.3.9",
     "@types/semver": "7.5.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "restify": "11.1.0",
     "rimraf": "5.0.1",
-    "semver": "^7.3.7",
+    "semver": "7.5.4",
     "test-all-versions": "^5.0.1",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.41.0",
+    "@opentelemetry/instrumentation": "^0.41.2",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify#readme"

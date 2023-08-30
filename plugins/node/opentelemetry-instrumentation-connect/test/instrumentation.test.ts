@@ -243,5 +243,88 @@ describe('connect', () => {
         changedRootSpan.spanContext().spanId
       );
     });
+
+    it('should append nested route in RpcMetadata', async () => {
+      const rootSpan = tracer.startSpan('root span');
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
+      app.use((req, res, next) => {
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
+
+      const nestedApp = connect();
+
+      app.use('/foo/', nestedApp);
+      nestedApp.use('/bar/', (req, res, next) => {
+        next();
+      });
+
+      await httpRequest.get(`http://localhost:${PORT}/foo/bar`);
+      rootSpan.end();
+
+      assert.strictEqual(rpcMetadata.route, '/foo/bar/');
+    });
+
+    it('should use latest match route when multiple route is match', async () => {
+      const rootSpan = tracer.startSpan('root span');
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
+      app.use((req, res, next) => {
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
+
+      app.use('/foo', (req, res, next) => {
+        next();
+      });
+
+      app.use('/foo/bar', (req, res, next) => {
+        next();
+      });
+
+      await httpRequest.get(`http://localhost:${PORT}/foo/bar`);
+      rootSpan.end();
+
+      assert.strictEqual(rpcMetadata.route, '/foo/bar');
+    });
+
+    it('should use latest match route when multiple route is match (with nested app)', async () => {
+      const rootSpan = tracer.startSpan('root span');
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
+      app.use((req, res, next) => {
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
+
+      const nestedApp = connect();
+
+      app.use('/foo/', nestedApp);
+      nestedApp.use('/bar/', (req, res, next) => {
+        next();
+      });
+
+      app.use('/foo/bar/test', (req, res, next) => {
+        next();
+      });
+
+      await httpRequest.get(`http://localhost:${PORT}/foo/bar/test`);
+      rootSpan.end();
+
+      assert.strictEqual(rpcMetadata.route, '/foo/bar/test');
+    });
   });
 });
