@@ -33,7 +33,7 @@
       "schedule": ["before 3am every weekday"]
     }
   ],
-  "ignoreDeps": ["lerna", "lerna-changelog"],
+  "ignoreDeps": ["lerna", "lerna-changelog", "@types/node"],
   "ignorePaths": ["archive/**", "examples/**"],
   "assignees": ["@blumamir", "@dyladan", "@legendecas", "@pichlermarc" ],
   "schedule": [
