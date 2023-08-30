@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.32.1...instrumentation-dns-v0.32.2) (2023-08-30)
+
+
+### Bug Fixes
+
+* **instrumentation-dns:** use caret range for semver regular dependency ([#1654](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1654)) ([d9cd8d7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d9cd8d7efcea66e70dab3de8f847f05a7fc9943f))
+
 ## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.32.0...instrumentation-dns-v0.32.1) (2023-08-14)
 
 
