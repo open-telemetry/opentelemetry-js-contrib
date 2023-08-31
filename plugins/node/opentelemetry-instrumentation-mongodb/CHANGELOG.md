@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.36.1...instrumentation-mongodb-v0.37.0) (2023-08-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **mongodb:** removes the broken exported type `V4Connection`.
+
+### Bug Fixes
+
+* **mongodb:** remove broken type export `V4Connection` ([#1644](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1644)) ([ff29576](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff29576ce9eaeed3681a9bcbd2f84668c396e5fd)), closes [#1639](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1639)
+
 ## [0.36.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.36.0...instrumentation-mongodb-v0.36.1) (2023-08-14)
 
 

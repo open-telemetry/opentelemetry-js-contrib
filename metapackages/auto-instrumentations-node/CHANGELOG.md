@@ -93,6 +93,14 @@
   * dependencies
     * @opentelemetry/instrumentation-generic-pool bumped from ^0.32.1 to ^0.32.2
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-dns bumped from ^0.32.1 to ^0.32.2
+    * @opentelemetry/instrumentation-fastify bumped from ^0.32.1 to ^0.32.2
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.36.1 to ^0.37.0
+
 ## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.38.0...auto-instrumentations-node-v0.39.0) (2023-08-14)
 
 

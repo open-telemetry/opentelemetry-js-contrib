@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.1...instrumentation-fastify-v0.32.2) (2023-08-30)
+
+
+### Bug Fixes
+
+* **fastify:** Make sure consturctor patching works with esm ([#1624](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1624)) ([67f66d2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/67f66d2e0e8ea9f5d9b46819d4f736fa1e0666b6))
+
 ## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.0...instrumentation-fastify-v0.32.1) (2023-08-14)
 
 
