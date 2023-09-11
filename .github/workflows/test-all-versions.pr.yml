@@ -19,7 +19,7 @@ jobs:
       args: ${{ steps.lerna-args.outputs.args }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         # Need lerna to list all packages
       - name: Install lerna
         run: npm install -g lerna@5.5.2
