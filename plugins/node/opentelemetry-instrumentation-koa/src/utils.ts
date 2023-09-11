@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  KoaInstrumentationConfig,
-} from './types';
+import { KoaInstrumentationConfig } from './types';
 import { AttributeNames } from './enums/AttributeNames';
 import { SpanAttributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
