@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 import {
-  KoaContext,
-  KoaMiddleware,
-  KoaLayerType,
   KoaInstrumentationConfig,
 } from './types';
 import { AttributeNames } from './enums/AttributeNames';
 import { SpanAttributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { KoaContext, KoaLayerType, KoaMiddleware } from './internal-types';
 
 export const getMiddlewareMetadata = (
   context: KoaContext,

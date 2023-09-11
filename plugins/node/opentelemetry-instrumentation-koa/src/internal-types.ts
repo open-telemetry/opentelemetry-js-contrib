@@ -13,8 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { KoaMiddleware } from './types';
 
+import type * as Router from '@koa/router';
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
+import type { RouterParamContext } from '@koa/router';
+
+export enum KoaLayerType {
+  ROUTER = 'router',
+  MIDDLEWARE = 'middleware',
+}
+
+export type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
+
+export type KoaRequestInfo = {
+  context: KoaContext;
+  middlewareLayer: Middleware<DefaultState, KoaContext>;
+  layerType: KoaLayerType;
+};
+
+export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
+  router?: Router;
+};
 /**
  * This symbol is used to mark a Koa layer as being already instrumented
  * since its possible to use a given layer multiple times (ex: middlewares)
