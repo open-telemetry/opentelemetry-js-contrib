@@ -93,8 +93,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
       }
       instrumentation._wrap(reply, 'send', instrumentation._patchSend());
 
+      const anyRequest = (request as any);
+
       const rpcMetadata = getRPCMetadata(context.active());
-      const routeName = request.routerPath;
+      const routeName = anyRequest.routeOptions?.config?.url || request.routerPath;
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
         rpcMetadata.route = routeName;
       }
@@ -176,7 +178,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
         const handler = args[1] as HandlerOriginal;
         const pluginName = this.pluginName;
         if (applicationHookNames.includes(name)) {
-          return original.apply(this, [name as any, handler]);
+          return original.apply(this, [name, handler] as never);
         }
 
         const syncFunctionWithDone =
@@ -184,14 +186,14 @@ export class FastifyInstrumentation extends InstrumentationBase {
           handler.constructor.name !== 'AsyncFunction';
 
         return original.apply(this, [
-          name as any,
+          name,
           instrumentation._wrapHandler(
             pluginName,
             name,
             handler,
             syncFunctionWithDone
           ),
-        ]);
+        ] as never);
       };
     };
   }
@@ -259,8 +261,11 @@ export class FastifyInstrumentation extends InstrumentationBase {
       if (!instrumentation.isEnabled()) {
         return done();
       }
-      const requestContext = (request as any).context || {};
-      const handlerName = (requestContext.handler?.name || '').substr(6);
+      const anyRequest = (request as any);
+
+      const handler = anyRequest.routeOptions?.handler || anyRequest.context?.handler || {};
+
+      const handlerName = handler?.name.substr(6);
       const spanName = `${FastifyNames.REQUEST_HANDLER} - ${
         handlerName || this.pluginName || ANONYMOUS_NAME
       }`;
@@ -268,7 +273,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
       const spanAttributes: SpanAttributes = {
         [AttributeNames.PLUGIN_NAME]: this.pluginName,
         [AttributeNames.FASTIFY_TYPE]: FastifyTypes.REQUEST_HANDLER,
-        [SemanticAttributes.HTTP_ROUTE]: request.routerPath,
+        [SemanticAttributes.HTTP_ROUTE]: anyRequest.routeOptions?.config?.url || request.routerPath,
       };
       if (handlerName) {
         spanAttributes[AttributeNames.FASTIFY_NAME] = handlerName;
