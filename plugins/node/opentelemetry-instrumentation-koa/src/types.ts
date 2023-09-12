@@ -13,9 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
+import type { RouterParamContext } from '@koa/router';
+import type * as Router from '@koa/router';
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { KoaLayerType, KoaRequestInfo } from './internal-types';
+
+export enum KoaLayerType {
+  ROUTER = 'router',
+  MIDDLEWARE = 'middleware',
+}
+
+export type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
+
+export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
+  router?: Router;
+};
+
+export type KoaRequestInfo = {
+  context: KoaContext;
+  middlewareLayer: Middleware<DefaultState, KoaContext>;
+  layerType: KoaLayerType;
+};
 
 /**
  * Function that can be used to add custom attributes to the current span

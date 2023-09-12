@@ -32,7 +32,7 @@ import * as koa from 'koa';
 import * as http from 'http';
 import * as sinon from 'sinon';
 import { AddressInfo } from 'net';
-import { KoaLayerType, KoaRequestInfo } from '../src/internal-types';
+import { KoaLayerType, KoaRequestInfo } from '../src/types';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 

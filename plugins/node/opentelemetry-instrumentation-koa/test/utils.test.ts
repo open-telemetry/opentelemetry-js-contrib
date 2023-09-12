@@ -16,8 +16,7 @@
 
 import * as utils from '../src/utils';
 import * as assert from 'assert';
-import { KoaInstrumentationConfig } from '../src/types';
-import { KoaLayerType } from '../src/internal-types';
+import { KoaInstrumentationConfig, KoaLayerType } from '../src/types';
 
 describe('Utils', () => {
   describe('isLayerIgnored()', () => {
