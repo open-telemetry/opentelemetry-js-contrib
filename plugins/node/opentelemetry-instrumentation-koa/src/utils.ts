@@ -15,10 +15,10 @@
  */
 import {
   KoaContext,
-  KoaMiddleware,
   KoaLayerType,
   KoaInstrumentationConfig,
 } from './types';
+import { KoaMiddleware } from './internal-types';
 import { AttributeNames } from './enums/AttributeNames';
 import { SpanAttributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
