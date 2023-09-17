@@ -23,15 +23,14 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import type * as koa from 'koa';
-import {
-  KoaContext,
-  KoaLayerType,
-  KoaInstrumentationConfig,
-} from './types';
+import { KoaContext, KoaLayerType, KoaInstrumentationConfig } from './types';
 import { VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
-import { kLayerPatched, KoaMiddleware, KoaPatchedMiddleware } from './internal-types';
+import {
+  kLayerPatched,
+  KoaMiddleware,
+  KoaPatchedMiddleware, } from './internal-types';
 
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
