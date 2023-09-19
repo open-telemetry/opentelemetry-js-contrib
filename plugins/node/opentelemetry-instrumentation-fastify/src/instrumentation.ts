@@ -93,10 +93,11 @@ export class FastifyInstrumentation extends InstrumentationBase {
       }
       instrumentation._wrap(reply, 'send', instrumentation._patchSend());
 
-      const anyRequest = (request as any);
+      const anyRequest = request as any;
 
       const rpcMetadata = getRPCMetadata(context.active());
-      const routeName = anyRequest.routeOptions?.config?.url || request.routerPath;
+      const routeName =
+        anyRequest.routeOptions?.config?.url || request.routerPath;
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
         rpcMetadata.route = routeName;
       }
@@ -261,9 +262,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
       if (!instrumentation.isEnabled()) {
         return done();
       }
-      const anyRequest = (request as any);
+      const anyRequest = request as any;
 
-      const handler = anyRequest.routeOptions?.handler || anyRequest.context?.handler || {};
+      const handler =
+        anyRequest.routeOptions?.handler || anyRequest.context?.handler || {};
 
       const handlerName = handler?.name.substr(6);
       const spanName = `${FastifyNames.REQUEST_HANDLER} - ${
@@ -273,7 +275,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
       const spanAttributes: SpanAttributes = {
         [AttributeNames.PLUGIN_NAME]: this.pluginName,
         [AttributeNames.FASTIFY_TYPE]: FastifyTypes.REQUEST_HANDLER,
-        [SemanticAttributes.HTTP_ROUTE]: anyRequest.routeOptions?.config?.url || request.routerPath,
+        [SemanticAttributes.HTTP_ROUTE]:
+          anyRequest.routeOptions?.config?.url || request.routerPath,
       };
       if (handlerName) {
         spanAttributes[AttributeNames.FASTIFY_NAME] = handlerName;

@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  Span,
-  SpanAttributes,
-  SpanStatusCode,
-  Tracer,
-} from '@opentelemetry/api';
+import { Attributes, Span, SpanStatusCode, Tracer } from '@opentelemetry/api';
 import { spanRequestSymbol } from './constants';
 
 import type { PluginFastifyReply } from './internal-types';
@@ -35,13 +30,14 @@ export function startSpan(
   reply: PluginFastifyReply,
   tracer: Tracer,
   spanName: string,
-  spanAttributes: SpanAttributes = {}
+  spanAttributes: Attributes = {}
 ) {
   const span = tracer.startSpan(spanName, { attributes: spanAttributes });
 
   const spans: Span[] = reply[spanRequestSymbol] || [];
   spans.push(span);
 
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   Object.defineProperty(reply, spanRequestSymbol, {
     enumerable: false,
     configurable: true,
