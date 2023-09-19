@@ -59,7 +59,7 @@ export class ContainerDetector implements Detector {
     const splitData = rawData.trim().split('\n');
     for (const line of splitData) {
       const lastSlashIdx = line.lastIndexOf('/');
-      if (lastSlashIdx === -1){
+      if (lastSlashIdx === -1) {
         continue;
       }
       const lastSection = line.substring(lastSlashIdx + 1);
