@@ -14,31 +14,113 @@
  * limitations under the License.
  */
 
-import { InstrumentationBase } from "@opentelemetry/instrumentation";
-import { createEventLoopLagMetrics } from "./metrics/event-loop-lag";
-import { RuntimeInstrumentationConfig } from "./types";
-import { VERSION } from "./version";
-import { monitorEventLoopDelay } from "perf_hooks";
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
+import { RuntimeInstrumentationConfig } from './types';
+import { VERSION } from './version';
+import { IntervalHistogram, monitorEventLoopDelay } from 'perf_hooks';
+import {
+  hrTime,
+  hrTimeDuration,
+  hrTimeToMilliseconds,
+} from '@opentelemetry/core';
+import { AttributeNames } from './enums/AttributeNames';
 
 /**
  * Runtime instrumentation for Opentelemetry
  */
 export class RuntimeInstrumentation extends InstrumentationBase {
-  constructor(protected override _config: RuntimeInstrumentationConfig = {}) {
-    super("@opentelemetry/instrumentation-runtime", VERSION, _config);
+  private eventLoopDelayHistogram: IntervalHistogram;
+
+  constructor(config?: RuntimeInstrumentationConfig) {
+    super('@opentelemetry/instrumentation-runtime', VERSION, config);
+    // https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions
+    this.eventLoopDelayHistogram = monitorEventLoopDelay({
+      resolution: config?.monitorEventLoopDelayResolution,
+    });
+    this.eventLoopDelayHistogram.enable();
   }
 
-  override setConfig(config: RuntimeInstrumentationConfig = {}) {
-    this._config = config;
+  protected override _updateMetricInstruments() {
+    this.meter
+      .createObservableGauge(AttributeNames.NODE_EVENT_LOOP_DELAY, {
+        description: 'Lag of event loop.',
+        unit: 'ms',
+      })
+      .addCallback(async observable => {
+        const startTime = hrTime();
+        await new Promise<void>(resolve => setImmediate(() => resolve()));
+        const duration = hrTimeToMilliseconds(
+          hrTimeDuration(startTime, hrTime())
+        );
+        observable.observe(duration);
+      });
+
+    this.meter
+      .createObservableGauge(AttributeNames.NODE_EVENT_LOOP_DELAY_MIN, {
+        description: 'The minimum recorded event loop delay.',
+        unit: 'ms',
+      })
+      .addCallback(observable => {
+        observable.observe(this.eventLoopDelayHistogram.min / 1e6);
+      });
+
+    this.meter
+      .createObservableGauge(AttributeNames.NODE_EVENT_LOOP_DELAY_MAX, {
+        description: 'The maximum recorded event loop delay.',
+        unit: 'ms',
+      })
+      .addCallback(observable => {
+        observable.observe(this.eventLoopDelayHistogram.max / 1e6);
+      });
+
+    this.meter
+      .createObservableGauge(AttributeNames.NODE_EVENT_LOOP_DELAY_MEAN, {
+        description: 'The mean of the recorded event loop delays.',
+        unit: 'ms',
+      })
+      .addCallback(observable => {
+        observable.observe(this.eventLoopDelayHistogram.mean / 1e6);
+      });
+
+    this.meter
+      .createObservableGauge(AttributeNames.NODE_EVENT_LOOP_DELAY_STDDEV, {
+        description:
+          'The standard deviation of the recorded event loop delays.',
+        unit: 'ms',
+      })
+      .addCallback(observable => {
+        observable.observe(this.eventLoopDelayHistogram.stddev / 1e6);
+      });
+
+    this.meter
+      .createObservableGauge(AttributeNames.NODE_EVENT_LOOP_DELAY_P50, {
+        description: 'The 50th percentile of the recorded event loop delays.',
+        unit: 'ms',
+      })
+      .addCallback(observable => {
+        observable.observe(this.eventLoopDelayHistogram.percentile(50) / 1e6);
+      });
+
+    this.meter
+      .createObservableGauge(AttributeNames.NODE_EVENT_LOOP_DELAY_P95, {
+        description: 'The 95th percentile of the recorded event loop delays.',
+        unit: 'ms',
+      })
+      .addCallback(observable => {
+        observable.observe(this.eventLoopDelayHistogram.percentile(95) / 1e6);
+      });
+
+    this.meter
+      .createObservableGauge(AttributeNames.NODE_EVENT_LOOP_DELAY_P99, {
+        description: 'The 99th percentile of the recorded event loop delays.',
+        unit: 'ms',
+      })
+      .addCallback(observable => {
+        observable.observe(this.eventLoopDelayHistogram.percentile(99) / 1e6);
+      });
   }
 
   init() {
-    const histogram = monitorEventLoopDelay({
-      resolution: this._config.monitorEventLoopDelayResolution,
-    });
-
-    histogram.enable();
-
-    createEventLoopLagMetrics(this.meter, histogram);
+    // No instrumentation, only metrics
   }
 }

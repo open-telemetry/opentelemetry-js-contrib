@@ -13,9 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { InstrumentationConfig } from "@opentelemetry/instrumentation";
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface RuntimeInstrumentationConfig extends InstrumentationConfig {
-  // https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions
+  /**
+   * The sampling rate in milliseconds.
+   * Must be greater than zero.
+   * @default 10
+   * https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions
+   */
   monitorEventLoopDelayResolution?: number;
 }
