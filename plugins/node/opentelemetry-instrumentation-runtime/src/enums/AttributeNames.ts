@@ -26,4 +26,7 @@ export enum AttributeNames {
   NODE_EVENT_LOOP_DELAY_P50 = 'node.event_loop_delay.p50',
   NODE_EVENT_LOOP_DELAY_P95 = 'node.event_loop_delay.p95',
   NODE_EVENT_LOOP_DELAY_P99 = 'node.event_loop_delay.p99',
+  NODE_EVENT_LOOP_UTILIZATION = 'node.event_loop_utilization.utilization',
+  NODE_EVENT_LOOP_UTILIZATION_IDLE = 'node.event_loop_utilization.idle',
+  NODE_EVENT_LOOP_UTILIZATION_ACTIVE = 'node.event_loop_utilization.active',
 }

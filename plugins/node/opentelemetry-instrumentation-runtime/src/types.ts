@@ -17,10 +17,15 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface RuntimeInstrumentationConfig extends InstrumentationConfig {
   /**
-   * The sampling rate in milliseconds.
+   * The sampling rate in milliseconds of event loop delay.
    * Must be greater than zero.
-   * @default 10
-   * https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions
+   * @default 1000
    */
   monitorEventLoopDelayResolution?: number;
+  /**
+   * The sampling rate in milliseconds of event loop utilization.
+   * Must be greater than zero.
+   * @default 1000
+   */
+  monitorEventLoopUtilizationResolution?: number;
 }

@@ -8,7 +8,10 @@ import { RuntimeInstrumentation } from '../../src/instrumentation';
 import * as assert from 'assert';
 import { TestMetricReader } from '../utils/TestMetricReader';
 
-const instrumentation = new RuntimeInstrumentation();
+const instrumentation = new RuntimeInstrumentation({
+  monitorEventLoopDelayResolution: 100,
+  monitorEventLoopUtilizationResolution: 100,
+});
 instrumentation.enable();
 instrumentation.disable();
 
@@ -34,7 +37,7 @@ describe('metrics', () => {
     instrumentation.disable();
   });
 
-  it('should add event loop delay metrics', async () => {
+  it('should add required metrics', async () => {
     const requestCount = 10;
     for (let i = 0; i < requestCount; i++) {
       await new Promise<void>(resolve =>
@@ -48,7 +51,7 @@ describe('metrics', () => {
     const scopeMetrics = resourceMetrics[0].scopeMetrics;
     assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
     const metrics = scopeMetrics[0].metrics;
-    assert.strictEqual(metrics.length, 8, 'metrics count');
+    assert.strictEqual(metrics.length, 11, 'metrics count');
     const eventLoopDelay = metrics[0];
     assert.strictEqual(eventLoopDelay.dataPointType, DataPointType.GAUGE);
     assert.strictEqual(
@@ -149,5 +152,50 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopDelayP99.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayP99.dataPoints.length, 1);
+
+    const eventLoopUtilization = metrics[8];
+    assert.strictEqual(eventLoopUtilization.dataPointType, DataPointType.GAUGE);
+    assert.strictEqual(
+      eventLoopUtilization.descriptor.description,
+      'The percentage utilization of the event loop.'
+    );
+    assert.strictEqual(
+      eventLoopUtilization.descriptor.name,
+      'node.event_loop_utilization.utilization'
+    );
+    assert.strictEqual(eventLoopUtilization.descriptor.unit, 'percent');
+    assert.strictEqual(eventLoopUtilization.dataPoints.length, 1);
+
+    const eventLoopUtilizationIdle = metrics[9];
+    assert.strictEqual(
+      eventLoopUtilizationIdle.dataPointType,
+      DataPointType.GAUGE
+    );
+    assert.strictEqual(
+      eventLoopUtilizationIdle.descriptor.description,
+      'The idle time utilization of event loop.'
+    );
+    assert.strictEqual(
+      eventLoopUtilizationIdle.descriptor.name,
+      'node.event_loop_utilization.idle'
+    );
+    assert.strictEqual(eventLoopUtilizationIdle.descriptor.unit, 'ms');
+    assert.strictEqual(eventLoopUtilizationIdle.dataPoints.length, 1);
+
+    const eventLoopUtilizationActive = metrics[10];
+    assert.strictEqual(
+      eventLoopUtilizationActive.dataPointType,
+      DataPointType.GAUGE
+    );
+    assert.strictEqual(
+      eventLoopUtilizationActive.descriptor.description,
+      'The active time utilization of event loop.'
+    );
+    assert.strictEqual(
+      eventLoopUtilizationActive.descriptor.name,
+      'node.event_loop_utilization.active'
+    );
+    assert.strictEqual(eventLoopUtilizationActive.descriptor.unit, 'ms');
+    assert.strictEqual(eventLoopUtilizationActive.dataPoints.length, 1);
   });
 });
