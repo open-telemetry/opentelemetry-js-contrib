@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-runtime",
   "version": "0.1.0",
-  "description": "OpenTelemetry runtime automatic instrumentation package.",
+  "description": "OpenTelemetry node runtime instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",

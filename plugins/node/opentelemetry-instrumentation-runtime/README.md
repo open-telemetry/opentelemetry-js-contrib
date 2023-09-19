@@ -21,13 +21,14 @@ npm install --save @opentelemetry/instrumentation-runtime
 const { MeterProvider } = require('@opentelemetry/sdk-metrics');
 const { HostMetrics } = require('@opentelemetry/host-metrics');
 const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
-const { registerInstrumentations } = require("@opentelemetry/instrumentation");
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
 const exporter = new PrometheusExporter(
   {
-    startServer: true
-  }, () => {
-    console.log('prometheus scrape endpoint: http://localhost:9464/metrics')
+    startServer: true,
+  },
+  () => {
+    console.log('prometheus scrape endpoint: http://localhost:9464/metrics');
   }
 );
 
@@ -47,9 +48,10 @@ registerInstrumentations({
 
 Runtime instrumentation has currently one option. You can set the following:
 
-| Options                           | Type     | Description                                                                                                                                      |
-| --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `monitorEventLoopDelayResolution` | `number` | Sampling rate in milliseconds. [perf_hooks.monitorEventLoopDelay](https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions) |
+| Options                                 | Type     | Description                                                                                                                                                                   |
+| --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `monitorEventLoopDelayResolution`       | `number` | Sampling rate in milliseconds. [perf_hooks.monitorEventLoopDelay](https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions)                              |
+| `monitorEventLoopUtilizationResolution` | `number` | Sampling rate in milliseconds. [perf_hooks.performance.eventLoopUtilization](https://nodejs.org/api/perf_hooks.html#performanceeventlooputilizationutilization1-utilization2) |
 
 ## Useful links
 
