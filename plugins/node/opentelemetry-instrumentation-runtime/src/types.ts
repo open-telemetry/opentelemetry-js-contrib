@@ -18,14 +18,16 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 export interface RuntimeInstrumentationConfig extends InstrumentationConfig {
   /**
    * The sampling rate in milliseconds of event loop delay.
-   * Must be greater than zero.
-   * @default 1000
+   * Setting this too high will result in inaccurate data, as the baseline
+   * will be skewed by this value.
+   * @default 10
    */
   monitorEventLoopDelayResolution?: number;
   /**
    * The sampling rate in milliseconds of event loop utilization.
-   * Must be greater than zero.
-   * @default 1000
+   * If you are using PeriodicExportingMetricReader it is recommended to set
+   * this value to (at most) half of what exportIntervalMillis is set to.
+   * @default 30000
    */
   monitorEventLoopUtilizationResolution?: number;
 }

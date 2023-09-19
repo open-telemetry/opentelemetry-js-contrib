@@ -42,8 +42,8 @@ export class RuntimeInstrumentation extends InstrumentationBase {
 
   constructor(
     config: RuntimeInstrumentationConfig = {
-      monitorEventLoopDelayResolution: 1000,
-      monitorEventLoopUtilizationResolution: 1000,
+      monitorEventLoopDelayResolution: 10,
+      monitorEventLoopUtilizationResolution: 30000,
     }
   ) {
     super('@opentelemetry/instrumentation-runtime', VERSION, config);
@@ -59,6 +59,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     this._lastIntervalELU = initialELU;
     this.ELU = initialELU;
     this.config = config;
+    this.enable();
   }
 
   protected override _updateMetricInstruments() {
