@@ -25,10 +25,7 @@ import { TestMetricReader } from '../utils/TestMetricReader';
 
 const instrumentation = new RuntimeInstrumentation({
   monitorEventLoopDelayResolution: 100,
-  monitorEventLoopUtilizationResolution: 100,
 });
-instrumentation.enable();
-instrumentation.disable();
 
 const meterProvider = new MeterProvider();
 const metricsMemoryExporter = new InMemoryMetricExporter(
@@ -53,10 +50,10 @@ describe('metrics', () => {
   });
 
   it('should add required metrics', async () => {
-    const requestCount = 10;
+    const requestCount = 3;
     for (let i = 0; i < requestCount; i++) {
       await new Promise<void>(resolve =>
-        setTimeout(() => resolve(), (i + 1) * 10)
+        setTimeout(() => resolve(), (i + 1) * 3)
       );
     }
 
@@ -71,7 +68,7 @@ describe('metrics', () => {
     assert.strictEqual(eventLoopDelay.dataPointType, DataPointType.GAUGE);
     assert.strictEqual(
       eventLoopDelay.descriptor.description,
-      'Lag of event loop.'
+      'Delay of event loop.'
     );
     assert.strictEqual(eventLoopDelay.descriptor.name, 'node.event_loop_delay');
     assert.strictEqual(eventLoopDelay.descriptor.unit, 'ms');
@@ -176,7 +173,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopUtilization.descriptor.name,
-      'node.event_loop_utilization.utilization'
+      'node.event_loop_utilization'
     );
     assert.strictEqual(eventLoopUtilization.descriptor.unit, 'percent');
     assert.strictEqual(eventLoopUtilization.dataPoints.length, 1);

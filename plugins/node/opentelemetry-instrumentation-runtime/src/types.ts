@@ -23,11 +23,4 @@ export interface RuntimeInstrumentationConfig extends InstrumentationConfig {
    * @default 10
    */
   monitorEventLoopDelayResolution?: number;
-  /**
-   * The sampling rate in milliseconds of event loop utilization.
-   * If you are using PeriodicExportingMetricReader it is recommended to set
-   * this value to (at most) half of what exportIntervalMillis is set to.
-   * @default 30000
-   */
-  monitorEventLoopUtilizationResolution?: number;
 }
