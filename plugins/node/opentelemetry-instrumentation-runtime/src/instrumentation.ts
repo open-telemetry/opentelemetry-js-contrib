@@ -29,6 +29,7 @@ import {
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
 import { AttributeNames } from './enums/AttributeNames';
+import { Attributes } from '@opentelemetry/api';
 
 /**
  * Runtime instrumentation for Opentelemetry
@@ -36,6 +37,7 @@ import { AttributeNames } from './enums/AttributeNames';
 export class RuntimeInstrumentation extends InstrumentationBase {
   private eventLoopDelayHistogram: IntervalHistogram;
   private _lastIntervalELU: EventLoopUtilization;
+  private config: RuntimeInstrumentationConfig;
 
   constructor(
     config: RuntimeInstrumentationConfig = {
@@ -43,6 +45,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     }
   ) {
     super('@opentelemetry/instrumentation-runtime', VERSION, config);
+    this.config = config;
 
     // https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions
     this.eventLoopDelayHistogram = monitorEventLoopDelay({
@@ -51,9 +54,13 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     this.eventLoopDelayHistogram.enable();
 
     // https://nodejs.org/api/perf_hooks.html#performanceeventlooputilizationutilization1-utilization2
-    const initialELU = performance.eventLoopUtilization();
-    this._lastIntervalELU = initialELU;
-    this.enable();
+    this._lastIntervalELU = performance.eventLoopUtilization();
+  }
+
+  private _getCustomMetricAttributes(): Attributes {
+    return this.config.customMetricAttributes
+      ? this.config.customMetricAttributes()
+      : {};
   }
 
   protected override _updateMetricInstruments() {
@@ -125,6 +132,8 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     // Event Loop Delay metrics
     this.meter.addBatchObservableCallback(
       async observable => {
+        const attributes = this._getCustomMetricAttributes();
+
         const startTime = hrTime();
         // Waits for all existing and chained promises to be resolved:
         await new Promise(setImmediate);
@@ -135,40 +144,47 @@ export class RuntimeInstrumentation extends InstrumentationBase {
         const duration = hrTimeToMilliseconds(
           hrTimeDuration(startTime, endTime)
         );
-        observable.observe(eventLoopDelayGauge, duration);
+        observable.observe(eventLoopDelayGauge, duration, attributes);
 
         observable.observe(
           eventLoopDelayMinGauge,
-          this.eventLoopDelayHistogram.min / 1e6
+          this.eventLoopDelayHistogram.min / 1e6,
+          attributes
         );
         observable.observe(
           eventLoopDelayMaxGauge,
-          this.eventLoopDelayHistogram.max / 1e6
+          this.eventLoopDelayHistogram.max / 1e6,
+          attributes
         );
 
         observable.observe(
           eventLoopDelayMeanGauge,
-          this.eventLoopDelayHistogram.mean / 1e6
+          this.eventLoopDelayHistogram.mean / 1e6,
+          attributes
         );
 
         observable.observe(
           eventLoopDelayStddevGauge,
-          this.eventLoopDelayHistogram.stddev / 1e6
+          this.eventLoopDelayHistogram.stddev / 1e6,
+          attributes
         );
 
         observable.observe(
           eventLoopDelayP50Gauge,
-          this.eventLoopDelayHistogram.percentile(50) / 1e6
+          this.eventLoopDelayHistogram.percentile(50) / 1e6,
+          attributes
         );
 
         observable.observe(
           eventLoopDelayP95Gauge,
-          this.eventLoopDelayHistogram.percentile(95) / 1e6
+          this.eventLoopDelayHistogram.percentile(95) / 1e6,
+          attributes
         );
 
         observable.observe(
           eventLoopDelayP99Gauge,
-          this.eventLoopDelayHistogram.percentile(99) / 1e6
+          this.eventLoopDelayHistogram.percentile(99) / 1e6,
+          attributes
         );
       },
       [
@@ -210,6 +226,8 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     // Event Loop Utilization metrics
     this.meter.addBatchObservableCallback(
       async observable => {
+        const attributes = this._getCustomMetricAttributes();
+
         // Store the current ELU so it can be assigned later.
         const currentIntervalELU = performance.eventLoopUtilization();
         // Calculate the diff between the current and last before sending.
@@ -217,9 +235,13 @@ export class RuntimeInstrumentation extends InstrumentationBase {
           currentIntervalELU,
           this._lastIntervalELU
         );
-        observable.observe(loopUtilizationGauge, ELU.utilization * 100);
-        observable.observe(loopIdleGauge, ELU.idle);
-        observable.observe(loopActiveGauge, ELU.active);
+        observable.observe(
+          loopUtilizationGauge,
+          ELU.utilization * 100,
+          attributes
+        );
+        observable.observe(loopIdleGauge, ELU.idle, attributes);
+        observable.observe(loopActiveGauge, ELU.active, attributes);
         // Assign over the last value to report the next interval.
         this._lastIntervalELU = currentIntervalELU;
       },

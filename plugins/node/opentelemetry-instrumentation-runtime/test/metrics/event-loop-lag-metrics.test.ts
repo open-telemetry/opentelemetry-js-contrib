@@ -25,6 +25,9 @@ import { TestMetricReader } from '../utils/TestMetricReader';
 
 const instrumentation = new RuntimeInstrumentation({
   monitorEventLoopDelayResolution: 100,
+  customMetricAttributes: () => ({
+    foo: 'bar',
+  }),
 });
 
 const meterProvider = new MeterProvider();
@@ -73,6 +76,9 @@ describe('metrics', () => {
     assert.strictEqual(eventLoopDelay.descriptor.name, 'node.event_loop_delay');
     assert.strictEqual(eventLoopDelay.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelay.dataPoints.length, 1);
+    assert.deepStrictEqual(eventLoopDelay.dataPoints[0].attributes, {
+      foo: 'bar',
+    });
 
     const eventLoopDelayMin = metrics[1];
     assert.strictEqual(eventLoopDelayMin.dataPointType, DataPointType.GAUGE);
@@ -86,6 +92,9 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopDelayMin.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayMin.dataPoints.length, 1);
+    assert.deepStrictEqual(eventLoopDelayMin.dataPoints[0].attributes, {
+      foo: 'bar',
+    });
 
     const eventLoopDelayMax = metrics[2];
     assert.strictEqual(eventLoopDelayMax.dataPointType, DataPointType.GAUGE);
@@ -99,6 +108,9 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopDelayMax.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayMax.dataPoints.length, 1);
+    assert.deepStrictEqual(eventLoopDelayMax.dataPoints[0].attributes, {
+      foo: 'bar',
+    });
 
     const eventLoopDelayMean = metrics[3];
     assert.strictEqual(eventLoopDelayMean.dataPointType, DataPointType.GAUGE);
@@ -125,6 +137,9 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopDelayStddev.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayStddev.dataPoints.length, 1);
+    assert.deepStrictEqual(eventLoopDelayStddev.dataPoints[0].attributes, {
+      foo: 'bar',
+    });
 
     const eventLoopDelayP50 = metrics[5];
     assert.strictEqual(eventLoopDelayP50.dataPointType, DataPointType.GAUGE);
@@ -138,6 +153,9 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopDelayP50.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayP50.dataPoints.length, 1);
+    assert.deepStrictEqual(eventLoopDelayP50.dataPoints[0].attributes, {
+      foo: 'bar',
+    });
 
     const eventLoopDelayP95 = metrics[6];
     assert.strictEqual(eventLoopDelayP95.dataPointType, DataPointType.GAUGE);
@@ -151,6 +169,9 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopDelayP95.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayP95.dataPoints.length, 1);
+    assert.deepStrictEqual(eventLoopDelayP95.dataPoints[0].attributes, {
+      foo: 'bar',
+    });
 
     const eventLoopDelayP99 = metrics[7];
     assert.strictEqual(eventLoopDelayP99.dataPointType, DataPointType.GAUGE);
@@ -164,6 +185,9 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopDelayP99.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayP99.dataPoints.length, 1);
+    assert.deepStrictEqual(eventLoopDelayP99.dataPoints[0].attributes, {
+      foo: 'bar',
+    });
 
     const eventLoopUtilization = metrics[8];
     assert.strictEqual(eventLoopUtilization.dataPointType, DataPointType.GAUGE);
@@ -177,6 +201,9 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopUtilization.descriptor.unit, 'percent');
     assert.strictEqual(eventLoopUtilization.dataPoints.length, 1);
+    assert.deepStrictEqual(eventLoopUtilization.dataPoints[0].attributes, {
+      foo: 'bar',
+    });
 
     const eventLoopUtilizationIdle = metrics[9];
     assert.strictEqual(
@@ -193,6 +220,9 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopUtilizationIdle.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopUtilizationIdle.dataPoints.length, 1);
+    assert.deepStrictEqual(eventLoopUtilizationIdle.dataPoints[0].attributes, {
+      foo: 'bar',
+    });
 
     const eventLoopUtilizationActive = metrics[10];
     assert.strictEqual(
@@ -209,5 +239,11 @@ describe('metrics', () => {
     );
     assert.strictEqual(eventLoopUtilizationActive.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopUtilizationActive.dataPoints.length, 1);
+    assert.deepStrictEqual(
+      eventLoopUtilizationActive.dataPoints[0].attributes,
+      {
+        foo: 'bar',
+      }
+    );
   });
 });

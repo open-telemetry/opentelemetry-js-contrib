@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { Attributes } from '@opentelemetry/api';
 
 export interface RuntimeInstrumentationConfig extends InstrumentationConfig {
   /**
@@ -23,4 +24,6 @@ export interface RuntimeInstrumentationConfig extends InstrumentationConfig {
    * @default 10
    */
   monitorEventLoopDelayResolution?: number;
+  /** Function for adding custom metric attributes on all recorded metrics */
+  customMetricAttributes?: () => Attributes;
 }
