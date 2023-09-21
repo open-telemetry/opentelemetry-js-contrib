@@ -3,9 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for some of the [`perf_hooks`](https://nodejs.org/api/perf_hooks.html) perofmance measurement and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
-
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+This module provides automatic instrumentation for some of the [`perf_hooks`](https://nodejs.org/api/perf_hooks.html) performance measurement.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
