@@ -48,6 +48,8 @@ components:
     - blumamir
   plugins/node/instrumentation-mongoose:
     - blumamir
+  plugins/node/instrumentation-runtime:
+    - klippx
   plugins/node/instrumentation-socket.io:
     - mottibec
     - rauno56
