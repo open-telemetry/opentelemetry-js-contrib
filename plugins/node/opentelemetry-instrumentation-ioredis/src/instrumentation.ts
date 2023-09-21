@@ -50,9 +50,10 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         'ioredis',
         ['>1', '<6'],
         (module, moduleVersion?: string) => {
-          const moduleExports = (module[Symbol.toStringTag] === "Module"
-            ? module.default // ESM
-            : module); // CommonJS
+          const moduleExports =
+            module[Symbol.toStringTag] === 'Module'
+              ? module.default // ESM
+              : module; // CommonJS
           diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
@@ -74,9 +75,10 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         },
         module => {
           if (module === undefined) return;
-          const moduleExports = (module[Symbol.toStringTag] === "Module"
-            ? module.default // ESM
-            : module); // CommonJS
+          const moduleExports =
+            module[Symbol.toStringTag] === 'Module'
+              ? module.default // ESM
+              : module; // CommonJS
           diag.debug('Removing patch for ioredis');
           this._unwrap(moduleExports.prototype, 'sendCommand');
           this._unwrap(moduleExports.prototype, 'connect');
