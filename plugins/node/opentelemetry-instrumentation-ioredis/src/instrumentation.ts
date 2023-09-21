@@ -49,7 +49,10 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
       new InstrumentationNodeModuleDefinition<any>(
         'ioredis',
         ['>1', '<6'],
-        (moduleExports, moduleVersion?: string) => {
+        (module, moduleVersion?: string) => {
+          const moduleExports = (module[Symbol.toStringTag] === "Module"
+            ? module.default // ESM
+            : module); // CommonJS
           diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
@@ -67,10 +70,13 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
             'connect',
             this._patchConnection()
           );
-          return moduleExports;
+          return module;
         },
-        moduleExports => {
-          if (moduleExports === undefined) return;
+        module => {
+          if (module === undefined) return;
+          const moduleExports = (module[Symbol.toStringTag] === "Module"
+            ? module.default // ESM
+            : module); // CommonJS
           diag.debug('Removing patch for ioredis');
           this._unwrap(moduleExports.prototype, 'sendCommand');
           this._unwrap(moduleExports.prototype, 'connect');
@@ -84,17 +90,17 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
    */
   private _patchSendCommand(moduleVersion?: string) {
     return (original: Function) => {
-      return this.traceSendCommand(original, moduleVersion);
+      return this._traceSendCommand(original, moduleVersion);
     };
   }
 
   private _patchConnection() {
     return (original: Function) => {
-      return this.traceConnection(original);
+      return this._traceConnection(original);
     };
   }
 
-  private traceSendCommand = (original: Function, moduleVersion?: string) => {
+  private _traceSendCommand(original: Function, moduleVersion?: string) {
     const instrumentation = this;
     return function (this: RedisInterface, cmd?: IORedisCommand) {
       if (arguments.length < 1 || typeof cmd !== 'object') {
@@ -178,9 +184,9 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         throw error;
       }
     };
-  };
+  }
 
-  private traceConnection = (original: Function) => {
+  private _traceConnection(original: Function) {
     const instrumentation = this;
     return function (this: RedisInterface) {
       const config =
@@ -213,5 +219,5 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         throw error;
       }
     };
-  };
+  }
 }
