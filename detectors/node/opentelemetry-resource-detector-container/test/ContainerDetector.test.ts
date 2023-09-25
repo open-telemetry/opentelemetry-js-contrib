@@ -28,7 +28,7 @@ import { ContainerDetector } from '../src';
 describe('ContainerDetector', () => {
   let readStub;
   const correctCgroupV1Data =
-    'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
+    '12:pids:/kubepods.slice/bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
   const correctCgroupV2Data = `tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl/hostname
     fhkjdshgfhsdfjhdsfkjhfkdshkjhfd/host
     sahfhfjkhjhfhjdhfjkdhfkjdhfjkhhdsjfhdfhjdhfkj/somethingelse`;

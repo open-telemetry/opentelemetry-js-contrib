@@ -60,7 +60,6 @@ export function startDocker(db: keyof typeof dockerRunCmds) {
 
 export function cleanUpDocker(db: keyof typeof dockerRunCmds) {
   run(`docker stop otel-${db}`);
-  run(`docker rm otel-${db}`);
 }
 
 function run(cmd: string) {
@@ -68,15 +67,16 @@ function run(cmd: string) {
     const proc = childProcess.spawnSync(cmd, {
       shell: true,
     });
+    const output = Buffer.concat(
+      proc.output.filter(c => c) as Buffer[]
+    ).toString('utf8');
     if (proc.status !== 0) {
       console.error('Failed run command:', cmd);
-      console.error(proc.output);
+      console.error(output);
     }
     return {
       code: proc.status,
-      output: proc.output
-        .map(v => String.fromCharCode.apply(null, v as any))
-        .join(''),
+      output,
     };
   } catch (e) {
     console.log(e);

@@ -15,7 +15,6 @@
  */
 import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
 import type { RouterParamContext } from '@koa/router';
-import type * as Router from '@koa/router';
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
@@ -25,10 +24,6 @@ export enum KoaLayerType {
 }
 
 export type KoaContext = ParameterizedContext<DefaultState, RouterParamContext>;
-
-export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
-  router?: Router;
-};
 
 export type KoaRequestInfo = {
   context: KoaContext;
