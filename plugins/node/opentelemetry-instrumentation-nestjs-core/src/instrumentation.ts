@@ -188,7 +188,8 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
             [AttributeNames.TYPE]: NestType.REQUEST_CONTEXT,
             [SemanticAttributes.HTTP_METHOD]: req.method,
             [SemanticAttributes.HTTP_URL]: req.originalUrl || req.url,
-            [SemanticAttributes.HTTP_ROUTE]: req.route?.path || req.routerPath,
+            [SemanticAttributes.HTTP_ROUTE]:
+              req.route?.path || req.routeOptions?.url || req.routerPath,
             [AttributeNames.CONTROLLER]: instanceName,
             [AttributeNames.CALLBACK]: callbackName,
           },
