@@ -65,7 +65,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.43.0",
-    "@types/bunyan": "1.8.8"
+    "@types/bunyan": "1.8.9"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-bunyan#readme"
 }
