@@ -73,7 +73,10 @@ describe('metrics', () => {
       eventLoopDelay.descriptor.description,
       'Delay of event loop.'
     );
-    assert.strictEqual(eventLoopDelay.descriptor.name, 'node.event_loop_delay');
+    assert.strictEqual(
+      eventLoopDelay.descriptor.name,
+      'nodejs.event_loop_delay'
+    );
     assert.strictEqual(eventLoopDelay.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelay.dataPoints.length, 1);
     assert.deepStrictEqual(eventLoopDelay.dataPoints[0].attributes, {
@@ -88,7 +91,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopDelayMin.descriptor.name,
-      'node.event_loop_delay.min'
+      'nodejs.event_loop_delay.min'
     );
     assert.strictEqual(eventLoopDelayMin.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayMin.dataPoints.length, 1);
@@ -104,7 +107,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopDelayMax.descriptor.name,
-      'node.event_loop_delay.max'
+      'nodejs.event_loop_delay.max'
     );
     assert.strictEqual(eventLoopDelayMax.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayMax.dataPoints.length, 1);
@@ -120,7 +123,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopDelayMean.descriptor.name,
-      'node.event_loop_delay.mean'
+      'nodejs.event_loop_delay.mean'
     );
     assert.strictEqual(eventLoopDelayMean.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayMean.dataPoints.length, 1);
@@ -133,7 +136,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopDelayStddev.descriptor.name,
-      'node.event_loop_delay.stddev'
+      'nodejs.event_loop_delay.stddev'
     );
     assert.strictEqual(eventLoopDelayStddev.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayStddev.dataPoints.length, 1);
@@ -149,7 +152,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopDelayP50.descriptor.name,
-      'node.event_loop_delay.p50'
+      'nodejs.event_loop_delay.p50'
     );
     assert.strictEqual(eventLoopDelayP50.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayP50.dataPoints.length, 1);
@@ -165,7 +168,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopDelayP95.descriptor.name,
-      'node.event_loop_delay.p95'
+      'nodejs.event_loop_delay.p95'
     );
     assert.strictEqual(eventLoopDelayP95.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayP95.dataPoints.length, 1);
@@ -181,7 +184,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopDelayP99.descriptor.name,
-      'node.event_loop_delay.p99'
+      'nodejs.event_loop_delay.p99'
     );
     assert.strictEqual(eventLoopDelayP99.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopDelayP99.dataPoints.length, 1);
@@ -197,7 +200,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopUtilization.descriptor.name,
-      'node.event_loop_utilization'
+      'nodejs.event_loop_utilization'
     );
     assert.strictEqual(eventLoopUtilization.descriptor.unit, 'percent');
     assert.strictEqual(eventLoopUtilization.dataPoints.length, 1);
@@ -216,7 +219,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopUtilizationIdle.descriptor.name,
-      'node.event_loop_utilization.idle'
+      'nodejs.event_loop_utilization.idle'
     );
     assert.strictEqual(eventLoopUtilizationIdle.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopUtilizationIdle.dataPoints.length, 1);
@@ -235,7 +238,7 @@ describe('metrics', () => {
     );
     assert.strictEqual(
       eventLoopUtilizationActive.descriptor.name,
-      'node.event_loop_utilization.active'
+      'nodejs.event_loop_utilization.active'
     );
     assert.strictEqual(eventLoopUtilizationActive.descriptor.unit, 'ms');
     assert.strictEqual(eventLoopUtilizationActive.dataPoints.length, 1);

@@ -14,5 +14,6 @@
  * limitations under the License.
  */
 
+export * from './enums/GaugeNames';
 export * from './instrumentation';
 export * from './types';

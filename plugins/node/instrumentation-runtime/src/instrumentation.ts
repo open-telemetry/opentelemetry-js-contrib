@@ -28,7 +28,7 @@ import {
   hrTimeDuration,
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
-import { AttributeNames } from './enums/AttributeNames';
+import { GaugeNames } from './enums/GaugeNames';
 import { Attributes } from '@opentelemetry/api';
 
 /**
@@ -58,14 +58,21 @@ export class RuntimeInstrumentation extends InstrumentationBase {
   }
 
   private _getCustomMetricAttributes(): Attributes {
-    return this.config.customMetricAttributes
-      ? this.config.customMetricAttributes()
-      : {};
+    if (!this.config.customMetricAttributes) {
+      return {};
+    }
+
+    try {
+      return this.config.customMetricAttributes();
+    } catch (e) {
+      this._diag.warn('an error was thrown in customMetricAttributes', e);
+      return {};
+    }
   }
 
   protected override _updateMetricInstruments() {
     const eventLoopDelayGauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_DELAY,
+      GaugeNames.NODE_EVENT_LOOP_DELAY,
       {
         description: 'Delay of event loop.',
         unit: 'ms',
@@ -73,7 +80,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const eventLoopDelayMinGauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_DELAY_MIN,
+      GaugeNames.NODE_EVENT_LOOP_DELAY_MIN,
       {
         description: 'The minimum recorded event loop delay.',
         unit: 'ms',
@@ -81,7 +88,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const eventLoopDelayMaxGauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_DELAY_MAX,
+      GaugeNames.NODE_EVENT_LOOP_DELAY_MAX,
       {
         description: 'The maximum recorded event loop delay.',
         unit: 'ms',
@@ -89,7 +96,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const eventLoopDelayMeanGauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_DELAY_MEAN,
+      GaugeNames.NODE_EVENT_LOOP_DELAY_MEAN,
       {
         description: 'The mean of the recorded event loop delays.',
         unit: 'ms',
@@ -97,7 +104,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const eventLoopDelayStddevGauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_DELAY_STDDEV,
+      GaugeNames.NODE_EVENT_LOOP_DELAY_STDDEV,
       {
         description:
           'The standard deviation of the recorded event loop delays.',
@@ -106,7 +113,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const eventLoopDelayP50Gauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_DELAY_P50,
+      GaugeNames.NODE_EVENT_LOOP_DELAY_P50,
       {
         description: 'The 50th percentile of the recorded event loop delays.',
         unit: 'ms',
@@ -114,7 +121,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const eventLoopDelayP95Gauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_DELAY_P95,
+      GaugeNames.NODE_EVENT_LOOP_DELAY_P95,
       {
         description: 'The 95th percentile of the recorded event loop delays.',
         unit: 'ms',
@@ -122,7 +129,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const eventLoopDelayP99Gauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_DELAY_P99,
+      GaugeNames.NODE_EVENT_LOOP_DELAY_P99,
       {
         description: 'The 99th percentile of the recorded event loop delays.',
         unit: 'ms',
@@ -146,44 +153,48 @@ export class RuntimeInstrumentation extends InstrumentationBase {
         );
         observable.observe(eventLoopDelayGauge, duration, attributes);
 
+        function nanoSecondToMilliSecond(nanoSecond: number) {
+          return nanoSecond / 1e6;
+        }
+
         observable.observe(
           eventLoopDelayMinGauge,
-          this.eventLoopDelayHistogram.min / 1e6,
+          nanoSecondToMilliSecond(this.eventLoopDelayHistogram.min),
           attributes
         );
         observable.observe(
           eventLoopDelayMaxGauge,
-          this.eventLoopDelayHistogram.max / 1e6,
+          nanoSecondToMilliSecond(this.eventLoopDelayHistogram.max),
           attributes
         );
 
         observable.observe(
           eventLoopDelayMeanGauge,
-          this.eventLoopDelayHistogram.mean / 1e6,
+          nanoSecondToMilliSecond(this.eventLoopDelayHistogram.mean),
           attributes
         );
 
         observable.observe(
           eventLoopDelayStddevGauge,
-          this.eventLoopDelayHistogram.stddev / 1e6,
+          nanoSecondToMilliSecond(this.eventLoopDelayHistogram.stddev),
           attributes
         );
 
         observable.observe(
           eventLoopDelayP50Gauge,
-          this.eventLoopDelayHistogram.percentile(50) / 1e6,
+          nanoSecondToMilliSecond(this.eventLoopDelayHistogram.percentile(50)),
           attributes
         );
 
         observable.observe(
           eventLoopDelayP95Gauge,
-          this.eventLoopDelayHistogram.percentile(95) / 1e6,
+          nanoSecondToMilliSecond(this.eventLoopDelayHistogram.percentile(95)),
           attributes
         );
 
         observable.observe(
           eventLoopDelayP99Gauge,
-          this.eventLoopDelayHistogram.percentile(99) / 1e6,
+          nanoSecondToMilliSecond(this.eventLoopDelayHistogram.percentile(99)),
           attributes
         );
       },
@@ -200,7 +211,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const loopUtilizationGauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_UTILIZATION,
+      GaugeNames.NODE_EVENT_LOOP_UTILIZATION,
       {
         description: 'The percentage utilization of the event loop.',
         unit: 'percent',
@@ -208,7 +219,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const loopIdleGauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_UTILIZATION_IDLE,
+      GaugeNames.NODE_EVENT_LOOP_UTILIZATION_IDLE,
       {
         description: 'The idle time utilization of event loop.',
         unit: 'ms',
@@ -216,7 +227,7 @@ export class RuntimeInstrumentation extends InstrumentationBase {
     );
 
     const loopActiveGauge = this.meter.createObservableGauge(
-      AttributeNames.NODE_EVENT_LOOP_UTILIZATION_ACTIVE,
+      GaugeNames.NODE_EVENT_LOOP_UTILIZATION_ACTIVE,
       {
         description: 'The active time utilization of event loop.',
         unit: 'ms',
