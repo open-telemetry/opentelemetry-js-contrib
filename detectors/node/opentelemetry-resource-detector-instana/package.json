@@ -44,7 +44,7 @@
     "@opentelemetry/sdk-node": "^0.43.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.6.5",
-    "@types/semver": "7.5.1",
+    "@types/semver": "7.5.2",
     "mocha": "7.2.0",
     "nock": "13.3.3",
     "nyc": "15.1.0",

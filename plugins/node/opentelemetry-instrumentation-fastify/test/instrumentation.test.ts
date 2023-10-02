@@ -27,7 +27,6 @@ import {
 import { Span } from '@opentelemetry/api';
 import * as http from 'http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { ANONYMOUS_NAME } from '../src/instrumentation';
 import { AttributeNames, FastifyInstrumentation } from '../src';
 import { FastifyRequestInfo } from '../src/types';
 
@@ -152,7 +151,10 @@ describe('fastify', () => {
         'plugin.name': 'fastify -> @fastify/express',
         [SemanticAttributes.HTTP_ROUTE]: '/test',
       });
-      assert.strictEqual(span.name, `request handler - ${ANONYMOUS_NAME}`);
+      assert.strictEqual(
+        span.name,
+        'request handler - fastify -> @fastify/express'
+      );
       const baseSpan = spans[1];
       assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
     });
@@ -290,7 +292,7 @@ describe('fastify', () => {
         assert.strictEqual(spans.length, 6);
         const baseSpan = spans[1];
         const span = spans[2];
-        assert.strictEqual(span.name, `middleware - ${ANONYMOUS_NAME}`);
+        assert.strictEqual(span.name, 'middleware - subsystem');
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
           'plugin.name': 'subsystem',
@@ -307,7 +309,7 @@ describe('fastify', () => {
 
         assert.strictEqual(spans.length, 6);
         const span = spans[3];
-        assert.strictEqual(span.name, 'request handler - anonymous');
+        assert.strictEqual(span.name, 'request handler - subsystem');
         assert.deepStrictEqual(span.status, {
           code: SpanStatusCode.ERROR,
           message: 'foo',

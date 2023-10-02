@@ -116,9 +116,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
         return original.apply(this, args);
       }
 
-      const spanName = `${FastifyNames.MIDDLEWARE} - ${
-        original.name || ANONYMOUS_NAME
-      }`;
+      const name = original.name || pluginName || ANONYMOUS_NAME;
+      const spanName = `${FastifyNames.MIDDLEWARE} - ${name}`;
 
       const reply = args[1] as PluginFastifyReply;
 
@@ -263,7 +262,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
       const requestContext = (request as any).context || {};
       const handlerName = (requestContext.handler?.name || '').substr(6);
       const spanName = `${FastifyNames.REQUEST_HANDLER} - ${
-        handlerName || ANONYMOUS_NAME
+        handlerName || this.pluginName || ANONYMOUS_NAME
       }`;
 
       const spanAttributes: SpanAttributes = {
