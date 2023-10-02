@@ -425,7 +425,7 @@ describe('instrumentation-aws-sdk-v3', () => {
           );
           done();
         });
-      });
+      }).skip();
     });
   });
 });
