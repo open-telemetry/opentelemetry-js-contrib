@@ -56,7 +56,7 @@
     "@types/amqplib": "^0.5.17",
     "@types/lodash": "4.14.199",
     "@types/mocha": "8.2.3",
-    "@types/sinon": "10.0.16",
+    "@types/sinon": "10.0.18",
     "@types/node": "18.6.5",
     "amqplib": "0.8.0",
     "expect": "29.2.0",
