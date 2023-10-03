@@ -77,4 +77,3 @@ Bridge API. This means that if the OpenTelemetry SDK has been configured with
 a Logger Provider, it will receive them. (If the OpenTelemetry SDK is not
 configured for this, then the added Bunyan stream will be a no-op.) Lines 2
 and 4 show a dumped OpenTelemetry Log Record.
-
