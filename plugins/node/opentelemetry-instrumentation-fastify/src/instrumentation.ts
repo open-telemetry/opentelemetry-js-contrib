@@ -102,6 +102,22 @@ export class FastifyInstrumentation extends InstrumentationBase {
     };
   }
 
+  private _hookOnError() {
+    const instrumentation = this;
+
+    return (request: any, reply: any, error: Error, done: () => void) => {
+      if (!instrumentation.isEnabled()) {
+        return done();
+      }
+
+      const onError = instrumentation.getConfig().onError;
+      if (onError) {
+        onError(request, reply, error);
+      }
+      done();
+    };
+  }
+
   private _wrapHandler(
     pluginName: string,
     hookName: string,
@@ -206,6 +222,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
       const app: FastifyInstance = moduleExports.fastify.apply(this, args);
       app.addHook('onRequest', instrumentation._hookOnRequest());
       app.addHook('preHandler', instrumentation._hookPreHandler());
+      app.addHook('onError', instrumentation._hookOnError());
 
       instrumentation._wrap(app, 'addHook', instrumentation._wrapAddHook());
 

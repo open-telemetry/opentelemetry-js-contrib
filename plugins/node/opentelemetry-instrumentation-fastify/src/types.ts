@@ -30,10 +30,16 @@ export interface FastifyCustomAttributeFunction {
   (span: Span, info: FastifyRequestInfo): void;
 }
 
+export interface FastifyOnErrorFunction {
+  (request: any, reply: any, error: Error): void;
+}
+
 /**
  * Options available for the Fastify Instrumentation
  */
 export interface FastifyInstrumentationConfig extends InstrumentationConfig {
   /** Function for adding custom attributes to each handler span */
   requestHook?: FastifyCustomAttributeFunction;
+  /** Function to call when an error is captured by Fastify. */
+  onError?: FastifyOnErrorFunction;
 }

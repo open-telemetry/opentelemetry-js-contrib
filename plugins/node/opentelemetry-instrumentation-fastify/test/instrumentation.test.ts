@@ -498,5 +498,30 @@ describe('fastify', () => {
         });
       });
     });
+
+    describe('using onError in config', () => {
+      it('calls onError provided function when set in config', async () => {
+        const errors: Error[] = [];
+
+        const onError = (request: unknown, res: unknown, error: Error) => {
+          console.log('on error');
+          errors.push(error);
+        };
+
+        instrumentation.setConfig({
+          ...instrumentation.getConfig(),
+          onError,
+        });
+
+        app.get('/test', (req, res) => {
+          throw new Error('test error here');
+        });
+
+        await startServer();
+        await httpRequest.get(`http://localhost:${PORT}/test`);
+
+        assert.deepEqual(errors, [new Error('test error here')]);
+      });
+    });
   });
 });
