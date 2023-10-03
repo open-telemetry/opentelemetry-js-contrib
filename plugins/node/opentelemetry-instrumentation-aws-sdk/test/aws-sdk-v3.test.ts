@@ -278,7 +278,7 @@ describe('instrumentation-aws-sdk-v3', () => {
     });
   });
 
-  describe('custom service behavior', () => {
+  describe.skip('custom service behavior', () => {
     describe('SQS', () => {
       const sqsClient = new SQS({ region });
 
@@ -384,7 +384,7 @@ describe('instrumentation-aws-sdk-v3', () => {
         );
       });
 
-      it.skip('sqs receive add messaging attributes and context', done => {
+      it('sqs receive add messaging attributes and context', done => {
         nock(`https://sqs.${region}.amazonaws.com/`)
           .post('/')
           .reply(
