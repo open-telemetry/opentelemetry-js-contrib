@@ -384,7 +384,7 @@ describe('instrumentation-aws-sdk-v3', () => {
         );
       });
 
-      it('sqs receive add messaging attributes and context', done => {
+      it.skip('sqs receive add messaging attributes and context', done => {
         nock(`https://sqs.${region}.amazonaws.com/`)
           .post('/')
           .reply(
@@ -425,7 +425,7 @@ describe('instrumentation-aws-sdk-v3', () => {
           );
           done();
         });
-      }).skip();
+      });
     });
   });
 });
