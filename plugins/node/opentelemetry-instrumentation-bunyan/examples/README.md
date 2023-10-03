@@ -4,7 +4,7 @@ This is a small example app, "app.js", that shows using the
 
 # Usage
 
-```
+```bash
 npm install
 node -r ./telemetry.js app.js
 ```
@@ -18,7 +18,7 @@ analysis.
 
 An example run looks like this:
 
-```
+```bash
 $ node -r ./telemetry.js app.js
 {"name":"myapp","hostname":"amachine.local","pid":93017,"level":20,"msg":"hi","time":"2023-09-27T23:24:06.074Z","v":0}
 {
