@@ -429,7 +429,7 @@ describe('redis@^4.0.0', () => {
       assert.ok(endTimeDiff < 10); // spans should all end together when multi response arrives from redis server
     });
 
-    it('WatchErrors are caught and handled as expected', async () => {
+    it('WatchErrors are caught and handled as expected when triggered from a multi exec', async () => {
       // Arrange
       const watchedKey = 'watched-key';
 
