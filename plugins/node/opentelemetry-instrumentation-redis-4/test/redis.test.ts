@@ -17,32 +17,32 @@ import {
   getTestSpans,
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
-import { RedisInstrumentation } from '../src';
 import * as assert from 'assert';
+import { RedisInstrumentation } from '../src';
 
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   redisTestConfig,
   redisTestUrl,
   shouldTest,
   shouldTestLocal,
 } from './utils';
-import * as testUtils from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
-import { createClient } from 'redis';
 import {
   Span,
   SpanKind,
   SpanStatusCode,
-  trace,
   context,
+  trace,
 } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { RedisResponseCustomAttributeFunction } from '../src/types';
 import { hrTimeToMilliseconds, suppressTracing } from '@opentelemetry/core';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { RedisClientType, WatchError, createClient } from 'redis';
+import { RedisResponseCustomAttributeFunction } from '../src/types';
 
 describe('redis@^4.0.0', () => {
   before(function () {
@@ -65,7 +65,7 @@ describe('redis@^4.0.0', () => {
     }
   });
 
-  let client: any;
+  let client: RedisClientType;
 
   beforeEach(async () => {
     client = createClient({
@@ -427,6 +427,25 @@ describe('redis@^4.0.0', () => {
         hrTimeToMilliseconds(multiGetSpan.endTime) -
         hrTimeToMilliseconds(multiSetSpan.endTime);
       assert.ok(endTimeDiff < 10); // spans should all end together when multi response arrives from redis server
+    });
+
+    it('WatchErrors are caught and handled as expected', async () => {
+      // Arrange
+      const watchedKey = 'watched-key';
+
+      await client.watch(watchedKey);
+
+      // Act
+      await client.set(watchedKey, 'a different value');
+      const multiCommand = client.multi().get(watchedKey);
+
+      // Assert
+      try {
+        await multiCommand.exec();
+        assert.fail('expected WatchError to be thrown and caught in try/catch');
+      } catch (error) {
+        assert.ok(error instanceof WatchError);
+      }
     });
 
     it('response hook for multi commands', async () => {

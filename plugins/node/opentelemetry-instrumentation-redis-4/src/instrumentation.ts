@@ -15,24 +15,24 @@
  */
 
 import {
+  Span,
+  SpanKind,
+  SpanStatusCode,
+  context,
   diag,
   trace,
-  context,
-  SpanKind,
-  Span,
-  SpanStatusCode,
 } from '@opentelemetry/api';
 import {
-  isWrapped,
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
+  isWrapped,
 } from '@opentelemetry/instrumentation';
-import { getClientAttributes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
-import { RedisInstrumentationConfig } from './types';
-import { VERSION } from './version';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { RedisInstrumentationConfig } from './types';
+import { getClientAttributes } from './utils';
+import { VERSION } from './version';
 
 const OTEL_OPEN_SPANS = Symbol(
   'opentelemetry.instruemntation.redis.open_spans'
@@ -268,51 +268,60 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
 
   private _getPatchMultiCommandsExec() {
     const plugin = this;
+
     return function execPatchWrapper(original: Function) {
       return function execPatch(this: any) {
-        const execRes = original.apply(this, arguments);
-        if (typeof execRes?.then !== 'function') {
+        const originalExecResult = original.apply(this, arguments);
+
+        if (typeof originalExecResult?.then !== 'function') {
           plugin._diag.error(
-            'got non promise result when patching RedisClientMultiCommand.exec'
+            'got non-promise result when patching RedisClientMultiCommand.exec'
           );
-          return execRes;
+          return originalExecResult;
         }
 
-        execRes.then((redisRes: unknown[]) => {
-          const openSpans = this[OTEL_OPEN_SPANS];
-          if (!openSpans) {
-            return plugin._diag.error(
-              'cannot find open spans to end for redis multi command'
-            );
-          }
-          if (redisRes.length !== openSpans.length) {
-            return plugin._diag.error(
-              'number of multi command spans does not match response from redis'
-            );
-          }
-          for (let i = 0; i < openSpans.length; i++) {
-            const { span, commandName, commandArgs } = openSpans[i];
-            const currCommandRes = redisRes[i];
-            if (currCommandRes instanceof Error) {
-              plugin._endSpanWithResponse(
-                span,
-                commandName,
-                commandArgs,
-                null,
-                currCommandRes
-              );
-            } else {
-              plugin._endSpanWithResponse(
-                span,
-                commandName,
-                commandArgs,
-                currCommandRes,
-                undefined
+        originalExecResult
+          .then((redisRes: unknown[]) => {
+            const openSpans = this[OTEL_OPEN_SPANS];
+
+            if (!openSpans) {
+              return plugin._diag.error(
+                'cannot find open spans to end for redis multi command'
               );
             }
-          }
-        });
-        return execRes;
+
+            if (redisRes.length !== openSpans.length) {
+              return plugin._diag.error(
+                'number of multi command spans does not match response from redis'
+              );
+            }
+
+            for (const i in openSpans) {
+              const { span, commandName, commandArgs } = openSpans[i];
+              const currCommandRes = redisRes[i];
+
+              if (currCommandRes instanceof Error) {
+                plugin._endSpanWithResponse(
+                  span,
+                  commandName,
+                  commandArgs,
+                  null,
+                  currCommandRes
+                );
+              } else {
+                plugin._endSpanWithResponse(
+                  span,
+                  commandName,
+                  commandArgs,
+                  currCommandRes,
+                  undefined
+                );
+              }
+            }
+          })
+          .catch(() => {});
+
+        return originalExecResult;
       };
     };
   }
