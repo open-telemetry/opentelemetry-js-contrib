@@ -184,6 +184,13 @@ export type V4Connection = {
   ): void;
 };
 
+// https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection_pool.ts
+export type V4ConnectionPool = {
+  // Instrumentation jsut cares about carrying the async context so
+  // types of callback params are not needed
+  checkOut: (callback: (error: any, connection: any) => void) => void;
+};
+
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connect.ts
 export type V4Connect = {
   connect: (options: any, callback: any) => void;
