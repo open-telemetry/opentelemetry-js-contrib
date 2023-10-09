@@ -324,6 +324,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     };
   }
 
+  // This is a pack to avoid loosing the async context when the
+  // ConnecitonPool class queues an operation while witing for
+  // an available connection. This shouuld be revoved when
+  // https://jira.mongodb.org/browse/NODE-5639 is done.
   private _getV4ConnectionPoolCheckOut() {
     return (original: V4ConnectionPool['checkOut']) => {
       return function patchedCheckout(this: unknown, callback: any) {
