@@ -1,0 +1,5 @@
+"fastify":
+  - versions: "4.23.2"
+    commands: npm run test
+"typescript":
+  - versions: "4.7.4"
