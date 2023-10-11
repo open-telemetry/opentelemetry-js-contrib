@@ -30,6 +30,20 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
 
+## [0.3.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.3.1...resource-detector-container-v0.3.2) (2023-10-10)
+
+
+### Bug Fixes
+
+* Update defect of of wrong resource attribute of "container.id" ([#1682](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1682)) ([5675c49](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5675c49b2b58e6b159a47d1a9ff5b00bc30a94a0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.1 to ^0.34.2
+
 ## [0.3.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.3.0...resource-detector-container-v0.3.1) (2023-08-14)
 
 
