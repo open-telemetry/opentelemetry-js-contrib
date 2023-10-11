@@ -73,7 +73,7 @@ describe('SNS - v2', () => {
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${topicName} send`
+        (s: ReadableSpan) => s.name === `${fakeARN} send`
       );
       expect(publishSpans.length).toBe(1);
 
@@ -83,7 +83,7 @@ describe('SNS - v2', () => {
       ).toBe(MessagingDestinationKindValues.TOPIC);
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-      ).toBe(topicName);
+      ).toBe(fakeARN);
       expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe(
         'Publish'
       );
@@ -128,7 +128,7 @@ describe('SNS - v2', () => {
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${topicName} send`
+        (s: ReadableSpan) => s.name === `${fakeARN} send`
       );
       expect(publishSpans.length).toBe(1);
       expect(
@@ -186,13 +186,15 @@ describe('SNS - v3', () => {
   describe('publish', () => {
     it('topic arn', async () => {
       const topicV3Name = 'dummy-sns-v3-topic';
+      const topicV3ARN = `arn:aws:sns:us-east-1:000000000:${topicV3Name}`;
+
       await sns.publish({
         Message: 'sns message',
-        TopicArn: `arn:aws:sns:us-east-1:000000000:${topicV3Name}`,
+        TopicArn: topicV3ARN,
       });
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${topicV3Name} send`
+        (s: ReadableSpan) => s.name === `${topicV3ARN} send`
       );
       expect(publishSpans.length).toBe(1);
 
@@ -202,7 +204,7 @@ describe('SNS - v3', () => {
       ).toBe(MessagingDestinationKindValues.TOPIC);
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-      ).toBe(topicV3Name);
+      ).toBe(topicV3ARN);
       expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe(
         'Publish'
       );
