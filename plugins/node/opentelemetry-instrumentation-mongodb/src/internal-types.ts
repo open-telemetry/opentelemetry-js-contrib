@@ -56,6 +56,7 @@ export type MongoInternalCommand = {
   findandmodify: boolean;
   createIndexes: boolean;
   count: boolean;
+  aggregate: boolean;
   ismaster: boolean;
   indexes?: unknown[];
   query?: Record<string, unknown>;
@@ -166,6 +167,7 @@ export enum MongodbCommandType {
   FIND_AND_MODIFY = 'findAndModify',
   IS_MASTER = 'isMaster',
   COUNT = 'count',
+  AGGREGATE = 'aggregate',
   UNKNOWN = 'unknown',
 }
 
