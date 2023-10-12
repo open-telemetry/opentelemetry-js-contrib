@@ -25,8 +25,17 @@ diag.setLogger(
   opentelemetry.core.getEnv().OTEL_LOG_LEVEL
 );
 
+const disabledAutoinstrumentations = (
+  process.env.OTEL_DISABLED_AUTOINSTRUMENTATIONS ?? ''
+).split(',');
+
 const sdk = new opentelemetry.NodeSDK({
-  instrumentations: getNodeAutoInstrumentations(),
+  instrumentations: getNodeAutoInstrumentations(
+    Object.fromEntries(
+    disabledAutoinstrumentations.map(instrumentationName =>
+      [instrumentationName, { enabled: false }]
+    ))
+  ),
   resourceDetectors: getResourceDetectorsFromEnv(),
 });
 
