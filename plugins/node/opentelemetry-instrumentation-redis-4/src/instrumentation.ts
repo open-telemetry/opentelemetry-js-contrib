@@ -166,23 +166,30 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         this._diag.debug('Patching redis client');
         const redisClientPrototype = moduleExports?.default?.prototype;
 
-        if (isWrapped(redisClientPrototype?.multi)) {
-          this._unwrap(redisClientPrototype, 'multi');
+        // In some @redis/client versions 'multi' is a method. In later
+        // versions, as of https://github.com/redis/node-redis/pull/2324,
+        // 'MULTI' is a method and 'multi' is a property defined in the
+        // constructor that points to 'MULTI'.
+        if (redisClientPrototype?.multi) {
+          if (isWrapped(redisClientPrototype?.multi)) {
+            this._unwrap(redisClientPrototype, 'multi');
+          }
+          this._wrap(
+            redisClientPrototype,
+            'multi',
+            this._getPatchRedisClientMulti()
+          );
         }
-        this._wrap(
-          redisClientPrototype,
-          'multi',
-          this._getPatchRedisClientMulti()
-        );
-
-        if (isWrapped(redisClientPrototype?.MULTI)) {
-          this._unwrap(redisClientPrototype, 'MULTI');
+        if (redisClientPrototype?.MULTI) {
+          if (isWrapped(redisClientPrototype?.MULTI)) {
+            this._unwrap(redisClientPrototype, 'MULTI');
+          }
+          this._wrap(
+            redisClientPrototype,
+            'MULTI',
+            this._getPatchRedisClientMulti()
+          );
         }
-        this._wrap(
-          redisClientPrototype,
-          'MULTI',
-          this._getPatchRedisClientMulti()
-        );
 
         if (isWrapped(redisClientPrototype?.sendCommand)) {
           this._unwrap(redisClientPrototype, 'sendCommand');
