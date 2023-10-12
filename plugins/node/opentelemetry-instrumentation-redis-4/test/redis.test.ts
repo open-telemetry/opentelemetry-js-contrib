@@ -32,7 +32,7 @@ const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
-import { createClient } from 'redis';
+import { createClient, WatchError } from 'redis';
 import {
   Span,
   SpanKind,
@@ -395,6 +395,26 @@ describe('redis@^4.0.0', () => {
       assert.strictEqual(
         multiIncrSpan.status.message,
         'ERR value is not an integer or out of range'
+      );
+    });
+
+    it('multi command that rejects', async () => {
+      const watchedKey = 'watched-key';
+      await client.watch(watchedKey);
+      await client.set(watchedKey, 'a different value');
+      try {
+        await client.multi().get(watchedKey).exec();
+        assert.fail('expected WatchError to be thrown and caught in try/catch');
+      } catch (error) {
+        assert.ok(error instanceof WatchError);
+      }
+
+      // All the multi spans' status are set to ERROR.
+      const [_watchSpan, _setSpan, multiGetSpan] = getTestSpans();
+      assert.strictEqual(multiGetSpan?.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(
+        multiGetSpan?.status.message,
+        'One (or more) of the watched keys has been changed'
       );
     });
 
