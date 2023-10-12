@@ -169,7 +169,8 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         // In some @redis/client versions 'multi' is a method. In later
         // versions, as of https://github.com/redis/node-redis/pull/2324,
         // 'MULTI' is a method and 'multi' is a property defined in the
-        // constructor that points to 'MULTI'.
+        // constructor that points to 'MULTI', and therefore it will not
+        // be defined on the prototype.
         if (redisClientPrototype?.multi) {
           if (isWrapped(redisClientPrototype?.multi)) {
             this._unwrap(redisClientPrototype, 'multi');
