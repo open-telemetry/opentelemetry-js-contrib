@@ -19,31 +19,58 @@ import * as os from 'os';
 import { CpuUsageData, MemoryData, ProcessCpuUsageData } from '../types';
 
 const MILLISECOND = 1 / 1e3;
-let cpuUsageTime: number | undefined = undefined;
+const MICROSECOND = 1 / 1e6;
+
+let prevOsData: { time: number, cpus: os.CpuInfo[] };
 
 /**
- * It returns cpu load delta from last time - to be used with SumObservers.
- * When called first time it will return 0 and then delta will be calculated
+ * For each CPU returned by `os.cpus()` it returns
+ * - the CPU times in each state (user, sys, ...) in seconds
+ * - the % of time the CPU was in each state since last measurement
+ * 
+ * The first time will return 0 for % masurements since there is not enough
+ * data to calculate it
  */
 export function getCpuUsageData(): CpuUsageData[] {
-  if (typeof cpuUsageTime !== 'number') {
-    cpuUsageTime = new Date().getTime() - process.uptime() * 1000;
+  if (typeof prevOsData !== 'object') {
+    const time = Date.now();
+    const cpus = os.cpus();
+    prevOsData = { time, cpus };
+
+    return cpus.map((cpu, cpuNumber) => ({
+      cpuNumber: String(cpuNumber),
+      idle: cpu.times.idle * MILLISECOND,
+      user: cpu.times.user * MILLISECOND,
+      system: cpu.times.sys * MILLISECOND,
+      interrupt: cpu.times.irq * MILLISECOND,
+      nice: cpu.times.nice * MILLISECOND,
+      userP: 0,
+      systemP: 0,
+      idleP: 0,
+      interruptP: 0,
+      niceP: 0,
+    }))
   }
 
-  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000;
+  const currentTime = Date.now();
+  const timeElapsed = currentTime - prevOsData.time;
+  const currentCpus = { time: currentTime, cpus: os.cpus() };
 
-  return os.cpus().map((cpu, cpuNumber) => {
-    const idle = cpu.times.idle * MILLISECOND;
-    const user = cpu.times.user * MILLISECOND;
-    const system = cpu.times.sys * MILLISECOND;
-    const interrupt = cpu.times.irq * MILLISECOND;
-    const nice = cpu.times.nice * MILLISECOND;
+  const usageData = currentCpus.cpus.map((cpu, cpuNumber) => {
+    const prevTimes = prevOsData.cpus[cpuNumber].times;
+    const currTimes = cpu.times;
 
-    const idleP = idle / timeElapsed;
-    const userP = user / timeElapsed;
-    const systemP = system / timeElapsed;
-    const interruptP = interrupt / timeElapsed;
-    const niceP = nice / timeElapsed;
+    const idle = currTimes.idle * MILLISECOND;
+    const user = currTimes.user * MILLISECOND;
+    const system = currTimes.sys * MILLISECOND;
+    const interrupt = currTimes.irq * MILLISECOND;
+    const nice = currTimes.nice * MILLISECOND;
+
+    const idleP = (currTimes.idle - prevTimes.idle) / timeElapsed;
+    const userP = (currTimes.user - prevTimes.user) / timeElapsed;
+    const systemP = (currTimes.sys - prevTimes.sys) / timeElapsed;
+    const interruptP = (currTimes.irq - prevTimes.irq) / timeElapsed;
+    const niceP = (currTimes.nice - prevTimes.nice) / timeElapsed;
 
     return {
       cpuNumber: String(cpuNumber),
@@ -59,22 +86,54 @@ export function getCpuUsageData(): CpuUsageData[] {
       niceP,
     };
   });
+
+  prevOsData = currentCpus;
+
+  return usageData;
 }
 
+let prevProcessData: { time: number, usage: NodeJS.CpuUsage };
+
 /**
- * It returns process cpu load delta from last time - to be used with SumObservers.
- * When called first time it will return 0 and then delta will be calculated
+ * It will return process usage information
+ * - the CPU times in each state (user, system) in seconds
+ * - the % of time the CPU was in each state since last measurement
+ * 
+ * The first time will return 0 as value for % since it needs previous
+ * measurement to do the calculation.
  */
 export function getProcessCpuUsageData(): ProcessCpuUsageData {
-  if (typeof cpuUsageTime !== 'number') {
-    cpuUsageTime = new Date().getTime() - process.uptime() * 1000;
+  if (typeof prevProcessData !== 'object') {
+    const usage = process.cpuUsage()
+    const time = Date.now();
+
+    prevProcessData = { time, usage };
+
+    return {
+      user: usage.user * MICROSECOND,
+      system: usage.system * MICROSECOND,
+      userP: 0,
+      systemP: 0,
+    };
   }
-  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000;
-  const cpuUsage: NodeJS.CpuUsage = process.cpuUsage();
-  const user = cpuUsage.user * MILLISECOND;
-  const system = cpuUsage.system * MILLISECOND;
-  const userP = user / timeElapsed;
-  const systemP = system / timeElapsed;
+
+  const currentTime = Date.now();
+  const timeElapsed = currentTime - prevProcessData.time;
+  const currUsage = process.cpuUsage();
+  const prevUsage = prevProcessData.usage;
+
+  console.log('update processUsageData', timeElapsed);
+  
+  const user = currUsage.user * MICROSECOND;
+  const system = currUsage.system * MICROSECOND;
+
+  // Note: Date times are in miliseconds and `cpuUsage()` returns
+  // microseconds. We nedd to have same unit for calculation
+  const userP = (currUsage.user - prevUsage.user) / timeElapsed * MILLISECOND;
+  const systemP = (currUsage.system - prevUsage.system) / timeElapsed * MILLISECOND;
+
+  prevProcessData = { time: currentTime, usage: currUsage };
+
   return {
     user,
     system,
