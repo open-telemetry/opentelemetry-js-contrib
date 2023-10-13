@@ -190,7 +190,7 @@ describe('fastify', () => {
         async function subsystem(fastify: FastifyInstance) {
           fastify.addHook(
             'onRequest',
-            async (
+            (
               req: FastifyRequest,
               res: FastifyReply,
               next: HookHandlerDoneFunction

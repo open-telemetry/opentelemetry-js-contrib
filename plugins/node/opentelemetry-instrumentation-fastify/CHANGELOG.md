@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.32.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.2...instrumentation-fastify-v0.32.3) (2023-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#1687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1687)) ([47301c0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/47301c038e4dc7d24797cb0b8426033ecc0374e6))
+* **deps:** update otel core experimental to v0.43.0 ([#1676](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1676)) ([deb9aa4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/deb9aa441dc7d2b0fd5ec11b41c934a1e93134fd))
+* **deps:** update otel core experimental to v0.44.0 ([#1725](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1725)) ([540a0d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/540a0d1ff5641522abba560d59a298084f786630))
+* **fastify:** Use plugin name for middleware span name ([#1680](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1680)) ([4503d3e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4503d3efe98c0b440582101df69a6df49a6cdb97))
+* **instrumentation-fastify:** add tav script ([#1710](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1710)) ([52dd42d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/52dd42d4748f6aef43988e62f464d95b808a06a6))
+* Removed deprecated properties usage in Fastify instrumentation ([#1679](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1679)) ([d3328f8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3328f8f55c6e3e2e7405a8e499d50555e9bec1a))
+
 ## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.1...instrumentation-fastify-v0.32.2) (2023-08-30)
 
 
