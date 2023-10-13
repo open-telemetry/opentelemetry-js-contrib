@@ -51,13 +51,13 @@ const CONFIG = {
   port: parseInt(process.env.OPENTELEMETRY_REDIS_PORT || '63790', 10),
 };
 
-const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
+const REDIS_URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
-  [SemanticAttributes.DB_CONNECTION_STRING]: URL,
+  [SemanticAttributes.DB_CONNECTION_STRING]: REDIS_URL,
 };
 
 const unsetStatus: SpanStatus = {
@@ -168,7 +168,7 @@ describe('ioredis', () => {
       };
 
       context.with(trace.setSpan(context.active(), span), () => {
-        client = new ioredis(URL);
+        client = new ioredis(REDIS_URL);
         client.on('ready', readyHandler);
         client.on('error', errorHandler);
       });
@@ -209,7 +209,7 @@ describe('ioredis', () => {
     ];
 
     before(done => {
-      client = new ioredis(URL);
+      client = new ioredis(REDIS_URL);
       client.on('error', err => {
         done(err);
       });
@@ -376,9 +376,9 @@ describe('ioredis', () => {
           try {
             // use lazyConnect so we can call the `connect` function and await it.
             // this ensures that all operations are sequential and predictable.
-            const pub = new ioredis(URL, { lazyConnect: true });
+            const pub = new ioredis(REDIS_URL, { lazyConnect: true });
             await pub.connect();
-            const sub = new ioredis(URL, { lazyConnect: true });
+            const sub = new ioredis(REDIS_URL, { lazyConnect: true });
             await sub.connect();
             await sub.subscribe('news', 'music');
             await pub.publish('news', 'Hello world!');
@@ -645,7 +645,7 @@ describe('ioredis', () => {
       });
 
       it('should not create child span for connect', async () => {
-        const lazyClient = new ioredis(URL, { lazyConnect: true });
+        const lazyClient = new ioredis(REDIS_URL, { lazyConnect: true });
         await lazyClient.connect();
         const spans = memoryExporter.getFinishedSpans();
         await lazyClient.quit();
@@ -684,7 +684,7 @@ describe('ioredis', () => {
         };
         instrumentation.setConfig(config);
 
-        const lazyClient = new ioredis(URL, { lazyConnect: true });
+        const lazyClient = new ioredis(REDIS_URL, { lazyConnect: true });
         await lazyClient.connect();
         const endedSpans = memoryExporter.getFinishedSpans();
         assert.strictEqual(endedSpans.length, 2);
@@ -723,7 +723,7 @@ describe('ioredis', () => {
         };
         instrumentation.setConfig(config);
 
-        const lazyClient = new ioredis(URL, { lazyConnect: true });
+        const lazyClient = new ioredis(REDIS_URL, { lazyConnect: true });
         await lazyClient.connect();
         const endedSpans = memoryExporter.getFinishedSpans();
         assert.strictEqual(endedSpans.length, 0);
@@ -999,4 +999,244 @@ describe('ioredis', () => {
       });
     });
   });
+
+  it('should work with ESM usage', async () => {
+    await runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-ioredis.mjs', REDIS_URL],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: TestCollector) => {
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans[0].name, 'manual');
+        assert.strictEqual(spans[1].name, 'set');
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'get');
+        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+      },
+    });
+  });
 });
+
+// ---
+// TODO: Move everything below here to @opentelemetry/contrib-test-utils.
+// ---
+
+import { IncomingMessage, ServerResponse, createServer } from 'http';
+import type { AddressInfo } from 'net';
+import { URL } from 'url';
+import { createGunzip } from 'zlib';
+
+import {
+  IInstrumentationScope,
+  IResource,
+  ISpan,
+} from '@opentelemetry/otlp-transformer';
+
+// TestSpan is an OTLP span plus references to `resource` and
+// `instrumentationScope` that are shared between multiple spans in the
+// protocol.
+type TestSpan = ISpan & {
+  resource: IResource;
+  instrumentationScope: IInstrumentationScope;
+};
+
+/**
+ * A minimal HTTP server that can act as an OTLP HTTP/JSON protocol collector.
+ * It stores the received data for later test assertions.
+ *
+ * Limitations: This only supports traces so far, no metrics or logs.
+ * There is little error checking here; we are assuming valid OTLP.
+ */
+class TestCollector {
+  endpointUrl?: string;
+  spans: Array<TestSpan> = [];
+  private _http;
+
+  constructor() {
+    this.clear();
+    this._http = createServer(this._onRequest.bind(this));
+  }
+
+  clear() {
+    this.spans = [];
+  }
+
+  // Start listening and set address to `endpointUrl`.
+  async start(): Promise<void> {
+    return new Promise(resolve => {
+      this._http.listen(() => {
+        this.endpointUrl = `http://localhost:${
+          (this._http.address() as AddressInfo).port
+        }`;
+        resolve();
+      });
+    });
+  }
+
+  close() {
+    this.endpointUrl = undefined;
+    return this._http.close();
+  }
+
+  // Return the spans sorted by start time for testing convenience.
+  get sortedSpans() {
+    this.spans[0].resource;
+    return this.spans.slice().sort((a, b) => {
+      if (a.startTimeUnixNano.high < b.startTimeUnixNano.high) {
+        return -1;
+      } else if (a.startTimeUnixNano.high > b.startTimeUnixNano.high) {
+        return 1;
+      } else if (a.startTimeUnixNano.low < b.startTimeUnixNano.low) {
+        return -1;
+      } else if (a.startTimeUnixNano.low > b.startTimeUnixNano.low) {
+        return 1;
+      } else {
+        return 0;
+      }
+    });
+  }
+
+  _onRequest(req: IncomingMessage, res: ServerResponse) {
+    const parsedUrl = new URL(req.url as string, this.endpointUrl);
+    let instream: EventEmitter;
+    if (req.headers['content-encoding'] === 'gzip') {
+      instream = req.pipe(createGunzip());
+    } else {
+      req.setEncoding('utf8');
+      instream = req;
+    }
+
+    let body = '';
+    instream.on('data', (chunk: Buffer) => {
+      body += chunk;
+    });
+
+    instream.on('end', () => {
+      let resStatusCode;
+      const resHeaders = { 'content-type': 'application/json' };
+      let resBody = '';
+      if (req.method === 'POST' && parsedUrl.pathname === '/v1/traces') {
+        if (req.headers['content-type'] !== 'application/json') {
+          resStatusCode = 415;
+          resBody = JSON.stringify({ message: 'invalid content-type' });
+        } else {
+          this._ingestTraces(body);
+          resStatusCode = 200;
+          // TODO: I'm not sure what the ExportTraceServiceResponse form should be.
+          // https://github.com/open-telemetry/opentelemetry-proto/blob/v1.0.0/opentelemetry/proto/collector/trace/v1/trace_service.proto
+          resBody = '{}';
+        }
+      } else {
+        resStatusCode = 404;
+      }
+
+      res.writeHead(resStatusCode, resHeaders);
+      res.end(resBody);
+    });
+  }
+
+  _ingestTraces(body: string) {
+    const data = JSON.parse(body);
+    // Read an OTLP `resourceSpans` body into `this.spans`.
+    for (const resourceSpan of data.resourceSpans) {
+      for (const scopeSpan of resourceSpan.scopeSpans) {
+        for (const span of scopeSpan.spans) {
+          span.resource = resourceSpan.resource;
+          span.instrumentationScope = scopeSpan.scope;
+          this.spans.push(span);
+        }
+      }
+    }
+  }
+}
+
+import { execFile } from 'child_process';
+import { EventEmitter } from 'stream';
+
+type RunTestFixtureOptions = {
+  /** Arguments to `node` executable. */
+  argv: Array<string>;
+  cwd?: string;
+  env?: Record<string, string>;
+  /** Timeout for the executed process in milliseconds. Defaults to 10s. */
+  timeoutMs?: number;
+  /** Check the process result. */
+  checkResult?: (err: Error | null, stdout: string, stderr: string) => void;
+  /** Check the collected results, e.g. via `collector.sortedSpans`. */
+  checkCollector?: (collector: TestCollector) => void;
+}
+
+/**
+ * Run a script that uses otel tracing and check the results.
+ *
+ * This starts a test collector that is capable of receiving HTTP/JSON OTLP,
+ * and sets OTEL_EXPORTER_OTLP_ENDPOINT and OTEL_EXPORTER_OTLP_PROTOCOL
+ * appropriately so that scripts using `NodeSDK` will by default send traces
+ * to this collector.
+ *
+ * Then the script (given in `argv`) is executed and the optional `opts.check*`
+ * callbacks are called so the caller can assert expected process output and
+ * collected spans.
+ *
+ * For example:
+ *    await runTestFixture({
+ *      argv: ['fixtures/some-esm-script.mjs'],
+ *      cwd: __dirname,
+ *      env: {
+ *        NODE_OPTIONS: '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+ *        NODE_NO_WARNINGS: '1',
+ *      },
+ *      checkResult: (err, stdout, stderr) => {
+ *        assert.ifError(err);
+ *      },
+ *      checkCollector: (collector: TestCollector) => {
+ *        const spans = collector.sortedSpans;
+ *        assert.strictEqual(spans[0].name, 'manual');
+ *        // ...
+ *      },
+ *    });
+ */
+async function runTestFixture(opts: RunTestFixtureOptions): Promise<void> {
+  const collector = new TestCollector();
+  await collector.start();
+
+  return new Promise((resolve, _reject) => {
+    execFile(
+      process.execPath,
+      opts.argv,
+      {
+        cwd: opts.cwd || process.cwd(),
+        timeout: opts.timeoutMs || 10000, // sanity guard on hanging
+        env: Object.assign(
+          {},
+          process.env,
+          {
+            OTEL_EXPORTER_OTLP_ENDPOINT: collector.endpointUrl,
+            OTEL_EXPORTER_OTLP_PROTOCOL: 'http/json',
+          },
+          opts.env
+        ),
+      },
+      async function done(err, stdout, stderr) {
+        try {
+          if (opts.checkResult) {
+            await opts.checkResult(err, stdout, stderr);
+          }
+          if (opts.checkCollector) {
+            await opts.checkCollector(collector);
+          }
+        } finally {
+          collector.close();
+          resolve();
+        }
+      }
+    );
+  });
+}
