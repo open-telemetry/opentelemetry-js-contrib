@@ -249,7 +249,9 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
       const tasks = queries.map((query, idx) => {
         return new Promise((resolve, reject) => {
           process.nextTick(() => {
-            const span = trace.getTracer('default').startSpan(`findRootSpan ${idx}`);
+            const span = trace
+              .getTracer('default')
+              .startSpan(`findRootSpan ${idx}`);
             context.with(trace.setSpan(context.active(), span), () => {
               collection
                 .find(query)
@@ -272,12 +274,12 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             const rootId = root.spanContext().spanId;
             const children = spans.filter(s => s.parentSpanId === rootId);
             assert.strictEqual(children.length, 1);
-          })
+          });
           done();
         })
         .catch(err => {
           done(err);
-        })
+        });
     });
   });
 
