@@ -33,7 +33,7 @@ import {
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as ioredisTypes from 'ioredis';
-import { IORedisInstrumentation } from '../src';
+import { IORedisInstrumentation } from '../src/index';
 import {
   IORedisInstrumentationConfig,
   DbStatementSerializer,
@@ -96,7 +96,7 @@ describe('ioredis', () => {
     context.disable();
   });
 
-  before(function () {
+  before(async function () {
     // needs to be "function" to have MochaContext "this" context
     if (!shouldTest) {
       // this.skip() workaround
@@ -112,7 +112,7 @@ describe('ioredis', () => {
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
     instrumentation = new IORedisInstrumentation();
     instrumentation.setTracerProvider(provider);
-    ioredis = require('ioredis');
+    ioredis = (await import('ioredis')).default;
   });
 
   after(() => {
@@ -233,11 +233,11 @@ describe('ioredis', () => {
     });
 
     describe('Instrumenting query operations', () => {
-      before(() => {
+      before(async () => {
         instrumentation.disable();
         instrumentation = new IORedisInstrumentation();
         instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        await import('ioredis');
       });
 
       IOREDIS_CALLBACK_OPERATIONS.forEach(command => {
@@ -322,7 +322,7 @@ describe('ioredis', () => {
             assert.strictEqual(
               exceptionEvent.attributes?.[
                 SemanticAttributes.EXCEPTION_STACKTRACE
-              ],
+                ],
               ex.stack
             );
             assert.strictEqual(
@@ -600,7 +600,7 @@ describe('ioredis', () => {
                       [SemanticAttributes.EXCEPTION_MESSAGE]:
                         'NOSCRIPT No matching script. Please use EVAL.',
                       [SemanticAttributes.EXCEPTION_STACKTRACE]:
-                        predictableStackTrace,
+                      predictableStackTrace,
                       [SemanticAttributes.EXCEPTION_TYPE]: 'ReplyError',
                     },
                     name: 'exception',
@@ -819,11 +819,11 @@ describe('ioredis', () => {
     });
 
     describe('Instrumenting with a custom hooks', () => {
-      before(() => {
+      before(async () => {
         instrumentation.disable();
         instrumentation = new IORedisInstrumentation();
         instrumentation.setTracerProvider(provider);
-        require('ioredis');
+        await import('ioredis');
       });
 
       it('should call requestHook when set in config', async () => {
