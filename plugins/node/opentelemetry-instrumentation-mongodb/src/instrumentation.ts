@@ -283,7 +283,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       v4PatchConnectionPool: (moduleExports: any, moduleVersion?: string) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         const poolPrototype = moduleExports.ConnectionPool.prototype;
-        
+
         if (isWrapped(poolPrototype.checkOut)) {
           this._unwrap(poolPrototype, 'checkOut');
         }
@@ -295,7 +295,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4UnpatchConnectionPool: (moduleExports?: any, moduleVersion?: string) => {
+      v4UnpatchConnectionPool: (
+        moduleExports?: any,
+        moduleVersion?: string
+      ) => {
         diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         if (moduleExports === undefined) return;
 
@@ -324,7 +327,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     };
   }
 
-  // This patch will become unnecessary once 
+  // This patch will become unnecessary once
   // https://jira.mongodb.org/browse/NODE-5639 is done.
   private _getV4ConnectionPoolCheckOut() {
     return (original: V4ConnectionPool['checkOut']) => {
