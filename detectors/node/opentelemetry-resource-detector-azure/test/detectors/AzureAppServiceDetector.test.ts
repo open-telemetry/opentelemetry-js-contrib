@@ -29,14 +29,14 @@ describe('AzureAppServiceDetector', () => {
     });
 
     it('should test on appService', () => {
-        process.env.WEBSITE_SITE_NAME = "test-site";
-        process.env.REGION_NAME = "test-region";
-        process.env.WEBSITE_SLOT_NAME = "test-slot";
-        process.env.WEBSITE_HOSTNAME = "test-hostname";
-        process.env.WEBSITE_INSTANCE_ID = "test-instance-id";
-        process.env.WEBSITE_HOME_STAMPNAME = "test-home-stamp";
-        process.env.WEBSITE_RESOURCE_GROUP = "test-resource-group";
-        process.env.WEBSITE_OWNER_NAME = "test-owner-name";
+        process.env.WEBSITE_SITE_NAME = 'test-site';
+        process.env.REGION_NAME = 'test-region';
+        process.env.WEBSITE_SLOT_NAME = 'test-slot';
+        process.env.WEBSITE_HOSTNAME = 'test-hostname';
+        process.env.WEBSITE_INSTANCE_ID = 'test-instance-id';
+        process.env.WEBSITE_HOME_STAMPNAME = 'test-home-stamp';
+        process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
+        process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
         const resource = azureAppServiceDetector.detect();
         assert.ok(resource);
@@ -53,13 +53,13 @@ describe('AzureAppServiceDetector', () => {
     });
 
     it('should test with no resource group', () => {
-        process.env.WEBSITE_SITE_NAME = "test-site";
-        process.env.REGION_NAME = "test-region";
-        process.env.WEBSITE_SLOT_NAME = "test-slot";
-        process.env.WEBSITE_HOSTNAME = "test-hostname";
-        process.env.WEBSITE_INSTANCE_ID = "test-instance-id";
-        process.env.WEBSITE_HOME_STAMPNAME = "test-home-stamp";
-        process.env.WEBSITE_OWNER_NAME = "test-owner-name";
+        process.env.WEBSITE_SITE_NAME = 'test-site';
+        process.env.REGION_NAME = 'test-region';
+        process.env.WEBSITE_SLOT_NAME = 'test-slot';
+        process.env.WEBSITE_HOSTNAME = 'test-hostname';
+        process.env.WEBSITE_INSTANCE_ID = 'test-instance-id';
+        process.env.WEBSITE_HOME_STAMPNAME = 'test-home-stamp';
+        process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
         const resource = azureAppServiceDetector.detect();
         assert.ok(resource);
@@ -72,13 +72,13 @@ describe('AzureAppServiceDetector', () => {
     });
 
     it('should test with no owner name', () => {
-        process.env.WEBSITE_SITE_NAME = "test-site";
-        process.env.REGION_NAME = "test-region";
-        process.env.WEBSITE_SLOT_NAME = "test-slot";
-        process.env.WEBSITE_HOSTNAME = "test-hostname";
-        process.env.WEBSITE_INSTANCE_ID = "test-instance-id";
-        process.env.WEBSITE_HOME_STAMPNAME = "test-home-stamp";
-        process.env.WEBSITE_RESOURCE_GROUP = "test-resource-group";
+        process.env.WEBSITE_SITE_NAME = 'test-site';
+        process.env.REGION_NAME = 'test-region';
+        process.env.WEBSITE_SLOT_NAME = 'test-slot';
+        process.env.WEBSITE_HOSTNAME = 'test-hostname';
+        process.env.WEBSITE_INSTANCE_ID = 'test-instance-id';
+        process.env.WEBSITE_HOME_STAMPNAME = 'test-home-stamp';
+        process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
         delete process.env.WEBSITE_OWNER_NAME;
         
         const resource = azureAppServiceDetector.detect();

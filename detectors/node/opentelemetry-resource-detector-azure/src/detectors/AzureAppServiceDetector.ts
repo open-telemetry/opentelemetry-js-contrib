@@ -71,7 +71,7 @@ class AzureAppServiceDetector implements DetectorSync {
         return new Resource(attributes);
     }
 
-    getAzureResourceUri(websiteSiteName: string): string | undefined {
+    private getAzureResourceUri(websiteSiteName: string): string | undefined {
         const websiteResourceGroup = process.env[WEBSITE_RESOURCE_GROUP];
         const websiteOwnerName = process.env[WEBSITE_OWNER_NAME];
 
