@@ -132,6 +132,7 @@ describe('Host Metrics', () => {
         return mockedSI.networkStats();
       });
       sandbox.stub(process, 'cpuUsage').callsFake(() => {
+        // TODO: stub this better
         return {
           user: 90713560,
           system: 63192630,
@@ -232,14 +233,15 @@ describe('Host Metrics', () => {
       ensureValue(metric, { direction: 'transmit', device: 'eth0' }, 321321);
     });
 
-    it.skip('should export Process CPU time metrics', async () => {
+    it('should export Process CPU time metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.time');
 
-      ensureValue(metric, { state: 'user' }, 90713.56);
-      ensureValue(metric, { state: 'system' }, 63192.630000000005);
+      ensureValue(metric, { state: 'user' }, 90.71356);
+      ensureValue(metric, { state: 'system' }, 63.192629999999994);
     });
 
-    it.skip('should export Process CPU utilization metrics', async () => {
+    it('should export Process CPU utilization metrics', async () => {
+      // TODO: move the clock here
       const metric = await getRecords(reader, 'process.cpu.utilization');
 
       ensureValue(metric, { state: 'user' }, 30247.935978659552);
