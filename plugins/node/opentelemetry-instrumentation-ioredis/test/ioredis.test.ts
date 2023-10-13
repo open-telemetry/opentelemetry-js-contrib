@@ -1171,7 +1171,7 @@ type RunTestFixtureOptions = {
   checkResult?: (err: Error | null, stdout: string, stderr: string) => void;
   /** Check the collected results, e.g. via `collector.sortedSpans`. */
   checkCollector?: (collector: TestCollector) => void;
-}
+};
 
 /**
  * Run a script that uses otel tracing and check the results.
