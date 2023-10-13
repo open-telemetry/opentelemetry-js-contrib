@@ -113,20 +113,22 @@ describe('Host Metrics', () => {
         return mockedOS.freemem();
       });
       sandbox.stub(os, 'totalmem').returns(mockedOS.totalmem());
-      sandbox.stub(os, 'cpus').callsFake(() => cpuJson.map((cpu: any) => {
-        const { model, speed, times } = cpu;
-        return {
-          model,
-          speed,
-          times: {
-            user: times.user + (ELAPSED_TIME * 0.6) * metricsTaken,
-            nice: times.nice,
-            sys: times.sys + (ELAPSED_TIME * 0.3) * metricsTaken,
-            idle: times.idle + (ELAPSED_TIME * 0.1) * metricsTaken,
-            irq: times.irq,
-          },
-        };
-      }))
+      sandbox.stub(os, 'cpus').callsFake(() =>
+        cpuJson.map((cpu: any) => {
+          const { model, speed, times } = cpu;
+          return {
+            model,
+            speed,
+            times: {
+              user: times.user + ELAPSED_TIME * 0.6 * metricsTaken,
+              nice: times.nice,
+              sys: times.sys + ELAPSED_TIME * 0.3 * metricsTaken,
+              idle: times.idle + ELAPSED_TIME * 0.1 * metricsTaken,
+              irq: times.irq,
+            },
+          };
+        })
+      );
       sandbox.stub(process, 'uptime').returns(0);
       sandbox.stub(SI, 'networkStats').callsFake(() => {
         return mockedSI.networkStats();

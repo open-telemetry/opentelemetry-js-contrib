@@ -21,13 +21,13 @@ import { CpuUsageData, MemoryData, ProcessCpuUsageData } from '../types';
 const MILLISECOND = 1 / 1e3;
 const MICROSECOND = 1 / 1e6;
 
-let prevOsData: { time: number, cpus: os.CpuInfo[] };
+let prevOsData: { time: number; cpus: os.CpuInfo[] };
 
 /**
  * For each CPU returned by `os.cpus()` it returns
  * - the CPU times in each state (user, sys, ...) in seconds
  * - the % of time the CPU was in each state since last measurement
- * 
+ *
  * The first time will return 0 for % masurements since there is not enough
  * data to calculate it
  */
@@ -49,7 +49,7 @@ export function getCpuUsageData(): CpuUsageData[] {
       idleP: 0,
       interruptP: 0,
       niceP: 0,
-    }))
+    }));
   }
 
   const currentTime = Date.now();
@@ -92,19 +92,19 @@ export function getCpuUsageData(): CpuUsageData[] {
   return usageData;
 }
 
-let prevProcessData: { time: number, usage: NodeJS.CpuUsage };
+let prevProcessData: { time: number; usage: NodeJS.CpuUsage };
 
 /**
  * It will return process usage information
  * - the CPU times in each state (user, system) in seconds
  * - the % of time the CPU was in each state since last measurement
- * 
+ *
  * The first time will return 0 as value for % since it needs previous
  * measurement to do the calculation.
  */
 export function getProcessCpuUsageData(): ProcessCpuUsageData {
   if (typeof prevProcessData !== 'object') {
-    const usage = process.cpuUsage()
+    const usage = process.cpuUsage();
     const time = Date.now();
 
     prevProcessData = { time, usage };
@@ -122,15 +122,14 @@ export function getProcessCpuUsageData(): ProcessCpuUsageData {
   const currUsage = process.cpuUsage();
   const prevUsage = prevProcessData.usage;
 
-  console.log('update processUsageData', timeElapsed);
-  
   const user = currUsage.user * MICROSECOND;
   const system = currUsage.system * MICROSECOND;
 
   // Note: Date times are in miliseconds and `cpuUsage()` returns
   // microseconds. We nedd to have same unit for calculation
-  const userP = (currUsage.user - prevUsage.user) / timeElapsed * MILLISECOND;
-  const systemP = (currUsage.system - prevUsage.system) / timeElapsed * MILLISECOND;
+  const userP = ((currUsage.user - prevUsage.user) / timeElapsed) * MILLISECOND;
+  const systemP =
+    ((currUsage.system - prevUsage.system) / timeElapsed) * MILLISECOND;
 
   prevProcessData = { time: currentTime, usage: currUsage };
 
