@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.33.1...instrumentation-user-interaction-v0.33.2) (2023-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#1687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1687)) ([47301c0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/47301c038e4dc7d24797cb0b8426033ecc0374e6))
+* **deps:** update otel core experimental to v0.43.0 ([#1676](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1676)) ([deb9aa4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/deb9aa441dc7d2b0fd5ec11b41c934a1e93134fd))
+* **deps:** update otel core experimental to v0.44.0 ([#1725](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1725)) ([540a0d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/540a0d1ff5641522abba560d59a298084f786630))
+
 ## [0.33.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.33.0...instrumentation-user-interaction-v0.33.1) (2023-08-14)
 
 
