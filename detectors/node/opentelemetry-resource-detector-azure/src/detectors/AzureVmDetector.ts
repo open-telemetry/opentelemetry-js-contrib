@@ -14,86 +14,91 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
-import { DetectorSync, IResource, Resource, ResourceDetectionConfig } from '@opentelemetry/resources';
-import { CloudPlatformValues, CloudProviderValues, SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import * as http from 'http';
+import {
+  DetectorSync,
+  IResource,
+  Resource,
+  ResourceAttributes,
+} from '@opentelemetry/resources';
+import {
+  CloudPlatformValues,
+  CloudProviderValues,
+  SemanticResourceAttributes,
+} from '@opentelemetry/semantic-conventions';
 
 const CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE = 'cloud.resource_id';
-const AZURE_VM_METADATA_ENDPOINT = 'http://169.254.169.254/metadata/instance/compute?api-version=2021-12-13&format=json';
+const AZURE_VM_METADATA_HOST = '169.254.169.254';
+const AZURE_VM_METADATA_PATH =
+  '/metadata/instance/compute?api-version=2021-12-13&format=json';
 const AZURE_VM_SCALE_SET_NAME_ATTRIBUTE = 'azure.vm.scaleset.name';
 const AZURE_VM_SKU_ATTRIBUTE = 'azure.vm.sku';
 
-const expectedAzureAmsAttributes = [
-    AZURE_VM_SCALE_SET_NAME_ATTRIBUTE,
-    AZURE_VM_SKU_ATTRIBUTE,
-    SemanticResourceAttributes.CLOUD_PLATFORM,
-    SemanticResourceAttributes.CLOUD_PROVIDER,
-    SemanticResourceAttributes.CLOUD_REGION,
-    CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
-    SemanticResourceAttributes.HOST_ID,
-    SemanticResourceAttributes.HOST_NAME,
-    SemanticResourceAttributes.HOST_TYPE,
-    SemanticResourceAttributes.OS_VERSION,
-    SemanticResourceAttributes.SERVICE_INSTANCE_ID,
-];
-
 class AzureVmResourceDetector implements DetectorSync {
-    detect(config?: ResourceDetectionConfig): IResource {
-        let attributes: any = {};
-        const metadataJson = this.getAzureVmMetadata();
-        if (!metadataJson) {
-            return new Resource(attributes);
-        }
-        for (const attribute of expectedAzureAmsAttributes) {
-            // attributes = { ...attributes, [attribute]: this.getAttributeFromMetadata(metadataJson, attribute) };
-            attributes[attribute] = this.getAttributeFromMetadata(metadataJson, attribute);
-            console.log("ATTRIBUTE: ", attributes[attribute]);
-        }
-        console.log("TEST OBJECT: ", new Resource(attributes));
-        return new Resource(attributes, this.getAzureVmMetadata());
-    }
+  detect(): IResource {
+    const resourceAttributes: Promise<ResourceAttributes> =
+      this.getAzureVmMetadata();
+    return new Resource({}, resourceAttributes);
+  }
 
-    async getAzureVmMetadata(): Promise<any> {
-        fetch(AZURE_VM_METADATA_ENDPOINT, {
-            method: 'GET',
-            headers: {
-                'Metadata': 'true'
+  async getAzureVmMetadata(): Promise<ResourceAttributes> {
+    let attributes: any = {};
+    const options = {
+      host: AZURE_VM_METADATA_HOST,
+      path: AZURE_VM_METADATA_PATH,
+      method: 'GET',
+      timeout: 5000,
+      headers: {
+        Metadata: 'True',
+      },
+    };
+    const metadata: any = await new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        req.destroy();
+        reject(new Error('EC2 metadata api request timed out.'));
+      }, 1000);
+
+      const req = http.request(options, res => {
+        clearTimeout(timeoutId);
+        const { statusCode } = res;
+        res.setEncoding('utf8');
+        let rawData = '';
+        res.on('data', chunk => (rawData += chunk));
+        res.on('end', () => {
+          if (statusCode && statusCode >= 200 && statusCode < 300) {
+            try {
+              resolve(JSON.parse(rawData));
+            } catch (error) {
+              reject(error);
             }
-        })
-        .then(response => {
-            return response.json();
-        })
-        .catch(error => {
-            diag.warn('Error fetching Azure VM metadata: ', error);
+          } else {
+            reject(
+              new Error('Failed to load page, status code: ' + statusCode)
+            );
+          }
         });
-    }
+      });
+      req.on('error', err => {
+        clearTimeout(timeoutId);
+        reject(err);
+      });
+      req.end();
+    });
 
-    private getAttributeFromMetadata(metadataJson: any, attribute: string): string {
-        let amsValue = "";
-        if (attribute == AZURE_VM_SCALE_SET_NAME_ATTRIBUTE) {
-            console.log("TEST: ", metadataJson);
-            amsValue = metadataJson['vmScaleSetName'];
-        } else if (attribute == AZURE_VM_SKU_ATTRIBUTE) {
-            amsValue = metadataJson['sku'];
-        } else if (attribute == SemanticResourceAttributes.CLOUD_PLATFORM) {
-            amsValue = CloudPlatformValues.AZURE_VM;
-        } else if (attribute == SemanticResourceAttributes.CLOUD_PROVIDER) {
-            amsValue = CloudProviderValues.AZURE;
-        } else if (attribute == SemanticResourceAttributes.CLOUD_REGION) {
-            amsValue = metadataJson['location'];
-        } else if (attribute == CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE) {
-            amsValue = metadataJson['resourceId'];
-        } else if (attribute == SemanticResourceAttributes.HOST_ID || attribute == SemanticResourceAttributes.SERVICE_INSTANCE_ID) {
-            amsValue = metadataJson['vmId'];
-        } else if (attribute == SemanticResourceAttributes.HOST_NAME) {
-            amsValue = metadataJson['name'];
-        } else if (attribute == SemanticResourceAttributes.HOST_TYPE) {
-            amsValue = metadataJson['vmSize'];
-        } else if (attribute == SemanticResourceAttributes.OS_VERSION) {
-            amsValue = metadataJson['version'];
-        }
-        return amsValue;
-    }
+    attributes = {
+      [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadata['vmScaleSetName'],
+      [AZURE_VM_SKU_ATTRIBUTE]: metadata['sku'],
+      [SemanticResourceAttributes.CLOUD_PLATFORM]: CloudPlatformValues.AZURE_VM,
+      [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AZURE,
+      [SemanticResourceAttributes.CLOUD_REGION]: metadata['location'],
+      [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadata['resourceId'],
+      [SemanticResourceAttributes.HOST_ID]: metadata['vmId'],
+      [SemanticResourceAttributes.HOST_NAME]: metadata['name'],
+      [SemanticResourceAttributes.HOST_TYPE]: metadata['vmSize'],
+      [SemanticResourceAttributes.OS_VERSION]: metadata['version'],
+    };
+    return attributes;
+  }
 }
 
 export const azureVmDetector = new AzureVmResourceDetector();
