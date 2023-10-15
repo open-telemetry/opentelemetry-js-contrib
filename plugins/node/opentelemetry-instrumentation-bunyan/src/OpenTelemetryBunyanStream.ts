@@ -16,7 +16,7 @@
 
 import { logs, SeverityNumber, Logger } from '@opentelemetry/api-logs';
 import type { LoggerOptions } from '@opentelemetry/api-logs';
-import type * as BunyanLogger from 'bunyan';
+import type { LogLevelString } from 'bunyan';
 import { VERSION } from './version';
 
 const DEFAULT_INSTRUMENTATION_SCOPE_NAME = 'io.opentelemetry.contrib.bunyan';
@@ -32,7 +32,7 @@ const INFO = 30;
 const WARN = 40;
 const ERROR = 50;
 const FATAL = 60;
-const levelFromName: { [name in BunyanLogger.LogLevelString]: number } = {
+const levelFromName: Record<LogLevelString, number> = {
   trace: TRACE,
   debug: DEBUG,
   info: INFO,
@@ -42,7 +42,7 @@ const levelFromName: { [name in BunyanLogger.LogLevelString]: number } = {
 };
 const nameFromLevel: { [level: number]: string } = {};
 Object.keys(levelFromName).forEach(function (name) {
-  nameFromLevel[levelFromName[name as BunyanLogger.LogLevelString]] = name;
+  nameFromLevel[levelFromName[name as LogLevelString]] = name;
 });
 
 const OTEL_SEV_NUM_FROM_BUNYAN_LEVEL: { [level: number]: number } = {
