@@ -6,6 +6,14 @@
   * dependencies
     * @opentelemetry/redis-common bumped from ^0.34.0 to ^0.35.0
 
+## [0.35.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.35.2...instrumentation-redis-4-v0.35.3) (2023-10-13)
+
+
+### Bug Fixes
+
+* **instrumentation-redis-4:** avoid shimmer warning by only wrapping multi/MULTI if they exist ([#1729](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1729)) ([247a81c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/247a81c047264ba638abb9a2ef2ca14801094040))
+* **instrumentation-redis-4:** fix unhandledRejection in client.multi(...) handling ([#1730](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1730)) ([d953531](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d95353179279e3cf35ec37b6ca18f1e920691e16))
+
 ## [0.35.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.35.1...instrumentation-redis-4-v0.35.2) (2023-10-10)
 
 
