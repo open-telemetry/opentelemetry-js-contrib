@@ -74,6 +74,8 @@ const mockedOS = {
   },
 };
 
+const INTERVAL = 3000;
+
 describe('Host Metrics', () => {
   let meterProvider: MeterProvider;
 
@@ -140,9 +142,13 @@ describe('Host Metrics', () => {
       });
       await hostMetrics.start();
 
+      const dateStub = sandbox
+        .stub(Date.prototype, 'getTime')
+        .returns(process.uptime() * 1000 + 1);
       // Drop first frame cpu metrics, see
       // src/common.ts getCpuUsageData
       await reader.collect();
+      dateStub.returns(process.uptime() * 1000 + INTERVAL);
 
       // advance the clock for the next collection
       sandbox.clock.tick(1000);
@@ -224,15 +230,15 @@ describe('Host Metrics', () => {
     it('should export Process CPU time metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.time');
 
-      ensureValue(metric, { state: 'user' }, 90.71376);
-      ensureValue(metric, { state: 'system' }, 63.19343);
+      ensureValue(metric, { state: 'user' }, 90713.56);
+      ensureValue(metric, { state: 'system' }, 63192.630000000005);
     });
 
-    it.skip('should export Process CPU utilization metrics', async () => {
+    it('should export Process CPU utilization metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.utilization');
 
-      ensureValue(metric, { state: 'user' }, 0.2);
-      ensureValue(metric, { state: 'system' }, 0.8);
+      ensureValue(metric, { state: 'user' }, 30247.935978659552);
+      ensureValue(metric, { state: 'system' }, 21071.23374458153);
     });
 
     it('should export Process Memory usage metrics', async () => {
