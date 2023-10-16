@@ -28,7 +28,6 @@ import {
 } from '@opentelemetry/semantic-conventions';
 
 const AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE = 'azure.app.service.stamp';
-// TODO: Remove once this resource attribute is no longer missing from SDK
 const CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE = 'cloud.resource_id';
 const REGION_NAME = 'REGION_NAME';
 const WEBSITE_HOME_STAMPNAME = 'WEBSITE_HOME_STAMPNAME';
