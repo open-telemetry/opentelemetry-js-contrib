@@ -117,19 +117,20 @@ export function getProcessCpuUsageData(): ProcessCpuUsageData {
     };
   }
 
-  const currentTime = Date.now();
-  const timeElapsed = currentTime - prevProcessData.time;
   const currUsage = process.cpuUsage();
   const prevUsage = prevProcessData.usage;
+
+  const currentTime = Date.now(); // ms
+  const timeElapsed = currentTime - prevProcessData.time; // ms
+  const timeElapsedUs = timeElapsed;
 
   const user = currUsage.user * MICROSECOND;
   const system = currUsage.system * MICROSECOND;
 
   // Note: Date times are in miliseconds and `cpuUsage()` returns
   // microseconds. We nedd to have same unit for calculation
-  const userP = ((currUsage.user - prevUsage.user) / timeElapsed) * MILLISECOND;
-  const systemP =
-    ((currUsage.system - prevUsage.system) / timeElapsed) * MILLISECOND;
+  const userP = (currUsage.user - prevUsage.user) /* us */ / timeElapsedUs;
+  const systemP = (currUsage.system - prevUsage.system) / timeElapsedUs;
 
   prevProcessData = { time: currentTime, usage: currUsage };
 
