@@ -17,27 +17,11 @@
 // Use ioredis from an ES module:
 //    node --experimental-loader=@opentelemetry/instrumentation/hook.mjs use-ioredis.mjs [REDIS_URL]
 
-// ---
-// TODO: Move this block to @opentelemetry/contrib-test-utils and import as:
-//    import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
-import { NodeSDK, tracing, api } from '@opentelemetry/sdk-node';
-function createTestNodeSdk(opts) {
-  // Typically, when run via `runTestFixture`, OTEL_EXPORTER_OTLP_ENDPOINT will
-  // be set to export to a test collector. Fallback to writing to the console
-  // for dev usage.
-  const spanProcessor = (process.env.OTEL_EXPORTER_OTLP_ENDPOINT
-    ? undefined
-    : new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter()));
-  const sdk = new NodeSDK({
-    serviceName: opts.serviceName || 'test-service',
-    spanProcessor,
-    instrumentations: opts.instrumentations
-  });
-  return sdk;
-}
-// ---
+import { trace } from '@opentelemetry/api';
+import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
 import { IORedisInstrumentation } from '../../build/src/index.js';
+
 const sdk = createTestNodeSdk({
   serviceName: 'use-ioredis',
   instrumentations: [
@@ -56,7 +40,7 @@ const redis = new Redis(REDIS_URL);
 const randomId = ((Math.random() * 2 ** 32) >>> 0).toString(16);
 const testKeyName = `test-${randomId}`;
 
-const tracer = api.trace.getTracer();
+const tracer = trace.getTracer();
 await tracer.startActiveSpan('manual', async (span) => {
   redis.set(testKeyName, 'bar');
   let val = await redis.get(testKeyName);
