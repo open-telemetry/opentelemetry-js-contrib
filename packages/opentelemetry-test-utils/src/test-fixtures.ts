@@ -32,7 +32,7 @@ import { NodeSDK, tracing } from '@opentelemetry/sdk-node';
 import type { InstrumentationOption } from '@opentelemetry/instrumentation';
 
 /**
- * A utility for scripts that will be run with `runTestFixtures()` to create an
+ * A utility for scripts that will be run with `runTestFixture()` to create an
  * appropriately configured NodeSDK.
  *
  * Typically, when run via `runTestFixture`, OTEL_EXPORTER_OTLP_ENDPOINT will be
