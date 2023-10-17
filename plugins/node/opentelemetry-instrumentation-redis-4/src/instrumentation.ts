@@ -166,23 +166,31 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         this._diag.debug('Patching redis client');
         const redisClientPrototype = moduleExports?.default?.prototype;
 
-        if (isWrapped(redisClientPrototype?.multi)) {
-          this._unwrap(redisClientPrototype, 'multi');
+        // In some @redis/client versions 'multi' is a method. In later
+        // versions, as of https://github.com/redis/node-redis/pull/2324,
+        // 'MULTI' is a method and 'multi' is a property defined in the
+        // constructor that points to 'MULTI', and therefore it will not
+        // be defined on the prototype.
+        if (redisClientPrototype?.multi) {
+          if (isWrapped(redisClientPrototype?.multi)) {
+            this._unwrap(redisClientPrototype, 'multi');
+          }
+          this._wrap(
+            redisClientPrototype,
+            'multi',
+            this._getPatchRedisClientMulti()
+          );
         }
-        this._wrap(
-          redisClientPrototype,
-          'multi',
-          this._getPatchRedisClientMulti()
-        );
-
-        if (isWrapped(redisClientPrototype?.MULTI)) {
-          this._unwrap(redisClientPrototype, 'MULTI');
+        if (redisClientPrototype?.MULTI) {
+          if (isWrapped(redisClientPrototype?.MULTI)) {
+            this._unwrap(redisClientPrototype, 'MULTI');
+          }
+          this._wrap(
+            redisClientPrototype,
+            'MULTI',
+            this._getPatchRedisClientMulti()
+          );
         }
-        this._wrap(
-          redisClientPrototype,
-          'MULTI',
-          this._getPatchRedisClientMulti()
-        );
 
         if (isWrapped(redisClientPrototype?.sendCommand)) {
           this._unwrap(redisClientPrototype, 'sendCommand');
@@ -278,41 +286,61 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
           return execRes;
         }
 
-        execRes.then((redisRes: unknown[]) => {
-          const openSpans = this[OTEL_OPEN_SPANS];
-          if (!openSpans) {
-            return plugin._diag.error(
-              'cannot find open spans to end for redis multi command'
-            );
-          }
-          if (redisRes.length !== openSpans.length) {
-            return plugin._diag.error(
-              'number of multi command spans does not match response from redis'
-            );
-          }
-          for (let i = 0; i < openSpans.length; i++) {
-            const { span, commandName, commandArgs } = openSpans[i];
-            const currCommandRes = redisRes[i];
-            if (currCommandRes instanceof Error) {
+        return execRes
+          .then((redisRes: unknown[]) => {
+            const openSpans = this[OTEL_OPEN_SPANS];
+            if (!openSpans) {
+              return plugin._diag.error(
+                'cannot find open spans to end for redis multi command'
+              );
+            }
+            if (redisRes.length !== openSpans.length) {
+              return plugin._diag.error(
+                'number of multi command spans does not match response from redis'
+              );
+            }
+            for (let i = 0; i < openSpans.length; i++) {
+              const { span, commandName, commandArgs } = openSpans[i];
+              const currCommandRes = redisRes[i];
+              if (currCommandRes instanceof Error) {
+                plugin._endSpanWithResponse(
+                  span,
+                  commandName,
+                  commandArgs,
+                  null,
+                  currCommandRes
+                );
+              } else {
+                plugin._endSpanWithResponse(
+                  span,
+                  commandName,
+                  commandArgs,
+                  currCommandRes,
+                  undefined
+                );
+              }
+            }
+            return redisRes;
+          })
+          .catch((err: Error) => {
+            const openSpans = this[OTEL_OPEN_SPANS];
+            if (!openSpans) {
+              return plugin._diag.error(
+                'cannot find open spans to end for redis multi command'
+              );
+            }
+            for (let i = 0; i < openSpans.length; i++) {
+              const { span, commandName, commandArgs } = openSpans[i];
               plugin._endSpanWithResponse(
                 span,
                 commandName,
                 commandArgs,
                 null,
-                currCommandRes
-              );
-            } else {
-              plugin._endSpanWithResponse(
-                span,
-                commandName,
-                commandArgs,
-                currCommandRes,
-                undefined
+                err
               );
             }
-          }
-        });
-        return execRes;
+            return Promise.reject(err);
+          });
       };
     };
   }

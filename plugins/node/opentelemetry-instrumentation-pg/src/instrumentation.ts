@@ -66,7 +66,11 @@ export class PgInstrumentation extends InstrumentationBase {
     const modulePG = new InstrumentationNodeModuleDefinition<typeof pgTypes>(
       'pg',
       ['8.*'],
-      moduleExports => {
+      (module: any) => {
+        const moduleExports: typeof pgTypes =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
@@ -87,9 +91,13 @@ export class PgInstrumentation extends InstrumentationBase {
           this._getClientConnectPatch() as any
         );
 
-        return moduleExports;
+        return module;
       },
-      moduleExports => {
+      (module: any) => {
+        const moduleExports: typeof pgTypes =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }

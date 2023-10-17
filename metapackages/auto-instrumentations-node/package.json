@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-node",
-  "version": "0.39.3",
+  "version": "0.39.4",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-node#readme",
@@ -81,7 +81,7 @@
     "@opentelemetry/instrumentation-pg": "^0.36.2",
     "@opentelemetry/instrumentation-pino": "^0.34.2",
     "@opentelemetry/instrumentation-redis": "^0.35.2",
-    "@opentelemetry/instrumentation-redis-4": "^0.35.2",
+    "@opentelemetry/instrumentation-redis-4": "^0.35.3",
     "@opentelemetry/instrumentation-restify": "^0.34.1",
     "@opentelemetry/instrumentation-router": "^0.33.2",
     "@opentelemetry/instrumentation-socket.io": "^0.34.2",
