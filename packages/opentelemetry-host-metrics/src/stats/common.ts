@@ -53,9 +53,9 @@ export function getCpuUsageData(): CpuUsageData[] {
 
   const currentTime = Date.now();
   const timeElapsed = currentTime - prevOsData.time;
-  const currentCpus = { time: currentTime, cpus: os.cpus() };
+  const currentOsData = { time: currentTime, cpus: os.cpus() };
 
-  const usageData = currentCpus.cpus.map((cpu, cpuNumber) => {
+  const usageData = currentOsData.cpus.map((cpu, cpuNumber) => {
     const prevTimes = prevOsData.cpus[cpuNumber].times;
     const currTimes = cpu.times;
 
@@ -86,7 +86,7 @@ export function getCpuUsageData(): CpuUsageData[] {
     };
   });
 
-  prevOsData = currentCpus;
+  prevOsData = currentOsData;
 
   return usageData;
 }
