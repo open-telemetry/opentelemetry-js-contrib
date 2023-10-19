@@ -59,7 +59,7 @@ class AzureVmResourceDetector implements DetectorSync {
     const metadata: any = await new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         req.destroy();
-        reject(new Error('EC2 metadata api request timed out.'));
+        reject(new Error('Azure metadata service request timed out.'));
       }, 1000);
 
       const req = http.request(options, res => {

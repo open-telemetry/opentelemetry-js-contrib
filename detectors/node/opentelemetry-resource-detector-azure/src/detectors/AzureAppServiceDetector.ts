@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  DetectorSync,
-  IResource,
-  Resource
-} from '@opentelemetry/resources';
+import { DetectorSync, IResource, Resource } from '@opentelemetry/resources';
 
 import {
   CloudProviderValues,

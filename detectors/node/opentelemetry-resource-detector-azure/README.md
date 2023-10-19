@@ -16,7 +16,7 @@ npm install --save @opentelemetry/resource-detector-azure
 ## Usage
 ```typescript
 import { detectResources } from '@opentelemetry/resources';
-import { azureAppServiceDetector } from '@opentelemetry/resource-detecotr-azure';
+import { azureAppServiceDetector } from '@opentelemetry/resource-detector-azure';
 const resource = detectResourcesSync({
     detectors: [azureAppServiceDetector],
 });
