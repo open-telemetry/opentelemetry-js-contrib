@@ -34,6 +34,10 @@ const AZURE_VM_METADATA_PATH =
 const AZURE_VM_SCALE_SET_NAME_ATTRIBUTE = 'azure.vm.scaleset.name';
 const AZURE_VM_SKU_ATTRIBUTE = 'azure.vm.sku';
 
+/**
+ * The AzureVmDetector can be used to detect if a process is running in an Azure VM.
+ * @returns a {@link Resource} populated with data about the environment or an empty Resource if detection fails.
+ */
 class AzureVmResourceDetector implements DetectorSync {
   detect(): IResource {
     const resourceAttributes: Promise<ResourceAttributes> =

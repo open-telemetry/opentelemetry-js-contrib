@@ -17,8 +17,7 @@
 import {
   DetectorSync,
   IResource,
-  Resource,
-  ResourceDetectionConfig,
+  Resource
 } from '@opentelemetry/resources';
 
 import {
@@ -46,8 +45,12 @@ const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
   [AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE]: WEBSITE_HOME_STAMPNAME,
 };
 
+/**
+ * The AzureAppServiceDetector can be used to detect if a process is running in an Azure App Service
+ * @returns a {@link Resource} populated with data about the environment or an empty Resource if detection fails.
+ */
 class AzureAppServiceDetector implements DetectorSync {
-  detect(config?: ResourceDetectionConfig): IResource {
+  detect(): IResource {
     let attributes = {};
     const websiteSiteName = process.env[WEBSITE_SITE_NAME];
     if (websiteSiteName) {

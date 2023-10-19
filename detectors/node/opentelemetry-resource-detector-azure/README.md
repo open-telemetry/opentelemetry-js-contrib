@@ -57,6 +57,18 @@ const tracerProvider = new NodeTracerProvider({ resource });
 | os.version               | The version of the operating system running on the VM.                                                                                                                                                                              |
 | service.instance.id      | An identifier for a specific instance of the service running on the Azure VM, for example, "02aab8a4-74ef-476e-8182-f6d2ba4166a6".                                                                                                  |
 
+### Azure Functions Resource Detector
+
+| Attribute               | Description                                                                                                                                                                                               |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| cloud.platform          | The cloud platform. Here, it's always "azure_functions".                                                                                                                                                  |
+| cloud.provider          | The cloud service provider. In this context, it's always "azure".                                                                                                                                         |
+| cloud.region            | The Azure region where the Azure Function is hosted, e.g., "East US", "West Europe", etc.                                                                                                                 |
+| faas.instance           | The specific instance of the Azure App Service, useful in a scaled-out configuration.                                                                                                                     |
+| faas.name               | The name of the Azure App Service.                                                                                                                                                                        |
+| faas.version            | The version of the Azure Function being executed, e.g., "~4".                                                                                                                                             |
+| faas.max_memory         | The amount of memory available to the Azure Function expressed in MiB.                                                                                                                                    | 
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
