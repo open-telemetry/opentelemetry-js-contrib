@@ -18,8 +18,9 @@ import * as assert from 'assert';
 import * as nock from 'nock';
 import { azureVmDetector } from '../../src/detectors/AzureVmDetector';
 import { IResource } from '@opentelemetry/resources';
+import { AzureVmMetadata } from '../../src/types';
 
-const linuxTestResponse = {
+const linuxTestResponse: AzureVmMetadata = {
   additionalCapabilities: {
     hibernationEnabled: 'false',
   },
@@ -177,7 +178,7 @@ const linuxTestResponse = {
   zone: '1',
 };
 
-const windowsTestResponse = {
+const windowsTestResponse: AzureVmMetadata = {
   additionalCapabilities: {
     hibernationEnabled: 'false',
   },

@@ -26,13 +26,14 @@ import {
   CloudProviderValues,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
-
-const CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE = 'cloud.resource_id';
-const AZURE_VM_METADATA_HOST = '169.254.169.254';
-const AZURE_VM_METADATA_PATH =
-  '/metadata/instance/compute?api-version=2021-12-13&format=json';
-const AZURE_VM_SCALE_SET_NAME_ATTRIBUTE = 'azure.vm.scaleset.name';
-const AZURE_VM_SKU_ATTRIBUTE = 'azure.vm.sku';
+import {
+  CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
+  AZURE_VM_METADATA_HOST,
+  AZURE_VM_METADATA_PATH,
+  AZURE_VM_SCALE_SET_NAME_ATTRIBUTE,
+  AZURE_VM_SKU_ATTRIBUTE,
+  AzureVmMetadata,
+} from '../types';
 
 /**
  * The AzureVmDetector can be used to detect if a process is running in an Azure VM.
@@ -40,13 +41,10 @@ const AZURE_VM_SKU_ATTRIBUTE = 'azure.vm.sku';
  */
 class AzureVmResourceDetector implements DetectorSync {
   detect(): IResource {
-    const resourceAttributes: Promise<ResourceAttributes> =
-      this.getAzureVmMetadata();
-    return new Resource({}, resourceAttributes);
+    return new Resource({}, this.getAzureVmMetadata());
   }
 
   async getAzureVmMetadata(): Promise<ResourceAttributes> {
-    let attributes: any = {};
     const options = {
       host: AZURE_VM_METADATA_HOST,
       path: AZURE_VM_METADATA_PATH,
@@ -56,7 +54,7 @@ class AzureVmResourceDetector implements DetectorSync {
         Metadata: 'True',
       },
     };
-    const metadata: any = await new Promise((resolve, reject) => {
+    const metadata: AzureVmMetadata = await new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         req.destroy();
         reject(new Error('Azure metadata service request timed out.'));
@@ -89,7 +87,7 @@ class AzureVmResourceDetector implements DetectorSync {
       req.end();
     });
 
-    attributes = {
+    const attributes = {
       [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadata['vmScaleSetName'],
       [AZURE_VM_SKU_ATTRIBUTE]: metadata['sku'],
       [SemanticResourceAttributes.CLOUD_PLATFORM]: CloudPlatformValues.AZURE_VM,

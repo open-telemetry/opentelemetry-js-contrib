@@ -21,17 +21,18 @@ import {
   CloudPlatformValues,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
-
-const FUNCTION_NAME = 'WEBSITE_SITE_NAME';
-const FUNCTIONS_VERSION = 'FUNCTIONS_EXTENSION_VERSION';
-const FUNCTIONS_INSTANCE = 'WEBSITE_INSTANCE_ID';
-const FUNCTIONS_MEM_LIMIT = 'WEBSITE_MEMORY_LIMIT_MB';
-const FUNCTIONS_REGION = 'REGION_NAME';
+import {
+  WEBSITE_SITE_NAME,
+  FUNCTIONS_VERSION,
+  WEBSITE_INSTANCE_ID,
+  FUNCTIONS_MEM_LIMIT,
+  REGION_NAME,
+} from '../types';
 
 const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
-  [SemanticResourceAttributes.FAAS_NAME]: FUNCTION_NAME,
+  [SemanticResourceAttributes.FAAS_NAME]: WEBSITE_SITE_NAME,
   [SemanticResourceAttributes.FAAS_VERSION]: FUNCTIONS_VERSION,
-  [SemanticResourceAttributes.FAAS_INSTANCE]: FUNCTIONS_INSTANCE,
+  [SemanticResourceAttributes.FAAS_INSTANCE]: WEBSITE_INSTANCE_ID,
   [SemanticResourceAttributes.FAAS_MAX_MEMORY]: FUNCTIONS_MEM_LIMIT,
 };
 
@@ -42,18 +43,17 @@ const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
 class AzureFunctionsDetector implements DetectorSync {
   detect(): IResource {
     let attributes = {};
-    const functionName = process.env[FUNCTION_NAME];
+    const functionName = process.env[WEBSITE_SITE_NAME];
     if (functionName) {
       const functionVersion = process.env[FUNCTIONS_VERSION];
-      const functionInstance = process.env[FUNCTIONS_INSTANCE];
+      const functionInstance = process.env[WEBSITE_INSTANCE_ID];
       const functionMemLimit = process.env[FUNCTIONS_MEM_LIMIT];
 
       attributes = {
         [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AZURE,
         [SemanticResourceAttributes.CLOUD_PLATFORM]:
           CloudPlatformValues.AZURE_FUNCTIONS,
-        [SemanticResourceAttributes.CLOUD_REGION]:
-          process.env[FUNCTIONS_REGION],
+        [SemanticResourceAttributes.CLOUD_REGION]: process.env[REGION_NAME],
       };
 
       if (functionName) {

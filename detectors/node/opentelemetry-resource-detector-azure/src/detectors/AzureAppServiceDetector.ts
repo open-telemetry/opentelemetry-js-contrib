@@ -15,23 +15,23 @@
  */
 
 import { DetectorSync, IResource, Resource } from '@opentelemetry/resources';
-
+import {
+  AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE,
+  REGION_NAME,
+  WEBSITE_HOME_STAMPNAME,
+  WEBSITE_HOSTNAME,
+  WEBSITE_INSTANCE_ID,
+  WEBSITE_OWNER_NAME,
+  WEBSITE_RESOURCE_GROUP,
+  WEBSITE_SITE_NAME,
+  WEBSITE_SLOT_NAME,
+  CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
+} from '../types';
 import {
   CloudProviderValues,
   CloudPlatformValues,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
-
-const AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE = 'azure.app.service.stamp';
-const CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE = 'cloud.resource_id';
-const REGION_NAME = 'REGION_NAME';
-const WEBSITE_HOME_STAMPNAME = 'WEBSITE_HOME_STAMPNAME';
-const WEBSITE_HOSTNAME = 'WEBSITE_HOSTNAME';
-const WEBSITE_INSTANCE_ID = 'WEBSITE_INSTANCE_ID';
-const WEBSITE_OWNER_NAME = 'WEBSITE_OWNER_NAME';
-const WEBSITE_RESOURCE_GROUP = 'WEBSITE_RESOURCE_GROUP';
-const WEBSITE_SITE_NAME = 'WEBSITE_SITE_NAME';
-const WEBSITE_SLOT_NAME = 'WEBSITE_SLOT_NAME';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
   [SemanticResourceAttributes.CLOUD_REGION]: REGION_NAME,
