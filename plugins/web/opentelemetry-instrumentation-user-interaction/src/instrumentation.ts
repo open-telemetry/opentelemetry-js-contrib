@@ -72,9 +72,14 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       typeof config?.shouldPreventSpanCreation === 'function'
         ? config.shouldPreventSpanCreation
         : defaultShouldPreventSpanCreation;
+    this.init();
   }
 
-  init() {}
+  init() {
+    this._eventNames.forEach(event => {
+      window.addEventListener(event, () => {});
+    });
+  }
 
   /**
    * This will check if last task was timeout and will save the time to
