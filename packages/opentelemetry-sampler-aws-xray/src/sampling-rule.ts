@@ -27,36 +27,14 @@ import { Reservoir } from './reservoir';
 import { Statistics } from './statistics';
 
 export class SamplingRule implements ISamplingRule {
-  public RuleName: string;
-  public Priority: number;
-  public ReservoirSize: number;
-  public FixedRate: number;
-  public ServiceName: string;
-  public ServiceType: string;
-  public Host: string;
-  public HTTPMethod: string;
-  public URLPath: string;
-  public ResourceARN: string;
-  public Attributes?: { [key: string]: string };
-  public Version: number;
+  public samplingRule: any;
   public reservoir: Reservoir;
   public statistics: Statistics;
 
   constructor(samplingRule: any) {
-    this.RuleName = samplingRule.ruleName;
-    this.Priority = samplingRule.priority;
-    this.ReservoirSize = samplingRule.reservoirSize;
-    this.FixedRate = samplingRule.fixedRate;
-    this.ServiceName = samplingRule.serviceName;
-    this.ServiceType = samplingRule.serviceType;
-    this.Host = samplingRule.host;
-    this.HTTPMethod = samplingRule.httpMethod;
-    this.URLPath = samplingRule.urlPath;
-    this.ResourceARN = samplingRule.resourceARN;
-    this.Version = samplingRule.version;
-    this.Attributes = samplingRule.attributes;
+    this.samplingRule = samplingRule;
 
-    this.reservoir = new Reservoir(this.ReservoirSize);
+    this.reservoir = new Reservoir(this.samplingRule.reservoirSize);
     this.statistics = new Statistics();
   }
 
@@ -68,19 +46,28 @@ export class SamplingRule implements ISamplingRule {
     const urlPath = attributes[SemanticAttributes.HTTP_URL];
     const serviceType =
       resource.attributes[SemanticResourceAttributes.CLOUD_PLATFORM];
+    const resourceARN =
+      resource.attributes[SemanticResourceAttributes.AWS_ECS_CLUSTER_ARN] ||
+      resource.attributes[SemanticResourceAttributes.AWS_EKS_CLUSTER_ARN] ||
+      resource.attributes[SemanticResourceAttributes.FAAS_ID];
 
     // "Default" is a reserved keyword from X-Ray back-end.
-    if (this.RuleName === 'Default') {
+    if (this.samplingRule.ruleName === 'Default') {
       return true;
     }
 
     return (
-      attributeMatch(attributes, this.Attributes) &&
-      (!host || wildcardMatch(this.Host, host)) &&
-      (!httpMethod || wildcardMatch(this.HTTPMethod, httpMethod)) &&
-      (!serviceName || wildcardMatch(this.ServiceName, serviceName)) &&
-      (!urlPath || wildcardMatch(this.URLPath, urlPath)) &&
-      (!serviceType || wildcardMatch(this.ServiceType, serviceType))
+      attributeMatch(attributes, this.samplingRule.attributes) &&
+      (!host || wildcardMatch(this.samplingRule.host, host)) &&
+      (!httpMethod ||
+        wildcardMatch(this.samplingRule.httpMethod, httpMethod)) &&
+      (!serviceName ||
+        wildcardMatch(this.samplingRule.sericeName, serviceName)) &&
+      (!urlPath || wildcardMatch(this.samplingRule.urlPath, urlPath)) &&
+      (!serviceType ||
+        wildcardMatch(this.samplingRule.serviceType, serviceType)) &&
+      (!serviceType ||
+        wildcardMatch(this.samplingRule.resourceARN, resourceARN))
     );
   };
 

@@ -21,7 +21,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { Context, Link, Attributes, SpanKind } from '@opentelemetry/api';
 
-export class FallbackSampler implements Sampler {
+export class AwsXrayFallbackSampler implements Sampler {
   private _alwaysOnSampler = new AlwaysOnSampler();
 
   shouldSample(
@@ -37,6 +37,6 @@ export class FallbackSampler implements Sampler {
   }
 
   public toString = (): string => {
-    return 'FallbackSampler';
+    return 'AwsXrayFallbackSampler';
   };
 }

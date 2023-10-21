@@ -21,43 +21,42 @@ const RuleCacheTTL_SECONDS = 60 * 60; // The cache expires 1 hour after the last
 
 export class RuleCache {
   public rules: SamplingRule[];
-  private lastUpdated: number | undefined = undefined;
+  private lastUpdatedEpoch: number | undefined = undefined;
+  private samplerResource: Resource;
 
-  constructor() {
+  constructor(samplerResource: Resource) {
     this.rules = [];
+    this.samplerResource = samplerResource;
   }
 
   public isExpired = (): boolean => {
-    if (this.lastUpdated === undefined) {
+    if (this.lastUpdatedEpoch === undefined) {
       return true;
     }
 
     const now = Math.floor(new Date().getTime() / 1000); // getTime returns milliseconds -> /1000 gives seconds
-    return now > this.lastUpdated + RuleCacheTTL_SECONDS;
+    return now > this.lastUpdatedEpoch + RuleCacheTTL_SECONDS;
   };
 
   public getMatchedRule = (
-    attributes: Attributes,
-    resource: Resource
+    attributes: Attributes
   ): SamplingRule | undefined => {
-    if (this.isExpired()) {
-      return undefined;
-    }
-
     return this.rules.find(
-      rule => rule.matches(attributes, resource) || rule.RuleName === 'Default'
+      rule =>
+        rule.matches(attributes, this.samplerResource) ||
+        rule.samplingRule.ruleName === 'Default'
     );
   };
 
-  private _sortRulesByPriority = () => {
+  private sortRulesByPriority = () => {
     this.rules.sort((rule1: SamplingRule, rule2: SamplingRule): number => {
-      const value = rule1.Priority - rule2.Priority;
+      const value = rule1.samplingRule.priority - rule2.samplingRule.priority;
 
       if (value !== 0) return value;
 
-      if (rule1.RuleName > rule2.RuleName) {
-        return 1;
-      } else return -1;
+      return rule1.samplingRule.ruleName.localeCompare(
+        rule2.samplingRule.ruleName
+      );
     });
   };
 
@@ -67,14 +66,14 @@ export class RuleCache {
 
     this.rules.forEach((rule: SamplingRule) => {
       // use Object.assign to create a new copy of the rules object to store by value
-      oldRules[rule.RuleName] = Object.assign({}, rule);
+      oldRules[rule.samplingRule.ruleName] = Object.assign({}, rule);
     });
 
     // update rules in the cache
     this.rules = newRules;
 
     this.rules.forEach((rule: SamplingRule) => {
-      const oldRule: SamplingRule = oldRules[rule.RuleName];
+      const oldRule: SamplingRule = oldRules[rule.samplingRule.ruleName];
 
       if (oldRule) {
         rule.reservoir = oldRule.reservoir;
@@ -83,8 +82,8 @@ export class RuleCache {
     });
 
     // sort rules by priority and make lastUpdated = now
-    this._sortRulesByPriority();
-    this.lastUpdated = Math.floor(new Date().getTime() / 1000);
+    this.sortRulesByPriority();
+    this.lastUpdatedEpoch = Math.floor(new Date().getTime() / 1000);
 
     return;
   };

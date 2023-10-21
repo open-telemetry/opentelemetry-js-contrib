@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Attributes } from '@opentelemetry/api';
+import { Attributes, diag } from '@opentelemetry/api';
 
 // Template function from: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
 const escapeRegExp = (regExPattern: string): string => {
@@ -22,13 +22,8 @@ const escapeRegExp = (regExPattern: string): string => {
   return regExPattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
 };
 
-const convertPatternToRegex = (pattern: string): string => {
-  let regexPattern = '';
-
-  regexPattern = escapeRegExp(pattern).replace(/\*/g, '.*');
-  regexPattern = regexPattern.replace(/\?/g, '.');
-
-  return regexPattern;
+const convertPatternToRegExp = (pattern: string): string => {
+  return escapeRegExp(pattern).replace(/\*/g, '.*').replace(/\?/g, '.');
 };
 
 export const wildcardMatch = (pattern?: string, text?: any): boolean => {
@@ -39,10 +34,10 @@ export const wildcardMatch = (pattern?: string, text?: any): boolean => {
 
   const match = text
     .toLowerCase()
-    .match(convertPatternToRegex(pattern.toLowerCase()));
+    .match(convertPatternToRegExp(pattern.toLowerCase()));
 
   if (match === null) {
-    console.log(`WildcardMatch: no match found for ${text}`);
+    diag.debug(`WildcardMatch: no match found for ${text}`);
     return false;
   }
 
@@ -51,7 +46,7 @@ export const wildcardMatch = (pattern?: string, text?: any): boolean => {
 
 export const attributeMatch = (
   attributes: Attributes | undefined,
-  ruleAttributes: any
+  ruleAttributes: { [key: string]: string } | undefined
 ): boolean => {
   if (!ruleAttributes || Object.keys(ruleAttributes).length === 0) {
     return true;
@@ -73,8 +68,6 @@ export const attributeMatch = (
     } else {
       continue;
     }
-
-    console.log(foundPattern);
 
     if (wildcardMatch(foundPattern, value)) {
       // increment matched count

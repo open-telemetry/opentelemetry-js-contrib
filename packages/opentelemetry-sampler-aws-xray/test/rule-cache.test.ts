@@ -48,22 +48,23 @@ describe('RuleCache', () => {
     const defaultRule: SamplingRule = createRule('Default', 10000, 1, 0.05);
     defaultRule.reservoir = new Reservoir(20);
 
-    const ruleCache = new RuleCache();
+    const ruleCache = new RuleCache(new Resource({}));
     ruleCache.rules = [defaultRule];
 
     const newDefaultRule: SamplingRule = createRule('Default', 10000, 10, 0.2);
     ruleCache.updateRules([newDefaultRule]);
+    console.log('HERE');
     console.log(ruleCache.rules[0]);
-    assert.equal(ruleCache.rules[0].RuleName, 'Default');
-    assert.equal(ruleCache.rules[0].ReservoirSize, 10);
-    assert.equal(ruleCache.rules[0].FixedRate, 0.2);
+    assert.equal(ruleCache.rules[0].samplingRule.ruleName, 'Default');
+    assert.equal(ruleCache.rules[0].samplingRule.reservoirSize, 10);
+    assert.equal(ruleCache.rules[0].samplingRule.fixedRate, 0.2);
   });
 
   it('should remove the old rule from the cache after updating', () => {
     const defaultRule: SamplingRule = createRule('Default', 10000, 1, 0.05);
     defaultRule.reservoir = new Reservoir(20);
 
-    const ruleCache = new RuleCache();
+    const ruleCache = new RuleCache(new Resource({}));
     ruleCache.rules = [defaultRule];
 
     const newDefaultRule: SamplingRule = createRule('Default', 10000, 10, 0.2);
@@ -73,7 +74,7 @@ describe('RuleCache', () => {
   });
 
   it('should sort the rules based on priority', () => {
-    const ruleCache = new RuleCache();
+    const ruleCache = new RuleCache(new Resource({}));
 
     const defaultRule: SamplingRule = createRule('Default', 10000, 1, 0.05); // priority = 10000
     const rule1: SamplingRule = createRule('Rule1', 100, 5, 0.2); // priority = 100
@@ -82,42 +83,40 @@ describe('RuleCache', () => {
     ruleCache.updateRules([defaultRule, rule1, rule2]);
 
     assert.equal(ruleCache.rules.length, 3);
-    assert.equal(ruleCache.rules[0].RuleName, 'Rule2');
-    assert.equal(ruleCache.rules[1].RuleName, 'Rule1');
-    assert.equal(ruleCache.rules[2].RuleName, 'Default');
+    assert.equal(ruleCache.rules[0].samplingRule.ruleName, 'Rule2');
+    assert.equal(ruleCache.rules[1].samplingRule.ruleName, 'Rule1');
+    assert.equal(ruleCache.rules[2].samplingRule.ruleName, 'Default');
   });
 
   it('should match with the rule with the higher priority', () => {
-    const ruleCache = new RuleCache();
     const attributes = {};
     const resource = new Resource({
       [SemanticResourceAttributes.SERVICE_NAME]: 'aws_ec2',
     });
-
+    const ruleCache = new RuleCache(resource);
     const defaultRule: SamplingRule = createRule('Default', 10000, 1, 0.05); // priority = 10000
     const rule1: SamplingRule = createRule('Rule1', 100, 5, 0.2); // priority = 100
     const rule2: SamplingRule = createRule('Rule2', 1, 10, 0.2); // priority = 1
 
     ruleCache.updateRules([defaultRule, rule1, rule2]);
 
-    const matchedRule = ruleCache.getMatchedRule(attributes, resource);
-    assert.equal(matchedRule?.RuleName, 'Rule2');
+    const matchedRule = ruleCache.getMatchedRule(attributes);
+    assert.equal(matchedRule?.samplingRule.ruleName, 'Rule2');
   });
 
   it('should match with the first rule if more than 1 rule have the same priority', () => {
-    const ruleCache = new RuleCache();
     const attributes = {};
     const resource = new Resource({
       [SemanticResourceAttributes.SERVICE_NAME]: 'aws_ec2',
     });
-
+    const ruleCache = new RuleCache(resource);
     const defaultRule: SamplingRule = createRule('Default', 10000, 1, 0.05); // priority = 10000
     const rule1: SamplingRule = createRule('Rule1', 1, 5, 0.2); // priority = 1
     const rule2: SamplingRule = createRule('Rule2', 1, 10, 0.2); // priority = 1
 
     ruleCache.updateRules([defaultRule, rule1, rule2]);
 
-    const matchedRule = ruleCache.getMatchedRule(attributes, resource);
-    assert.equal(matchedRule?.RuleName, 'Rule1'); // alphabetical order
+    const matchedRule = ruleCache.getMatchedRule(attributes);
+    assert.equal(matchedRule?.samplingRule.ruleName, 'Rule1'); // alphabetical order
   });
 });

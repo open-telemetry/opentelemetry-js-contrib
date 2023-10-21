@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  Sampler,
-  SamplingResult,
-} from '@opentelemetry/sdk-trace-base';
+import { Sampler, SamplingResult } from '@opentelemetry/sdk-trace-base';
 import {
   diag,
   DiagLogger,
@@ -27,11 +24,10 @@ import {
   SpanKind,
 } from '@opentelemetry/api';
 import { SamplingRule } from './sampling-rule';
-import { Resource } from '@opentelemetry/resources';
 import { AWSXRaySamplerConfig, SamplingRuleRecord } from './types';
 import axios from 'axios';
 import { RuleCache } from './rule-cache';
-import { FallbackSampler } from './fallback-sampler';
+import { AwsXrayFallbackSampler } from './aws-xray-fallback-sampler';
 
 // 5 minute interval on sampling rules fetch (default polling interval)
 const DEFAULT_INTERVAL_MS = 5 * 60 * 1000;
@@ -43,10 +39,9 @@ const SAMPLING_RULES_PATH = '/GetSamplingRules';
 export class AWSXRayRemoteSampler implements Sampler {
   private _pollingInterval: number;
   private _awsProxyEndpoint: string;
-  private _resource: Resource;
   private _ruleCache: RuleCache;
-  private _fallBackSampler: FallbackSampler;
-  private _samplerDiag: DiagLogger;
+  private _fallBackSampler: AwsXrayFallbackSampler;
+  private samplerDiag: DiagLogger;
 
   constructor(samplerConfig: AWSXRaySamplerConfig) {
     this._pollingInterval =
@@ -54,17 +49,17 @@ export class AWSXRayRemoteSampler implements Sampler {
     this._awsProxyEndpoint = samplerConfig.endpoint
       ? samplerConfig.endpoint
       : DEFAULT_AWS_PROXY_ENDPOINT;
-    this._resource = samplerConfig.resource;
-    this._ruleCache = new RuleCache();
-    this._fallBackSampler = new FallbackSampler();
+    this._fallBackSampler = new AwsXrayFallbackSampler();
 
     if (this._pollingInterval <= 0) {
       throw new TypeError('pollingInterval must be a positive integer');
     }
 
-    this._samplerDiag = diag.createComponentLogger({
+    this.samplerDiag = diag.createComponentLogger({
       namespace: '@opentelemetry/sampler-aws-xray',
     });
+
+    this._ruleCache = new RuleCache(samplerConfig.resource);
 
     // execute first get Sampling rules update using polling interval
     this.startRulePoller();
@@ -90,10 +85,7 @@ export class AWSXRayRemoteSampler implements Sampler {
       );
     }
 
-    const matchedRule = this._ruleCache.getMatchedRule(
-      attributes,
-      this._resource
-    );
+    const matchedRule = this._ruleCache.getMatchedRule(attributes);
 
     // TODO: update after verifying if default rule will always match,
     // this means that this method will always return return { decision: matchedRule.sample(attributes) }
@@ -101,6 +93,10 @@ export class AWSXRayRemoteSampler implements Sampler {
     if (matchedRule) {
       return { decision: matchedRule.sample(attributes) };
     }
+
+    this.samplerDiag.warn(
+      'Using fallback sampler as no rule match was found. This is likely due to a bug, since default rule should always match'
+    );
 
     return this._fallBackSampler.shouldSample(
       context,
@@ -142,8 +138,7 @@ export class AWSXRayRemoteSampler implements Sampler {
 
       this._ruleCache.updateRules(samplingRules);
     } catch (error) {
-      // Log error
-      this._samplerDiag.warn('Error fetching sampling rules: ', error);
+      this.samplerDiag.warn('Error fetching sampling rules: ', error);
     }
   };
 
