@@ -6,7 +6,7 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "test": "cross-env NODE_NO_WARNINGS=1 NODE_OPTIONS='--loader @opentelemetry/instrumentation/hook.mjs' nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts' 'test/**/*.test.mjs'",
     "test:debug": "cross-env RUN_REDIS_TESTS_LOCAL=true ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_REDIS_TESTS_LOCAL=true npm run test",
     "test-all-versions": "tav",

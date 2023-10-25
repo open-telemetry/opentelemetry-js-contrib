@@ -54,6 +54,10 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
             module[Symbol.toStringTag] === 'Module'
               ? module.default // ESM
               : module; // CommonJS
+          console.log(
+            'XXX IORedisInstrumentation: esm?',
+            module[Symbol.toStringTag] === 'Module'
+          );
           diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
