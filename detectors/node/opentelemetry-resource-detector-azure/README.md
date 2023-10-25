@@ -14,6 +14,7 @@ npm install --save @opentelemetry/resource-detector-azure
 ```
 
 ## Usage
+
 ```typescript
 import { detectResources } from '@opentelemetry/resources';
 import { azureAppServiceDetector } from '@opentelemetry/resource-detector-azure';
@@ -67,7 +68,7 @@ const tracerProvider = new NodeTracerProvider({ resource });
 | faas.instance           | The specific instance of the Azure App Service, useful in a scaled-out configuration.                                                                                                                     |
 | faas.name               | The name of the Azure App Service.                                                                                                                                                                        |
 | faas.version            | The version of the Azure Function being executed, e.g., "~4".                                                                                                                                             |
-| faas.max_memory         | The amount of memory available to the Azure Function expressed in MiB.                                                                                                                                    | 
+| faas.max_memory         | The amount of memory available to the Azure Function expressed in MiB.                                                                                                                                    |
 
 ## Useful links
 
