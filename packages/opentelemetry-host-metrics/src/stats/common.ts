@@ -34,9 +34,6 @@ let prevOsData: { time: number; cpus: os.CpuInfo[] } = {
  * For each CPU returned by `os.cpus()` it returns
  * - the CPU times in each state (user, sys, ...) in seconds
  * - the % of time the CPU was in each state since last measurement
- *
- * The first time will return 0 for % masurements since there is not enough
- * data to calculate it
  */
 export function getCpuUsageData(): CpuUsageData[] {
   const currentTime = Date.now();
