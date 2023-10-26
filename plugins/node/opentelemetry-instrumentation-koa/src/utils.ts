@@ -16,7 +16,7 @@
 import { KoaContext, KoaLayerType, KoaInstrumentationConfig } from './types';
 import { KoaMiddleware } from './internal-types';
 import { AttributeNames } from './enums/AttributeNames';
-import { SpanAttributes } from '@opentelemetry/api';
+import { Attributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 export const getMiddlewareMetadata = (
@@ -25,7 +25,7 @@ export const getMiddlewareMetadata = (
   isRouter: boolean,
   layerPath?: string
 ): {
-  attributes: SpanAttributes;
+  attributes: Attributes;
   name: string;
 } => {
   if (isRouter) {
