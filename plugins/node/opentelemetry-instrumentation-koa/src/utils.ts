@@ -23,7 +23,7 @@ export const getMiddlewareMetadata = (
   context: KoaContext,
   layer: KoaMiddleware,
   isRouter: boolean,
-  layerPath?: string
+  layerPath?: string | RegExp
 ): {
   attributes: Attributes;
   name: string;
@@ -31,9 +31,9 @@ export const getMiddlewareMetadata = (
   if (isRouter) {
     return {
       attributes: {
-        [AttributeNames.KOA_NAME]: layerPath,
+        [AttributeNames.KOA_NAME]: layerPath?.toString(),
         [AttributeNames.KOA_TYPE]: KoaLayerType.ROUTER,
-        [SemanticAttributes.HTTP_ROUTE]: layerPath,
+        [SemanticAttributes.HTTP_ROUTE]: layerPath?.toString(),
       },
       name: context._matchedRouteName || `router - ${layerPath}`,
     };
