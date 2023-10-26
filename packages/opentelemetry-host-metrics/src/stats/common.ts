@@ -20,7 +20,15 @@ import { CpuUsageData, MemoryData, ProcessCpuUsageData } from '../types';
 
 const MILLISECOND = 1 / 1e3;
 let cpuUsageTime: number | undefined = undefined;
-let prevOsData: { time: number; cpus: os.CpuInfo[] };
+
+/**
+ * We get data as soon as we load the module so the 1st collect
+ * of the metric already has valuable data to be sent.
+ */
+let prevOsData: { time: number; cpus: os.CpuInfo[] } = {
+  time: Date.now(),
+  cpus: os.cpus(),
+};
 
 /**
  * For each CPU returned by `os.cpus()` it returns
@@ -31,26 +39,6 @@ let prevOsData: { time: number; cpus: os.CpuInfo[] };
  * data to calculate it
  */
 export function getCpuUsageData(): CpuUsageData[] {
-  if (typeof prevOsData !== 'object') {
-    const time = Date.now();
-    const cpus = os.cpus();
-    prevOsData = { time, cpus };
-
-    return cpus.map((cpu, cpuNumber) => ({
-      cpuNumber: String(cpuNumber),
-      idle: cpu.times.idle * MILLISECOND,
-      user: cpu.times.user * MILLISECOND,
-      system: cpu.times.sys * MILLISECOND,
-      interrupt: cpu.times.irq * MILLISECOND,
-      nice: cpu.times.nice * MILLISECOND,
-      userP: 0,
-      systemP: 0,
-      idleP: 0,
-      interruptP: 0,
-      niceP: 0,
-    }));
-  }
-
   const currentTime = Date.now();
   const timeElapsed = currentTime - prevOsData.time;
   const currentOsData = { time: currentTime, cpus: os.cpus() };
