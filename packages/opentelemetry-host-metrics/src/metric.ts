@@ -40,48 +40,51 @@ export class HostMetrics extends BaseMetrics {
     observableResult: api.BatchObservableResult,
     cpuUsages: CpuUsageData[]
   ): void {
+    const stateAttr = enums.METRIC_ATTRIBUTES.SYSTEM_CPU_STATE;
+    const cpuAttr = enums.METRIC_ATTRIBUTES.SYSTEM_CPU_LOGICAL_NUMBER;
+    
     for (let i = 0, j = cpuUsages.length; i < j; i++) {
       const cpuUsage = cpuUsages[i];
       observableResult.observe(this._cpuTime, cpuUsage.user, {
-        state: enums.CPU_LABELS.USER,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.USER,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuTime, cpuUsage.system, {
-        state: enums.CPU_LABELS.SYSTEM,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.SYSTEM,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuTime, cpuUsage.idle, {
-        state: enums.CPU_LABELS.IDLE,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.IDLE,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuTime, cpuUsage.interrupt, {
-        state: enums.CPU_LABELS.INTERRUPT,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.INTERRUPT,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuTime, cpuUsage.nice, {
-        state: enums.CPU_LABELS.NICE,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.NICE,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
 
       observableResult.observe(this._cpuUtilization, cpuUsage.userP, {
-        state: enums.CPU_LABELS.USER,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.USER,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuUtilization, cpuUsage.systemP, {
-        state: enums.CPU_LABELS.SYSTEM,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.SYSTEM,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuUtilization, cpuUsage.idleP, {
-        state: enums.CPU_LABELS.IDLE,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.IDLE,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuUtilization, cpuUsage.interruptP, {
-        state: enums.CPU_LABELS.INTERRUPT,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.INTERRUPT,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
       observableResult.observe(this._cpuUtilization, cpuUsage.niceP, {
-        state: enums.CPU_LABELS.NICE,
-        cpu: cpuUsage.cpuNumber,
+        [stateAttr]: enums.CPU_LABELS.NICE,
+        [cpuAttr]: cpuUsage.cpuNumber,
       });
     }
   }
