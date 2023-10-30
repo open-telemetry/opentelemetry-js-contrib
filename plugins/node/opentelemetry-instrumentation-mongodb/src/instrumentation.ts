@@ -99,31 +99,31 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition<any>(
         'mongodb',
-        ['4.*', '5.*'],
+        ['4.*', '5.*', '6.*'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile<V4Connection>(
             'mongodb/lib/cmap/connection.js',
-            ['4.*', '5.*'],
+            ['4.*', '5.*', '6.*'],
             v4PatchConnection,
             v4UnpatchConnection
           ),
           new InstrumentationNodeModuleFile<V4ConnectionPool>(
             'mongodb/lib/cmap/connection_pool.js',
-            ['4.*', '5.*'],
+            ['4.*', '5.*', '6.*'],
             v4PatchConnectionPool,
             v4UnpatchConnectionPool
           ),
           new InstrumentationNodeModuleFile<V4Connect>(
             'mongodb/lib/cmap/connect.js',
-            ['4.*', '5.*'],
+            ['4.*', '5.*', '6.*'],
             v4PatchConnect,
             v4UnpatchConnect
           ),
           new InstrumentationNodeModuleFile<V4Session>(
             'mongodb/lib/sessions.js',
-            ['4.*', '5.*'],
+            ['4.*', '5.*', '6.*'],
             v4PatchSessions,
             v4UnpatchSessions
           ),
