@@ -27,6 +27,7 @@ import {
 import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
+import { METRIC_ATTRIBUTES } from '../src/enum'
 import { HostMetrics } from '../src';
 
 const cpuJson = require('./mocks/cpu.json');
@@ -160,39 +161,39 @@ describe('Host Metrics', () => {
       sandbox.restore();
     });
 
-    const sysStateAttr = 'system.cpu.state';
-    const sysCpuAttr = 'system.cpu.logical_number';
+    const sysCpuStateAttr = METRIC_ATTRIBUTES.SYSTEM_CPU_STATE;
+    const sysCpuNumAttr = METRIC_ATTRIBUTES.SYSTEM_CPU_LOGICAL_NUMBER;
 
     it('should export CPU time metrics', async () => {
       const metric = await getRecords(reader, 'system.cpu.time');
 
-      ensureValue(metric, { [sysStateAttr]: 'user', [sysCpuAttr]: '0' }, 90714.26);
-      ensureValue(metric, { [sysStateAttr]: 'system', [sysCpuAttr]: '0' }, 63192.83);
-      ensureValue(metric, { [sysStateAttr]: 'idle', [sysCpuAttr]: '0' }, 374870.8);
-      ensureValue(metric, { [sysStateAttr]: 'interrupt', [sysCpuAttr]: '0' }, 0);
-      ensureValue(metric, { [sysStateAttr]: 'nice', [sysCpuAttr]: '0' }, 0);
+      ensureValue(metric, { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '0' }, 90714.26);
+      ensureValue(metric, { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '0' }, 63192.83);
+      ensureValue(metric, { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '0' }, 374870.8);
+      ensureValue(metric, { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '0' }, 0);
+      ensureValue(metric, { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '0' }, 0);
 
-      ensureValue(metric, { [sysStateAttr]: 'user', [sysCpuAttr]: '1' }, 11005.72);
-      ensureValue(metric, { [sysStateAttr]: 'system', [sysCpuAttr]: '1' }, 7678.62);
-      ensureValue(metric, { [sysStateAttr]: 'idle', [sysCpuAttr]: '1' }, 510035);
-      ensureValue(metric, { [sysStateAttr]: 'interrupt', [sysCpuAttr]: '1' }, 0);
-      ensureValue(metric, { [sysStateAttr]: 'nice', [sysCpuAttr]: '1' }, 0);
+      ensureValue(metric, { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '1' }, 11005.72);
+      ensureValue(metric, { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '1' }, 7678.62);
+      ensureValue(metric, { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '1' }, 510035);
+      ensureValue(metric, { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '1' }, 0);
+      ensureValue(metric, { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '1' }, 0);
     });
 
     it('should export CPU utilization metrics', async () => {
       const metric = await getRecords(reader, 'system.cpu.utilization');
 
-      ensureValue(metric, { [sysStateAttr]: 'user', [sysCpuAttr]: '0' }, 0.7);
-      ensureValue(metric, { [sysStateAttr]: 'system', [sysCpuAttr]: '0' }, 0.2);
-      ensureValue(metric, { [sysStateAttr]: 'idle', [sysCpuAttr]: '0' }, 0.1);
-      ensureValue(metric, { [sysStateAttr]: 'interrupt', [sysCpuAttr]: '0' }, 0);
-      ensureValue(metric, { [sysStateAttr]: 'nice', [sysCpuAttr]: '0' }, 0);
+      ensureValue(metric, { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '0' }, 0.7);
+      ensureValue(metric, { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '0' }, 0.2);
+      ensureValue(metric, { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '0' }, 0.1);
+      ensureValue(metric, { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '0' }, 0);
+      ensureValue(metric, { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '0' }, 0);
 
-      ensureValue(metric, { [sysStateAttr]: 'user', [sysCpuAttr]: '1' }, 0.3);
-      ensureValue(metric, { [sysStateAttr]: 'system', [sysCpuAttr]: '1' }, 0.5);
-      ensureValue(metric, { [sysStateAttr]: 'idle', [sysCpuAttr]: '1' }, 0.2);
-      ensureValue(metric, { [sysStateAttr]: 'interrupt', [sysCpuAttr]: '1' }, 0);
-      ensureValue(metric, { [sysStateAttr]: 'nice', [sysCpuAttr]: '1' }, 0);
+      ensureValue(metric, { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '1' }, 0.3);
+      ensureValue(metric, { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '1' }, 0.5);
+      ensureValue(metric, { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '1' }, 0.2);
+      ensureValue(metric, { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '1' }, 0);
+      ensureValue(metric, { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '1' }, 0);
     });
 
     it('should export Memory usage metrics', async () => {
