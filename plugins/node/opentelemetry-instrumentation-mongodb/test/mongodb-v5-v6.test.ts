@@ -124,7 +124,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               'mongodb.insert',
               SpanKind.CLIENT,
               'insert',
-              URL,
+              URL
             );
             done();
           })
