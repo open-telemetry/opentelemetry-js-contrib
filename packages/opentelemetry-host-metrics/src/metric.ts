@@ -42,7 +42,7 @@ export class HostMetrics extends BaseMetrics {
   ): void {
     const stateAttr = enums.METRIC_ATTRIBUTES.SYSTEM_CPU_STATE;
     const cpuAttr = enums.METRIC_ATTRIBUTES.SYSTEM_CPU_LOGICAL_NUMBER;
-    
+
     for (let i = 0, j = cpuUsages.length; i < j; i++) {
       const cpuUsage = cpuUsages[i];
       observableResult.observe(this._cpuTime, cpuUsage.user, {
