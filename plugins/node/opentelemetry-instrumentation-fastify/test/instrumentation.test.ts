@@ -183,6 +183,23 @@ describe('fastify', () => {
       assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
     });
 
+    it('should generate span for 404 request', async () => {
+      await startServer();
+      await httpRequest.get(`http://localhost:${PORT}/no-such-route`);
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 5);
+      const span = spans[2];
+      assert.deepStrictEqual(span.attributes, {
+        'fastify.name': 'basic404',
+        'fastify.type': 'request_handler',
+        'plugin.name': 'fastify -> @fastify/express',
+      });
+      assert.strictEqual(span.name, 'request handler - basic404');
+      const baseSpan = spans[1];
+      assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+    });
+
     describe('when subsystem is registered', () => {
       beforeEach(async () => {
         httpInstrumentation.enable();
