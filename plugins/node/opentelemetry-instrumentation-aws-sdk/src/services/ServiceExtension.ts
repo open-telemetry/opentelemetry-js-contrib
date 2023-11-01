@@ -30,7 +30,7 @@ export interface RequestMetadata {
 
 export interface ServiceExtension {
   // called before request is sent, and before span is started
-  requestPreSpanHook: (request: NormalizedRequest) => RequestMetadata;
+  requestPreSpanHook: (request: NormalizedRequest, config: AwsSdkInstrumentationConfig) => RequestMetadata;
 
   // called before request is sent, and after span is started
   requestPostSpanHook?: (request: NormalizedRequest) => void;

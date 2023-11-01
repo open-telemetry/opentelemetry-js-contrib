@@ -35,13 +35,16 @@ export class ServicesExtensions implements ServiceExtension {
     this.services.set('Lambda', new LambdaServiceExtension());
   }
 
-  requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
+  requestPreSpanHook(
+    request: NormalizedRequest,
+    config: AwsSdkInstrumentationConfig
+  ): RequestMetadata {
     const serviceExtension = this.services.get(request.serviceName);
     if (!serviceExtension)
       return {
         isIncoming: false,
       };
-    return serviceExtension.requestPreSpanHook(request);
+    return serviceExtension.requestPreSpanHook(request, config);
   }
 
   requestPostSpanHook(request: NormalizedRequest) {

@@ -475,8 +475,10 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
           command.input,
           undefined
         );
-        const requestMetadata =
-          self.servicesExtensions.requestPreSpanHook(normalizedRequest);
+        const requestMetadata = self.servicesExtensions.requestPreSpanHook(
+          normalizedRequest,
+          self._config
+        );
         const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
         const activeContextWithSpan = trace.setSpan(context.active(), span);
 
@@ -602,8 +604,10 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       }
 
       const normalizedRequest = normalizeV2Request(this);
-      const requestMetadata =
-        self.servicesExtensions.requestPreSpanHook(normalizedRequest);
+      const requestMetadata = self.servicesExtensions.requestPreSpanHook(
+        normalizedRequest,
+        self._config
+      );
       const span = self._startAwsV2Span(
         this,
         requestMetadata,
@@ -642,8 +646,10 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       }
 
       const normalizedRequest = normalizeV2Request(this);
-      const requestMetadata =
-        self.servicesExtensions.requestPreSpanHook(normalizedRequest);
+      const requestMetadata = self.servicesExtensions.requestPreSpanHook(
+        normalizedRequest,
+        self._config
+      );
       const span = self._startAwsV2Span(
         this,
         requestMetadata,

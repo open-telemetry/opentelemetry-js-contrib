@@ -21,26 +21,36 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   AwsSdkInstrumentationConfig,
+  AwsSdkDynamoDBStatementSerializer,
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
+
+const defaultDynamoDBStatementSerializer: AwsSdkDynamoDBStatementSerializer = () =>
+  undefined;
 
 export class DynamodbServiceExtension implements ServiceExtension {
   toArray<T>(values: T | T[]): T[] {
     return Array.isArray(values) ? values : [values];
   }
 
-  requestPreSpanHook(normalizedRequest: NormalizedRequest): RequestMetadata {
+  requestPreSpanHook(
+    normalizedRequest: NormalizedRequest,
+    config: AwsSdkInstrumentationConfig
+  ): RequestMetadata {
     const spanKind: SpanKind = SpanKind.CLIENT;
     let spanName: string | undefined;
     const isIncoming = false;
     const operation = normalizedRequest.commandName;
 
+    const dbStatementSerializer =
+      config.dynamoDBStatementSerializer || defaultDynamoDBStatementSerializer;
+
     const spanAttributes = {
       [SemanticAttributes.DB_SYSTEM]: DbSystemValues.DYNAMODB,
       [SemanticAttributes.DB_NAME]: normalizedRequest.commandInput?.TableName,
       [SemanticAttributes.DB_OPERATION]: operation,
-      [SemanticAttributes.DB_STATEMENT]: JSON.stringify(
+      [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
         normalizedRequest.commandInput
       ),
     };
