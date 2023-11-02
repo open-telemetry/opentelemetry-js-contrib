@@ -330,7 +330,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4ConnectionPoolCheckOut() {
     return (original: V4ConnectionPool['checkOut']) => {
       return function patchedCheckout(this: unknown, callback: any) {
-        const patchedCallback = context.bind(context.active(), callback)
+        const patchedCallback = context.bind(context.active(), callback);
         return original.call(this, patchedCallback);
       };
     };
