@@ -29,8 +29,9 @@ describe('Register', function () {
         env: Object.assign({}, process.env, {
           OTEL_NODE_RESOURCE_DETECTORS: 'none',
           OTEL_TRACES_EXPORTER: 'console',
-          FORCE_COLOR: '1',
-          // NODE_DISABLE_COLORS: '1',
+          // XXX
+          // FORCE_COLOR: '1',
+          NODE_DISABLE_COLORS: '1',
         }),
       }
     );
