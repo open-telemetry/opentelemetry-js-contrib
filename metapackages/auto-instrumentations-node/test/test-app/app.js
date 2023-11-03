@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 console.log('XXX process.env', process.env);
-const tty = require('tty')
-console.log('XXX isatty', tty.isatty(1));
 
 //Used in register.test.ts to mimic a JS app.
 const http = require('http');

@@ -29,9 +29,10 @@ describe('Register', function () {
         env: Object.assign({}, process.env, {
           OTEL_NODE_RESOURCE_DETECTORS: 'none',
           OTEL_TRACES_EXPORTER: 'console',
-          // XXX
-          // FORCE_COLOR: '1',
-          NODE_DISABLE_COLORS: '1',
+          // nx (used by lerna run) defaults `FORCE_COLOR=true`, which in
+          // node v18.17.0, v20.3.0 and later results in ANSI color escapes
+          // in the ConsoleSpanExporter output that is checked below.
+          FORCE_COLOR: '0',
         }),
       }
     );
