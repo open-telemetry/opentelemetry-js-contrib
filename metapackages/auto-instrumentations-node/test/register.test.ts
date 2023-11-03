@@ -18,25 +18,27 @@ import { spawnSync } from 'child_process';
 import * as assert from 'assert';
 
 describe('Register', function () {
-  this.timeout(5000);
   it('can load auto instrumentation from command line', async () => {
+    console.log('XXX env.TERM=%s', process.env.TERM)
     const proc = spawnSync(
       process.execPath,
       ['--require', '../build/src/register.js', './test-app/app.js'],
       {
         cwd: __dirname,
         timeout: 5000,
+        killSignal: 'SIGKILL', // SIGTERM is not sufficient to terminate some hangs
         env: Object.assign(
           {},
           process.env,
           {
             OTEL_NODE_RESOURCE_DETECTORS: 'none',
             OTEL_TRACES_EXPORTER: 'console',
+            NODE_DISABLE_COLORS: '1'
           }
         )
       }
     );
-    console.log('XXX proc: status=%s stdout=--\n%s\n-- stderr=--\n%s\n--', proc.status, proc.stdout, proc.stderr);
+    console.log('XXX proc: status=%s signal=%s stdout=--\n%s\n-- stderr=--\n%s\n--', proc.status, proc.signal, proc.stdout, proc.stderr);
     assert.ifError(proc.error);
     assert.ok(
       proc.stdout.includes(
