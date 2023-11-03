@@ -21,26 +21,7 @@ jobs:
           ignore: "./**/CHANGELOG.md"
           args: "./**/*.md"
 
-      - name: restore lerna
-        uses: actions/cache@master # must use unreleased master to cache multiple paths
-        id: cache
-        with:
-          path: |
-            ./node_modules
-            ./package-lock.json
-            node_modules
-            detectors/node/*/node_modules
-            metapackages/*/node_modules
-            packages/*/node_modules
-            plugins/node/*/node_modules
-            plugins/web/*/node_modules
-            propagators/*/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
-
-      - name: Bootstrap
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          npm install --only=dev --ignore-scripts
-          npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='gts' --ignore-scripts -- --only=dev
+      # XXX consider 'npm install --only=dev' instead
+      - run: npm ci
       - name: Lint
         run: npm run lint
