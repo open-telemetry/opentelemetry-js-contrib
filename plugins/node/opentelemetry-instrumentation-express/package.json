@@ -17,7 +17,7 @@
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc -p .",
     "compile:examples": "cd examples && npm run compile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },
   "keywords": [
