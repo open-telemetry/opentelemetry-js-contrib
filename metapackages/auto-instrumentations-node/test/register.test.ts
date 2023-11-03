@@ -18,7 +18,7 @@ import { spawnSync } from 'child_process';
 import * as assert from 'assert';
 
 describe('Register', function () {
-  it('can load auto instrumentation from command line', async () => {
+  it('can load auto instrumentation from command line', () => {
     const proc = spawnSync(
       process.execPath,
       ['--require', '../build/src/register.js', './test-app/app.js'],
@@ -29,9 +29,19 @@ describe('Register', function () {
         env: Object.assign({}, process.env, {
           OTEL_NODE_RESOURCE_DETECTORS: 'none',
           OTEL_TRACES_EXPORTER: 'console',
-          NODE_DISABLE_COLORS: '1',
+          FORCE_COLORS: '1',
+          CI: '1',
+          GITHUB_ACTIONS: '1',
+          // NODE_DISABLE_COLORS: '1',
         }),
       }
+    );
+    console.log(
+      'XXX proc: %s/%s --\n%s\n--\n%s\n--',
+      proc.status,
+      proc.signal,
+      proc.stdout,
+      proc.stderr
     );
     assert.ifError(proc.error);
     assert.equal(proc.status, 0, `proc.status (${proc.status})`);
