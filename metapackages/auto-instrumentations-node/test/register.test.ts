@@ -29,9 +29,7 @@ describe('Register', function () {
         env: Object.assign({}, process.env, {
           OTEL_NODE_RESOURCE_DETECTORS: 'none',
           OTEL_TRACES_EXPORTER: 'console',
-          FORCE_COLORS: '1',
-          CI: '1',
-          GITHUB_ACTIONS: '1',
+          FORCE_COLOR: '1',
           // NODE_DISABLE_COLORS: '1',
         }),
       }
