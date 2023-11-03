@@ -118,6 +118,9 @@ jobs:
       - name: Legacy Peer Dependencies for npm 7
         if: matrix.node == '16'
         run: npm config set legacy-peer-deps=true
+      - name: Update npm to a version that supports workspaces (v7 or later)
+        if: ${{ matrix.node < 16 }}
+        run: npm install -g npm@9 # npm@9 supports node >=14.17.0
       - name: Install
         run: npm ci
       - name: Build
