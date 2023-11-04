@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-console.log('XXX process.env', process.env);
-
 //Used in register.test.ts to mimic a JS app.
 const http = require('http');
 

@@ -36,13 +36,6 @@ describe('Register', function () {
         }),
       }
     );
-    console.log(
-      'XXX proc: %s/%s --\n%s\n--\n%s\n--',
-      proc.status,
-      proc.signal,
-      proc.stdout,
-      proc.stderr
-    );
     assert.ifError(proc.error);
     assert.equal(proc.status, 0, `proc.status (${proc.status})`);
     assert.equal(proc.signal, null, `proc.signal (${proc.signal})`);

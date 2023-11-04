@@ -9,10 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    #XXX instead try setup-node
-    # container:
-    #   image: node:18
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,7 +22,6 @@ jobs:
           ignore: "./**/CHANGELOG.md"
           args: "./**/*.md"
 
-      # XXX consider 'npm install --only=dev' instead
       - run: npm ci
       - name: Lint
         run: npm run lint
