@@ -97,7 +97,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
 
       const rpcMetadata = getRPCMetadata(context.active());
       const routeName = anyRequest.routeOptions
-        ? anyRequest.routeOptions.url
+        ? anyRequest.routeOptions.url // since fastify@4.10.0
         : request.routerPath;
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
         rpcMetadata.route = routeName;
@@ -279,7 +279,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
         [AttributeNames.PLUGIN_NAME]: this.pluginName,
         [AttributeNames.FASTIFY_TYPE]: FastifyTypes.REQUEST_HANDLER,
         [SemanticAttributes.HTTP_ROUTE]: anyRequest.routeOptions
-          ? anyRequest.routeOptions.url
+          ? anyRequest.routeOptions.url // since fastify@4.10.0
           : request.routerPath,
       };
       if (handlerName) {
