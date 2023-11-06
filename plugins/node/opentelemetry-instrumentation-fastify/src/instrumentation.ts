@@ -33,7 +33,7 @@ import type {
   FastifyRequest,
   FastifyReply,
 } from 'fastify';
-import { applicationHookNames } from './constants';
+import { hooksNamesToWrap } from './constants';
 import {
   AttributeNames,
   FastifyNames,
@@ -178,8 +178,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
         const name = args[0] as string;
         const handler = args[1] as HandlerOriginal;
         const pluginName = this.pluginName;
-        if (applicationHookNames.includes(name)) {
-          return original.apply(this, [name, handler] as never);
+        if (!hooksNamesToWrap.has(name)) {
+          return original.apply(this, args);
         }
 
         const syncFunctionWithDone =

@@ -14,22 +14,4 @@
  * limitations under the License.
  */
 
-export const spanRequestSymbol = Symbol(
-  'opentelemetry.instrumentation.fastify.request_active_span'
-);
-
-// The instrumentation creates a span for invocations of lifecycle hook handlers
-// that take `(request, reply, ...[, done])` arguments. Currently this is all
-// lifecycle hooks except `onRequestAbort`.
-// https://fastify.dev/docs/latest/Reference/Hooks
-export const hooksNamesToWrap = new Set([
-  'onTimeout',
-  'onRequest',
-  'preParsing',
-  'preValidation',
-  'preSerialization',
-  'preHandler',
-  'onSend',
-  'onResponse',
-  'onError',
-]);
+export * from './detectors';
