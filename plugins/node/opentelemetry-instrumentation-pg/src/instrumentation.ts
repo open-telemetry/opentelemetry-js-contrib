@@ -66,7 +66,8 @@ export class PgInstrumentation extends InstrumentationBase {
     const modulePG = new InstrumentationNodeModuleDefinition<typeof pgTypes>(
       'pg',
       ['8.*'],
-      (module: any) => {
+      (module: any, moduleVersion) => {
+        diag.debug(`Applying patch for pg@${moduleVersion}`);
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
@@ -93,11 +94,12 @@ export class PgInstrumentation extends InstrumentationBase {
 
         return module;
       },
-      (module: any) => {
+      (module: any, moduleVersion) => {
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
             : module; // CommonJS
+        diag.debug(`Removing patch for pg@${moduleVersion}`);
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
@@ -109,7 +111,8 @@ export class PgInstrumentation extends InstrumentationBase {
     >(
       'pg-pool',
       ['2.*', '3.*'],
-      moduleExports => {
+      (moduleExports, moduleVersion) => {
+        diag.debug(`Applying patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -120,7 +123,8 @@ export class PgInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      moduleExports => {
+      (moduleExports, moduleVersion) => {
+        diag.debug(`Removing patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }

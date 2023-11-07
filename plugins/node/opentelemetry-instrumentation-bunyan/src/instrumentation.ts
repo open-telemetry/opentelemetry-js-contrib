@@ -43,7 +43,8 @@ export class BunyanInstrumentation extends InstrumentationBase<
       new InstrumentationNodeModuleDefinition<typeof BunyanLogger>(
         'bunyan',
         ['<2.0'],
-        logger => {
+        (logger, moduleVersion) => {
+          diag.debug(`Applying patch for bunyan@${moduleVersion}`);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const proto = logger.prototype as any;
           if (isWrapped(proto['_emit'])) {
@@ -58,8 +59,9 @@ export class BunyanInstrumentation extends InstrumentationBase<
           );
           return logger;
         },
-        logger => {
+        (logger, moduleVersion) => {
           if (logger === undefined) return;
+          diag.debug(`Removing patch for bunyan@${moduleVersion}`);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           this._unwrap(logger.prototype as any, '_emit');
         }
