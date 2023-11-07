@@ -605,6 +605,7 @@ describe('ioredis', () => {
                     },
                     name: 'exception',
                     time: [0, 0],
+                    droppedAttributesCount: 0,
                   },
                 ],
                 {

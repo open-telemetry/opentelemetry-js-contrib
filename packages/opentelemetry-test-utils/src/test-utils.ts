@@ -141,6 +141,8 @@ export interface TimedEvent {
   name: string;
   /** The attributes of the event. */
   attributes?: SpanAttributes;
+  /** Count of attributes of the event that were dropped due to collection limits */
+  droppedAttributesCount?: number;
 }
 
 export const getPackageVersion = (packageName: string) => {
