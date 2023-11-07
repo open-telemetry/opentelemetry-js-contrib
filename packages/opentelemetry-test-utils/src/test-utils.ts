@@ -144,8 +144,17 @@ export interface TimedEvent {
 }
 
 export const getPackageVersion = (packageName: string) => {
+  // With npm workspaces, `require.main` could be in the top-level node_modules,
+  // e.g. "<repo>/node_modules/mocha/bin/mocha" when running mocha tests, while
+  // the target package could be installed in a workspace subdir, e.g.
+  // "<repo>/plugins/node/opentelemetry-instrumentation/mysql2" for
+  // "test-all-versions" tests that tend to install conflicting package
+  // versions. Prefix the search paths with the cwd to include the workspace
+  // dir.
   const packagePath = require?.resolve(packageName, {
-    paths: require?.main?.paths,
+    paths: [path.join(process.cwd(), 'node_modules')].concat(
+      require?.main?.paths || []
+    ),
   });
   const packageJsonPath = path.join(path.dirname(packagePath), 'package.json');
   return require(packageJsonPath).version;
