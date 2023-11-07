@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, diag, trace } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
@@ -103,7 +103,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       // cannot make it work with appropriate type as execute function has 2
       //types and/cannot import function but only types
       (moduleExports: any, moduleVersion) => {
-        diag.debug(`Applying patch for graphql@${moduleVersion} execute`);
+        this._diag.debug(`Applying patch for graphql@${moduleVersion} execute`);
         if (isWrapped(moduleExports.execute)) {
           this._unwrap(moduleExports, 'execute');
         }
@@ -116,7 +116,9 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       },
       (moduleExports, moduleVersion) => {
         if (moduleExports) {
-          diag.debug(`Removing patch for graphql@${moduleVersion} execute`);
+          this._diag.debug(
+            `Removing patch for graphql@${moduleVersion} execute`
+          );
           this._unwrap(moduleExports, 'execute');
         }
       }
@@ -130,7 +132,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       'graphql/language/parser.js',
       supportedVersions,
       (moduleExports, moduleVersion) => {
-        diag.debug(`Applying patch for graphql@${moduleVersion} parse`);
+        this._diag.debug(`Applying patch for graphql@${moduleVersion} parse`);
         if (isWrapped(moduleExports.parse)) {
           this._unwrap(moduleExports, 'parse');
         }
@@ -139,7 +141,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       },
       (moduleExports, moduleVersion) => {
         if (moduleExports) {
-          diag.debug(`Removing patch for graphql@${moduleVersion} parse`);
+          this._diag.debug(`Removing patch for graphql@${moduleVersion} parse`);
           this._unwrap(moduleExports, 'parse');
         }
       }
@@ -153,7 +155,9 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       'graphql/validation/validate.js',
       supportedVersions,
       (moduleExports, moduleVersion) => {
-        diag.debug(`Applying patch for graphql@${moduleVersion} validate`);
+        this._diag.debug(
+          `Applying patch for graphql@${moduleVersion} validate`
+        );
         if (isWrapped(moduleExports.validate)) {
           this._unwrap(moduleExports, 'validate');
         }
@@ -162,7 +166,9 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       },
       (moduleExports, moduleVersion) => {
         if (moduleExports) {
-          diag.debug(`Removing patch for graphql@${moduleVersion} validate`);
+          this._diag.debug(
+            `Removing patch for graphql@${moduleVersion} validate`
+          );
           this._unwrap(moduleExports, 'validate');
         }
       }
@@ -291,7 +297,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       },
       err => {
         if (err) {
-          diag.error('Error running response hook', err);
+          this._diag.error('Error running response hook', err);
         }
 
         endSpan(span, undefined);

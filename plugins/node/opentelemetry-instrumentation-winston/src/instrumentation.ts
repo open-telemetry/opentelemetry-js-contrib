@@ -16,7 +16,6 @@
 
 import {
   context,
-  diag,
   trace,
   isSpanContextValid,
   Span,
@@ -58,7 +57,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
             'winston/lib/winston/logger.js',
             winston3Versions,
             (logger, moduleVersion) => {
-              diag.debug(`Applying patch for winston@${moduleVersion}`);
+              this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
               }
@@ -68,7 +67,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
             },
             (logger, moduleVersion) => {
               if (logger === undefined) return;
-              diag.debug(`Removing patch for winston@${moduleVersion}`);
+              this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(logger.prototype, 'write');
             }
           ),
@@ -84,7 +83,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
             'winston/lib/winston/logger.js',
             winstonPre3Versions,
             (fileExports, moduleVersion) => {
-              diag.debug(`Applying patch for winston@${moduleVersion}`);
+              this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               const proto = fileExports.Logger.prototype;
 
               if (isWrapped(proto.log)) {
@@ -97,7 +96,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
             },
             (fileExports, moduleVersion) => {
               if (fileExports === undefined) return;
-              diag.debug(`Removing patch for winston@${moduleVersion}`);
+              this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(fileExports.Logger.prototype, 'log');
             }
           ),
@@ -125,7 +124,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
       () => hook(span, record),
       err => {
         if (err) {
-          diag.error('winston instrumentation: error calling logHook', err);
+          this._diag.error('error calling logHook', err);
         }
       },
       true

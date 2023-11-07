@@ -22,7 +22,6 @@ import {
 
 import {
   context,
-  diag,
   trace,
   Span,
   SpanStatusCode,
@@ -67,7 +66,7 @@ export class PgInstrumentation extends InstrumentationBase {
       'pg',
       ['8.*'],
       (module: any, moduleVersion) => {
-        diag.debug(`Applying patch for pg@${moduleVersion}`);
+        this._diag.debug(`Applying patch for pg@${moduleVersion}`);
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
@@ -99,7 +98,7 @@ export class PgInstrumentation extends InstrumentationBase {
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
             : module; // CommonJS
-        diag.debug(`Removing patch for pg@${moduleVersion}`);
+        this._diag.debug(`Removing patch for pg@${moduleVersion}`);
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
@@ -112,7 +111,7 @@ export class PgInstrumentation extends InstrumentationBase {
       'pg-pool',
       ['2.*', '3.*'],
       (moduleExports, moduleVersion) => {
-        diag.debug(`Applying patch for pg-pool@${moduleVersion}`);
+        this._diag.debug(`Applying patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -124,7 +123,7 @@ export class PgInstrumentation extends InstrumentationBase {
         return moduleExports;
       },
       (moduleExports, moduleVersion) => {
-        diag.debug(`Removing patch for pg-pool@${moduleVersion}`);
+        this._diag.debug(`Removing patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -184,7 +183,7 @@ export class PgInstrumentation extends InstrumentationBase {
   private _getClientQueryPatch() {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
-      diag.debug(
+      this._diag.debug(
         `Patching ${PgInstrumentation.COMPONENT}.Client.prototype.query`
       );
       return function query(this: PgClientExtended, ...args: unknown[]) {
