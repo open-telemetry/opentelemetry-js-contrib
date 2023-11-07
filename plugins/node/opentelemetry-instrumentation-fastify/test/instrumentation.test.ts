@@ -25,12 +25,16 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { Span } from '@opentelemetry/api';
+import { getPackageVersion } from '@opentelemetry/contrib-test-utils';
+import * as semver from 'semver';
 import * as http from 'http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { AttributeNames, FastifyInstrumentation } from '../src';
 import { FastifyRequestInfo } from '../src/types';
 
 const URL = require('url').URL;
+
+const fastifyVersion = getPackageVersion('fastify');
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
@@ -441,7 +445,13 @@ describe('fastify', () => {
         await startServer();
       });
 
-      it('preClose is not instrumented', async () => {
+      it('preClose is not instrumented', async function () {
+        // 'preClose' was added in fastify@4.16.0
+        if (semver.lt(fastifyVersion, '4.16.0')) {
+          this.skip();
+          return;
+        }
+
         app.addHook('preClose', () => {
           assertRootContextActive();
         });
