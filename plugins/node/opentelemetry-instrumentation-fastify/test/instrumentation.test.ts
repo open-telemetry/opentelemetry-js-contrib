@@ -424,6 +424,14 @@ describe('fastify', () => {
         await startServer();
       });
 
+      it('preClose is not instrumented', async () => {
+        app.addHook('preClose', () => {
+          assertRootContextActive();
+        });
+
+        await startServer();
+      });
+
       it('onClose is not instrumented', async () => {
         app.addHook('onClose', () => {
           assertRootContextActive();
