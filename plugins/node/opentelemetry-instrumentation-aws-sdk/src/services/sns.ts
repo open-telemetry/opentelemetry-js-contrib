@@ -41,6 +41,9 @@ export class SnsServiceExtension implements ServiceExtension {
         MessagingDestinationKindValues.TOPIC;
       const { TopicArn, TargetArn, PhoneNumber } = request.commandInput;
       spanAttributes[SemanticAttributes.MESSAGING_DESTINATION] =
+        this.extractDestinationName(TopicArn, TargetArn, PhoneNumber);
+      // ToDO: Use SpanAttributes.MESSAGING_DESTINATION_NAME when implemented
+      spanAttributes['messaging.destination.name'] =
         TopicArn || TargetArn || PhoneNumber || 'unknown';
 
       spanName = `${
@@ -76,4 +79,23 @@ export class SnsServiceExtension implements ServiceExtension {
     tracer: Tracer,
     config: AwsSdkInstrumentationConfig
   ): void {}
+
+  extractDestinationName(
+    topicArn: string,
+    targetArn: string,
+    phoneNumber: string
+  ): string {
+    if (topicArn || targetArn) {
+      const arn = topicArn ?? targetArn;
+      try {
+        return arn.substr(arn.lastIndexOf(':') + 1);
+      } catch (err) {
+        return arn;
+      }
+    } else if (phoneNumber) {
+      return phoneNumber;
+    } else {
+      return 'unknown';
+    }
+  }
 }

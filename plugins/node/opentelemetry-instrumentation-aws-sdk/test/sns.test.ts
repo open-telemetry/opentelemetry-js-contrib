@@ -73,7 +73,7 @@ describe('SNS - v2', () => {
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${fakeARN} send`
+        (s: ReadableSpan) => s.name === `${topicName} send`
       );
       expect(publishSpans.length).toBe(1);
 
@@ -83,7 +83,10 @@ describe('SNS - v2', () => {
       ).toBe(MessagingDestinationKindValues.TOPIC);
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-      ).toBe(fakeARN);
+      ).toBe(topicName);
+      expect(publishSpan.attributes['messaging.destination.name']).toBe(
+        fakeARN
+      );
       expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe(
         'Publish'
       );
@@ -111,6 +114,9 @@ describe('SNS - v2', () => {
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
       ).toBe(PhoneNumber);
+      expect(publishSpan.attributes['messaging.destination.name']).toBe(
+        PhoneNumber
+      );
     });
 
     it('inject context propagation', async () => {
@@ -128,7 +134,7 @@ describe('SNS - v2', () => {
         .promise();
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${fakeARN} send`
+        (s: ReadableSpan) => s.name === `${topicName} send`
       );
       expect(publishSpans.length).toBe(1);
       expect(
@@ -158,6 +164,9 @@ describe('SNS - v2', () => {
       ).toBeUndefined();
       expect(
         createTopicSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
+      ).toBeUndefined();
+      expect(
+        createTopicSpan.attributes['messaging.destination.name']
       ).toBeUndefined();
       expect(createTopicSpan.kind).toBe(SpanKind.CLIENT);
     });
@@ -194,7 +203,7 @@ describe('SNS - v3', () => {
       });
 
       const publishSpans = getTestSpans().filter(
-        (s: ReadableSpan) => s.name === `${topicV3ARN} send`
+        (s: ReadableSpan) => s.name === `${topicV3Name} send`
       );
       expect(publishSpans.length).toBe(1);
 
@@ -204,7 +213,10 @@ describe('SNS - v3', () => {
       ).toBe(MessagingDestinationKindValues.TOPIC);
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
-      ).toBe(topicV3ARN);
+      ).toBe(topicV3Name);
+      expect(publishSpan.attributes['messaging.destination.name']).toBe(
+        topicV3ARN
+      );
       expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe(
         'Publish'
       );
