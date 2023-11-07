@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AsyncResource } from 'async_hooks';
-
 import {
   context,
   diag,
@@ -332,7 +330,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4ConnectionPoolCheckOut() {
     return (original: V4ConnectionPool['checkOut']) => {
       return function patchedCheckout(this: unknown, callback: any) {
-        const patchedCallback = AsyncResource.bind(callback);
+        const patchedCallback = context.bind(context.active(), callback);
         return original.call(this, patchedCallback);
       };
     };
