@@ -104,11 +104,11 @@ export class TestCollector {
   // Return the spans sorted by start time for testing convenience.
   get sortedSpans(): Array<TestSpan> {
     return this.spans.slice().sort((a, b) => {
-      assert(typeof(a.startTimeUnixNano) === 'string');
-      assert(typeof(b.startTimeUnixNano) === 'string');
+      assert(typeof a.startTimeUnixNano === 'string');
+      assert(typeof b.startTimeUnixNano === 'string');
       const aStartInt = BigInt(a.startTimeUnixNano);
       const bStartInt = BigInt(b.startTimeUnixNano);
-      return (aStartInt < bStartInt ? -1 : aStartInt > bStartInt ? 1 : 0);
+      return aStartInt < bStartInt ? -1 : aStartInt > bStartInt ? 1 : 0;
     });
   }
 
