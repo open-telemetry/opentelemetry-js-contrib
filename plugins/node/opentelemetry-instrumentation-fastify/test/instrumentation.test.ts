@@ -449,14 +449,13 @@ describe('fastify', () => {
         // 'preClose' was added in fastify@4.16.0
         if (semver.lt(fastifyVersion, '4.16.0')) {
           this.skip();
-          return;
+        } else {
+          app.addHook('preClose', () => {
+            assertRootContextActive();
+          });
+
+          await startServer();
         }
-
-        app.addHook('preClose', () => {
-          assertRootContextActive();
-        });
-
-        await startServer();
       });
 
       it('onClose is not instrumented', async () => {
