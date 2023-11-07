@@ -16,6 +16,7 @@
 
 // Utilities for running test files out-of-process. See `runTestFixture()` below.
 
+import * as assert from 'assert';
 import { execFile } from 'child_process';
 import { EventEmitter } from 'stream';
 import { IncomingMessage, ServerResponse, createServer } from 'http';
@@ -102,19 +103,12 @@ export class TestCollector {
 
   // Return the spans sorted by start time for testing convenience.
   get sortedSpans(): Array<TestSpan> {
-    this.spans[0].resource;
     return this.spans.slice().sort((a, b) => {
-      if (a.startTimeUnixNano.high < b.startTimeUnixNano.high) {
-        return -1;
-      } else if (a.startTimeUnixNano.high > b.startTimeUnixNano.high) {
-        return 1;
-      } else if (a.startTimeUnixNano.low < b.startTimeUnixNano.low) {
-        return -1;
-      } else if (a.startTimeUnixNano.low > b.startTimeUnixNano.low) {
-        return 1;
-      } else {
-        return 0;
-      }
+      assert(typeof(a.startTimeUnixNano) === 'string');
+      assert(typeof(b.startTimeUnixNano) === 'string');
+      const aStartInt = BigInt(a.startTimeUnixNano);
+      const bStartInt = BigInt(b.startTimeUnixNano);
+      return (aStartInt < bStartInt ? -1 : aStartInt > bStartInt ? 1 : 0);
     });
   }
 
