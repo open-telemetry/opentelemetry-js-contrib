@@ -22,28 +22,39 @@ const MILLISECOND = 1 / 1e3;
 let cpuUsageTime: number | undefined = undefined;
 
 /**
- * It returns cpu load delta from last time - to be used with SumObservers.
- * When called first time it will return 0 and then delta will be calculated
+ * We get data as soon as we load the module so the 1st collect
+ * of the metric already has valuable data to be sent.
+ */
+let prevOsData: { time: number; cpus: os.CpuInfo[] } = {
+  time: Date.now(),
+  cpus: os.cpus(),
+};
+
+/**
+ * For each CPU returned by `os.cpus()` it returns
+ * - the CPU times in each state (user, sys, ...) in seconds
+ * - the % of time the CPU was in each state since last measurement
  */
 export function getCpuUsageData(): CpuUsageData[] {
-  if (typeof cpuUsageTime !== 'number') {
-    cpuUsageTime = new Date().getTime() - process.uptime() * 1000;
-  }
+  const currentTime = Date.now();
+  const timeElapsed = currentTime - prevOsData.time;
+  const currentOsData = { time: currentTime, cpus: os.cpus() };
 
-  const timeElapsed = (new Date().getTime() - cpuUsageTime) / 1000;
+  const usageData = currentOsData.cpus.map((cpu, cpuNumber) => {
+    const prevTimes = prevOsData.cpus[cpuNumber].times;
+    const currTimes = cpu.times;
 
-  return os.cpus().map((cpu, cpuNumber) => {
-    const idle = cpu.times.idle * MILLISECOND;
-    const user = cpu.times.user * MILLISECOND;
-    const system = cpu.times.sys * MILLISECOND;
-    const interrupt = cpu.times.irq * MILLISECOND;
-    const nice = cpu.times.nice * MILLISECOND;
+    const idle = currTimes.idle * MILLISECOND;
+    const user = currTimes.user * MILLISECOND;
+    const system = currTimes.sys * MILLISECOND;
+    const interrupt = currTimes.irq * MILLISECOND;
+    const nice = currTimes.nice * MILLISECOND;
 
-    const idleP = idle / timeElapsed;
-    const userP = user / timeElapsed;
-    const systemP = system / timeElapsed;
-    const interruptP = interrupt / timeElapsed;
-    const niceP = nice / timeElapsed;
+    const idleP = (currTimes.idle - prevTimes.idle) / timeElapsed;
+    const userP = (currTimes.user - prevTimes.user) / timeElapsed;
+    const systemP = (currTimes.sys - prevTimes.sys) / timeElapsed;
+    const interruptP = (currTimes.irq - prevTimes.irq) / timeElapsed;
+    const niceP = (currTimes.nice - prevTimes.nice) / timeElapsed;
 
     return {
       cpuNumber: String(cpuNumber),
@@ -59,6 +70,10 @@ export function getCpuUsageData(): CpuUsageData[] {
       niceP,
     };
   });
+
+  prevOsData = currentOsData;
+
+  return usageData;
 }
 
 /**
