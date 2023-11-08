@@ -45,7 +45,7 @@ Object.keys(levelFromName).forEach(function (name) {
   nameFromLevel[levelFromName[name as LogLevelString]] = name;
 });
 
-const OTEL_SEV_NUM_FROM_BUNYAN_LEVEL: { [level: number]: number } = {
+const OTEL_SEV_NUM_FROM_BUNYAN_LEVEL: { [level: number]: SeverityNumber } = {
   [TRACE]: SeverityNumber.TRACE,
   [DEBUG]: SeverityNumber.DEBUG,
   [INFO]: SeverityNumber.INFO,
