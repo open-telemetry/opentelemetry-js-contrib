@@ -33,7 +33,7 @@ import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
-import { BunyanInstrumentation } from '../src';
+import { BunyanInstrumentation, OpenTelemetryBunyanStream } from '../src';
 import { VERSION } from '../src/version';
 
 import type * as BunyanLogger from 'bunyan';
@@ -375,6 +375,87 @@ describe('BunyanInstrumentation', () => {
         log.info('foo');
         assert.strictEqual(memExporter.getFinishedLogRecords().length, 0);
       });
+    });
+  });
+});
+
+describe('OpenTelemetryBunyanStream', () => {
+  before(() => {
+    instrumentation.disable();
+  });
+
+  beforeEach(() => {
+    memExporter.getFinishedLogRecords().length = 0; // clear
+  });
+
+  it('can be used directly with createLogger', () => {
+    const log = Logger.createLogger({
+      name: 'test-logger-name',
+      streams: [
+        {
+          type: 'raw',
+          stream: new OpenTelemetryBunyanStream(),
+          level: 'debug',
+        },
+      ],
+    });
+
+    // levels
+    log.trace('at trace level');
+    log.debug('at debug level');
+    log.info('at info level');
+    log.warn('at warn level');
+    log.error('at error level');
+    log.fatal('at fatal level');
+    const logRecords = memExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 5);
+    assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
+    assert.strictEqual(logRecords[0].severityText, 'debug');
+    assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.INFO);
+    assert.strictEqual(logRecords[1].severityText, 'info');
+    assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
+    assert.strictEqual(logRecords[2].severityText, 'warn');
+    assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
+    assert.strictEqual(logRecords[3].severityText, 'error');
+    assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.FATAL);
+    assert.strictEqual(logRecords[4].severityText, 'fatal');
+
+    // attributes, resource, instrumentationScope, etc.
+    log.info({ foo: 'bar' }, 'a message');
+    const rec = logRecords[logRecords.length - 1];
+    assert.strictEqual(rec.body, 'a message');
+    assert.deepStrictEqual(rec.attributes, {
+      name: 'test-logger-name',
+      hostname: os.hostname(),
+      pid: process.pid,
+      foo: 'bar',
+    });
+    assert.strictEqual(
+      rec.resource.attributes['service.name'],
+      'test-instrumentation-bunyan'
+    );
+    assert.strictEqual(
+      rec.instrumentationScope.name,
+      'io.opentelemetry.contrib.bunyan'
+    );
+    assert.strictEqual(rec.instrumentationScope.version, VERSION);
+    assert.strictEqual(rec.spanContext, undefined);
+
+    // spanContext
+    tracer.startActiveSpan('abc', span => {
+      const { traceId, spanId, traceFlags } = span.spanContext();
+      log.info('in active span');
+      const rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.spanContext?.traceId, traceId);
+      assert.strictEqual(rec.spanContext?.spanId, spanId);
+      assert.strictEqual(rec.spanContext?.traceFlags, traceFlags);
+
+      // This rec should *NOT* have the `trace_id` et al attributes.
+      assert.strictEqual(rec.attributes.trace_id, undefined);
+      assert.strictEqual(rec.attributes.span_id, undefined);
+      assert.strictEqual(rec.attributes.trace_flags, undefined);
+
+      span.end();
     });
   });
 });

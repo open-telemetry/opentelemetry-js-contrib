@@ -89,7 +89,10 @@ function severityNumberFromBunyanLevel(lvl: number) {
   // just for exactly values.
   const relativeLevelWeight = (lvl - 10) / (70 - 10);
   const otelSevIdx = Math.floor(relativeLevelWeight * EXTRA_SEV_NUMS.length);
-  const cappedOTelIdx = Math.min(EXTRA_SEV_NUMS.length - 1, Math.max(0, otelSevIdx));
+  const cappedOTelIdx = Math.min(
+    EXTRA_SEV_NUMS.length - 1,
+    Math.max(0, otelSevIdx)
+  );
   const otelSevValue = EXTRA_SEV_NUMS[cappedOTelIdx];
   return otelSevValue;
 }
