@@ -446,7 +446,7 @@ describe('fastify', () => {
       });
 
       it('preClose is not instrumented', async function () {
-        // 'preClose' was added in fastify@4.16.0
+        // 'preClose' was added in fastify@4.16.0.
         if (semver.lt(fastifyVersion, '4.16.0')) {
           this.skip();
         } else {
