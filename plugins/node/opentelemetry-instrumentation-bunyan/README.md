@@ -84,6 +84,33 @@ Log injection can be disabled with the `disableInjection: true` option.
 | `disableInjection`  | `boolean`         | Whether to disable [log injection](#log-injection). Default `false`. |
 | `logHook`           | `LogHookFunction` | An option hook to inject additional context to a log record after span context has been added. This requires `disableInjection` to be false. |
 
+### Using OpenTelemetryBunyanStream without instrumentation
+
+This package exports the Bunyan stream class that is used to bridge to the
+OpenTelemetry Logs Bridge API. It can be used directly when configuring a
+Bunyan logger if one is not using the `BunyanInstrumentation` for whatever
+reason. For example:
+
+```js
+const { OpenTelemetryBunyanStream } = require('@opentelemetry/instrumentation-bunyan');
+const bunyan = require('bunyan');
+
+// You must register an OpenTelemetry LoggerProvider, otherwise log records will
+// be sent to a no-op implementation. "examples/telemetry.js" shows one way
+// to configure one.
+// ...
+
+const logger = bunyan.createLogger({
+  name: 'my-logger',
+  streams: [
+    {
+      type: 'raw',
+      stream: new OpenTelemetryBunyanStream()
+    }
+  ],
+});
+```
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
