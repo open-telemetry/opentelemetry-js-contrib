@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  context,
-  diag,
-  trace,
-  isSpanContextValid,
-  Span,
-} from '@opentelemetry/api';
+import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -43,7 +37,8 @@ export class BunyanInstrumentation extends InstrumentationBase<
       new InstrumentationNodeModuleDefinition<typeof BunyanLogger>(
         'bunyan',
         ['<2.0'],
-        logger => {
+        (logger, moduleVersion) => {
+          this._diag.debug(`Applying patch for bunyan@${moduleVersion}`);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const proto = logger.prototype as any;
           if (isWrapped(proto['_emit'])) {
@@ -58,8 +53,9 @@ export class BunyanInstrumentation extends InstrumentationBase<
           );
           return logger;
         },
-        logger => {
+        (logger, moduleVersion) => {
           if (logger === undefined) return;
+          this._diag.debug(`Removing patch for bunyan@${moduleVersion}`);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           this._unwrap(logger.prototype as any, '_emit');
         }
@@ -114,7 +110,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
       () => hook(span, record),
       err => {
         if (err) {
-          diag.error('bunyan instrumentation: error calling logHook', err);
+          this._diag.error('error calling logHook', err);
         }
       },
       true
