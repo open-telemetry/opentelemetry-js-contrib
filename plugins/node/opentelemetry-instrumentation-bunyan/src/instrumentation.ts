@@ -27,8 +27,8 @@ import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';
 
 const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
-  enableLogsBridge: true,
-  enableInjection: true,
+  disableLogsBridge: false,
+  disableInjection: false,
 };
 
 export class BunyanInstrumentation extends InstrumentationBase<
@@ -114,7 +114,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
       const instrumentation = this;
       return function patchedEmit(this: BunyanLogger, ...args: unknown[]) {
         const config = instrumentation.getConfig();
-        if (!instrumentation.isEnabled() || !config.enableInjection) {
+        if (!instrumentation.isEnabled() || config.disableInjection) {
           return original.apply(this, args);
         }
 
@@ -153,7 +153,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
 
   private _addStream(logger: any) {
     const config: BunyanInstrumentationConfig = this.getConfig();
-    if (!this.isEnabled() || !config.enableLogsBridge) {
+    if (!this.isEnabled() || config.disableLogsBridge) {
       return;
     }
     this._diag.debug('Adding OpenTelemetryBunyanStream to logger');

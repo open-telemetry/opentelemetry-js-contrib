@@ -157,9 +157,9 @@ describe('BunyanInstrumentation', () => {
       });
     });
 
-    it('does not inject or call logHook if enableInjection=false', () => {
+    it('does not inject or call logHook if disableInjection=true', () => {
       instrumentation.setConfig({
-        enableInjection: false,
+        disableInjection: true,
         logHook: (_span, record) => {
           record['resource.service.name'] = 'test-service';
         },
@@ -268,10 +268,10 @@ describe('BunyanInstrumentation', () => {
       assert.strictEqual(rec.severityText, undefined);
     });
 
-    it('does not emit to the Logs Bridge API if enableLogsBridge=false', () => {
-      instrumentation.setConfig({ enableLogsBridge: false });
+    it('does not emit to the Logs Bridge API if disableLogsBridge=true', () => {
+      instrumentation.setConfig({ disableLogsBridge: true });
 
-      // Changing `enableLogsBridge` only has an impact on Loggers created
+      // Changing `disableLogsBridge` only has an impact on Loggers created
       // *after* it is set. So we cannot test with the `log` created in
       // `beforeEach()` above.
       log = Logger.createLogger({ name: 'test-logger-name', stream });

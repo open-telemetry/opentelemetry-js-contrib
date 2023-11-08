@@ -22,23 +22,23 @@ export type LogHookFunction = (span: Span, record: Record<string, any>) => void;
 
 export interface BunyanInstrumentationConfig extends InstrumentationConfig {
   /**
-   * Whether to enable the automatic sending of log records to the OpenTelemetry
-   * Logs Bridge API.
-   * @default true
+   * Whether to disable the automatic sending of log records to the
+   * OpenTelemetry Logs Bridge API.
+   * @default false
    */
-  enableLogsBridge?: boolean;
+  disableLogsBridge?: boolean;
 
   /**
-   * Whether to enable the injection of data such as trace-context fields into
+   * Whether to disable the injection of data such as trace-context fields into
    * log output.
-   * @default true
+   * @default false
    */
-  enableInjection?: boolean;
+  disableInjection?: boolean;
 
   /**
    * A function that allows injecting additional fields in log records. It is
    * called, as `logHook(span, record)`, for each log record emitted in a valid
-   * span context. It requires `enableInjection` to be true.
+   * span context. It requires `disableInjection` to be false.
    */
   logHook?: LogHookFunction;
 }

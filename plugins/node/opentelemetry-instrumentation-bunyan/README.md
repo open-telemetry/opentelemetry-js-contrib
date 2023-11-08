@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-bunyan
 
 ## Supported Versions
 
-- `^1.0.0`
+- `bunyan@^1.0.0`
 
 ## Usage
 
@@ -54,7 +54,7 @@ Creation of a Bunyan Logger will automatically add a [Bunyan stream](https://git
 
 If the OpenTelemetry SDK is not configured with a Logger provider, then this added stream will be a no-op.
 
-The logs bridge can be disabled with the `enableLogsBridge: false` option.
+The logs bridge can be disabled with the `disableLogsBridge: true` option.
 
 ### Log injection
 
@@ -74,15 +74,15 @@ After adding these fields, the optional `logHook` is called to allow injecting a
 ```
 
 When no span context is active or the span context is invalid, injection is skipped.
-Log injection can be disabled with the `enableInjection: false` option.
+Log injection can be disabled with the `disableInjection: true` option.
 
 ### Bunyan instrumentation options
 
-| Option             | Type              | Description |
-| ------------------ | ----------------- | ----------- |
-| `enableLogsBridge` | `boolean`         | Whether [logs bridging](#logs-bridge) is enabled. Default `true`. |
-| `enableInjection`  | `boolean`         | Whether [log injection](#log-injection) is enabled. Default `true`. |
-| `logHook`          | `LogHookFunction` | An option hook to inject additional context to a log record after span context has been added. This requires `enableInjection` to be true. |
+| Option              | Type              | Description |
+| ------------------- | ----------------- | ----------- |
+| `disableLogsBridge` | `boolean`         | Whether to disable [logs bridging](#logs-bridge). Default `false`. |
+| `disableInjection`  | `boolean`         | Whether to disable [log injection](#log-injection). Default `false`. |
+| `logHook`           | `LogHookFunction` | An option hook to inject additional context to a log record after span context has been added. This requires `disableInjection` to be false. |
 
 ## Useful links
 
