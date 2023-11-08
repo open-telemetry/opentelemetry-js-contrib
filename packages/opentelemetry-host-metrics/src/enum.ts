@@ -27,6 +27,11 @@ export enum METRIC_NAMES {
   PROCESS_MEMORY_USAGE = 'process.memory.usage',
 }
 
+export enum METRIC_ATTRIBUTES {
+  SYSTEM_CPU_LOGICAL_NUMBER = 'system.cpu.logical_number',
+  SYSTEM_CPU_STATE = 'system.cpu.state',
+}
+
 export enum CPU_LABELS {
   USER = 'user',
   SYSTEM = 'system',
