@@ -68,10 +68,10 @@ export class BunyanInstrumentation extends InstrumentationBase<
             if (this instanceof LoggerTraced) {
               // called with `new Logger()`
               inst = this;
-              Logger.call(this, ...args);
+              Logger.apply(this, args);
             } else {
               // called without `new`
-              inst = Logger.call(null, ...args);
+              inst = Logger.apply(null, args);
               retval = inst;
             }
             // If `_childOptions` is defined, this is a `Logger#child(...)`
