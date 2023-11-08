@@ -102,7 +102,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       supportedVersions,
       // cannot make it work with appropriate type as execute function has 2
       //types and/cannot import function but only types
-      (moduleExports: any) => {
+      (moduleExports: any, moduleVersion) => {
+        this._diag.debug(`Applying patch for graphql@${moduleVersion} execute`);
         if (isWrapped(moduleExports.execute)) {
           this._unwrap(moduleExports, 'execute');
         }
@@ -113,8 +114,11 @@ export class GraphQLInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      moduleExports => {
+      (moduleExports, moduleVersion) => {
         if (moduleExports) {
+          this._diag.debug(
+            `Removing patch for graphql@${moduleVersion} execute`
+          );
           this._unwrap(moduleExports, 'execute');
         }
       }
@@ -127,15 +131,17 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
       'graphql/language/parser.js',
       supportedVersions,
-      moduleExports => {
-        if (isWrapped(moduleExports.execute)) {
+      (moduleExports, moduleVersion) => {
+        this._diag.debug(`Applying patch for graphql@${moduleVersion} parse`);
+        if (isWrapped(moduleExports.parse)) {
           this._unwrap(moduleExports, 'parse');
         }
         this._wrap(moduleExports, 'parse', this._patchParse());
         return moduleExports;
       },
-      moduleExports => {
+      (moduleExports, moduleVersion) => {
         if (moduleExports) {
+          this._diag.debug(`Removing patch for graphql@${moduleVersion} parse`);
           this._unwrap(moduleExports, 'parse');
         }
       }
@@ -148,15 +154,21 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
       'graphql/validation/validate.js',
       supportedVersions,
-      moduleExports => {
-        if (isWrapped(moduleExports.execute)) {
+      (moduleExports, moduleVersion) => {
+        this._diag.debug(
+          `Applying patch for graphql@${moduleVersion} validate`
+        );
+        if (isWrapped(moduleExports.validate)) {
           this._unwrap(moduleExports, 'validate');
         }
         this._wrap(moduleExports, 'validate', this._patchValidate());
         return moduleExports;
       },
-      moduleExports => {
+      (moduleExports, moduleVersion) => {
         if (moduleExports) {
+          this._diag.debug(
+            `Removing patch for graphql@${moduleVersion} validate`
+          );
           this._unwrap(moduleExports, 'validate');
         }
       }
@@ -285,7 +297,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       },
       err => {
         if (err) {
-          api.diag.error('Error running response hook', err);
+          this._diag.error('Error running response hook', err);
         }
 
         endSpan(span, undefined);
