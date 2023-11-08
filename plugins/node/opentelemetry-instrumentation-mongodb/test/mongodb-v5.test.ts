@@ -243,6 +243,44 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         });
       });
     });
+
+    it('should create child spans for concurrent cursor operations', done => {
+      const queries = [{ a: 1 }, { a: 2 }, { a: 3 }];
+      const tasks = queries.map((query, idx) => {
+        return new Promise((resolve, reject) => {
+          process.nextTick(() => {
+            const span = trace
+              .getTracer('default')
+              .startSpan(`findRootSpan ${idx}`);
+            context.with(trace.setSpan(context.active(), span), () => {
+              collection
+                .find(query)
+                .toArray()
+                .then(() => {
+                  resolve(span.end());
+                })
+                .catch(reject);
+            });
+          });
+        });
+      });
+
+      Promise.all(tasks)
+        .then(() => {
+          const spans = getTestSpans();
+          const roots = spans.filter(s => s.name.startsWith('findRootSpan'));
+
+          roots.forEach(root => {
+            const rootId = root.spanContext().spanId;
+            const children = spans.filter(s => s.parentSpanId === rootId);
+            assert.strictEqual(children.length, 1);
+          });
+          done();
+        })
+        .catch(err => {
+          done(err);
+        });
+    });
   });
 
   /** Should intercept command */
