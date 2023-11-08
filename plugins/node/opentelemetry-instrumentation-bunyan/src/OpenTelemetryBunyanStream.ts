@@ -84,14 +84,14 @@ function severityNumberFromBunyanLevel(lvl: number) {
 
   // Otherwise, scale the Bunyan level range -- 10 (TRACE) to 70 (FATAL+10)
   // -- onto the extra OTel severity numbers (TRACE2, TRACE3, ..., FATAL4).
-  // Values below bunyan.TRACE map to SeverityNumber.TRACE2, which is a bit
-  // weird.
-  return EXTRA_SEV_NUMS[
-    Math.min(
-      EXTRA_SEV_NUMS.length - 1,
-      Math.max(0, Math.floor(((lvl - 10) / (70 - 10)) * EXTRA_SEV_NUMS.length))
-    )
-  ];
+  // Values below bunyan.TRACE map to SeverityNumber.TRACE2, which may be
+  // considered a bit weird, but it means the unnumbered levels are always
+  // just for exactly values.
+  const relativeLevelWeight = (lvl - 10) / (70 - 10);
+  const otelSevIdx = Math.floor(relativeLevelWeight * EXTRA_SEV_NUMS.length);
+  const cappedOTelIdx = Math.min(EXTRA_SEV_NUMS.length - 1, Math.max(0, otelSevIdx));
+  const otelSevValue = EXTRA_SEV_NUMS[cappedOTelIdx];
+  return otelSevValue;
 }
 
 /**
