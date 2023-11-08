@@ -152,7 +152,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
   }
 
   private _addStream(logger: any) {
-    const config: BunyanInstrumentationConfig = this._config;
+    const config: BunyanInstrumentationConfig = this.getConfig();
     if (!this.isEnabled() || !config.enableLogsBridge) {
       return;
     }
