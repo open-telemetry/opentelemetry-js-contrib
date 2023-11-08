@@ -34,15 +34,15 @@ const sdk = new NodeSDK({
   ]
 })
 
-const log = bunyan.createLogger({name: 'example'});
+const logger = bunyan.createLogger({name: 'example'});
 
-log.info('hi');
+logger.info('hi');
 // 1. Log records will be sent to the SDK-registered log record processor, if any.
 //    This is called "bridging".
 
 const tracer = api.getTracer('example');
 tracer.startActiveSpan('manual-span', span => {
-  log.info('in a span');
+  logger.info('in a span');
   // 2. Fields identifying the current span will be injected into log records:
   //    {"name":"example",...,"msg":"in a span","trace_id":"d61b4e4af1032e0aae279d12f3ab0159","span_id":"d140da862204f2a2","trace_flags":"01"}
 })
