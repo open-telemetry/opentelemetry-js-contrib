@@ -36,6 +36,7 @@ import {
 import { expect } from 'expect';
 import type { ConsumedCapacity as ConsumedCapacityV2 } from 'aws-sdk/clients/dynamodb';
 import type { ConsumedCapacity as ConsumedCapacityV3 } from '@aws-sdk/client-dynamodb';
+import * as sinon from 'sinon';
 
 type ConsumedCapacity = ConsumedCapacityV2 | ConsumedCapacityV3;
 
@@ -700,6 +701,7 @@ describe('DynamoDB', () => {
     const SERIALIZED_DB_STATEMENT = 'serialized statement';
 
     const dynamoDBStatementSerializer: AwsSdkDynamoDBStatementSerializer = (
+      _operation: string,
       _command: CommandInput
     ): string => {
       return SERIALIZED_DB_STATEMENT;
@@ -711,6 +713,199 @@ describe('DynamoDB', () => {
         dynamoDBStatementSerializer,
       });
       instrumentation.enable();
+    });
+
+    it('should not fail if serializer throws', done => {
+      instrumentation.disable();
+      instrumentation.setConfig({
+        dynamoDBStatementSerializer: () => {
+          throw new Error('Serializer failure');
+        },
+      });
+      instrumentation.enable();
+      mockV2AwsSend(responseMockSuccess, {
+        Items: [{ key1: 'val1' }, { key2: 'val2' }],
+        Count: 2,
+        ScannedCount: 5,
+      } as AWS.DynamoDB.Types.QueryOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: {
+          '#k': 'key1',
+        },
+        ExpressionAttributeValues: {
+          ':v': 'val1',
+        },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.query(
+        params,
+        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should omit DB statement if serializer is not configured', done => {
+      instrumentation.disable();
+      instrumentation.setConfig({
+        dynamoDBStatementSerializer: undefined,
+      });
+      instrumentation.enable();
+      mockV2AwsSend(responseMockSuccess, {
+        Items: [{ key1: 'val1' }, { key2: 'val2' }],
+        Count: 2,
+        ScannedCount: 5,
+      } as AWS.DynamoDB.Types.QueryOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: {
+          '#k': 'key1',
+        },
+        ExpressionAttributeValues: {
+          ':v': 'val1',
+        },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.query(
+        params,
+        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should omit DB statement if serializer returns undefined', done => {
+      instrumentation.disable();
+      instrumentation.setConfig({
+        dynamoDBStatementSerializer: () => undefined,
+      });
+      instrumentation.enable();
+      mockV2AwsSend(responseMockSuccess, {
+        Items: [{ key1: 'val1' }, { key2: 'val2' }],
+        Count: 2,
+        ScannedCount: 5,
+      } as AWS.DynamoDB.Types.QueryOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: {
+          '#k': 'key1',
+        },
+        ExpressionAttributeValues: {
+          ':v': 'val1',
+        },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.query(
+        params,
+        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should provide operation and command input to serializer', done => {
+      const dynamoDBStatementSerializerSpy = sinon.spy();
+      instrumentation.disable();
+      instrumentation.setConfig({
+        dynamoDBStatementSerializer: dynamoDBStatementSerializerSpy,
+      });
+      instrumentation.enable();
+      mockV2AwsSend(responseMockSuccess, {
+        Items: [{ key1: 'val1' }, { key2: 'val2' }],
+        Count: 2,
+        ScannedCount: 5,
+      } as AWS.DynamoDB.Types.QueryOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: {
+          '#k': 'key1',
+        },
+        ExpressionAttributeValues: {
+          ':v': 'val1',
+        },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.query(
+        params,
+        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+
+          expect(dynamoDBStatementSerializerSpy.callCount).toBe(1);
+          expect(dynamoDBStatementSerializerSpy.args[0][0]).toStrictEqual(
+            'Query'
+          );
+          expect(dynamoDBStatementSerializerSpy.args[0][1]).toStrictEqual({
+            ConsistentRead: true,
+            ExpressionAttributeNames: {
+              '#k': 'key1',
+            },
+            ExpressionAttributeValues: {
+              ':v': 'val1',
+            },
+            IndexName: 'name_to_group',
+            KeyConditionExpression: '#k = :v',
+            Limit: 10,
+            ProjectionExpression: 'id',
+            ScanIndexForward: true,
+            Select: 'ALL_ATTRIBUTES',
+            TableName: 'test-table',
+          });
+
+          done();
+        }
+      );
     });
 
     it('should properly execute the db statement serializer for Query operation', done => {
@@ -898,7 +1093,10 @@ describe('DynamoDB', () => {
 
       dynamodb.listTables(
         params,
-        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.ListTablesOutput) => {
+        (
+          err: AWSError,
+          _data: AWS.DynamoDB.DocumentClient.ListTablesOutput
+        ) => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;

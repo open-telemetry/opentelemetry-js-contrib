@@ -21,13 +21,9 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   AwsSdkInstrumentationConfig,
-  AwsSdkDynamoDBStatementSerializer,
   NormalizedRequest,
   NormalizedResponse,
 } from '../types';
-
-const defaultDynamoDBStatementSerializer: AwsSdkDynamoDBStatementSerializer = () =>
-  undefined;
 
 export class DynamodbServiceExtension implements ServiceExtension {
   toArray<T>(values: T | T[]): T[] {
@@ -44,17 +40,26 @@ export class DynamodbServiceExtension implements ServiceExtension {
     const isIncoming = false;
     const operation = normalizedRequest.commandName;
 
-    const dbStatementSerializer =
-      config.dynamoDBStatementSerializer || defaultDynamoDBStatementSerializer;
-
     const spanAttributes = {
       [SemanticAttributes.DB_SYSTEM]: DbSystemValues.DYNAMODB,
       [SemanticAttributes.DB_NAME]: normalizedRequest.commandInput?.TableName,
       [SemanticAttributes.DB_OPERATION]: operation,
-      [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
-        normalizedRequest.commandInput
-      ),
     };
+
+    if (config.dynamoDBStatementSerializer) {
+      try {
+        const sanitizedStatement = config.dynamoDBStatementSerializer(
+          operation,
+          normalizedRequest.commandInput
+        );
+
+        if (typeof sanitizedStatement === 'string') {
+          spanAttributes[SemanticAttributes.DB_STATEMENT] = sanitizedStatement;
+        }
+      } catch (err) {
+        diag.error('failed to sanitize DynamoDB statement', err);
+      }
+    }
 
     // normalizedRequest.commandInput.RequestItems) is undefined when no table names are returned
     // keys in this object are the table names

@@ -65,6 +65,7 @@ export interface AwsSdkSqsProcessCustomAttributeFunction {
 }
 
 export type AwsSdkDynamoDBStatementSerializer = (
+  operation: string,
   commandInput: CommandInput
 ) => string | undefined;
 
