@@ -132,7 +132,7 @@ describe('Koa Instrumentation', () => {
     };
 
   describe('Instrumenting @koa/router calls', () => {
-    it('should create a child span for middlewares', async () => {
+    it('should create a child span for middlewares (string route)', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
@@ -168,6 +168,10 @@ describe('Koa Instrumentation', () => {
             requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
             KoaLayerType.ROUTER
           );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_NAME],
+            '/post/:id'
+          );
 
           assert.strictEqual(
             requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
@@ -175,6 +179,57 @@ describe('Koa Instrumentation', () => {
           );
 
           assert.strictEqual(rpcMetadata.route, '/post/:id');
+        }
+      );
+    });
+
+    it('should create a child span for middlewares (RegExp route)', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
+      app.use((ctx, next) =>
+        context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        )
+      );
+
+      const router = new KoaRouter();
+      router.get(/^\/post/, ctx => {
+        ctx.body = `Post`;
+      });
+
+      app.use(router.routes());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/post/0`);
+          rootSpan.end();
+
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('router - /^\\/post/'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.ROUTER
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_NAME],
+            '/^\\/post/'
+          );
+
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/^\\/post/'
+          );
+
+          assert.strictEqual(rpcMetadata.route, '/^\\/post/');
         }
       );
     });
