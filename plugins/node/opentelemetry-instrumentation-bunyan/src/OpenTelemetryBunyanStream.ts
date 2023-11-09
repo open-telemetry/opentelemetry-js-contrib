@@ -116,19 +116,33 @@ export class OpenTelemetryBunyanStream {
    * Dev Notes:
    * - We drop the Bunyan 'v' field. It is meant to indicate the format
    *   of the Bunyan log record. FWIW, it has always been `0`.
-   * - Some Bunyan fields would naturally map to Resource attributes:
-   *      hostname -> host.name
-   *      name -> service.name
-   *      pid -> process.pid
-   *   However, AFAIK there isn't a way to influence the LoggerProvider's
-   *   `resource` from here.
+   * - The standard Bunyan `hostname` and `pid` fields are removed because they
+   *   are redundant with the OpenTelemetry `host.name` and `process.pid`
+   *   Resource attributes, respectively. This code cannot change the
+   *   LoggerProvider's `resource`, so getting the OpenTelemetry equivalents
+   *   depends on the user using relevant OpenTelemetry resource detectors.
+   *   "examples/telemetry.js" shows using HostDetector and ProcessDetector for
+   *   this.
+   * - The Bunyan `name` field *could* naturally map to OpenTelemetry's
+   *   `service.name` resource attribute. However, that is debatable, as some
+   *   users might use `name` more like a log4j logger name.
    * - Strip the `trace_id` et al fields that may have been added by the
    *   the _emit wrapper.
    */
   write(rec: Record<string, any>) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { time, level, msg, v, trace_id, span_id, trace_flags, ...fields } =
-      rec;
+    const {
+      time,
+      level,
+      msg,
+      v,
+      hostname,
+      pid,
+      trace_id,
+      span_id,
+      trace_flags,
+      ...fields
+    } = rec;
     let timestamp = undefined;
     if (typeof time.getTime === 'function') {
       timestamp = time.getTime(); // ms

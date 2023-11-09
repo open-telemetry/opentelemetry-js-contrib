@@ -23,7 +23,7 @@ const bunyan = require('bunyan');
 
 const log = bunyan.createLogger({name: 'myapp', level: 'debug'});
 
-log.debug('hi');
+log.debug({foo: 'bar'}, 'hi');
 
 const tracer = otel.trace.getTracer('example');
 tracer.startActiveSpan('manual-span', span => {

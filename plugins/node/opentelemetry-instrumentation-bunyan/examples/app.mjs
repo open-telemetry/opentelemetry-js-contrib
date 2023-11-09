@@ -23,7 +23,7 @@ import bunyan from 'bunyan';
 
 const log = bunyan.createLogger({name: 'myapp', level: 'debug'});
 
-log.debug('hi');
+log.debug({foo: 'bar'}, 'hi');
 
 const tracer = trace.getTracer('example');
 tracer.startActiveSpan('manual-span', span => {

@@ -1,7 +1,7 @@
 {
   "name": "bunyan-example",
   "private": true,
-  "version": "0.43.0",
+  "version": "0.45.1",
   "description": "Example of Bunyan integration with OpenTelemetry",
   "scripts": {
     "start": "node -r ./telemetry.js app.js"
@@ -19,7 +19,8 @@
   "dependencies": {
     "@opentelemetry/api": "^1.6.0",
     "@opentelemetry/instrumentation-bunyan": "../",
-    "@opentelemetry/sdk-node": "^0.43.0",
+    "@opentelemetry/resources": "^1.17.0",
+    "@opentelemetry/sdk-node": "^0.44.0",
     "bunyan": "^1.8.15"
   }
 }
