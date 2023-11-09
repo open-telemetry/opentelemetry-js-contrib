@@ -31,6 +31,7 @@ import { METRIC_ATTRIBUTES } from '../src/enum';
 import { HostMetrics } from '../src';
 
 const cpuJson = require('./mocks/cpu.json');
+const processJson = require('./mocks/process.json');
 const networkJson = require('./mocks/network.json');
 
 class TestMetricReader extends MetricReader {
@@ -75,7 +76,20 @@ const mockedOS = {
   },
 };
 
-const INTERVAL = 3000;
+const mockedProcess = {
+  uptime: function () {
+    return 0;
+  },
+  procIdx: 0,
+  cpuUsage: function () {
+    return processJson[this.procIdx++ % 2];
+  },
+  memoryUsage: {
+    rss: function () {
+      return 123456;
+    },
+  },
+};
 
 describe('Host Metrics', () => {
   let meterProvider: MeterProvider;
@@ -113,24 +127,17 @@ describe('Host Metrics', () => {
       sandbox = sinon.createSandbox();
       sandbox.useFakeTimers();
 
-      sandbox.stub(os, 'freemem').callsFake(() => {
-        return mockedOS.freemem();
-      });
-      sandbox.stub(os, 'totalmem').returns(mockedOS.totalmem());
+      sandbox.stub(os, 'freemem').callsFake(mockedOS.freemem);
+      sandbox.stub(os, 'totalmem').callsFake(mockedOS.totalmem);
       sandbox.stub(os, 'cpus').callsFake(() => mockedOS.cpus());
-      sandbox.stub(process, 'uptime').returns(0);
-      sandbox.stub(SI, 'networkStats').callsFake(() => {
-        return mockedSI.networkStats();
-      });
-      sandbox.stub(process, 'cpuUsage').callsFake(() => {
-        return {
-          user: 90713560,
-          system: 63192630,
-        };
-      });
-      sandbox.stub(process.memoryUsage, 'rss').callsFake(() => {
-        return 123456;
-      });
+      sandbox.stub(process, 'uptime').callsFake(mockedProcess.uptime);
+      sandbox
+        .stub(process, 'cpuUsage')
+        .callsFake(() => mockedProcess.cpuUsage());
+      sandbox
+        .stub(process.memoryUsage, 'rss')
+        .callsFake(mockedProcess.memoryUsage.rss);
+      sandbox.stub(SI, 'networkStats').callsFake(mockedSI.networkStats);
 
       reader = new TestMetricReader();
 
@@ -143,13 +150,9 @@ describe('Host Metrics', () => {
       });
       await hostMetrics.start();
 
-      const dateStub = sandbox
-        .stub(Date.prototype, 'getTime')
-        .returns(process.uptime() * 1000 + 1);
       // Drop first frame cpu metrics, see
-      // src/common.ts getCpuUsageData
+      // src/common.ts getCpuUsageData/getProcessCpuUsageData
       await reader.collect();
-      dateStub.returns(process.uptime() * 1000 + INTERVAL);
 
       // advance the clock for the next collection
       sandbox.clock.tick(1000);
@@ -314,15 +317,15 @@ describe('Host Metrics', () => {
     it('should export Process CPU time metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.time');
 
-      ensureValue(metric, { state: 'user' }, 90713.56);
-      ensureValue(metric, { state: 'system' }, 63192.630000000005);
+      ensureValue(metric, { state: 'user' }, 90.71356);
+      ensureValue(metric, { state: 'system' }, 63.192629999999994);
     });
 
     it('should export Process CPU utilization metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.utilization');
 
-      ensureValue(metric, { state: 'user' }, 30247.935978659552);
-      ensureValue(metric, { state: 'system' }, 21071.23374458153);
+      ensureValue(metric, { state: 'user' }, 1.5);
+      ensureValue(metric, { state: 'system' }, 1);
     });
 
     it('should export Process Memory usage metrics', async () => {
