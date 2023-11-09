@@ -71,7 +71,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
               Logger.apply(this, args);
             } else {
               // called without `new`
-              inst = Logger.apply(null, args);
+              inst = Logger(...args);
               retval = inst;
             }
             // If `_childOptions` is defined, this is a `Logger#child(...)`
