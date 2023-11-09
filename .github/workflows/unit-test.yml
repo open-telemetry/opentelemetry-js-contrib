@@ -151,8 +151,8 @@ jobs:
         run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
 
       # XXX Some debugging of the unit-test (18) failure
-      - run: npm ls -a
-      - run: npx lerna exec --scope @opentelemetry/instrumentation-bunyan -- npm ls -a
+      - run: npm ls -a || true
+      - run: npx lerna exec --scope @opentelemetry/instrumentation-bunyan -- npm ls -a || true
 
       - name: Unit tests (Full)
         if: matrix.code-coverage
