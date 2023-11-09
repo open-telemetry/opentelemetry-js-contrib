@@ -210,8 +210,6 @@ describe('BunyanInstrumentation', () => {
       assert.strictEqual(rec.body, 'a message');
       assert.deepStrictEqual(rec.attributes, {
         name: 'test-logger-name',
-        hostname: os.hostname(),
-        pid: process.pid,
         foo: 'bar',
       });
       assert.strictEqual(
@@ -426,8 +424,6 @@ describe('OpenTelemetryBunyanStream', () => {
     assert.strictEqual(rec.body, 'a message');
     assert.deepStrictEqual(rec.attributes, {
       name: 'test-logger-name',
-      hostname: os.hostname(),
-      pid: process.pid,
       foo: 'bar',
     });
     assert.strictEqual(
