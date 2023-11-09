@@ -15,7 +15,6 @@
  */
 
 import { logs, SeverityNumber, Logger } from '@opentelemetry/api-logs';
-import type { LoggerOptions } from '@opentelemetry/api-logs';
 import type { LogLevelString } from 'bunyan';
 import { VERSION } from './version';
 
@@ -103,11 +102,10 @@ function severityNumberFromBunyanLevel(lvl: number) {
 export class OpenTelemetryBunyanStream {
   private _otelLogger: Logger;
 
-  constructor(name?: string, version?: string, options?: LoggerOptions) {
+  constructor() {
     this._otelLogger = logs.getLogger(
-      name || DEFAULT_INSTRUMENTATION_SCOPE_NAME,
-      version || DEFAULT_INSTRUMENTATION_SCOPE_VERSION,
-      options
+      DEFAULT_INSTRUMENTATION_SCOPE_NAME,
+      DEFAULT_INSTRUMENTATION_SCOPE_VERSION
     );
   }
 
