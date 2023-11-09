@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span, SpanKind, Tracer } from '@opentelemetry/api';
+import { DiagLogger, Span, SpanKind, Tracer } from '@opentelemetry/api';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 import {
   DbSystemValues,
@@ -36,7 +36,8 @@ export class DynamodbServiceExtension implements ServiceExtension {
 
   requestPreSpanHook(
     normalizedRequest: NormalizedRequest,
-    config: AwsSdkInstrumentationConfig
+    config: AwsSdkInstrumentationConfig,
+    diag: DiagLogger,
   ): RequestMetadata {
     const spanKind: SpanKind = SpanKind.CLIENT;
     let spanName: string | undefined;

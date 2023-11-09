@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Tracer, Span } from '@opentelemetry/api';
+import { Tracer, Span, DiagLogger } from '@opentelemetry/api';
 import { ServiceExtension, RequestMetadata } from './ServiceExtension';
 import { SqsServiceExtension } from './sqs';
 import {
@@ -37,14 +37,15 @@ export class ServicesExtensions implements ServiceExtension {
 
   requestPreSpanHook(
     request: NormalizedRequest,
-    config: AwsSdkInstrumentationConfig
+    config: AwsSdkInstrumentationConfig,
+    diag: DiagLogger
   ): RequestMetadata {
     const serviceExtension = this.services.get(request.serviceName);
     if (!serviceExtension)
       return {
         isIncoming: false,
       };
-    return serviceExtension.requestPreSpanHook(request, config);
+    return serviceExtension.requestPreSpanHook(request, config, diag);
   }
 
   requestPostSpanHook(request: NormalizedRequest) {
