@@ -30,7 +30,6 @@ import { isWrapped } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
-import * as os from 'os';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
 import { BunyanInstrumentation, OpenTelemetryBunyanStream } from '../src';
