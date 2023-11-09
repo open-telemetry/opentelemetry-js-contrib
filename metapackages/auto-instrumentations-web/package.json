@@ -65,5 +65,10 @@
     "@opentelemetry/instrumentation-fetch": "^0.45.1",
     "@opentelemetry/instrumentation-user-interaction": "^0.33.2",
     "@opentelemetry/instrumentation-xml-http-request": "^0.45.1"
-  }
+  },
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts"
+  ]
 }
