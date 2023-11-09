@@ -22,7 +22,6 @@ import {
 
 import {
   context,
-  diag,
   trace,
   Span,
   SpanStatusCode,
@@ -66,7 +65,12 @@ export class PgInstrumentation extends InstrumentationBase {
     const modulePG = new InstrumentationNodeModuleDefinition<typeof pgTypes>(
       'pg',
       ['8.*'],
-      moduleExports => {
+      (module: any, moduleVersion) => {
+        this._diag.debug(`Applying patch for pg@${moduleVersion}`);
+        const moduleExports: typeof pgTypes =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
@@ -87,9 +91,14 @@ export class PgInstrumentation extends InstrumentationBase {
           this._getClientConnectPatch() as any
         );
 
-        return moduleExports;
+        return module;
       },
-      moduleExports => {
+      (module: any, moduleVersion) => {
+        const moduleExports: typeof pgTypes =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
+        this._diag.debug(`Removing patch for pg@${moduleVersion}`);
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
@@ -101,7 +110,8 @@ export class PgInstrumentation extends InstrumentationBase {
     >(
       'pg-pool',
       ['2.*', '3.*'],
-      moduleExports => {
+      (moduleExports, moduleVersion) => {
+        this._diag.debug(`Applying patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -112,7 +122,8 @@ export class PgInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      moduleExports => {
+      (moduleExports, moduleVersion) => {
+        this._diag.debug(`Removing patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -172,7 +183,7 @@ export class PgInstrumentation extends InstrumentationBase {
   private _getClientQueryPatch() {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
-      diag.debug(
+      this._diag.debug(
         `Patching ${PgInstrumentation.COMPONENT}.Client.prototype.query`
       );
       return function query(this: PgClientExtended, ...args: unknown[]) {
