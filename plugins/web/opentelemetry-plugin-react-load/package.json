@@ -38,10 +38,7 @@
     "build/esm/**/*.d.ts",
     "build/src/**/*.js",
     "build/src/**/*.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
