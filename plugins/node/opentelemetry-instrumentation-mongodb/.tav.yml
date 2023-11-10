@@ -5,7 +5,7 @@ mongodb:
     - versions: ">=4 <5"
       commands: npm run test-v4
     - versions: ">=5 <7"
-      commands: npm run test-v5
+      commands: npm run test-v5-v6
 
   # Fix missing `contrib-test-utils` package
   pretest: npm run --prefix ../../../ lerna:link
