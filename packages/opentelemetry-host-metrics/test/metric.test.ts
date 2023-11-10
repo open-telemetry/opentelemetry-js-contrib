@@ -324,8 +324,8 @@ describe('Host Metrics', () => {
     it('should export Process CPU utilization metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.utilization');
 
-      ensureValue(metric, { state: 'user' }, 1.5);
-      ensureValue(metric, { state: 'system' }, 1);
+      ensureValue(metric, { state: 'user' }, 0.025);
+      ensureValue(metric, { state: 'system' }, 0.05);
     });
 
     it('should export Process Memory usage metrics', async () => {
