@@ -1,22 +1,54 @@
-[{
-  "model": "CPU @ 2.60GHz",
-  "speed": 2600,
-  "times": {
-    "user": 90713560,
-    "nice": 0,
-    "sys": 63192630,
-    "idle": 374870700,
-    "irq": 0
-  }
-}, {
-  "model": "CPU @ 2.60GHz",
-  "speed": 2600,
-  "times": {
-    "user": 11005420,
-    "nice": 0,
-    "sys": 7678120,
-    "idle": 510034800,
-    "irq": 0
-  }
-}
+[
+  [
+    {
+      "model": "CPU @ 2.60GHz",
+      "speed": 2600,
+      "// times": "this is the 1st collect of CPU data which will be used to calc utilization",
+      "times": {
+        "user": 90713560,
+        "nice": 0,
+        "sys": 63192630,
+        "idle": 374870700,
+        "irq": 0
+      }
+    },
+    {
+      "model": "CPU @ 2.60GHz",
+      "speed": 2600,
+      "// times": "this is the 1st collect of CPU data which will be used to calc utilization",
+      "times": {
+        "user": 11005420,
+        "nice": 0,
+        "sys": 7678120,
+        "idle": 510034800,
+        "irq": 0
+      }
+    }
+  ],
+  [
+    {
+      "model": "CPU @ 2.60GHz",
+      "speed": 2600,
+      "// times": "assuming a time delta of 1000ms we distribute 70% to user, 20% to sys and 10% to idle",
+      "times": {
+        "user": 90714260,
+        "nice": 0,
+        "sys": 63192830,
+        "idle": 374870800,
+        "irq": 0
+      }
+    },
+    {
+      "model": "CPU @ 2.60GHz",
+      "speed": 2600,
+      "// times": "assuming a time delta of 1000ms we distribute 30% to user, 50% to sys and 20% to idle",
+      "times": {
+        "user": 11005720,
+        "nice": 0,
+        "sys": 7678620,
+        "idle": 510035000,
+        "irq": 0
+      }
+    }
+  ]
 ]
