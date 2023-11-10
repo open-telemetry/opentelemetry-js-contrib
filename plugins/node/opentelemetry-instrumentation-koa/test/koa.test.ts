@@ -198,7 +198,7 @@ describe('Koa Instrumentation', () => {
 
       const router = new KoaRouter();
       router.get(/^\/post/, ctx => {
-        ctx.body = `Post`;
+        ctx.body = 'Post';
       });
 
       app.use(router.routes());
