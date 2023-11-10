@@ -37,8 +37,9 @@ import { VERSION } from '../src/version';
 
 import type * as BunyanLogger from 'bunyan';
 
-// import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
-// diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+// XXX
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
 const tracerProvider = new NodeTracerProvider();
 tracerProvider.register();
