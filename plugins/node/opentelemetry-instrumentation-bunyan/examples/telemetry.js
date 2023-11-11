@@ -22,7 +22,7 @@
 
 const { NodeSDK, tracing, logs, api } = require('@opentelemetry/sdk-node');
 const { envDetectorSync, hostDetectorSync, processDetectorSync } = require('@opentelemetry/resources');
-api.diag.setLogger(new api.DiagConsoleLogger(), api.DiagLogLevel.DEBUG);
+// api.diag.setLogger(new api.DiagConsoleLogger(), api.DiagLogLevel.DEBUG);
 
 const { BunyanInstrumentation } = require('@opentelemetry/instrumentation-bunyan');
 
