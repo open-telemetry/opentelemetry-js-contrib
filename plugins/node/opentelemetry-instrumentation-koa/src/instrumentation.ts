@@ -134,7 +134,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   private _patchLayer(
     middlewareLayer: KoaPatchedMiddleware,
     isRouter: boolean,
-    layerPath?: string
+    layerPath?: string | RegExp
   ): KoaMiddleware {
     const layerType = isRouter ? KoaLayerType.ROUTER : KoaLayerType.MIDDLEWARE;
     // Skip patching layer if its ignored in the config
