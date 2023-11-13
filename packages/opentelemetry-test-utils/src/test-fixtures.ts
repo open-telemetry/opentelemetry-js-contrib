@@ -138,7 +138,7 @@ export class TestCollector {
         } else {
           this._ingestTraces(body);
           resStatusCode = 200;
-          // TODO: I'm not sure what the ExportTraceServiceResponse form should be.
+          // A full success ExportTraceServiceResponse.
           // https://github.com/open-telemetry/opentelemetry-proto/blob/v1.0.0/opentelemetry/proto/collector/trace/v1/trace_service.proto
           resBody = '{}';
         }
