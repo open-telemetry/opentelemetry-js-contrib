@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-restify",
-  "version": "0.34.1",
+  "version": "0.34.2",
   "description": "OpenTelemetry restify automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -34,10 +34,7 @@
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
@@ -65,7 +62,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.45.0",
+    "@opentelemetry/instrumentation": "^0.45.1",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify#readme"

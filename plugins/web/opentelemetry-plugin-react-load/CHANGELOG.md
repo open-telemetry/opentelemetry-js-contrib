@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/plugin-react-load-v0.29.1...plugin-react-load-v0.30.0) (2023-11-13)
+
+
+### Features
+
+* add esnext target for web instrumentations ([#1776](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1776)) ([2698bb1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2698bb1a5a4de5a5c6272643d6e50180db874d64))
+
 ## [0.29.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/plugin-react-load-v0.29.0...plugin-react-load-v0.29.1) (2023-08-14)
 
 
