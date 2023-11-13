@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-winston",
-  "version": "0.32.2",
+  "version": "0.33.0",
   "description": "OpenTelemetry instrumentation for winston",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

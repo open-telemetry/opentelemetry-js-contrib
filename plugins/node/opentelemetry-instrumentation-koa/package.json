@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-koa",
-  "version": "0.36.1",
+  "version": "0.36.2",
   "description": "OpenTelemetry Koa automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

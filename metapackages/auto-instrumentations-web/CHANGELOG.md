@@ -12,6 +12,27 @@
   * dependencies
     * @opentelemetry/instrumentation-document-load bumped from ^0.31.1 to ^0.31.2
 
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.33.2...auto-instrumentations-web-v0.34.0) (2023-11-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auto-instrumentations-web:** Add zone.js as a peerDependency ([#1768](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1768))
+
+### Bug Fixes
+
+* **auto-instrumentations-web:** Add zone.js as a peerDependency ([#1768](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1768)) ([5564096](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5564096eb6227a134c701fde837dff07a5e27d38))
+* **deps:** update otel core experimental to v0.45.0 ([#1779](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1779)) ([7348635](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/734863562c25cd0497aa3f51eccb2bf8bbd5e711))
+* **deps:** update otel core experimental to v0.45.1 ([#1781](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1781)) ([7f420e2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f420e25a8d396c83fd38101088434210705e365))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.33.2 to ^0.34.0
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.33.2 to ^0.34.0
+
 ## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.33.1...auto-instrumentations-web-v0.33.2) (2023-10-10)
 
 
