@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-router",
-  "version": "0.33.2",
+  "version": "0.33.3",
   "description": "OpenTelemetry Router automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -33,10 +33,7 @@
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
