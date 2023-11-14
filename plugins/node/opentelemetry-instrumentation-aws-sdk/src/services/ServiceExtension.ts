@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DiagLogger, Span, SpanAttributes, SpanKind, Tracer } from '@opentelemetry/api';
+import {
+  DiagLogger,
+  Span,
+  SpanAttributes,
+  SpanKind,
+  Tracer,
+} from '@opentelemetry/api';
 import {
   AwsSdkInstrumentationConfig,
   NormalizedRequest,
@@ -30,7 +36,11 @@ export interface RequestMetadata {
 
 export interface ServiceExtension {
   // called before request is sent, and before span is started
-  requestPreSpanHook: (request: NormalizedRequest, config: AwsSdkInstrumentationConfig, diag: DiagLogger) => RequestMetadata;
+  requestPreSpanHook: (
+    request: NormalizedRequest,
+    config: AwsSdkInstrumentationConfig,
+    diag: DiagLogger
+  ) => RequestMetadata;
 
   // called before request is sent, and after span is started
   requestPostSpanHook?: (request: NormalizedRequest) => void;

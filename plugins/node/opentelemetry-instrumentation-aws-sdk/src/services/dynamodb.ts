@@ -33,7 +33,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
   requestPreSpanHook(
     normalizedRequest: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger,
+    diag: DiagLogger
   ): RequestMetadata {
     const spanKind: SpanKind = SpanKind.CLIENT;
     let spanName: string | undefined;
