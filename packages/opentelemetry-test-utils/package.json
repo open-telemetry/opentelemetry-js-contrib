@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/contrib-test-utils",
-  "version": "0.34.2",
+  "version": "0.34.3",
   "description": "Test utilities for opentelemetry components",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -24,9 +24,7 @@
   "files": [
     "build/**/*.js",
     "build/**/*.js.map",
-    "build/**/*.d.ts",
-    "LICENSE",
-    "README.md"
+    "build/**/*.d.ts"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

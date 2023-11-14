@@ -1,23 +1,24 @@
 {
   "name": "@opentelemetry/instrumentation-user-interaction",
-  "version": "0.33.2",
+  "version": "0.34.0",
   "description": "OpenTelemetry UserInteraction automatic instrumentation package.",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
+  "esnext": "build/esnext/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-user-interaction --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc --build tsconfig.json tsconfig.esm.json",
+    "compile": "npm run version:update && tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prepare": "npm run compile",
     "tdd": "karma start",
     "test:browser": "nyc karma start --single-run",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
   "keywords": [
     "opentelemetry",
@@ -36,12 +37,12 @@
     "build/esm/**/*.js",
     "build/esm/**/*.map",
     "build/esm/**/*.d.ts",
+    "build/esnext/**/*.js",
+    "build/esnext/**/*.map",
+    "build/esnext/**/*.d.ts",
     "build/src/**/*.js",
     "build/src/**/*.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
