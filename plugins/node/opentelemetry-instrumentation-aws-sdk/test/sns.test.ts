@@ -84,6 +84,9 @@ describe('SNS - v2', () => {
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
       ).toBe(topicName);
+      expect(publishSpan.attributes['messaging.destination.name']).toBe(
+        fakeARN
+      );
       expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe(
         'Publish'
       );
@@ -111,6 +114,9 @@ describe('SNS - v2', () => {
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
       ).toBe(PhoneNumber);
+      expect(publishSpan.attributes['messaging.destination.name']).toBe(
+        PhoneNumber
+      );
     });
 
     it('inject context propagation', async () => {
@@ -159,6 +165,9 @@ describe('SNS - v2', () => {
       expect(
         createTopicSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
       ).toBeUndefined();
+      expect(
+        createTopicSpan.attributes['messaging.destination.name']
+      ).toBeUndefined();
       expect(createTopicSpan.kind).toBe(SpanKind.CLIENT);
     });
   });
@@ -186,9 +195,11 @@ describe('SNS - v3', () => {
   describe('publish', () => {
     it('topic arn', async () => {
       const topicV3Name = 'dummy-sns-v3-topic';
+      const topicV3ARN = `arn:aws:sns:us-east-1:000000000:${topicV3Name}`;
+
       await sns.publish({
         Message: 'sns message',
-        TopicArn: `arn:aws:sns:us-east-1:000000000:${topicV3Name}`,
+        TopicArn: topicV3ARN,
       });
 
       const publishSpans = getTestSpans().filter(
@@ -203,6 +214,9 @@ describe('SNS - v3', () => {
       expect(
         publishSpan.attributes[SemanticAttributes.MESSAGING_DESTINATION]
       ).toBe(topicV3Name);
+      expect(publishSpan.attributes['messaging.destination.name']).toBe(
+        topicV3ARN
+      );
       expect(publishSpan.attributes[SemanticAttributes.RPC_METHOD]).toBe(
         'Publish'
       );
