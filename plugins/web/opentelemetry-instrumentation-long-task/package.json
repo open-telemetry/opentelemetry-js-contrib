@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-long-task",
-  "version": "0.33.2",
+  "version": "0.34.0",
   "description": "OpenTelemetry long task API automatic instrumentation package.",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
@@ -42,10 +42,7 @@
     "build/esnext/**/*.d.ts",
     "build/src/**/*.js",
     "build/src/**/*.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"

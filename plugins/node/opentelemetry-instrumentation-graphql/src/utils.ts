@@ -129,7 +129,7 @@ function createResolverSpan(
   };
 
   const span = tracer.startSpan(
-    SpanNames.RESOLVE,
+    `${SpanNames.RESOLVE} ${attributes[AttributeNames.FIELD_PATH]}`,
     {
       attributes,
     },
