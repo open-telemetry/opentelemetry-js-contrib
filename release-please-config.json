@@ -8,7 +8,7 @@
   "packages": {
     ".": {
       "release-as": "0.1.0",
-      "skip-github-release": true,
+      "skip-github-release": true
     },
     "detectors/node/opentelemetry-resource-detector-alibaba-cloud": {},
     "detectors/node/opentelemetry-resource-detector-aws": {},
