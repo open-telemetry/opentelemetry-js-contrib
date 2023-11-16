@@ -36,7 +36,6 @@ export type SpanNameHook = (
   defaultName: string
 ) => string;
 
-
 /**
  * Function that can be used to add custom attributes to the current span or the root span on
  * a Express request
