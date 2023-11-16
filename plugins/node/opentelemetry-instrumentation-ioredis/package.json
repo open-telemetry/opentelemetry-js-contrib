@@ -19,7 +19,7 @@
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc -p .",
-    "prepare": "npm run compile"
+    "prepublishOnly": "npm run compile"
   },
   "keywords": [
     "instrumentation",
