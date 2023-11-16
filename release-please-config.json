@@ -6,6 +6,7 @@
   "bump-minor-pre-major": true,
   "sequential-calls": true,
   "packages": {
+    ".": {},
     "detectors/node/opentelemetry-resource-detector-alibaba-cloud": {},
     "detectors/node/opentelemetry-resource-detector-aws": {},
     "detectors/node/opentelemetry-resource-detector-azure": {},
