@@ -86,7 +86,6 @@ Express instrumentation has few options available to choose from. You can set th
 
 NOTE: `ExpressRequestInfo.request` is typed as `any`. If you want type support make sure you have `@types/express` installed then you can use `ExpressRequestInfo<express.Request>`
 
-
 #### Ignore a whole Express route
 
 In order to ignore whole traces that represent a given Express route, use
