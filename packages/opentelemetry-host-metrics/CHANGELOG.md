@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.33.1...host-metrics-v0.33.2) (2023-11-13)
+
+
+### Bug Fixes
+
+* host-metrics `system.cpu.utilization` calculation fix ([#1741](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1741)) ([b9350d9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b9350d918bf08569cffb3374d2b1e1fff6b38b80))
+
 ## [0.33.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.33.0...host-metrics-v0.33.1) (2023-08-14)
 
 
