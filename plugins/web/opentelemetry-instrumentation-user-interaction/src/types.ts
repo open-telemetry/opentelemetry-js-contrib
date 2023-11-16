@@ -25,6 +25,10 @@ export type ShouldPreventSpanCreation = (
   span: Span
 ) => boolean | void;
 
+export interface UserInteractionCustomAttributeFunction {
+  (span: Span): void;
+}
+
 export interface UserInteractionInstrumentationConfig
   extends InstrumentationConfig {
   /**
@@ -39,4 +43,9 @@ export interface UserInteractionInstrumentationConfig
    * You can also use this handler to enhance created span with extra attributes.
    */
   shouldPreventSpanCreation?: ShouldPreventSpanCreation;
+
+  /**
+   * Function for adding custom attributes on the span
+   */
+  applyCustomAttributesOnSpan?: UserInteractionCustomAttributeFunction;
 }

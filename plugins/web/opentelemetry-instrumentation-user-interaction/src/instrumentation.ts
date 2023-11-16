@@ -16,7 +16,7 @@
 
 /// <reference types="zone.js" />
 
-import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation';
+import { isWrapped, InstrumentationBase, safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
@@ -24,7 +24,7 @@ import { getElementXPath } from '@opentelemetry/sdk-trace-web';
 import { AttributeNames } from './enums/AttributeNames';
 import {
   EventName,
-  ShouldPreventSpanCreation,
+  ShouldPreventSpanCreation, UserInteractionCustomAttributeFunction,
   UserInteractionInstrumentationConfig,
 } from './types';
 import {
@@ -35,6 +35,7 @@ import {
   ZoneTypeWithPrototype,
 } from './internal-types';
 import { VERSION } from './version';
+import { Span } from '@opentelemetry/api';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
@@ -77,6 +78,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
   }
 
   init() {}
+
+  private _getConfig(): UserInteractionInstrumentationConfig {
+    return this._config;
+  }
 
   /**
    * This will check if last task was timeout and will save the time to
@@ -147,6 +152,11 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
           : undefined
       );
 
+      this._addCustomAttributesOnSpan(
+        span,
+        this._getConfig().applyCustomAttributesOnSpan
+      );
+
       if (this._shouldPreventSpanCreation(eventName, element, span) === true) {
         return undefined;
       }
@@ -160,6 +170,28 @@ export class UserInteractionInstrumentation extends InstrumentationBase<unknown>
       this._diag.error('failed to start create new user interaction span', e);
     }
     return undefined;
+  }
+
+  /**
+   * adds custom attributes to root span if configured
+   */
+  private _addCustomAttributesOnSpan(
+    span: Span,
+    applyCustomAttributesOnSpan: UserInteractionCustomAttributeFunction | undefined
+  ) {
+    if (applyCustomAttributesOnSpan) {
+      safeExecuteInTheMiddle(
+        () => applyCustomAttributesOnSpan(span),
+        error => {
+          if (!error) {
+            return;
+          }
+
+          this._diag.error('addCustomAttributesOnSpan', error);
+        },
+        true
+      );
+    }
   }
 
   /**
