@@ -15,7 +15,7 @@
  */
 
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
-import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
+import { trace, context, diag, Attributes } from '@opentelemetry/api';
 import type * as express from 'express';
 import { ExpressInstrumentationConfig, ExpressRequestInfo } from './types';
 import { ExpressLayerType } from './enums/ExpressLayerType';
@@ -187,7 +187,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
           .filter(path => path !== '/' && path !== '/*')
           .join('');
 
-        const attributes: SpanAttributes = {
+        const attributes: Attributes = {
           [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
         };
         const metadata = getLayerMetadata(layer, layerPath);
