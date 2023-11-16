@@ -1,15 +1,6 @@
 {
   "npmClient": "npm",
-  "packages": [
-    "packages/*",
-    "metapackages/*",
-    "plugins/node/*",
-    "plugins/node/*/examples",
-    "plugins/web/*",
-    "plugins/web/*/examples",
-    "propagators/*",
-    "detectors/node/*"
-  ],
+  "useWorkspaces": true,
   "version": "independent",
   "changelog": {
     "repo": "open-telemetry/opentelemetry-js-contrib",
