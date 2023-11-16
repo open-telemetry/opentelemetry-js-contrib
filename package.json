@@ -6,9 +6,6 @@
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
