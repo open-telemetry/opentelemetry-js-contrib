@@ -13,7 +13,7 @@
     "compile": "tsc -p .",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/contrib-test-utils --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },
   "repository": "open-telemetry/opentelemetry-js-contrib",
