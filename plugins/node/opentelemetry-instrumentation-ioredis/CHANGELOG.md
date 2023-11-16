@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.35.3...instrumentation-ioredis-v0.36.0) (2023-11-16)
+
+
+### Features
+
+* **test-utils:** runTestFixture utility for running out-of-process tests ([#1735](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1735)) ([4c8b374](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4c8b37453225769ec5f7b3c97a2bf0de673bc60f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
+
 ## [0.35.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-ioredis-v0.35.2...instrumentation-ioredis-v0.35.3) (2023-11-13)
 
 
