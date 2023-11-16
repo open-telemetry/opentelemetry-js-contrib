@@ -15,29 +15,15 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 14
+          node-version: 18
           registry-url: 'https://registry.npmjs.org'
-
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            detectors/node/*/node_modules
-            metapackages/*/node_modules
-            packages/*/node_modules
-            plugins/node/*/node_modules
-            plugins/web/*/node_modules
-            propagators/*/node_modules
-          key: release-${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
 
       - name: Build Packages
         run: |
-          npm install
-          npx lerna bootstrap --no-ci
+          npm ci
+          npm run compile
 
       - uses: google-github-actions/release-please-action@v3
         id: release

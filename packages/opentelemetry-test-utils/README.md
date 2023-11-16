@@ -19,9 +19,9 @@ This package:
 
 By using this package, testing instrumentation code can be shorter, and good practices for writing tests are more easily applied.
 
-### Supporter Version
+### Supported Version
 
-Since [root hook plugin](https://mochajs.org/#root-hook-plugins) are used, this package is compatible to mocha v8.0.0 and above.
+Since [root hook plugin](https://mochajs.org/#root-hook-plugins) are used, this package is compatible to mocha v7.2.0 and above.
 
 ### Usage
 

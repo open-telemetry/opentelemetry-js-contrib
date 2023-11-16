@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-memcached",
-  "version": "0.32.2",
+  "version": "0.32.3",
   "description": "OpenTelemetry memcached automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,7 +12,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-memcached --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "test:debug": "cross-env RUN_MEMCACHED_TESTS_LOCAL=true ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
@@ -35,10 +35,7 @@
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
@@ -49,7 +46,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/contrib-test-utils": "^0.34.2",
+    "@opentelemetry/contrib-test-utils": "^0.34.3",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
@@ -63,7 +60,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.44.0",
+    "@opentelemetry/instrumentation": "^0.45.1",
     "@opentelemetry/semantic-conventions": "^1.0.0",
     "@types/memcached": "^2.2.6"
   },

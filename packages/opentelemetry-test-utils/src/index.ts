@@ -15,5 +15,6 @@
  */
 
 export * from './resource-assertions';
+export * from './test-fixtures';
 export * from './test-utils';
 export * from './instrumentations';
