@@ -79,6 +79,14 @@ Express instrumentation has few options available to choose from. You can set th
 - `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer.
 - `defaultName: string` - original name proposed by the instrumentation.
 
+`requestHook` is invoked with 2 arguments:
+
+- `span: Span` - the span associated with the express request.
+- `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer.
+
+NOTE: `ExpressRequestInfo.request` is typed as `any`. If you want type support make sure you have `@types/express` installed then you can use `ExpressRequestInfo<express.Request>`
+
+
 #### Ignore a whole Express route
 
 In order to ignore whole traces that represent a given Express route, use
