@@ -25,7 +25,11 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { Span } from '@opentelemetry/api';
-import { getPackageVersion } from '@opentelemetry/contrib-test-utils';
+import {
+  getPackageVersion,
+  runTestFixture,
+  TestCollector,
+} from '@opentelemetry/contrib-test-utils';
 import * as semver from 'semver';
 import * as http from 'http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -531,6 +535,32 @@ describe('fastify', () => {
           [SemanticAttributes.HTTP_METHOD]: 'GET',
         });
       });
+    });
+  });
+
+  it('should work with ESM usage', async () => {
+    await runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-fastify.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: TestCollector) => {
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans.length, 1);
+        assert.strictEqual(spans[0].name, 'request handler - aRoute');
+        assert.strictEqual(
+          spans[0].attributes.filter(a => a.key === 'plugin.name')[0]?.value
+            ?.stringValue,
+          'fastify',
+          'attribute plugin.name'
+        );
+      },
     });
   });
 });
