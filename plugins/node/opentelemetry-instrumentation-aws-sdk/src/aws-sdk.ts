@@ -222,6 +222,12 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       this._getRequestPromisePatch.bind(this, moduleVersion)
     );
 
+    const unsignableHeaders =
+      moduleExports?.Signers.V4.prototype.unsignableHeaders;
+    if (!unsignableHeaders.includes('traceparent')) {
+      unsignableHeaders.push('traceparent');
+    }
+
     return moduleExports;
   }
 
@@ -231,6 +237,12 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
     }
     if (isWrapped(moduleExports?.Request.prototype.promise)) {
       this._unwrap(moduleExports!.Request.prototype, 'promise');
+    }
+
+    const unsignableHeaders =
+      moduleExports?.Signers.V4.prototype.unsignableHeaders;
+    if (unsignableHeaders.includes('traceparent')) {
+      unsignableHeaders.splice(unsignableHeaders.indexOf('traceparent'), 1);
     }
   }
 
