@@ -151,7 +151,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14"]
+        node: ["18"]
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
