@@ -538,13 +538,13 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentLoad');
 
         assert.isOk(
-          fetchSpan.attributes['http.url'].startsWith(
+          (fetchSpan.attributes['http.url'] as string).startsWith(
             'http://localhost:8000/?wtr-session-id='
           )
         );
 
         assert.isOk(
-          rootSpan.attributes['http.url'].startsWith(
+          (rootSpan.attributes['http.url'] as string).startsWith(
             'http://localhost:8000/?wtr-session-id='
           )
         );
