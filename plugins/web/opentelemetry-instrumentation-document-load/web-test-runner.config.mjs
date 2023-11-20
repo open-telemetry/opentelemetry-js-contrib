@@ -23,14 +23,11 @@ const nodeResolve = fromRollup(nodeResolveRollup);
 const commonjs = fromRollup(commonjsRollup);
 
 export default {
-  coverageConfig: {
-    reporters: ['json', 'lcov'],
-  },
   files: ['test/**/*.test.ts'],
   nodeResolve: true,
   plugins: [
     esbuildPlugin({ ts: true }),
     nodeResolve({ browser: true, preferBuiltins: false }),
-    commonjs({}),
+    commonjs(),
   ],
 };
