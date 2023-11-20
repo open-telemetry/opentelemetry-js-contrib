@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install lerna
-        run: npm install -g lerna@5.5.2
+        run: npm install -g lerna@6.6.2
 
       - name: Ensure Release Please Config and Manifest are in sync with the repository
         run: node scripts/check-release-please.mjs

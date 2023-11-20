@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-generic-pool",
-  "version": "0.32.3",
+  "version": "0.32.4",
   "description": "OpenTelemetry Generic Pool automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -15,7 +15,7 @@
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc -p .",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },
   "keywords": [
@@ -33,10 +33,7 @@
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"

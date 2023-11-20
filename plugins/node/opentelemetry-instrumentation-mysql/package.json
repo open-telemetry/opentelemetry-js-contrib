@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mysql",
-  "version": "0.34.2",
+  "version": "0.34.3",
   "description": "OpenTelemetry mysql automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,7 +12,7 @@
     "lint": "eslint . --ext .ts",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-mysql --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha tsconfig.json 'test/**/*.test.ts'",
     "version:update": "node ../../../scripts/version-update.js",
@@ -34,10 +34,7 @@
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
@@ -49,7 +46,7 @@
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/sdk-metrics": "^1.8.0",
     "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/contrib-test-utils": "^0.34.2",
+    "@opentelemetry/contrib-test-utils": "^0.34.3",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.6.5",
