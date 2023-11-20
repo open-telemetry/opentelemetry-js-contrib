@@ -35,11 +35,13 @@ import {
   StackContextManager,
 } from '@opentelemetry/sdk-trace-web';
 
-import * as assert from 'assert';
+import chai from 'chai/chai.js';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { EventNames } from '../src/enums/EventNames';
+
+const { assert } = chai;
 
 const exporter = new InMemorySpanExporter();
 const provider = new BasicTracerProvider();
@@ -535,14 +537,12 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fetchSpan.name, 'documentFetch');
         assert.strictEqual(rootSpan.name, 'documentLoad');
 
-        assert.strictEqual(
-          fetchSpan.attributes['http.url'],
-          'http://localhost:9876/context.html'
+        assert.isOk(
+          fetchSpan.attributes['http.url'].startsWith('http://localhost:8000/?wtr-session-id='),
         );
 
-        assert.strictEqual(
-          rootSpan.attributes['http.url'],
-          'http://localhost:9876/context.html'
+        assert.isOk(
+          rootSpan.attributes['http.url'].startsWith('http://localhost:8000/?wtr-session-id='),
         );
         assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
 
