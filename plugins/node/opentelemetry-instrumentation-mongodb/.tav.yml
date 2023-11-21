@@ -1,4 +1,4 @@
-mongodb-v3-v5:
+mongodb:
   jobs:
     - versions: ">=3.3 <4"
       commands: npm run test-v3
@@ -6,14 +6,8 @@ mongodb-v3-v5:
       commands: npm run test-v4
     - versions: ">=5 <6"
       commands: npm run test-v5-v6
-
-  # Fix missing `contrib-test-utils` package
-  pretest: npm run --prefix ../../../ lerna:link
-
-mongodb-v6:
-  node: '>=16'
-  jobs:
     - versions: ">=6 <7"
+      node: '>=15.0.0'
       commands: npm run test-v5-v6
 
   # Fix missing `contrib-test-utils` package
