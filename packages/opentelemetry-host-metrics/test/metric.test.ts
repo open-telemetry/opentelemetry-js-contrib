@@ -171,7 +171,6 @@ describe('Host Metrics', () => {
     const sysNetDirAttr = ATTRIBUTE_NAMES.SYSTEM_NETWORK_DIRECTION;
     const procCpuStateAttr = ATTRIBUTE_NAMES.PROCESS_CPU_STATE;
 
-
     it('should export CPU time metrics', async () => {
       const metric = await getRecords(reader, 'system.cpu.time');
 
@@ -285,8 +284,6 @@ describe('Host Metrics', () => {
     });
 
     it('should export Memory usage metrics', async () => {
-      
-
       const metric = await getRecords(reader, 'system.memory.usage');
 
       ensureValue(metric, { [sysMemStateAttr]: 'used' }, 1024 * 1024 - 1024);
@@ -303,22 +300,46 @@ describe('Host Metrics', () => {
     it('should export Network io dropped', async () => {
       const metric = await getRecords(reader, 'system.network.dropped');
 
-      ensureValue(metric, { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' }, 1200);
-      ensureValue(metric, { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' }, 12);
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' },
+        1200
+      );
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' },
+        12
+      );
     });
 
     it('should export Network io errors', async () => {
       const metric = await getRecords(reader, 'system.network.errors');
 
-      ensureValue(metric, { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' }, 3);
-      ensureValue(metric, { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' }, 15);
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' },
+        3
+      );
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' },
+        15
+      );
     });
 
     it('should export Network io bytes', async () => {
       const metric = await getRecords(reader, 'system.network.io');
 
-      ensureValue(metric, { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' }, 123123);
-      ensureValue(metric, { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' }, 321321);
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' },
+        123123
+      );
+      ensureValue(
+        metric,
+        { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' },
+        321321
+      );
     });
 
     it('should export Process CPU time metrics', async () => {
