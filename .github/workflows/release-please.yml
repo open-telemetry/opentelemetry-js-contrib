@@ -20,17 +20,51 @@ jobs:
           node-version: 18
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Build Packages
+      - name: Install packages
         run: |
           npm ci
-          npm run compile
 
       - uses: google-github-actions/release-please-action@v3
         id: release
         with:
           command: manifest
-          token: ${{secrets.RELEASE_PR_TOKEN}}
+          token: ${{secrets.OPENTELEMETRYBOT_GITHUB_TOKEN}}
           default-branch: main
+
+      # get release PR as we're currently on main
+      - name: Checkout release PR
+        # only update if a PR has been created, otherwise this will fail
+        if: ${{ steps.release.outputs.pr }}
+        uses: actions/checkout@v4
+        with:
+          ref: release-please--branches--main
+          # use a token so that workflows on the PR run when we push later
+          token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+
+      # release-please does not do this on its own, so we do it here instead
+      - name: Update package-lock.json in PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+        # only update if a PR has been created
+        if: ${{ steps.release.outputs.pr }}
+        run: |
+          npm install --ignore-scripts --package-lock-only
+          git add package-lock.json
+          git config user.name opentelemetrybot
+          git config user.email 107717825+opentelemetrybot@users.noreply.github.com
+          git commit -m "chore: sync package-lock.json"
+          git push
+
+      # get main again
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild Packages
+        run: |
+          npm ci
+          npm run compile
 
       # Release Please has already incremented versions and published tags, so we just
       # need to publish all unpublished versions to npm here
