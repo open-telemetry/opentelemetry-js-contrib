@@ -166,6 +166,11 @@ describe('Host Metrics', () => {
 
     const sysCpuStateAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_STATE;
     const sysCpuNumAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_LOGICAL_NUMBER;
+    const sysMemStateAttr = ATTRIBUTE_NAMES.SYSTEM_MEMORY_STATE;
+    const sysDeviceAttr = ATTRIBUTE_NAMES.SYSTEM_DEVICE;
+    const sysNetDirAttr = ATTRIBUTE_NAMES.SYSTEM_NETWORK_DIRECTION;
+    const procCpuStateAttr = ATTRIBUTE_NAMES.PROCESS_CPU_STATE;
+
 
     it('should export CPU time metrics', async () => {
       const metric = await getRecords(reader, 'system.cpu.time');
@@ -280,52 +285,54 @@ describe('Host Metrics', () => {
     });
 
     it('should export Memory usage metrics', async () => {
+      
+
       const metric = await getRecords(reader, 'system.memory.usage');
 
-      ensureValue(metric, { state: 'used' }, 1024 * 1024 - 1024);
-      ensureValue(metric, { state: 'free' }, 1024);
+      ensureValue(metric, { [sysMemStateAttr]: 'used' }, 1024 * 1024 - 1024);
+      ensureValue(metric, { [sysMemStateAttr]: 'free' }, 1024);
     });
 
     it('should export Memory utilization metrics', async () => {
       const metric = await getRecords(reader, 'system.memory.utilization');
 
-      ensureValue(metric, { state: 'used' }, 0.9990234375);
-      ensureValue(metric, { state: 'free' }, 0.0009765625);
+      ensureValue(metric, { [sysMemStateAttr]: 'used' }, 0.9990234375);
+      ensureValue(metric, { [sysMemStateAttr]: 'free' }, 0.0009765625);
     });
 
     it('should export Network io dropped', async () => {
       const metric = await getRecords(reader, 'system.network.dropped');
 
-      ensureValue(metric, { direction: 'receive', device: 'eth0' }, 1200);
-      ensureValue(metric, { direction: 'transmit', device: 'eth0' }, 12);
+      ensureValue(metric, { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' }, 1200);
+      ensureValue(metric, { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' }, 12);
     });
 
     it('should export Network io errors', async () => {
       const metric = await getRecords(reader, 'system.network.errors');
 
-      ensureValue(metric, { direction: 'receive', device: 'eth0' }, 3);
-      ensureValue(metric, { direction: 'transmit', device: 'eth0' }, 15);
+      ensureValue(metric, { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' }, 3);
+      ensureValue(metric, { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' }, 15);
     });
 
     it('should export Network io bytes', async () => {
       const metric = await getRecords(reader, 'system.network.io');
 
-      ensureValue(metric, { direction: 'receive', device: 'eth0' }, 123123);
-      ensureValue(metric, { direction: 'transmit', device: 'eth0' }, 321321);
+      ensureValue(metric, { [sysNetDirAttr]: 'receive', [sysDeviceAttr]: 'eth0' }, 123123);
+      ensureValue(metric, { [sysNetDirAttr]: 'transmit', [sysDeviceAttr]: 'eth0' }, 321321);
     });
 
     it('should export Process CPU time metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.time');
 
-      ensureValue(metric, { state: 'user' }, 90.71356);
-      ensureValue(metric, { state: 'system' }, 63.192629999999994);
+      ensureValue(metric, { [procCpuStateAttr]: 'user' }, 90.71356);
+      ensureValue(metric, { [procCpuStateAttr]: 'system' }, 63.192629999999994);
     });
 
     it('should export Process CPU utilization metrics', async () => {
       const metric = await getRecords(reader, 'process.cpu.utilization');
 
-      ensureValue(metric, { state: 'user' }, 0.025);
-      ensureValue(metric, { state: 'system' }, 0.05);
+      ensureValue(metric, { [procCpuStateAttr]: 'user' }, 0.025);
+      ensureValue(metric, { [procCpuStateAttr]: 'system' }, 0.05);
     });
 
     it('should export Process Memory usage metrics', async () => {
