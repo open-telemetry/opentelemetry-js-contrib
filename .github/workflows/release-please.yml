@@ -33,7 +33,7 @@ jobs:
 
       # get release PR as we're currently on main
       - name: Checkout release PR
-        # only update if a PR has been created, otherwise this will fail
+        # only checkout if a PR has been created, otherwise this will fail
         if: ${{ steps.release.outputs.pr }}
         uses: actions/checkout@v4
         with:
