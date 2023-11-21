@@ -27,7 +27,7 @@ import {
 import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
-import { METRIC_ATTRIBUTES } from '../src/enum';
+import { ATTRIBUTE_NAMES } from '../src/enum';
 import { HostMetrics } from '../src';
 
 const cpuJson = require('./mocks/cpu.json');
@@ -164,8 +164,8 @@ describe('Host Metrics', () => {
       sandbox.restore();
     });
 
-    const sysCpuStateAttr = METRIC_ATTRIBUTES.SYSTEM_CPU_STATE;
-    const sysCpuNumAttr = METRIC_ATTRIBUTES.SYSTEM_CPU_LOGICAL_NUMBER;
+    const sysCpuStateAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_STATE;
+    const sysCpuNumAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_LOGICAL_NUMBER;
 
     it('should export CPU time metrics', async () => {
       const metric = await getRecords(reader, 'system.cpu.time');
