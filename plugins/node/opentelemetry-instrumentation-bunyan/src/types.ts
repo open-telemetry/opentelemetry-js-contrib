@@ -29,16 +29,16 @@ export interface BunyanInstrumentationConfig extends InstrumentationConfig {
   disableLogsBridge?: boolean;
 
   /**
-   * Whether to disable the injection of data such as trace-context fields into
-   * log output.
+   * Whether to disable the injection trace-context fields, and possibly other
+   * fields from `logHook()`, into log records for log correlation.
    * @default false
    */
-  disableInjection?: boolean;
+  disableLogCorrelation?: boolean;
 
   /**
    * A function that allows injecting additional fields in log records. It is
    * called, as `logHook(span, record)`, for each log record emitted in a valid
-   * span context. It requires `disableInjection` to be false.
+   * span context. It requires `disableLogCorrelation` to be false.
    */
   logHook?: LogHookFunction;
 }

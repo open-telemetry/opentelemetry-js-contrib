@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation of the [`bunyan`](https://www.npmjs.com/package/bunyan) module to inject trace-context into Bunyan log records and to bridge Bunyan logging to the OpenTelemetry Logging SDK. It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation of the [`bunyan`](https://www.npmjs.com/package/bunyan) module to inject trace-context into Bunyan log records (Log correlation) and to bridge Bunyan logging to the OpenTelemetry Logging SDK. It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -44,8 +44,9 @@ logger.info('hi');
 const tracer = api.trace.getTracer('example');
 tracer.startActiveSpan('manual-span', span => {
   logger.info('in a span');
-  // 2. Fields identifying the current span will be injected into log records:
+  // 2. Fields identifying the current span will be added to log records:
   //    {"name":"example",...,"msg":"in a span","trace_id":"d61b4e4af1032e0aae279d12f3ab0159","span_id":"d140da862204f2a2","trace_flags":"01"}
+  //    This is called "log correlation".
 })
 ```
 
@@ -57,10 +58,13 @@ If the OpenTelemetry SDK is not configured with a Logger provider, then this add
 
 The logs bridge can be disabled with the `disableLogsBridge: true` option.
 
-### Log injection
+### Log correlation
 
-Bunyan logger calls in the context of a tracing span will have fields indentifying
-the span ([spec](https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/)):
+Bunyan logger calls in the context of a tracing span will have fields
+indentifying the span added to the log record. This allows
+[correlating](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)
+log records with tracing data. The added fields are
+([spec](https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/)):
 
 - `trace_id`
 - `span_id`
@@ -75,15 +79,15 @@ After adding these fields, the optional `logHook` is called to allow injecting a
 ```
 
 When no span context is active or the span context is invalid, injection is skipped.
-Log injection can be disabled with the `disableInjection: true` option.
+Log injection can be disabled with the `disableLogCorrelation: true` option.
 
 ### Bunyan instrumentation options
 
-| Option              | Type              | Description |
-| ------------------- | ----------------- | ----------- |
-| `disableLogsBridge` | `boolean`         | Whether to disable [logs bridging](#logs-bridge). Default `false`. |
-| `disableInjection`  | `boolean`         | Whether to disable [log injection](#log-injection). Default `false`. |
-| `logHook`           | `LogHookFunction` | An option hook to inject additional context to a log record after span context has been added. This requires `disableInjection` to be false. |
+| Option                  | Type              | Description |
+| ----------------------- | ----------------- | ----------- |
+| `disableLogsBridge`     | `boolean`         | Whether to disable [logs bridging](#logs-bridge). Default `false`. |
+| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
+| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
 
 ### Using OpenTelemetryBunyanStream without instrumentation
 

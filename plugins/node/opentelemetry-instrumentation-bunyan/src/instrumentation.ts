@@ -28,7 +28,7 @@ import type * as BunyanLogger from 'bunyan';
 
 const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
   disableLogsBridge: false,
-  disableInjection: false,
+  disableLogCorrelation: false,
 };
 
 export class BunyanInstrumentation extends InstrumentationBase<
@@ -114,7 +114,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
       const instrumentation = this;
       return function patchedEmit(this: BunyanLogger, ...args: unknown[]) {
         const config = instrumentation.getConfig();
-        if (!instrumentation.isEnabled() || config.disableInjection) {
+        if (!instrumentation.isEnabled() || config.disableLogCorrelation) {
           return original.apply(this, args);
         }
 

@@ -156,9 +156,9 @@ describe('BunyanInstrumentation', () => {
       });
     });
 
-    it('does not inject or call logHook if disableInjection=true', () => {
+    it('does not inject or call logHook if disableLogCorrelation=true', () => {
       instrumentation.setConfig({
-        disableInjection: true,
+        disableLogCorrelation: true,
         logHook: (_span, record) => {
           record['resource.service.name'] = 'test-service';
         },
@@ -278,7 +278,7 @@ describe('BunyanInstrumentation', () => {
         log.info('foo');
         assert.strictEqual(memExporter.getFinishedLogRecords().length, 0);
 
-        // Test log injection still works.
+        // Test log correlation still works.
         sinon.assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
         assert.strictEqual('foo', record['msg']);

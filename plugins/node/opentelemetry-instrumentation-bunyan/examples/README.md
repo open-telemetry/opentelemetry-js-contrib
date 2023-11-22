@@ -63,8 +63,8 @@ $ node -r ./telemetry.js app.js
 }
 ```
 
-There are two separate Bunyan instrumentation functionalities. The first, called
-"log injection", is that Bunyan log records emitted in the context of a tracing
+There are two separate Bunyan instrumentation features. The first, called
+"log correlation", is that Bunyan log records emitted in the context of a tracing
 span will include `trace_id` and `span_id` fields that can be used for
 correlating with collected tracing data.
 
