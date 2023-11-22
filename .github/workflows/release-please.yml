@@ -28,7 +28,7 @@ jobs:
         id: release
         with:
           command: manifest
-          token: ${{secrets.OPENTELEMETRYBOT_GITHUB_TOKEN}}
+          token: ${{secrets.RELEASE_PR_TOKEN}}
           default-branch: main
 
       # get release PR as we're currently on main
@@ -39,12 +39,12 @@ jobs:
         with:
           ref: release-please--branches--main
           # use a token so that workflows on the PR run when we push later
-          token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PR_TOKEN }}
 
       # release-please does not do this on its own, so we do it here instead
       - name: Update package-lock.json in PR
         env:
-          GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
         # only update if a PR has been created
         if: ${{ steps.release.outputs.pr }}
         run: |
