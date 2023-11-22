@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-container",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Opentelemetry resource detector to get container resource attributes",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -11,9 +11,9 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/resource-detector-container --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/resource-detector-container --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "version:update": "node ../../../scripts/version-update.js",
@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.34.3",
+    "@opentelemetry/contrib-test-utils": "^0.35.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.6.5",
     "@types/sinon": "10.0.18",

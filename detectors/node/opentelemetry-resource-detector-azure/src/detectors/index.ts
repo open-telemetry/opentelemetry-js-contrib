@@ -15,3 +15,5 @@
  */
 
 export * from './AzureAppServiceDetector';
+export * from './AzureFunctionsDetector';
+export * from './AzureVmDetector';

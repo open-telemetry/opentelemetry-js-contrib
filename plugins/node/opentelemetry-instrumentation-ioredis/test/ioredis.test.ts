@@ -51,13 +51,13 @@ const CONFIG = {
   port: parseInt(process.env.OPENTELEMETRY_REDIS_PORT || '63790', 10),
 };
 
-const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
+const REDIS_URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
-  [SemanticAttributes.DB_CONNECTION_STRING]: URL,
+  [SemanticAttributes.DB_CONNECTION_STRING]: REDIS_URL,
 };
 
 const unsetStatus: SpanStatus = {
@@ -168,7 +168,7 @@ describe('ioredis', () => {
       };
 
       context.with(trace.setSpan(context.active(), span), () => {
-        client = new ioredis(URL);
+        client = new ioredis(REDIS_URL);
         client.on('ready', readyHandler);
         client.on('error', errorHandler);
       });
@@ -209,7 +209,7 @@ describe('ioredis', () => {
     ];
 
     before(done => {
-      client = new ioredis(URL);
+      client = new ioredis(REDIS_URL);
       client.on('error', err => {
         done(err);
       });
@@ -376,9 +376,9 @@ describe('ioredis', () => {
           try {
             // use lazyConnect so we can call the `connect` function and await it.
             // this ensures that all operations are sequential and predictable.
-            const pub = new ioredis(URL, { lazyConnect: true });
+            const pub = new ioredis(REDIS_URL, { lazyConnect: true });
             await pub.connect();
-            const sub = new ioredis(URL, { lazyConnect: true });
+            const sub = new ioredis(REDIS_URL, { lazyConnect: true });
             await sub.connect();
             await sub.subscribe('news', 'music');
             await pub.publish('news', 'Hello world!');
@@ -605,6 +605,7 @@ describe('ioredis', () => {
                     },
                     name: 'exception',
                     time: [0, 0],
+                    droppedAttributesCount: 0,
                   },
                 ],
                 {
@@ -645,7 +646,7 @@ describe('ioredis', () => {
       });
 
       it('should not create child span for connect', async () => {
-        const lazyClient = new ioredis(URL, { lazyConnect: true });
+        const lazyClient = new ioredis(REDIS_URL, { lazyConnect: true });
         await lazyClient.connect();
         const spans = memoryExporter.getFinishedSpans();
         await lazyClient.quit();
@@ -684,7 +685,7 @@ describe('ioredis', () => {
         };
         instrumentation.setConfig(config);
 
-        const lazyClient = new ioredis(URL, { lazyConnect: true });
+        const lazyClient = new ioredis(REDIS_URL, { lazyConnect: true });
         await lazyClient.connect();
         const endedSpans = memoryExporter.getFinishedSpans();
         assert.strictEqual(endedSpans.length, 2);
@@ -723,7 +724,7 @@ describe('ioredis', () => {
         };
         instrumentation.setConfig(config);
 
-        const lazyClient = new ioredis(URL, { lazyConnect: true });
+        const lazyClient = new ioredis(REDIS_URL, { lazyConnect: true });
         await lazyClient.connect();
         const endedSpans = memoryExporter.getFinishedSpans();
         assert.strictEqual(endedSpans.length, 0);
@@ -997,6 +998,29 @@ describe('ioredis', () => {
           });
         });
       });
+    });
+  });
+
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-ioredis.mjs', REDIS_URL],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans[0].name, 'manual');
+        assert.strictEqual(spans[1].name, 'set');
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'get');
+        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+      },
     });
   });
 });
