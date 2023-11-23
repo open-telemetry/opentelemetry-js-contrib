@@ -23,10 +23,10 @@ export type LogHookFunction = (span: Span, record: Record<string, any>) => void;
 export interface BunyanInstrumentationConfig extends InstrumentationConfig {
   /**
    * Whether to disable the automatic sending of log records to the
-   * OpenTelemetry Logs Bridge API.
+   * OpenTelemetry Logs SDK.
    * @default false
    */
-  disableLogsBridge?: boolean;
+  disableLogSending?: boolean;
 
   /**
    * Whether to disable the injection trace-context fields, and possibly other

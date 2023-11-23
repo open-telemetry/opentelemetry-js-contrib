@@ -97,7 +97,7 @@ function severityNumberFromBunyanLevel(lvl: number) {
 }
 
 /**
- * A Bunyan stream for sending log records to the OpenTelemetry Logs Bridge API.
+ * A Bunyan stream for sending log records to the OpenTelemetry Logs SDK.
  */
 export class OpenTelemetryBunyanStream {
   private _otelLogger: Logger;
@@ -130,17 +130,16 @@ export class OpenTelemetryBunyanStream {
    *   the _emit wrapper.
    */
   write(rec: Record<string, any>) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const {
       time,
       level,
       msg,
-      v,
-      hostname,
-      pid,
-      trace_id,
-      span_id,
-      trace_flags,
+      v, // eslint-disable-line @typescript-eslint/no-unused-vars
+      hostname, // eslint-disable-line @typescript-eslint/no-unused-vars
+      pid, // eslint-disable-line @typescript-eslint/no-unused-vars
+      trace_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+      span_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+      trace_flags, // eslint-disable-line @typescript-eslint/no-unused-vars
       ...fields
     } = rec;
     let timestamp = undefined;

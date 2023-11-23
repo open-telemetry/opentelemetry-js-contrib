@@ -175,13 +175,13 @@ describe('BunyanInstrumentation', () => {
         assert.strictEqual(
           memExporter.getFinishedLogRecords().length,
           1,
-          'Logs Bridge still works'
+          'Log sending still works'
         );
         span.end();
       });
     });
 
-    it('emits log records to Logs Bridge API', () => {
+    it('emits log records to Logs SDK', () => {
       const logRecords = memExporter.getFinishedLogRecords();
 
       // levels
@@ -265,10 +265,10 @@ describe('BunyanInstrumentation', () => {
       assert.strictEqual(rec.severityText, undefined);
     });
 
-    it('does not emit to the Logs Bridge API if disableLogsBridge=true', () => {
-      instrumentation.setConfig({ disableLogsBridge: true });
+    it('does not emit to the Logs SDK if disableLogSending=true', () => {
+      instrumentation.setConfig({ disableLogSending: true });
 
-      // Changing `disableLogsBridge` only has an impact on Loggers created
+      // Changing `disableLogSending` only has an impact on Loggers created
       // *after* it is set. So we cannot test with the `log` created in
       // `beforeEach()` above.
       log = Logger.createLogger({ name: 'test-logger-name', stream });
@@ -288,7 +288,7 @@ describe('BunyanInstrumentation', () => {
       });
     });
 
-    it('emits to the Logs Bridge API with `new Logger(...)`', () => {
+    it('emits to the Logs SDK with `new Logger(...)`', () => {
       log = new Logger({ name: 'test-logger-name', stream });
       log.info('foo');
 
@@ -304,7 +304,7 @@ describe('BunyanInstrumentation', () => {
       assert.strictEqual(rec.attributes.aProperty, 'bar');
     });
 
-    it('emits to the Logs Bridge API with `Logger(...)`', () => {
+    it('emits to the Logs SDK with `Logger(...)`', () => {
       log = Logger({ name: 'test-logger-name', stream });
       log.info('foo');
 
@@ -367,7 +367,7 @@ describe('BunyanInstrumentation', () => {
       });
     });
 
-    it('does not emit to the Logs Bridge API', () => {
+    it('does not emit to the Logs SDK', () => {
       tracer.startActiveSpan('abc', span => {
         log.info('foo');
         assert.strictEqual(memExporter.getFinishedLogRecords().length, 0);

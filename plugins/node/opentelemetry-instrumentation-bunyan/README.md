@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation of the [`bunyan`](https://www.npmjs.com/package/bunyan) module to inject trace-context into Bunyan log records (Log correlation) and to bridge Bunyan logging to the OpenTelemetry Logging SDK. It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation of the [`bunyan`](https://www.npmjs.com/package/bunyan) module to inject trace-context into Bunyan log records (log correlation) and to send Bunyan logging to the OpenTelemetry Logging SDK (log sending). It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -39,7 +39,7 @@ const logger = bunyan.createLogger({name: 'example'});
 
 logger.info('hi');
 // 1. Log records will be sent to the SDK-registered log record processor, if any.
-//    This is called "bridging".
+//    This is called "log sending".
 
 const tracer = api.trace.getTracer('example');
 tracer.startActiveSpan('manual-span', span => {
@@ -50,13 +50,13 @@ tracer.startActiveSpan('manual-span', span => {
 })
 ```
 
-### Logs Bridge
+### Log sending
 
-Creation of a Bunyan Logger will automatically add a [Bunyan stream](https://github.com/trentm/node-bunyan#streams) that sends log records to the OpenTelemetry Logs Bridge API. The OpenTelemetry SDK can be configured to handle those records -- for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
+Creation of a Bunyan Logger will automatically add a [Bunyan stream](https://github.com/trentm/node-bunyan#streams) that sends log records to the OpenTelemetry Logs SDK. The OpenTelemetry SDK can be configured to handle those records -- for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
 
 If the OpenTelemetry SDK is not configured with a Logger provider, then this added stream will be a no-op.
 
-The logs bridge can be disabled with the `disableLogsBridge: true` option.
+Log sending can be disabled with the `disableLogSending: true` option.
 
 ### Log correlation
 
@@ -85,16 +85,16 @@ Log injection can be disabled with the `disableLogCorrelation: true` option.
 
 | Option                  | Type              | Description |
 | ----------------------- | ----------------- | ----------- |
-| `disableLogsBridge`     | `boolean`         | Whether to disable [logs bridging](#logs-bridge). Default `false`. |
+| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
 | `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
 
 ### Using OpenTelemetryBunyanStream without instrumentation
 
-This package exports the Bunyan stream class that is used to bridge to the
-OpenTelemetry Logs Bridge API. It can be used directly when configuring a
-Bunyan logger if one is not using the `BunyanInstrumentation` for whatever
-reason. For example:
+This package exports the Bunyan stream class that is used to send records to the
+OpenTelemetry Logs SDK. It can be used directly when configuring a Bunyan logger
+if one is not using the `BunyanInstrumentation` for whatever reason. For
+example:
 
 ```js
 const { OpenTelemetryBunyanStream } = require('@opentelemetry/instrumentation-bunyan');

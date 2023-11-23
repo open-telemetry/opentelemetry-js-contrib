@@ -63,17 +63,17 @@ $ node -r ./telemetry.js app.js
 }
 ```
 
-There are two separate Bunyan instrumentation features. The first, called
-"log correlation", is that Bunyan log records emitted in the context of a tracing
+There are two separate Bunyan instrumentation features. The first, called "log
+correlation", is that Bunyan log records emitted in the context of a tracing
 span will include `trace_id` and `span_id` fields that can be used for
 correlating with collected tracing data.
 
-The second, called "logs bridging", is that a [Bunyan
+The second, called "log sending", is that a [Bunyan
 stream](https://github.com/trentm/node-bunyan#streams) is automatically added
 to created Loggers that will send every log record to the OpenTelemetry Logs
-Bridge API. This means that if the OpenTelemetry SDK has been configured with
-a Logger Provider, it will receive them. (If the OpenTelemetry SDK is not
-configured for this, then the added Bunyan stream will be a no-op.)
+SDK. This means that if the OpenTelemetry SDK has been configured with a Logger
+Provider, it will receive them. (If the OpenTelemetry SDK is not configured for
+this, then the added Bunyan stream will be a no-op.)
 
 # Resource attributes
 

@@ -27,7 +27,7 @@ import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';
 
 const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
-  disableLogsBridge: false,
+  disableLogSending: false,
   disableLogCorrelation: false,
 };
 
@@ -153,7 +153,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
 
   private _addStream(logger: any) {
     const config: BunyanInstrumentationConfig = this.getConfig();
-    if (!this.isEnabled() || config.disableLogsBridge) {
+    if (!this.isEnabled() || config.disableLogSending) {
       return;
     }
     this._diag.debug('Adding OpenTelemetryBunyanStream to logger');
