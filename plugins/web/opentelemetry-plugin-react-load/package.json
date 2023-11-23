@@ -1,23 +1,24 @@
 {
   "name": "@opentelemetry/plugin-react-load",
-  "version": "0.29.1",
+  "version": "0.30.0",
   "description": "OpenTelemetry React loading automatic instrumentation package.",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
+  "esnext": "build/esnext/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/plugin-react-load --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc --build tsconfig.json tsconfig.esm.json",
-    "prepare": "npm run compile",
+    "compile": "npm run version:update && tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "prepublishOnly": "npm run compile",
     "tdd": "karma start",
     "test:browser": "nyc karma start --single-run",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
+    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
   "keywords": [
     "opentelemetry",
@@ -36,12 +37,12 @@
     "build/esm/**/*.js",
     "build/esm/**/*.map",
     "build/esm/**/*.d.ts",
+    "build/esnext/**/*.js",
+    "build/esnext/**/*.map",
+    "build/esnext/**/*.d.ts",
     "build/src/**/*.js",
     "build/src/**/*.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
