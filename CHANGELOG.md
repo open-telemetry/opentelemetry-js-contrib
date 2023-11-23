@@ -4,10 +4,6 @@ All notable changes to this project will be documented in this file. Do not remo
 
 ## Unreleased
 
-#### :rocket: Enhancement
-
-* feat(host-metrics): use the package name as the default instrumentation scope name, to align with instrumentations ([@trentm](https://github.com/trentm))
-
 ## 0.25.0
 
 #### :bug: Bug Fix
