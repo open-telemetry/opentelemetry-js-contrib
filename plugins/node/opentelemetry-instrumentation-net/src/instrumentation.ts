@@ -162,7 +162,7 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
       }
     };
 
-    for (const event of [SocketEvent.CLOSE, SocketEvent.ERROR]) {
+    for (const event of [SocketEvent.CLOSE, SocketEvent.ERROR, SocketEvent.SECURE_CONNECT]) {
       socket.once(event, otelTlsRemoveListeners);
     }
 
