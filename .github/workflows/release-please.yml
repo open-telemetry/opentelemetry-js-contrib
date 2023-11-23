@@ -43,8 +43,6 @@ jobs:
 
       # release-please does not do this on its own, so we do it here instead
       - name: Update package-lock.json in PR
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
         # only update if a PR has been created
         if: ${{ steps.release.outputs.pr }}
         run: |
