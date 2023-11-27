@@ -21,6 +21,10 @@ import {
 import { context, trace, Span, INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  runTestFixture,
+  TestCollector,
+} from '@opentelemetry/contrib-test-utils';
 import { Writable } from 'stream';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -302,5 +306,40 @@ describe('PinoInstrumentation', () => {
         testInjection(span);
       });
     });
+  });
+
+  it('should work with ESM usage', async function () {
+    if (semver.lt(pino.version, '6.0.0')) {
+      // Pino v5 did not support named exports.
+      this.skip();
+    } else {
+      let logRecords: any[];
+      await runTestFixture({
+        cwd: __dirname,
+        argv: ['fixtures/use-pino.mjs'],
+        env: {
+          NODE_OPTIONS:
+            '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+          NODE_NO_WARNINGS: '1',
+        },
+        checkResult: (err, stdout, _stderr) => {
+          assert.ifError(err);
+          logRecords = stdout
+            .trim()
+            .split('\n')
+            .map(ln => JSON.parse(ln));
+          assert.strictEqual(logRecords.length, 2);
+        },
+        checkCollector: (collector: TestCollector) => {
+          // Check that both log records had the trace-context of the span injected.
+          const spans = collector.sortedSpans;
+          assert.strictEqual(spans.length, 1);
+          logRecords.forEach(rec => {
+            assert.strictEqual(rec.trace_id, spans[0].traceId);
+            assert.strictEqual(rec.span_id, spans[0].spanId);
+          });
+        },
+      });
+    }
   });
 });
