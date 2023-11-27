@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/contrib-test-utils",
-  "version": "0.34.3",
+  "version": "0.35.0",
   "description": "Test utilities for opentelemetry components",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -13,7 +13,7 @@
     "compile": "tsc -p .",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/contrib-test-utils --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -49,6 +49,7 @@
     "@opentelemetry/instrumentation": "^0.45.1",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@opentelemetry/resources": "^1.8.0",
+    "@opentelemetry/sdk-node": "^0.45.1",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   }

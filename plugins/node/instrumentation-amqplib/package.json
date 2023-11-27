@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-amqplib",
-  "version": "0.33.3",
+  "version": "0.33.4",
   "description": "OpenTelemetry automatic instrumentation for the `amqplib` package",
   "keywords": [
     "amqplib",
@@ -30,9 +30,9 @@
     "compile": "npm run version:update && tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-amqplib --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-amqplib --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/contrib-test-utils": "^0.34.3",
+    "@opentelemetry/contrib-test-utils": "^0.35.0",
     "@types/amqplib": "^0.5.17",
     "@types/lodash": "4.14.199",
     "@types/mocha": "8.2.3",

@@ -10,13 +10,13 @@ jobs:
   peer-api-check:
     runs-on: ubuntu-latest
     container:
-      image: node:14
+      image: node:18
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install script dependencies
-        run: npm install
+        run: npm ci
 
       - name: Check API dependency semantics
         run: npx lerna exec "node \$LERNA_ROOT_PATH/scripts/peer-api-check.js"
