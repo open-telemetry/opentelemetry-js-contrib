@@ -217,7 +217,7 @@ describe('BunyanInstrumentation', () => {
       );
       assert.strictEqual(
         rec.instrumentationScope.name,
-        'io.opentelemetry.contrib.bunyan'
+        '@opentelemetry/instrumentation-bunyan'
       );
       assert.strictEqual(rec.instrumentationScope.version, VERSION);
       assert.strictEqual(rec.spanContext, undefined);
@@ -431,7 +431,7 @@ describe('OpenTelemetryBunyanStream', () => {
     );
     assert.strictEqual(
       rec.instrumentationScope.name,
-      'io.opentelemetry.contrib.bunyan'
+      '@opentelemetry/instrumentation-bunyan'
     );
     assert.strictEqual(rec.instrumentationScope.version, VERSION);
     assert.strictEqual(rec.spanContext, undefined);
