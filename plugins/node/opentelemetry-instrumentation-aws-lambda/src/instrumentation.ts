@@ -101,8 +101,8 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
     // _HANDLER and LAMBDA_TASK_ROOT are always defined in Lambda but guard bail out if in the future this changes.
     if (!taskRoot || !handlerDef) {
-      diag.debug(
-        'Unable to initialize instrumentation for lambda. Cannot identify lambda handler or task root.',
+      this._diag.debug(
+        'Skipping lambda instrumentation: no _HANDLER/lambdaHandler or LAMBDA_TASK_ROOT.',
         { taskRoot, handlerDef }
       );
       return [];
