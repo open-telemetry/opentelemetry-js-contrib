@@ -63,10 +63,11 @@ log records with tracing data. The added fields are
 After adding these fields, the optional `logHook` is called to allow injecting additional fields. For example:
 
 ```js
-  logHook: (span, record) => {
-    record['resource.service.name'] = provider.resource.attributes['service.name'];
-  }
+logHook: (span, record) => {
+  record['resource.service.name'] = provider.resource.attributes['service.name'];
+}
 ```
+
 Log injection can be disabled with the `disableLogCorrelation: true` option.
 
 ### Winston instrumentation options
@@ -76,7 +77,6 @@ Log injection can be disabled with the `disableLogCorrelation: true` option.
 | `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
 | `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
-
 
 ### Supported versions
 
