@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for injection of trace context for the [`winston`](https://www.npmjs.com/package/winston) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation of the [`winston`](https://www.npmjs.com/package/winston) module to inject trace-context into Winston log records (log correlation) and to send Winston logging to the OpenTelemetry Logging SDK (log sending). It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
@@ -18,23 +18,17 @@ npm install --save @opentelemetry/instrumentation-winston
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK, tracing, logs, api } = require('@opentelemetry/sdk-node');
 const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
+  spanProcessor: new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter()),
+  logRecordProcessor: new logs.SimpleLogRecordProcessor(new logs.ConsoleLogRecordExporter()),
   instrumentations: [
     new WinstonInstrumentation({
-      // Optional hook to insert additional context to log metadata.
-      // Called after trace context is injected to metadata.
-      logHook: (span, record) => {
-        record['resource.service.name'] = provider.resource.attributes['service.name'];
-      },
+      // See below for Winston instrumentation options.
     }),
-    // other instrumentations
   ],
 });
 
@@ -46,15 +40,43 @@ logger.info('foobar');
 // {"message":"foobar","trace_id":"e21c7a95fff34e04f77c7bd518779621","span_id":"b7589a981fde09f4","trace_flags":"01", ...}
 ```
 
-### Fields added to Winston metadata
+### Log sending
 
-For the current active span, the following fields are injected:
+Winston Logger will automatically send log records to the OpenTelemetry Logs SDK. The OpenTelemetry SDK can be configured to handle those records -- for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
+
+If the OpenTelemetry SDK is not configured with a Logger provider, then this will be a no-op.
+
+Log sending can be disabled with the `disableLogSending: true` option.
+
+### Log correlation
+
+Winston logger calls in the context of a tracing span will have fields
+indentifying the span added to the log record. This allows
+[correlating](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)
+log records with tracing data. The added fields are
+([spec](https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/)):
 
 * `trace_id`
 * `span_id`
 * `trace_flags`
 
-When no span context is active or the span context is invalid, injection is skipped.
+After adding these fields, the optional `logHook` is called to allow injecting additional fields. For example:
+
+```js
+  logHook: (span, record) => {
+    record['resource.service.name'] = provider.resource.attributes['service.name'];
+  }
+```
+Log injection can be disabled with the `disableLogCorrelation: true` option.
+
+### Winston instrumentation options
+
+| Option                  | Type              | Description |
+| ----------------------- | ----------------- | ----------- |
+| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
+| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
+| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
+
 
 ### Supported versions
 

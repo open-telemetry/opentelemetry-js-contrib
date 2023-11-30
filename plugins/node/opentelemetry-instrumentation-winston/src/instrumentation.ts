@@ -21,6 +21,13 @@ import {
   Span,
   SpanContext,
 } from '@opentelemetry/api';
+import * as util from 'node:util';
+import {
+  LogRecord,
+  Logger,
+  SeverityNumber,
+  logs,
+} from '@opentelemetry/api-logs';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -39,10 +46,24 @@ import { VERSION } from './version';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
+const DEFAULT_CONFIG: WinstonInstrumentationConfig = {
+  disableLogSending: false,
+  disableLogCorrelation: false,
+};
 
 export class WinstonInstrumentation extends InstrumentationBase {
+  private _logger: Logger;
+
   constructor(config: WinstonInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-winston', VERSION, config);
+    super(
+      '@opentelemetry/instrumentation-winston',
+      VERSION,
+      Object.assign({}, DEFAULT_CONFIG, config)
+    );
+    this._logger = logs.getLogger(
+      '@opentelemetry/instrumentation-winston',
+      VERSION
+    );
   }
 
   protected init() {
@@ -61,8 +82,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
               }
-
               this._wrap(logger.prototype, 'write', this._getPatchedWrite());
+
               return logger;
             },
             (logger, moduleVersion) => {
@@ -89,7 +110,6 @@ export class WinstonInstrumentation extends InstrumentationBase {
               if (isWrapped(proto.log)) {
                 this._unwrap(proto, 'log');
               }
-
               this._wrap(proto, 'log', this._getPatchedLog());
 
               return fileExports;
@@ -113,10 +133,10 @@ export class WinstonInstrumentation extends InstrumentationBase {
     this._config = config;
   }
 
-  private _callHook(span: Span, record: Record<string, string>) {
+  private _callHook(span: Span, record?: Record<string, string>) {
     const hook = this.getConfig().logHook;
 
-    if (!hook) {
+    if (!hook || !record) {
       return;
     }
 
@@ -138,21 +158,23 @@ export class WinstonInstrumentation extends InstrumentationBase {
         this: never,
         ...args: Parameters<typeof original>
       ) {
-        const span = trace.getSpan(context.active());
-
-        if (!span) {
-          return original.apply(this, args);
-        }
-
-        const spanContext = span.spanContext();
-
-        if (!isSpanContextValid(spanContext)) {
-          return original.apply(this, args);
-        }
-
+        const config = instrumentation.getConfig();
         const record = args[0];
-        injectRecord(spanContext, record);
-        instrumentation._callHook(span, record);
+
+        if (!config.disableLogCorrelation) {
+          const span = trace.getSpan(context.active());
+          if (span) {
+            const spanContext = span.spanContext();
+            if (isSpanContextValid(spanContext)) {
+              injectRecord(spanContext, record);
+            }
+            instrumentation._callHook(span, record);
+          }
+        }
+
+        if (!config.disableLogSending) {
+          instrumentation._emitLogRecord(record);
+        }
 
         return original.apply(this, args);
       };
@@ -163,43 +185,96 @@ export class WinstonInstrumentation extends InstrumentationBase {
     return (original: Winston2LogMethod) => {
       const instrumentation = this;
       return function patchedLog(
-        this: unknown,
+        this: never,
         ...args: Parameters<typeof original>
       ) {
-        const span = trace.getSpan(context.active());
-
-        if (!span) {
-          return original.apply(this, args);
-        }
-
-        const spanContext = span.spanContext();
-
-        if (!isSpanContextValid(spanContext)) {
-          return original.apply(this, args);
-        }
-
-        for (let i = args.length - 1; i >= 0; i--) {
-          if (typeof args[i] === 'object') {
-            const record = args[i];
-            injectRecord(spanContext, record);
+        let record: Record<string, any> = {};
+        const config = instrumentation.getConfig();
+        if (!config.disableLogCorrelation) {
+          const span = trace.getSpan(context.active());
+          if (span) {
+            const spanContext = span.spanContext();
+            if (isSpanContextValid(spanContext)) {
+              record = injectRecord(spanContext, record);
+            }
             instrumentation._callHook(span, record);
-            return original.apply(this, args);
+
+            // Inject in metadata argument
+            let isDataInjected = false;
+            for (let i = args.length - 1; i >= 0; i--) {
+              if (typeof args[i] === 'object') {
+                args[i] = Object.assign(args[i], record);
+                isDataInjected = true;
+                break;
+              }
+            }
+            if (!isDataInjected) {
+              const insertAt =
+                typeof args[args.length - 1] === 'function'
+                  ? args.length - 1
+                  : args.length;
+
+              args.splice(insertAt, 0, record);
+            }
           }
         }
 
-        const record = injectRecord(spanContext);
+        if (!config.disableLogSending) {
+          const logRecord: Record<string, any> = {};
+          if (args.length >= 1) {
+            // Level is always first argument
+            logRecord['level'] = args[0];
 
-        const insertAt =
-          typeof args[args.length - 1] === 'function'
-            ? args.length - 1
-            : args.length;
+            // Get meta if present
+            for (let i = args.length - 1; i >= 0; i--) {
+              if (typeof args[i] === 'object') {
+                logRecord['meta'] = args[i];
+                break;
+              }
+            }
 
-        args.splice(insertAt, 0, record);
-        instrumentation._callHook(span, record);
+            let msgArguments = 0;
+            for (let i = 1; i < args.length; i++) {
+              if (typeof args[i] === 'string') {
+                msgArguments++;
+              }
+            }
+            if (msgArguments > 0) {
+              if (msgArguments === 1) {
+                logRecord['msg'] = args[1];
+              } else {
+                // Handle string interpolation
+                const values = args.slice(2, msgArguments + 1);
+                logRecord['msg'] = util.format(args[1], ...values);
+              }
+            }
+          }
+          instrumentation._emitLogRecord(logRecord);
+        }
 
         return original.apply(this, args);
       };
     };
+  }
+
+  private _emitLogRecord(record: Record<string, any>): void {
+    const { message, msg, level, meta, ...splat } = record;
+    const attributes = meta || {};
+    for (const key in splat) {
+      if (Object.prototype.hasOwnProperty.call(splat, key)) {
+        attributes[key] = splat[key];
+      }
+    }
+    const timestamp = Date.now();
+    const logRecord: LogRecord = {
+      timestamp,
+      observedTimestamp: timestamp,
+      severityNumber: getSeverityNumber(level),
+      severityText: level,
+      body: message || msg,
+      attributes: attributes,
+    };
+    this._logger.emit(logRecord);
   }
 }
 
@@ -218,4 +293,55 @@ function injectRecord(
   }
 
   return Object.assign(record, fields);
+}
+
+const npmLevels: Record<string, number> = {
+  error: SeverityNumber.ERROR,
+  warn: SeverityNumber.WARN,
+  info: SeverityNumber.INFO,
+  http: SeverityNumber.DEBUG3,
+  verbose: SeverityNumber.DEBUG2,
+  debug: SeverityNumber.DEBUG,
+  silly: SeverityNumber.TRACE,
+};
+
+const sysLoglevels: Record<string, number> = {
+  emerg: SeverityNumber.FATAL3,
+  alert: SeverityNumber.FATAL2,
+  crit: SeverityNumber.FATAL,
+  error: SeverityNumber.ERROR,
+  warning: SeverityNumber.WARN,
+  notice: SeverityNumber.INFO2,
+  info: SeverityNumber.INFO,
+  debug: SeverityNumber.DEBUG,
+};
+
+const cliLevels: Record<string, number> = {
+  error: SeverityNumber.ERROR,
+  warn: SeverityNumber.WARN,
+  help: SeverityNumber.INFO3,
+  data: SeverityNumber.INFO2,
+  info: SeverityNumber.INFO,
+  debug: SeverityNumber.DEBUG,
+  prompt: SeverityNumber.TRACE4,
+  verbose: SeverityNumber.TRACE3,
+  input: SeverityNumber.TRACE2,
+  silly: SeverityNumber.TRACE,
+};
+
+function getSeverityNumber(level: string): SeverityNumber {
+  let result = npmLevels[level];
+  if (result) {
+    return result;
+  }
+  result = sysLoglevels[level];
+  if (result) {
+    return result;
+  }
+  result = cliLevels[level];
+  if (result) {
+    return result;
+  }
+  // Unknown
+  return SeverityNumber.TRACE;
 }
