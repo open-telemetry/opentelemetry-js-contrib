@@ -14,7 +14,7 @@ shows key aspects of tracing such as
 
 ```sh
 # from this directory
-npm install
+npm install --workspaces=false
 ```
 
 Setup [Zipkin Tracing](https://zipkin.io/pages/quickstart.html)
