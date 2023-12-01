@@ -89,9 +89,8 @@ function getData(url) {
 By default, only `click` events are automatically instrumented. To automatically instrument other events, specify the events that should be captured for telemetry. Most [browser events](https://developer.mozilla.org/en-US/docs/Web/Events) are supported.
 
 ```js
-import { UserInteractionInstrumentation } from '@opentelemetryinstrumentation-user-interaction';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
-
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 // ...general opentelemetry configuration
 
@@ -116,8 +115,9 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 registerInstrumentations({
   instrumentations: [
     new UserInteractionInstrumentation({
-      eventNames: ['submit', 'click', 'keypress'],
-      shouldPreventSpanCreation: true,
+      shouldPreventSpanCreation: () => {
+        return true
+      },
     }),
   ],
 });
@@ -131,13 +131,11 @@ To attach extra attributes to user interaction spans, provide a callback functio
 import { UserInteractionInstrumentation } from '@opentelemetryinstrumentation-user-interaction';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
-
 // ...general opentelemetry configuration
 
 registerInstrumentations({
   instrumentations: [
     new UserInteractionInstrumentation({
-      eventNames: ['submit', 'click', 'keypress'],
       shouldPreventSpanCreation: (event, element, span) => {
         span.setAttribute('target.id', element.id)
         // etc..
