@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-mongoose
 
 ## Supported Versions
 
-- `>=5.9.7 <=8`
+- `>=5.9.7 <8`
 
 ## Usage
 

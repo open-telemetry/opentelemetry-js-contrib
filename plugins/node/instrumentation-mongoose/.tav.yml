@@ -1,4 +1,4 @@
 'mongoose':
-  versions: ">=5.9.7 <=8"
+  versions: ">=5.9.7 <8"
   commands:
     - npm run test
