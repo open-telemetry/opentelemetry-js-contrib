@@ -105,6 +105,25 @@ registerInstrumentations({
 });
 ```
 
+### Prevent spans from recording
+
+```js
+import { UserInteractionInstrumentation } from '@opentelemetryinstrumentation-user-interaction';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+
+
+// ...general opentelemetry configuration
+
+registerInstrumentations({
+  instrumentations: [
+    new UserInteractionInstrumentation({
+      eventNames: ['submit', 'click', 'keypress'],
+      shouldPreventSpanCreation: true,
+    }),
+  ],
+});
+```
+
 ### Add extra attributes to spans
 
 To attach extra attributes to user interaction spans, provide a callback function to the `shouldPreventSpanCreation` option:
