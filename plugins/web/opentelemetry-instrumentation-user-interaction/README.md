@@ -86,7 +86,7 @@ function getData(url) {
 
 ### Send spans for different events
 
-By default, only `click` events are automatically instrumented. To automatically instrument other events, specify the events that should be captured for telemetry. Most [browser events](https://developer.mozilla.org/en-US/docs/Web/Events) are supported.
+By default, only `click` events are automatically instrumented. To automatically instrument other events, specify the events that should be captured for telemetry. Most [HTMLElement interface events](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement#events) are supported.
 
 ```js
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
