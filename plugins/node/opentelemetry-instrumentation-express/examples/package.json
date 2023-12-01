@@ -31,6 +31,7 @@
   "dependencies": {
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/exporter-jaeger": "^1.18.1",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.45.1",
     "@opentelemetry/exporter-zipkin": "^1.18.1",
     "@opentelemetry/instrumentation": "^0.45.1",
     "@opentelemetry/instrumentation-express": "^0.33.3",
