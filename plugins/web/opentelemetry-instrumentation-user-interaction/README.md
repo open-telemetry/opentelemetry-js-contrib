@@ -20,7 +20,6 @@ npm install --save @opentelemetry/instrumentation-user-interaction
 
 ## Usage
 
-
 ### Initialize
 
 ```js
