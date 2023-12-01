@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, trace } from '@opentelemetry/api';
+import { SpanStatusCode, context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -250,6 +250,94 @@ describe('ExpressInstrumentation', () => {
               .find(span => span.name.includes('asyncMiddleware')),
             undefined,
             'no asyncMiddleware span'
+          );
+        }
+      );
+    });
+
+    it('captures sync middleware errors', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let finishListenerCount: number | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
+          });
+          next();
+        });
+
+        const errorMiddleware: express.RequestHandler = (req, res, next) => {
+          throw new Error('message');
+        };
+        app.use(errorMiddleware);
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 3);
+
+          const errorSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('errorMiddleware'));
+          assert.notStrictEqual(errorSpan, undefined);
+
+          assert.deepStrictEqual(errorSpan!.status, {
+            code: SpanStatusCode.ERROR,
+            message: 'message',
+          });
+          assert.notStrictEqual(
+            errorSpan!.events.find(event => event.name === 'exception'),
+            undefined
+          );
+        }
+      );
+    });
+
+    it('captures async middleware errors', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let finishListenerCount: number | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          res.on('finish', () => {
+            finishListenerCount = res.listenerCount('finish');
+          });
+          next();
+        });
+
+        const errorMiddleware: express.RequestHandler = (req, res, next) => {
+          setTimeout(() => next(new Error('message')), 10);
+        };
+        app.use(errorMiddleware);
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/toto/tata`);
+          rootSpan.end();
+          assert.strictEqual(finishListenerCount, 2);
+
+          const errorSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('errorMiddleware'));
+          assert.notStrictEqual(errorSpan, undefined);
+
+          assert.deepStrictEqual(errorSpan!.status, {
+            code: SpanStatusCode.ERROR,
+            message: 'message',
+          });
+          assert.notStrictEqual(
+            errorSpan!.events.find(event => event.name === 'exception'),
+            undefined
           );
         }
       );
