@@ -21,6 +21,10 @@ import {
   Span,
   SpanContext,
 } from '@opentelemetry/api';
+import {
+  hrTime,
+  hrTimeToNanoseconds,
+} from '@opentelemetry/core';
 import * as util from 'node:util';
 import {
   LogRecord,
@@ -265,9 +269,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
         attributes[key] = splat[key];
       }
     }
-    const timestamp = Date.now();
+    const timestamp = hrTimeToNanoseconds(hrTime());
     const logRecord: LogRecord = {
-      timestamp,
       observedTimestamp: timestamp,
       severityNumber: getSeverityNumber(level),
       severityText: level,

@@ -71,7 +71,7 @@ describe('WinstonInstrumentation', () => {
     }
 
     const stream = new Writable();
-    stream._write = () => {};
+    stream._write = () => { };
     writeSpy = sinon.spy(stream, 'write');
 
     if (winston['createLogger']) {
@@ -213,6 +213,18 @@ describe('WinstonInstrumentation', () => {
         logRecords[0].attributes['extraAttribute2'],
         'attributeValue2'
       );
+    });
+
+    it('emit LogRecord with string interpolation', () => {
+      if ('write' in logger) {
+        // In winston 3.x, string interpolation happens before write is called
+      } else {
+        // winston 2.x
+        logger.log('info', "%s:%s", "value1", "value2");
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].body, 'value1:value2');
+      }
     });
 
     it('does not emit LogRecord if config off', () => {

@@ -42,7 +42,7 @@ logger.info('foobar');
 
 ### Log sending
 
-Winston Logger will automatically send log records to the OpenTelemetry Logs SDK. The OpenTelemetry SDK can be configured to handle those records -- for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
+Winston Logger will automatically send log records to the OpenTelemetry Logs SDK. The OpenTelemetry SDK can be configured to handle those records, for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
 
 If the OpenTelemetry SDK is not configured with a Logger provider, then this will be a no-op.
 
