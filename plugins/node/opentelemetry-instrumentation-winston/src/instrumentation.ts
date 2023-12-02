@@ -21,10 +21,7 @@ import {
   Span,
   SpanContext,
 } from '@opentelemetry/api';
-import {
-  hrTime,
-  hrTimeToNanoseconds,
-} from '@opentelemetry/core';
+import { hrTime, hrTimeToNanoseconds } from '@opentelemetry/core';
 import * as util from 'node:util';
 import {
   LogRecord,
