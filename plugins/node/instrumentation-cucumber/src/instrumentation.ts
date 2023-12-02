@@ -52,7 +52,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition<Cucumber>(
         '@cucumber/cucumber',
-        ['^8.0.0', '^9.0.0'],
+        ['^8.0.0', '^9.0.0', '^10.0.0'],
         (moduleExports, moduleVersion) => {
           this._diag.debug(
             `Applying patch for @cucumber/cucumber@${moduleVersion}`
@@ -86,7 +86,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
             default: { new (): TestCaseRunner; prototype: TestCaseRunner };
           }>(
             '@cucumber/cucumber/lib/runtime/test_case_runner.js',
-            ['^8.0.0', '^9.0.0'],
+            ['^8.0.0', '^9.0.0', '^10.0.0'],
             (moduleExports, moduleVersion) => {
               this._diag.debug(
                 `Applying patch for @cucumber/cucumber/lib/runtime/test_case_runner.js@${moduleVersion}`
