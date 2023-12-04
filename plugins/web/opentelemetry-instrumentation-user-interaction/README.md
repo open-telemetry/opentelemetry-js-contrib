@@ -116,7 +116,7 @@ registerInstrumentations({
   instrumentations: [
     new UserInteractionInstrumentation({
       shouldPreventSpanCreation: () => {
-        return true
+        return true;
       },
     }),
   ],
@@ -137,7 +137,7 @@ registerInstrumentations({
   instrumentations: [
     new UserInteractionInstrumentation({
       shouldPreventSpanCreation: (event, element, span) => {
-        span.setAttribute('target.id', element.id)
+        span.setAttribute('target.id', element.id);
         // etc..
       }
     }),
