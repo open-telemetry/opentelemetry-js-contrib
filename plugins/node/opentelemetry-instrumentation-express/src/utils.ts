@@ -132,3 +132,16 @@ export const isLayerIgnored = (
 
   return false;
 };
+
+/**
+ * Converts a user-provided error value into an error and error message pair
+ *
+ * @param error - User-provided error value
+ * @returns Both an Error or string representation of the value and an error message
+ */
+export const asErrorAndMessage = (
+  error: unknown
+): [error: string | Error, message: string] =>
+  error instanceof Error
+    ? [error, error.message]
+    : [String(error), String(error)];
