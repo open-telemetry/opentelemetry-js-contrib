@@ -278,7 +278,7 @@ describe('instrumentation-aws-sdk-v3', () => {
     });
   });
 
-  describe.skip('custom service behavior', () => {
+  describe('custom service behavior', () => {
     describe('SQS', () => {
       const sqsClient = new SQS({ region });
 
@@ -384,7 +384,7 @@ describe('instrumentation-aws-sdk-v3', () => {
         );
       });
 
-      it('sqs receive add messaging attributes and context', done => {
+      it('sqs receive add messaging attributes', done => {
         nock(`https://sqs.${region}.amazonaws.com/`)
           .post('/')
           .reply(
@@ -412,16 +412,33 @@ describe('instrumentation-aws-sdk-v3', () => {
             'SQS'
           );
           expect(span.attributes[AttributeNames.AWS_REGION]).toEqual(region);
+          expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(
+            200
+          );
+          done();
+        });
+      });
 
+      it.skip('sqs receive context', done => {
+        nock(`https://sqs.${region}.amazonaws.com/`)
+          .post('/')
+          .reply(
+            200,
+            fs.readFileSync('./test/mock-responses/sqs-receive.xml', 'utf8')
+          );
+
+        const params = {
+          QueueUrl:
+            'https://sqs.us-east-1.amazonaws.com/731241200085/otel-demo-aws-sdk',
+          MaxNumberOfMessages: 3,
+        };
+        sqsClient.receiveMessage(params).then(res => {
           const receiveCallbackSpan = trace.getSpan(context.active());
           expect(receiveCallbackSpan).toBeDefined();
           const attributes = (receiveCallbackSpan as unknown as ReadableSpan)
             .attributes;
           expect(attributes[SemanticAttributes.MESSAGING_OPERATION]).toMatch(
             MessagingOperationValues.RECEIVE
-          );
-          expect(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]).toEqual(
-            200
           );
           done();
         });
