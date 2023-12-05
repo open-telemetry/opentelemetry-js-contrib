@@ -142,4 +142,27 @@ describe('Utils', () => {
       );
     });
   });
+
+  describe('asErrorAndMessage', () => {
+    it('should special case Error instances', () => {
+      const input = new Error('message');
+      const [error, message] = utils.asErrorAndMessage(input);
+      assert.strictEqual(error, input);
+      assert.strictEqual(message, 'message');
+    });
+
+    it('should pass strings as-is', () => {
+      const input = 'error';
+      const [error, message] = utils.asErrorAndMessage(input);
+      assert.strictEqual(error, input);
+      assert.strictEqual(message, input);
+    });
+
+    it('should stringify other types', () => {
+      const input = 2;
+      const [error, message] = utils.asErrorAndMessage(input);
+      assert.strictEqual(error, '2');
+      assert.strictEqual(message, '2');
+    });
+  });
 });
