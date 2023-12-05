@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import {
   context,
   diag,
@@ -42,6 +41,7 @@ import {
   MongoInternalTopology,
   WireProtocolInternal,
   V4Connection,
+  V4ConnectionPool,
 } from './internal-types';
 import { V4Connect, V4Session } from './internal-types';
 import { VERSION } from './version';
@@ -76,6 +76,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const { v4PatchConnect, v4UnpatchConnect } = this._getV4ConnectPatches();
     const { v4PatchConnection, v4UnpatchConnection } =
       this._getV4ConnectionPatches();
+    const { v4PatchConnectionPool, v4UnpatchConnectionPool } =
+      this._getV4ConnectionPoolPatches();
     const { v4PatchSessions, v4UnpatchSessions } = this._getV4SessionsPatches();
 
     return [
@@ -95,25 +97,31 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition<any>(
         'mongodb',
-        ['4.*', '5.*'],
+        ['4.*', '5.*', '6.*'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile<V4Connection>(
             'mongodb/lib/cmap/connection.js',
-            ['4.*', '5.*'],
+            ['4.*', '5.*', '6.*'],
             v4PatchConnection,
             v4UnpatchConnection
           ),
+          new InstrumentationNodeModuleFile<V4ConnectionPool>(
+            'mongodb/lib/cmap/connection_pool.js',
+            ['4.*', '5.*', '6.*'],
+            v4PatchConnectionPool,
+            v4UnpatchConnectionPool
+          ),
           new InstrumentationNodeModuleFile<V4Connect>(
             'mongodb/lib/cmap/connect.js',
-            ['4.*', '5.*'],
+            ['4.*', '5.*', '6.*'],
             v4PatchConnect,
             v4UnpatchConnect
           ),
           new InstrumentationNodeModuleFile<V4Session>(
             'mongodb/lib/sessions.js',
-            ['4.*', '5.*'],
+            ['4.*', '5.*', '6.*'],
             v4PatchSessions,
             v4UnpatchSessions
           ),
@@ -268,6 +276,35 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     };
   }
 
+  private _getV4ConnectionPoolPatches<T extends V4ConnectionPool>() {
+    return {
+      v4PatchConnectionPool: (moduleExports: any, moduleVersion?: string) => {
+        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+        const poolPrototype = moduleExports.ConnectionPool.prototype;
+
+        if (isWrapped(poolPrototype.checkOut)) {
+          this._unwrap(poolPrototype, 'checkOut');
+        }
+
+        this._wrap(
+          poolPrototype,
+          'checkOut',
+          this._getV4ConnectionPoolCheckOut()
+        );
+        return moduleExports;
+      },
+      v4UnpatchConnectionPool: (
+        moduleExports?: any,
+        moduleVersion?: string
+      ) => {
+        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
+        if (moduleExports === undefined) return;
+
+        this._unwrap(moduleExports.ConnectionPool.prototype, 'checkOut');
+      },
+    };
+  }
+
   private _getV4ConnectPatches<T extends V4Connect>() {
     return {
       v4PatchConnect: (moduleExports: any, moduleVersion?: string) => {
@@ -285,6 +322,17 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
         this._unwrap(moduleExports, 'connect');
       },
+    };
+  }
+
+  // This patch will become unnecessary once
+  // https://jira.mongodb.org/browse/NODE-5639 is done.
+  private _getV4ConnectionPoolCheckOut() {
+    return (original: V4ConnectionPool['checkOut']) => {
+      return function patchedCheckout(this: unknown, callback: any) {
+        const patchedCallback = context.bind(context.active(), callback);
+        return original.call(this, patchedCallback);
+      };
     };
   }
 

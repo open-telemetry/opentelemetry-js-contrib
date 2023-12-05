@@ -16,7 +16,6 @@
 
 import {
   context,
-  diag,
   trace,
   isSpanContextValid,
   Span,
@@ -57,7 +56,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile<Winston3Logger>(
             'winston/lib/winston/logger.js',
             winston3Versions,
-            logger => {
+            (logger, moduleVersion) => {
+              this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
               }
@@ -65,8 +65,9 @@ export class WinstonInstrumentation extends InstrumentationBase {
               this._wrap(logger.prototype, 'write', this._getPatchedWrite());
               return logger;
             },
-            logger => {
+            (logger, moduleVersion) => {
               if (logger === undefined) return;
+              this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(logger.prototype, 'write');
             }
           ),
@@ -81,7 +82,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile<Winston2LoggerModule>(
             'winston/lib/winston/logger.js',
             winstonPre3Versions,
-            fileExports => {
+            (fileExports, moduleVersion) => {
+              this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               const proto = fileExports.Logger.prototype;
 
               if (isWrapped(proto.log)) {
@@ -92,8 +94,9 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return fileExports;
             },
-            fileExports => {
+            (fileExports, moduleVersion) => {
               if (fileExports === undefined) return;
+              this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(fileExports.Logger.prototype, 'log');
             }
           ),
@@ -121,7 +124,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
       () => hook(span, record),
       err => {
         if (err) {
-          diag.error('winston instrumentation: error calling logHook', err);
+          this._diag.error('error calling logHook', err);
         }
       },
       true

@@ -6,6 +6,35 @@
   * dependencies
     * @opentelemetry/redis-common bumped from ^0.34.0 to ^0.35.0
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
+
+## [0.35.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.35.3...instrumentation-redis-4-v0.35.4) (2023-11-13)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to v0.45.0 ([#1779](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1779)) ([7348635](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/734863562c25cd0497aa3f51eccb2bf8bbd5e711))
+* **deps:** update otel core experimental to v0.45.1 ([#1781](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1781)) ([7f420e2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f420e25a8d396c83fd38101088434210705e365))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.2 to ^0.34.3
+
+## [0.35.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.35.2...instrumentation-redis-4-v0.35.3) (2023-10-13)
+
+
+### Bug Fixes
+
+* **instrumentation-redis-4:** avoid shimmer warning by only wrapping multi/MULTI if they exist ([#1729](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1729)) ([247a81c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/247a81c047264ba638abb9a2ef2ca14801094040))
+* **instrumentation-redis-4:** fix unhandledRejection in client.multi(...) handling ([#1730](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1730)) ([d953531](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d95353179279e3cf35ec37b6ca18f1e920691e16))
+
 ## [0.35.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.35.1...instrumentation-redis-4-v0.35.2) (2023-10-10)
 
 

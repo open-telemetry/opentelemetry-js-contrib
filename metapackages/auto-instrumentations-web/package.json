@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-web",
-  "version": "0.33.2",
+  "version": "0.34.0",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/metapackages/auto-instrumentations-web#readme",
@@ -22,7 +22,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/auto-instrumentations-web --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "test:browser": "nyc karma start --single-run",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
   },
@@ -30,7 +30,8 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.3.0"
+    "@opentelemetry/api": "^1.3.0",
+    "zone.js": "0.11.4"
   },
   "devDependencies": {
     "@babel/core": "7.22.17",
@@ -59,10 +60,15 @@
     "webpack-merge": "5.8.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.44.0",
-    "@opentelemetry/instrumentation-document-load": "^0.33.2",
-    "@opentelemetry/instrumentation-fetch": "^0.44.0",
-    "@opentelemetry/instrumentation-user-interaction": "^0.33.2",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.44.0"
-  }
+    "@opentelemetry/instrumentation": "^0.45.1",
+    "@opentelemetry/instrumentation-document-load": "^0.34.0",
+    "@opentelemetry/instrumentation-fetch": "^0.45.1",
+    "@opentelemetry/instrumentation-user-interaction": "^0.34.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.45.1"
+  },
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts"
+  ]
 }

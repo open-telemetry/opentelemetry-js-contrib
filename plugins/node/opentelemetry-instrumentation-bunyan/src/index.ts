@@ -16,3 +16,4 @@
 
 export * from './instrumentation';
 export * from './types';
+export * from './OpenTelemetryBunyanStream';

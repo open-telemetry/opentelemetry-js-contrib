@@ -13,32 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { promisify } from 'util';
-import * as childProcess from 'child_process';
+
+import { spawnSync } from 'child_process';
 import * as assert from 'assert';
 
-const exec = promisify(childProcess.exec);
-
 describe('Register', function () {
-  this.timeout(5000);
-  it('can load auto instrumentation from command line', async () => {
-    process.env.OTEL_NODE_RESOURCE_DETECTORS = 'none';
-    process.env.OTEL_TRACES_EXPORTER = 'console';
-
-    const { stdout } = await exec(
-      'node --require ./build/src/register.js ./test/test-app/app.js'
+  it('can load auto instrumentation from command line', () => {
+    const proc = spawnSync(
+      process.execPath,
+      ['--require', '../build/src/register.js', './test-app/app.js'],
+      {
+        cwd: __dirname,
+        timeout: 5000,
+        killSignal: 'SIGKILL', // SIGTERM is not sufficient to terminate some hangs
+        env: Object.assign({}, process.env, {
+          OTEL_NODE_RESOURCE_DETECTORS: 'none',
+          OTEL_TRACES_EXPORTER: 'console',
+          // nx (used by lerna run) defaults `FORCE_COLOR=true`, which in
+          // node v18.17.0, v20.3.0 and later results in ANSI color escapes
+          // in the ConsoleSpanExporter output that is checked below.
+          FORCE_COLOR: '0',
+        }),
+      }
     );
+    assert.ifError(proc.error);
+    assert.equal(proc.status, 0, `proc.status (${proc.status})`);
+    assert.equal(proc.signal, null, `proc.signal (${proc.signal})`);
 
     assert.ok(
-      stdout.includes(
+      proc.stdout.includes(
         'OpenTelemetry automatic instrumentation started successfully'
       )
     );
 
-    //Check a span has been generated for the GET request done in app.js
-    assert.ok(stdout.includes("name: 'GET'"));
-
-    delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
-    delete process.env.OTEL_TRACES_EXPORTER;
+    // Check a span has been generated for the GET request done in app.js
+    assert.ok(
+      proc.stdout.includes("name: 'GET'"),
+      'console span output in stdout'
+    );
   });
 });
