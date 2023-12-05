@@ -19,12 +19,14 @@
 
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { KoaInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-koa',
   instrumentations: [
-    new KoaInstrumentation()
+    new KoaInstrumentation(),
+    new HttpInstrumentation()
   ]
 })
 sdk.start();
@@ -35,7 +37,7 @@ import * as http from 'http';
 
 const app = new Koa();
 
-app.use(async function simpleResponse(ctx, next) {
+app.use(async function simpleMiddleware(ctx, next) {
   await next();
 });
 
