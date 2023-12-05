@@ -55,8 +55,8 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
     return new InstrumentationNodeModuleDefinition<typeof koa>(
       'koa',
       ['^2.0.0'],
-      module => {
-        const moduleExports =
+      (module: any) => {
+        const moduleExports: typeof koa =
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
             : module; // CommonJS
@@ -74,8 +74,8 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         );
         return module;
       },
-      module => {
-        const moduleExports =
+      (module: any) => {
+        const moduleExports: typeof koa =
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
             : module; // CommonJS
