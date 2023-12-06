@@ -79,7 +79,10 @@ export class PinoInstrumentation extends InstrumentationBase {
             patchedPino.default = patchedPino;
           }
           if (isESM) {
-            module.pino = patchedPino;
+            if (module.pino) {
+              // This was added in pino@6.8.0 (https://github.com/pinojs/pino/pull/936).
+              module.pino = patchedPino;
+            }
             module.default = patchedPino;
           }
 

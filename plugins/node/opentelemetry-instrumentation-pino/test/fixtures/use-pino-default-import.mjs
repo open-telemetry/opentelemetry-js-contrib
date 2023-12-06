@@ -15,7 +15,7 @@
  */
 
 // Use pino from an ES module:
-//    node --experimental-loader=@opentelemetry/instrumentation/hook.mjs use-pino.mjs
+//    node --experimental-loader=@opentelemetry/instrumentation/hook.mjs use-pino-default-import.mjs
 
 import { trace } from '@opentelemetry/api';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
@@ -30,16 +30,12 @@ const sdk = createTestNodeSdk({
 })
 sdk.start();
 
-// Test that both `import pino from 'pino'` and named import work.
-// Using a named export requires pino >=6.
-import pino, { pino as pinoNamedImport } from 'pino';
+import pino from 'pino';
 const logger = pino();
-const loggerNamedImport = pinoNamedImport();
 
 const tracer = trace.getTracer();
 await tracer.startActiveSpan('manual', async (span) => {
   logger.info('hi from logger')
-  loggerNamedImport.info('hi from loggerNamedImport')
   span.end();
 });
 

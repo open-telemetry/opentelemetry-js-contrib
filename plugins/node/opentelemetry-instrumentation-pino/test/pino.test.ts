@@ -308,15 +308,45 @@ describe('PinoInstrumentation', () => {
     });
   });
 
-  it('should work with ESM usage', async function () {
-    if (semver.lt(pino.version, '6.0.0')) {
-      // Pino v5 did not support named exports.
+  it('should work with ESM default import', async function () {
+    let logRecords: any[];
+    await runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-pino-default-import.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, _stderr) => {
+        assert.ifError(err);
+        logRecords = stdout
+          .trim()
+          .split('\n')
+          .map(ln => JSON.parse(ln));
+        assert.strictEqual(logRecords.length, 1);
+      },
+      checkCollector: (collector: TestCollector) => {
+        // Check that both log records had the trace-context of the span injected.
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans.length, 1);
+        logRecords.forEach(rec => {
+          assert.strictEqual(rec.trace_id, spans[0].traceId);
+          assert.strictEqual(rec.span_id, spans[0].spanId);
+        });
+      },
+    });
+  });
+
+  it('should work with ESM named import', async function () {
+    if (semver.lt(pino.version, '6.8.0')) {
+      // Pino 6.8.0 added named ESM exports (https://github.com/pinojs/pino/pull/936).
       this.skip();
     } else {
       let logRecords: any[];
       await runTestFixture({
         cwd: __dirname,
-        argv: ['fixtures/use-pino.mjs'],
+        argv: ['fixtures/use-pino-named-import.mjs'],
         env: {
           NODE_OPTIONS:
             '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
@@ -328,7 +358,7 @@ describe('PinoInstrumentation', () => {
             .trim()
             .split('\n')
             .map(ln => JSON.parse(ln));
-          assert.strictEqual(logRecords.length, 2);
+          assert.strictEqual(logRecords.length, 1);
         },
         checkCollector: (collector: TestCollector) => {
           // Check that both log records had the trace-context of the span injected.
