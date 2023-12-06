@@ -20,10 +20,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        # Need lerna to list all packages
-      - name: Install lerna
-        run: npm install -g lerna@6.6.2
-      - name: Parse labels into lerna scope arguments
+      - name: Parse labels into npm workspace arguments
         id: npm-workspace-args
         run: |
           OUTPUT=`node scripts/pr-labels-to-npm-workspace-args.mjs "$PR_LABELS"`
