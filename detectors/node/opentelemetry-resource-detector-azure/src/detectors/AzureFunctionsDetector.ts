@@ -44,8 +44,8 @@ class AzureFunctionsDetector implements DetectorSync {
   detect(): IResource {
     let attributes = {};
     const functionName = process.env[WEBSITE_SITE_NAME];
-    if (functionName) {
-      const functionVersion = process.env[FUNCTIONS_VERSION];
+    const functionVersion = process.env[FUNCTIONS_VERSION];
+    if (functionName && functionVersion) {
       const functionInstance = process.env[WEBSITE_INSTANCE_ID];
       const functionMemLimit = process.env[FUNCTIONS_MEM_LIMIT];
 
