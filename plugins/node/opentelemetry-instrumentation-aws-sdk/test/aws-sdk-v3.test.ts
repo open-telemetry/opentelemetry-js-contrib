@@ -284,10 +284,19 @@ describe('instrumentation-aws-sdk-v3', () => {
 
       it('sqs send add messaging attributes', async () => {
         nock(`https://sqs.${region}.amazonaws.com/`)
+          .matchHeader('content-type', 'application/x-www-form-urlencoded')
           .post('/')
           .reply(
             200,
             fs.readFileSync('./test/mock-responses/sqs-send.xml', 'utf8')
+          );
+        // @aws-sdk/client-sqs >=3.446.0 uses a new JSON protocol.
+        nock(`https://sqs.${region}.amazonaws.com/`)
+          .matchHeader('content-type', 'application/x-amz-json-1.0')
+          .post('/')
+          .reply(
+            200,
+            fs.readFileSync('./test/mock-responses/sqs-send.json', 'utf8')
           );
 
         const params = {
@@ -332,11 +341,20 @@ describe('instrumentation-aws-sdk-v3', () => {
 
       it('sqs send message batch attributes', async () => {
         nock(`https://sqs.${region}.amazonaws.com/`)
+          .matchHeader('content-type', 'application/x-www-form-urlencoded')
           .post('/')
           .reply(
             200,
             fs.readFileSync('./test/mock-responses/sqs-send-batch.xml', 'utf8')
           );
+        nock(`https://sqs.${region}.amazonaws.com/`)
+          .matchHeader('content-type', 'application/x-amz-json-1.0')
+          .post('/')
+          .reply(
+            200,
+            fs.readFileSync('./test/mock-responses/sqs-send-batch.json', 'utf8')
+          );
+
         const params = {
           QueueUrl:
             'https://sqs.us-east-1.amazonaws.com/731241200085/otel-demo-aws-sdk',
@@ -386,10 +404,18 @@ describe('instrumentation-aws-sdk-v3', () => {
 
       it('sqs receive add messaging attributes', done => {
         nock(`https://sqs.${region}.amazonaws.com/`)
+          .matchHeader('content-type', 'application/x-www-form-urlencoded')
           .post('/')
           .reply(
             200,
             fs.readFileSync('./test/mock-responses/sqs-receive.xml', 'utf8')
+          );
+        nock(`https://sqs.${region}.amazonaws.com/`)
+          .matchHeader('content-type', 'application/x-amz-json-1.0')
+          .post('/')
+          .reply(
+            200,
+            fs.readFileSync('./test/mock-responses/sqs-receive.json', 'utf8')
           );
 
         const params = {
