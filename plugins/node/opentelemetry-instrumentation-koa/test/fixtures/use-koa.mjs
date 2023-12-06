@@ -17,6 +17,7 @@
 // Use koa from an ES module:
 //    node --experimental-loader=@opentelemetry/instrumentation/hook.mjs use-koa.mjs
 
+import { promisify } from 'util';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -38,6 +39,11 @@ import * as http from 'http';
 const app = new Koa();
 
 app.use(async function simpleMiddleware(ctx, next) {
+  // Wait a short delay to ensure this "middleware - ..." span clearly starts
+  // before the "router - ..." span. The test rely on a start-time-based sort
+  // of the produced spans. If they start in the same millisecond, then tests
+  // can be flaky.
+  await promisify(setTimeout)(10);
   await next();
 });
 

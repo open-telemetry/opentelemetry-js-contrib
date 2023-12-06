@@ -728,7 +728,7 @@ describe('Koa Instrumentation', () => {
         // a `simpleMiddleware`, then makes a single 'GET /post/0' request. We
         // expect to see spans like this:
         //    span 'GET /post/:id'
-        //    `- span 'middleware - simpleResponse'
+        //    `- span 'middleware - simpleMiddleware'
         //       `- span 'router - /post/:id'
         const spans = collector.sortedSpans;
         assert.strictEqual(spans[0].name, 'GET /post/:id');
