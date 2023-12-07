@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.36.2...instrumentation-koa-v0.36.3) (2023-12-07)
+
+
+### Bug Fixes
+
+* **koa:** fix instrumentation of ESM-imported koa ([#1736](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1736)) ([b61f912](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b61f9129f620c4535d3782a985546c2986a46ca0))
+
 ## [0.36.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.36.1...instrumentation-koa-v0.36.2) (2023-11-13)
 
 

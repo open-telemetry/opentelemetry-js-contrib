@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.4...instrumentation-fastify-v0.32.5) (2023-12-07)
+
+
+### Bug Fixes
+
+* **instrumentation-fastify:** fix span attributes and avoid FSTDEP017 FastifyDeprecation warning for 404 request ([#1763](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1763)) ([18ae75c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/18ae75c6004d66744ee99be68469843372c19d1e))
+
 ## [0.32.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.3...instrumentation-fastify-v0.32.4) (2023-11-13)
 
 

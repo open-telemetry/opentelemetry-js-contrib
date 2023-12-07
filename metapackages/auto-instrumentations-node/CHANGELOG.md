@@ -131,6 +131,21 @@
     * @opentelemetry/resource-detector-container bumped from ^0.3.3 to ^0.3.4
     * @opentelemetry/resource-detector-gcp bumped from ^0.29.3 to ^0.29.4
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.37.2 to ^0.37.3
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.37.0 to ^0.37.1
+    * @opentelemetry/instrumentation-bunyan bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.1.2 to ^0.2.0
+    * @opentelemetry/instrumentation-express bumped from ^0.33.3 to ^0.34.0
+    * @opentelemetry/instrumentation-fastify bumped from ^0.32.4 to ^0.32.5
+    * @opentelemetry/instrumentation-koa bumped from ^0.36.2 to ^0.36.3
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.37.3 to ^0.38.0
+    * @opentelemetry/instrumentation-net bumped from ^0.32.3 to ^0.32.4
+    * @opentelemetry/instrumentation-pino bumped from ^0.34.3 to ^0.34.4
+
 ## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.39.4...auto-instrumentations-node-v0.40.0) (2023-11-13)
 
 

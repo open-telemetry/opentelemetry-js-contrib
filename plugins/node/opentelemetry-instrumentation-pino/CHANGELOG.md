@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.34.3...instrumentation-pino-v0.34.4) (2023-12-07)
+
+
+### Bug Fixes
+
+* **instrumentation-pino:** instrument pino used in ESM ([#1831](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1831)) ([4782f5b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4782f5b7aee3b8816444eee202fe04cd8871ba66))
+
 ## [0.34.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.34.2...instrumentation-pino-v0.34.3) (2023-11-13)
 
 
