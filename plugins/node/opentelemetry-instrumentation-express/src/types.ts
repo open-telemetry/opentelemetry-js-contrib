@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import type { Request } from 'express';
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 
 export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 
-export type ExpressRequestInfo = {
-  request: Request;
+export type ExpressRequestInfo<T = any> = {
+  /** An express request object */
+  request: T;
   route: string;
   layerType: ExpressLayerType;
 };
@@ -47,7 +47,7 @@ export interface ExpressRequestCustomAttributeFunction {
 }
 
 /**
- * Options available for the Express Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-Instrumentation-express#express-Instrumentation-options))
+ * Options available for the Express Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express#express-instrumentation-options))
  */
 export interface ExpressInstrumentationConfig extends InstrumentationConfig {
   /** Ignore specific based on their name */
