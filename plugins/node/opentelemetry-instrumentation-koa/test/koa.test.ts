@@ -15,9 +15,10 @@
  */
 
 import * as KoaRouter from '@koa/router';
-import { context, trace, Span } from '@opentelemetry/api';
+import { context, trace, Span, SpanKind } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -707,6 +708,38 @@ describe('Koa Instrumentation', () => {
           );
         }
       );
+    });
+  });
+
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-koa.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        // use-koa.mjs creates a Koa app with a 'GET /post/:id' endpoint and
+        // a `simpleMiddleware`, then makes a single 'GET /post/0' request. We
+        // expect to see spans like this:
+        //    span 'GET /post/:id'
+        //    `- span 'middleware - simpleMiddleware'
+        //       `- span 'router - /post/:id'
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans[0].name, 'GET /post/:id');
+        assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'router - /post/:id');
+        assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
+      },
     });
   });
 });
