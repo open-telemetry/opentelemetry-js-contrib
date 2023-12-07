@@ -43,7 +43,10 @@ import {
 } from './MessageAttributes';
 
 export class SqsServiceExtension implements ServiceExtension {
-  requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
+  requestPreSpanHook(
+    request: NormalizedRequest,
+    _config: AwsSdkInstrumentationConfig
+  ): RequestMetadata {
     const queueUrl = this.extractQueueUrl(request.commandInput);
     const queueName = this.extractQueueNameFromUrl(queueUrl);
     let spanKind: SpanKind = SpanKind.CLIENT;
