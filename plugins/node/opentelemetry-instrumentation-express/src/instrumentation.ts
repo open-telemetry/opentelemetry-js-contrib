@@ -19,7 +19,7 @@ import {
   trace,
   context,
   diag,
-  SpanAttributes,
+  Attributes,
   SpanStatusCode,
 } from '@opentelemetry/api';
 import type * as express from 'express';
@@ -199,7 +199,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
           .filter(path => path !== '/' && path !== '/*')
           .join('');
 
-        const attributes: SpanAttributes = {
+        const attributes: Attributes = {
           [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
         };
         const metadata = getLayerMetadata(layer, layerPath);

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.32.3...instrumentation-net-v0.32.4) (2023-12-07)
+
+
+### Bug Fixes
+
+* **instrumentation-net:** Don't operate on closed span ([#1819](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1819)) ([60d60d0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/60d60d0be27f625819d9c4138488fb4d4c0a6b45))
+
 ## [0.32.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-net-v0.32.2...instrumentation-net-v0.32.3) (2023-11-13)
 
 
