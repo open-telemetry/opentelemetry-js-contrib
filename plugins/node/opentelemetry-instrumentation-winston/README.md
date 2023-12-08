@@ -18,27 +18,50 @@ npm install --save @opentelemetry/instrumentation-winston
 ## Usage
 
 ```js
-const { NodeSDK, tracing, logs, api } = require('@opentelemetry/sdk-node');
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const logsAPI = require('@opentelemetry/api-logs');
+const {
+    LoggerProvider,
+    SimpleLogRecordProcessor,
+    ConsoleLogRecordExporter,
+} = require('@opentelemetry/sdk-logs');
 const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const sdk = new NodeSDK({
-  spanProcessor: new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter()),
-  logRecordProcessor: new logs.SimpleLogRecordProcessor(new logs.ConsoleLogRecordExporter()),
-  instrumentations: [
-    new WinstonInstrumentation({
-      // See below for Winston instrumentation options.
-    }),
-  ],
+const tracerProvider = new NodeTracerProvider();
+tracerProvider.register();
+
+// To start a logger, you first need to initialize the Logger provider.
+const loggerProvider = new LoggerProvider();
+// Add a processor to export log record
+loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())
+);
+logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
+
+registerInstrumentations({
+    instrumentations: [
+        new WinstonInstrumentation({
+            // See below for Winston instrumentation options.
+        }),
+    ],
 });
 
 const winston = require('winston');
 const logger = winston.createLogger({
-  transports: [new winston.transports.Console()],
+    transports: [new winston.transports.Console()],
 })
 logger.info('foobar');
 // {"message":"foobar","trace_id":"e21c7a95fff34e04f77c7bd518779621","span_id":"b7589a981fde09f4","trace_flags":"01", ...}
 ```
+
+### Winston instrumentation options
+
+| Option                  | Type              | Description |
+| ----------------------- | ----------------- | ----------- |
+| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
+| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
+| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires 
 
 ### Log sending
 
@@ -70,13 +93,7 @@ logHook: (span, record) => {
 
 Log injection can be disabled with the `disableLogCorrelation: true` option.
 
-### Winston instrumentation options
-
-| Option                  | Type              | Description |
-| ----------------------- | ----------------- | ----------- |
-| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
-| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
-| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
+`disableLogCorrelation` to be false. |
 
 ### Supported versions
 

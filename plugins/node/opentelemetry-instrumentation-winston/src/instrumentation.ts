@@ -47,20 +47,12 @@ import { VERSION } from './version';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
-const DEFAULT_CONFIG: WinstonInstrumentationConfig = {
-  disableLogSending: false,
-  disableLogCorrelation: false,
-};
 
 export class WinstonInstrumentation extends InstrumentationBase {
   private _logger: Logger;
 
   constructor(config: WinstonInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-winston',
-      VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+    super('@opentelemetry/instrumentation-winston', VERSION, config);
     this._logger = logs.getLogger(
       '@opentelemetry/instrumentation-winston',
       VERSION
@@ -163,13 +155,13 @@ export class WinstonInstrumentation extends InstrumentationBase {
         const record = args[0];
 
         if (!config.disableLogCorrelation) {
-          const span = trace.getSpan(context.active());
+          const span = trace.getActiveSpan();
           if (span) {
             const spanContext = span.spanContext();
             if (isSpanContextValid(spanContext)) {
               injectRecord(spanContext, record);
+              instrumentation._callHook(span, record);
             }
-            instrumentation._callHook(span, record);
           }
         }
 
@@ -197,25 +189,24 @@ export class WinstonInstrumentation extends InstrumentationBase {
             const spanContext = span.spanContext();
             if (isSpanContextValid(spanContext)) {
               record = injectRecord(spanContext, record);
-            }
-            instrumentation._callHook(span, record);
-
-            // Inject in metadata argument
-            let isDataInjected = false;
-            for (let i = args.length - 1; i >= 0; i--) {
-              if (typeof args[i] === 'object') {
-                args[i] = Object.assign(args[i], record);
-                isDataInjected = true;
-                break;
+              instrumentation._callHook(span, record);
+              // Inject in metadata argument
+              let isDataInjected = false;
+              for (let i = args.length - 1; i >= 0; i--) {
+                if (typeof args[i] === 'object') {
+                  args[i] = Object.assign(args[i], record);
+                  isDataInjected = true;
+                  break;
+                }
               }
-            }
-            if (!isDataInjected) {
-              const insertAt =
-                typeof args[args.length - 1] === 'function'
-                  ? args.length - 1
-                  : args.length;
+              if (!isDataInjected) {
+                const insertAt =
+                  typeof args[args.length - 1] === 'function'
+                    ? args.length - 1
+                    : args.length;
 
-              args.splice(insertAt, 0, record);
+                args.splice(insertAt, 0, record);
+              }
             }
           }
         }
@@ -271,7 +262,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
       observedTimestamp: timestamp,
       severityNumber: getSeverityNumber(level),
       severityText: level,
-      body: message || msg,
+      body: message ?? msg,
       attributes: attributes,
     };
     this._logger.emit(logRecord);
@@ -329,19 +320,6 @@ const cliLevels: Record<string, number> = {
   silly: SeverityNumber.TRACE,
 };
 
-function getSeverityNumber(level: string): SeverityNumber {
-  let result = npmLevels[level];
-  if (result) {
-    return result;
-  }
-  result = sysLoglevels[level];
-  if (result) {
-    return result;
-  }
-  result = cliLevels[level];
-  if (result) {
-    return result;
-  }
-  // Unknown
-  return SeverityNumber.TRACE;
+function getSeverityNumber(level: string): SeverityNumber | undefined {
+  return npmLevels[level] ?? sysLoglevels[level] ?? cliLevels[level];
 }
