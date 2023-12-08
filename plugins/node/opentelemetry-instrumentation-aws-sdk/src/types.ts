@@ -17,6 +17,8 @@ import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { SQS } from './aws-sdk.types';
 
+export type CommandInput = Record<string, any>;
+
 /**
  * These are normalized request and response, which are used by both sdk v2 and v3.
  * They organize the relevant data in one interface which can be processed in a
@@ -25,7 +27,7 @@ import { SQS } from './aws-sdk.types';
 export interface NormalizedRequest {
   serviceName: string;
   commandName: string;
-  commandInput: Record<string, any>;
+  commandInput: CommandInput;
   region?: string;
 }
 export interface NormalizedResponse {
@@ -62,6 +64,11 @@ export interface AwsSdkSqsProcessCustomAttributeFunction {
   (span: Span, sqsProcessInfo: AwsSdkSqsProcessHookInformation): void;
 }
 
+export type AwsSdkDynamoDBStatementSerializer = (
+  operation: string,
+  commandInput: CommandInput
+) => string | undefined;
+
 export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
   /** hook for adding custom attributes before request is sent to aws */
   preRequestHook?: AwsSdkRequestCustomAttributeFunction;
@@ -71,6 +78,9 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
 
   /** hook for adding custom attribute when an sqs process span is started */
   sqsProcessHook?: AwsSdkSqsProcessCustomAttributeFunction;
+
+  /** custom serializer function for the db.statement attribute in DynamoDB spans */
+  dynamoDBStatementSerializer?: AwsSdkDynamoDBStatementSerializer;
 
   /**
    * Most aws operation use http request under the hood.

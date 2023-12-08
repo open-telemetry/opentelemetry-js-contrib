@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.36.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.36.2...instrumentation-koa-v0.36.3) (2023-12-07)
+
+
+### Bug Fixes
+
+* **koa:** fix instrumentation of ESM-imported koa ([#1736](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1736)) ([b61f912](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b61f9129f620c4535d3782a985546c2986a46ca0))
+
+## [0.36.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.36.1...instrumentation-koa-v0.36.2) (2023-11-13)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to v0.45.0 ([#1779](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1779)) ([7348635](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/734863562c25cd0497aa3f51eccb2bf8bbd5e711))
+* **deps:** update otel core experimental to v0.45.1 ([#1781](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1781)) ([7f420e2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f420e25a8d396c83fd38101088434210705e365))
+* **instrumentation-koa:** handle koa routes being of type RegExp ([#1754](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1754)) ([e313938](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e3139386d87dec70bc5f3f689ffe2271dba58942))
+
 ## [0.36.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-koa-v0.36.0...instrumentation-koa-v0.36.1) (2023-10-10)
 
 

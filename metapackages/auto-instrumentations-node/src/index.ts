@@ -14,4 +14,8 @@
  * limitations under the License.
  */
 
-export { getNodeAutoInstrumentations, InstrumentationConfigMap } from './utils';
+export {
+  getNodeAutoInstrumentations,
+  getResourceDetectorsFromEnv as getResourceDetectors,
+  InstrumentationConfigMap,
+} from './utils';

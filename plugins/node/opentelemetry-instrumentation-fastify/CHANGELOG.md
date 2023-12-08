@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.32.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.4...instrumentation-fastify-v0.32.5) (2023-12-07)
+
+
+### Bug Fixes
+
+* **instrumentation-fastify:** fix span attributes and avoid FSTDEP017 FastifyDeprecation warning for 404 request ([#1763](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1763)) ([18ae75c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/18ae75c6004d66744ee99be68469843372c19d1e))
+
+## [0.32.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.3...instrumentation-fastify-v0.32.4) (2023-11-13)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to v0.45.0 ([#1779](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1779)) ([7348635](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/734863562c25cd0497aa3f51eccb2bf8bbd5e711))
+* **deps:** update otel core experimental to v0.45.1 ([#1781](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1781)) ([7f420e2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f420e25a8d396c83fd38101088434210705e365))
+* **instrumentation-fastify:** do not wrap preClose and onRequestAbort hooks ([#1764](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1764)) ([de6156a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/de6156aea1db7a7a018ad34f08cfc9f7ff7752b8))
+
 ## [0.32.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.2...instrumentation-fastify-v0.32.3) (2023-10-10)
 
 

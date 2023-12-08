@@ -27,7 +27,10 @@ import { injectPropagationContext } from './MessageAttributes';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
 export class SnsServiceExtension implements ServiceExtension {
-  requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
+  requestPreSpanHook(
+    request: NormalizedRequest,
+    _config: AwsSdkInstrumentationConfig
+  ): RequestMetadata {
     let spanKind: SpanKind = SpanKind.CLIENT;
     let spanName = `SNS ${request.commandName}`;
     const spanAttributes = {
@@ -42,6 +45,9 @@ export class SnsServiceExtension implements ServiceExtension {
       const { TopicArn, TargetArn, PhoneNumber } = request.commandInput;
       spanAttributes[SemanticAttributes.MESSAGING_DESTINATION] =
         this.extractDestinationName(TopicArn, TargetArn, PhoneNumber);
+      // ToDO: Use SpanAttributes.MESSAGING_DESTINATION_NAME when implemented
+      spanAttributes['messaging.destination.name'] =
+        TopicArn || TargetArn || PhoneNumber || 'unknown';
 
       spanName = `${
         PhoneNumber

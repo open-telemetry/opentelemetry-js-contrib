@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/// <reference types="zone.js" />
+
 import { isWrapped, InstrumentationBase } from '@opentelemetry/instrumentation';
 
 import * as api from '@opentelemetry/api';
