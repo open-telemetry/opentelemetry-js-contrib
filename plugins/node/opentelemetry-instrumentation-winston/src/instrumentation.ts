@@ -64,7 +64,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
         'winston',
         winston3Versions,
         moduleExports => moduleExports,
-        () => { },
+        () => {},
         [
           new InstrumentationNodeModuleFile<Winston3Logger>(
             'winston/lib/winston/logger.js',
@@ -90,7 +90,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
         'winston',
         winstonPre3Versions,
         moduleExports => moduleExports,
-        () => { },
+        () => {},
         [
           new InstrumentationNodeModuleFile<Winston2LoggerModule>(
             'winston/lib/winston/logger.js',
