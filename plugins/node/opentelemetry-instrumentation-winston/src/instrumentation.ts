@@ -250,7 +250,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
   private _emitLogRecord(record: Record<string, any>): void {
     const { message, msg, level, meta, ...splat } = record;
-    const attributes = Object.assign(meta, {});
+    const attributes = Object.assign(meta ?? {}, {});
     for (const key in splat) {
       if (Object.prototype.hasOwnProperty.call(splat, key)) {
         attributes[key] = splat[key];
