@@ -61,7 +61,7 @@ logger.info('foobar');
 | ----------------------- | ----------------- | ----------- |
 | `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
 | `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
-| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires 
+| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires.
 
 ### Log sending
 

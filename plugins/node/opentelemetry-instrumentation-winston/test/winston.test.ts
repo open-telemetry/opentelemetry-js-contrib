@@ -224,6 +224,22 @@ describe('WinstonInstrumentation', () => {
         const logRecords = memoryLogExporter.getFinishedLogRecords();
         assert.strictEqual(logRecords.length, 1);
         assert.strictEqual(logRecords[0].body, 'value1:value2');
+        logger.log('info', 'This is a number %d', 123, '{meta:something}');
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].body, 'This is a number 123');
+        logger.log(
+          'info',
+          'This is a number %d and this is a string %s',
+          123,
+          'test',
+          '{meta:something}',
+          () => {}
+        );
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(
+          logRecords[0].body,
+          'This is a number 123 and this is a string test'
+        );
       }
     });
 

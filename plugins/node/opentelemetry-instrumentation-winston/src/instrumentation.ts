@@ -21,7 +21,6 @@ import {
   Span,
   SpanContext,
 } from '@opentelemetry/api';
-import { hrTime, hrTimeToNanoseconds } from '@opentelemetry/core';
 import * as util from 'node:util';
 import {
   LogRecord,
@@ -65,7 +64,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
         'winston',
         winston3Versions,
         moduleExports => moduleExports,
-        () => {},
+        () => { },
         [
           new InstrumentationNodeModuleFile<Winston3Logger>(
             'winston/lib/winston/logger.js',
@@ -91,7 +90,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
         'winston',
         winstonPre3Versions,
         moduleExports => moduleExports,
-        () => {},
+        () => { },
         [
           new InstrumentationNodeModuleFile<Winston2LoggerModule>(
             'winston/lib/winston/logger.js',
@@ -218,19 +217,19 @@ export class WinstonInstrumentation extends InstrumentationBase {
             logRecord['level'] = args[0];
 
             // Get meta if present
+            let metaIndex = 0;
             for (let i = args.length - 1; i >= 0; i--) {
               if (typeof args[i] === 'object') {
-                logRecord['meta'] = args[i];
+                metaIndex = i;
+                logRecord['meta'] = args[metaIndex];
                 break;
               }
             }
+            const callback =
+              typeof args[args.length - 1] === 'function' ? 1 : 0;
+            // Arguments between level and meta or callbkack if present
+            const msgArguments = args.length - metaIndex - callback - 1;
 
-            let msgArguments = 0;
-            for (let i = 1; i < args.length; i++) {
-              if (typeof args[i] === 'string') {
-                msgArguments++;
-              }
-            }
             if (msgArguments > 0) {
               if (msgArguments === 1) {
                 logRecord['msg'] = args[1];
@@ -251,15 +250,13 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
   private _emitLogRecord(record: Record<string, any>): void {
     const { message, msg, level, meta, ...splat } = record;
-    const attributes = meta || {};
+    const attributes = Object.assign(meta, {});
     for (const key in splat) {
       if (Object.prototype.hasOwnProperty.call(splat, key)) {
         attributes[key] = splat[key];
       }
     }
-    const timestamp = hrTimeToNanoseconds(hrTime());
     const logRecord: LogRecord = {
-      observedTimestamp: timestamp,
       severityNumber: getSeverityNumber(level),
       severityText: level,
       body: message ?? msg,
