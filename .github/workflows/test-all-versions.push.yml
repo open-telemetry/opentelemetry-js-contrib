@@ -10,4 +10,4 @@ jobs:
   tav:
     uses: ./.github/workflows/test-all-versions.yml
     with:
-      lerna-args: ""
+      npm-workspace-args: ""
