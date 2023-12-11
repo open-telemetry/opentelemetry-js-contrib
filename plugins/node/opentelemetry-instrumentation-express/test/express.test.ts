@@ -23,8 +23,8 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { ExpressInstrumentation } from '../src';
-import { createServer, httpRequest, serverWithMiddleware } from './utils';
+import { ExpressInstrumentation } from '../src/instrumentation.js';
+import { createServer, httpRequest, serverWithMiddleware } from './utils.js';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
