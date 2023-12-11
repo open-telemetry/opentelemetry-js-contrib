@@ -17,7 +17,10 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-express --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile:cjs": "tsc --build && echo '{ \"type\": \"commonjs\" }' > build/src/package.json",
+    "compile:esm": "tsc --build tsconfig.esm.json && echo '{ \"type\": \"module\" }' > build/esm/package.json",
+    "compile:esnext": "tsc --build tsconfig.esnext.json && echo '{ \"type\": \"module\" }' > build/esnext/package.json",
+    "compile": "npm run compile:cjs && npm run compile:esm && npm run compile:esnext",
     "compile:examples": "cd examples && npm run compile",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
@@ -35,6 +38,7 @@
   "engines": {
     "node": ">=14"
   },
+  "type": "module",
   "exports": {
     ".": {
       "require": {
