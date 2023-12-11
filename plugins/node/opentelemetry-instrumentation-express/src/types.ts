@@ -16,7 +16,7 @@
 
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { ExpressLayerType } from './enums/ExpressLayerType';
+import { ExpressLayerType } from './enums/ExpressLayerType.js';
 
 export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 
