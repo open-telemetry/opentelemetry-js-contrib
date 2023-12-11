@@ -39,4 +39,14 @@ export interface MySQL2InstrumentationConfig extends InstrumentationConfig {
    * the tracing context, following the {@link https://github.com/open-telemetry/opentelemetry-sqlcommenter sqlcommenter} format
    */
   addSqlCommenterCommentToQueries?: boolean;
+
+  /**
+   * If true, queries are modified to include values
+   */
+  includeValuesInDbStatement?: boolean;
+
+  /**
+   * If set, truncate the query to the specified length
+   */
+  dbStatementMaxLength?: number;
 }

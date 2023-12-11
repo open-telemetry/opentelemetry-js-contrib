@@ -39,7 +39,8 @@ const user = process.env.MYSQL_USER || 'otel';
 const password = process.env.MYSQL_PASSWORD || 'secret';
 const rootPassword = process.env.MYSQL_ROOT_PASSWORD || 'rootpw';
 
-const instrumentation = new MySQL2Instrumentation();
+const instrumentationConfig = { includeValuesInDbStatement: true };
+const instrumentation = new MySQL2Instrumentation(instrumentationConfig);
 instrumentation.enable();
 instrumentation.disable();
 
@@ -49,7 +50,7 @@ interface Result extends mysqlTypes.RowDataPacket {
   solution: number;
 }
 
-describe('mysql2@2.x', () => {
+describe('mysql2@2.x includeValuesInDbStatement=true (old behaviour)', () => {
   let contextManager: AsyncHooksContextManager;
   let connection: mysqlTypes.Connection;
   let rootConnection: mysqlTypes.Connection;
@@ -58,6 +59,9 @@ describe('mysql2@2.x', () => {
   const provider = new BasicTracerProvider();
   const testMysql = process.env.RUN_MYSQL_TESTS; // For CI: assumes local mysql db is already available
   const testMysqlLocally = process.env.RUN_MYSQL_TESTS_LOCAL; // For local: spins up local mysql db via docker
+  const testMysqlLocallyImage = process.env.RUN_MYSQL_TESTS_LOCAL_USE_MARIADB
+    ? 'mariadb'
+    : 'mysql'; // For local: spins up mysql (default) or mariadb
   const shouldTest = testMysql || testMysqlLocally; // Skips these tests if false (default)
   const memoryExporter = new InMemorySpanExporter();
 
@@ -87,19 +91,27 @@ describe('mysql2@2.x', () => {
       this.skip();
     }
     provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
-    rootConnection = mysqlTypes.createConnection({
-      port,
-      user: 'root',
-      host,
-      password: rootPassword,
-      database,
-    });
+
+    function openRootConnection() {
+      rootConnection = mysqlTypes.createConnection({
+        port,
+        user: 'root',
+        host,
+        password: rootPassword,
+        database,
+      });
+    }
+
     if (testMysqlLocally) {
-      testUtils.startDocker('mysql');
+      testUtils.startDocker(testMysqlLocallyImage);
       // wait 15 seconds for docker container to start
       this.timeout(20000);
-      setTimeout(done, 15000);
+      setTimeout(() => {
+        openRootConnection();
+        done();
+      }, 15000);
     } else {
+      openRootConnection();
       done();
     }
   });
@@ -108,9 +120,13 @@ describe('mysql2@2.x', () => {
     rootConnection.end(() => {
       if (testMysqlLocally) {
         this.timeout(5000);
-        testUtils.cleanUpDocker('mysql');
+        setTimeout(() => {
+          testUtils.cleanUpDocker(testMysqlLocallyImage);
+          done();
+        }, 1000);
+      } else {
+        done();
       }
-      done();
     });
   });
 
@@ -149,7 +165,7 @@ describe('mysql2@2.x', () => {
   afterEach(done => {
     context.disable();
     memoryExporter.reset();
-    instrumentation.setConfig();
+    instrumentation.setConfig(instrumentationConfig);
     instrumentation.disable();
     connection.end(() => {
       pool.end(() => {
@@ -1101,7 +1117,7 @@ describe('mysql2@2.x', () => {
   describe('#responseHook', () => {
     const queryResultAttribute = 'query_result';
 
-    describe('invalid repsonse hook', () => {
+    describe('invalid response hook', () => {
       beforeEach(() => {
         const config: MySQL2InstrumentationConfig = {
           responseHook: (span, responseHookInfo) => {

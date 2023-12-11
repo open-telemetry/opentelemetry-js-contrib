@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import { SpanAttributes } from '@opentelemetry/api';
+import { Attributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 /*
   Following types declare an expectation on mysql2 types and define a subset we
-  use in the instrumentation of the types actually defined in mysql2 pacakge
+  use in the instrumentation of the types actually defined in mysql2 package
 
   We need to import them here so that the installing party of the instrumentation
   doesn't have to absolutely install the mysql2 package as well - specially
-  important for auto-loaders and meta-pacakges.
+  important for auto-loaders and meta-packages.
 */
 interface QueryOptions {
   sql: string;
@@ -41,12 +41,13 @@ interface Config {
   user?: string;
   connectionConfig?: Config;
 }
+
 /**
  * Get an SpanAttributes map from a mysql connection config object
  *
  * @param config ConnectionConfig
  */
-export function getConnectionAttributes(config: Config): SpanAttributes {
+export function getConnectionAttributes(config: Config): Attributes {
   const { host, port, database, user } = getConfig(config);
 
   return {
@@ -93,23 +94,31 @@ function getJDBCString(
  */
 export function getDbStatement(
   query: string | Query | QueryOptions,
-  format: (
+  values?: any[],
+  format?: (
     sql: string,
     values: any[],
     stringifyObjects?: boolean,
     timeZone?: string
   ) => string,
-  values?: any[]
+  statementLimit?: number
 ): string {
+  let statement = '';
   if (typeof query === 'string') {
-    return values ? format(query, values) : query;
+    statement = format ? (values ? format(query, values) : query) : query;
   } else {
     // According to https://github.com/mysqljs/mysql#performing-queries
     // The values argument will override the values in the option object.
-    return values || (query as QueryOptions).values
-      ? format(query.sql, values || (query as QueryOptions).values)
+    statement = format
+      ? values || (query as QueryOptions).values
+        ? format(query.sql, values || (query as QueryOptions).values)
+        : query.sql
       : query.sql;
   }
+  if (statementLimit) {
+    return statement.substring(0, statementLimit) + '[...]';
+  }
+  return statement;
 }
 
 /**
