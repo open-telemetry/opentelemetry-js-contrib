@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.2.1...resource-detector-azure-v0.2.2) (2023-12-07)
+
+
+### Bug Fixes
+
+* **resource-detector-azure:** only detect Azure Functions when FUNCTIONS_EXTENSION_VERSION is defined ([#1846](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1846)) ([8f2a195](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8f2a195d405c173ed7b817db63a1735af424a3e8))
+
 ## [0.2.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.2.0...resource-detector-azure-v0.2.1) (2023-11-22)
 
 
