@@ -33,7 +33,7 @@ export interface MetricsCollectorConfig {
   url?: string;
 }
 
-const DEFAULT_NAME = 'opentelemetry-host-metrics';
+const DEFAULT_NAME = '@opentelemetry/host-metrics';
 
 /**
  * Base Class for metrics

@@ -15,7 +15,7 @@
  */
 
 import type { Request } from 'express';
-import { SpanAttributes } from '@opentelemetry/api';
+import { Attributes } from '@opentelemetry/api';
 
 /**
  * This symbol is used to mark express layer as being already instrumented
@@ -67,6 +67,6 @@ export type ExpressLayer = {
 };
 
 export type LayerMetadata = {
-  attributes: SpanAttributes;
+  attributes: Attributes;
   name: string;
 };
