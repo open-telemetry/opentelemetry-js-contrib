@@ -35,6 +35,18 @@
   "engines": {
     "node": ">=14"
   },
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./build/src/index.d.ts",
+        "default": "./build/src/index.js"
+      },
+      "import": {
+        "types": "./build/esm/index.d.ts",
+        "default": "./build/esm/index.js"
+      }
+    }
+  },
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
