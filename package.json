@@ -21,6 +21,7 @@
     "test": "lerna run test",
     "test:ci:changed": "lerna run test --since origin/main",
     "test:browser": "lerna run test:browser --concurrency 1",
+    "test-all-versions": "npm run --if-present --workspaces test-all-versions",
     "bump": "lerna publish",
     "changelog": "lerna-changelog",
     "lint": "lerna run lint",

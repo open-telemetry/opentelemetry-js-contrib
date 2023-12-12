@@ -123,9 +123,6 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Set MySQL variables
         run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
-      - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == '16'
-        run: npm config set legacy-peer-deps=true
       - name: Update npm to a version that supports workspaces (v7 or later)
         if: ${{ matrix.node < 16 }}
         run: npm install -g npm@9 # npm@9 supports node >=14.17.0
@@ -135,10 +132,10 @@ jobs:
         run: npm run compile
       - name: Unit tests (Full)
         if: matrix.code-coverage
-        run: npm run test -- ${{ matrix.lerna-extra-args }}
+        run: npm run test
       - name: Unit tests (Delta)
         if: ${{ !matrix.code-coverage }}
-        run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
+        run: npm run test:ci:changed
       - name: Build examples
         run: npm run compile:examples
       - name: Report Coverage
