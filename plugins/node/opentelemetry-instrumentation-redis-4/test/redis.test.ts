@@ -71,7 +71,7 @@ describe('redis@^4.0.0', () => {
     client = createClient({
       url: redisTestUrl,
     });
-    context.with(suppressTracing(context.active()), async () => {
+    await context.with(suppressTracing(context.active()), async () => {
       await client.connect();
     });
   });
