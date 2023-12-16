@@ -15,6 +15,12 @@
  */
 
 import * as api from '@opentelemetry/api';
+import type * as mysqlTypes from 'mysql2';
+
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -22,19 +28,15 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  DbSystemValues,
-  SemanticAttributes,
-} from '@opentelemetry/semantic-conventions';
-import { addSqlCommenterComment } from '@opentelemetry/sql-common';
-import type * as mysqlTypes from 'mysql2';
-import { MySQL2InstrumentationConfig } from './types';
-import {
   getConnectionAttributes,
   getDbStatement,
   getSpanName,
   once,
 } from './utils';
+
+import { MySQL2InstrumentationConfig } from './types';
 import { VERSION } from './version';
+import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 
 type formatType = typeof mysqlTypes.format;
 
@@ -47,7 +49,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
     super('@opentelemetry/instrumentation-mysql2', VERSION, config);
   }
 
-  protected init() {
+  init() {
     return [
       new InstrumentationNodeModuleDefinition<any>(
         'mysql2',

@@ -51,7 +51,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
     return this._config as KoaInstrumentationConfig;
   }
 
-  protected init() {
+  init() {
     return new InstrumentationNodeModuleDefinition<typeof koa>(
       'koa',
       ['^2.0.0'],

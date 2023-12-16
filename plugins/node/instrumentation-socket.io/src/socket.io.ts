@@ -61,7 +61,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
     );
   }
 
-  protected init() {
+  init() {
     const socketInstrumentation = new InstrumentationNodeModuleFile<any>(
       'socket.io/dist/socket.js',
       ['>=3 <5'],

@@ -43,7 +43,7 @@ export class RedisInstrumentation extends InstrumentationBase {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
-  protected init() {
+  init() {
     return [
       new InstrumentationNodeModuleDefinition<any>(
         'redis',

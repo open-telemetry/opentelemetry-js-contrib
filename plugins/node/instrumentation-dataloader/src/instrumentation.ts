@@ -49,7 +49,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-dataloader', VERSION, config);
   }
 
-  protected init() {
+  init() {
     return [
       new InstrumentationNodeModuleDefinition<typeof Dataloader>(
         MODULE_NAME,

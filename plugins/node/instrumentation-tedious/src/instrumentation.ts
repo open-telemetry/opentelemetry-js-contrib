@@ -15,19 +15,21 @@
  */
 
 import * as api from '@opentelemetry/api';
-import { EventEmitter } from 'events';
+import type * as tedious from 'tedious';
+
+import {
+  DbSystemValues,
+  SemanticAttributes,
+} from '@opentelemetry/semantic-conventions';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import {
-  DbSystemValues,
-  SemanticAttributes,
-} from '@opentelemetry/semantic-conventions';
-import type * as tedious from 'tedious';
-import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
+
+import { EventEmitter } from 'events';
+import { TediousInstrumentationConfig } from './types';
 import { VERSION } from './version';
 
 const CURRENT_DATABASE = Symbol(
@@ -70,7 +72,7 @@ export class TediousInstrumentation extends InstrumentationBase<
     super('@opentelemetry/instrumentation-tedious', VERSION, config);
   }
 
-  protected init() {
+  init() {
     return [
       new InstrumentationNodeModuleDefinition<typeof tedious>(
         TediousInstrumentation.COMPONENT,

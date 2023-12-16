@@ -47,7 +47,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-cassandra-driver', VERSION, config);
   }
 
-  protected init() {
+  init() {
     return new InstrumentationNodeModuleDefinition<any>(
       'cassandra-driver',
       supportedVersions,

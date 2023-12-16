@@ -62,7 +62,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
-  protected init() {
+  init() {
     // @node-redis/client is a new package introduced and consumed by 'redis 4.0.x'
     // on redis@4.1.0 it was changed to @redis/client.
     // we will instrument both packages

@@ -82,7 +82,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
-  protected init() {
+  init() {
     const module = new InstrumentationNodeModuleDefinition<any>(
       'graphql',
       supportedVersions

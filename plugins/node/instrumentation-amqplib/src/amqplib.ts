@@ -84,7 +84,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
-  protected init() {
+  init() {
     const channelModelModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/channel_model.js',
       ['>=0.5.5'],
