@@ -25,10 +25,7 @@ function getFastifyInstrumentationArgs(config?: FastifyInstrumentationConfig) {
   if (!config) return;
 
   return `{
-    enabled: ${config.enabled ?? true},
-    // TODO: Figure out a way to pass in functions correctly. Stringifying them like this means they can't depend
-    // on any out of scope dependencies like imports
-    requestHook: ${config.requestHook?.toString() ?? undefined},
+    enabled: ${config.enabled ?? true}
   }`;
 }
 

@@ -29,12 +29,7 @@ function getAwsInstrumentationArgs(config?: AwsSdkInstrumentationConfig) {
     sqsExtractContextPropagationFromPayload: ${
       config.sqsExtractContextPropagationFromPayload
     },
-    suppressInternalInstrumentation: ${config.suppressInternalInstrumentation},
-    // TODO: Figure out a way to pass in functions correctly. Stringifying them like this means they can't depend
-    // on any out of scope dependencies like imports
-    preRequestHook: ${config.preRequestHook?.toString() ?? undefined},
-    responseHook: ${config.responseHook?.toString() ?? undefined},
-    sqsProcessHook: ${config.sqsProcessHook?.toString() ?? undefined},
+    suppressInternalInstrumentation: ${config.suppressInternalInstrumentation}
   }`;
 }
 
