@@ -27,7 +27,7 @@ import * as sinon from 'sinon';
 import * as semver from 'semver';
 import type { pino as Pino } from 'pino';
 
-import { PinoInstrumentation } from '../src';
+import { PinoInstrumentation , PinoInstrumentationConfig} from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -37,6 +37,12 @@ context.setGlobalContextManager(new AsyncHooksContextManager());
 
 const kMessage = 'log-message';
 
+const logKeys = {
+  traceId: 'traceId',
+  spanId: 'spanId',
+  traceFlags: 'traceFlags',
+};
+
 describe('PinoInstrumentation', () => {
   let stream: Writable;
   let writeSpy: sinon.SinonSpy;
@@ -44,24 +50,37 @@ describe('PinoInstrumentation', () => {
   let instrumentation: PinoInstrumentation;
   let logger: Pino.Logger;
 
-  function assertRecord(record: any, span: Span) {
+  function assertRecord(
+    record: any,
+    span: Span,
+    expectedKeys?: PinoInstrumentationConfig['logKeys']
+  ) {
     const { traceId, spanId, traceFlags } = span.spanContext();
-    assert.strictEqual(record['trace_id'], traceId);
-    assert.strictEqual(record['span_id'], spanId);
-    assert.strictEqual(record['trace_flags'], `0${traceFlags.toString(16)}`);
+    assert.strictEqual(record[logKeys.traceId], traceId);
+    assert.strictEqual(record[logKeys.spanId], spanId);
+    assert.strictEqual(
+      record[logKeys.traceFlags],
+      `0${traceFlags.toString(16)}`
+    );
     assert.strictEqual(kMessage, record['msg']);
   }
 
-  function assertInjection(span: Span) {
+  function assertInjection(
+    span: Span,
+    expectedKeys?: PinoInstrumentationConfig['logKeys']
+  ) {
     sinon.assert.calledOnce(writeSpy);
     const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-    assertRecord(record, span);
+    assertRecord(record, span, expectedKeys);
     return record;
   }
 
-  function testInjection(span: Span) {
+  function testInjection(
+    span: Span,
+    expectedKeys?: PinoInstrumentationConfig['logKeys']
+  ) {
     logger.info(kMessage);
-    return assertInjection(span);
+    return assertInjection(span, expectedKeys);
   }
 
   function testNoInjection() {
@@ -87,10 +106,16 @@ describe('PinoInstrumentation', () => {
     }
   }
 
-  before(() => {
-    instrumentation = new PinoInstrumentation();
+  function setup() {
+    instrumentation = new PinoInstrumentation({
+      logKeys,
+    });
     instrumentation.enable();
     pino = require('pino');
+  }
+
+  before(() => {
+    setup();
   });
 
   describe('enabled instrumentation', () => {
@@ -99,6 +124,14 @@ describe('PinoInstrumentation', () => {
     });
 
     it('injects span context to records', () => {
+      const span = tracer.startSpan('abc');
+      context.with(trace.setSpan(context.active(), span), () => {
+        testInjection(span);
+      });
+    });
+
+    it('injects span context to records with custom keys', () => {
+      setup();
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
         testInjection(span);

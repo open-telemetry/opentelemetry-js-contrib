@@ -26,4 +26,9 @@ export type LogHookFunction = (
 
 export interface PinoInstrumentationConfig extends InstrumentationConfig {
   logHook?: LogHookFunction;
+  logKeys?: {
+    traceId: string;
+    spanId: string;
+    traceFlags: string;
+  };
 }

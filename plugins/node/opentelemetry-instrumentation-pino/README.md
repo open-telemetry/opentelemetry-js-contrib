@@ -30,7 +30,14 @@ registerInstrumentations({
     new PinoInstrumentation({
       // Optional hook to insert additional context to log object.
       logHook: (span, record, level) => {
-        record['resource.service.name'] = provider.resource.attributes['service.name'];
+        record['resource.service.name'] =
+          provider.resource.attributes['service.name'];
+      },
+      // Log span context under custom keys
+      logKeys: {
+        traceId: 'traceId',
+        spanId: 'spanId',
+        traceFlags: 'traceFlags',
       },
     }),
     // other instrumentations
