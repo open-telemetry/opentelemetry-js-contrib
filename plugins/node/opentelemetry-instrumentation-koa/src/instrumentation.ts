@@ -55,7 +55,11 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
     return new InstrumentationNodeModuleDefinition<typeof koa>(
       'koa',
       ['^2.0.0'],
-      moduleExports => {
+      (module: any) => {
+        const moduleExports: typeof koa =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
         if (moduleExports == null) {
           return moduleExports;
         }
@@ -68,9 +72,13 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
           'use',
           this._getKoaUsePatch.bind(this)
         );
-        return moduleExports;
+        return module;
       },
-      moduleExports => {
+      (module: any) => {
+        const moduleExports: typeof koa =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
         api.diag.debug('Unpatching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');

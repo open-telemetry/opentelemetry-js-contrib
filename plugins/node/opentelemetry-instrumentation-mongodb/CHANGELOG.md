@@ -6,6 +6,13 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.37.3...instrumentation-mongodb-v0.38.0) (2023-12-07)
+
+
+### Features
+
+* **instrumentation-mongodb:** add support for mongodb v6 ([#1760](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1760)) ([660e37b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/660e37bb67509b2fdd5cdd814dad2e60aa0ab40b))
+
 ## [0.37.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.37.1...instrumentation-mongodb-v0.37.2) (2023-11-13)
 
 

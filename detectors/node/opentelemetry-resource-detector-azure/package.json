@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-azure",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "OpenTelemetry SDK resource detector for Azure",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
