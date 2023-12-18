@@ -34,6 +34,7 @@ registerInstrumentations({
           provider.resource.attributes['service.name'];
       },
       // Log span context under custom keys
+      // This is optional, and will default to "trace_id", "span_id" and "trace_flags" as the keys
       logKeys: {
         traceId: 'traceId',
         spanId: 'spanId',
@@ -52,7 +53,7 @@ logger.info('foobar');
 
 ### Fields added to pino log objects
 
-For the current active span, the following fields are injected:
+For the current active span, the following fields are injected. These field names can be optionally configured via `logKeys` in the PinoInstrumentation config:
 
 * `trace_id`
 * `span_id`
