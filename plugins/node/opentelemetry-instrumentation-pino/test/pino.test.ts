@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
+import * as assert from 'assert';
+import * as semver from 'semver';
+import * as sinon from 'sinon';
+
+import { INVALID_SPAN_CONTEXT, Span, context, trace } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { context, trace, Span, INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import { Writable } from 'stream';
-import * as assert from 'assert';
-import * as sinon from 'sinon';
-import * as semver from 'semver';
-import type { pino as Pino } from 'pino';
+import { PinoInstrumentation, PinoInstrumentationConfig } from '../src';
 
-import { PinoInstrumentation , PinoInstrumentationConfig} from '../src';
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import type { pino as Pino } from 'pino';
+import { Writable } from 'stream';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new NodeTracerProvider();
@@ -36,12 +37,6 @@ provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 context.setGlobalContextManager(new AsyncHooksContextManager());
 
 const kMessage = 'log-message';
-
-const logKeys = {
-  traceId: 'traceId',
-  spanId: 'spanId',
-  traceFlags: 'traceFlags',
-};
 
 describe('PinoInstrumentation', () => {
   let stream: Writable;
@@ -56,10 +51,10 @@ describe('PinoInstrumentation', () => {
     expectedKeys?: PinoInstrumentationConfig['logKeys']
   ) {
     const { traceId, spanId, traceFlags } = span.spanContext();
-    assert.strictEqual(record[logKeys.traceId], traceId);
-    assert.strictEqual(record[logKeys.spanId], spanId);
+    assert.strictEqual(record[expectedKeys?.traceId ?? 'trace_id'], traceId);
+    assert.strictEqual(record[expectedKeys?.spanId ?? 'span_id'], spanId);
     assert.strictEqual(
-      record[logKeys.traceFlags],
+      record[expectedKeys?.traceFlags ?? 'trace_flags'],
       `0${traceFlags.toString(16)}`
     );
     assert.strictEqual(kMessage, record['msg']);
@@ -106,20 +101,17 @@ describe('PinoInstrumentation', () => {
     }
   }
 
-  function setup() {
-    instrumentation = new PinoInstrumentation({
-      logKeys,
-    });
-    instrumentation.enable();
+  function setup(config?: PinoInstrumentationConfig) {
+    instrumentation = new PinoInstrumentation(config);
+    if (config?.enabled !== false) {
+      instrumentation.enable();
+    }
     pino = require('pino');
   }
 
-  before(() => {
-    setup();
-  });
-
   describe('enabled instrumentation', () => {
     beforeEach(() => {
+      setup();
       init();
     });
 
@@ -131,10 +123,18 @@ describe('PinoInstrumentation', () => {
     });
 
     it('injects span context to records with custom keys', () => {
-      setup();
+      const logKeys = {
+        traceId: 'traceId',
+        spanId: 'spanId',
+        traceFlags: 'traceFlags',
+      };
+
+      setup({ logKeys });
+      init();
+
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        testInjection(span);
+        testInjection(span, logKeys);
       });
     });
 
@@ -218,9 +218,9 @@ describe('PinoInstrumentation', () => {
     let stdoutSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      stream = new Writable();
-      stream._write = () => {};
-      writeSpy = sinon.spy(stream, 'write');
+      setup();
+      init();
+
       stdoutSpy = sinon.spy(process.stdout, 'write');
     });
 
@@ -297,15 +297,15 @@ describe('PinoInstrumentation', () => {
   });
 
   describe('disabled instrumentation', () => {
-    before(() => {
+    beforeEach(() => {
+      setup({ enabled: false });
       instrumentation.disable();
+      init();
     });
 
-    after(() => {
-      instrumentation.enable();
-    });
-
-    beforeEach(() => init());
+    // afterEach(() => {
+    //   instrumentation.enable();
+    // });
 
     it('does not inject span context', () => {
       const span = tracer.startSpan('abc');
