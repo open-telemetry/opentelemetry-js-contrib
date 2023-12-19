@@ -173,10 +173,7 @@ function shouldIgnoreModule({
 }): boolean {
   if (namespace !== 'file') return true;
 
-  if (
-    !importer.includes(NODE_MODULES) &&
-    (path.startsWith('.') || path.startsWith('@'))
-  ) {
+  if (!importer.includes(NODE_MODULES) && path.startsWith('.')) {
     return true;
   }
 
