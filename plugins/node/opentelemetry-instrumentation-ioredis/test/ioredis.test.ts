@@ -1007,7 +1007,7 @@ describe('ioredis', () => {
       argv: ['fixtures/use-ioredis.mjs', REDIS_URL],
       env: {
         NODE_OPTIONS:
-          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+          '--experimental-loader=import-in-the-middle/hook.mjs',
         NODE_NO_WARNINGS: '1',
       },
       checkResult: (err, stdout, stderr) => {
