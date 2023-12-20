@@ -27,6 +27,7 @@ import {
 import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
+import { METRIC_ATTRIBUTES } from '../src/enum';
 import { HostMetrics } from '../src';
 
 const cpuJson = require('./mocks/cpu.json');
@@ -67,6 +68,10 @@ const mockedOS = {
   },
   totalmem: function () {
     return 1024 * 1024;
+  },
+  cpusIdx: 0,
+  cpus: function () {
+    return cpuJson[this.cpusIdx++ % 2];
   },
 };
 
@@ -112,7 +117,7 @@ describe('Host Metrics', () => {
         return mockedOS.freemem();
       });
       sandbox.stub(os, 'totalmem').returns(mockedOS.totalmem());
-      sandbox.stub(os, 'cpus').returns(cpuJson);
+      sandbox.stub(os, 'cpus').callsFake(() => mockedOS.cpus());
       sandbox.stub(process, 'uptime').returns(0);
       sandbox.stub(SI, 'networkStats').callsFake(() => {
         return mockedSI.networkStats();
@@ -134,8 +139,9 @@ describe('Host Metrics', () => {
 
       hostMetrics = new HostMetrics({
         meterProvider,
-        name: 'opentelemetry-host-metrics',
+        name: '', // to get default instrumentation scope name
       });
+
       await hostMetrics.start();
 
       const dateStub = sandbox
@@ -146,6 +152,9 @@ describe('Host Metrics', () => {
       await reader.collect();
       dateStub.returns(process.uptime() * 1000 + INTERVAL);
 
+      // advance the clock for the next collection
+      sandbox.clock.tick(1000);
+
       // invalidates throttles
       countSI = 0;
     });
@@ -153,36 +162,119 @@ describe('Host Metrics', () => {
       sandbox.restore();
     });
 
+    const sysCpuStateAttr = METRIC_ATTRIBUTES.SYSTEM_CPU_STATE;
+    const sysCpuNumAttr = METRIC_ATTRIBUTES.SYSTEM_CPU_LOGICAL_NUMBER;
+
     it('should export CPU time metrics', async () => {
       const metric = await getRecords(reader, 'system.cpu.time');
 
-      ensureValue(metric, { state: 'user', cpu: '0' }, 90713.56);
-      ensureValue(metric, { state: 'system', cpu: '0' }, 63192.630000000005);
-      ensureValue(metric, { state: 'idle', cpu: '0' }, 374870.7);
-      ensureValue(metric, { state: 'interrupt', cpu: '0' }, 0);
-      ensureValue(metric, { state: 'nice', cpu: '0' }, 0);
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '0' },
+        90714.26
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '0' },
+        63192.83
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '0' },
+        374870.8
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '0' },
+        0
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '0' },
+        0
+      );
 
-      ensureValue(metric, { state: 'user', cpu: '1' }, 11005.42);
-      ensureValue(metric, { state: 'system', cpu: '1' }, 7678.12);
-      ensureValue(metric, { state: 'idle', cpu: '1' }, 510034.8);
-      ensureValue(metric, { state: 'interrupt', cpu: '1' }, 0);
-      ensureValue(metric, { state: 'nice', cpu: '1' }, 0);
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '1' },
+        11005.72
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '1' },
+        7678.62
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '1' },
+        510035
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '1' },
+        0
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '1' },
+        0
+      );
     });
 
     it('should export CPU utilization metrics', async () => {
       const metric = await getRecords(reader, 'system.cpu.utilization');
 
-      ensureValue(metric, { state: 'user', cpu: '0' }, 30247.935978659552);
-      ensureValue(metric, { state: 'system', cpu: '0' }, 21071.23374458153);
-      ensureValue(metric, { state: 'idle', cpu: '0' }, 124998.56618872957);
-      ensureValue(metric, { state: 'interrupt', cpu: '0' }, 0);
-      ensureValue(metric, { state: 'nice', cpu: '0' }, 0);
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '0' },
+        0.7
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '0' },
+        0.2
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '0' },
+        0.1
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '0' },
+        0
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '0' },
+        0
+      );
 
-      ensureValue(metric, { state: 'user', cpu: '1' }, 3669.6965655218405);
-      ensureValue(metric, { state: 'system', cpu: '1' }, 2560.2267422474156);
-      ensureValue(metric, { state: 'idle', cpu: '1' }, 170068.28942980993);
-      ensureValue(metric, { state: 'interrupt', cpu: '1' }, 0);
-      ensureValue(metric, { state: 'nice', cpu: '1' }, 0);
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'user', [sysCpuNumAttr]: '1' },
+        0.3
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'system', [sysCpuNumAttr]: '1' },
+        0.5
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'idle', [sysCpuNumAttr]: '1' },
+        0.2
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'interrupt', [sysCpuNumAttr]: '1' },
+        0
+      );
+      ensureValue(
+        metric,
+        { [sysCpuStateAttr]: 'nice', [sysCpuNumAttr]: '1' },
+        0
+      );
     });
 
     it('should export Memory usage metrics', async () => {
@@ -250,6 +342,11 @@ async function getRecords(
   assert(collectionResult != null);
   assert.strictEqual(collectionResult.resourceMetrics.scopeMetrics.length, 1);
   const scopeMetrics = collectionResult.resourceMetrics.scopeMetrics[0];
+  assert.strictEqual(
+    scopeMetrics.scope.name,
+    '@opentelemetry/host-metrics',
+    'default instrumentation scope name is the package name'
+  );
   const metricDataList = scopeMetrics.metrics.filter(
     metric => metric.descriptor.name === name
   );

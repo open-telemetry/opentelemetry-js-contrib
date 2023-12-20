@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span, SpanKind, Tracer } from '@opentelemetry/api';
+import { DiagLogger, Span, SpanKind, Tracer } from '@opentelemetry/api';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 import {
   DbSystemValues,
@@ -30,7 +30,11 @@ export class DynamodbServiceExtension implements ServiceExtension {
     return Array.isArray(values) ? values : [values];
   }
 
-  requestPreSpanHook(normalizedRequest: NormalizedRequest): RequestMetadata {
+  requestPreSpanHook(
+    normalizedRequest: NormalizedRequest,
+    config: AwsSdkInstrumentationConfig,
+    diag: DiagLogger
+  ): RequestMetadata {
     const spanKind: SpanKind = SpanKind.CLIENT;
     let spanName: string | undefined;
     const isIncoming = false;
@@ -40,10 +44,22 @@ export class DynamodbServiceExtension implements ServiceExtension {
       [SemanticAttributes.DB_SYSTEM]: DbSystemValues.DYNAMODB,
       [SemanticAttributes.DB_NAME]: normalizedRequest.commandInput?.TableName,
       [SemanticAttributes.DB_OPERATION]: operation,
-      [SemanticAttributes.DB_STATEMENT]: JSON.stringify(
-        normalizedRequest.commandInput
-      ),
     };
+
+    if (config.dynamoDBStatementSerializer) {
+      try {
+        const sanitizedStatement = config.dynamoDBStatementSerializer(
+          operation,
+          normalizedRequest.commandInput
+        );
+
+        if (typeof sanitizedStatement === 'string') {
+          spanAttributes[SemanticAttributes.DB_STATEMENT] = sanitizedStatement;
+        }
+      } catch (err) {
+        diag.error('failed to sanitize DynamoDB statement', err);
+      }
+    }
 
     // normalizedRequest.commandInput.RequestItems) is undefined when no table names are returned
     // keys in this object are the table names
