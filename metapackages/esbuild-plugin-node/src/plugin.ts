@@ -15,9 +15,9 @@
  */
 
 import { OnLoadArgs, OpenTelemetryPluginParams } from './types';
+import { Plugin, PluginBuild } from 'esbuild';
 import { instrumentations, otelPackageToInstrumentationConfig } from './config';
 
-import { Plugin } from 'esbuild';
 import { builtinModules } from 'module';
 import { dirname } from 'path';
 import { readFile } from 'fs/promises';
@@ -59,7 +59,8 @@ export function openTelemetryPlugin(
 
         if (isBuiltIn(args.path, extractedModule)) return;
 
-        const matchingInstrumentation = getInstrumentation({
+        const matchingInstrumentation = await getInstrumentation({
+          build,
           extractedModule,
           path: args.path,
           resolveDir: args.resolveDir,
@@ -193,16 +194,18 @@ function isBuiltIn(path: string, extractedModule: ExtractedModule): boolean {
   );
 }
 
-function getInstrumentation({
+async function getInstrumentation({
   extractedModule,
   path,
   resolveDir,
+  build,
 }: {
   extractedModule: ExtractedModule;
   path: string;
   resolveDir: string;
+  build: PluginBuild;
 }) {
-  return instrumentations.find(instrumentation => {
+  for (const instrumentation of instrumentations) {
     const moduleWithPackage = `${extractedModule.package}/${extractedModule.path}`;
     const nameMatches =
       instrumentation.name === path ||
@@ -212,18 +215,26 @@ function getInstrumentation({
       const fileMatch = instrumentation.files.find(
         file => file.name === path || file.name === moduleWithPackage
       );
-      if (!fileMatch) return;
+      if (!fileMatch) continue;
     }
 
-    const packageJsonPath = require.resolve(
+    const { path: packageJsonPath } = await build.resolve(
       `${extractedModule.package}/package.json`,
-      { paths: [resolveDir] }
+      {
+        resolveDir,
+        kind: 'require-resolve',
+      }
     );
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { version } = require(packageJsonPath);
+    const packageJsonContents = await readFile(packageJsonPath);
+    const { version } = JSON.parse(packageJsonContents.toString());
 
-    return instrumentation.supportedVersions.some(supportedVersion =>
-      satisfies(version, supportedVersion)
-    );
-  });
+    if (
+      instrumentation.supportedVersions.some(supportedVersion =>
+        satisfies(version, supportedVersion)
+      )
+    ) {
+      return instrumentation;
+    }
+  }
+  return null;
 }
