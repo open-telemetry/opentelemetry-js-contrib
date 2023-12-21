@@ -24,13 +24,12 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
-  TestContext,
-  TestInstrumentation,
+  TestInstrumentationAndContext,
   assertInjection,
   assertRecord,
   initTestContext,
   kMessage,
-  setupInstrumentation,
+  setupInstrumentationAndInitTestContext,
   testInjection,
   testNoInjection,
 } from './common';
@@ -46,12 +45,11 @@ provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 context.setGlobalContextManager(new AsyncHooksContextManager());
 
 describe('PinoInstrumentation', () => {
-  let testInstrumentation: TestInstrumentation;
-  let testContext: TestContext;
+  let testContext: TestInstrumentationAndContext;
+
   describe('enabled instrumentation', () => {
     beforeEach(() => {
-      testInstrumentation = setupInstrumentation();
-      testContext = initTestContext(testInstrumentation);
+      testContext = setupInstrumentationAndInitTestContext();
     });
 
     it('injects span context to records', () => {
@@ -68,8 +66,7 @@ describe('PinoInstrumentation', () => {
         traceFlags: 'traceFlags',
       };
 
-      testInstrumentation = setupInstrumentation({ logKeys });
-      testContext = initTestContext(testInstrumentation);
+      testContext = setupInstrumentationAndInitTestContext({ logKeys });
 
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
@@ -79,10 +76,10 @@ describe('PinoInstrumentation', () => {
 
     it('injects span context to records in default export', function () {
       // @ts-expect-error the same function reexported
-      if (!testInstrumentation.pino.default) {
+      if (!testContext.pino.default) {
         this.skip();
       }
-      initTestContext(testInstrumentation, 'default');
+      initTestContext(testContext, 'default');
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
         testInjection(span, testContext);
@@ -91,10 +88,10 @@ describe('PinoInstrumentation', () => {
 
     it('injects span context to records in named export', function () {
       // @ts-expect-error the same function reexported
-      if (!testInstrumentation.pino.pino) {
+      if (!testContext.pino.pino) {
         this.skip();
       }
-      initTestContext(testInstrumentation, 'pino');
+      initTestContext(testContext, 'pino');
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
         testInjection(span, testContext);
@@ -112,11 +109,11 @@ describe('PinoInstrumentation', () => {
 
     it('calls the users log hook', () => {
       const span = tracer.startSpan('abc');
-      testInstrumentation.instrumentation.setConfig({
+      testContext.instrumentation.setConfig({
         enabled: true,
         logHook: (_span, record, level) => {
           record['resource.service.name'] = 'test-service';
-          if (semver.satisfies(testInstrumentation.pino.version, '>= 7.9.0')) {
+          if (semver.satisfies(testContext.pino.version, '>= 7.9.0')) {
             assert.strictEqual(level, 30);
           }
         },
@@ -141,7 +138,7 @@ describe('PinoInstrumentation', () => {
 
     it('does not propagate exceptions from user hooks', () => {
       const span = tracer.startSpan('abc');
-      testInstrumentation.instrumentation.setConfig({
+      testContext.instrumentation.setConfig({
         enabled: true,
         logHook: () => {
           throw new Error('Oops');
@@ -157,8 +154,7 @@ describe('PinoInstrumentation', () => {
     let stdoutSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      testInstrumentation = setupInstrumentation();
-      testContext = initTestContext(testInstrumentation);
+      testContext = setupInstrumentationAndInitTestContext();
 
       stdoutSpy = sinon.spy(process.stdout, 'write');
     });
@@ -168,7 +164,7 @@ describe('PinoInstrumentation', () => {
     });
 
     it('does not fail when constructing logger without arguments', () => {
-      testContext.logger = testInstrumentation.pino();
+      testContext.logger = testContext.pino();
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
         testContext.logger.info(kMessage);
@@ -178,7 +174,7 @@ describe('PinoInstrumentation', () => {
     });
 
     it('preserves user options and adds a mixin', () => {
-      testContext.logger = testInstrumentation.pino(
+      testContext.logger = testContext.pino(
         { name: 'LogLog' },
         testContext.stream
       );
@@ -192,7 +188,7 @@ describe('PinoInstrumentation', () => {
 
     describe('binary arguments', () => {
       it('is possible to construct logger with undefined options', () => {
-        testContext.logger = testInstrumentation.pino(
+        testContext.logger = testContext.pino(
           undefined as unknown as Pino.LoggerOptions,
           testContext.stream
         );
@@ -203,7 +199,7 @@ describe('PinoInstrumentation', () => {
       });
 
       it('preserves user mixins', () => {
-        testContext.logger = testInstrumentation.pino(
+        testContext.logger = testContext.pino(
           { name: 'LogLog', mixin: () => ({ a: 2, b: 'bar' }) },
           testContext.stream
         );
@@ -218,7 +214,7 @@ describe('PinoInstrumentation', () => {
       });
 
       it('ensures user mixin values take precedence', () => {
-        testContext.logger = testInstrumentation.pino(
+        testContext.logger = testContext.pino(
           {
             mixin() {
               return { trace_id: '123' };

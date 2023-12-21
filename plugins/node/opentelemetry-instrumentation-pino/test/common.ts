@@ -36,6 +36,8 @@ export interface TestInstrumentation {
   pino: typeof Pino;
 }
 
+export type TestInstrumentationAndContext = TestContext & TestInstrumentation;
+
 export function assertRecord(
   record: any,
   span: Span,
@@ -107,4 +109,13 @@ export function setupInstrumentation(
   }
   const pino = require('pino');
   return { instrumentation, pino };
+}
+
+export function setupInstrumentationAndInitTestContext(
+  config?: PinoInstrumentationConfig,
+  importType: 'global' | 'default' | 'pino' = 'global'
+) {
+  const instrumentation = setupInstrumentation(config);
+  const context = initTestContext(instrumentation, importType);
+  return { ...instrumentation, ...context };
 }
