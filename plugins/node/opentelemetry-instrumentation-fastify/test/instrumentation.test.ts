@@ -544,7 +544,7 @@ describe('fastify', () => {
       argv: ['fixtures/use-fastify.mjs'],
       env: {
         NODE_OPTIONS:
-          '--experimental-loader=import-in-the-middle/hook.mjs',
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
         NODE_NO_WARNINGS: '1',
       },
       checkResult: (err, stdout, stderr) => {

@@ -315,7 +315,7 @@ describe('PinoInstrumentation', () => {
       argv: ['fixtures/use-pino-default-import.mjs'],
       env: {
         NODE_OPTIONS:
-          '--experimental-loader=import-in-the-middle/hook.mjs',
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
         NODE_NO_WARNINGS: '1',
       },
       checkResult: (err, stdout, _stderr) => {
@@ -349,7 +349,7 @@ describe('PinoInstrumentation', () => {
         argv: ['fixtures/use-pino-named-import.mjs'],
         env: {
           NODE_OPTIONS:
-            '--experimental-loader=import-in-the-middle/hook.mjs',
+            '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
           NODE_NO_WARNINGS: '1',
         },
         checkResult: (err, stdout, _stderr) => {
