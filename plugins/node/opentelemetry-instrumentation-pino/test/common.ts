@@ -25,11 +25,16 @@ import { Writable } from 'stream';
 
 export const kMessage = 'log-message';
 
-export let stream: Writable;
-export let writeSpy: sinon.SinonSpy;
-export let pino: typeof Pino;
-export let instrumentation: PinoInstrumentation;
-export let logger: Pino.Logger;
+export interface TestContext {
+  stream: Writable;
+  writeSpy: sinon.SinonSpy;
+  logger: Pino.Logger;
+}
+
+export interface TestInstrumentation {
+  instrumentation: PinoInstrumentation;
+  pino: typeof Pino;
+}
 
 export function assertRecord(
   record: any,
@@ -48,26 +53,28 @@ export function assertRecord(
 
 export function assertInjection(
   span: Span,
+  testContext: TestContext,
   expectedKeys?: PinoInstrumentationConfig['logKeys']
 ) {
-  sinon.assert.calledOnce(writeSpy);
-  const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+  sinon.assert.calledOnce(testContext.writeSpy);
+  const record = JSON.parse(testContext.writeSpy.firstCall.args[0].toString());
   assertRecord(record, span, expectedKeys);
   return record;
 }
 
 export function testInjection(
   span: Span,
+  testContext: TestContext,
   expectedKeys?: PinoInstrumentationConfig['logKeys']
 ) {
-  logger.info(kMessage);
-  return assertInjection(span, expectedKeys);
+  testContext.logger.info(kMessage);
+  return assertInjection(span, testContext, expectedKeys);
 }
 
-export function testNoInjection() {
-  logger.info(kMessage);
-  sinon.assert.calledOnce(writeSpy);
-  const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+export function testNoInjection(testContext: TestContext) {
+  testContext.logger.info(kMessage);
+  sinon.assert.calledOnce(testContext.writeSpy);
+  const record = JSON.parse(testContext.writeSpy.firstCall.args[0].toString());
   assert.strictEqual(record['trace_id'], undefined);
   assert.strictEqual(record['span_id'], undefined);
   assert.strictEqual(record['trace_flags'], undefined);
@@ -75,26 +82,29 @@ export function testNoInjection() {
   return record;
 }
 
-export function init(importType: 'global' | 'default' | 'pino' = 'global') {
-  stream = new Writable();
+export function initTestContext(
+  testInstrumentation: TestInstrumentation,
+  importType: 'global' | 'default' | 'pino' = 'global'
+): TestContext {
+  const stream = new Writable();
   stream._write = () => {};
-  writeSpy = sinon.spy(stream, 'write');
-  if (importType === 'global') {
-    logger = pino(stream);
-  } else {
-    // @ts-expect-error the same function reexported
-    logger = pino[importType](stream);
-  }
+  const writeSpy = sinon.spy(stream, 'write');
+  const logger =
+    importType === 'global'
+      ? testInstrumentation.pino(stream)
+      : // @ts-expect-error the same function reexported
+        testInstrumentation.pino[importType](stream);
+
+  return { stream, writeSpy, logger };
 }
 
-export function setLogger(log: Pino.Logger) {
-  logger = log;
-}
-
-export function setup(config?: PinoInstrumentationConfig) {
-  instrumentation = new PinoInstrumentation(config);
+export function setupInstrumentation(
+  config?: PinoInstrumentationConfig
+): TestInstrumentation {
+  const instrumentation = new PinoInstrumentation(config);
   if (config?.enabled !== false) {
     instrumentation.enable();
   }
-  pino = require('pino');
+  const pino = require('pino');
+  return { instrumentation, pino };
 }

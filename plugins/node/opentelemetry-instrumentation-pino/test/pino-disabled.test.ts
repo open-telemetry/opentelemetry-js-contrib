@@ -20,14 +20,15 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { context, trace } from '@opentelemetry/api';
 import {
-  init,
-  instrumentation,
-  setup,
+  TestContext,
+  TestInstrumentation,
+  initTestContext,
+  setupInstrumentation,
   testInjection,
   testNoInjection,
 } from './common';
+import { context, trace } from '@opentelemetry/api';
 
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -40,40 +41,45 @@ context.setGlobalContextManager(new AsyncHooksContextManager());
 
 describe('PinoInstrumentation', () => {
   describe('disabled instrumentation', () => {
+    let testInstrumentation: TestInstrumentation;
+    let testContext: TestContext;
     before(() => {
-      setup();
-      instrumentation.disable();
+      testInstrumentation = setupInstrumentation();
+      testContext = initTestContext(testInstrumentation);
+      testInstrumentation.instrumentation.disable();
     });
-    after(() => instrumentation.enable());
+    after(() => testInstrumentation.instrumentation.enable());
 
-    beforeEach(() => init());
+    beforeEach(() => {
+      testContext = initTestContext(testInstrumentation);
+    });
 
     it('does not inject span context', () => {
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        testNoInjection();
+        testNoInjection(testContext);
       });
     });
 
     it('does not call log hook', () => {
       const span = tracer.startSpan('abc');
-      instrumentation.setConfig({
+      testInstrumentation.instrumentation.setConfig({
         enabled: false,
         logHook: (_span, record) => {
           record['resource.service.name'] = 'test-service';
         },
       });
       context.with(trace.setSpan(context.active(), span), () => {
-        const record = testNoInjection();
+        const record = testNoInjection(testContext);
         assert.strictEqual(record['resource.service.name'], undefined);
       });
     });
 
     it('injects span context once re-enabled', () => {
-      instrumentation.enable();
+      testInstrumentation.instrumentation.enable();
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        testInjection(span);
+        testInjection(span, testContext);
       });
     });
   });

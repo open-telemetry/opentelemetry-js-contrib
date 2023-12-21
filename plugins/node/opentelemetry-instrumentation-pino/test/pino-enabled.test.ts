@@ -24,19 +24,15 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import {
+  TestContext,
+  TestInstrumentation,
   assertInjection,
   assertRecord,
-  init,
-  instrumentation,
+  initTestContext,
   kMessage,
-  logger,
-  pino,
-  setLogger,
-  setup,
-  stream,
+  setupInstrumentation,
   testInjection,
   testNoInjection,
-  writeSpy,
 } from './common';
 
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -50,16 +46,18 @@ provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 context.setGlobalContextManager(new AsyncHooksContextManager());
 
 describe('PinoInstrumentation', () => {
+  let testInstrumentation: TestInstrumentation;
+  let testContext: TestContext;
   describe('enabled instrumentation', () => {
     beforeEach(() => {
-      setup();
-      init();
+      testInstrumentation = setupInstrumentation();
+      testContext = initTestContext(testInstrumentation);
     });
 
     it('injects span context to records', () => {
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        testInjection(span);
+        testInjection(span, testContext);
       });
     });
 
@@ -70,87 +68,87 @@ describe('PinoInstrumentation', () => {
         traceFlags: 'traceFlags',
       };
 
-      setup({ logKeys });
-      init();
+      testInstrumentation = setupInstrumentation({ logKeys });
+      testContext = initTestContext(testInstrumentation);
 
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        testInjection(span, logKeys);
+        testInjection(span, testContext, logKeys);
       });
     });
 
     it('injects span context to records in default export', function () {
       // @ts-expect-error the same function reexported
-      if (!pino.default) {
+      if (!testInstrumentation.pino.default) {
         this.skip();
       }
-      init('default');
+      initTestContext(testInstrumentation, 'default');
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        testInjection(span);
+        testInjection(span, testContext);
       });
     });
 
     it('injects span context to records in named export', function () {
       // @ts-expect-error the same function reexported
-      if (!pino.pino) {
+      if (!testInstrumentation.pino.pino) {
         this.skip();
       }
-      init('pino');
+      initTestContext(testInstrumentation, 'pino');
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        testInjection(span);
+        testInjection(span, testContext);
       });
     });
 
     it('injects span context to child logger records', () => {
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        const child = logger.child({ foo: 42 });
+        const child = testContext.logger.child({ foo: 42 });
         child.info(kMessage);
-        assertInjection(span);
+        assertInjection(span, testContext);
       });
     });
 
     it('calls the users log hook', () => {
       const span = tracer.startSpan('abc');
-      instrumentation.setConfig({
+      testInstrumentation.instrumentation.setConfig({
         enabled: true,
         logHook: (_span, record, level) => {
           record['resource.service.name'] = 'test-service';
-          if (semver.satisfies(pino.version, '>= 7.9.0')) {
+          if (semver.satisfies(testInstrumentation.pino.version, '>= 7.9.0')) {
             assert.strictEqual(level, 30);
           }
         },
       });
       context.with(trace.setSpan(context.active(), span), () => {
-        const record = testInjection(span);
+        const record = testInjection(span, testContext);
         assert.strictEqual(record['resource.service.name'], 'test-service');
       });
     });
 
     it('does not inject span context if no span is active', () => {
       assert.strictEqual(trace.getSpan(context.active()), undefined);
-      testNoInjection();
+      testNoInjection(testContext);
     });
 
     it('does not inject span context if span context is invalid', () => {
       const span = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
       context.with(trace.setSpan(context.active(), span), () => {
-        testNoInjection();
+        testNoInjection(testContext);
       });
     });
 
     it('does not propagate exceptions from user hooks', () => {
       const span = tracer.startSpan('abc');
-      instrumentation.setConfig({
+      testInstrumentation.instrumentation.setConfig({
         enabled: true,
         logHook: () => {
           throw new Error('Oops');
         },
       });
       context.with(trace.setSpan(context.active(), span), () => {
-        testInjection(span);
+        testInjection(span, testContext);
       });
     });
   });
@@ -159,8 +157,8 @@ describe('PinoInstrumentation', () => {
     let stdoutSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      setup();
-      init();
+      testInstrumentation = setupInstrumentation();
+      testContext = initTestContext(testInstrumentation);
 
       stdoutSpy = sinon.spy(process.stdout, 'write');
     });
@@ -170,48 +168,49 @@ describe('PinoInstrumentation', () => {
     });
 
     it('does not fail when constructing logger without arguments', () => {
-      setLogger(pino());
+      testContext.logger = testInstrumentation.pino();
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        logger.info(kMessage);
+        testContext.logger.info(kMessage);
       });
       const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
       assertRecord(record, span);
     });
 
     it('preserves user options and adds a mixin', () => {
-      setLogger(pino({ name: 'LogLog' }, stream));
+      testContext.logger = testInstrumentation.pino(
+        { name: 'LogLog' },
+        testContext.stream
+      );
 
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
-        const record = testInjection(span);
+        const record = testInjection(span, testContext);
         assert.strictEqual(record['name'], 'LogLog');
       });
     });
 
     describe('binary arguments', () => {
       it('is possible to construct logger with undefined options', () => {
-        setLogger(pino(undefined as unknown as Pino.LoggerOptions, stream));
+        testContext.logger = testInstrumentation.pino(
+          undefined as unknown as Pino.LoggerOptions,
+          testContext.stream
+        );
         const span = tracer.startSpan('abc');
         context.with(trace.setSpan(context.active(), span), () => {
-          testInjection(span);
+          testInjection(span, testContext);
         });
       });
 
       it('preserves user mixins', () => {
-        setLogger(
-          pino(
-            {
-              name: 'LogLog',
-              mixin: () => ({ a: 2, b: 'bar' }),
-            },
-            stream
-          )
+        testContext.logger = testInstrumentation.pino(
+          { name: 'LogLog', mixin: () => ({ a: 2, b: 'bar' }) },
+          testContext.stream
         );
 
         const span = tracer.startSpan('abc');
         context.with(trace.setSpan(context.active(), span), () => {
-          const record = testInjection(span);
+          const record = testInjection(span, testContext);
           assert.strictEqual(record['a'], 2);
           assert.strictEqual(record['b'], 'bar');
           assert.strictEqual(record['name'], 'LogLog');
@@ -219,23 +218,23 @@ describe('PinoInstrumentation', () => {
       });
 
       it('ensures user mixin values take precedence', () => {
-        setLogger(
-          pino(
-            {
-              mixin() {
-                return { trace_id: '123' };
-              },
+        testContext.logger = testInstrumentation.pino(
+          {
+            mixin() {
+              return { trace_id: '123' };
             },
-            stream
-          )
+          },
+          testContext.stream
         );
 
         const span = tracer.startSpan('abc');
         context.with(trace.setSpan(context.active(), span), () => {
-          logger.info(kMessage);
+          testContext.logger.info(kMessage);
         });
 
-        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        const record = JSON.parse(
+          testContext.writeSpy.firstCall.args[0].toString()
+        );
         assert.strictEqual(record['trace_id'], '123');
       });
     });
