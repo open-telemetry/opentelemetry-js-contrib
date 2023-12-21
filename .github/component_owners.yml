@@ -21,6 +21,8 @@ components:
     - obecny
   metapackages/auto-instrumentations-web:
     - obecny
+  metapackages/esbuild-plugin-node:
+    - drewcorlin1
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
