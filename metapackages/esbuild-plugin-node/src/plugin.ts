@@ -57,14 +57,17 @@ export function openTelemetryPlugin(
           args.resolveDir
         );
 
+        // We'll rely on the OTel auto-instrumentation at runtime to patch builtin modules
         if (isBuiltIn(args.path, extractedModule)) return;
 
+        // See if we have an instrumentation registered for this package
         const matchingInstrumentation = await getInstrumentation({
-          build,
           extractedModule,
           path: args.path,
           resolveDir: args.resolveDir,
+          build,
         });
+
         if (!matchingInstrumentation) return;
 
         return {
@@ -79,6 +82,7 @@ export function openTelemetryPlugin(
       build.onLoad(
         { filter: /.*/ },
         async ({ path, pluginData }: OnLoadArgs) => {
+          // Ignore any packages that don't have an instrumentation registered for them
           if (!pluginData?.shouldPatchPackage) return;
 
           const contents = await readFile(path);
@@ -130,11 +134,12 @@ function extractPackageAndModulePath(
   const fullPath = dotFriendlyResolve(path, resolveDir);
 
   const nodeModulesIndex = fullPath.lastIndexOf(NODE_MODULES);
-  if (nodeModulesIndex < 0)
+  if (nodeModulesIndex < 0) {
     return {
       path: fullPath,
       extractedModule: { package: null, path: null },
     };
+  }
 
   const subPath = fullPath.substring(nodeModulesIndex + NODE_MODULES.length);
   const firstSlash = subPath.indexOf('/');
@@ -172,16 +177,15 @@ function shouldIgnoreModule({
   externalModules?: string[];
   pathPrefixesToIgnore?: string[];
 }): boolean {
+  // If onLoad is being triggered from another plugin, ignore it
   if (namespace !== 'file') return true;
-
-  if (!importer.includes(NODE_MODULES) && path.startsWith('.')) {
-    return true;
-  }
-
+  // If it's a local import from our code, ignore it
+  if (!importer.includes(NODE_MODULES) && path.startsWith('.')) return true;
+  // If it starts with a prefix to ignore, ignore it
   if (pathPrefixesToIgnore?.some(prefix => path.startsWith(prefix))) {
     return true;
   }
-
+  // If it's marked as external, ignore it
   if (externalModules?.includes(path)) return true;
 
   return false;
@@ -225,8 +229,9 @@ async function getInstrumentation({
         kind: 'require-resolve',
       }
     );
+
     const packageJsonContents = await readFile(packageJsonPath);
-    const { version } = JSON.parse(packageJsonContents.toString());
+    const version = JSON.parse(packageJsonContents.toString()).version;
 
     if (
       instrumentation.supportedVersions.some(supportedVersion =>
