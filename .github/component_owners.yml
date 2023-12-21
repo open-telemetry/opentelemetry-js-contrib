@@ -122,7 +122,7 @@ components:
   plugins/web/opentelemetry-instrumentation-user-interaction:
     - obecny
   plugins/web/opentelemetry-plugin-react-load: []
-    # Unmaintained?
+    - martinkuba
   propagators/opentelemetry-propagator-aws-xray:
     - carolabadeer
   propagators/opentelemetry-propagator-grpc-census-binary: []
