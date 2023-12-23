@@ -39,8 +39,6 @@ build({
   platform: 'node',
   sourcemap: true,
   plugins: [openTelemetryPlugin()],
-}).catch(err => {
-  throw err;
 });
 ```
 
@@ -62,8 +60,6 @@ build({
   platform: 'node',
   sourcemap: true,
   plugins: [openTelemetryPlugin()],
-}).catch(err => {
-  throw err;
 });
 ```
 
@@ -82,24 +78,13 @@ build({
   sourcemap: true,
   plugins: [
     openTelemetryPlugin({
-      '@opentelemetry/instrumentation-pino': {
-        logHook: (span, record) => {
-          // Reformat the injected log fields to use camelCase, eg. trace_id -> traceId
-          const context = span.spanContext();
-          record.traceId = context.traceId;
-          record.spanId = context.spanId;
-          record.strTraceFlags = context.traceFlags;
-
-          if (record.trace_id === context.traceId) delete record.trace_id;
-          if (record.span_id === context.spanId) delete record.span_id;
-          if (Number(record.trace_flags) === context.traceFlags)
-            delete record.trace_flags;
+      instrumentationConfig: {
+        '@opentelemetry/instrumentation-aws-sdk': {
+          suppressInternalInstrumentation: true,
         },
       },
     }),
   ],
-}).catch(err => {
-  throw err;
 });
 ```
 
