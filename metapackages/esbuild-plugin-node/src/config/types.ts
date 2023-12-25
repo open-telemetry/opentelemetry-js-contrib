@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-import type { InstrumentationConfigMap } from '@opentelemetry/auto-instrumentations-node';
+import { EsbuildInstrumentationConfigMap } from '../types';
 
 export interface InstrumentationConfig<
-  T extends keyof InstrumentationConfigMap
+  T extends keyof EsbuildInstrumentationConfigMap
 > {
   oTelInstrumentationPackage: T;
   oTelInstrumentationClass: string;
-  configGenerator: (config?: InstrumentationConfigMap[T]) => string | undefined;
+  configGenerator: (
+    config?: EsbuildInstrumentationConfigMap[T]
+  ) => string | undefined;
 }

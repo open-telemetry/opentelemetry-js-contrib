@@ -20,8 +20,12 @@ import {
 } from '@opentelemetry/instrumentation-aws-sdk';
 
 import { InstrumentationConfig } from './types';
+import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
+import { RemoveFunctions } from '../types';
 
-function getAwsInstrumentationArgs(config?: AwsSdkInstrumentationConfig) {
+function getAwsInstrumentationArgs(
+  config?: RemoveFunctions<AwsSdkInstrumentationConfig>
+) {
   if (!config) return;
 
   return `{
@@ -33,7 +37,8 @@ function getAwsInstrumentationArgs(config?: AwsSdkInstrumentationConfig) {
   }`;
 }
 
-export const awsSdkInstrumentations = new AwsInstrumentation().init();
+export const awsSdkInstrumentations: InstrumentationModuleDefinition<any>[] =
+  new AwsInstrumentation().init();
 
 export const awsSdkInstrumentationConfig: Record<
   '@smithy/smithy-client' | '@smithy/middleware-stack',

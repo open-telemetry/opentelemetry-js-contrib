@@ -20,8 +20,12 @@ import {
 } from '@opentelemetry/instrumentation-fastify';
 
 import { InstrumentationConfig } from './types';
+import { InstrumentationNodeModuleDefinition } from '@opentelemetry/instrumentation';
+import { RemoveFunctions } from '../types';
 
-function getFastifyInstrumentationArgs(config?: FastifyInstrumentationConfig) {
+function getFastifyInstrumentationArgs(
+  config?: RemoveFunctions<FastifyInstrumentationConfig>
+) {
   if (!config) return;
 
   return `{
@@ -29,7 +33,8 @@ function getFastifyInstrumentationArgs(config?: FastifyInstrumentationConfig) {
   }`;
 }
 
-export const fastifyInstrumentations = new FastifyInstrumentation().init();
+export const fastifyInstrumentations: InstrumentationNodeModuleDefinition<any>[] =
+  new FastifyInstrumentation().init();
 
 export const fastifyInstrumentationConfig: Record<
   'fastify',

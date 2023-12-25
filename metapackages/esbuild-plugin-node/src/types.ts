@@ -40,8 +40,21 @@ export interface ModuleParams {
   instrumentationName?: string;
 }
 
+type _RemoveFunctions<T> = {
+  [P in keyof T as T[P] extends (...args: any) => any ? never : P]: T[P];
+};
+
+// _RemoveFunctions does not work on optional fields, so first make the type required then apply Partial to the result
+export type RemoveFunctions<T> = Partial<_RemoveFunctions<Required<T>>>;
+
+export type EsbuildInstrumentationConfigMap = {
+  [K in keyof InstrumentationConfigMap]: RemoveFunctions<
+    InstrumentationConfigMap[K]
+  >;
+};
+
 export interface OpenTelemetryPluginParams {
-  instrumentationConfig?: InstrumentationConfigMap;
+  instrumentationConfig?: EsbuildInstrumentationConfigMap;
 
   /** Modules to consider external and ignore from the plugin */
   externalModules?: string[];

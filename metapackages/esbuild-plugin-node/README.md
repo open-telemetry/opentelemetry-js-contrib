@@ -21,7 +21,7 @@ npm install --save @opentelemetry/esbuild-plugin-node
 
 ## Usage: Esbuild plugin
 
-This module includes auto instrumentation for all supported instrumentations and [all available data exporters][exporter-url].
+This module includes instrumentation for all supported instrumentations and [all available data exporters][exporter-url].
 It provides a completely automatic, out-of-the-box experience.
 Please see the [Supported Instrumentations](#supported-instrumentations) section for more information.
 

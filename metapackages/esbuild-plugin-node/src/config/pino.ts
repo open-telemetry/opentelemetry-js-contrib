@@ -20,8 +20,12 @@ import {
 } from '@opentelemetry/instrumentation-pino';
 
 import { InstrumentationConfig } from './types';
+import { InstrumentationNodeModuleDefinition } from '@opentelemetry/instrumentation';
+import { RemoveFunctions } from '../types';
 
-function getPinoInstrumentationArgs(config?: PinoInstrumentationConfig) {
+function getPinoInstrumentationArgs(
+  config?: RemoveFunctions<PinoInstrumentationConfig>
+) {
   if (!config) return;
 
   return `{
@@ -29,7 +33,8 @@ function getPinoInstrumentationArgs(config?: PinoInstrumentationConfig) {
   }`;
 }
 
-export const pinoInstrumentations = new PinoInstrumentation().init();
+export const pinoInstrumentations: InstrumentationNodeModuleDefinition<any>[] =
+  new PinoInstrumentation().init();
 
 export const pinoInstrumentationConfig: Record<
   'pino',
