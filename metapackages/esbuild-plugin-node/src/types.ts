@@ -62,7 +62,7 @@ export interface OpenTelemetryPluginParams {
   /**
    * Path prefixes to ignore.
    *
-   * ie if you configure compilteOptions.paths in your tsconfig.json to use something like `~/` for the
+   * ie if you configure compilerOptions.paths in your tsconfig.json to use something like `~/` for the
    * root of your project then you could set that here to ignore modules
    */
   pathPrefixesToIgnore?: string[];
