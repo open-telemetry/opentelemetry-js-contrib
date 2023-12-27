@@ -127,8 +127,41 @@ To support this use case, you can choose one of the following options:
 
     It is recommended to use this option when the types involved are simple and short.
 
-3. Use `any` type, and add a comment to guide users on what type they should expect, with a link to its definition.
+3. Use a [generic type](https://www.typescriptlang.org/docs/handbook/2/generics.html#generic-types) and add a comment to guide users on what type they should use, with a link to its definition.
 
-    This option will offer no typing aid to the instrumentation consumer, which will move the burden and risk of checking type correctness to the user.
+    This approach is useful when types have breaking changes within the versions supported and there are too many declarations to copied over.
 
-    It is recommended to implement it only if the previous options are not feasible or are too complex to use.
+    This option will offer typing aid to the instrumentation consumer with the same version of types is used in the instrumented application.
+
+    You may import the types package for internal use but use generics for the types you want to export.
+
+    ```js
+    // package.json
+    {
+        "name": "@opentelemetry/instrumentation-bar",
+        ...
+        "devDependencies": {
+            "@types/foo": "1.2.3"
+        },
+        ...
+    }
+
+    // types.ts
+
+    export interface FooRequestInfo<BarType = any> {
+        bar: BarType;
+    }
+    ...
+    ```
+
+    ```js
+    // app.ts
+    import { FooRequestInfo } from "@opentelemetry/instrumentation-bar";
+    import type { Bar } from 'foo';
+
+    const requestInfo: FooRequestInfo<Bar> = {
+        bar: { ... },
+    };
+    ...
+    ```
+
