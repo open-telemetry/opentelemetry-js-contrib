@@ -7,7 +7,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v8
+      - uses: actions/stale@v9
         with:
           days-before-stale: 60
           days-before-close: 14
@@ -17,5 +17,6 @@ jobs:
           close-pr-message: 'This PR was closed because it has been stale for 14 days with no activity.'
           stale-issue-label: stale
           stale-pr-label: stale
-          exempt-issue-labels: never-stale,instrumentation-request,bug
+          exempt-issue-labels: never-stale
           exempt-pr-labels: never-stale
+          any-of-labels: information-requested

@@ -13,7 +13,6 @@
   "types": "build/src/index.d.ts",
   "scripts": {
     "clean": "lerna run clean",
-    "prepare": "husky install",
     "precompile": "tsc --version && npm run version:update",
     "version:update": "lerna run version:update",
     "compile": "lerna run compile",
@@ -22,6 +21,7 @@
     "test": "lerna run test",
     "test:ci:changed": "lerna run test --since origin/main",
     "test:browser": "lerna run test:browser --concurrency 1",
+    "test-all-versions": "npm run --if-present --workspaces test-all-versions",
     "bump": "lerna publish",
     "changelog": "lerna-changelog",
     "lint": "lerna run lint",
@@ -40,8 +40,6 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@commitlint/cli": "18.4.1",
-    "@commitlint/config-conventional": "18.4.0",
     "@typescript-eslint/eslint-plugin": "5.8.1",
     "@typescript-eslint/parser": "5.8.1",
     "eslint": "8.7.0",
@@ -51,7 +49,6 @@
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
-    "husky": "7.0.4",
     "lerna": "6.6.2",
     "lerna-changelog": "2.2.0",
     "prettier": "2.8.8",
