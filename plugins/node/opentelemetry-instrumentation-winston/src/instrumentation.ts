@@ -21,13 +21,6 @@ import {
   Span,
   SpanContext,
 } from '@opentelemetry/api';
-import * as util from 'node:util';
-import {
-  LogRecord,
-  Logger,
-  SeverityNumber,
-  logs,
-} from '@opentelemetry/api-logs';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -37,25 +30,23 @@ import {
 } from '@opentelemetry/instrumentation';
 import type { WinstonInstrumentationConfig } from './types';
 import type {
+  Winston2ConfigureMethod,
   Winston2LogMethod,
   Winston2LoggerModule,
+  Winston3ConfigureMethod,
   Winston3LogMethod,
   Winston3Logger,
 } from './internal-types';
 import { VERSION } from './version';
+import { OpenTelemetryTransportv3 } from './OpenTelemetryTransportv3';
+import { OpenTelemetryTransportv2 } from './OpenTelemetryTransportv2';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
 
 export class WinstonInstrumentation extends InstrumentationBase {
-  private _logger: Logger;
-
   constructor(config: WinstonInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-winston', VERSION, config);
-    this._logger = logs.getLogger(
-      '@opentelemetry/instrumentation-winston',
-      VERSION
-    );
   }
 
   protected init() {
@@ -75,6 +66,12 @@ export class WinstonInstrumentation extends InstrumentationBase {
                 this._unwrap(logger.prototype, 'write');
               }
               this._wrap(logger.prototype, 'write', this._getPatchedWrite());
+
+              // Wrap configure
+              if (isWrapped(logger.prototype['configure'])) {
+                this._unwrap(logger.prototype, 'configure');
+              }
+              this._wrap(logger.prototype, 'configure', this._getPatchedV3Configure());
 
               return logger;
             },
@@ -103,6 +100,12 @@ export class WinstonInstrumentation extends InstrumentationBase {
                 this._unwrap(proto, 'log');
               }
               this._wrap(proto, 'log', this._getPatchedLog());
+
+              // Wrap configure
+              if (isWrapped(proto.configure)) {
+                this._unwrap(proto, 'configure');
+              }
+              this._wrap(proto, 'configure', this._getPatchedV2Configure());
 
               return fileExports;
             },
@@ -163,11 +166,6 @@ export class WinstonInstrumentation extends InstrumentationBase {
             }
           }
         }
-
-        if (!config.disableLogSending) {
-          instrumentation._emitLogRecord(record);
-        }
-
         return original.apply(this, args);
       };
     };
@@ -210,59 +208,63 @@ export class WinstonInstrumentation extends InstrumentationBase {
           }
         }
 
-        if (!config.disableLogSending) {
-          const logRecord: Record<string, any> = {};
-          if (args.length >= 1) {
-            // Level is always first argument
-            logRecord['level'] = args[0];
-
-            // Get meta if present
-            let metaIndex = 0;
-            for (let i = args.length - 1; i >= 0; i--) {
-              if (typeof args[i] === 'object') {
-                metaIndex = i;
-                logRecord['meta'] = args[metaIndex];
-                break;
-              }
-            }
-            const callback =
-              typeof args[args.length - 1] === 'function' ? 1 : 0;
-            // Arguments between level and meta or callbkack if present
-            const msgArguments = args.length - metaIndex - callback - 1;
-
-            if (msgArguments > 0) {
-              if (msgArguments === 1) {
-                logRecord['msg'] = args[1];
-              } else {
-                // Handle string interpolation
-                const values = args.slice(2, msgArguments + 1);
-                logRecord['msg'] = util.format(args[1], ...values);
-              }
-            }
-          }
-          instrumentation._emitLogRecord(logRecord);
-        }
-
         return original.apply(this, args);
       };
     };
   }
 
-  private _emitLogRecord(record: Record<string, any>): void {
-    const { message, msg, level, meta, ...splat } = record;
-    const attributes = Object.assign(meta ?? {}, {});
-    for (const key in splat) {
-      if (Object.prototype.hasOwnProperty.call(splat, key)) {
-        attributes[key] = splat[key];
-      }
-    }
-    const logRecord: LogRecord = {
-      severityNumber: getSeverityNumber(level),
-      severityText: level,
-      body: message ?? msg,
-      attributes: attributes,
+  private _getPatchedV3Configure() {
+    return (original: Winston3ConfigureMethod) => {
+      const instrumentation = this;
+      return function patchedConfigure(
+        this: never,
+        ...args: Parameters<typeof original>
+      ) {
+        const config = instrumentation.getConfig();
+        if (!config.disableLogSending) {
+          if (args && args.length > 0) {
+            let originalTransports = args[0].transports;
+            let newTransports = Array.isArray(originalTransports)
+              ? originalTransports
+              : [];
+            const openTelemetryTransport = new OpenTelemetryTransportv3({});
+            if (originalTransports && !Array.isArray(originalTransports)) {
+              newTransports = [originalTransports];
+            }
+            newTransports.push(openTelemetryTransport);
+            originalTransports = newTransports;
+          }
+        }
+        return original.apply(this, args);
+      };
     };
-    this._logger.emit(logRecord);
+  }
+
+  private _getPatchedV2Configure() {
+    return (original: Winston2ConfigureMethod) => {
+      const instrumentation = this;
+      return function patchedConfigure(
+        this: never,
+        ...args: Parameters<typeof original>
+      ) {
+        const config = instrumentation.getConfig();
+        if (!config.disableLogSending) {
+          if (args && args.length > 0) {
+            let originalTransports = args[0].transports;
+            let newTransports = Array.isArray(originalTransports)
+              ? originalTransports
+              : [];
+            const openTelemetryTransport = new OpenTelemetryTransportv2({});
+            if (originalTransports && !Array.isArray(originalTransports)) {
+              newTransports = [originalTransports];
+            }
+            newTransports.push(openTelemetryTransport);
+            originalTransports = newTransports;
+          }
+        }
+        return original.apply(this, args);
+      };
+    };
   }
 }
 
@@ -281,42 +283,4 @@ function injectRecord(
   }
 
   return Object.assign(record, fields);
-}
-
-const npmLevels: Record<string, number> = {
-  error: SeverityNumber.ERROR,
-  warn: SeverityNumber.WARN,
-  info: SeverityNumber.INFO,
-  http: SeverityNumber.DEBUG3,
-  verbose: SeverityNumber.DEBUG2,
-  debug: SeverityNumber.DEBUG,
-  silly: SeverityNumber.TRACE,
-};
-
-const sysLoglevels: Record<string, number> = {
-  emerg: SeverityNumber.FATAL3,
-  alert: SeverityNumber.FATAL2,
-  crit: SeverityNumber.FATAL,
-  error: SeverityNumber.ERROR,
-  warning: SeverityNumber.WARN,
-  notice: SeverityNumber.INFO2,
-  info: SeverityNumber.INFO,
-  debug: SeverityNumber.DEBUG,
-};
-
-const cliLevels: Record<string, number> = {
-  error: SeverityNumber.ERROR,
-  warn: SeverityNumber.WARN,
-  help: SeverityNumber.INFO3,
-  data: SeverityNumber.INFO2,
-  info: SeverityNumber.INFO,
-  debug: SeverityNumber.DEBUG,
-  prompt: SeverityNumber.TRACE4,
-  verbose: SeverityNumber.TRACE3,
-  input: SeverityNumber.TRACE2,
-  silly: SeverityNumber.TRACE,
-};
-
-function getSeverityNumber(level: string): SeverityNumber | undefined {
-  return npmLevels[level] ?? sysLoglevels[level] ?? cliLevels[level];
 }
