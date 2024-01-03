@@ -96,9 +96,9 @@ for builtins or add any additional instrumentations.
 
 ### Gotchas
 
-There are limitations to the configuration options for each package. Most notably, any functions (like `ignoreIncomingRequestHook` in the example) must not depend on any scope outside the function itself, including but not limited to module level variables and imports.
+There are limitations to the configuration options for each package. Most notably, any functions (like `ignoreIncomingRequestHook` in the example) are not allowed to be passed in to plugins.
 
-The reason for this is that the current mechanism of instrumenting packages involves stringifying the instrumentation configs, which does not account for any external scoped dependencies.
+The reason for this is that the current mechanism of instrumenting packages involves stringifying the instrumentation configs, which does not account for any external scoped dependencies, and thus creates subtle opportunities for bugs.
 
 ```javascript
 const {
