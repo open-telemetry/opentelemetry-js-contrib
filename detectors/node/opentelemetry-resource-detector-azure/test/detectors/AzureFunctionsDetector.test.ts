@@ -19,6 +19,7 @@ import { azureFunctionsDetector } from '../../src/detectors/AzureFunctionsDetect
 import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { detectResourcesSync } from '@opentelemetry/resources';
+import { AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE } from '../../src/types';
 
 describe('AzureFunctionsDetector', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -70,47 +71,16 @@ describe('AzureFunctionsDetector', () => {
       attributes[SemanticResourceAttributes.FAAS_VERSION],
       '~4'
     );
-  });
 
-  it('should not detect azure app service values', () => {
-    process.env.WEBSITE_SITE_NAME = 'test-function';
-    process.env.REGION_NAME = 'test-region';
-    process.env.WEBSITE_INSTANCE_ID = 'test-instance-id';
-    process.env.FUNCTIONS_EXTENSION_VERSION = '~4';
-    process.env.WEBSITE_MEMORY_LIMIT_MB = '1000';
+    // Should not detect app service values
+    assert.strictEqual(
+      attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+      undefined
+    );
 
-    const resource = detectResourcesSync({
-      detectors: [azureFunctionsDetector, azureAppServiceDetector],
-    });
-    assert.ok(resource);
-    const attributes = resource.attributes;
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.FAAS_NAME],
-      'test-function'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_PROVIDER],
-      'azure'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_PLATFORM],
-      'azure_functions'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_REGION],
-      'test-region'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.FAAS_INSTANCE],
-      'test-instance-id'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.FAAS_MAX_MEMORY],
-      '1000'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.FAAS_VERSION],
-      '~4'
+      attributes[AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE],
+      undefined
     );
   });
 });
