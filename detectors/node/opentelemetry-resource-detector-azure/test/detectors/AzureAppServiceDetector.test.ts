@@ -17,6 +17,8 @@
 import * as assert from 'assert';
 import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { azureFunctionsDetector } from '../../src';
+import { detectResourcesSync } from '@opentelemetry/resources';
 
 describe('AzureAppServiceDetector', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -38,7 +40,9 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
     process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
-    const resource = azureAppServiceDetector.detect();
+    const resource = detectResourcesSync({
+      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+    });
     assert.ok(resource);
     const attributes = resource.attributes;
     assert.strictEqual(
@@ -88,7 +92,9 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_HOME_STAMPNAME = 'test-home-stamp';
     process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
-    const resource = azureAppServiceDetector.detect();
+    const resource = detectResourcesSync({
+      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+    });
     assert.ok(resource);
     const attributes = resource.attributes;
     assert.strictEqual(
@@ -123,7 +129,9 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
     delete process.env.WEBSITE_OWNER_NAME;
 
-    const resource = azureAppServiceDetector.detect();
+    const resource = detectResourcesSync({
+      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+    });
     assert.ok(resource);
     const attributes = resource.attributes;
     assert.strictEqual(

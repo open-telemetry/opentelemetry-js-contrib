@@ -26,6 +26,7 @@ import {
   WEBSITE_SITE_NAME,
   WEBSITE_SLOT_NAME,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
+  FUNCTIONS_VERSION
 } from '../types';
 import {
   CloudProviderValues,
@@ -49,7 +50,8 @@ class AzureAppServiceDetector implements DetectorSync {
   detect(): IResource {
     let attributes = {};
     const websiteSiteName = process.env[WEBSITE_SITE_NAME];
-    if (websiteSiteName) {
+    const isAzureFunction = !!process.env[FUNCTIONS_VERSION];
+    if (websiteSiteName && !isAzureFunction) {
       attributes = {
         ...attributes,
         [SemanticResourceAttributes.SERVICE_NAME]: websiteSiteName,
