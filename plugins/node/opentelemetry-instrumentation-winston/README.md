@@ -71,6 +71,42 @@ If the OpenTelemetry SDK is not configured with a Logger provider, then this wil
 
 Log sending can be disabled with the `disableLogSending: true` option.
 
+### Using OpenTelemetryWinstonTransport without instrumentation
+
+This package exports the Winston transport class that is used to send records to the
+OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger
+if one is not using the `WinstonInstrumentation` for whatever reason. For
+example:
+
+```js
+const { OpenTelemetryTransportv3 } = require('@opentelemetry/instrumentation-winston');
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  level: 'info',
+  transports: [
+    new winston.transports.Console(),
+    new OpenTelemetryTransportv3()
+  ]
+});
+
+```
+
+Use OpenTelemetryTransportv2 when using winston version 2 or older.
+
+```js
+const { OpenTelemetryTransportv2 } = require('@opentelemetry/instrumentation-winston');
+const winston = require('winston');
+
+const logger = new (winston.Logger)({
+transports: [
+    new (winston.transports.Console)(),
+    new OpenTelemetryTransportv2()
+]
+});
+```
+
+
 ### Log correlation
 
 Winston logger calls in the context of a tracing span will have fields

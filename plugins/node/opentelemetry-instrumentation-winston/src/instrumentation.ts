@@ -71,7 +71,11 @@ export class WinstonInstrumentation extends InstrumentationBase {
               if (isWrapped(logger.prototype['configure'])) {
                 this._unwrap(logger.prototype, 'configure');
               }
-              this._wrap(logger.prototype, 'configure', this._getPatchedV3Configure());
+              this._wrap(
+                logger.prototype,
+                'configure',
+                this._getPatchedV3Configure()
+              );
 
               return logger;
             },
@@ -79,6 +83,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
               if (logger === undefined) return;
               this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(logger.prototype, 'write');
+              this._unwrap(logger.prototype, 'configure');
             }
           ),
         ]
@@ -113,6 +118,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
               if (fileExports === undefined) return;
               this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(fileExports.Logger.prototype, 'log');
+              this._unwrap(fileExports.Logger.prototype, 'configure');
             }
           ),
         ]
@@ -227,7 +233,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
             let newTransports = Array.isArray(originalTransports)
               ? originalTransports
               : [];
-            const openTelemetryTransport = new OpenTelemetryTransportv3({});
+            const openTelemetryTransport = new OpenTelemetryTransportv3();
             if (originalTransports && !Array.isArray(originalTransports)) {
               newTransports = [originalTransports];
             }
@@ -254,7 +260,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
             let newTransports = Array.isArray(originalTransports)
               ? originalTransports
               : [];
-            const openTelemetryTransport = new OpenTelemetryTransportv2({});
+            const openTelemetryTransport = new OpenTelemetryTransportv2();
             if (originalTransports && !Array.isArray(originalTransports)) {
               newTransports = [originalTransports];
             }

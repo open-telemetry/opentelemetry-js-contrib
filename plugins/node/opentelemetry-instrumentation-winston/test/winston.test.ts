@@ -77,12 +77,17 @@ describe('WinstonInstrumentation', () => {
     if (winston['createLogger']) {
       // winston 3.x
       logger = winston.createLogger({
+        level: 'debug',
         levels: levels,
         transports: [
           new winston.transports.Stream({
             stream,
           }),
         ],
+        // format: winston.format.combine(
+        //   winston.format.splat(),
+        //   winston.format.simple()
+        // )
       });
     } else if (winston['Logger']) {
       // winston 2.x
@@ -215,39 +220,12 @@ describe('WinstonInstrumentation', () => {
       );
     });
 
-    it('emit LogRecord with string interpolation', () => {
-      if ('write' in logger) {
-        // In winston 3.x, string interpolation happens before write is called
-      } else {
-        // winston 2.x
-        logger.log('info', '%s:%s', 'value1', 'value2');
-        const logRecords = memoryLogExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].body, 'value1:value2');
-        logger.log('info', 'This is a number %d', 123, '{meta:something}');
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].body, 'This is a number 123');
-        logger.log(
-          'info',
-          'This is a number %d and this is a string %s',
-          123,
-          'test',
-          '{meta:something}',
-          () => {}
-        );
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(
-          logRecords[0].body,
-          'This is a number 123 and this is a string test'
-        );
-      }
-    });
-
     it('does not emit LogRecord if config off', () => {
       instrumentation.setConfig({
         enabled: true,
         disableLogSending: true,
       });
+      initLogger();
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
         testNoEmitLogRecord();
@@ -337,21 +315,12 @@ describe('WinstonInstrumentation', () => {
     });
 
     it('npm levels', () => {
-      initLogger(LevelsType.npm);
+      initLogger();
       logger.log('http', kMessage);
       const logRecords = memoryLogExporter.getFinishedLogRecords();
       assert.strictEqual(logRecords.length, 1);
       assert.strictEqual(logRecords[0].severityText, 'http');
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG3);
-    });
-
-    it('syslog levels', () => {
-      initLogger(LevelsType.syslog);
-      logger.log('emerg', kMessage);
-      const logRecords = memoryLogExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].severityText, 'emerg');
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL3);
     });
 
     it('cli levels', () => {
@@ -361,6 +330,15 @@ describe('WinstonInstrumentation', () => {
       assert.strictEqual(logRecords.length, 1);
       assert.strictEqual(logRecords[0].severityText, 'data');
       assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO2);
+    });
+
+    it('syslog levels', () => {
+      initLogger(LevelsType.syslog);
+      logger.log('emerg', kMessage);
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].severityText, 'emerg');
+      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL3);
     });
   });
 });

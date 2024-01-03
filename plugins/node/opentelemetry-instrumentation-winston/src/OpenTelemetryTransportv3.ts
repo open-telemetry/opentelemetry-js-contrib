@@ -22,7 +22,7 @@ import { emitLogRecord } from './utils';
 export class OpenTelemetryTransportv3 extends Transport {
   private _logger: Logger;
 
-  constructor(options: Transport.TransportStreamOptions) {
+  constructor(options?: Transport.TransportStreamOptions) {
     super(options);
     this._logger = logs.getLogger(
       '@opentelemetry/instrumentation-winston',
