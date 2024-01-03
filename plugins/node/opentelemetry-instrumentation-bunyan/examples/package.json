@@ -15,12 +15,11 @@
   },
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
-  "// @opentelemetry/instrumentation-bunyan": "TODO: change to a ver when there is a next release",
   "dependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/instrumentation-bunyan": "../",
+    "@opentelemetry/instrumentation-bunyan": "^0.34.0",
     "@opentelemetry/resources": "^1.8.0",
-    "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/sdk-node": "^0.46.0",
     "bunyan": "^1.8.15"
   }
 }

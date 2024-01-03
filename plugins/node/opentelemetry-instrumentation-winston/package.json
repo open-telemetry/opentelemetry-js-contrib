@@ -64,7 +64,7 @@
   "dependencies": {
     "@opentelemetry/api-logs": "^0.45.1",
     "@opentelemetry/core": "1.18.1",
-    "@opentelemetry/instrumentation": "^0.45.1",
+    "@opentelemetry/instrumentation": "^0.46.0",
     "winston": "3.3.3",
     "winston2": "npm:winston@2.4.7"
   },

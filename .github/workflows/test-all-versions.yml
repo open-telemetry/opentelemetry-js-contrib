@@ -4,11 +4,11 @@ on:
     - cron: "30 4 * * *"
   workflow_dispatch:
     inputs:
-      lerna-args:
+      npm-workspace-args:
         type: string
   workflow_call:
     inputs:
-      lerna-args:
+      npm-workspace-args:
         required: true
         type: string
 
@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14", "16", "18"]
+        node: ["14", "16", "18.18.2"]
     runs-on: ubuntu-latest
     services:
       mongo:
@@ -115,9 +115,6 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Set MySQL variables
         run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
-      - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == '16'
-        run: npm config set legacy-peer-deps=true
       - name: Update npm to a version that supports workspaces (v7 or later)
         if: ${{ matrix.node < 16 }}
         run: npm install -g npm@9 # npm@9 supports node >=14.17.0
@@ -126,4 +123,4 @@ jobs:
       - name: Build
         run: npm run compile
       - name: Run test-all-versions
-        run: npx lerna run test-all-versions ${{ inputs.lerna-args }} ${{ matrix.lerna-extra-args }} --stream --concurrency 1
+        run: npm run --if-present --workspaces test-all-versions ${{ inputs.npm-workspace-args }}
