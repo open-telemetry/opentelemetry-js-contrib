@@ -89,7 +89,6 @@ const logger = winston.createLogger({
     new OpenTelemetryTransportv3()
   ]
 });
-
 ```
 
 Use OpenTelemetryTransportv2 when using winston version 2 or older.
@@ -105,7 +104,6 @@ transports: [
 ]
 });
 ```
-
 
 ### Log correlation
 
