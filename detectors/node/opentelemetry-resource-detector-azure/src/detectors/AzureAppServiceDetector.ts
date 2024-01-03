@@ -26,7 +26,7 @@ import {
   WEBSITE_SITE_NAME,
   WEBSITE_SLOT_NAME,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
-  FUNCTIONS_VERSION
+  FUNCTIONS_VERSION,
 } from '../types';
 import {
   CloudProviderValues,

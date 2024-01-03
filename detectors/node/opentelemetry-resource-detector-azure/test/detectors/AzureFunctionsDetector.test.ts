@@ -71,7 +71,7 @@ describe('AzureFunctionsDetector', () => {
       '~4'
     );
   });
-  
+
   it('should not detect azure app service values', () => {
     process.env.WEBSITE_SITE_NAME = 'test-function';
     process.env.REGION_NAME = 'test-region';
