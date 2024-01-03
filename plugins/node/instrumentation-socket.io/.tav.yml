@@ -4,12 +4,12 @@
     commands:
       - npm run test
 
-  - versions: "^3.1.3"
+  - versions: "^3.1.2"
     peerDependencies: socket.io-client@^3
     commands:
       - npm run test
 
-  - versions: "4.4.1 || 4.5.1 || 4.5.2 || ^4.5.3"
+  - versions: "4.5.3 || 4.6.2 || ^4.7.1"
     peerDependencies: socket.io-client@^4
     commands:
       - npm run test
