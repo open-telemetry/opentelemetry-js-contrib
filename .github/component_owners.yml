@@ -21,7 +21,7 @@ components:
     - obecny
   metapackages/auto-instrumentations-web:
     - obecny
-  metapackages/esbuild-plugin-node:
+  packages/esbuild-plugin-node:
     - drewcorlin1
   packages/opentelemetry-host-metrics:
     - legendecas
