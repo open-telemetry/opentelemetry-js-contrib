@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-restify",
-  "version": "0.34.2",
+  "version": "0.34.3",
   "description": "OpenTelemetry restify automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -56,7 +56,7 @@
     "restify": "11.1.0",
     "rimraf": "5.0.5",
     "semver": "7.5.4",
-    "test-all-versions": "^5.0.1",
+    "test-all-versions": "^6.0.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },

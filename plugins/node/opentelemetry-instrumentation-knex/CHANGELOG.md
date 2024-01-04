@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.32.3...instrumentation-knex-v0.32.4) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
 ## [0.32.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.32.2...instrumentation-knex-v0.32.3) (2023-11-13)
 
 
