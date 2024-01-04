@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-router",
-  "version": "0.33.3",
+  "version": "0.33.4",
   "description": "OpenTelemetry Router automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
