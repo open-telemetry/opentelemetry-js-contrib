@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.37.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.37.3...instrumentation-aws-lambda-v0.37.4) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+## [0.37.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.37.2...instrumentation-aws-lambda-v0.37.3) (2023-12-07)
+
+
+### Bug Fixes
+
+* **instrumentation-lambda:** soften "unable to init" message and demote to diag.debug ([#1836](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1836)) ([fb80783](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fb807835e9317891e6f18715e708e9993b8797d8))
+
 ## [0.37.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.37.1...instrumentation-aws-lambda-v0.37.2) (2023-11-13)
 
 

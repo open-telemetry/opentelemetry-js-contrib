@@ -41,12 +41,14 @@ export class PinoInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition<any>(
         'pino',
         pinoVersions,
-        (pinoModule, moduleVersion) => {
+        (module, moduleVersion?: string) => {
           diag.debug(`Applying patch for pino@${moduleVersion}`);
+          const isESM = module[Symbol.toStringTag] === 'Module';
+          const moduleExports = isESM ? module.default : module;
           const instrumentation = this;
           const patchedPino = Object.assign((...args: unknown[]) => {
             if (args.length === 0) {
-              return pinoModule({
+              return moduleExports({
                 mixin: instrumentation._getMixinFunction(),
               });
             }
@@ -61,20 +63,27 @@ export class PinoInstrumentation extends InstrumentationBase {
                 args.splice(0, 0, {
                   mixin: instrumentation._getMixinFunction(),
                 });
-                return pinoModule(...args);
+                return moduleExports(...args);
               }
             }
 
             args[0] = instrumentation._combineOptions(args[0]);
 
-            return pinoModule(...args);
-          }, pinoModule);
+            return moduleExports(...args);
+          }, moduleExports);
 
           if (typeof patchedPino.pino === 'function') {
             patchedPino.pino = patchedPino;
           }
           if (typeof patchedPino.default === 'function') {
             patchedPino.default = patchedPino;
+          }
+          if (isESM) {
+            if (module.pino) {
+              // This was added in pino@6.8.0 (https://github.com/pinojs/pino/pull/936).
+              module.pino = patchedPino;
+            }
+            module.default = patchedPino;
           }
 
           return patchedPino;

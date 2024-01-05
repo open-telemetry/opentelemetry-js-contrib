@@ -36,6 +36,18 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.0 to ^0.35.1
+
 ## [0.29.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.2...resource-detector-gcp-v0.29.3) (2023-11-13)
 
 

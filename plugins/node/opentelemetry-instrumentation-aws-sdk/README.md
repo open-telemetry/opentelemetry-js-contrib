@@ -20,11 +20,11 @@ npm install --save @opentelemetry/instrumentation-aws-sdk
 For further automatic instrumentation instruction see the [@opentelemetry/instrumentation](https://www.npmjs.com/package/@opentelemetry/instrumentation) package.
 
 ```js
-const { NodeTracerProvider } = require("@opentelemetry/sdk-trace-node");
-const { registerInstrumentations } = require("@opentelemetry/instrumentation");
+const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const {
   AwsInstrumentation,
-} = require("@opentelemetry/instrumentation-aws-sdk");
+} = require('@opentelemetry/instrumentation-aws-sdk');
 
 const provider = new NodeTracerProvider();
 provider.register();
@@ -42,13 +42,14 @@ registerInstrumentations({
 
 aws-sdk instrumentation has few options available to choose from. You can set the following:
 
-| Options                           | Type                                      | Description                                                                                                                |
-| --------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `preRequestHook`                  | `AwsSdkRequestCustomAttributeFunction`    | Hook called before request send, which allow to add custom attributes to span.                                             |
-| `responseHook`                    | `AwsSdkResponseCustomAttributeFunction`   | Hook for adding custom attributes when response is received from aws.                                                      |
-| `sqsProcessHook`                  | `AwsSdkSqsProcessCustomAttributeFunction` | Hook called after starting sqs `process` span (for each sqs received message), which allow to add custom attributes to it. |
-| `suppressInternalInstrumentation` | `boolean`                                 | Most aws operation use http requests under the hood. Set this to `true` to hide all underlying http spans.                 |
-| `sqsExtractContextPropagationFromPayload` | `boolean` | Will parse and extract context propagation headers from SQS Payload, false by default. [When should it be used?](./doc/sns.md#integration-with-sqs)|
+| Options                                   | Type                                      | Description                                                                                                                                                                     |
+| ----------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preRequestHook`                          | `AwsSdkRequestCustomAttributeFunction`    | Hook called before request send, which allow to add custom attributes to span.                                                                                                  |
+| `responseHook`                            | `AwsSdkResponseCustomAttributeFunction`   | Hook for adding custom attributes when response is received from aws.                                                                                                           |
+| `sqsProcessHook`                          | `AwsSdkSqsProcessCustomAttributeFunction` | Hook called after starting sqs `process` span (for each sqs received message), which allow to add custom attributes to it.                                                      |
+| `suppressInternalInstrumentation`         | `boolean`                                 | Most aws operation use http requests under the hood. Set this to `true` to hide all underlying http spans.                                                                      |
+| `sqsExtractContextPropagationFromPayload` | `boolean`                                 | Will parse and extract context propagation headers from SQS Payload, false by default. [When should it be used?](./doc/sns.md#integration-with-sqs)                             |
+| `dynamoDBStatementSerializer`             | `AwsSdkDynamoDBStatementSerializer`       | AWS SDK instrumentation will serialize DynamoDB commands to the `db.statement` attribute using the specified function. Defaults to using a serializer that returns `undefined`. |
 
 ## Span Attributes
 
@@ -82,8 +83,8 @@ Usage example:
 ```js
 awsInstrumentationConfig = {
   preRequestHook: (span, request) => {
-    if (span.serviceName === "s3") {
-      span.setAttribute("s3.bucket.name", request.commandInput["Bucket"]);
+    if (span.serviceName === 's3') {
+      span.setAttribute('s3.bucket.name', request.commandInput['Bucket']);
     }
   },
 };
