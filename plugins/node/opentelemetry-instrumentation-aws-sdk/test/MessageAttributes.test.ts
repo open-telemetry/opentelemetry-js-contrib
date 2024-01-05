@@ -17,15 +17,35 @@
 import { expect } from 'expect';
 import {
   MAX_MESSAGE_ATTRIBUTES,
+  contextGetter,
   contextSetter,
   injectPropagationContext,
   addPropagationFieldsToAttributeNames,
 } from '../src/services/MessageAttributes';
+import { SNS, SQS } from '../src/aws-sdk.types';
 
 describe('MessageAttributes', () => {
   describe('MAX_MESSAGE_ATTRIBUTES', () => {
     it('should be 10', () => {
       expect(MAX_MESSAGE_ATTRIBUTES).toBe(10);
+    });
+  });
+
+  describe('contextGetter', () => {
+    it('returns context keys if there are available attributes', () => {
+      const contextCarrier = {
+        key1: { DataType: 'String', StringValue: 'value1' },
+      };
+      const expectedKeys = ['key1'];
+
+      expect(contextGetter.keys(contextCarrier)).toEqual(expectedKeys);
+    });
+
+    it('returns empty context keys if there are no available attributes', () => {
+      let contextCarrier = undefined;
+      const expectedKeys: string[] = [];
+
+      expect(contextGetter.keys(contextCarrier as unknown as (SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap))).toEqual(expectedKeys);
     });
   });
 
