@@ -42,10 +42,16 @@ describe('MessageAttributes', () => {
     });
 
     it('returns empty context keys if there are no available attributes', () => {
-      let contextCarrier = undefined;
+      const contextCarrier = undefined;
       const expectedKeys: string[] = [];
 
-      expect(contextGetter.keys(contextCarrier as unknown as (SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap))).toEqual(expectedKeys);
+      expect(
+        contextGetter.keys(
+          contextCarrier as unknown as
+            | SQS.MessageBodyAttributeMap
+            | SNS.MessageAttributeMap
+        )
+      ).toEqual(expectedKeys);
     });
   });
 
