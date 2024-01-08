@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.34.0...instrumentation-bunyan-v0.34.1) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.33.0...instrumentation-bunyan-v0.34.0) (2023-12-07)
+
+
+### Features
+
+* **instrumentation-bunyan:** add log sending to Logs Bridge API ([#1713](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1713)) ([4a1d83c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4a1d83ccaa73fa0f11af1d775de4e89ceed75f4d))
+
 ## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.32.2...instrumentation-bunyan-v0.33.0) (2023-11-13)
 
 

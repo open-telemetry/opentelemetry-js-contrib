@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.34.0...host-metrics-v0.34.1) (2024-01-04)
+
+
+### Bug Fixes
+
+* **host-metrics:** bump minimum systeminformation version to 5.21.20 (security) ([#1868](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1868)) ([c59e666](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c59e666de2b1361ae80697d546633a7d3643ba00))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.33.2...host-metrics-v0.34.0) (2023-12-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **host-metrics:** use the package name as the default instrumentation scope name, to align with instrumentations ([#1822](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1822))
+
+### Features
+
+* **host-metrics:** use the package name as the default instrumentation scope name, to align with instrumentations ([#1822](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1822)) ([bcf3501](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bcf3501e623d0fa6af87eeeef0f1cdd2ef755857)), closes [#1782](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1782)
+
 ## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.33.1...host-metrics-v0.33.2) (2023-11-13)
 
 

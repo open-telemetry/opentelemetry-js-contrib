@@ -146,8 +146,9 @@ describe('Host Metrics', () => {
 
       hostMetrics = new HostMetrics({
         meterProvider,
-        name: 'opentelemetry-host-metrics',
+        name: '', // to get default instrumentation scope name
       });
+
       await hostMetrics.start();
 
       // Drop first frame cpu metrics, see
@@ -372,6 +373,11 @@ async function getRecords(
   assert(collectionResult != null);
   assert.strictEqual(collectionResult.resourceMetrics.scopeMetrics.length, 1);
   const scopeMetrics = collectionResult.resourceMetrics.scopeMetrics[0];
+  assert.strictEqual(
+    scopeMetrics.scope.name,
+    '@opentelemetry/host-metrics',
+    'default instrumentation scope name is the package name'
+  );
   const metricDataList = scopeMetrics.metrics.filter(
     metric => metric.descriptor.name === name
   );

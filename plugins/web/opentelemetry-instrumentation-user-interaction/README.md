@@ -20,6 +20,8 @@ npm install --save @opentelemetry/instrumentation-user-interaction
 
 ## Usage
 
+### Initialize
+
 ```js
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
@@ -80,6 +82,67 @@ function getData(url) {
 
 // now click on buttons
 
+```
+
+### Send spans for different events
+
+By default, only `click` events are automatically instrumented. To automatically instrument other events, specify the events that should be captured for telemetry. Most [HTMLElement interface events](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement#events) are supported.
+
+```js
+import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+
+// ...general opentelemetry configuration
+
+registerInstrumentations({
+  instrumentations: [
+    new UserInteractionInstrumentation({
+      eventNames: ['submit', 'click', 'keypress'],
+    }),
+  ],
+});
+```
+
+### Prevent spans from recording
+
+```js
+import { UserInteractionInstrumentation } from '@opentelemetryinstrumentation-user-interaction';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+
+
+// ...general opentelemetry configuration
+
+registerInstrumentations({
+  instrumentations: [
+    new UserInteractionInstrumentation({
+      shouldPreventSpanCreation: () => {
+        return true;
+      },
+    }),
+  ],
+});
+```
+
+### Add extra attributes to spans
+
+To attach extra attributes to user interaction spans, provide a callback function to the `shouldPreventSpanCreation` option:
+
+```js
+import { UserInteractionInstrumentation } from '@opentelemetryinstrumentation-user-interaction';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+
+// ...general opentelemetry configuration
+
+registerInstrumentations({
+  instrumentations: [
+    new UserInteractionInstrumentation({
+      shouldPreventSpanCreation: (event, element, span) => {
+        span.setAttribute('target.id', element.id);
+        // etc..
+      }
+    }),
+  ],
+});
 ```
 
 ## Example Screenshots
