@@ -16,7 +16,10 @@
 
 import * as assert from 'assert';
 import { azureFunctionsDetector } from '../../src/detectors/AzureFunctionsDetector';
+import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { detectResourcesSync } from '@opentelemetry/resources';
+import { AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE } from '../../src/types';
 
 describe('AzureFunctionsDetector', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -35,7 +38,9 @@ describe('AzureFunctionsDetector', () => {
     process.env.FUNCTIONS_EXTENSION_VERSION = '~4';
     process.env.WEBSITE_MEMORY_LIMIT_MB = '1000';
 
-    const resource = azureFunctionsDetector.detect();
+    const resource = detectResourcesSync({
+      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+    });
     assert.ok(resource);
     const attributes = resource.attributes;
     assert.strictEqual(
@@ -65,6 +70,17 @@ describe('AzureFunctionsDetector', () => {
     assert.strictEqual(
       attributes[SemanticResourceAttributes.FAAS_VERSION],
       '~4'
+    );
+
+    // Should not detect app service values
+    assert.strictEqual(
+      attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+      undefined
+    );
+
+    assert.strictEqual(
+      attributes[AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE],
+      undefined
     );
   });
 });
