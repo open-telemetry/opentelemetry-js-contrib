@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.34.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.34.4...instrumentation-pino-v0.34.5) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.0 to ^0.35.1
+
 ## [0.34.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.34.3...instrumentation-pino-v0.34.4) (2023-12-07)
 
 
