@@ -40,8 +40,8 @@ export class HostMetrics extends BaseMetrics {
     observableResult: api.BatchObservableResult,
     cpuUsages: CpuUsageData[]
   ): void {
-    const stateAttr = enums.METRIC_ATTRIBUTES.SYSTEM_CPU_STATE;
-    const cpuAttr = enums.METRIC_ATTRIBUTES.SYSTEM_CPU_LOGICAL_NUMBER;
+    const stateAttr = enums.ATTRIBUTE_NAMES.SYSTEM_CPU_STATE;
+    const cpuAttr = enums.ATTRIBUTE_NAMES.SYSTEM_CPU_LOGICAL_NUMBER;
 
     for (let i = 0, j = cpuUsages.length; i < j; i++) {
       const cpuUsage = cpuUsages[i];
@@ -93,25 +93,27 @@ export class HostMetrics extends BaseMetrics {
     observableResult: api.BatchObservableResult,
     processCpuUsage: ProcessCpuUsageData
   ): void {
+    const stateAttr = enums.ATTRIBUTE_NAMES.PROCESS_CPU_STATE;
+
     observableResult.observe(this._processCpuTime, processCpuUsage.user, {
-      state: enums.CPU_LABELS.USER,
+      [stateAttr]: enums.CPU_LABELS.USER,
     });
     observableResult.observe(this._processCpuTime, processCpuUsage.system, {
-      state: enums.CPU_LABELS.SYSTEM,
+      [stateAttr]: enums.CPU_LABELS.SYSTEM,
     });
 
     observableResult.observe(
       this._processCpuUtilization,
       processCpuUsage.userP,
       {
-        state: enums.CPU_LABELS.USER,
+        [stateAttr]: enums.CPU_LABELS.USER,
       }
     );
     observableResult.observe(
       this._processCpuUtilization,
       processCpuUsage.systemP,
       {
-        state: enums.CPU_LABELS.SYSTEM,
+        [stateAttr]: enums.CPU_LABELS.SYSTEM,
       }
     );
   }
@@ -120,18 +122,20 @@ export class HostMetrics extends BaseMetrics {
     observableResult: api.BatchObservableResult,
     memUsage: MemoryData
   ): void {
+    const stateAttr = enums.ATTRIBUTE_NAMES.SYSTEM_MEMORY_STATE;
+
     observableResult.observe(this._memoryUsage, memUsage.used, {
-      state: enums.MEMORY_LABELS.USED,
+      [stateAttr]: enums.MEMORY_LABELS.USED,
     });
     observableResult.observe(this._memoryUsage, memUsage.free, {
-      state: enums.MEMORY_LABELS.FREE,
+      [stateAttr]: enums.MEMORY_LABELS.FREE,
     });
 
     observableResult.observe(this._memoryUtilization, memUsage.usedP, {
-      state: enums.MEMORY_LABELS.USED,
+      [stateAttr]: enums.MEMORY_LABELS.USED,
     });
     observableResult.observe(this._memoryUtilization, memUsage.freeP, {
-      state: enums.MEMORY_LABELS.FREE,
+      [stateAttr]: enums.MEMORY_LABELS.FREE,
     });
   }
 
@@ -146,33 +150,36 @@ export class HostMetrics extends BaseMetrics {
     observableResult: api.BatchObservableResult,
     networkUsages: NetworkData[]
   ): void {
+    const deviceAttr = enums.ATTRIBUTE_NAMES.SYSTEM_DEVICE;
+    const directionAttr = enums.ATTRIBUTE_NAMES.SYSTEM_NETWORK_DIRECTION;
+
     for (let i = 0, j = networkUsages.length; i < j; i++) {
       const networkUsage = networkUsages[i];
       observableResult.observe(this._networkDropped, networkUsage.rx_dropped, {
-        [enums.NETWORK_LABELS.DEVICE]: networkUsage.iface,
-        direction: enums.NETWORK_LABELS.RECEIVE,
+        [deviceAttr]: networkUsage.iface,
+        [directionAttr]: enums.NETWORK_LABELS.RECEIVE,
       });
       observableResult.observe(this._networkDropped, networkUsage.tx_dropped, {
-        device: networkUsage.iface,
-        direction: enums.NETWORK_LABELS.TRANSMIT,
+        [deviceAttr]: networkUsage.iface,
+        [directionAttr]: enums.NETWORK_LABELS.TRANSMIT,
       });
 
       observableResult.observe(this._networkErrors, networkUsage.rx_errors, {
-        device: networkUsage.iface,
-        direction: enums.NETWORK_LABELS.RECEIVE,
+        [deviceAttr]: networkUsage.iface,
+        [directionAttr]: enums.NETWORK_LABELS.RECEIVE,
       });
       observableResult.observe(this._networkErrors, networkUsage.tx_errors, {
-        device: networkUsage.iface,
-        direction: enums.NETWORK_LABELS.TRANSMIT,
+        [deviceAttr]: networkUsage.iface,
+        [directionAttr]: enums.NETWORK_LABELS.TRANSMIT,
       });
 
       observableResult.observe(this._networkIo, networkUsage.rx_bytes, {
-        device: networkUsage.iface,
-        direction: enums.NETWORK_LABELS.RECEIVE,
+        [deviceAttr]: networkUsage.iface,
+        [directionAttr]: enums.NETWORK_LABELS.RECEIVE,
       });
       observableResult.observe(this._networkIo, networkUsage.tx_bytes, {
-        device: networkUsage.iface,
-        direction: enums.NETWORK_LABELS.TRANSMIT,
+        [deviceAttr]: networkUsage.iface,
+        [directionAttr]: enums.NETWORK_LABELS.TRANSMIT,
       });
     }
   }
