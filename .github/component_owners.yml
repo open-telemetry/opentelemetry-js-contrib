@@ -121,8 +121,8 @@ components:
     - t2t2
   plugins/web/opentelemetry-instrumentation-user-interaction:
     - obecny
-  plugins/web/opentelemetry-plugin-react-load: []
-    # Unmaintained?
+  plugins/web/opentelemetry-plugin-react-load:
+    - martinkuba
   propagators/opentelemetry-propagator-aws-xray:
     - carolabadeer
   propagators/opentelemetry-propagator-grpc-census-binary: []

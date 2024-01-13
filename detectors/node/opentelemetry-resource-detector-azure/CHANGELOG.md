@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.2.2...resource-detector-azure-v0.2.3) (2024-01-04)
+
+
+### Bug Fixes
+
+* Fix Azure Fns Detector When Running with App Service Detector ([#1884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1884)) ([006c963](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/006c963721b2040416e312d7e469fdd9755410d7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.0 to ^0.35.1
+
 ## [0.2.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.2.1...resource-detector-azure-v0.2.2) (2023-12-07)
 
 
