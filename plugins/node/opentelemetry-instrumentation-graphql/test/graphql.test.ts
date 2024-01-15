@@ -689,6 +689,37 @@ describe('graphql', () => {
     });
   });
 
+  describe('when ignoreResolveSpans is true', () => {
+    beforeEach(() => {
+      create({
+        ignoreResolveSpans: true,
+      });
+    });
+
+    afterEach(() => {
+      exporter.reset();
+      graphQLInstrumentation.disable();
+    });
+
+    it('should not create a span for a defined resolver', async () => {
+      const schema = buildSchema(`
+        type Query {
+          hello: String
+        }
+      `);
+
+      const rootValue = {
+        hello: () => 'world',
+      };
+
+      await graphql({ schema, source: '{ hello }', rootValue });
+      const resolveSpans = exporter
+        .getFinishedSpans()
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
+      assert.deepStrictEqual(resolveSpans.length, 0);
+    });
+  });
+
   describe('when allowValues is set to true', () => {
     describe('AND source is query with param', () => {
       let spans: ReadableSpan[];
