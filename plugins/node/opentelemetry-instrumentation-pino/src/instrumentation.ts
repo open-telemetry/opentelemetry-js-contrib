@@ -31,6 +31,12 @@ import { VERSION } from './version';
 
 const pinoVersions = ['>=5.14.0 <9'];
 
+const DEFAULT_LOG_KEYS = {
+  traceId: 'trace_id',
+  spanId: 'span_id',
+  traceFlags: 'trace_flags',
+};
+
 export class PinoInstrumentation extends InstrumentationBase {
   constructor(config: PinoInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-pino', VERSION, config);
@@ -137,10 +143,12 @@ export class PinoInstrumentation extends InstrumentationBase {
         return {};
       }
 
+      const logKeys = instrumentation.getConfig().logKeys ?? DEFAULT_LOG_KEYS;
+
       const record = {
-        trace_id: spanContext.traceId,
-        span_id: spanContext.spanId,
-        trace_flags: `0${spanContext.traceFlags.toString(16)}`,
+        [logKeys.traceId]: spanContext.traceId,
+        [logKeys.spanId]: spanContext.spanId,
+        [logKeys.traceFlags]: `0${spanContext.traceFlags.toString(16)}`,
       };
 
       instrumentation._callHook(span, record, level);
