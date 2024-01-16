@@ -24,7 +24,7 @@ import {
 import { PerfHooksInstrumentation } from '../src';
 import * as assert from 'assert';
 
-const EXPORT_INTERVAL = 200;
+const EXPORT_INTERVAL = 20;
 
 const metricExporter = new InMemoryMetricExporter(AggregationTemporality.DELTA);
 const metricReader = new PeriodicExportingMetricReader({
