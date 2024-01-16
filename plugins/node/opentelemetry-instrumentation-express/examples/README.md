@@ -13,7 +13,10 @@ shows key aspects of tracing such as
 ## Installation
 
 ```sh
-# from this directory
+# from this directory, install all necessary dependencies from the workspace
+npm run setup
+
+# OR alternatively, install dependencies from npm as a standalone example app
 npm install --workspaces=false
 ```
 

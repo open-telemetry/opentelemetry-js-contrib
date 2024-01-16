@@ -1,14 +1,15 @@
 {
   "name": "express-example",
   "private": true,
-  "version": "0.28.0",
+  "version": "0.34.1",
   "description": "Example of Express integration with OpenTelemetry",
   "scripts": {
     "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",
     "zipkin:client": "cross-env EXPORTER=zipkin ts-node src/client.ts",
     "jaeger:server": "cross-env EXPORTER=jaeger ts-node src/server.ts",
     "jaeger:client": "cross-env EXPORTER=jaeger ts-node src/client.ts",
-    "compile": "tsc -p ."
+    "compile": "tsc -p .",
+    "setup": "cd ../../../../ && npm ci && cd plugins/node/opentelemetry-instrumentation-express && npm run compile && cd examples && npm run compile"
   },
   "repository": {
     "type": "git",
