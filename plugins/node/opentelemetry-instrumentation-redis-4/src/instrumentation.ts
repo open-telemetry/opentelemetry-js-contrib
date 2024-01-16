@@ -33,6 +33,7 @@ import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import type { MultiErrorReply } from './internal-types';
 
 const OTEL_OPEN_SPANS = Symbol(
   'opentelemetry.instruemntation.redis.open_spans'
@@ -289,55 +290,30 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         return execRes
           .then((redisRes: unknown[]) => {
             const openSpans = this[OTEL_OPEN_SPANS];
-            if (!openSpans) {
-              return plugin._diag.error(
-                'cannot find open spans to end for redis multi command'
-              );
-            }
-            if (redisRes.length !== openSpans.length) {
-              return plugin._diag.error(
-                'number of multi command spans does not match response from redis'
-              );
-            }
-            for (let i = 0; i < openSpans.length; i++) {
-              const { span, commandName, commandArgs } = openSpans[i];
-              const currCommandRes = redisRes[i];
-              if (currCommandRes instanceof Error) {
+            plugin._endSpansWithRedisReplies(openSpans, redisRes);
+            return redisRes;
+          })
+          .catch((err: Error) => {
+            const openSpans = this[OTEL_OPEN_SPANS];
+            if (err.constructor.name === 'MultiErrorReply') {
+              const multiErr = err as MultiErrorReply;
+              plugin._endSpansWithRedisReplies(openSpans, multiErr.replies);
+            } else {
+              if (!openSpans) {
+                return plugin._diag.error(
+                  'cannot find open spans to end for redis multi command'
+                );
+              }
+              for (let i = 0; i < openSpans.length; i++) {
+                const { span, commandName, commandArgs } = openSpans[i];
                 plugin._endSpanWithResponse(
                   span,
                   commandName,
                   commandArgs,
                   null,
-                  currCommandRes
-                );
-              } else {
-                plugin._endSpanWithResponse(
-                  span,
-                  commandName,
-                  commandArgs,
-                  currCommandRes,
-                  undefined
+                  err
                 );
               }
-            }
-            return redisRes;
-          })
-          .catch((err: Error) => {
-            const openSpans = this[OTEL_OPEN_SPANS];
-            if (!openSpans) {
-              return plugin._diag.error(
-                'cannot find open spans to end for redis multi command'
-              );
-            }
-            for (let i = 0; i < openSpans.length; i++) {
-              const { span, commandName, commandArgs } = openSpans[i];
-              plugin._endSpanWithResponse(
-                span,
-                commandName,
-                commandArgs,
-                null,
-                err
-              );
             }
             return Promise.reject(err);
           });
@@ -485,6 +461,43 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       });
     }
     return res;
+  }
+
+  private _endSpansWithRedisReplies(
+    openSpans: Array<MutliCommandInfo>,
+    replies: unknown[]
+  ) {
+    if (!openSpans) {
+      return this._diag.error(
+        'cannot find open spans to end for redis multi command'
+      );
+    }
+    if (replies.length !== openSpans.length) {
+      return this._diag.error(
+        'number of multi command spans does not match response from redis'
+      );
+    }
+    for (let i = 0; i < openSpans.length; i++) {
+      const { span, commandName, commandArgs } = openSpans[i];
+      const currCommandRes = replies[i];
+      if (currCommandRes instanceof Error) {
+        this._endSpanWithResponse(
+          span,
+          commandName,
+          commandArgs,
+          null,
+          currCommandRes
+        );
+      } else {
+        this._endSpanWithResponse(
+          span,
+          commandName,
+          commandArgs,
+          currCommandRes,
+          undefined
+        );
+      }
+    }
   }
 
   private _endSpanWithResponse(

@@ -32,7 +32,7 @@ const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
-import { createClient, WatchError } from 'redis';
+import * as redis from 'redis';
 import {
   Span,
   SpanKind,
@@ -68,7 +68,7 @@ describe('redis@^4.0.0', () => {
   let client: any;
 
   beforeEach(async () => {
-    client = createClient({
+    client = redis.createClient({
       url: redisTestUrl,
     });
     await context.with(suppressTracing(context.active()), async () => {
@@ -187,7 +187,7 @@ describe('redis@^4.0.0', () => {
 
   describe('client connect', () => {
     it('produces a span', async () => {
-      const newClient = createClient({
+      const newClient = redis.createClient({
         url: redisTestUrl,
       });
 
@@ -223,7 +223,7 @@ describe('redis@^4.0.0', () => {
       const redisURL = `redis://${redisTestConfig.host}:${
         redisTestConfig.port + 1
       }`;
-      const newClient = createClient({
+      const newClient = redis.createClient({
         url: redisURL,
       });
 
@@ -246,7 +246,7 @@ describe('redis@^4.0.0', () => {
       const expectAttributeConnString = `redis://${redisTestConfig.host}:${
         redisTestConfig.port + 1
       }`;
-      const newClient = createClient({
+      const newClient = redis.createClient({
         url: redisURL,
       });
 
@@ -273,7 +273,7 @@ describe('redis@^4.0.0', () => {
       const expectAttributeConnString = `redis://${redisTestConfig.host}:${
         redisTestConfig.port + 1
       }?db=mydb`;
-      const newClient = createClient({
+      const newClient = redis.createClient({
         url: redisURL,
       });
 
@@ -377,11 +377,17 @@ describe('redis@^4.0.0', () => {
     });
 
     it('multi command with error', async () => {
-      const [setReply, incrReply] = await client
-        .multi()
-        .set('key', 'value')
-        .incr('key')
-        .exec(); // ['OK', 'ReplyError']
+      let replies;
+      try {
+        replies = await client.multi().set('key', 'value').incr('key').exec();
+      } catch (err) {
+        // Starting in redis@4.6.12 `multi().exec()` with *throw* a
+        // MultiErrorReply, with `err.replies`, if any of the commands error.
+        assert.ok(err instanceof redis.MultiErrorReply);
+        replies = err.replies;
+      }
+      const [setReply, incrReply] = replies;
+
       assert.strictEqual(setReply, 'OK'); // verify we did not screw up the normal functionality
       assert.ok(incrReply instanceof Error); // verify we did not screw up the normal functionality
 
@@ -406,7 +412,7 @@ describe('redis@^4.0.0', () => {
         await client.multi().get(watchedKey).exec();
         assert.fail('expected WatchError to be thrown and caught in try/catch');
       } catch (error) {
-        assert.ok(error instanceof WatchError);
+        assert.ok(error instanceof redis.WatchError);
       }
 
       // All the multi spans' status are set to ERROR.
