@@ -36,7 +36,7 @@ sdk.start()
 
 Go to [`localhost:9464/metrics`](http://localhost:9464/metrics), and you should see:
 
-```
+```txt
 # HELP nodejs_performance_event_loop_utilization Event loop utilization
 # UNIT nodejs_performance_event_loop_utilization 1
 # TYPE nodejs_performance_event_loop_utilization gauge
@@ -44,7 +44,8 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 ```
 
 > Metrics will only be exported after it has collected two ELU readings (at least approximately `PerfHooksInstrumentationConfig.eventLoopUtilizationMeasurementInterval` milliseconds after initialization). Otherwise, you may see:
-> ```
+>
+> ```txt
 > # no registered metrics
 > ```
 
@@ -77,4 +78,3 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-pg
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-pg.svg
-
