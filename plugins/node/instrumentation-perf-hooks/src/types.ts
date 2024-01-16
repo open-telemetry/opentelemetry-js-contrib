@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface PerfHooksInstrumentationConfig extends InstrumentationConfig {
   /**
