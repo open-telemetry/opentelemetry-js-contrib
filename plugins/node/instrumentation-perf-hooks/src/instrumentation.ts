@@ -82,6 +82,7 @@ export class PerfHooksInstrumentation extends InstrumentationBase {
   }
 
   override disable() {
+    this._clearELU();
     clearInterval(this._interval);
     this._interval = undefined;
   }

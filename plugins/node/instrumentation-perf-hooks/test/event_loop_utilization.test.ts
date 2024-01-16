@@ -86,4 +86,12 @@ describe('nodejs.performance.event_loop.utilization', () => {
     );
     assert.strictEqual(metrics[0].descriptor.unit, '1');
   });
+
+  it('should stop exporting metrics when disabled', async () => {
+    instrumentation.disable();
+    await new Promise(resolve => setTimeout(resolve, EXPORT_INTERVAL));
+    const resourceMetrics = metricExporter.getMetrics();
+    const scopeMetrics = resourceMetrics[0].scopeMetrics;
+    assert.strictEqual(scopeMetrics.length, 0);
+  });
 });
