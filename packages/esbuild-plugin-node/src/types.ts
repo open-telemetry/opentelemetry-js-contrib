@@ -47,9 +47,42 @@ type _RemoveFunctions<T> = {
 // _RemoveFunctions does not work on optional fields, so first make the type required then apply Partial to the result
 export type RemoveFunctions<T> = Partial<_RemoveFunctions<Required<T>>>;
 
+// type BuiltinPackage =
+//   | '@opentelemetry/instrumentation-dns'
+//   | '@opentelemetry/instrumentation-fs'
+//   | '@opentelemetry/instrumentation-http'
+//   | '@opentelemetry/instrumentation-net';
+
+// export type NonBuiltinPackage = Exclude<
+//   keyof InstrumentationConfigMap,
+//   BuiltinPackage
+// >;
+
+// type NonBuiltinInstrumentationConfigMap = Pick<
+//   InstrumentationConfigMap,
+//   NonBuiltinPackage
+// >;
+
+// export type EsbuildInstrumentationConfigMap = {
+//   [K in keyof InstrumentationConfigMap]: RemoveFunctions<
+//     NonBuiltinInstrumentationConfigMap[K]
+//   >;
+// };
+
+type BuiltinPackages =
+  | '@opentelemetry/instrumentation-dns'
+  | '@opentelemetry/instrumentation-fs'
+  | '@opentelemetry/instrumentation-http';
+
+type NonBuiltinInstrumentationConfigMap = Omit<
+  InstrumentationConfigMap,
+  BuiltinPackages
+>;
+
+// TODO: Remove builtins from this
 export type EsbuildInstrumentationConfigMap = {
-  [K in keyof InstrumentationConfigMap]: RemoveFunctions<
-    InstrumentationConfigMap[K]
+  [K in keyof NonBuiltinInstrumentationConfigMap]: RemoveFunctions<
+    NonBuiltinInstrumentationConfigMap[K]
   >;
 };
 

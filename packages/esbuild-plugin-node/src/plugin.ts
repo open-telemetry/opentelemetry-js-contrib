@@ -16,7 +16,10 @@
 
 import { OnLoadArgs, OpenTelemetryPluginParams } from './types';
 import { Plugin, PluginBuild } from 'esbuild';
-import { instrumentations, otelPackageToInstrumentationConfig } from './config';
+import {
+  instrumentations,
+  otelPackageToInstrumentationConfig,
+} from './config/main';
 
 import { builtinModules } from 'module';
 import { dirname } from 'path';

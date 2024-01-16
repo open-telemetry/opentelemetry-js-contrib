@@ -14,24 +14,65 @@
  * limitations under the License.
  */
 
-import { awsSdkInstrumentationConfig, awsSdkInstrumentations } from './aws-sdk';
 import {
-  fastifyInstrumentationConfig,
-  fastifyInstrumentations,
-} from './fastify';
-import { pinoInstrumentationConfig, pinoInstrumentations } from './pino';
+  InstrumentationBase,
+  InstrumentationModuleDefinition,
+} from '@opentelemetry/instrumentation';
 
-import { InstrumentationNodeModuleDefinition } from '@opentelemetry/instrumentation';
+import { EsbuildInstrumentationConfigMap } from '../types';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 
-export const instrumentations: InstrumentationNodeModuleDefinition<unknown>[] =
-  [
-    ...fastifyInstrumentations,
-    ...pinoInstrumentations,
-    ...awsSdkInstrumentations,
-  ];
+export const instrumentations: InstrumentationModuleDefinition<any>[] =
+  getNodeAutoInstrumentations()
+    .flatMap(i => {
+      // This is because the GrpcInstrumentation does not extend InstrumentationBase
+      // Should we instead have it extend that?
+      if (i instanceof InstrumentationBase) {
+        return i.init() ?? [];
+      }
+      return [];
+    })
+    .filter(Boolean);
 
-export const otelPackageToInstrumentationConfig = {
-  ...pinoInstrumentationConfig,
-  ...fastifyInstrumentationConfig,
-  ...awsSdkInstrumentationConfig,
-};
+function configGenerator<T extends { enabled?: boolean }>(
+  config?: T
+): string | undefined {
+  if (!config) return;
+  return JSON.stringify(
+    Object.fromEntries(
+      Object.entries(config).filter(([, v]) => typeof v !== 'function')
+    )
+  );
+}
+
+export function getOtelPackageToInstrumentationConfig() {
+  const otelPackageToInstrumentationConfig: Record<
+    string,
+    {
+      oTelInstrumentationPackage: keyof EsbuildInstrumentationConfigMap;
+      oTelInstrumentationClass: string;
+      configGenerator: <T extends { enabled?: boolean }>(
+        config?: T
+      ) => string | undefined;
+    }
+  > = {};
+  for (const instrumentation of getNodeAutoInstrumentations()) {
+    const instrumentationModuleDefinitions = [instrumentation.init()]
+      .flat()
+      .filter(Boolean);
+    for (const instrumentationModuleDefinition of instrumentationModuleDefinitions) {
+      otelPackageToInstrumentationConfig[instrumentationModuleDefinition.name] =
+        {
+          oTelInstrumentationPackage:
+            instrumentation.instrumentationName as keyof EsbuildInstrumentationConfigMap,
+          // TODO: Do we need to worry about minification/obfuscation messing with this class name?
+          oTelInstrumentationClass: instrumentation.constructor.name,
+          configGenerator,
+        };
+    }
+  }
+  return otelPackageToInstrumentationConfig;
+}
+
+export const otelPackageToInstrumentationConfig =
+  getOtelPackageToInstrumentationConfig();
