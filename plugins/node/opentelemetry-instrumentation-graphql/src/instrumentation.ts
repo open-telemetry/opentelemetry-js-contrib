@@ -59,6 +59,7 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
   mergeItems: false,
   depth: -1,
   allowValues: false,
+  ignoreResolveSpans: false,
 };
 
 const supportedVersions = ['>=14'];
@@ -474,7 +475,11 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     if (!contextValue) {
       contextValue = {};
     }
-    if (contextValue[OTEL_GRAPHQL_DATA_SYMBOL]) {
+
+    if (
+      contextValue[OTEL_GRAPHQL_DATA_SYMBOL] ||
+      this._getConfig().ignoreResolveSpans
+    ) {
       return {
         schema,
         document,
