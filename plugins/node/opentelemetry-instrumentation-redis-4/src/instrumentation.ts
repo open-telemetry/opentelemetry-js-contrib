@@ -295,25 +295,16 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
           })
           .catch((err: Error) => {
             const openSpans = this[OTEL_OPEN_SPANS];
-            if (err.constructor.name === 'MultiErrorReply') {
-              const multiErr = err as MultiErrorReply;
-              plugin._endSpansWithRedisReplies(openSpans, multiErr.replies);
+            if (!openSpans) {
+              plugin._diag.error(
+                'cannot find open spans to end for redis multi command'
+              );
             } else {
-              if (!openSpans) {
-                return plugin._diag.error(
-                  'cannot find open spans to end for redis multi command'
-                );
-              }
-              for (let i = 0; i < openSpans.length; i++) {
-                const { span, commandName, commandArgs } = openSpans[i];
-                plugin._endSpanWithResponse(
-                  span,
-                  commandName,
-                  commandArgs,
-                  null,
-                  err
-                );
-              }
+              const replies =
+                err.constructor.name === 'MultiErrorReply'
+                  ? (err as MultiErrorReply).replies
+                  : new Array(openSpans.length).fill(err);
+              plugin._endSpansWithRedisReplies(openSpans, replies);
             }
             return Promise.reject(err);
           });
