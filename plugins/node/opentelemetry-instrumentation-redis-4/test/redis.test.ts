@@ -33,7 +33,7 @@ const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
-import * as redis from 'redis';
+import { createClient, WatchError } from 'redis';
 import {
   Span,
   SpanKind,
@@ -69,7 +69,7 @@ describe('redis@^4.0.0', () => {
   let client: any;
 
   beforeEach(async () => {
-    client = redis.createClient({
+    client = createClient({
       url: redisTestUrl,
     });
     await context.with(suppressTracing(context.active()), async () => {
@@ -188,7 +188,7 @@ describe('redis@^4.0.0', () => {
 
   describe('client connect', () => {
     it('produces a span', async () => {
-      const newClient = redis.createClient({
+      const newClient = createClient({
         url: redisTestUrl,
       });
 
@@ -224,7 +224,7 @@ describe('redis@^4.0.0', () => {
       const redisURL = `redis://${redisTestConfig.host}:${
         redisTestConfig.port + 1
       }`;
-      const newClient = redis.createClient({
+      const newClient = createClient({
         url: redisURL,
       });
 
@@ -247,7 +247,7 @@ describe('redis@^4.0.0', () => {
       const expectAttributeConnString = `redis://${redisTestConfig.host}:${
         redisTestConfig.port + 1
       }`;
-      const newClient = redis.createClient({
+      const newClient = createClient({
         url: redisURL,
       });
 
@@ -274,7 +274,7 @@ describe('redis@^4.0.0', () => {
       const expectAttributeConnString = `redis://${redisTestConfig.host}:${
         redisTestConfig.port + 1
       }?db=mydb`;
-      const newClient = redis.createClient({
+      const newClient = createClient({
         url: redisURL,
       });
 
@@ -412,7 +412,7 @@ describe('redis@^4.0.0', () => {
         await client.multi().get(watchedKey).exec();
         assert.fail('expected WatchError to be thrown and caught in try/catch');
       } catch (error) {
-        assert.ok(error instanceof redis.WatchError);
+        assert.ok(error instanceof WatchError);
       }
 
       // All the multi spans' status are set to ERROR.
