@@ -480,23 +480,16 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     for (let i = 0; i < openSpans.length; i++) {
       const { span, commandName, commandArgs } = openSpans[i];
       const currCommandRes = replies[i];
-      if (currCommandRes instanceof Error) {
-        this._endSpanWithResponse(
-          span,
-          commandName,
-          commandArgs,
-          null,
-          currCommandRes
-        );
-      } else {
-        this._endSpanWithResponse(
-          span,
-          commandName,
-          commandArgs,
-          currCommandRes,
-          undefined
-        );
-      }
+      const [res, err] = currCommandRes instanceof Error ?
+        [null, curCommandRes] :
+        [curCommandRes, undefined];
+      this._endSpanWithResponse(
+        span,
+        commandName,
+        commandArgs,
+        res,
+        err
+      );
     }
   }
 
