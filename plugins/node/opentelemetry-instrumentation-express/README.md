@@ -142,6 +142,16 @@ const expressInstrumentation = new ExpressInstrumentation({
 });
 ```
 
+## Semantic Conventions
+
+This package implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute  | Short Description                  | Notes |
+| ---------- | ---------------------------------- | ----- |
+| HTTP_ROUTE | The matched route (path template). |       |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
