@@ -148,9 +148,9 @@ This package implements Semantic Convention [Version 1.7.0](https://github.com/o
 
 Attributes collected:
 
-| Attribute  | Short Description                  | Notes |
-| ---------- | ---------------------------------- | ----- |
-| HTTP_ROUTE | The matched route (path template). |       |
+| Attribute    | Short Description                  | Notes             |
+| ------------ | ---------------------------------- | ----------------- |
+| `http.route` | The matched route (path template). | Key: `HTTP_ROUTE` |
 
 ## Useful links
 
