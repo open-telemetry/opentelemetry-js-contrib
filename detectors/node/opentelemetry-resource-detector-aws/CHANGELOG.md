@@ -54,6 +54,12 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.0 to ^0.35.1
+
 ## [1.3.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.3.0...resource-detector-aws-v1.3.1) (2023-08-14)
 
 

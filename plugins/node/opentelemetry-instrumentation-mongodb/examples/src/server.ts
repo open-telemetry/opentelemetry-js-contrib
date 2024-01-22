@@ -2,9 +2,9 @@ import * as api from '@opentelemetry/api';
 
 import { setupTracing } from './tracer';
 
-import { accessDB } from './utils';
-
 setupTracing('example-mongodb-server')
+
+import { accessDB } from './utils';
 
 import * as http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
