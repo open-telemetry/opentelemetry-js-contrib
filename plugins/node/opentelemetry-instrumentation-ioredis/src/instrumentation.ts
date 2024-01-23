@@ -35,6 +35,19 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
 };
 
+function getModuleExports(module: any): any {
+  // The Symbol.toStringTag module check is unreliable starting from import-in-the-middle@1.7.2
+  // see https://github.com/DataDog/import-in-the-middle/issues/57 - once fixed this may start working again.
+  if (
+    module[Symbol.toStringTag] === 'Module' ||
+    (module.prototype == null && module.default.prototype != null)
+  ) {
+    return module.default;
+  } else {
+    return module;
+  }
+}
+
 export class IORedisInstrumentation extends InstrumentationBase<any> {
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
@@ -50,10 +63,7 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         'ioredis',
         ['>1', '<6'],
         (module, moduleVersion?: string) => {
-          const moduleExports =
-            module[Symbol.toStringTag] === 'Module'
-              ? module.default // ESM
-              : module; // CommonJS
+          const moduleExports = getModuleExports(module);
           diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
@@ -75,10 +85,7 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         },
         module => {
           if (module === undefined) return;
-          const moduleExports =
-            module[Symbol.toStringTag] === 'Module'
-              ? module.default // ESM
-              : module; // CommonJS
+          const moduleExports = getModuleExports(module);
           diag.debug('Removing patch for ioredis');
           this._unwrap(moduleExports.prototype, 'sendCommand');
           this._unwrap(moduleExports.prototype, 'connect');
