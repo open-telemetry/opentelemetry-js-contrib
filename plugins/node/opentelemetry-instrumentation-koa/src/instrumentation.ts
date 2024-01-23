@@ -36,10 +36,13 @@ import {
 function getModuleExports(module: any): any {
   // The Symbol.toStringTag module check is unreliable starting from import-in-the-middle@1.7.2
   // see https://github.com/DataDog/import-in-the-middle/issues/57 - once fixed this may start working again.
-  if(module[Symbol.toStringTag] === 'Module' || (module.prototype == null && module.default.prototype != null)){
+  if (
+    module[Symbol.toStringTag] === 'Module' ||
+    (module.prototype == null && module.default.prototype != null)
+  ) {
     return module.default;
   } else {
-    return module
+    return module;
   }
 }
 
@@ -66,8 +69,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       'koa',
       ['^2.0.0'],
       (module: any) => {
-        const moduleExports: typeof koa =
-          getModuleExports(module);
+        const moduleExports: typeof koa = getModuleExports(module);
         if (moduleExports == null) {
           return moduleExports;
         }
@@ -83,8 +85,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         return module;
       },
       (module: any) => {
-        const moduleExports: typeof koa =
-          getModuleExports(module);
+        const moduleExports: typeof koa = getModuleExports(module);
         api.diag.debug('Unpatching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
