@@ -34,19 +34,13 @@ import {
 } from './internal-types';
 
 function getModuleExports(module: any): any {
-  // This check is unreliable starting from import-in-the-middle@1.7.2
+  // The Symbol.toStringTag module check is unreliable starting from import-in-the-middle@1.7.2
   // see https://github.com/DataDog/import-in-the-middle/issues/57 - once fixed this may start working again.
-  const moduleExports =
-    module[Symbol.toStringTag] === 'Module'
-      ? module.default // ESM
-      : module; // CommonJS
-
-  // Try and fix it if we run into the bug linked above
-  if(module.prototype == null && module.default.prototype != null){
+  if(module[Symbol.toStringTag] === 'Module' || (module.prototype == null && module.default.prototype != null)){
     return module.default;
+  } else {
+    return module
   }
-
-  return moduleExports;
 }
 
 /** Koa instrumentation for OpenTelemetry */
