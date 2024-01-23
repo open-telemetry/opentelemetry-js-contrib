@@ -61,7 +61,7 @@ logger.info('foobar');
 | ----------------------- | ----------------- | ----------- |
 | `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
 | `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
-| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires.
+| `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |  
 
 ### Log sending
 
@@ -71,7 +71,7 @@ If the OpenTelemetry SDK is not configured with a Logger provider, then this wil
 
 Log sending can be disabled with the `disableLogSending: true` option.
 
-### Using OpenTelemetryWinstonTransport without instrumentation
+### Using OpenTelemetry Winston Transport without instrumentation
 
 This package exports the Winston transport class that is used to send records to the
 OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger
@@ -99,7 +99,7 @@ const winston = require('winston');
 
 const logger = new (winston.Logger)({
 transports: [
-    new (winston.transports.Console)(),
+    new winston.transports.Console(),
     new OpenTelemetryTransportv2()
 ]
 });
@@ -126,8 +126,7 @@ logHook: (span, record) => {
 ```
 
 Log injection can be disabled with the `disableLogCorrelation: true` option.
-
-`disableLogCorrelation` to be false. |
+|
 
 ### Supported versions
 
