@@ -18,6 +18,7 @@ import {
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
 import { RedisInstrumentation } from '../src';
+import type { MultiErrorReply } from '../src/internal-types';
 import * as assert from 'assert';
 
 import {
@@ -377,11 +378,16 @@ describe('redis@^4.0.0', () => {
     });
 
     it('multi command with error', async () => {
-      const [setReply, incrReply] = await client
-        .multi()
-        .set('key', 'value')
-        .incr('key')
-        .exec(); // ['OK', 'ReplyError']
+      let replies;
+      try {
+        replies = await client.multi().set('key', 'value').incr('key').exec();
+      } catch (err) {
+        // Starting in redis@4.6.12 `multi().exec()` will *throw* a
+        // MultiErrorReply, with `err.replies`, if any of the commands error.
+        replies = (err as MultiErrorReply).replies;
+      }
+      const [setReply, incrReply] = replies;
+
       assert.strictEqual(setReply, 'OK'); // verify we did not screw up the normal functionality
       assert.ok(incrReply instanceof Error); // verify we did not screw up the normal functionality
 
