@@ -33,6 +33,22 @@ import {
   KoaPatchedMiddleware,
 } from './internal-types';
 
+function getModuleExports(module: any): any {
+  // This check is unreliable starting from import-in-the-middle@1.7.2
+  // see https://github.com/DataDog/import-in-the-middle/issues/57 - once fixed this may start working again.
+  const moduleExports =
+    module[Symbol.toStringTag] === 'Module'
+      ? module.default // ESM
+      : module; // CommonJS
+
+  // Try and fix it if we run into the bug linked above
+  if(module.prototype == null && module.default.prototype != null){
+    return module.default;
+  }
+
+  return moduleExports;
+}
+
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   constructor(config: KoaInstrumentationConfig = {}) {
@@ -57,9 +73,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       ['^2.0.0'],
       (module: any) => {
         const moduleExports: typeof koa =
-          module[Symbol.toStringTag] === 'Module'
-            ? module.default // ESM
-            : module; // CommonJS
+          getModuleExports(module);
         if (moduleExports == null) {
           return moduleExports;
         }
@@ -76,9 +90,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       },
       (module: any) => {
         const moduleExports: typeof koa =
-          module[Symbol.toStringTag] === 'Module'
-            ? module.default // ESM
-            : module; // CommonJS
+          getModuleExports(module);
         api.diag.debug('Unpatching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
