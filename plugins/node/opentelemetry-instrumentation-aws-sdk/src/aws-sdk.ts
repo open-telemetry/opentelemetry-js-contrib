@@ -56,6 +56,7 @@ import {
   normalizeV3Request,
   removeSuffixFromStringIfExists,
 } from './utils';
+import { propwrap } from './propwrap';
 import { RequestMetadata } from './services/ServiceExtension';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -118,18 +119,16 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       '@smithy/middleware-stack',
       ['>=2.0.0'],
       (moduleExports, moduleVersion) => {
-        // XXX need full propwrap, i.e. any possible props other that `constructStack`
-        const newExports = {
-          get constructStack() {
-            return self._getV3ConstructStackPatch(
-              moduleVersion,
-              (moduleExports as any).constructStack
-            );
-          },
-        };
+        const newExports = propwrap(
+          moduleExports,
+          'constructStack',
+          (orig: any) => {
+            self._diag.debug('propwrapping aws-sdk v3 constructStack');
+            return self._getV3ConstructStackPatch(moduleVersion, orig);
+          }
+        );
         return newExports;
-      },
-      undefined // XXX Is no longer being able to unpatch an issue?
+      }
     );
 
     const v3SmithyClient = new InstrumentationNodeModuleDefinition<typeof AWS>(
