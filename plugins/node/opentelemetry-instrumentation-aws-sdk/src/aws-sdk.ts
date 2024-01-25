@@ -113,18 +113,23 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
     ]);
 
     // patch for @smithy/middleware-stack for aws-sdk packages v3.363.0+
-    const v3SmithyMiddlewareStackFile = new InstrumentationNodeModuleFile(
-      '@smithy/middleware-stack/dist-cjs/MiddlewareStack.js',
-      ['>=1.0.1'],
-      this.patchV3ConstructStack.bind(this),
-      this.unpatchV3ConstructStack.bind(this)
-    );
+    const self = this;
     const v3SmithyMiddlewareStack = new InstrumentationNodeModuleDefinition(
       '@smithy/middleware-stack',
       ['>=2.0.0'],
-      undefined,
-      undefined,
-      [v3SmithyMiddlewareStackFile]
+      (moduleExports, moduleVersion) => {
+        // XXX need full propwrap, i.e. any possible props other that `constructStack`
+        const newExports = {
+          get constructStack() {
+            return self._getV3ConstructStackPatch(
+              moduleVersion,
+              (moduleExports as any).constructStack
+            );
+          },
+        };
+        return newExports;
+      },
+      undefined // XXX Is no longer being able to unpatch an issue?
     );
 
     const v3SmithyClient = new InstrumentationNodeModuleDefinition<typeof AWS>(
