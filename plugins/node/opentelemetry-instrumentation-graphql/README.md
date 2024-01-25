@@ -58,7 +58,7 @@ registerInstrumentations({
 |    depth    |  number |       -1      |                       The maximum depth of fields/resolvers to instrument. When set to 0 it will not instrument fields and resolvers. When set to -1 it will instrument all fields and resolvers.                      |   |
 | allowValues | boolean |     false     | When set to true it will not remove attributes values from schema source.   By default all values that can be sensitive are removed and replaced with "*" |   |
 | ignoreTrivialResolveSpans | boolean | false | Don't create spans for the execution of the default resolver on object properties. |
-| ignoreResolveSpans | false | Don't create spans for resolvers, regardless if they are trivial or not. |
+| ignoreResolveSpans | boolean | false | Don't create spans for resolvers, regardless if they are trivial or not. |
 | responseHook | GraphQLInstrumentationExecutionResponseHook |     undefined     | Hook that allows adding custom span attributes based on the data returned from "execute" GraphQL action. |   |
 
 ## Verbosity
@@ -77,7 +77,7 @@ When a resolver function is not defined on the schema for a field, graphql will 
 
 ### ignoreResolveSpans
 
-The performance overhead for complex schemas with a lot of resolvers can be high due to the cheer amount of spans created. When ignoreResolveSpans is set to true, no spans for resolvers will created.
+The performance overhead for complex schemas with a lot of resolvers can be high due to the large number of spans created. When ignoreResolveSpans is set to true, no spans for resolvers will be created.
 
 If you are using `@apollo/server` as your graphql server, you might want to
 enable this option because all resolvers are [currently considered non-trivial](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1686).
