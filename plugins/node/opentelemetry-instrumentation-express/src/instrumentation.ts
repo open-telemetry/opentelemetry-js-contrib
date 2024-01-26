@@ -280,7 +280,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
             const isError = ![undefined, null, 'route', 'router'].includes(
               maybeError
             );
-            if (isError) {
+            if (!spanHasEnded && isError) {
               const [error, message] = asErrorAndMessage(maybeError);
               span.recordException(error);
               span.setStatus({
