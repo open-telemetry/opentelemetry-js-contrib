@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.34.1...host-metrics-v0.35.0) (2024-01-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **host-metrics:** fix process.cpu.* metrics ([#1785](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1785))
+
+### Bug Fixes
+
+* **host-metrics:** fix process.cpu.* metrics ([#1785](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1785)) ([1e90a40](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1e90a4055144e48ec007b6237b6a4fecba2748fb))
+
 ## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.34.0...host-metrics-v0.34.1) (2024-01-04)
 
 
