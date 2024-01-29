@@ -53,7 +53,7 @@ export class PerfHooksInstrumentation extends InstrumentationBase {
   // the Meter (result of @opentelemetry/api's getMeter) is available as this.meter within this method
   override _updateMetricInstruments() {
     this.meter
-      .createObservableGauge('nodejs.performance.event_loop.utilization', {
+      .createObservableGauge('nodejs.event_loop.utilization', {
         description: 'Event loop utilization',
         unit: '1',
       })

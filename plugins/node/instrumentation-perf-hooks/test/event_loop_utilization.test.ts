@@ -40,7 +40,7 @@ const instrumentation = new PerfHooksInstrumentation({
 
 instrumentation.setMeterProvider(meterProvider);
 
-describe('nodejs.performance.event_loop.utilization', () => {
+describe('nodejs.event_loop.utilization', () => {
   before(async () => {
     instrumentation.enable();
   });
@@ -78,7 +78,7 @@ describe('nodejs.performance.event_loop.utilization', () => {
     assert.strictEqual(metrics[0].dataPoints[0].value < 1, true);
     assert.strictEqual(
       metrics[0].descriptor.name,
-      'nodejs.performance.event_loop.utilization'
+      'nodejs.event_loop.utilization'
     );
     assert.strictEqual(
       metrics[0].descriptor.description,
