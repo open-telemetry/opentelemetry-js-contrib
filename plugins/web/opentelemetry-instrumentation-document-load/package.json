@@ -69,6 +69,7 @@
     "nyc": "15.1.0",
     "rimraf": "5.0.5",
     "sinon": "15.2.0",
+    "nise": "5.1.5",
     "ts-loader": "8.3.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4",
@@ -78,7 +79,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.46.0",
+    "@opentelemetry/instrumentation": "^0.48.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
     "@opentelemetry/sdk-trace-web": "^1.15.0",
     "@opentelemetry/semantic-conventions": "^1.0.0"
