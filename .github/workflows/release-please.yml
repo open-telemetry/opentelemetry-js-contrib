@@ -28,7 +28,7 @@ jobs:
         id: release
         with:
           token: ${{secrets.RELEASE_PR_TOKEN}}
-          default-branch: main
+          target-branch: main
 
       # get release PR as we're currently on main
       - name: Checkout release PR
