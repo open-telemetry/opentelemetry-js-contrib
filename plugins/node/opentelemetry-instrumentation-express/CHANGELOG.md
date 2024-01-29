@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.34.1...instrumentation-express-v0.35.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Bug Fixes
+
+* span emit warnings on express instrumentation ([#1891](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1891)) ([f65f2f1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f65f2f1482f6f9ca80681f09249dc2b75ef7e3db))
+
 ## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.34.0...instrumentation-express-v0.34.1) (2024-01-04)
 
 
