@@ -24,25 +24,26 @@ import {
 import { PerfHooksInstrumentation } from '../src';
 import * as assert from 'assert';
 
-const EXPORT_INTERVAL = 20;
+const MEASUREMENT_INTERVAL = 10;
 
 const metricExporter = new InMemoryMetricExporter(AggregationTemporality.DELTA);
 const metricReader = new PeriodicExportingMetricReader({
   exporter: metricExporter,
-  exportIntervalMillis: EXPORT_INTERVAL,
+  exportIntervalMillis: MEASUREMENT_INTERVAL * 2,
 });
 const meterProvider = new MeterProvider();
 meterProvider.addMetricReader(metricReader);
 
 const instrumentation = new PerfHooksInstrumentation({
-  eventLoopUtilizationMeasurementInterval: EXPORT_INTERVAL / 2,
+  eventLoopUtilizationMeasurementInterval: MEASUREMENT_INTERVAL,
 });
 
 instrumentation.setMeterProvider(meterProvider);
 
 describe('nodejs.event_loop.utilization', () => {
-  before(async () => {
-    instrumentation.enable();
+  beforeEach(async () => {
+    instrumentation.disable(); // Stops future metrics from being collected
+    metricExporter.reset(); // Remove existing collected metrics
   });
 
   after(() => {
@@ -50,26 +51,41 @@ describe('nodejs.event_loop.utilization', () => {
     meterProvider.shutdown();
   });
 
-  afterEach(() => {
-    metricExporter.reset();
+  it('should stop exporting metrics when disabled', async () => {
+    // Wait for the ELU data to be collected and exported
+    // MEASUREMENT_INTERVAL * 2 is the export interval, plus MEASUREMENT_INTERVAL as a buffer
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 3));
+    // Retrieve exported metrics
+    const resourceMetrics = metricExporter.getMetrics();
+    const scopeMetrics =
+      resourceMetrics[resourceMetrics.length - 1].scopeMetrics;
+    assert.strictEqual(scopeMetrics.length, 0);
   });
 
   it('should not export immediately after enable', async () => {
-    // default interval is 5000, which is much higher than EXPORT_INTERVAL
-    const instrumentation = new PerfHooksInstrumentation();
-    instrumentation.setMeterProvider(meterProvider);
-    instrumentation.disable();
     instrumentation.enable();
-    await new Promise(resolve => setTimeout(resolve, EXPORT_INTERVAL / 2));
     assert.deepEqual(metricExporter.getMetrics(), []);
-    instrumentation.disable();
+  });
+
+  it('can use default eventLoopUtilizationMeasurementInterval', async () => {
+    // Repeat of 'should not export immediately after enable' but with defaults
+    const localInstrumentation = new PerfHooksInstrumentation();
+    localInstrumentation.setMeterProvider(meterProvider);
+    localInstrumentation.disable();
+    metricExporter.reset();
+    localInstrumentation.enable();
+    assert.deepEqual(metricExporter.getMetrics(), []);
+    localInstrumentation.disable();
   });
 
   it('should export event loop utilization metrics after eventLoopUtilizationMeasurementInterval', async () => {
+    instrumentation.enable();
     // Wait for the ELU data to be collected and exported
-    await new Promise(resolve => setTimeout(resolve, EXPORT_INTERVAL));
+    // MEASUREMENT_INTERVAL * 2 is the export interval, plus MEASUREMENT_INTERVAL as a buffer
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 3));
     const resourceMetrics = metricExporter.getMetrics();
-    const scopeMetrics = resourceMetrics[0].scopeMetrics;
+    const scopeMetrics =
+      resourceMetrics[resourceMetrics.length - 1].scopeMetrics;
     const metrics = scopeMetrics[0].metrics;
     assert.strictEqual(metrics.length, 1);
     assert.strictEqual(metrics[0].dataPointType, DataPointType.GAUGE);
@@ -85,13 +101,5 @@ describe('nodejs.event_loop.utilization', () => {
       'Event loop utilization'
     );
     assert.strictEqual(metrics[0].descriptor.unit, '1');
-  });
-
-  it('should stop exporting metrics when disabled', async () => {
-    instrumentation.disable();
-    await new Promise(resolve => setTimeout(resolve, EXPORT_INTERVAL));
-    const resourceMetrics = metricExporter.getMetrics();
-    const scopeMetrics = resourceMetrics[0].scopeMetrics;
-    assert.strictEqual(scopeMetrics.length, 0);
   });
 });
