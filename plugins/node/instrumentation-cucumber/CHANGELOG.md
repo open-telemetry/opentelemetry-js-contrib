@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.2.1...instrumentation-cucumber-v0.3.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
 ## [0.2.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.2.0...instrumentation-cucumber-v0.2.1) (2024-01-04)
 
 

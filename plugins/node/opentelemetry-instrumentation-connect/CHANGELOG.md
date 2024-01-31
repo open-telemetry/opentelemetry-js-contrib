@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.32.4...instrumentation-connect-v0.33.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
 ## [0.32.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-connect-v0.32.3...instrumentation-connect-v0.32.4) (2024-01-04)
 
 
