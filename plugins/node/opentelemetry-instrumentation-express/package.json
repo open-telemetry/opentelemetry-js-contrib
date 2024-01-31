@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-express",
-  "version": "0.34.1",
+  "version": "0.35.0",
   "description": "OpenTelemetry express automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.46.0",
+    "@opentelemetry/instrumentation": "^0.48.0",
     "@opentelemetry/semantic-conventions": "^1.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express#readme"
