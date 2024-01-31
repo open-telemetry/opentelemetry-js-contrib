@@ -65,8 +65,6 @@ const __copyProps = (
 };
 
 /**
- * Derived from https://github.com/elastic/apm-agent-nodejs/blob/main/lib/propwrap.js
- *
  * Return a new object that is a copy of `obj`, with its `subpath` property
  * replaced with the return value of `wrapper(original)`.
  *
@@ -110,7 +108,7 @@ export const propwrap = (obj: any, subpath: string, wrapper: Function): any => {
   let val;
 
   // 1. Traverse the subpath parts to sanity check and get references to the
-  //    Objects that will will be copying.
+  //    Objects that we will be copying.
   for (let i = 0; i < parts.length; i++) {
     key = parts[i];
     val = namespace[key];

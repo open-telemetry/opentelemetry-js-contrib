@@ -113,7 +113,9 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       v3MiddlewareStackFileNewVersions,
     ]);
 
-    // patch for @smithy/middleware-stack for aws-sdk packages v3.363.0+
+    // Patch for @smithy/middleware-stack for @aws-sdk/* packages v3.363.0+.
+    // As of @smithy/middleware-stack@2.1.0 `constructStack` is only available
+    // as a getter, so we cannot use `this._wrap()`.
     const self = this;
     const v3SmithyMiddlewareStack = new InstrumentationNodeModuleDefinition(
       '@smithy/middleware-stack',
