@@ -16,5 +16,4 @@
 
 export * from './instrumentation';
 export * from './types';
-export { OpenTelemetryTransportv2 } from './OpenTelemetryTransportv2';
-export { OpenTelemetryTransportv3 } from './OpenTelemetryTransportv3';
+export { OpenTelemetryTransport } from './OpenTelemetryTransport';

@@ -19,7 +19,7 @@ import * as Transport from 'winston-transport';
 import { VERSION } from './version';
 import { emitLogRecord } from './utils';
 
-export class OpenTelemetryTransportv3 extends Transport {
+export class OpenTelemetryTransport extends Transport {
   private _logger: Logger;
 
   constructor(options?: Transport.TransportStreamOptions) {
@@ -33,10 +33,12 @@ export class OpenTelemetryTransportv3 extends Transport {
   public override log(info: any, next: () => void) {
     try {
       emitLogRecord(info, this._logger);
-      this.emit('logged', info);
     } catch (error) {
       this.emit('warn', error);
     }
+    setImmediate(() => {
+      this.emit('logged', info);
+    });
     if (next) {
       setImmediate(next);
     }

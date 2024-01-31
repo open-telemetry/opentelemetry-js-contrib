@@ -27,10 +27,9 @@ export type Winston3ConfigureMethod = Winston3Logger['configure'];
 export type { Winston3Logger, Winstons3LoggerOptions };
 
 export type { Winston2LogMethod };
-export type Winston2ConfigureMethod = Winston2Logger['configure'];
 export type Winston2LoggerModule = {
   Logger: Winston2Logger & {
-    prototype: { log: Winston2LogMethod; configure: Winston2ConfigureMethod };
+    prototype: { log: Winston2LogMethod };
   };
 };
 export type { Winston2Logger };

@@ -30,7 +30,6 @@ import {
 } from '@opentelemetry/instrumentation';
 import type { WinstonInstrumentationConfig } from './types';
 import type {
-  Winston2ConfigureMethod,
   Winston2LogMethod,
   Winston2LoggerModule,
   Winston3ConfigureMethod,
@@ -38,8 +37,7 @@ import type {
   Winston3Logger,
 } from './internal-types';
 import { VERSION } from './version';
-import { OpenTelemetryTransportv3 } from './OpenTelemetryTransportv3';
-import { OpenTelemetryTransportv2 } from './OpenTelemetryTransportv2';
+import { OpenTelemetryTransport } from './OpenTelemetryTransport';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
@@ -50,7 +48,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    return [
+    const winstons3instrumentationNodeModuleDefinition =
       new InstrumentationNodeModuleDefinition<{}>(
         'winston',
         winston3Versions,
@@ -74,7 +72,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
               this._wrap(
                 logger.prototype,
                 'configure',
-                this._getPatchedV3Configure()
+                this._getPatchedConfigure()
               );
 
               return logger;
@@ -87,7 +85,9 @@ export class WinstonInstrumentation extends InstrumentationBase {
             }
           ),
         ]
-      ),
+      );
+
+    const winstons2instrumentationNodeModuleDefinition =
       new InstrumentationNodeModuleDefinition<{}>(
         'winston',
         winstonPre3Versions,
@@ -106,23 +106,19 @@ export class WinstonInstrumentation extends InstrumentationBase {
               }
               this._wrap(proto, 'log', this._getPatchedLog());
 
-              // Wrap configure
-              if (isWrapped(proto.configure)) {
-                this._unwrap(proto, 'configure');
-              }
-              this._wrap(proto, 'configure', this._getPatchedV2Configure());
-
               return fileExports;
             },
             (fileExports, moduleVersion) => {
               if (fileExports === undefined) return;
               this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(fileExports.Logger.prototype, 'log');
-              this._unwrap(fileExports.Logger.prototype, 'configure');
             }
           ),
         ]
-      ),
+      );
+    return [
+      winstons3instrumentationNodeModuleDefinition,
+      winstons2instrumentationNodeModuleDefinition,
     ];
   }
 
@@ -219,7 +215,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
     };
   }
 
-  private _getPatchedV3Configure() {
+  private _getPatchedConfigure() {
     return (original: Winston3ConfigureMethod) => {
       const instrumentation = this;
       return function patchedConfigure(
@@ -233,34 +229,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
             let newTransports = Array.isArray(originalTransports)
               ? originalTransports
               : [];
-            const openTelemetryTransport = new OpenTelemetryTransportv3();
-            if (originalTransports && !Array.isArray(originalTransports)) {
-              newTransports = [originalTransports];
-            }
-            newTransports.push(openTelemetryTransport);
-            originalTransports = newTransports;
-          }
-        }
-        return original.apply(this, args);
-      };
-    };
-  }
-
-  private _getPatchedV2Configure() {
-    return (original: Winston2ConfigureMethod) => {
-      const instrumentation = this;
-      return function patchedConfigure(
-        this: never,
-        ...args: Parameters<typeof original>
-      ) {
-        const config = instrumentation.getConfig();
-        if (!config.disableLogSending) {
-          if (args && args.length > 0) {
-            let originalTransports = args[0].transports;
-            let newTransports = Array.isArray(originalTransports)
-              ? originalTransports
-              : [];
-            const openTelemetryTransport = new OpenTelemetryTransportv2();
+            const openTelemetryTransport = new OpenTelemetryTransport();
             if (originalTransports && !Array.isArray(originalTransports)) {
               newTransports = [originalTransports];
             }

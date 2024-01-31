@@ -42,7 +42,7 @@
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.7.0",
-    "@opentelemetry/api-logs": "^0.47.0"
+    "@opentelemetry/api-logs": "^0.48.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.7.0",
@@ -60,13 +60,14 @@
     "test-all-versions": "6.0.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4",
-    "winston-transport": "4.6.0",
+    "winston": "3.3.3",
     "winston2": "npm:winston@2.4.7"
   },
   "dependencies": {
-    "@opentelemetry/api-logs": "^0.47.0",
+    "@opentelemetry/api-logs": "^0.48.0",
     "@opentelemetry/core": "1.20.0",
-    "@opentelemetry/instrumentation": "^0.47.0"
+    "@opentelemetry/instrumentation": "^0.47.0",
+    "winston-transport" : ">3.*"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston#readme"
 }

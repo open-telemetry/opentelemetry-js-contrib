@@ -53,6 +53,7 @@ describe('WinstonInstrumentation', () => {
   let logger: Winston3Logger | Winston2Logger;
   let writeSpy: sinon.SinonSpy;
   let instrumentation: WinstonInstrumentation;
+  let isWinston2 = false;
 
   enum LevelsType {
     npm,
@@ -84,13 +85,10 @@ describe('WinstonInstrumentation', () => {
             stream,
           }),
         ],
-        // format: winston.format.combine(
-        //   winston.format.splat(),
-        //   winston.format.simple()
-        // )
       });
     } else if (winston['Logger']) {
       // winston 2.x
+      isWinston2 = true;
       logger = new winston.Logger({
         levels: levels,
         transports: [
@@ -172,6 +170,13 @@ describe('WinstonInstrumentation', () => {
       }
     });
 
+    it('wraps configure', () => {
+      if (!isWinston2) {
+        // winston 3.x
+        assert.ok(isWrapped(logger['configure']));
+      }
+    });
+
     it('injects span context to records', () => {
       const span = tracer.startSpan('abc');
       context.with(trace.setSpan(context.active(), span), () => {
@@ -194,30 +199,34 @@ describe('WinstonInstrumentation', () => {
     });
 
     it('emit LogRecord', () => {
-      const span = tracer.startSpan('abc');
-      context.with(trace.setSpan(context.active(), span), () => {
-        testEmitLogRecord(span);
-      });
+      if (!isWinston2) {
+        const span = tracer.startSpan('abc');
+        context.with(trace.setSpan(context.active(), span), () => {
+          testEmitLogRecord(span);
+        });
+      }
     });
 
     it('emit LogRecord with extra attibutes', () => {
-      const extraAttributes = {
-        extraAttribute1: 'attributeValue1',
-        extraAttribute2: 'attributeValue2',
-      };
-      logger.log('info', kMessage, extraAttributes);
-      const logRecords = memoryLogExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].severityText, 'info');
-      assert.strictEqual(logRecords[0].body, kMessage);
-      assert.strictEqual(
-        logRecords[0].attributes['extraAttribute1'],
-        'attributeValue1'
-      );
-      assert.strictEqual(
-        logRecords[0].attributes['extraAttribute2'],
-        'attributeValue2'
-      );
+      if (!isWinston2) {
+        const extraAttributes = {
+          extraAttribute1: 'attributeValue1',
+          extraAttribute2: 'attributeValue2',
+        };
+        logger.log('info', kMessage, extraAttributes);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].severityText, 'info');
+        assert.strictEqual(logRecords[0].body, kMessage);
+        assert.strictEqual(
+          logRecords[0].attributes['extraAttribute1'],
+          'attributeValue1'
+        );
+        assert.strictEqual(
+          logRecords[0].attributes['extraAttribute2'],
+          'attributeValue2'
+        );
+      }
     });
 
     it('does not emit LogRecord if config off', () => {
@@ -315,30 +324,36 @@ describe('WinstonInstrumentation', () => {
     });
 
     it('npm levels', () => {
-      initLogger();
-      logger.log('http', kMessage);
-      const logRecords = memoryLogExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].severityText, 'http');
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG3);
+      if (!isWinston2) {
+        initLogger();
+        logger.log('http', kMessage);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].severityText, 'http');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG3);
+      }
     });
 
     it('cli levels', () => {
-      initLogger(LevelsType.cli);
-      logger.log('data', kMessage);
-      const logRecords = memoryLogExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].severityText, 'data');
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO2);
+      if (!isWinston2) {
+        initLogger(LevelsType.cli);
+        logger.log('data', kMessage);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].severityText, 'data');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO2);
+      }
     });
 
     it('syslog levels', () => {
-      initLogger(LevelsType.syslog);
-      logger.log('emerg', kMessage);
-      const logRecords = memoryLogExporter.getFinishedLogRecords();
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].severityText, 'emerg');
-      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL3);
+      if (!isWinston2) {
+        initLogger(LevelsType.syslog);
+        logger.log('emerg', kMessage);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].severityText, 'emerg');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL3);
+      }
     });
   });
 });

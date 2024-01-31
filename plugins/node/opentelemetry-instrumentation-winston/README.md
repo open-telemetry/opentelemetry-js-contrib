@@ -69,7 +69,7 @@ Winston Logger will automatically send log records to the OpenTelemetry Logs SDK
 
 If the OpenTelemetry SDK is not configured with a Logger provider, then this will be a no-op.
 
-Log sending can be disabled with the `disableLogSending: true` option.
+Log sending can be disabled with the `disableLogSending: true` option. Log sending is only available for Winston version 3 and later.
 
 ### Using OpenTelemetry Winston Transport without instrumentation
 
@@ -79,29 +79,15 @@ if one is not using the `WinstonInstrumentation` for whatever reason. For
 example:
 
 ```js
-const { OpenTelemetryTransportv3 } = require('@opentelemetry/instrumentation-winston');
+const { OpenTelemetryTransport } = require('@opentelemetry/instrumentation-winston');
 const winston = require('winston');
 
 const logger = winston.createLogger({
   level: 'info',
   transports: [
     new winston.transports.Console(),
-    new OpenTelemetryTransportv3()
+    new OpenTelemetryTransport()
   ]
-});
-```
-
-Use OpenTelemetryTransportv2 when using winston version 2 or older.
-
-```js
-const { OpenTelemetryTransportv2 } = require('@opentelemetry/instrumentation-winston');
-const winston = require('winston');
-
-const logger = new (winston.Logger)({
-transports: [
-    new winston.transports.Console(),
-    new OpenTelemetryTransportv2()
-]
 });
 ```
 
@@ -131,6 +117,10 @@ Log injection can be disabled with the `disableLogCorrelation: true` option.
 ### Supported versions
 
 `1.x`, `2.x`, `3.x`
+
+Log sending
+
+`3.x`
 
 ## Useful links
 
