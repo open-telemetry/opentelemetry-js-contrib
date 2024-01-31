@@ -3,15 +3,20 @@ receivers:
     protocols:
       grpc:
       http:
-        cors_allowed_origins:
-        - http://*
-        - https://*
+        cors:
+          allowed_origins:
+            - http://*
+            - https://*
 
 exporters:
-  zipkin:
-    endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
+  otlp:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
   prometheus:
     endpoint: "0.0.0.0:9464"
+  zipkin:
+    endpoint: "http://zipkin:9411/api/v2/spans"
 
 processors:
   batch:
@@ -19,10 +24,17 @@ processors:
 service:
   pipelines:
     traces:
-      receivers: [otlp]
-      exporters: [zipkin]
-      processors: [batch]
+      receivers:
+        - otlp
+      exporters:
+        - otlp
+        - zipkin
+      processors:
+        - batch
     metrics:
-      receivers: [otlp]
-      exporters: [prometheus]
-      processors: [batch]
+      receivers:
+        - otlp
+      exporters:
+        - prometheus
+      processors:
+        - batch
