@@ -159,7 +159,9 @@ export class BunyanInstrumentation extends InstrumentationBase<
     this._diag.debug('Adding OpenTelemetryBunyanStream to logger');
     logger.addStream({
       type: 'raw',
-      stream: new OpenTelemetryBunyanStream(),
+      stream: new OpenTelemetryBunyanStream({
+        logSendingLevel: config.logSendingLevel,
+      }),
       level: logger.level(),
     });
   }

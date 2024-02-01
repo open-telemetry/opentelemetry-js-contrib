@@ -319,6 +319,22 @@ describe('BunyanInstrumentation', () => {
       assert.strictEqual(rec.body, 'hi');
       assert.strictEqual(rec.attributes.aProperty, 'bar');
     });
+
+    it('log record level configuration', () => {
+      instrumentation.setConfig({ logSendingLevel: SeverityNumber.WARN });
+
+      // Changing `disableLogSending` only has an impact on Loggers created
+      // *after* it is set. So we cannot test with the `log` created in
+      // `beforeEach()` above.
+      log = Logger.createLogger({ name: 'test-logger-name', stream });
+
+      log.info('info log');
+      log.warn('warn log');
+      const logRecords = memExporter.getFinishedLogRecords();
+      // Only one log record match configured severity
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].body, 'warn log');
+    });
   });
 
   describe('disabled instrumentation', () => {
