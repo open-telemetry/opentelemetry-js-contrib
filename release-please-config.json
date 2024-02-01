@@ -49,6 +49,7 @@
     "plugins/node/opentelemetry-instrumentation-mysql2": {},
     "plugins/node/opentelemetry-instrumentation-nestjs-core": {},
     "plugins/node/opentelemetry-instrumentation-net": {},
+    "plugins/node/opentelemetry-instrumentation-ogma": {},
     "plugins/node/opentelemetry-instrumentation-pg": {},
     "plugins/node/opentelemetry-instrumentation-pino": {},
     "plugins/node/opentelemetry-instrumentation-redis": {},

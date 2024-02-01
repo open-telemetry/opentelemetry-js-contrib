@@ -1,0 +1,13 @@
+ogma:
+  - versions: "^3.2.0"
+    node: ">=16"
+    commands: npm run test
+
+    # Fix missing `contrib-test-utils` package
+    pretest: npm run --prefix ../../../ lerna:link
+  - versions: "^3.2.0"
+    node: ">=8 <16"
+    commands: npm run test
+
+    # Fix missing `contrib-test-utils` package
+    pretest: npm run --prefix ../../../ lerna:link
