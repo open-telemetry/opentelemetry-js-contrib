@@ -75,7 +75,6 @@ Log sending can be disabled with the `disableLogSending: true` option. Log sendi
 npm install --save @opentelemetry/winston-transport
 ```
 
-
 ### Log correlation
 
 Winston logger calls in the context of a tracing span will have fields
