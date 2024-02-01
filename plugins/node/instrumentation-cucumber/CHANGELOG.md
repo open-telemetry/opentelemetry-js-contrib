@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.2.1...instrumentation-cucumber-v0.3.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+## [0.2.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.2.0...instrumentation-cucumber-v0.2.1) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.1.2...instrumentation-cucumber-v0.2.0) (2023-12-07)
+
+
+### Features
+
+* **cucumber:** support @cucumber/cucumber@10 ([#1830](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1830)) ([1c2e8b2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1c2e8b20ff981873838c1543324e700e2e466dba))
+
 ## [0.1.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-cucumber-v0.1.1...instrumentation-cucumber-v0.1.2) (2023-11-13)
 
 

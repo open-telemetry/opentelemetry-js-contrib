@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.6...instrumentation-fastify-v0.33.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.1 to ^0.36.0
+
+## [0.32.6](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.5...instrumentation-fastify-v0.32.6) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.0 to ^0.35.1
+
+## [0.32.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.4...instrumentation-fastify-v0.32.5) (2023-12-07)
+
+
+### Bug Fixes
+
+* **instrumentation-fastify:** fix span attributes and avoid FSTDEP017 FastifyDeprecation warning for 404 request ([#1763](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1763)) ([18ae75c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/18ae75c6004d66744ee99be68469843372c19d1e))
+
 ## [0.32.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fastify-v0.32.3...instrumentation-fastify-v0.32.4) (2023-11-13)
 
 

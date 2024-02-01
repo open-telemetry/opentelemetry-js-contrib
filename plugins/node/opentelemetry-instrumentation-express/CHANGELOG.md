@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.34.1...instrumentation-express-v0.35.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Bug Fixes
+
+* span emit warnings on express instrumentation ([#1891](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1891)) ([f65f2f1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f65f2f1482f6f9ca80681f09249dc2b75ef7e3db))
+
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.34.0...instrumentation-express-v0.34.1) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.33.3...instrumentation-express-v0.34.0) (2023-12-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-express:** remove `@types/express` from dependencies ([#1804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1804))
+
+### Features
+
+* **express:** record exceptions ([#1657](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1657)) ([4ca1862](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4ca18626610c0ee3da38807da82c753b8763af95))
+
+
+### Bug Fixes
+
+* **instrumentation-express:** remove `@types/express` from dependencies ([#1804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1804)) ([86a21d7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/86a21d7b4ce289dc986925ad73ffd6f0618bb5c7)), closes [#1787](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1787)
+
 ## [0.33.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.33.2...instrumentation-express-v0.33.3) (2023-11-13)
 
 

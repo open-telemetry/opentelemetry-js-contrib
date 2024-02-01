@@ -12,6 +12,41 @@
   * dependencies
     * @opentelemetry/instrumentation-document-load bumped from ^0.31.1 to ^0.31.2
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.35.0...auto-instrumentations-web-v0.36.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.34.1 to ^0.35.0
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.34.1 to ^0.35.0
+
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.34.0...auto-instrumentations-web-v0.35.0) (2024-01-04)
+
+
+### Features
+
+* add esnext target for auto-instr-web package ([#1848](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1848)) ([3cb2802](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3cb2802770eb5b42774e4f7c6fcc7d126a2b31dc))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.34.0 to ^0.34.1
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.34.0 to ^0.34.1
+
 ## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.33.2...auto-instrumentations-web-v0.34.0) (2023-11-13)
 
 

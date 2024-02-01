@@ -1,8 +1,7 @@
 redis:
-
   jobs:
-    - versions: "^4.0.0"
+    # The latest minor releases in the range "^4.0.0", excluding
+    # "4.6.9", which was a bad release that accidentally broke
+    # node v14 support.
+    - versions: "4.0.0 || 4.0.6 || 4.1.1 || 4.2.0 || 4.3.1 || 4.4.0 || 4.5.1 || ^4.6.11"
       commands: npm run test
-
-  # Fix missing `contrib-test-utils` package
-  pretest: npm run --prefix ../../../ lerna:link
