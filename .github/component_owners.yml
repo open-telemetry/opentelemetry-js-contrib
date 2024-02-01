@@ -113,6 +113,8 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-winston:
     - seemk
+  plugins/node/opentelemetry-winston-transport:
+    - hectorhdzg
   plugins/web/opentelemetry-instrumentation-document-load:
     - pkanal
     - martinkuba 

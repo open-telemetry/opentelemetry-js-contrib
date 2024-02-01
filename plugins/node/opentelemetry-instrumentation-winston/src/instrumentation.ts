@@ -37,7 +37,7 @@ import type {
   Winston3Logger,
 } from './internal-types';
 import { VERSION } from './version';
-import { OpenTelemetryTransport } from './OpenTelemetryTransport';
+
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
@@ -53,7 +53,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
         'winston',
         winston3Versions,
         moduleExports => moduleExports,
-        () => {},
+        () => { },
         [
           new InstrumentationNodeModuleFile<Winston3Logger>(
             'winston/lib/winston/logger.js',
@@ -92,7 +92,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
         'winston',
         winstonPre3Versions,
         moduleExports => moduleExports,
-        () => {},
+        () => { },
         [
           new InstrumentationNodeModuleFile<Winston2LoggerModule>(
             'winston/lib/winston/logger.js',
@@ -222,19 +222,27 @@ export class WinstonInstrumentation extends InstrumentationBase {
         this: never,
         ...args: Parameters<typeof original>
       ) {
+
         const config = instrumentation.getConfig();
         if (!config.disableLogSending) {
           if (args && args.length > 0) {
-            let originalTransports = args[0].transports;
-            let newTransports = Array.isArray(originalTransports)
-              ? originalTransports
-              : [];
-            const openTelemetryTransport = new OpenTelemetryTransport();
-            if (originalTransports && !Array.isArray(originalTransports)) {
-              newTransports = [originalTransports];
+            // Try to load Winston transport
+            try {
+              const { OpenTelemetryTransport } = require("@opentelemetry/winston-transport");
+              const originalTransports = args[0].transports;
+              let newTransports = Array.isArray(originalTransports)
+                ? originalTransports
+                : [];
+              const openTelemetryTransport = new OpenTelemetryTransport();
+              if (originalTransports && !Array.isArray(originalTransports)) {
+                newTransports = [originalTransports];
+              }
+              newTransports.push(openTelemetryTransport);
+              args[0].transports = newTransports;
             }
-            newTransports.push(openTelemetryTransport);
-            originalTransports = newTransports;
+            catch (err) {
+              instrumentation._diag.error('OpenTelemetry Winston transport is not available', err);
+            }
           }
         }
         return original.apply(this, args);

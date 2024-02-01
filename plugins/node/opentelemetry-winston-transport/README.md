@@ -1,0 +1,71 @@
+# OpenTelemetry transport for winston
+
+[![NPM Published Version][npm-img]][npm-url]
+[![Apache License][license-image]][license-image]
+
+This module provides a Transport for [`winston`](https://www.npmjs.com/package/winston) module to send Winston logging to the OpenTelemetry Logging SDK. It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
+
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
+## Installation
+
+```bash
+npm install --save @opentelemetry/winston-transport
+```
+
+## Usage
+
+
+This package exports the Winston transport class that is used to send records to the
+OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger
+For example:
+
+```js
+const logsAPI = require('@opentelemetry/api-logs');
+const {
+    LoggerProvider,
+    SimpleLogRecordProcessor,
+    ConsoleLogRecordExporter,
+} = require('@opentelemetry/sdk-logs');
+const { OpenTelemetryTransport } = require('@opentelemetry/winston-transport');
+const winston = require('winston');
+
+
+// To start a logger, you first need to initialize the Logger provider.
+const loggerProvider = new LoggerProvider();
+// Add a processor to export log record
+loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())
+);
+logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
+
+const logger = winston.createLogger({
+  level: 'info',
+  transports: [
+    new winston.transports.Console(),
+    new OpenTelemetryTransport()
+  ]
+});
+```
+
+
+### Supported versions
+
+`3.x`
+
+
+## Useful links
+
+* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+
+## License
+
+Apache 2.0 - See [LICENSE][license-url] for more information.
+
+[discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
+[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/winston-transport
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fwinston-transport.svg

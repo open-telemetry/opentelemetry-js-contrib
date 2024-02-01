@@ -14,5 +14,4 @@
  * limitations under the License.
  */
 
-export * from './instrumentation';
-export * from './types';
+export { OpenTelemetryTransport } from './OpenTelemetryTransport';

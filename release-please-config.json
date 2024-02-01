@@ -56,6 +56,7 @@
     "plugins/node/opentelemetry-instrumentation-restify": {},
     "plugins/node/opentelemetry-instrumentation-router": {},
     "plugins/node/opentelemetry-instrumentation-winston": {},
+    "plugins/node/opentelemetry-winston-transport": {},
     "plugins/web/opentelemetry-instrumentation-document-load": {},
     "plugins/web/opentelemetry-instrumentation-long-task": {},
     "plugins/web/opentelemetry-instrumentation-user-interaction": {},
