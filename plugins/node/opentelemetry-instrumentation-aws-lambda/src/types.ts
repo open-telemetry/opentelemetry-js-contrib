@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Span, Context as OtelContext } from '@opentelemetry/api';
+import { Span, Context as OtelContext, Link } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type { Context } from 'aws-lambda';
 
@@ -31,6 +31,8 @@ export type ResponseHook = (
   }
 ) => void;
 
+export type EventSpanLinksExtractor = (event: any, context: Context) => Link[];
+
 export type EventContextExtractor = (
   event: any,
   context: Context
@@ -40,5 +42,7 @@ export interface AwsLambdaInstrumentationConfig extends InstrumentationConfig {
   responseHook?: ResponseHook;
   disableAwsContextPropagation?: boolean;
   eventContextExtractor?: EventContextExtractor;
+  /** for batch processing, link a span to multiple spans instead of just single propagated context */
+  eventSpanLinksExtractor?: EventSpanLinksExtractor;
   lambdaHandler?: string;
 }
