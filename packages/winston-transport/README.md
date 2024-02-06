@@ -16,8 +16,8 @@ npm install --save @opentelemetry/winston-transport
 ## Usage
 
 This package exports the Winston transport class that is used to send records to the
-OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger. If using 
-[`@opentelemetry/instrumenation-winston`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston) 
+OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logger. If using
+[`@opentelemetry/instrumenation-winston`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston)
 package there is no need to instantiate the transport as the instrumentation will take care of that.
 For example:
 
