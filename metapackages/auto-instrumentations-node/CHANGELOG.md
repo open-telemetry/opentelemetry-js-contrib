@@ -146,6 +146,12 @@
     * @opentelemetry/instrumentation-net bumped from ^0.32.3 to ^0.32.4
     * @opentelemetry/instrumentation-pino bumped from ^0.34.3 to ^0.34.4
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.38.0 to ^0.38.1
+
 ## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.40.3...auto-instrumentations-node-v0.41.0) (2024-01-29)
 
 
