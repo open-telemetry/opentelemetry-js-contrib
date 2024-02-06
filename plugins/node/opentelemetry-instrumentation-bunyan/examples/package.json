@@ -1,7 +1,7 @@
 {
   "name": "bunyan-example",
   "private": true,
-  "version": "0.45.1",
+  "version": "0.45.2",
   "description": "Example of Bunyan integration with OpenTelemetry",
   "scripts": {
     "start": "node -r ./telemetry.js app.js"
