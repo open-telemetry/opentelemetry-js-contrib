@@ -15,47 +15,29 @@
  */
 
 // X-Ray Sampling rule reference: https://docs.aws.amazon.com/xray/latest/api/API_GetSamplingRules.html
-export interface SamplingRule {
-  // a unique name for the rule
-  RuleName: string;
+import { SamplingRule } from './sampling-rule';
+import { Resource } from '@opentelemetry/resources';
 
-  // (integer between 1 and 9999) - the priority of the sampling rule. Services evaluate rules in ascending order of
-  // priority, and make a sampling decision with the first rule that matches.
-  Priority: number;
-
-  // A fixed number of matching requests to instrument per second, before applying the fixed rate.
-  ReservoirSize: number;
-
-  // The percentage of matching requests to instrument, after the reservoir is exhausted.
-  FixedRate: number;
-
-  // The name of the instrumented service, as it appears in the X-Ray service map.
-  ServiceName: string;
-
-  // The service type, as it appears in the X-Ray service map.
-  ServiceType: string;
-
-  // The hostname from the HTTP host header.
-  Host: string;
-
-  // The method of the HTTP request.
-  HTTPMethod: string;
-
-  // the URL path of the request
-  URLPath: string;
-
-  // The ARN of the AWS resource running the service.
-  ResourceARN: string;
-
-  // (Optional) segment attributes that are known when the sampling decision is made.
-  Attributes?: { [key: string]: string };
-  Version: number;
+export interface ISamplingRule {
+  matches(samplingRequest: any, resource: Resource): boolean;
 }
 
 export interface SamplingRuleRecord {
   CreatedAt: number;
   ModifiedAt: number;
   SamplingRule?: SamplingRule;
+}
+
+// TODO: move to internal-types.ts (for types that should not be exported from this package)
+export interface ISamplingStatistics {
+  // matchedRequests is the number of requests matched against specific rule.
+  matchedRequests: number;
+
+  // sampledRequests is the number of requests sampled using specific rule.
+  sampledRequests: number;
+
+  // borrowedRequests is the number of requests borrowed using specific rule.
+  borrowedRequests: number;
 }
 
 export interface GetSamplingRulesResponse {
@@ -80,6 +62,9 @@ export interface SamplingStatisticsDocument {
 }
 
 export interface AWSXRaySamplerConfig {
+  // resource to control sampling at the service level
+  resource: Resource;
+
   // endpoint of awsproxy - for more information see https://aws-otel.github.io/docs/getting-started/remote-sampling
   // defaults to localhost:2000 if not specified
   endpoint?: string;

@@ -18,7 +18,8 @@ import * as sinon from 'sinon';
 import axios from 'axios';
 import * as nock from 'nock';
 import * as assert from 'assert';
-
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { AWSXRayRemoteSampler } from '../src';
 
 describe('GetSamplingRules', () => {
@@ -95,7 +96,11 @@ describe('GetSamplingRules', () => {
 
   const defaultEndpoint = 'http://localhost:1234';
   const pollingInterval = 60 * 1000;
+  const defaultResource = new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'test_resource',
+  });
   const config = {
+    resource: defaultResource,
     endpoint: defaultEndpoint,
     pollingIntervalMs: pollingInterval,
   };
@@ -120,9 +125,11 @@ describe('GetSamplingRules', () => {
 
   it('should throw TypeError when an invalid polling interval is passed in', async () => {
     const configWithZeroPollingInterval = {
+      resource: defaultResource,
       pollingIntervalMs: 0,
     };
     const configWithNegativeInterval = {
+      resource: defaultResource,
       pollingIntervalMs: -5,
     };
 
@@ -160,7 +167,7 @@ describe('GetSamplingRules', () => {
   });
 
   it('should fall back to default polling interval and endpoint if not specified in config', async () => {
-    const sampler = new AWSXRayRemoteSampler({});
+    const sampler = new AWSXRayRemoteSampler({ resource: defaultResource });
 
     // default polling interval (5 minutes) = 5 * 60 * 1000
     assert.strictEqual(
