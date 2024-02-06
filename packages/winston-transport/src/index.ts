@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export { OpenTelemetryTransport } from './OpenTelemetryTransport';
+export { OpenTelemetryTransportV3 } from './OpenTelemetryTransportV3';

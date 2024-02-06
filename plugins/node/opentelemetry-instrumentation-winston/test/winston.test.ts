@@ -59,7 +59,7 @@ describe('WinstonInstrumentation', () => {
     npm,
     syslog,
     cli,
-  };
+  }
 
   function initLogger(levelsType?: LevelsType) {
     const winston = require('winston');

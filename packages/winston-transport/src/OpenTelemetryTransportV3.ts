@@ -19,7 +19,7 @@ import * as Transport from 'winston-transport';
 import { VERSION } from './version';
 import { emitLogRecord } from './utils';
 
-export class OpenTelemetryTransport extends Transport {
+export class OpenTelemetryTransportV3 extends Transport {
   private _logger: Logger;
 
   constructor(options?: Transport.TransportStreamOptions) {

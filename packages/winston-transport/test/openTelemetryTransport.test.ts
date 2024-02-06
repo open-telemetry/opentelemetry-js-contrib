@@ -22,7 +22,7 @@ import {
 } from '@opentelemetry/sdk-logs';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { OpenTelemetryTransport } from '../src';
+import { OpenTelemetryTransportV3 } from '../src';
 
 const loggerProvider = new LoggerProvider();
 const memoryLogExporter = new InMemoryLogRecordExporter();
@@ -39,7 +39,7 @@ describe('OpenTelemetryTransport', () => {
   });
 
   it('emit LogRecord', () => {
-    const transport = new OpenTelemetryTransport();
+    const transport = new OpenTelemetryTransportV3();
     const writeSpy = sinon.spy(transport, 'emit');
     transport.log({ message: kMessage }, () => {});
     setImmediate(() => {
@@ -51,7 +51,7 @@ describe('OpenTelemetryTransport', () => {
   });
 
   it('emit LogRecord with extra attibutes', () => {
-    const transport = new OpenTelemetryTransport();
+    const transport = new OpenTelemetryTransportV3();
     const extraAttributes = {
       extraAttribute1: 'attributeValue1',
       extraAttribute2: 'attributeValue2',
@@ -73,7 +73,7 @@ describe('OpenTelemetryTransport', () => {
   describe('emit logRecord severity', () => {
     it('npm levels', () => {
       const callback = () => {};
-      const transport = new OpenTelemetryTransport();
+      const transport = new OpenTelemetryTransportV3();
       transport.log({ message: kMessage, level: 'error' }, callback);
       transport.log({ message: kMessage, level: 'warn' }, callback);
       transport.log({ message: kMessage, level: 'info' }, callback);
@@ -94,7 +94,7 @@ describe('OpenTelemetryTransport', () => {
 
     it('cli levels', () => {
       const callback = () => {};
-      const transport = new OpenTelemetryTransport();
+      const transport = new OpenTelemetryTransportV3();
       transport.log({ message: kMessage, level: 'error' }, callback);
       transport.log({ message: kMessage, level: 'warn' }, callback);
       transport.log({ message: kMessage, level: 'help' }, callback);
@@ -121,7 +121,7 @@ describe('OpenTelemetryTransport', () => {
 
     it('syslog levels', () => {
       const callback = () => {};
-      const transport = new OpenTelemetryTransport();
+      const transport = new OpenTelemetryTransportV3();
       transport.log({ message: kMessage, level: 'emerg' }, callback);
       transport.log({ message: kMessage, level: 'alert' }, callback);
       transport.log({ message: kMessage, level: 'crit' }, callback);

@@ -15,7 +15,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/winston-transport --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
-    "version:update": "node ../../../scripts/version-update.js",
+    "version:update": "node ../../scripts/version-update.js",
     "compile": "tsc -p ."
   },
   "keywords": [
@@ -55,5 +55,5 @@
     "@opentelemetry/api-logs": "^0.48.0",
     "winston-transport" : "4.*"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-winston-transport#readme"
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/winston-transport#readme"
 }
