@@ -29,35 +29,48 @@ const getProcessOutput = (cmd, args) => {
 	return result.stdout.toString('utf8');
 }
 
-const lernaList = JSON.parse(
-	getProcessOutput('npx', ['lerna', 'list', '--json'])
-);
+const lernaList = JSON
+	.parse(getProcessOutput('npx', ['lerna', 'list', '--json', '-a']))
+	.map((pkgInfo) => {
+		pkgInfo.relativeLocation = path.relative(PROJECT_ROOT, pkgInfo.location);
+		return pkgInfo;
+	});
 const manifest = readJson('.release-please-manifest.json');
 const config = readJson('release-please-config.json');
 
 const lernaPackages = new Set(
-	lernaList.map((pkg) => {
-		return path.relative(PROJECT_ROOT, pkg.location);
-	})
+  lernaList.map((pkgInfo) => pkgInfo.relativeLocation)
 );
 const manifestPackages = new Set(Object.keys(manifest));
 const configPackages = new Set(Object.keys(config.packages));
 
-console.log('lerna packages', lernaPackages);
-console.log('manifest packages', manifestPackages);
-console.log('config packages', configPackages);
+// console.log('lerna list', lernaList);
+// console.log('manifest packages', manifestPackages);
+// console.log('config packages', configPackages);
 
-lernaPackages.forEach((relativeLocation) => {
-	logErrorIf(
-		!manifestPackages.has(relativeLocation),
-		`Could not find ${relativeLocation} in .release-please-manifest.json. If you are adding a new package. Add following
-  "${relativeLocation}": "0.0.1",`);
+lernaList.forEach((pkgInfo) => {
+  const relativeLocation = pkgInfo.relativeLocation
+  if (pkgInfo.private) {
+    // Should be in config, with `skip-github-release` option.
+    const configEntry = config.packages[relativeLocation]
+    if (!configEntry) {
+      errors.push(`Could not find "${relativeLocation}" entry in release-please-config.json. If you are adding a new package. Add following to "packages" object:
+    "${relativeLocation}": { "skip-github-release": true },`);
+    } else if (configEntry['skip-github-release'] !== true) {
+      errors.push(`The "${relativeLocation}" entry in release-please-config.json should have the '"skip-github-release": true' option`);
+    }
+  } else {
+    // Should be in manifest and config.
+    logErrorIf(
+      !manifestPackages.has(relativeLocation),
+      `Could not find "${relativeLocation}" entry in .release-please-manifest.json. If you are adding a new package. Add following
+    "${relativeLocation}": "0.0.1",`);
 
-	logErrorIf(
-		!configPackages.has(relativeLocation),
-		`Could not find ${relativeLocation} in release-please-config.json. If you are adding a new package. Add following to "packages" object
-  "${relativeLocation}": {},`);
-
+    logErrorIf(
+      !configPackages.has(relativeLocation),
+      `Could not find "${relativeLocation}" entry in release-please-config.json. If you are adding a new package. Add following to "packages" object
+    "${relativeLocation}": {},`);
+  }
 });
 
 manifestPackages.forEach((relativeLocation) => {
