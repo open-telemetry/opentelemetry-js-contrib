@@ -59,7 +59,7 @@ logger.info('foobar');
 
 | Option                  | Type              | Description |
 | ----------------------- | ----------------- | ----------- |
-| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
+| `enableLogSending`      | `boolean`         | Whether to enable [log sending](#log-sending). Default `false`. |
 | `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |  
 
@@ -69,7 +69,7 @@ Winston Logger will automatically send log records to the OpenTelemetry Logs SDK
 
 If the OpenTelemetry SDK is not configured with a Logger provider, then this will be a no-op.
 
-Log sending can be disabled with the `disableLogSending: true` option. Log sending is only available for Winston version 3 and later.
+Log sending can be enabled with the `disableLogSending: false` option. Log sending is only available for Winston version 3 and later.
 
 ```bash
 npm install --save @opentelemetry/winston-transport

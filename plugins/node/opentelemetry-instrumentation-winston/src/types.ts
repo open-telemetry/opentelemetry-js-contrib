@@ -22,11 +22,11 @@ export type LogHookFunction = (span: Span, record: Record<string, any>) => void;
 
 export interface WinstonInstrumentationConfig extends InstrumentationConfig {
   /**
-   * Whether to disable the automatic sending of log records to the
+   * Whether to enable the automatic sending of log records to the
    * OpenTelemetry Logs SDK.
    * @default false
    */
-  disableLogSending?: boolean;
+  enableLogSending?: boolean;
 
   /**
    * Whether to disable the injection trace-context fields, and possibly other

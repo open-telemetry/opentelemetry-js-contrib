@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  context,
-  trace,
-  isSpanContextValid,
-  Span,
-  SpanContext,
-} from '@opentelemetry/api';
+import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -129,10 +123,10 @@ export class WinstonInstrumentation extends InstrumentationBase {
     this._config = config;
   }
 
-  private _callHook(span: Span, record?: Record<string, string>) {
+  private _callHook(span: Span, record: Record<string, string>) {
     const hook = this.getConfig().logHook;
 
-    if (!hook || !record) {
+    if (!hook) {
       return;
     }
 
@@ -154,19 +148,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
         this: never,
         ...args: Parameters<typeof original>
       ) {
-        const config = instrumentation.getConfig();
         const record = args[0];
-
-        if (!config.disableLogCorrelation) {
-          const span = trace.getActiveSpan();
-          if (span) {
-            const spanContext = span.spanContext();
-            if (isSpanContextValid(spanContext)) {
-              injectRecord(spanContext, record);
-              instrumentation._callHook(span, record);
-            }
-          }
-        }
+        instrumentation._handleLogCorrelation(record);
         return original.apply(this, args);
       };
     };
@@ -179,34 +162,24 @@ export class WinstonInstrumentation extends InstrumentationBase {
         this: never,
         ...args: Parameters<typeof original>
       ) {
-        let record: Record<string, any> = {};
-        const config = instrumentation.getConfig();
-        if (!config.disableLogCorrelation) {
-          const span = trace.getSpan(context.active());
-          if (span) {
-            const spanContext = span.spanContext();
-            if (isSpanContextValid(spanContext)) {
-              record = injectRecord(spanContext, record);
-              instrumentation._callHook(span, record);
-              // Inject in metadata argument
-              let isDataInjected = false;
-              for (let i = args.length - 1; i >= 0; i--) {
-                if (typeof args[i] === 'object') {
-                  args[i] = Object.assign(args[i], record);
-                  isDataInjected = true;
-                  break;
-                }
-              }
-              if (!isDataInjected) {
-                const insertAt =
-                  typeof args[args.length - 1] === 'function'
-                    ? args.length - 1
-                    : args.length;
-
-                args.splice(insertAt, 0, record);
-              }
-            }
+        const record: Record<string, any> = {};
+        instrumentation._handleLogCorrelation(record);
+        // Inject in metadata argument
+        let isDataInjected = false;
+        for (let i = args.length - 1; i >= 0; i--) {
+          if (typeof args[i] === 'object') {
+            args[i] = Object.assign(args[i], record);
+            isDataInjected = true;
+            break;
           }
+        }
+        if (!isDataInjected) {
+          const insertAt =
+            typeof args[args.length - 1] === 'function'
+              ? args.length - 1
+              : args.length;
+
+          args.splice(insertAt, 0, record);
         }
 
         return original.apply(this, args);
@@ -222,7 +195,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
         ...args: Parameters<typeof original>
       ) {
         const config = instrumentation.getConfig();
-        if (!config.disableLogSending) {
+        if (config.enableLogSending) {
           if (args && args.length > 0) {
             // Try to load Winston transport
             try {
@@ -251,21 +224,24 @@ export class WinstonInstrumentation extends InstrumentationBase {
       };
     };
   }
-}
 
-function injectRecord(
-  spanContext: SpanContext,
-  record?: Record<string, string>
-) {
-  const fields = {
-    trace_id: spanContext.traceId,
-    span_id: spanContext.spanId,
-    trace_flags: `0${spanContext.traceFlags.toString(16)}`,
-  };
-
-  if (!record) {
-    return fields;
+  private _handleLogCorrelation(record: Record<string, string>) {
+    if (!this.getConfig().disableLogCorrelation) {
+      const span = trace.getSpan(context.active());
+      if (span) {
+        const spanContext = span.spanContext();
+        if (isSpanContextValid(spanContext)) {
+          const fields = {
+            trace_id: spanContext.traceId,
+            span_id: spanContext.spanId,
+            trace_flags: `0${spanContext.traceFlags.toString(16)}`,
+          };
+          const enhancedRecord = Object.assign(record, fields);
+          this._callHook(span, enhancedRecord);
+          return enhancedRecord;
+        }
+      }
+    }
+    return record;
   }
-
-  return Object.assign(record, fields);
 }
