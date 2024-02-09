@@ -44,10 +44,6 @@ const lernaPackages = new Set(
 const manifestPackages = new Set(Object.keys(manifest));
 const configPackages = new Set(Object.keys(config.packages));
 
-// console.log('lerna list', lernaList);
-// console.log('manifest packages', manifestPackages);
-// console.log('config packages', configPackages);
-
 lernaList.forEach((pkgInfo) => {
   const relativeLocation = pkgInfo.relativeLocation
   if (pkgInfo.private) {
