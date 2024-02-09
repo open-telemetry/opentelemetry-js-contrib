@@ -236,6 +236,24 @@ describe('WinstonInstrumentation', () => {
       }
     });
 
+    it('do not emit log record if @opentelemetry/winston-transport load fails', () => {
+      const module = require('module');
+      const originalRequire = module.prototype.require;
+      module.prototype.require = function () {
+        if (arguments[0] === '@opentelemetry/winston-transport') {
+          throw new Error('@opentelemetry/winston-transport not present');
+        }
+        return originalRequire.apply(this, arguments);
+      };
+
+      instrumentation.setConfig({
+        enableLogSending: true,
+      });
+      initLogger();
+      module.prototype.require = originalRequire;
+      testNoEmitLogRecord();
+    });
+
     it('does not emit LogRecord if config off', () => {
       instrumentation.setConfig({
         enableLogSending: false,

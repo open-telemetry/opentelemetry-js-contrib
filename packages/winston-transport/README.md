@@ -51,7 +51,7 @@ const logger = winston.createLogger({
 
 ### Supported versions
 
-`3.x`
+Winston `3.x`
 
 ## Useful links
 
