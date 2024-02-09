@@ -75,7 +75,7 @@
     "webpack": "4.46.0",
     "webpack-cli": "4.7.2",
     "webpack-merge": "5.8.0",
-    "zone.js": "^0.11.4"
+    "zone.js": "^0.11.4 || ^0.13.0 || ^0.14.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
