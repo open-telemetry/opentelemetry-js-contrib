@@ -28,7 +28,7 @@ const {
     SimpleLogRecordProcessor,
     ConsoleLogRecordExporter,
 } = require('@opentelemetry/sdk-logs');
-const { OpenTelemetryTransport } = require('@opentelemetry/winston-transport');
+const { OpenTelemetryTransportV3 } = require('@opentelemetry/winston-transport');
 const winston = require('winston');
 
 
