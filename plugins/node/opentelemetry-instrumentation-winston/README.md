@@ -96,7 +96,6 @@ logHook: (span, record) => {
 ```
 
 Log injection can be disabled with the `disableLogCorrelation: true` option.
-|
 
 ### Supported versions
 
