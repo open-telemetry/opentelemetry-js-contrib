@@ -33,7 +33,7 @@ logs.setGlobalLoggerProvider(loggerProvider);
 
 const kMessage = 'log-message';
 
-describe('OpenTelemetryTransport', () => {
+describe('OpenTelemetryTransportV3', () => {
   beforeEach(() => {
     memoryLogExporter.getFinishedLogRecords().length = 0; // clear
   });
