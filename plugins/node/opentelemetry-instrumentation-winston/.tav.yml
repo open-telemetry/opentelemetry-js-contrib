@@ -1,5 +1,5 @@
 winston:
-    # a sample from supported versions
-  - versions: "3.3.3 || 3.2.1 || 2.4.5 || 2.4.4 || 2.1.1"
+    # A selection of versions of Winston 2.x and 3.x
+  - versions: "2.0.0 || 2.4.0 || 2.4.7 || 3.3.1 || 3.6.0 || 3.10.0 || ^3.11.0"
     commands: npm run test
 
