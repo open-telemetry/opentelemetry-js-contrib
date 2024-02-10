@@ -1,5 +1,0 @@
-winston-transport:
-    # a sample from supported versions
-  - versions: "4.6.0"
-    commands: npm run test
-
