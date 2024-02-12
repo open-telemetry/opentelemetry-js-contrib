@@ -195,7 +195,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
         ...args: Parameters<typeof original>
       ) {
         const config = instrumentation.getConfig();
-        if (config.enableLogSending) {
+        if (!config.disableLogSending) {
           if (args && args.length > 0) {
             // Try to load Winston transport
             try {
@@ -213,8 +213,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
               newTransports.push(openTelemetryTransport);
               args[0].transports = newTransports;
             } catch (err) {
-              instrumentation._diag.error(
-                'OpenTelemetry Winston transport is not available',
+              instrumentation._diag.warn(
+                'OpenTelemetry Winston transport is not available, log records will not be automatically sent.',
                 err
               );
             }

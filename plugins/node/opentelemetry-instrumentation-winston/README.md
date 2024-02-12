@@ -59,17 +59,17 @@ logger.info('foobar');
 
 | Option                  | Type              | Description |
 | ----------------------- | ----------------- | ----------- |
-| `enableLogSending`      | `boolean`         | Whether to enable [log sending](#log-sending). Default `false`. |
+| `disableLogSending`      | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
 | `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |  
 
 ### Log sending
 
-Winston Logger will automatically send log records to the OpenTelemetry Logs SDK if enabled in config and @opentelemetry/winston-transport npm package is installed in the project. The OpenTelemetry SDK can be configured to handle those records, for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
+Winston Logger will automatically send log records to the OpenTelemetry Logs SDK if not explicitly disabled in config and @opentelemetry/winston-transport npm package is installed in the project. The OpenTelemetry SDK can be configured to handle those records, for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
 
 If the OpenTelemetry SDK is not configured with a Logger provider, then this will be a no-op.
 
-Log sending can be enabled with the `enableLogSending: true` option. Log sending is only available for Winston version 3 and later.
+Log sending can be disabled with the `disableLogSending: true` option. Log sending is only available for Winston version 3 and later.
 
 ```bash
 npm install --save @opentelemetry/winston-transport

@@ -201,7 +201,7 @@ describe('WinstonInstrumentation', () => {
     it('emit LogRecord', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
-          enableLogSending: true,
+          disableLogSending: false,
         });
         initLogger();
         const span = tracer.startSpan('abc');
@@ -214,7 +214,7 @@ describe('WinstonInstrumentation', () => {
     it('emit LogRecord with extra attibutes', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
-          enableLogSending: true,
+          disableLogSending: false,
         });
         const extraAttributes = {
           extraAttribute1: 'attributeValue1',
@@ -247,7 +247,7 @@ describe('WinstonInstrumentation', () => {
       };
 
       instrumentation.setConfig({
-        enableLogSending: true,
+        disableLogSending: false,
       });
       initLogger();
       module.prototype.require = originalRequire;
@@ -256,7 +256,7 @@ describe('WinstonInstrumentation', () => {
 
     it('does not emit LogRecord if config off', () => {
       instrumentation.setConfig({
-        enableLogSending: false,
+        disableLogSending: true,
       });
       initLogger();
       const span = tracer.startSpan('abc');
@@ -345,7 +345,7 @@ describe('WinstonInstrumentation', () => {
   describe('emit logRecord severity', () => {
     beforeEach(() => {
       instrumentation.setConfig({
-        enableLogSending: true,
+        disableLogSending: false,
       });
       memoryLogExporter.getFinishedLogRecords().length = 0; // clear
     });
