@@ -32,6 +32,10 @@ import {
   CloudPlatformValues,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
+// Patch until the OpenTelemetry SDK is updated to ship this attribute 
+import {
+  SemanticResourceAttributes as AdditionalSemanticResourceAttributes
+} from '../../src/detectors/SemanticResourceAttributes';
 import { readFileSync } from 'fs';
 import * as os from 'os';
 import { join } from 'path';
@@ -69,6 +73,10 @@ const assertEcsResource = (
   if (validations.containerArn)
     assert.strictEqual(
       resource.attributes[SemanticResourceAttributes.AWS_ECS_CONTAINER_ARN],
+      validations.containerArn
+    );
+    assert.strictEqual(
+      resource.attributes[AdditionalSemanticResourceAttributes.CLOUD_RESOURCE_ID],
       validations.containerArn
     );
   if (validations.clusterArn)
