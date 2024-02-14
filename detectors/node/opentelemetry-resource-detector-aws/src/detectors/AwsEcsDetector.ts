@@ -25,10 +25,8 @@ import {
   CloudPlatformValues,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
-// Patch until the OpenTelemetry SDK is updated to ship this attribute 
-import {
-  SemanticResourceAttributes as AdditionalSemanticResourceAttributes
-} from './SemanticResourceAttributes';
+// Patch until the OpenTelemetry SDK is updated to ship this attribute
+import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from './SemanticResourceAttributes';
 import * as http from 'http';
 import * as util from 'util';
 import * as fs from 'fs';
