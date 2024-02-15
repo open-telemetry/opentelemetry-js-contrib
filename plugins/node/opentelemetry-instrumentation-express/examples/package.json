@@ -1,7 +1,7 @@
 {
   "name": "express-example",
   "private": true,
-  "version": "0.34.1",
+  "version": "0.1.0",
   "description": "Example of Express integration with OpenTelemetry",
   "scripts": {
     "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",
