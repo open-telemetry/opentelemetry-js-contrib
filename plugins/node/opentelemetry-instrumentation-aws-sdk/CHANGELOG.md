@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.38.0...instrumentation-aws-sdk-v0.38.1) (2024-02-06)
+
+
+### Bug Fixes
+
+* **instr-aws-sdk:** @smithy/middleware-stack@2.1.0 change broke aws-sdk-v3 instrumentation ([#1913](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1913)) ([7895306](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/78953064f8bd957649b8052b03debb200784b351))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.37.2...instrumentation-aws-sdk-v0.38.0) (2024-01-29)
 
 
