@@ -31,6 +31,8 @@ export interface MetricsCollectorConfig {
   name: string;
   // metric export endpoint
   url?: string;
+  // Scope of metrics to be stored: undefined = all
+  meterScope?: 'process' | 'host';
 }
 
 const DEFAULT_NAME = '@opentelemetry/host-metrics';
@@ -42,6 +44,7 @@ export abstract class BaseMetrics {
   protected _logger = api.diag;
   protected _meter: api.Meter;
   private _name: string;
+  protected _meterScope?: string;
 
   constructor(config: MetricsCollectorConfig) {
     this._name = config.name || DEFAULT_NAME;
@@ -51,6 +54,7 @@ export abstract class BaseMetrics {
       this._logger.warn('No meter provider, using default');
     }
     this._meter = meterProvider.getMeter(this._name, VERSION);
+    this._meterScope = config.meterScope;
   }
 
   /**

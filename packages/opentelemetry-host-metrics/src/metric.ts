@@ -256,17 +256,22 @@ export class HostMetrics extends BaseMetrics {
 
     this._meter.addBatchObservableCallback(
       async observableResult => {
-        const cpuUsages = getCpuUsageData();
-        const memoryUsages = getMemoryData();
-        const processCpuUsages = getProcessCpuUsageData();
-        const processMemoryUsages = getProcessMemoryData();
-        const networkData = await getNetworkData();
 
-        this._batchUpdateCpuUsages(observableResult, cpuUsages);
-        this._batchUpdateMemUsages(observableResult, memoryUsages);
-        this._batchUpdateProcessCpuUsages(observableResult, processCpuUsages);
-        this._batchUpdateProcessMemUsage(observableResult, processMemoryUsages);
-        this._batchUpdateNetworkData(observableResult, networkData);
+        if (this._meterScope == undefined || this._meterScope == 'host') {
+          const cpuUsages = getCpuUsageData();
+          this._batchUpdateCpuUsages(observableResult, cpuUsages);
+          const memoryUsages = getMemoryData();
+          this._batchUpdateMemUsages(observableResult, memoryUsages);
+          const networkData = await getNetworkData();
+          this._batchUpdateNetworkData(observableResult, networkData);
+        }
+
+        if (this._meterScope == undefined || this._meterScope == 'process') {
+          const processCpuUsages = getProcessCpuUsageData();
+          this._batchUpdateProcessCpuUsages(observableResult, processCpuUsages);
+          const processMemoryUsages = getProcessMemoryData();
+          this._batchUpdateProcessMemUsage(observableResult, processMemoryUsages);
+        }
       },
       [
         this._cpuTime,

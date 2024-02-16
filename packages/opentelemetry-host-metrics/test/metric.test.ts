@@ -28,7 +28,9 @@ import * as assert from 'assert';
 import * as os from 'os';
 import * as sinon from 'sinon';
 import { ATTRIBUTE_NAMES } from '../src/enum';
-import { HostMetrics } from '../src';
+import { HostMetrics, MetricsCollectorConfig } from '../src';
+import * as commonUsage from '../src/stats/common';
+import * as networkUsage from '../src/stats/si';
 
 const cpuJson = require('./mocks/cpu.json');
 const processJson = require('./mocks/process.json');
@@ -141,8 +143,7 @@ describe('Host Metrics', () => {
 
       reader = new TestMetricReader();
 
-      meterProvider = new MeterProvider();
-      meterProvider.addMetricReader(reader);
+      meterProvider = new MeterProvider({ readers: [reader] });
 
       hostMetrics = new HostMetrics({
         meterProvider,
@@ -363,7 +364,100 @@ describe('Host Metrics', () => {
       ensureValue(metric, {}, 123456);
     });
   });
+
+  describe('filtered metrics', () => {
+    let sandbox: sinon.SinonSandbox;
+    let reader: TestMetricReader;
+
+    let cpuSpy: sinon.SinonSpy;
+    let memSpy: sinon.SinonSpy;
+    let networkSpy: sinon.SinonSpy;
+    let processCpuSpy: sinon.SinonSpy;
+    let processMemSpy: sinon.SinonSpy;
+
+    beforeEach(async () => {
+      sandbox = sinon.createSandbox();
+      sandbox.useFakeTimers();
+
+      sandbox.stub(os, 'freemem').callsFake(mockedOS.freemem);
+      sandbox.stub(os, 'totalmem').callsFake(mockedOS.totalmem);
+      sandbox.stub(os, 'cpus').callsFake(() => mockedOS.cpus());
+      sandbox.stub(process, 'uptime').callsFake(mockedProcess.uptime);
+      sandbox
+        .stub(process, 'cpuUsage')
+        .callsFake(() => mockedProcess.cpuUsage());
+      sandbox
+        .stub(process.memoryUsage, 'rss')
+        .callsFake(mockedProcess.memoryUsage.rss);
+      sandbox.stub(SI, 'networkStats').callsFake(mockedSI.networkStats);
+
+      cpuSpy = sandbox.spy(commonUsage, 'getCpuUsageData');
+      memSpy = sandbox.spy(commonUsage, 'getMemoryData');
+      networkSpy = sandbox.spy(networkUsage, 'getNetworkData');
+      processCpuSpy = sandbox.spy(commonUsage, 'getProcessCpuUsageData');
+      processMemSpy = sandbox.spy(commonUsage, 'getProcessMemoryData');
+
+      reader = new TestMetricReader();
+      meterProvider = new MeterProvider({ readers: [reader] });
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+      cpuSpy.resetHistory();
+      memSpy.resetHistory();
+      networkSpy.resetHistory();
+      processCpuSpy.resetHistory();
+      processMemSpy.resetHistory();
+    });
+
+    it('should report all when undefined', async () => {
+      await _initMetrics(reader, meterProvider, sandbox, undefined);
+
+      assert(cpuSpy.called);
+      assert(memSpy.called);
+      assert(networkSpy.called);
+      assert(processCpuSpy.called);
+      assert(processMemSpy.called);
+    });
+
+    it('should report only process metrics', async () => {
+      await _initMetrics(reader, meterProvider, sandbox, 'process');
+
+      assert(cpuSpy.notCalled);
+      assert(memSpy.notCalled);
+      assert(networkSpy.notCalled);
+      assert(processCpuSpy.called);
+      assert(processMemSpy.called);
+    });
+
+    it('should report only host metrics', async () => {
+      await _initMetrics(reader, meterProvider, sandbox, 'host');
+
+      assert(cpuSpy.called);
+      assert(memSpy.called);
+      assert(networkSpy.called);
+      assert(processCpuSpy.notCalled);
+      assert(processMemSpy.notCalled);
+    });
+  });
 });
+
+async function _initMetrics(reader: TestMetricReader, meterProvider: MeterProvider, sandbox: sinon.SinonSandbox, meterScope: MetricsCollectorConfig['meterScope']) {
+  const hostMetrics = new HostMetrics({
+    meterProvider,
+    name: '', // to get default instrumentation scope name
+    meterScope: meterScope as MetricsCollectorConfig['meterScope']
+  });
+
+  hostMetrics.start();
+  // Drop first frame cpu metrics, see
+  // src/common.ts getCpuUsageData/getProcessCpuUsageData
+  await reader.collect();
+  // advance the clock for the next collection
+  sandbox.clock.tick(1000);
+  // invalidates throttles
+  countSI = 0;
+}
 
 async function getRecords(
   metricReader: MetricReader,
