@@ -32,7 +32,7 @@ export interface BunyanInstrumentationConfig extends InstrumentationConfig {
   /**
    * Control Log sending severity level, logs will be sent for  specified severity and higher.
    */
-  logSendingLevel?: SeverityNumber;
+  logSeverity?: SeverityNumber;
 
   /**
    * Whether to disable the injection trace-context fields, and possibly other

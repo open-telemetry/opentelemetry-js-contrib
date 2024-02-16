@@ -321,7 +321,7 @@ describe('BunyanInstrumentation', () => {
     });
 
     it('log record level configuration', () => {
-      instrumentation.setConfig({ logSendingLevel: SeverityNumber.WARN });
+      instrumentation.setConfig({ logSeverity: SeverityNumber.WARN });
 
       // Changing `disableLogSending` only has an impact on Loggers created
       // *after* it is set. So we cannot test with the `log` created in

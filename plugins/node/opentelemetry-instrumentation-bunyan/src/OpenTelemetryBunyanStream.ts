@@ -102,15 +102,12 @@ function severityNumberFromBunyanLevel(lvl: number) {
  */
 export class OpenTelemetryBunyanStream {
   private _otelLogger: Logger;
-  private _logSendingLevel: SeverityNumber;
 
-  constructor(options?: { logSendingLevel?: SeverityNumber }) {
+  constructor() {
     this._otelLogger = logs.getLogger(
       DEFAULT_INSTRUMENTATION_SCOPE_NAME,
       DEFAULT_INSTRUMENTATION_SCOPE_VERSION
     );
-    this._logSendingLevel =
-      options?.logSendingLevel || SeverityNumber.UNSPECIFIED;
   }
 
   /**
@@ -152,17 +149,14 @@ export class OpenTelemetryBunyanStream {
     } else {
       fields.time = time; // Expose non-Date "time" field on attributes.
     }
-    const severityNumber = severityNumberFromBunyanLevel(level);
-    if (this._logSendingLevel <= severityNumber) {
-      const otelRec = {
-        timestamp,
-        observedTimestamp: timestamp,
-        severityNumber: severityNumber,
-        severityText: nameFromLevel[level],
-        body: msg,
-        attributes: fields,
-      };
-      this._otelLogger.emit(otelRec);
-    }
+    const otelRec = {
+      timestamp,
+      observedTimestamp: timestamp,
+      severityNumber: severityNumberFromBunyanLevel(level),
+      severityText: nameFromLevel[level],
+      body: msg,
+      attributes: fields,
+    };
+    this._otelLogger.emit(otelRec);
   }
 }
