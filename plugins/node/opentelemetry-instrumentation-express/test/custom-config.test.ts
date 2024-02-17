@@ -26,8 +26,9 @@ import * as assert from 'assert';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { ExpressInstrumentation, ExpressInstrumentationConfig } from '../src';
-import { createServer, httpRequest } from './utils';
+import { ExpressInstrumentation } from '../src/instrumentation.js';
+import { ExpressInstrumentationConfig } from '../src/types.js';
+import { createServer, httpRequest } from './utils.js';
 
 const instrumentation = new ExpressInstrumentation({
   ignoreLayersType: [ExpressLayerType.MIDDLEWARE],

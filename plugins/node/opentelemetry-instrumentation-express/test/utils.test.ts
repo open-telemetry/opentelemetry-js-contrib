@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import * as utils from '../src/utils';
+import * as utils from '../src/utils.js';
 import * as assert from 'assert';
-import { ExpressInstrumentationConfig } from '../src/types';
-import { ExpressLayer } from '../src/internal-types';
-import { ExpressLayerType } from '../src/enums/ExpressLayerType';
-import { AttributeNames } from '../src/enums/AttributeNames';
+import { ExpressInstrumentationConfig } from '../src/types.js';
+import { ExpressLayer } from '../src/internal-types.js';
+import { ExpressLayerType } from '../src/enums/ExpressLayerType.js';
+import { AttributeNames } from '../src/enums/AttributeNames.js';
 
 describe('Utils', () => {
   describe('isLayerIgnored()', () => {

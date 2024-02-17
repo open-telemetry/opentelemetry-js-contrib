@@ -3,19 +3,24 @@
   "version": "0.35.0",
   "description": "OpenTelemetry express automatic instrumentation package.",
   "main": "build/src/index.js",
+  "module": "build/esm/index.js",
+  "esnext": "build/esnext/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "test-all-versions": "tav",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "tdd": "yarn test -- --watch-extensions ts --watch",
-    "clean": "rimraf build/*",
+    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-express --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "tsc -p .",
+    "compile:cjs": "tsc --build && echo '{ \"type\": \"commonjs\" }' > build/src/package.json",
+    "compile:esm": "tsc --build tsconfig.esm.json && echo '{ \"type\": \"module\" }' > build/esm/package.json",
+    "compile:esnext": "tsc --build tsconfig.esnext.json && echo '{ \"type\": \"module\" }' > build/esnext/package.json",
+    "compile": "npm run compile:cjs && npm run compile:esm && npm run compile:esnext",
     "compile:examples": "cd examples && npm run compile",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
@@ -33,10 +38,29 @@
   "engines": {
     "node": ">=14"
   },
+  "type": "module",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./build/src/index.d.ts",
+        "default": "./build/src/index.js"
+      },
+      "import": {
+        "types": "./build/esm/index.d.ts",
+        "default": "./build/esm/index.js"
+      }
+    }
+  },
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "build/src/**/*.d.ts",
+    "build/esm/**/*.js",
+    "build/esm/**/*.js.map",
+    "build/esm/**/*.d.ts",
+    "build/esnext/**/*.js",
+    "build/esnext/**/*.js.map",
+    "build/esnext/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"

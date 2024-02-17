@@ -23,16 +23,16 @@ import {
   SpanStatusCode,
 } from '@opentelemetry/api';
 import type * as express from 'express';
-import { ExpressInstrumentationConfig, ExpressRequestInfo } from './types';
-import { ExpressLayerType } from './enums/ExpressLayerType';
-import { AttributeNames } from './enums/AttributeNames';
+import { ExpressInstrumentationConfig, ExpressRequestInfo } from './types.js';
+import { ExpressLayerType } from './enums/ExpressLayerType.js';
+import { AttributeNames } from './enums/AttributeNames.js';
 import {
   asErrorAndMessage,
   getLayerMetadata,
   isLayerIgnored,
   storeLayerPath,
-} from './utils';
-import { VERSION } from './version';
+} from './utils.js';
+import { VERSION } from './version.js';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -46,7 +46,7 @@ import {
   kLayerPatched,
   PatchedRequest,
   _LAYERS_STORE_PROPERTY,
-} from './internal-types';
+} from './internal-types.js';
 
 /** Express instrumentation for OpenTelemetry */
 export class ExpressInstrumentation extends InstrumentationBase<
