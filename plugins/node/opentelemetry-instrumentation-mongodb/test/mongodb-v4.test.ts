@@ -51,7 +51,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
   }
 
   const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
-  const PORT = process.env.MONGODB_PORT || '27017';
+  const PORT = process.env.MONGODB_PORT || 27017;
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-traces';
   const COLLECTION_NAME = 'test-traces';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
