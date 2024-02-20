@@ -813,10 +813,11 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     });
 
     if (host && port) {
-      span.setAttributes({
-        [SemanticAttributes.NET_PEER_NAME]: host,
-        [SemanticAttributes.NET_PEER_PORT]: port,
-      });
+      span.setAttribute(SemanticAttributes.NET_PEER_NAME, host);
+      const portNumber = parseInt(port, 10);
+      if (!isNaN(portNumber)) {
+        span.setAttribute(SemanticAttributes.NET_PEER_PORT, portNumber);
+      }
     }
     if (!commandObj) return;
     const dbStatementSerializer =

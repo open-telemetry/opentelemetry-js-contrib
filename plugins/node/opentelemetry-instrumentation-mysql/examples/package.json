@@ -1,7 +1,7 @@
 {
   "name": "mysql-example",
   "private": true,
-  "version": "0.23.0",
+  "version": "0.1.0",
   "description": "Example of mysql integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {

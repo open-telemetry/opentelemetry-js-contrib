@@ -36,7 +36,9 @@ const memoryExporter = new InMemorySpanExporter();
 
 const CONFIG = {
   host: process.env.OPENTELEMETRY_MEMCACHED_HOST || 'localhost',
-  port: process.env.OPENTELEMETRY_MEMCACHED_PORT || '11211',
+  port: process.env.OPENTELEMETRY_MEMCACHED_PORT
+    ? parseInt(process.env.OPENTELEMETRY_MEMCACHED_PORT)
+    : 27017,
 };
 
 const DEFAULT_ATTRIBUTES = {
