@@ -49,7 +49,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
   }
 
   const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
-    process.env.MONGODB_PORT || '27017'
+    process.env.MONGODB_PORT || 27017
   }`;
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
   const COLLECTION_NAME = 'test';
@@ -585,7 +585,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
               );
               assert.strictEqual(
                 mongoSpan.attributes[SemanticAttributes.NET_PEER_PORT],
-                process.env.MONGODB_PORT || '27017'
+                process.env.MONGODB_PORT
+                  ? parseInt(process.env.MONGODB_PORT)
+                  : 27017
               );
               done();
             }
