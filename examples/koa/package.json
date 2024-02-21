@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.1.0",
   "description": "Example of Koa and @koa/router integration with OpenTelemetry",
-  "main": "index.js",
   "scripts": {
     "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",
     "zipkin:client": "cross-env EXPORTER=zipkin ts-node src/client.ts",
@@ -13,7 +12,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git"
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "examples/koa"
   },
   "keywords": [
     "opentelemetry",
@@ -42,7 +42,7 @@
     "axios": "^1.6.0",
     "koa": "^2.13.0"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/koa#readme",
   "devDependencies": {
     "cross-env": "^7.0.0",
     "ts-node": "^10.6.0",

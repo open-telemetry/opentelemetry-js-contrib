@@ -13,6 +13,7 @@ shows key aspects of tracing such as
 ## Installation
 
 ```sh
+# from this directory
 npm install
 ```
 

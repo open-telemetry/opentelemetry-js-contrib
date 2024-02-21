@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js-contrib.git",
-    "directory": "plugins/node/opentelemetry-instrumentation-express"
+    "directory": "examples/express"
   },
   "keywords": [
     "opentelemetry",
@@ -28,7 +28,7 @@
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express/examples#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/express#readme",
   "dependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/exporter-jaeger": "^1.18.1",
