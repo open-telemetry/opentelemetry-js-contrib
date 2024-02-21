@@ -8,8 +8,7 @@
     "zipkin:client": "cross-env EXPORTER=zipkin ts-node src/client.ts",
     "jaeger:server": "cross-env EXPORTER=jaeger ts-node src/server.ts",
     "jaeger:client": "cross-env EXPORTER=jaeger ts-node src/client.ts",
-    "compile": "tsc -p .",
-    "setup": "cd ../../../../ && npm ci && cd plugins/node/opentelemetry-instrumentation-express && npm run compile && cd examples && npm run compile"
+    "compile": "tsc -p ."
   },
   "repository": {
     "type": "git",
