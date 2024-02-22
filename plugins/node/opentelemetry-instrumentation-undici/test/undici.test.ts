@@ -466,7 +466,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
           throw new Error('ignoreRequestHook error');
         },
         applyCustomAttributesOnSpan: () => {
-          throw new Error('ignoreRequestHook error');
+          throw new Error('applyCustomAttributesOnSpan error');
         },
         requestHook: () => {
           throw new Error('requestHook error');

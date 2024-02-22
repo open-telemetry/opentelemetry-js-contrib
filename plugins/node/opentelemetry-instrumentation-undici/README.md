@@ -40,17 +40,23 @@ registerInstrumentations({
 ```
 
 <!-- TODO: -->
-See [examples/http](https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/fetch) for a short example.
+See [examples/http](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/fetch) for a short example.
 
 ### Undici/Fetch instrumentation Options
-
-<!-- TODO: check PR description about config -->
 
 Undici instrumentation has few options available to choose from. You can set the following:
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`onRequest`](https://github.com/open-telemetry/opentelemetry-js/blob/main/experimental/packages/opentelemetry-instrumentation-undici/src/types.ts#19) | `UndiciRequestHook` | Function for adding custom attributes before request is handled |
+| [`ignoreRequestHook`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#61) | `IgnoreRequestFunction` | Undici instrumentation will not trace all incoming requests that matched with custom function. |
+| [`applyCustomAttributesOnSpan`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#63) | `CustomAttributesFunction` | Function for adding custom attributes before response is handled. |
+| [`requestHook`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#65) | `RequestHookFunction` | Function for adding custom attributes before request is handled. |
+| [`startSpanHook`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#67) | `StartSpanHookFunction` | Function for adding custom attributes before a span is started. |
+| [`requireParentforSpans`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#69) | `Boolean` | Require a parent span is present to create new span for outgoing requests. |
+| [`headersToSpanAttributes`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#71) | `Object` |  List of case insensitive HTTP headers to convert to span attributes. Headers will be converted to span attributes in the form of `http.{request\|response}.header.header-name` where the name is only lowecased, e.g. `http.response.header.content-length`|
+
+
+
 
 ## Useful links
 
@@ -63,7 +69,7 @@ Undici instrumentation has few options available to choose from. You can set the
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
-[license-url]: https://github.com/open-telemetry/opentelemetry-js/blob/main/LICENSE
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-http
-[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-http.svg
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-router
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-router.svg
