@@ -77,7 +77,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       } catch (assertErr) {
         // The exception will hang the server and the test so we set a header
         // back to the test to make an assertion
-        res.setHeader('propagation-error', assertErr.message);
+        res.setHeader('propagation-error', (assertErr as Error).message);
       }
 
       // Retur a valid response always
@@ -357,7 +357,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         await fetch(fetchUrl);
       } catch (err) {
         // Expected error
-        fetchError = err;
+        fetchError = err as Error;
       }
 
       spans = memoryExporter.getFinishedSpans();
@@ -390,7 +390,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         await fetchPromise;
       } catch (err) {
         // Expected error
-        fetchError = err;
+        fetchError = err as Error;
       }
 
       // Let the error be published to diagnostics channel

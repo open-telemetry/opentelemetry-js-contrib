@@ -94,7 +94,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       } catch (assertErr) {
         // The exception will hang the server and the test so we set a header
         // back to the test to make an assertion
-        res.setHeader('propagation-error', assertErr.message);
+        res.setHeader('propagation-error', (assertErr as Error).message);
       }
 
       // Retur a valid response always
@@ -578,7 +578,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         await undici.request(requestUrl);
       } catch (err) {
         // Expected error
-        fetchError = err;
+        fetchError = err as Error;
       }
 
       spans = memoryExporter.getFinishedSpans();
@@ -613,7 +613,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         await requestPromise;
       } catch (err) {
         // Expected error
-        requestError = err;
+        requestError = err as Error;
       }
 
       // Let the error be published to diagnostics channel
@@ -632,7 +632,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         noNetPeer: true, // do not check network attribs
         forceStatus: {
           code: SpanStatusCode.ERROR,
-          message: requestError.message,
+          message: requestError?.message,
         },
       });
     });
