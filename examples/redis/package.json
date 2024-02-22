@@ -2,7 +2,7 @@
   "name": "redis-example",
   "private": true,
   "version": "0.1.0",
-  "description": "Example of HTTP integration with OpenTelemetry",
+  "description": "Example of Redis integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
     "docker:start": "docker run -d -p 6379:6379 --name otel-redis redis:alpine",
@@ -43,7 +43,7 @@
     "express": "^4.17.1",
     "redis": "^3.1.1"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/redis#readme",
   "devDependencies": {
     "@types/express": "^4.17.14",
     "cross-env": "^7.0.0",
