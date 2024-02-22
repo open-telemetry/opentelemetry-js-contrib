@@ -114,10 +114,7 @@ export const assertSpan = (
       validations.forceStatus.code,
       'span `status.code` is correct'
     );
-    assert.ok(
-      span.status.message,
-      'span `status.message` is present'
-    );
+    assert.ok(span.status.message, 'span `status.message` is present');
   } else {
     const { httpStatusCode } = validations;
     const isStatusUnset =
@@ -138,7 +135,7 @@ export const assertSpan = (
   if (validations.resHeaders) {
     // Headers were added in v17.5.0, v16.15.0
     // https://nodejs.org/api/globals.html#class-headers
-    const { resHeaders } = validations
+    const { resHeaders } = validations;
     const contentLengthHeader = getHeader(resHeaders, 'content-length');
 
     if (contentLengthHeader) {
@@ -175,9 +172,9 @@ export const assertSpan = (
 
   if (validations.reqHeaders) {
     const userAgent = getHeader(validations.reqHeaders, 'content-length');
-      // validations.reqHeaders instanceof Headers
-      //   ? validations.reqHeaders.get('user-agent')
-      //   : validations.reqHeaders['user-agent'];
+    // validations.reqHeaders instanceof Headers
+    //   ? validations.reqHeaders.get('user-agent')
+    //   : validations.reqHeaders['user-agent'];
     if (userAgent) {
       assert.strictEqual(
         span.attributes[SemanticAttributes.USER_AGENT_ORIGINAL],
@@ -190,7 +187,10 @@ export const assertSpan = (
 /**
  * Gets a header by name regardless of the type
  */
-function getHeader(headers: Headers | IncomingHttpHeaders, name: string): string | string[] | null | undefined {
+function getHeader(
+  headers: Headers | IncomingHttpHeaders,
+  name: string
+): string | string[] | null | undefined {
   if (typeof headers.get === 'function') {
     return headers.get(name);
   }
