@@ -139,16 +139,8 @@ export const assertSpan = (
     // Headers were added in v17.5.0, v16.15.0
     // https://nodejs.org/api/globals.html#class-headers
     const { resHeaders } = validations
-    const headersSupporetd = typeof Headers !== 'undefined';
-    let contentLengthHeader;
+    const contentLengthHeader = getHeader(resHeaders, 'content-length');
 
-    if (headersSupporetd && resHeaders instanceof Headers) {
-      contentLengthHeader = resHeaders.get('content-length');
-    } else if (!(resHeaders instanceof Headers)) {
-      contentLengthHeader = resHeaders['content-length'];
-    }
-
-    console.log('contentLengthHeader', contentLengthHeader);
     if (contentLengthHeader) {
       const contentLength = Number(contentLengthHeader);
 
@@ -182,10 +174,10 @@ export const assertSpan = (
   );
 
   if (validations.reqHeaders) {
-    const userAgent =
-      validations.reqHeaders instanceof Headers
-        ? validations.reqHeaders.get('user-agent')
-        : validations.reqHeaders['user-agent'];
+    const userAgent = getHeader(validations.reqHeaders, 'content-length');
+      // validations.reqHeaders instanceof Headers
+      //   ? validations.reqHeaders.get('user-agent')
+      //   : validations.reqHeaders['user-agent'];
     if (userAgent) {
       assert.strictEqual(
         span.attributes[SemanticAttributes.USER_AGENT_ORIGINAL],
@@ -194,3 +186,13 @@ export const assertSpan = (
     }
   }
 };
+
+/**
+ * Gets a header by name regardless of the type
+ */
+function getHeader(headers: Headers | IncomingHttpHeaders, name: string): string | string[] | null | undefined {
+  if (typeof headers.get === 'function') {
+    return headers.get(name);
+  }
+  return (headers as IncomingHttpHeaders)[name];
+}

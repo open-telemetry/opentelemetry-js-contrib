@@ -70,9 +70,9 @@ describe('UndiciInstrumentation `undici` tests', function () {
   before(function (done) {
     // Undici >6.0.0 requires node v18
     // https://github.com/nodejs/undici/blob/e218fc61eda46da8784e0cedcaa88cd7e84dee99/package.json#L138
-    if (!satisfies(process.version, '>=18.0')) {
-      this.skip();
-    }
+    // if (!satisfies(process.version, '>=18.0')) {
+    //   this.skip();
+    // }
 
     propagation.setGlobalPropagator(new MockPropagation());
     context.setGlobalContextManager(new AsyncHooksContextManager().enable());
@@ -259,6 +259,13 @@ describe('UndiciInstrumentation `undici` tests', function () {
     });
 
     it('should create valid spans for "fetch" method', async function () {
+      // Fetch method is available from node v16.5
+      // we want to skip this test for lowe versions
+      // https://github.com/nodejs/undici/blob/08839e450aa6dd1b0e2c019d6e5869cd5b966be1/index.js#L95
+      if (typeof undici.fetch === 'undefined') {
+        this.skip();
+      }
+
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 
@@ -599,6 +606,13 @@ describe('UndiciInstrumentation `undici` tests', function () {
     });
 
     it('should capture error if undici request is aborted', async function () {
+      // AbortController was added in: v15.0.0, v14.17.0
+      // but we still run tests for node v14
+      // https://nodejs.org/api/globals.html#class-abortcontroller
+      if (typeof AbortController === 'undefined') {
+        this.skip();
+      }
+
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 

@@ -65,9 +65,10 @@ export class MockServer {
 
   stop(cb: (err?: Error) => void) {
     if (this._httpServer) {
-      this._reqListener = undefined;
       this._httpServer.close();
-      cb();
+      this._httpServer = undefined;
+      this._reqListener = undefined;
     }
+    cb();
   }
 }
