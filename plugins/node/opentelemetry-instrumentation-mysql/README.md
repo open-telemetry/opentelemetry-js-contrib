@@ -40,7 +40,7 @@ registerInstrumentations({
 })
 ```
 
-See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql/examples) for a short example.
+See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main//examples/mysql) for a short example.
 
 ### MySQL instrumentation Options
 

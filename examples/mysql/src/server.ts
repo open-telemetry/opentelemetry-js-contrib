@@ -50,7 +50,7 @@ function startServer(port: number | undefined) {
 function handleRequest(request: any, response: any) {
   const currentSpan = api.trace.getSpan(api.context.active())
   // display traceid in the terminal
-  const traceId = currentSpan?.spanContext();
+  const traceId = currentSpan?.spanContext().traceId;
   console.log(`traceid: ${traceId}`);
   console.log(`Jaeger URL: http://localhost:16686/trace/${traceId}`);
   console.log(`Zipkin URL: http://localhost:9411/zipkin/traces/${traceId}`);

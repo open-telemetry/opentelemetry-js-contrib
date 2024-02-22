@@ -42,7 +42,7 @@
     "@opentelemetry/exporter-metrics-otlp-grpc": "^0.48.0",
     "mysql": "^2.18.1"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/mysql#readme",
   "devDependencies": {
     "@types/mysql": "^2.15.21",
     "cross-env": "^7.0.0",
