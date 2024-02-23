@@ -55,9 +55,6 @@ Undici instrumentation has few options available to choose from. You can set the
 | [`requireParentforSpans`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#69) | `Boolean` | Require a parent span is present to create new span for outgoing requests. |
 | [`headersToSpanAttributes`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#71) | `Object` |  List of case insensitive HTTP headers to convert to span attributes. Headers will be converted to span attributes in the form of `http.{request\|response}.header.header-name` where the name is only lowecased, e.g. `http.response.header.content-length`|
 
-
-
-
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
