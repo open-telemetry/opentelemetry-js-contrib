@@ -154,6 +154,9 @@ describe('UndiciInstrumentation `undici` tests', function () {
           requestHeaders: ['foo-client', 'x-requested-with'],
           responseHeaders: ['foo-server'],
         },
+        applyCustomAttributesOnSpan: (span, req, res) => {
+          span.setAttribute('user.defined.attribute', 'user.defined.value');
+        }
       });
     });
     afterEach(function () {
@@ -249,6 +252,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'hook-value',
         'startSpanHook is called'
       );
+      assert.strictEqual(
+        span.attributes['user.defined.attribute'],
+        'user.defined.value',
+        'applyCustomAttributesOnSpan is called'
+      );
     });
 
     it('should create valid spans for "fetch" method', async function () {
@@ -308,6 +316,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['user.defined.attribute'],
+        'user.defined.value',
+        'applyCustomAttributesOnSpan is called'
       );
     });
 
@@ -376,6 +389,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['user.defined.attribute'],
+        'user.defined.value',
+        'applyCustomAttributesOnSpan is called'
       );
     });
 
@@ -452,6 +470,11 @@ describe('UndiciInstrumentation `undici` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
+      );
+      assert.strictEqual(
+        span.attributes['user.defined.attribute'],
+        'user.defined.value',
+        'applyCustomAttributesOnSpan is called'
       );
     });
 

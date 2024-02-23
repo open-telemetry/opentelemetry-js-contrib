@@ -41,6 +41,7 @@ import {
   ListenerRecord,
   RequestHeadersMessage,
   RequestMessage,
+  RequestTrailersMessage,
   ResponseHeadersMessage,
 } from './internal-types';
 import { UndiciInstrumentationConfig, UndiciRequest } from './types';
@@ -374,14 +375,23 @@ export class UndiciInstrumentation extends InstrumentationBase {
   }
 
   // This is the last event we receive if the request went without any errors
-  private onDone({ request }: RequestMessage): void {
+  private onDone({ request, response }: RequestTrailersMessage): void {
     const record = this._recordFromReq.get(request);
 
     if (!record) {
       return;
     }
 
+    const config = this._getConfig();
     const { span, attributes, startTime } = record;
+
+    // Let the user apply custom attribs before ending the span
+    safeExecuteInTheMiddle(
+      () => config.applyCustomAttributesOnSpan?.(span, request, response),
+      e => e && this._diag.error('caught applyCustomAttributesOnSpan error: ', e),
+      true
+    );
+    
     // End the span
     span.end();
     this._recordFromReq.delete(request);
