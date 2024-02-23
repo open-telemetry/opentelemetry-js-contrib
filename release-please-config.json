@@ -63,6 +63,7 @@
     "plugins/node/opentelemetry-instrumentation-redis-4": {},
     "plugins/node/opentelemetry-instrumentation-restify": {},
     "plugins/node/opentelemetry-instrumentation-router": {},
+    "plugins/node/opentelemetry-instrumentation-undici": {},
     "plugins/node/opentelemetry-instrumentation-winston": {},
     "plugins/web/opentelemetry-instrumentation-document-load": {},
     "plugins/web/opentelemetry-instrumentation-long-task": {},
