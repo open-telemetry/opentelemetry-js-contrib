@@ -223,7 +223,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         },
         applyCustomAttributesOnSpan: (span, req, res) => {
           span.setAttribute('user.defined.attribute', 'user.defined.value');
-        }
+        },
       });
 
       // Do some requests

@@ -388,10 +388,11 @@ export class UndiciInstrumentation extends InstrumentationBase {
     // Let the user apply custom attribs before ending the span
     safeExecuteInTheMiddle(
       () => config.applyCustomAttributesOnSpan?.(span, request, response),
-      e => e && this._diag.error('caught applyCustomAttributesOnSpan error: ', e),
+      e =>
+        e && this._diag.error('caught applyCustomAttributesOnSpan error: ', e),
       true
     );
-    
+
     // End the span
     span.end();
     this._recordFromReq.delete(request);

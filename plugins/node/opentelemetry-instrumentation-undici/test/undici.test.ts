@@ -156,7 +156,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         },
         applyCustomAttributesOnSpan: (span, req, res) => {
           span.setAttribute('user.defined.attribute', 'user.defined.value');
-        }
+        },
       });
     });
     afterEach(function () {
