@@ -135,12 +135,7 @@ export type InstrumentationConfigMap = {
 export function getNodeAutoInstrumentations(
   inputConfigs: InstrumentationConfigMap = {}
 ): Instrumentation[] {
-  for (const name of Object.keys(inputConfigs)) {
-    if (!Object.prototype.hasOwnProperty.call(InstrumentationMap, name)) {
-      diag.error(`Provided instrumentation name "${name}" not found`);
-      continue;
-    }
-  }
+  checkManuallyProvidedInstrumentationNames(Object.keys(inputConfigs));
 
   const instrumentations: Instrumentation[] = [];
 
@@ -165,6 +160,16 @@ export function getNodeAutoInstrumentations(
   }
 
   return instrumentations;
+}
+
+function checkManuallyProvidedInstrumentationNames(
+  manuallyProvidedInstrumentationNames: string[]
+) {
+  for (const name of manuallyProvidedInstrumentationNames) {
+    if (!Object.prototype.hasOwnProperty.call(InstrumentationMap, name)) {
+      diag.error(`Provided instrumentation name "${name}" not found`);
+    }
+  }
 }
 
 export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
