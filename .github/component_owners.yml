@@ -63,6 +63,7 @@ components:
     - blumamir
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
+    - trentm
   plugins/node/opentelemetry-instrumentation-cassandra:
     - seemk
   plugins/node/opentelemetry-instrumentation-connect: []

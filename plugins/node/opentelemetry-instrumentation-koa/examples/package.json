@@ -1,7 +1,7 @@
 {
   "name": "koa-example",
   "private": true,
-  "version": "0.23.0",
+  "version": "0.1.0",
   "description": "Example of Koa and @koa/router integration with OpenTelemetry",
   "main": "index.js",
   "scripts": {
