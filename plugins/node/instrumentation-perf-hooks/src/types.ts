@@ -13,9 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export type IgnoreMatcher = string | RegExp | ((url: string) => boolean);
-export interface DnsInstrumentationConfig extends InstrumentationConfig {
-  ignoreHostnames?: IgnoreMatcher | IgnoreMatcher[];
+export interface PerfHooksInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * The approximate number of milliseconds for which to calculate event loop utilization averages.
+   * A larger value will result in more accurate averages at the expense of less granular data.
+   * Should be set to below the scrape interval of your metrics collector to avoid duplicated data points.
+   * @default 5000
+   */
+  eventLoopUtilizationMeasurementInterval?: number;
 }
