@@ -56,6 +56,7 @@ import {
   normalizeV3Request,
   removeSuffixFromStringIfExists,
 } from './utils';
+import { propwrap } from './propwrap';
 import { RequestMetadata } from './services/ServiceExtension';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -112,19 +113,24 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       v3MiddlewareStackFileNewVersions,
     ]);
 
-    // patch for @smithy/middleware-stack for aws-sdk packages v3.363.0+
-    const v3SmithyMiddlewareStackFile = new InstrumentationNodeModuleFile(
-      '@smithy/middleware-stack/dist-cjs/MiddlewareStack.js',
-      ['>=1.0.1'],
-      this.patchV3ConstructStack.bind(this),
-      this.unpatchV3ConstructStack.bind(this)
-    );
+    // Patch for @smithy/middleware-stack for @aws-sdk/* packages v3.363.0+.
+    // As of @smithy/middleware-stack@2.1.0 `constructStack` is only available
+    // as a getter, so we cannot use `this._wrap()`.
+    const self = this;
     const v3SmithyMiddlewareStack = new InstrumentationNodeModuleDefinition(
       '@smithy/middleware-stack',
       ['>=2.0.0'],
-      undefined,
-      undefined,
-      [v3SmithyMiddlewareStackFile]
+      (moduleExports, moduleVersion) => {
+        const newExports = propwrap(
+          moduleExports,
+          'constructStack',
+          (orig: any) => {
+            self._diag.debug('propwrapping aws-sdk v3 constructStack');
+            return self._getV3ConstructStackPatch(moduleVersion, orig);
+          }
+        );
+        return newExports;
+      }
     );
 
     const v3SmithyClient = new InstrumentationNodeModuleDefinition<typeof AWS>(

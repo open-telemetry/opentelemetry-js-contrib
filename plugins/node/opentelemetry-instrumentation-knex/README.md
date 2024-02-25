@@ -22,7 +22,7 @@ npm install --save @opentelemetry/instrumentation-knex
 ## Usage
 
 ```js
-const { KnexInstrumentation, KnexInstrumentationConfig } = require('@opentelemetry/instrumentation-knex');
+const { KnexInstrumentation } = require('@opentelemetry/instrumentation-knex');
 const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
@@ -34,11 +34,10 @@ provider.register();
 
 registerInstrumentations({
   instrumentations: [
-    new KnexInstrumentation(
-      new KnexInstrumentationConfig({
+    new KnexInstrumentation({
         maxQueryLength: 100,
       })
-    )],
+  ],
   tracerProvider: provider,
 });
 ```

@@ -1,6 +1,6 @@
 'use strict';
 
-import { Sampler, SpanKind } from "@opentelemetry/api";
+import { SpanKind, Attributes } from "@opentelemetry/api";
 
 const opentelemetry = require('@opentelemetry/api');
 
@@ -8,17 +8,15 @@ const opentelemetry = require('@opentelemetry/api');
 const { diag, DiagConsoleLogger, DiagLogLevel } = opentelemetry;
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
-import { AlwaysOnSampler } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
+import { Sampler, AlwaysOnSampler, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticAttributes, SemanticResourceAttributes as ResourceAttributesSC } from '@opentelemetry/semantic-conventions';
-import { SpanAttributes } from "@opentelemetry/api/build/src/trace/attributes";
 
-const Exporter = (process.env.EXPORTER || '').toLowerCase().startsWith('z') ? ZipkinExporter : JaegerExporter;
+const Exporter = (process.env.EXPORTER || '').toLowerCase().startsWith('z') ? ZipkinExporter : OTLPTraceExporter;
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 
@@ -50,7 +48,7 @@ export const setupTracing = (serviceName: string) => {
   return opentelemetry.trace.getTracer(serviceName);
 };
 
-type FilterFunction = (spanName: string, spanKind: SpanKind, attributes: SpanAttributes) => boolean;
+type FilterFunction = (spanName: string, spanKind: SpanKind, attributes: Attributes) => boolean;
 
 function filterSampler(filterFn: FilterFunction, parent: Sampler): Sampler {
   return {
@@ -66,6 +64,6 @@ function filterSampler(filterFn: FilterFunction, parent: Sampler): Sampler {
   }
 }
 
-function ignoreHealthCheck(spanName: string, spanKind: SpanKind, attributes: SpanAttributes) {
+function ignoreHealthCheck(spanName: string, spanKind: SpanKind, attributes: Attributes) {
   return spanKind !== opentelemetry.SpanKind.SERVER || attributes[SemanticAttributes.HTTP_ROUTE] !== "/health";
 }
