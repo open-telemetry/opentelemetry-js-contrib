@@ -79,7 +79,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
     );
   }
 
-  init() {
+  protected init() {
     return [
       new InstrumentationNodeModuleDefinition<typeof mysqlTypes>(
         'mysql',

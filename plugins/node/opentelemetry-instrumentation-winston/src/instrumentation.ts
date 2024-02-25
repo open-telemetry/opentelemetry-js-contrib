@@ -45,7 +45,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-winston', VERSION, config);
   }
 
-  init() {
+  protected init() {
     return [
       new InstrumentationNodeModuleDefinition<{}>(
         'winston',

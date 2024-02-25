@@ -89,7 +89,7 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
     this._config = Object.assign({}, config);
   }
 
-  init(): InstrumentationModuleDefinition<any>[] {
+  protected init(): InstrumentationModuleDefinition<any>[] {
     const v3MiddlewareStackFileOldVersions = new InstrumentationNodeModuleFile(
       '@aws-sdk/middleware-stack/dist/cjs/MiddlewareStack.js',
       ['>=3.1.0 <3.35.0'],

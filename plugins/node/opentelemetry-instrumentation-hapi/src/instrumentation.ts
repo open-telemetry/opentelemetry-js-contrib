@@ -14,39 +14,38 @@
  * limitations under the License.
  */
 
-// types for @hapi/hapi are published under @types/hapi__hapi
-import type * as Hapi from 'hapi__hapi';
 import * as api from '@opentelemetry/api';
-
-import {
-  HapiComponentName,
-  HapiPluginInput,
-  HapiServerRouteInput,
-  HapiServerRouteInputMethod,
-  PatchableExtMethod,
-  PatchableServerRoute,
-  RegisterFunction,
-  ServerExtDirectInput,
-  handlerPatched,
-} from './internal-types';
+import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   InstrumentationBase,
   InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { RPCType, getRPCMetadata } from '@opentelemetry/core';
+
+// types for @hapi/hapi are published under @types/hapi__hapi
+import type * as Hapi from 'hapi__hapi';
+import { VERSION } from './version';
 import {
-  getExtMetadata,
-  getPluginName,
+  HapiComponentName,
+  HapiServerRouteInput,
+  handlerPatched,
+  PatchableServerRoute,
+  HapiServerRouteInputMethod,
+  HapiPluginInput,
+  RegisterFunction,
+  PatchableExtMethod,
+  ServerExtDirectInput,
+} from './internal-types';
+import {
   getRouteMetadata,
-  isDirectExtInput,
-  isLifecycleExtEventObj,
+  getPluginName,
   isLifecycleExtType,
+  isLifecycleExtEventObj,
+  getExtMetadata,
+  isDirectExtInput,
   isPatchableExtMethod,
 } from './utils';
-
-import { VERSION } from './version';
 
 /** Hapi instrumentation for OpenTelemetry */
 export class HapiInstrumentation extends InstrumentationBase {
@@ -54,7 +53,7 @@ export class HapiInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-hapi', VERSION, config);
   }
 
-  init() {
+  protected init() {
     return new InstrumentationNodeModuleDefinition<typeof Hapi>(
       HapiComponentName,
       ['>=17 <21'],

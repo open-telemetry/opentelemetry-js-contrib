@@ -74,7 +74,7 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
     this._config = Object.assign({}, config);
   }
 
-  init(): InstrumentationModuleDefinition<any> {
+  protected init(): InstrumentationModuleDefinition<any> {
     const module = new InstrumentationNodeModuleDefinition<any>(
       'mongoose',
       ['>=5.9.7 <7'],

@@ -42,7 +42,7 @@ export class PinoInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-pino', VERSION, config);
   }
 
-  init() {
+  protected init() {
     return [
       new InstrumentationNodeModuleDefinition<any>(
         'pino',

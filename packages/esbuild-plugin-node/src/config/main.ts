@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-import {
-  InstrumentationBase,
-  InstrumentationModuleDefinition,
-} from '@opentelemetry/instrumentation';
-
 import { EsbuildInstrumentationConfigMap } from '../types';
+import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 
 export const instrumentations: InstrumentationModuleDefinition<any>[] =
   getNodeAutoInstrumentations()
-    .flatMap(i => {
-      // This is because the GrpcInstrumentation does not extend InstrumentationBase
-      // Should we instead have it extend that?
-      if (i instanceof InstrumentationBase) {
-        return i.init() ?? [];
-      }
-      return [];
-    })
+    .flatMap(i => i.getModuleDefinitions() ?? [])
     .filter(Boolean);
 
 function configGenerator<T extends { enabled?: boolean }>(

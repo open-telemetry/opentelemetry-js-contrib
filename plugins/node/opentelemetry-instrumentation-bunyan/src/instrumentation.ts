@@ -42,7 +42,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
     );
   }
 
-  init() {
+  protected init() {
     return [
       new InstrumentationNodeModuleDefinition<typeof BunyanLogger>(
         'bunyan',
