@@ -87,14 +87,23 @@ describe('nodejs.event_loop.utilization', () => {
     const scopeMetrics =
       resourceMetrics[resourceMetrics.length - 1].scopeMetrics;
     const metrics = scopeMetrics[0].metrics;
-    assert.strictEqual(metrics.length, 1);
-    assert.strictEqual(metrics[0].dataPointType, DataPointType.GAUGE);
-    assert.strictEqual(metrics[0].dataPoints.length, 1);
-    assert.strictEqual(metrics[0].dataPoints[0].value > 0, true);
-    assert.strictEqual(metrics[0].dataPoints[0].value < 1, true);
+    assert.strictEqual(metrics.length, 1, 'one ScopeMetrics');
+    assert.strictEqual(metrics[0].dataPointType, DataPointType.GAUGE, 'gauge');
+    assert.strictEqual(metrics[0].dataPoints.length, 1, 'one data point');
+    assert.strictEqual(
+      metrics[0].dataPoints[0].value > 0,
+      true,
+      `val (${val}) > 0`
+    );
+    assert.strictEqual(
+      metrics[0].dataPoints[0].value < 1,
+      true,
+      `val (${val}) < 1`
+    );
     assert.strictEqual(
       metrics[0].descriptor.name,
-      'nodejs.event_loop.utilization'
+      'nodejs.event_loop.utilization',
+      'descriptor.name'
     );
     assert.strictEqual(
       metrics[0].descriptor.description,
