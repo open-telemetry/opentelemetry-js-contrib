@@ -40,11 +40,12 @@ registerInstrumentations({
 
 You can set the following:
 
-| Options             | Type                                                                                                | Description                                                                                                     |
-| ------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `createHook`        | `(functionName: FMember \| FPMember, info: { args: ArrayLike<unknown> }) => boolean`                | Hook called before creating the span. If `false` is returned this and all the sibling calls will not be traced. |
-| `endHook`           | `( functionName: FMember \| FPMember, info: { args: ArrayLike<unknown>; span: api.Span } ) => void` | Function called just before the span is ended. Useful for adding attributes.                                    |
-| `requireParentSpan` | `boolean`                                                                                           | Require parent to create fs span, default when unset is `false`.                                                |
+| Options             | Type                                                                                                                             | Description                                                                                                                                                                                                |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createHook`        | `(functionName: FMember \| FPMember, info: { args: ArrayLike<unknown> }) => boolean`                                             | Hook called before creating the span. If `false` is returned this and all the sibling calls will not be traced.                                                                                            |
+| `endHook`           | `(functionName: FMember \| FPMember, info: { args: ArrayLike<unknown>; span: api.Span; error?: NodeJS.ErrnoException }  => void` | Hook called just before the span is ended. Useful for adding attributes.                                                                                                                                   |
+| `errorHook`         | `(functionName: FMember \| FPMember, error: NodeJS.ErrnoException) => boolean`                                                   | Hook called when a filesystem function throws an error. If `false` is returned no error event will be added to the span and it won't end with an error status code. The error itself is always propagated. |
+| `requireParentSpan` | `boolean`                                                                                                                        | Require parent to create fs span, default when unset is `false`.                                                                                                                                           |
 
 ## Useful links
 
