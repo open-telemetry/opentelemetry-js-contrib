@@ -65,11 +65,29 @@ export class ContainerDetector implements Detector {
       this.UTF8_UNICODE
     );
     const splitData = rawData.trim().split('\n');
-    for (const str of splitData) {
-      if (str.length >= this.CONTAINER_ID_LENGTH) {
-        return str.substring(str.length - this.CONTAINER_ID_LENGTH);
+    for (const line of splitData) {
+      const lastSlashIdx = line.lastIndexOf('/');
+      if (lastSlashIdx === -1) {
+        continue;
       }
-    }
+      const lastSection = line.substring(lastSlashIdx + 1);
+      const colonIdx = lastSection.lastIndexOf(':');
+      if (colonIdx !== -1) {
+        // since containerd v1.5.0+, containerId is divided by the last colon when the cgroupDriver is systemd:
+        // https://github.com/containerd/containerd/blob/release/1.5/pkg/cri/server/helpers_linux.go#L64
+        return lastSection.substring(colonIdx + 1);
+      } else {
+        let startIdx = lastSection.lastIndexOf('-');
+        let endIdx = lastSection.lastIndexOf('.');
+
+        startIdx = startIdx === -1 ? 0 : startIdx + 1;
+        if (endIdx === -1) {
+          endIdx = lastSection.length;
+        }
+        if (startIdx > endIdx) {
+          continue;
+        }
+        return lastSection.substring(startIdx, endIdx);
     return undefined;
   }
 
