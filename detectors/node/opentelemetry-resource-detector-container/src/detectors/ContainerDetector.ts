@@ -88,6 +88,8 @@ export class ContainerDetector implements Detector {
           continue;
         }
         return lastSection.substring(startIdx, endIdx);
+      }
+    }
     return undefined;
   }
 

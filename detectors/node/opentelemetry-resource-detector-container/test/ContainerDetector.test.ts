@@ -22,7 +22,7 @@ import {
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
-import { KubeConfig, CoreV1Api } from '@kubernetes/client-node';
+import { KubeConfig } from '@kubernetes/client-node';
 
 import { ContainerDetector } from '../src';
 
