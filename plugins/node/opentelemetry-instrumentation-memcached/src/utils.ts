@@ -45,10 +45,18 @@ export const getPeerAttributes = (
 
   if (typeof server === 'string') {
     const [host, port] = server && server.split(':');
-    return {
-      [SemanticAttributes.NET_PEER_NAME]: host,
-      [SemanticAttributes.NET_PEER_PORT]: port,
-    };
+    if (host && port) {
+      const portNumber = parseInt(port, 10);
+      if (!isNaN(portNumber)) {
+        return {
+          [SemanticAttributes.NET_PEER_NAME]: host,
+          [SemanticAttributes.NET_PEER_PORT]: portNumber,
+        };
+      }
+      return {
+        [SemanticAttributes.NET_PEER_NAME]: host,
+      };
+    }
   }
   return {};
 };
