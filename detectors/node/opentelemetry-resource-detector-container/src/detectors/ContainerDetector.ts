@@ -25,6 +25,9 @@ import * as fs from 'fs';
 import * as util from 'util';
 import { diag } from '@opentelemetry/api';
 
+const { KubeConfig, CoreV1Api } = require('@kubernetes/client-node');
+require('dotenv').config();
+
 export class ContainerDetector implements Detector {
   readonly CONTAINER_ID_LENGTH = 64;
   readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
@@ -36,7 +39,12 @@ export class ContainerDetector implements Detector {
 
   async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
     try {
-      const containerId = await this._getContainerId();
+      let containerId = '';
+      if (this._isInKubernetesEnvironment()) {
+        containerId = await this._getContainerIdK8();
+      } else {
+        containerId = (await this._getContainerId()) || '';
+      }
       return !containerId
         ? Resource.empty()
         : new Resource({
@@ -98,6 +106,43 @@ export class ContainerDetector implements Detector {
       ?.split('/')
       .find(s => s.length === this.CONTAINER_ID_LENGTH);
     return containerIdStr || '';
+  }
+
+  private _isInKubernetesEnvironment(): boolean {
+    return process.env.KUBERNETES_SERVICE_HOST !== undefined;
+  }
+
+  private async _getContainerIdK8(): Promise<string> {
+    const kubeconfig = new KubeConfig();
+    kubeconfig.loadFromDefault();
+
+    const api = kubeconfig.makeApiClient(CoreV1Api);
+    const namespace: string = process.env.NAMESPACE || 'default';
+    const containerName: string | undefined = process.env.CONTAINER_NAME;
+    if (!containerName) {
+      throw new Error('Container name not specified in environment');
+    }
+
+    const response = await api.listNamespacePod(namespace);
+
+    const podWithContainer = response.body.items.find(
+      (pod: { spec: { containers: any[] } }) => {
+        return pod.spec.containers.some(
+          container => container.name === containerName
+        );
+      }
+    );
+
+    if (!podWithContainer) {
+      throw new Error(`No pods found with container name '${containerName}'.`);
+    }
+
+    const container = podWithContainer.spec.containers.find(
+      (container: { name: string }) => container.name === containerName
+    );
+    const containerId = container ? container.containerID || '' : '';
+
+    return containerId;
   }
 
   /*
