@@ -88,6 +88,13 @@ describe('Utility', () => {
       assert.strictEqual(answer1, true);
     });
 
+    it('should call isSatisfyPattern, match for a single mathcer', () => {
+      const answer1 = utils.isIgnored('api.montreal.ca', url =>
+        url.endsWith('montreal.ca')
+      );
+      assert.strictEqual(answer1, true);
+    });
+
     it('should not re-throw when function throws an exception', () => {
       satisfiesPatternStub.restore();
       const onException = (e: Error) => {
