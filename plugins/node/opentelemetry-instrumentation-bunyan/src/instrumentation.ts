@@ -158,15 +158,15 @@ export class BunyanInstrumentation extends InstrumentationBase<
       return;
     }
     this._diag.debug('Adding OpenTelemetryBunyanStream to logger');
-    let currentLevel = logger.level();
+    let streamLevel = logger.level();
     if (config.logSeverity) {
       const bunyanLevel = bunyanLevelFromSeverity(config.logSeverity);
-      currentLevel = bunyanLevel || currentLevel;
+      streamLevel = bunyanLevel || streamLevel;
     }
     logger.addStream({
       type: 'raw',
       stream: new OpenTelemetryBunyanStream(),
-      level: currentLevel,
+      level: streamLevel,
     });
   }
 
