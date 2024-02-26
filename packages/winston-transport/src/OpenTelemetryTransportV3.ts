@@ -24,7 +24,7 @@ export class OpenTelemetryTransportV3 extends Transport {
 
   constructor(options?: Transport.TransportStreamOptions) {
     super(options);
-    this._logger = logs.getLogger('@opentelemetry/winston', VERSION);
+    this._logger = logs.getLogger('@opentelemetry/winston-transport', VERSION);
   }
 
   public override log(info: any, next: () => void) {
