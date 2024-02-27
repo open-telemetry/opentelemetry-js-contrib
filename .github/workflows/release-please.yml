@@ -10,41 +10,58 @@ jobs:
     steps:
       # The logic below handles the npm publication:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 14
+          node-version: 18
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            detectors/node/*/node_modules
-            metapackages/*/node_modules
-            packages/*/node_modules
-            plugins/node/*/node_modules
-            plugins/web/*/node_modules
-            propagators/*/node_modules
-          key: release-${{ runner.os }}-${{ matrix.container }}-${{ hashFiles('**/package.json') }}
-
-      - name: Build Packages
+      - name: Install packages
         run: |
-          npm install
-          npx lerna bootstrap --no-ci
+          npm ci
 
-      - uses: google-github-actions/release-please-action@v3
+      - uses: google-github-actions/release-please-action@v4
         id: release
         with:
-          command: manifest
           token: ${{secrets.RELEASE_PR_TOKEN}}
-          default-branch: main
+          target-branch: main
+
+      # get release PR as we're currently on main
+      - name: Checkout release PR
+        # only checkout if a PR has been created, otherwise this will fail
+        if: ${{ steps.release.outputs.pr }}
+        uses: actions/checkout@v4
+        with:
+          ref: release-please--branches--main
+          # use a token so that workflows on the PR run when we push later
+          token: ${{ secrets.RELEASE_PR_TOKEN }}
+
+      # release-please does not do this on its own, so we do it here instead
+      - name: Update package-lock.json in PR
+        # only update if a PR has been created
+        if: ${{ steps.release.outputs.pr }}
+        run: |
+          npm install --ignore-scripts --package-lock-only
+          git add package-lock.json
+          git config user.name opentelemetrybot
+          git config user.email 107717825+opentelemetrybot@users.noreply.github.com
+          git commit -m "chore: sync package-lock.json"
+          git push
+
+      # get main again
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild Packages
+        run: |
+          npm ci
+          npm run compile
 
       # Release Please has already incremented versions and published tags, so we just
       # need to publish all unpublished versions to npm here

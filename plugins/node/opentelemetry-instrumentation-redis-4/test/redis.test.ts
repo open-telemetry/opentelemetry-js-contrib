@@ -18,6 +18,7 @@ import {
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
 import { RedisInstrumentation } from '../src';
+import type { MultiErrorReply } from '../src/internal-types';
 import * as assert from 'assert';
 
 import {
@@ -32,7 +33,7 @@ const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
 );
 
-import { createClient } from 'redis';
+import { createClient, WatchError } from 'redis';
 import {
   Span,
   SpanKind,
@@ -71,7 +72,7 @@ describe('redis@^4.0.0', () => {
     client = createClient({
       url: redisTestUrl,
     });
-    context.with(suppressTracing(context.active()), async () => {
+    await context.with(suppressTracing(context.active()), async () => {
       await client.connect();
     });
   });
@@ -220,8 +221,11 @@ describe('redis@^4.0.0', () => {
     });
 
     it('sets error status on connection failure', async () => {
+      const redisURL = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }`;
       const newClient = createClient({
-        url: `redis://${redisTestConfig.host}:${redisTestConfig.port + 1}`,
+        url: redisURL,
       });
 
       await assert.rejects(newClient.connect());
@@ -230,6 +234,64 @@ describe('redis@^4.0.0', () => {
 
       assert.strictEqual(span.name, 'redis-connect');
       assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        redisURL
+      );
+    });
+
+    it('omits basic auth from DB_CONNECTION_STRING span attribute', async () => {
+      const redisURL = `redis://myuser:mypassword@${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }`;
+      const expectAttributeConnString = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }`;
+      const newClient = createClient({
+        url: redisURL,
+      });
+
+      await assert.rejects(newClient.connect());
+
+      const [span] = getTestSpans();
+
+      assert.strictEqual(span.name, 'redis-connect');
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        expectAttributeConnString
+      );
+    });
+
+    it('omits user_pwd query parameter from DB_CONNECTION_STRING span attribute', async () => {
+      const redisURL = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }?db=mydb&user_pwd=mypassword`;
+      const expectAttributeConnString = `redis://${redisTestConfig.host}:${
+        redisTestConfig.port + 1
+      }?db=mydb`;
+      const newClient = createClient({
+        url: redisURL,
+      });
+
+      await assert.rejects(newClient.connect());
+
+      const [span] = getTestSpans();
+
+      assert.strictEqual(span.name, 'redis-connect');
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.NET_PEER_NAME],
+        redisTestConfig.host
+      );
+      assert.strictEqual(
+        span.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+        expectAttributeConnString
+      );
     });
   });
 
@@ -316,11 +378,16 @@ describe('redis@^4.0.0', () => {
     });
 
     it('multi command with error', async () => {
-      const [setReply, incrReply] = await client
-        .multi()
-        .set('key', 'value')
-        .incr('key')
-        .exec(); // ['OK', 'ReplyError']
+      let replies;
+      try {
+        replies = await client.multi().set('key', 'value').incr('key').exec();
+      } catch (err) {
+        // Starting in redis@4.6.12 `multi().exec()` will *throw* a
+        // MultiErrorReply, with `err.replies`, if any of the commands error.
+        replies = (err as MultiErrorReply).replies;
+      }
+      const [setReply, incrReply] = replies;
+
       assert.strictEqual(setReply, 'OK'); // verify we did not screw up the normal functionality
       assert.ok(incrReply instanceof Error); // verify we did not screw up the normal functionality
 
@@ -334,6 +401,26 @@ describe('redis@^4.0.0', () => {
       assert.strictEqual(
         multiIncrSpan.status.message,
         'ERR value is not an integer or out of range'
+      );
+    });
+
+    it('multi command that rejects', async () => {
+      const watchedKey = 'watched-key';
+      await client.watch(watchedKey);
+      await client.set(watchedKey, 'a different value');
+      try {
+        await client.multi().get(watchedKey).exec();
+        assert.fail('expected WatchError to be thrown and caught in try/catch');
+      } catch (error) {
+        assert.ok(error instanceof WatchError);
+      }
+
+      // All the multi spans' status are set to ERROR.
+      const [_watchSpan, _setSpan, multiGetSpan] = getTestSpans();
+      assert.strictEqual(multiGetSpan?.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(
+        multiGetSpan?.status.message,
+        'One (or more) of the watched keys has been changed'
       );
     });
 

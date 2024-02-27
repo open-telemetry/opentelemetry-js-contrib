@@ -55,6 +55,9 @@ class ContextGetter
   keys(
     carrier: SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap
   ): string[] {
+    if (carrier == null) {
+      return [];
+    }
     return Object.keys(carrier);
   }
 

@@ -42,16 +42,9 @@ for general practices for OpenTelemetry project.
 
 #### Conventional commit
 
-The Conventional Commits specification is a lightweight convention on top of commit messages. It provides an easy set of rules for creating an explicit commit history; which makes it easier to write automated tools on top of. This convention dovetails with SemVer, by describing the features, fixes, and breaking changes made in commit messages. You can see examples [here](https://www.conventionalcommits.org/en/v1.0.0-beta.4/#examples).
-We use [commitlint](https://github.com/conventional-changelog/commitlint) and [husky](https://github.com/typicode/husky) to prevent bad commit message.
-For example, you want to submit the following commit message `git commit -s -am "my bad commit"`.
-You will receive the following error :
+The Conventional Commits specification is a lightweight convention on top of commit messages. It provides an easy set of rules for creating an explicit commit history; which makes it easier to write automated tools on top of. This convention dovetails with SemVer, by describing the features, fixes, and breaking changes made in commit messages. You can see examples [here](https://www.conventionalcommits.org/en/v1.0.0/#examples).
 
-```text
-✖   type must be one of [ci, feat, fix, docs, style, refactor, perf, test, revert, chore] [type-enum]
-```
-
-Here an exemple that will pass the verification: `git commit -s -am "chore(opentelemetry-core): update deps"`
+We use [the "pr-title" CI workflow](./.github/workflows/pr-title.yml) to ensure PR titles, and hence the commit message from those PRs, follow the Conventional Commits spec.
 
 ### Fork
 
@@ -87,10 +80,6 @@ The `opentelemetry-js-contrib` project is written in TypeScript.
 - `npm test` tests code the same way that our CI will test it.
 - `npm run lint:fix` lint (and maybe fix) any changes.
 
-### Generating API documentation
-
-- `npm run docs` to generate API documentation. Generates the documentation in `packages/opentelemetry-api/docs/out`
-
 ### Generating CHANGELOG documentation
 
 - `npm run changelog` to generate CHANGELOG documentation in your terminal (see [RELEASING.md](RELEASING.md) for more details).
@@ -116,6 +105,9 @@ This repository contains many components in various stages of the component life
 A component may be **unreleased**, **experimental**, **beta**, **stable**, **unmaintained**, or **deprecated**; see the below definitions for each stability level.
 With the exception of the stable status, it is up to each individual [component owner](#component-ownership) to determine the status of a component.
 A component may only be marked stable with the approval of a member of @open-telemetry/javascript-maintainers; see the definition of stable below for more details.
+
+A Pull Request modifying components in any stage of the lifecycle is subject to the
+[Pull Request Merge Requirements](#pull-request-merge-requirements).
 
 ### Unreleased
 
@@ -161,6 +153,33 @@ Deprecated components are no longer maintained and there are not currently plans
 They may not work and there are no guarantees for fixes or new features.
 Their source files may be deleted from the repository.
 Any packages released from their source will be marked as deprecated in NPM.
+
+## Pull Request Merge Requirements
+
+Pull requests MAY be merged by an approver OR a maintainer provided they meet all the following requirements:
+
+- Approved by
+  - at least one component owner if one is defined in [.github/component_owners.yml](.github/component_owners.yml)
+  - OR one maintainer
+  - OR at least one approver who is not the approver merging the pull request
+    - A pull request for small (simple typo, URL, update docs, or grammatical fix) changes may be approved and merged by the same approver
+- No “changes requested” reviews or unresolved conversations by
+  - approvers
+  - maintainers
+  - technical committee members
+  - component owners
+  - subject-matter experts
+- New or changed functionality is tested by unit tests
+- New or changed functionality is documented if appropriate
+- Substantial changes should not be merged within 24 hours of opening in order to allow reviewers from all time zones to have a chance to review
+
+All requirements are at the discretion of the maintainers.
+Maintainers MAY merge pull requests which have not strictly met these requirements.
+Maintainers MAY close, block, or put on hold pull requests even if they have strictly met these requirements.
+
+If a PR has not been interacted with by a reviewer within one week, please ping the component
+owners as listed in [.github/component_owners.yml](.github/component_owners.yml), if component owners are unresponsive
+please ping ([@open-telemetry/javascript-approvers](https://github.com/orgs/open-telemetry/teams/javascript-approvers)).
 
 ## Contributing Vendor Components
 

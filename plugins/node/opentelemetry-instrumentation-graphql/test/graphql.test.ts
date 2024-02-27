@@ -613,7 +613,7 @@ describe('graphql', () => {
       await graphql({ schema: simpleSchemaWithResolver, source: '{ hello }' });
       const resovleSpans = exporter
         .getFinishedSpans()
-        .filter(span => span.name === SpanNames.RESOLVE);
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
       assert.deepStrictEqual(resovleSpans.length, 1);
       const resolveSpan = resovleSpans[0];
       assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
@@ -633,7 +633,7 @@ describe('graphql', () => {
       await graphql({ schema, source: '{ hello }', rootValue });
       const resovleSpans = exporter
         .getFinishedSpans()
-        .filter(span => span.name === SpanNames.RESOLVE);
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
       assert.deepStrictEqual(resovleSpans.length, 1);
       const resolveSpan = resovleSpans[0];
       assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
@@ -653,7 +653,7 @@ describe('graphql', () => {
       await graphql({ schema, source: '{ hello }', rootValue });
       const resovleSpans = exporter
         .getFinishedSpans()
-        .filter(span => span.name === SpanNames.RESOLVE);
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
       assert.deepStrictEqual(resovleSpans.length, 0);
     });
 
@@ -682,10 +682,41 @@ describe('graphql', () => {
       await graphql({ schema, source: '{ hello }', rootValue, fieldResolver });
       const resovleSpans = exporter
         .getFinishedSpans()
-        .filter(span => span.name === SpanNames.RESOLVE);
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
       assert.deepStrictEqual(resovleSpans.length, 1);
       const resolveSpan = resovleSpans[0];
       assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
+    });
+  });
+
+  describe('when ignoreResolveSpans is true', () => {
+    beforeEach(() => {
+      create({
+        ignoreResolveSpans: true,
+      });
+    });
+
+    afterEach(() => {
+      exporter.reset();
+      graphQLInstrumentation.disable();
+    });
+
+    it('should not create a span for a defined resolver', async () => {
+      const schema = buildSchema(`
+        type Query {
+          hello: String
+        }
+      `);
+
+      const rootValue = {
+        hello: () => 'world',
+      };
+
+      await graphql({ schema, source: '{ hello }', rootValue });
+      const resolveSpans = exporter
+        .getFinishedSpans()
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
+      assert.deepStrictEqual(resolveSpans.length, 0);
     });
   });
 
@@ -1355,7 +1386,9 @@ describe('graphql', () => {
       const spans = exporter.getFinishedSpans();
 
       // single resolve span with error and event for exception
-      const resolveSpans = spans.filter(s => s.name === SpanNames.RESOLVE);
+      const resolveSpans = spans.filter(
+        s => s.name === `${SpanNames.RESOLVE} hello`
+      );
       assert.deepStrictEqual(resolveSpans.length, 1);
       const resolveSpan = resolveSpans[0];
       assert.deepStrictEqual(resolveSpan.status.code, SpanStatusCode.ERROR);

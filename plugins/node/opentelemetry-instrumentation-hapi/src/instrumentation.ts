@@ -44,7 +44,6 @@ import {
   getExtMetadata,
   isDirectExtInput,
   isPatchableExtMethod,
-  getRootSpanMetadata,
   getPluginFromInput,
 } from './utils';
 
@@ -278,7 +277,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     const oldHandler = plugin.register;
     const self = this;
     const newRegisterHandler = function (server: Hapi.Server, options: T) {
-      // @ts-expect-error - Who knows how to wind these generics i don't
       self._wrap(server, 'route', original => {
         return instrumentation._getServerRoutePatch.bind(instrumentation)(
           original,
@@ -334,7 +332,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         ...params: Parameters<Hapi.Lifecycle.Method>
       ) {
         if (api.trace.getSpan(api.context.active()) === undefined) {
-          return await method.apply(null, params);
+          return await method.apply(this, params);
         }
         const metadata = getExtMetadata(extPoint, pluginName);
         const span = instrumentation.tracer.startSpan(metadata.name, {
@@ -391,9 +389,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         }
         const rpcMetadata = getRPCMetadata(api.context.active());
         if (rpcMetadata?.type === RPCType.HTTP) {
-          const rootSpanMetadata = getRootSpanMetadata(route);
-          rpcMetadata.span.updateName(rootSpanMetadata.name);
-          rpcMetadata.span.setAttributes(rootSpanMetadata.attributes);
+          rpcMetadata.route = route.path;
         }
         const metadata = getRouteMetadata(route, pluginName);
         const span = instrumentation.tracer.startSpan(metadata.name, {

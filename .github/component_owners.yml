@@ -4,12 +4,14 @@ components:
     - legendecas
   detectors/node/opentelemetry-resource-detector-aws:
     - carolabadeer
+  detectors/node/opentelemetry-resource-detector-azure:
+    - jacksonweber
+    - hectorhdzg
   detectors/node/opentelemetry-resource-detector-container:
     - abhee11
   detectors/node/opentelemetry-resource-detector-gcp:
     - aabmass
     - punya
-    # Unmaintained?
   detectors/node/opentelemetry-resource-detector-github: []
     # Unmaintained?
   detectors/node/opentelemetry-resource-detector-instana:
@@ -22,6 +24,8 @@ components:
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
+    - carolabadeer
+  packages/opentelemetry-sampler-aws-xray:
     - carolabadeer
   packages/opentelemetry-propagation-utils:
     - dyladan
@@ -37,6 +41,8 @@ components:
     - blumamir
   plugins/node/instrumentation-amqplib:
     - blumamir
+  plugins/node/instrumentation-cucumber:
+    - Ugzuzg
   plugins/node/instrumentation-dataloader:
     - henrinormak
   plugins/node/instrumentation-fs:
@@ -57,16 +63,18 @@ components:
     - blumamir
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
+    - trentm
   plugins/node/opentelemetry-instrumentation-cassandra:
     - seemk
   plugins/node/opentelemetry-instrumentation-connect: []
     # Unmaintained?
   plugins/node/opentelemetry-instrumentation-dns: []
     # Unmaintained?
-  plugins/node/opentelemetry-instrumentation-express: []
-    # Unmaintained?
-  plugins/node/opentelemetry-instrumentation-fastify: []
-    # Unmaintained?
+  plugins/node/opentelemetry-instrumentation-express:
+    - JamieDanielson
+    - pkanal
+  plugins/node/opentelemetry-instrumentation-fastify:
+    - pichlermarc
   plugins/node/opentelemetry-instrumentation-generic-pool:
     - rauno56
   plugins/node/opentelemetry-instrumentation-graphql:
@@ -92,6 +100,8 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-net:
     - seemk
+  plugins/node/opentelemetry-instrumentation-perf-hooks:
+    - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
     - rauno56
   plugins/node/opentelemetry-instrumentation-pino:
@@ -107,14 +117,15 @@ components:
   plugins/node/opentelemetry-instrumentation-winston:
     - seemk
   plugins/web/opentelemetry-instrumentation-document-load:
-    - obecny
+    - pkanal
+    - martinkuba
   plugins/web/opentelemetry-instrumentation-long-task:
     - mhennoch
     - t2t2
   plugins/web/opentelemetry-instrumentation-user-interaction:
     - obecny
-  plugins/web/opentelemetry-plugin-react-load: []
-    # Unmaintained?
+  plugins/web/opentelemetry-plugin-react-load:
+    - martinkuba
   propagators/opentelemetry-propagator-aws-xray:
     - carolabadeer
   propagators/opentelemetry-propagator-grpc-census-binary: []

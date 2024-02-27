@@ -30,6 +30,100 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.0 to ^0.35.1
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.1 to ^0.36.0
+
+## [0.29.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.2...resource-detector-gcp-v0.29.3) (2023-11-13)
+
+
+### Bug Fixes
+
+* **deps:** update dependency gcp-metadata to v6 ([#1720](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1720)) ([267dfad](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/267dfad8d11925877e1ff312d4efc551b4360803))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.2 to ^0.34.3
+
+## [0.29.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.1...resource-detector-gcp-v0.29.2) (2023-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#1687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1687)) ([47301c0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/47301c038e4dc7d24797cb0b8426033ecc0374e6))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.1 to ^0.34.2
+
+## [0.29.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.29.0...resource-detector-gcp-v0.29.1) (2023-08-14)
+
+
+### Bug Fixes
+
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.0 to ^0.34.1
+
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.28.3...resource-detector-gcp-v0.29.0) (2023-07-12)
+
+
+### Features
+
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.4 to ^0.34.0
+
+## [0.28.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.28.1...resource-detector-gcp-v0.28.2) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.2 to ^0.33.3
+
 ## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-gcp-v0.27.5...resource-detector-gcp-v0.28.0) (2023-02-08)
 
 

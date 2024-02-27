@@ -34,7 +34,10 @@ class LambdaCommands {
 }
 
 export class LambdaServiceExtension implements ServiceExtension {
-  requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
+  requestPreSpanHook(
+    request: NormalizedRequest,
+    _config: AwsSdkInstrumentationConfig
+  ): RequestMetadata {
     const functionName = this.extractFunctionName(request.commandInput);
 
     let spanAttributes: SpanAttributes = {};

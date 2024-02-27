@@ -22,7 +22,6 @@ import {
 
 import {
   context,
-  diag,
   trace,
   Span,
   SpanStatusCode,
@@ -44,6 +43,7 @@ import {
   SemanticAttributes,
   DbSystemValues,
 } from '@opentelemetry/semantic-conventions';
+import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import { VERSION } from './version';
 
 const PG_POOL_COMPONENT = 'pg-pool';
@@ -65,7 +65,12 @@ export class PgInstrumentation extends InstrumentationBase {
     const modulePG = new InstrumentationNodeModuleDefinition<typeof pgTypes>(
       'pg',
       ['8.*'],
-      moduleExports => {
+      (module: any, moduleVersion) => {
+        this._diag.debug(`Applying patch for pg@${moduleVersion}`);
+        const moduleExports: typeof pgTypes =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
@@ -86,9 +91,14 @@ export class PgInstrumentation extends InstrumentationBase {
           this._getClientConnectPatch() as any
         );
 
-        return moduleExports;
+        return module;
       },
-      moduleExports => {
+      (module: any, moduleVersion) => {
+        const moduleExports: typeof pgTypes =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
+        this._diag.debug(`Removing patch for pg@${moduleVersion}`);
         if (isWrapped(moduleExports.Client.prototype.query)) {
           this._unwrap(moduleExports.Client.prototype, 'query');
         }
@@ -100,7 +110,8 @@ export class PgInstrumentation extends InstrumentationBase {
     >(
       'pg-pool',
       ['2.*', '3.*'],
-      moduleExports => {
+      (moduleExports, moduleVersion) => {
+        this._diag.debug(`Applying patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -111,7 +122,8 @@ export class PgInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      moduleExports => {
+      (moduleExports, moduleVersion) => {
+        this._diag.debug(`Removing patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -171,7 +183,7 @@ export class PgInstrumentation extends InstrumentationBase {
   private _getClientQueryPatch() {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
-      diag.debug(
+      this._diag.debug(
         `Patching ${PgInstrumentation.COMPONENT}.Client.prototype.query`
       );
       return function query(this: PgClientExtended, ...args: unknown[]) {
@@ -214,20 +226,13 @@ export class PgInstrumentation extends InstrumentationBase {
 
         // Modify query text w/ a tracing comment before invoking original for
         // tracing, but only if args[0] has one of our expected shapes.
-        //
-        // TODO: remove the `as ...` casts below when the TS version is upgraded.
-        // Newer TS versions will use the result of firstArgIsQueryObjectWithText
-        // to properly narrow arg0, but TS 4.3.5 does not.
         if (instrumentationConfig.addSqlCommenterCommentToQueries) {
           args[0] = firstArgIsString
-            ? utils.addSqlCommenterComment(span, arg0 as string)
+            ? addSqlCommenterComment(span, arg0)
             : firstArgIsQueryObjectWithText
             ? {
-                ...(arg0 as utils.ObjectWithText),
-                text: utils.addSqlCommenterComment(
-                  span,
-                  (arg0 as utils.ObjectWithText).text
-                ),
+                ...arg0,
+                text: addSqlCommenterComment(span, arg0.text),
               }
             : args[0];
         }
@@ -263,9 +268,7 @@ export class PgInstrumentation extends InstrumentationBase {
               callback = context.bind(context.active(), callback);
             }
 
-            // Copy the callback instead of writing to args.callback so that we
-            // don't modify user's original callback reference
-            args[0] = { ...(args[0] as object), callback };
+            (args[0] as { callback?: PostgresCallback }).callback = callback;
           }
         }
 

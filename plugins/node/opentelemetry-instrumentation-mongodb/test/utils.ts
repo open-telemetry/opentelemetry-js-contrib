@@ -41,7 +41,9 @@ export function accessCollection(
   options: mongodb.MongoClientOptions = {}
 ): Promise<MongoDBAccess> {
   return new Promise((resolve, reject) => {
-    mongodb.MongoClient.connect(url, { serverSelectionTimeoutMS: 1000 })
+    mongodb.MongoClient.connect(url, {
+      serverSelectionTimeoutMS: 1000,
+    })
       .then(client => {
         const db = client.db(dbName);
         const collection = db.collection(collectionName);
@@ -66,6 +68,7 @@ export function assertSpans(
   expectedName: string,
   expectedKind: SpanKind,
   expectedOperation: string,
+  expectedConnString: string | undefined,
   log = false,
   isEnhancedDatabaseReportingEnabled = false
 ) {
@@ -93,6 +96,12 @@ export function assertSpans(
     process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
   assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
+  if (expectedConnString) {
+    assert.strictEqual(
+      mongoSpan.attributes[SemanticAttributes.DB_CONNECTION_STRING],
+      expectedConnString
+    );
+  }
 
   if (isEnhancedDatabaseReportingEnabled) {
     const dbStatement = JSON.parse(

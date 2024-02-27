@@ -210,11 +210,10 @@ function ensureNetworkEventsExists(events: TimedEvent[]) {
   assert.strictEqual(events[1].name, PTN.DOMAIN_LOOKUP_START);
   assert.strictEqual(events[2].name, PTN.DOMAIN_LOOKUP_END);
   assert.strictEqual(events[3].name, PTN.CONNECT_START);
-  assert.strictEqual(events[4].name, PTN.SECURE_CONNECTION_START);
-  assert.strictEqual(events[5].name, PTN.CONNECT_END);
-  assert.strictEqual(events[6].name, PTN.REQUEST_START);
-  assert.strictEqual(events[7].name, PTN.RESPONSE_START);
-  assert.strictEqual(events[8].name, PTN.RESPONSE_END);
+  assert.strictEqual(events[4].name, PTN.CONNECT_END);
+  assert.strictEqual(events[5].name, PTN.REQUEST_START);
+  assert.strictEqual(events[6].name, PTN.RESPONSE_START);
+  assert.strictEqual(events[7].name, PTN.RESPONSE_END);
 }
 
 describe('DocumentLoad Instrumentation', () => {
@@ -370,7 +369,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fsEvents[7].name, PTN.LOAD_EVENT_START);
         assert.strictEqual(fsEvents[8].name, PTN.LOAD_EVENT_END);
 
-        assert.strictEqual(rsEvents.length, 9);
+        assert.strictEqual(rsEvents.length, 8);
         assert.strictEqual(fsEvents.length, 11);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
@@ -486,15 +485,7 @@ describe('DocumentLoad Instrumentation', () => {
           'http://localhost:8090/bundle.js'
         );
 
-        assert.strictEqual(srEvents1[0].name, PTN.FETCH_START);
-        assert.strictEqual(srEvents1[1].name, PTN.DOMAIN_LOOKUP_START);
-        assert.strictEqual(srEvents1[2].name, PTN.DOMAIN_LOOKUP_END);
-        assert.strictEqual(srEvents1[3].name, PTN.CONNECT_START);
-        assert.strictEqual(srEvents1[4].name, PTN.SECURE_CONNECTION_START);
-        assert.strictEqual(srEvents1[5].name, PTN.CONNECT_END);
-        assert.strictEqual(srEvents1[6].name, PTN.REQUEST_START);
-        assert.strictEqual(srEvents1[7].name, PTN.RESPONSE_START);
-        assert.strictEqual(srEvents1[8].name, PTN.RESPONSE_END);
+        ensureNetworkEventsExists(srEvents1);
 
         assert.strictEqual(exporter.getFinishedSpans().length, 3);
         done();
@@ -570,7 +561,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rsEvents[7].name, PTN.LOAD_EVENT_START);
         assert.strictEqual(rsEvents[8].name, PTN.LOAD_EVENT_END);
 
-        assert.strictEqual(fsEvents.length, 9);
+        assert.strictEqual(fsEvents.length, 8);
         assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
@@ -706,8 +697,12 @@ describe('DocumentLoad Instrumentation', () => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         applyCustomAttributesOnSpan: {
-          resourceFetch: span => {
+          resourceFetch: (span, resource) => {
             span.setAttribute('custom-key', 'custom-val');
+            span.setAttribute(
+              'resource.tcp.duration_ms',
+              resource.connectEnd - resource.connectStart
+            );
           },
         },
       });
@@ -722,6 +717,14 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(
           resourceSpan2.attributes['custom-key'],
           'custom-val'
+        );
+        assert.strictEqual(
+          resourceSpan1.attributes['resource.tcp.duration_ms'],
+          0
+        );
+        assert.strictEqual(
+          resourceSpan2.attributes['resource.tcp.duration_ms'],
+          0
         );
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
         done();

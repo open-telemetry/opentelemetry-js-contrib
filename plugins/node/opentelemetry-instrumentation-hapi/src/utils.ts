@@ -95,20 +95,6 @@ export const getRouteMetadata = (
   };
 };
 
-export const getRootSpanMetadata = (
-  route: Hapi.ServerRoute
-): {
-  attributes: SpanAttributes;
-  name: string;
-} => {
-  return {
-    attributes: {
-      [SemanticAttributes.HTTP_ROUTE]: route.path,
-    },
-    name: `${route.method} ${route.path}`,
-  };
-};
-
 export const getExtMetadata = (
   extPoint: Hapi.ServerRequestExtType,
   pluginName?: string

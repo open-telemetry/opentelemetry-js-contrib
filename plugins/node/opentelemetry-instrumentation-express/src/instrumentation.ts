@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
-import { setRPCMetadata, getRPCMetadata, RPCType } from '@opentelemetry/core';
-import { trace, context, diag, SpanAttributes } from '@opentelemetry/api';
+import { getRPCMetadata, RPCType } from '@opentelemetry/core';
+import {
+  trace,
+  context,
+  diag,
+  Attributes,
+  SpanStatusCode,
+} from '@opentelemetry/api';
 import type * as express from 'express';
 import { ExpressInstrumentationConfig, ExpressRequestInfo } from './types';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 import { AttributeNames } from './enums/AttributeNames';
-import { getLayerMetadata, storeLayerPath, isLayerIgnored } from './utils';
+import {
+  asErrorAndMessage,
+  getLayerMetadata,
+  isLayerIgnored,
+  storeLayerPath,
+} from './utils';
 import { VERSION } from './version';
 import {
   InstrumentationBase,
@@ -176,6 +187,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
     layer[kLayerPatched] = true;
 
     this._wrap(layer, 'handle', (original: Function) => {
+      // TODO: instrument error handlers
       if (original.length === 4) return original;
       return function (
         this: ExpressLayer,
@@ -186,7 +198,8 @@ export class ExpressInstrumentation extends InstrumentationBase<
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
           .join('');
-        const attributes: SpanAttributes = {
+
+        const attributes: Attributes = {
           [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
         };
         const metadata = getLayerMetadata(layer, layerPath);
@@ -194,22 +207,9 @@ export class ExpressInstrumentation extends InstrumentationBase<
           AttributeNames.EXPRESS_TYPE
         ] as ExpressLayerType;
 
-        // Rename the root http span in case we haven't done it already
-        // once we reach the request handler
         const rpcMetadata = getRPCMetadata(context.active());
-        if (
-          metadata.attributes[AttributeNames.EXPRESS_TYPE] ===
-            ExpressLayerType.REQUEST_HANDLER &&
-          rpcMetadata?.type === RPCType.HTTP
-        ) {
-          const name = instrumentation._getSpanName(
-            {
-              request: req,
-              route,
-            },
-            `${req.method} ${route.length > 0 ? route : '/'}`
-          );
-          rpcMetadata.span.updateName(name);
+        if (rpcMetadata?.type === RPCType.HTTP) {
+          rpcMetadata.route = route || '/';
         }
 
         // verify against the config if the layer should be ignored
@@ -219,6 +219,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
           }
           return original.apply(this, arguments);
         }
+
         if (trace.getSpan(context.active()) === undefined) {
           return original.apply(this, arguments);
         }
@@ -267,41 +268,61 @@ export class ExpressInstrumentation extends InstrumentationBase<
             span.end();
           }
         };
+
         // verify we have a callback
         const args = Array.from(arguments);
         const callbackIdx = args.findIndex(arg => typeof arg === 'function');
-        const newContext =
-          rpcMetadata?.type === RPCType.HTTP
-            ? setRPCMetadata(
-                context.active(),
-                Object.assign(rpcMetadata, { route: route })
-              )
-            : context.active();
         if (callbackIdx >= 0) {
           arguments[callbackIdx] = function () {
+            // express considers anything but an empty value, "route" or "router"
+            // passed to its callback to be an error
+            const maybeError = arguments[0];
+            const isError = ![undefined, null, 'route', 'router'].includes(
+              maybeError
+            );
+            if (!spanHasEnded && isError) {
+              const [error, message] = asErrorAndMessage(maybeError);
+              span.recordException(error);
+              span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message,
+              });
+            }
+
             if (spanHasEnded === false) {
               spanHasEnded = true;
               req.res?.removeListener('finish', onResponseFinish);
               span.end();
             }
-            if (!(req.route && arguments[0] instanceof Error)) {
+            if (!(req.route && isError)) {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
             const callback = args[callbackIdx] as Function;
-            return context.bind(newContext, callback).apply(this, arguments);
+            return callback.apply(this, arguments);
           };
         }
-        const result = original.apply(this, arguments);
-        /**
-         * At this point if the callback wasn't called, that means either the
-         * layer is asynchronous (so it will call the callback later on) or that
-         * the layer directly end the http response, so we'll hook into the "finish"
-         * event to handle the later case.
-         */
-        if (!spanHasEnded) {
-          res.once('finish', onResponseFinish);
+
+        try {
+          return original.apply(this, arguments);
+        } catch (anyError) {
+          const [error, message] = asErrorAndMessage(anyError);
+          span.recordException(error);
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message,
+          });
+          throw anyError;
+        } finally {
+          /**
+           * At this point if the callback wasn't called, that means either the
+           * layer is asynchronous (so it will call the callback later on) or that
+           * the layer directly end the http response, so we'll hook into the "finish"
+           * event to handle the later case.
+           */
+          if (!spanHasEnded) {
+            res.once('finish', onResponseFinish);
+          }
         }
-        return result;
       };
     });
   }

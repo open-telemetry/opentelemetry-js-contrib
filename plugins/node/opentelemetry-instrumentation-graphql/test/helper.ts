@@ -28,7 +28,10 @@ export function assertResolveSpan(
   parentSpanId?: string
 ) {
   const attrs = span.attributes;
-  assert.deepStrictEqual(span.name, SpanNames.RESOLVE);
+  assert.deepStrictEqual(
+    span.name,
+    `${SpanNames.RESOLVE} ${attrs[AttributeNames.FIELD_PATH]}`
+  );
   assert.deepStrictEqual(attrs[AttributeNames.FIELD_NAME], fieldName);
   assert.deepStrictEqual(attrs[AttributeNames.FIELD_PATH], fieldPath);
   assert.deepStrictEqual(attrs[AttributeNames.FIELD_TYPE], fieldType);

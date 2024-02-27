@@ -61,3 +61,11 @@ export type CommandResult = {
   connection?: unknown;
   message?: unknown;
 };
+
+export enum MongodbCommandType {
+  CREATE_INDEXES = 'createIndexes',
+  FIND_AND_MODIFY = 'findAndModify',
+  IS_MASTER = 'isMaster',
+  COUNT = 'count',
+  UNKNOWN = 'unknown',
+}

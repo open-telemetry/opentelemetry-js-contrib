@@ -33,7 +33,7 @@ import type {
   FastifyRequest,
   FastifyReply,
 } from 'fastify';
-import { applicationHookNames } from './constants';
+import { hooksNamesToWrap } from './constants';
 import {
   AttributeNames,
   FastifyNames,
@@ -93,11 +93,14 @@ export class FastifyInstrumentation extends InstrumentationBase {
       }
       instrumentation._wrap(reply, 'send', instrumentation._patchSend());
 
+      const anyRequest = request as any;
+
       const rpcMetadata = getRPCMetadata(context.active());
-      const routeName = request.routerPath;
+      const routeName = anyRequest.routeOptions
+        ? anyRequest.routeOptions.url // since fastify@4.10.0
+        : request.routerPath;
       if (routeName && rpcMetadata?.type === RPCType.HTTP) {
-        rpcMetadata.span.setAttribute(SemanticAttributes.HTTP_ROUTE, routeName);
-        rpcMetadata.span.updateName(`${request.method} ${routeName}`);
+        rpcMetadata.route = routeName;
       }
       done();
     };
@@ -117,9 +120,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
         return original.apply(this, args);
       }
 
-      const spanName = `${FastifyNames.MIDDLEWARE} - ${
-        original.name || ANONYMOUS_NAME
-      }`;
+      const name = original.name || pluginName || ANONYMOUS_NAME;
+      const spanName = `${FastifyNames.MIDDLEWARE} - ${name}`;
 
       const reply = args[1] as PluginFastifyReply;
 
@@ -177,8 +179,8 @@ export class FastifyInstrumentation extends InstrumentationBase {
         const name = args[0] as string;
         const handler = args[1] as HandlerOriginal;
         const pluginName = this.pluginName;
-        if (applicationHookNames.includes(name)) {
-          return original.apply(this, [name as any, handler]);
+        if (!hooksNamesToWrap.has(name)) {
+          return original.apply(this, args);
         }
 
         const syncFunctionWithDone =
@@ -186,26 +188,26 @@ export class FastifyInstrumentation extends InstrumentationBase {
           handler.constructor.name !== 'AsyncFunction';
 
         return original.apply(this, [
-          name as any,
+          name,
           instrumentation._wrapHandler(
             pluginName,
             name,
             handler,
             syncFunctionWithDone
           ),
-        ]);
+        ] as never);
       };
     };
   }
 
-  private _patchConstructor(
-    original: () => FastifyInstance
-  ): () => FastifyInstance {
+  private _patchConstructor(moduleExports: {
+    fastify: () => FastifyInstance;
+  }): () => FastifyInstance {
     const instrumentation = this;
     this._diag.debug('Patching fastify constructor function');
 
     function fastify(this: FastifyInstance, ...args: any) {
-      const app: FastifyInstance = original.apply(this, args);
+      const app: FastifyInstance = moduleExports.fastify.apply(this, args);
       app.addHook('onRequest', instrumentation._hookOnRequest());
       app.addHook('preHandler', instrumentation._hookPreHandler());
 
@@ -261,16 +263,24 @@ export class FastifyInstrumentation extends InstrumentationBase {
       if (!instrumentation.isEnabled()) {
         return done();
       }
-      const requestContext = (request as any).context || {};
-      const handlerName = (requestContext.handler?.name || '').substr(6);
+      const anyRequest = request as any;
+
+      const handler =
+        anyRequest.routeOptions?.handler || anyRequest.context?.handler;
+
+      const handlerName = handler?.name.startsWith('bound ')
+        ? handler.name.substr(6)
+        : handler?.name;
       const spanName = `${FastifyNames.REQUEST_HANDLER} - ${
-        handlerName || ANONYMOUS_NAME
+        handlerName || this.pluginName || ANONYMOUS_NAME
       }`;
 
       const spanAttributes: SpanAttributes = {
         [AttributeNames.PLUGIN_NAME]: this.pluginName,
         [AttributeNames.FASTIFY_TYPE]: FastifyTypes.REQUEST_HANDLER,
-        [SemanticAttributes.HTTP_ROUTE]: request.routerPath,
+        [SemanticAttributes.HTTP_ROUTE]: anyRequest.routeOptions
+          ? anyRequest.routeOptions.url // since fastify@4.10.0
+          : request.routerPath,
       };
       if (handlerName) {
         spanAttributes[AttributeNames.FASTIFY_NAME] = handlerName;

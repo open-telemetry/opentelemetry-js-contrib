@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-mongodb
 
 ### Supported Versions
 
-- `>=3.3 <5`
+- `>=3.3 <7`
 
 ## Usage
 
@@ -42,6 +42,8 @@ registerInstrumentations({
 });
 
 ```
+
+See [`examples/mongodb`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/mongodb) for a short example.
 
 ### Mongo instrumentation Options
 

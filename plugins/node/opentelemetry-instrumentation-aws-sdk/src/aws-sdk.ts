@@ -56,6 +56,7 @@ import {
   normalizeV3Request,
   removeSuffixFromStringIfExists,
 } from './utils';
+import { propwrap } from './propwrap';
 import { RequestMetadata } from './services/ServiceExtension';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -112,9 +113,37 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       v3MiddlewareStackFileNewVersions,
     ]);
 
+    // Patch for @smithy/middleware-stack for @aws-sdk/* packages v3.363.0+.
+    // As of @smithy/middleware-stack@2.1.0 `constructStack` is only available
+    // as a getter, so we cannot use `this._wrap()`.
+    const self = this;
+    const v3SmithyMiddlewareStack = new InstrumentationNodeModuleDefinition(
+      '@smithy/middleware-stack',
+      ['>=2.0.0'],
+      (moduleExports, moduleVersion) => {
+        const newExports = propwrap(
+          moduleExports,
+          'constructStack',
+          (orig: any) => {
+            self._diag.debug('propwrapping aws-sdk v3 constructStack');
+            return self._getV3ConstructStackPatch(moduleVersion, orig);
+          }
+        );
+        return newExports;
+      }
+    );
+
     const v3SmithyClient = new InstrumentationNodeModuleDefinition<typeof AWS>(
       '@aws-sdk/smithy-client',
       ['^3.1.0'],
+      this.patchV3SmithyClient.bind(this),
+      this.unpatchV3SmithyClient.bind(this)
+    );
+
+    // patch for new @smithy/smithy-client for aws-sdk packages v3.363.0+
+    const v3NewSmithyClient = new InstrumentationNodeModuleDefinition(
+      '@smithy/smithy-client',
+      ['>=1.0.3'],
       this.patchV3SmithyClient.bind(this),
       this.unpatchV3SmithyClient.bind(this)
     );
@@ -134,7 +163,13 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       [v2Request]
     );
 
-    return [v2Module, v3MiddlewareStack, v3SmithyClient];
+    return [
+      v2Module,
+      v3MiddlewareStack,
+      v3SmithyMiddlewareStack,
+      v3SmithyClient,
+      v3NewSmithyClient,
+    ];
   }
 
   protected patchV3ConstructStack(moduleExports: any, moduleVersion?: string) {
@@ -320,7 +355,7 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
 
         self._callUserResponseHook(span, normalizedResponse);
         if (response.error) {
-          span.setAttribute(AttributeNames.AWS_ERROR, response.error);
+          span.recordException(response.error);
         } else {
           this.servicesExtensions.responseHook(
             normalizedResponse,
@@ -446,8 +481,11 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
           command.input,
           undefined
         );
-        const requestMetadata =
-          self.servicesExtensions.requestPreSpanHook(normalizedRequest);
+        const requestMetadata = self.servicesExtensions.requestPreSpanHook(
+          normalizedRequest,
+          self._config,
+          self._diag
+        );
         const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
         const activeContextWithSpan = trace.setSpan(context.active(), span);
 
@@ -573,8 +611,11 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       }
 
       const normalizedRequest = normalizeV2Request(this);
-      const requestMetadata =
-        self.servicesExtensions.requestPreSpanHook(normalizedRequest);
+      const requestMetadata = self.servicesExtensions.requestPreSpanHook(
+        normalizedRequest,
+        self._config,
+        self._diag
+      );
       const span = self._startAwsV2Span(
         this,
         requestMetadata,
@@ -613,8 +654,11 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       }
 
       const normalizedRequest = normalizeV2Request(this);
-      const requestMetadata =
-        self.servicesExtensions.requestPreSpanHook(normalizedRequest);
+      const requestMetadata = self.servicesExtensions.requestPreSpanHook(
+        normalizedRequest,
+        self._config,
+        self._diag
+      );
       const span = self._startAwsV2Span(
         this,
         requestMetadata,

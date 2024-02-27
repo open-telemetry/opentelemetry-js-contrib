@@ -1,5 +1,94 @@
 # Changelog
 
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.34.1...instrumentation-express-v0.35.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Bug Fixes
+
+* span emit warnings on express instrumentation ([#1891](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1891)) ([f65f2f1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f65f2f1482f6f9ca80681f09249dc2b75ef7e3db))
+
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.34.0...instrumentation-express-v0.34.1) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.33.3...instrumentation-express-v0.34.0) (2023-12-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-express:** remove `@types/express` from dependencies ([#1804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1804))
+
+### Features
+
+* **express:** record exceptions ([#1657](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1657)) ([4ca1862](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4ca18626610c0ee3da38807da82c753b8763af95))
+
+
+### Bug Fixes
+
+* **instrumentation-express:** remove `@types/express` from dependencies ([#1804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1804)) ([86a21d7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/86a21d7b4ce289dc986925ad73ffd6f0618bb5c7)), closes [#1787](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1787)
+
+## [0.33.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.33.2...instrumentation-express-v0.33.3) (2023-11-13)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to v0.45.0 ([#1779](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1779)) ([7348635](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/734863562c25cd0497aa3f51eccb2bf8bbd5e711))
+* **deps:** update otel core experimental to v0.45.1 ([#1781](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1781)) ([7f420e2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f420e25a8d396c83fd38101088434210705e365))
+
+## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.33.1...instrumentation-express-v0.33.2) (2023-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update all patch versions ([#1687](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1687)) ([47301c0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/47301c038e4dc7d24797cb0b8426033ecc0374e6))
+* **deps:** update otel core experimental to v0.43.0 ([#1676](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1676)) ([deb9aa4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/deb9aa441dc7d2b0fd5ec11b41c934a1e93134fd))
+* **deps:** update otel core experimental to v0.44.0 ([#1725](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1725)) ([540a0d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/540a0d1ff5641522abba560d59a298084f786630))
+
+## [0.33.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.33.0...instrumentation-express-v0.33.1) (2023-08-14)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to v0.41.2 ([#1628](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1628)) ([4f11245](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4f1124524aee565c3cfbf3975aa5d3d039377621))
+* **express:** make rpcMetadata.route capture the last layer even when if the last layer is not REQUEST_HANDLER ([#1620](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1620)) ([eeda32a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/eeda32a03a4d75166013188bd0a295a17b2da1dc))
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.32.4...instrumentation-express-v0.33.0) (2023-07-12)
+
+
+### Features
+
+* **express:** Skip update HTTP's span name and update RpcMetadata's route instead ([#1557](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1557)) ([8e2f518](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8e2f518d668bb5e0382e1e071bac0213b57142a0))
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.41.0 ([#1566](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1566)) ([84a2377](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/84a2377845c313f0ca68b4de7f3e7a464be68885))
+
+## [0.32.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.32.3...instrumentation-express-v0.32.4) (2023-06-12)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.40.0 ([#1527](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1527)) ([4e18a46](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4e18a46396eb2f06e86790dbbd68075c4c2dc83b))
+
+## [0.32.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.32.2...instrumentation-express-v0.32.3) (2023-05-16)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental to ^0.39.1 ([#1493](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1493)) ([8ef95bc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8ef95bccc2d03302089f256f3d0ee091869b4c44))
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
 ## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.32.1...instrumentation-express-v0.32.2) (2023-04-25)
 
 

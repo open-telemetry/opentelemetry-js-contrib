@@ -57,6 +57,7 @@ import {
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 import { VERSION } from './version';
+import { env } from 'process';
 import { LambdaModule } from './internal-types';
 
 const awsPropagator = new AWSXRayPropagator();
@@ -77,6 +78,17 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+    if (this._config.disableAwsContextPropagation == null) {
+      if (
+        typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
+          'string' &&
+        env[
+          'OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'
+        ].toLocaleLowerCase() === 'true'
+      ) {
+        this._config.disableAwsContextPropagation = true;
+      }
+    }
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
@@ -85,10 +97,14 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   init() {
     const taskRoot = process.env.LAMBDA_TASK_ROOT;
-    const handlerDef = process.env._HANDLER;
+    const handlerDef = this._config.lambdaHandler ?? process.env._HANDLER;
 
     // _HANDLER and LAMBDA_TASK_ROOT are always defined in Lambda but guard bail out if in the future this changes.
     if (!taskRoot || !handlerDef) {
+      this._diag.debug(
+        'Skipping lambda instrumentation: no _HANDLER/lambdaHandler or LAMBDA_TASK_ROOT.',
+        { taskRoot, handlerDef }
+      );
       return [];
     }
 
@@ -110,6 +126,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         filename += '.cjs';
       }
     }
+
+    diag.debug('Instrumenting lambda handler', {
+      taskRoot,
+      handlerDef,
+      handler,
+      moduleRoot,
+      module,
+      filename,
+      functionName,
+    });
 
     return [
       new InstrumentationNodeModuleDefinition(

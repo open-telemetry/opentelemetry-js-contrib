@@ -33,7 +33,7 @@ export interface MetricsCollectorConfig {
   url?: string;
 }
 
-const DEFAULT_NAME = 'opentelemetry-host-metrics';
+const DEFAULT_NAME = '@opentelemetry/host-metrics';
 
 /**
  * Base Class for metrics
@@ -46,7 +46,7 @@ export abstract class BaseMetrics {
   constructor(config: MetricsCollectorConfig) {
     this._name = config.name || DEFAULT_NAME;
     const meterProvider =
-      config.meterProvider! || api.metrics.getMeterProvider();
+      config.meterProvider || api.metrics.getMeterProvider();
     if (!config.meterProvider) {
       this._logger.warn('No meter provider, using default');
     }

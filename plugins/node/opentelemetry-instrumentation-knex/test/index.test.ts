@@ -190,6 +190,247 @@ describe('Knex instrumentation', () => {
         }
       );
     });
+
+    describe('nested queries', () => {
+      it('should correctly identify the table in nested queries', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await client.schema.createTable('testTable1', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test1' }).into('testTable1');
+
+            const builder = client('testTable1').select('*');
+            const clone = builder.clone().clear('order');
+
+            const nestedQueryBuilder = builder.client
+              .queryBuilder()
+              .count('* AS count')
+              .from(clone.as('inner'))
+              .first();
+
+            const total = await nestedQueryBuilder;
+            assert.deepEqual(total, { count: 1 });
+
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+            assertSpans(instrumentationSpans, [
+              {
+                statement: 'create table `testTable1` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                op: 'first',
+                table: 'testTable1',
+                statement:
+                  'select count(*) as `count` from (select * from `te..',
+                parentSpan,
+              },
+              null,
+            ]);
+          }
+        );
+      });
+
+      it('should correctly identify the table in double nested queries', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await client.schema.createTable('testTable1', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test1' }).into('testTable1');
+
+            const builder = client('testTable1').select('*');
+            const clone = builder.clone().clear('order');
+
+            const nestedQueryBuilder = builder.client
+              .queryBuilder()
+              .count('* AS count')
+              .from(clone.as('inner'))
+              .first();
+
+            const nestedClone = nestedQueryBuilder.clone().clear('order');
+            const totalDoubleNested = await nestedQueryBuilder.client
+              .queryBuilder()
+              .count('* AS count2')
+              .from(nestedClone.as('inner2'))
+              .first();
+            assert.deepEqual(totalDoubleNested, { count2: 1 });
+
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+            assertSpans(instrumentationSpans, [
+              {
+                statement: 'create table `testTable1` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                op: 'first',
+                table: 'testTable1',
+                statement:
+                  'select count(*) as `count2` from (select count(*) ..',
+                parentSpan,
+              },
+              null,
+            ]);
+          }
+        );
+      });
+
+      it('should correctly identify the table in join with nested table', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await client.schema.createTable('testTable1', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test1' }).into('testTable1');
+
+            await client.schema.createTable('testTable2', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test2' }).into('testTable2');
+
+            const builder = client('testTable1').select('*');
+            const clone = builder.clone().clear('order');
+
+            const nestedQueryBuilder = builder.client
+              .queryBuilder()
+              .count('* AS count')
+              .from(clone.as('inner'))
+              .first();
+
+            const totalDoubleNested = await nestedQueryBuilder.client
+              .queryBuilder()
+              .from('testTable2')
+              .leftJoin(nestedQueryBuilder.as('nested_query'))
+              .first();
+            assert.deepEqual(totalDoubleNested, { title: 'test2', count: 1 });
+
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+            assertSpans(instrumentationSpans, [
+              {
+                statement: 'create table `testTable1` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                statement: 'create table `testTable2` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable2',
+                statement: 'insert into `testTable2` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                op: 'first',
+                table: 'testTable2',
+                statement:
+                  'select * from `testTable2` left join (select count..',
+                parentSpan,
+              },
+              null,
+            ]);
+          }
+        );
+      });
+
+      it('should correctly identify the table in join nested table with table', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await client.schema.createTable('testTable1', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test1' }).into('testTable1');
+
+            await client.schema.createTable('testTable2', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test2' }).into('testTable2');
+
+            const builder = client('testTable1').select('*');
+            const clone = builder.clone().clear('order');
+
+            const nestedQueryBuilder = builder.client
+              .queryBuilder()
+              .count('* AS count')
+              .from(clone.as('inner'))
+              .first();
+
+            const totalDoubleNested = await nestedQueryBuilder.client
+              .queryBuilder()
+              .from(nestedQueryBuilder.as('nested_query'))
+              .leftJoin('testTable2')
+              .first();
+            assert.deepEqual(totalDoubleNested, { title: 'test2', count: 1 });
+
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+            assertSpans(instrumentationSpans, [
+              {
+                statement: 'create table `testTable1` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                statement: 'create table `testTable2` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable2',
+                statement: 'insert into `testTable2` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                op: 'first',
+                table: 'testTable1',
+                statement:
+                  'select * from (select count(*) as `count` from (se..',
+                parentSpan,
+              },
+              null,
+            ]);
+          }
+        );
+      });
+    });
   });
 
   describe('Disabling instrumentation', () => {

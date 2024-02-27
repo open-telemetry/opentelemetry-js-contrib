@@ -29,6 +29,7 @@ module.exports = {
     {
       files: ['*.ts'],
       rules: {
+        "@typescript-eslint/no-floating-promises": "error",
         "@typescript-eslint/no-this-alias": "off",
         "@typescript-eslint/naming-convention": [
           "error",

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-connect",
-  "version": "0.31.2",
+  "version": "0.33.0",
   "description": "OpenTelemetry connect automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -12,7 +12,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-connect --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
@@ -32,10 +32,7 @@
   },
   "files": [
     "build/src/**/*.js",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
@@ -49,19 +46,19 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "18.11.7",
+    "@types/node": "18.6.5",
     "connect": "3.7.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "4.2.0",
+    "rimraf": "5.0.5",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.38.0",
+    "@opentelemetry/instrumentation": "^0.48.0",
     "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/connect": "3.4.35"
+    "@types/connect": "3.4.36"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-connect#readme"
 }
