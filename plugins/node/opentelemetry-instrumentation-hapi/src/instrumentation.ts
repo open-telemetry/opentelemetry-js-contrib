@@ -23,7 +23,7 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 
-import * as Hapi from '@hapi/hapi';
+import type * as Hapi from '@hapi/hapi';
 import { VERSION } from './version';
 import {
   HapiComponentName,
@@ -56,28 +56,23 @@ export class HapiInstrumentation extends InstrumentationBase {
   protected init() {
     return new InstrumentationNodeModuleDefinition<typeof Hapi>(
       HapiComponentName,
-      ['>=21'],
+      ['>=17 <22'],
       moduleExports => {
         if (!isWrapped(moduleExports.server)) {
           api.diag.debug('Patching Hapi.server');
           this._wrap(
-            moduleExports as any,
+            moduleExports,
             'server',
-            this._getServerPatch.bind(this)
+            this._getServerPatch.bind(this) as any
           );
         }
 
-        // Casting as any is necessary here due to an issue with the @types/hapi__hapi
-        // type definition for Hapi.Server. Hapi.Server (note the uppercase) can also function
-        // as a factory function, similarly to Hapi.server (lowercase), and so should
-        // also be supported and instrumented. This is an issue with the DefinitelyTyped repo.
-        // Function is defined at: https://github.com/hapijs/hapi/blob/main/lib/index.js#L9
         if (!isWrapped(moduleExports.Server)) {
           api.diag.debug('Patching Hapi.Server');
           this._wrap(
-            moduleExports as any,
+            moduleExports,
             'Server',
-            this._getServerPatch.bind(this)
+            this._getServerPatch.bind(this) as any
           );
         }
         return moduleExports;
@@ -104,7 +99,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     return function server(this: Hapi.Server, opts?: Hapi.ServerOptions) {
       const newServer: Hapi.Server = original.apply(this, [opts]);
 
-      // @ts-expect-error - Typescript never likes monkey-patching
       self._wrap(newServer, 'route', originalRouter => {
         return instrumentation._getServerRoutePatch.bind(instrumentation)(
           originalRouter
@@ -378,14 +372,13 @@ export class HapiInstrumentation extends InstrumentationBase {
     const instrumentation: HapiInstrumentation = this;
     if (route[handlerPatched] === true) return route;
     route[handlerPatched] = true;
-    const oldHandler = route.handler;
+    const oldHandler = route.options?.handler ?? route.handler;
     if (typeof oldHandler === 'function') {
       const newHandler: Hapi.Lifecycle.Method = async function (
         ...params: Parameters<Hapi.Lifecycle.Method>
       ) {
         if (api.trace.getSpan(api.context.active()) === undefined) {
-          // @ts-expect-error there's like generic stuff override issues here
-          return await oldHandler.apply(route as object | null, params);
+          return await oldHandler(...params);
         }
         const rpcMetadata = getRPCMetadata(api.context.active());
         if (rpcMetadata?.type === RPCType.HTTP) {
@@ -398,8 +391,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         try {
           return await api.context.with(
             api.trace.setSpan(api.context.active(), span),
-            // @ts-expect-error there's like generic stuff override issues here
-            () => oldHandler.apply(route as object | null, params)
+            () => oldHandler(...params)
           );
         } catch (err: any) {
           span.recordException(err);
@@ -412,7 +404,11 @@ export class HapiInstrumentation extends InstrumentationBase {
           span.end();
         }
       };
-      route.handler = newHandler;
+      if (route.options?.handler) {
+        route.options.handler = newHandler;
+      } else {
+        route.handler = newHandler;
+      }
     }
     return route;
   }
