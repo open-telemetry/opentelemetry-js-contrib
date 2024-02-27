@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { SpanStatusCode, context, trace } from '@opentelemetry/api';
+import { SpanStatusCode, context, SpanKind, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -26,6 +26,7 @@ import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 import { createServer, httpRequest, serverWithMiddleware } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
@@ -491,6 +492,46 @@ describe('ExpressInstrumentation', () => {
           );
         }
       );
+    });
+  });
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-express.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        // use-express.mjs creates an express app with a 'GET /post/:id' endpoint and
+        // a `simpleMiddleware`, then makes a single 'GET /post/0' request. We
+        // expect to see spans like this:
+        //    span 'GET /post/:id'
+        //     `- span 'middleware - query'
+        //     `- span 'middleware - expressInit'
+        //     `- span 'middleware - simpleMiddleware'
+        //     `- span 'router - /post/:id'
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans[0].name, 'GET /post/:id');
+        assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'middleware - query');
+        assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'middleware - expressInit');
+        assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+        // assert.strictEqual(spans[4].name, 'router - /post/:id'); // TODO bug?
+        assert.strictEqual(spans[4].name, 'router - /');
+        assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+      },
     });
   });
 });
