@@ -43,7 +43,7 @@ registerInstrumentations({
 });
 ```
 
-See [`examples`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa/examples) for a short example using both Koa and @koa/router.
+See [`examples/koa`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/koa) for a short example using both Koa and @koa/router.
 
 Note that generator-based middleware are deprecated and won't be instrumented.
 
