@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 import {
-  AggregationTemporality,
-  InMemoryMetricExporter,
   MeterProvider,
   DataPointType,
-  PeriodicExportingMetricReader,
+  MetricReader,
 } from '@opentelemetry/sdk-metrics';
 
 import { PerfHooksInstrumentation } from '../src';
@@ -26,73 +24,100 @@ import * as assert from 'assert';
 
 const MEASUREMENT_INTERVAL = 10;
 
-const metricExporter = new InMemoryMetricExporter(AggregationTemporality.DELTA);
-const metricReader = new PeriodicExportingMetricReader({
-  exporter: metricExporter,
-  exportIntervalMillis: MEASUREMENT_INTERVAL * 2,
-});
-const meterProvider = new MeterProvider();
-meterProvider.addMetricReader(metricReader);
+class TestMetricReader extends MetricReader {
+  constructor() {
+    super();
+  }
 
-const instrumentation = new PerfHooksInstrumentation({
-  eventLoopUtilizationMeasurementInterval: MEASUREMENT_INTERVAL,
-});
+  protected async onForceFlush(): Promise<void> {}
 
-instrumentation.setMeterProvider(meterProvider);
+  protected async onShutdown(): Promise<void> {}
+}
 
-describe('nodejs.event_loop.utilization', () => {
-  beforeEach(async () => {
-    instrumentation.disable(); // Stops future metrics from being collected
-    metricExporter.reset(); // Remove existing collected metrics
+describe('nodejs.event_loop.utilization', function () {
+  let metricReader: TestMetricReader;
+  let meterProvider: MeterProvider;
+
+  beforeEach(() => {
+    metricReader = new TestMetricReader();
+    meterProvider = new MeterProvider();
+    meterProvider.addMetricReader(metricReader);
   });
 
-  after(() => {
-    instrumentation.disable();
-    meterProvider.shutdown();
-  });
+  it('should not export before being enabled', async function () {
+    // arrange
+    const instrumentation = new PerfHooksInstrumentation({
+      eventLoopUtilizationMeasurementInterval: MEASUREMENT_INTERVAL,
+      enabled: false,
+    });
+    instrumentation.setMeterProvider(meterProvider);
 
-  it('should stop exporting metrics when disabled', async () => {
-    // Wait for the ELU data to be collected and exported
-    // MEASUREMENT_INTERVAL * 2 is the export interval, plus MEASUREMENT_INTERVAL as a buffer
-    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 3));
-    // Retrieve exported metrics
-    const resourceMetrics = metricExporter.getMetrics();
-    const scopeMetrics =
-      resourceMetrics[resourceMetrics.length - 1].scopeMetrics;
+    // act
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(errors, []);
+    const scopeMetrics = resourceMetrics.scopeMetrics;
     assert.strictEqual(scopeMetrics.length, 0);
   });
 
-  it('should not export immediately after enable', async () => {
-    instrumentation.enable();
-    assert.deepEqual(metricExporter.getMetrics(), []);
+  it('should not record result when collecting immediately with custom config', async function () {
+    const instrumentation = new PerfHooksInstrumentation({
+      eventLoopUtilizationMeasurementInterval: MEASUREMENT_INTERVAL,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    assert.deepEqual(
+      (await metricReader.collect()).resourceMetrics.scopeMetrics,
+      []
+    );
   });
 
-  it('can use default eventLoopUtilizationMeasurementInterval', async () => {
-    // Repeat of 'should not export immediately after enable' but with defaults
-    const localInstrumentation = new PerfHooksInstrumentation();
-    localInstrumentation.setMeterProvider(meterProvider);
-    localInstrumentation.disable();
-    metricExporter.reset();
-    localInstrumentation.enable();
-    assert.deepEqual(metricExporter.getMetrics(), []);
-    localInstrumentation.disable();
+  it('should not record result when collecting immediately with default config', async function () {
+    const instrumentation = new PerfHooksInstrumentation();
+    instrumentation.setMeterProvider(meterProvider);
+
+    assert.deepEqual(
+      (await metricReader.collect()).resourceMetrics.scopeMetrics,
+      []
+    );
   });
 
-  it('should export event loop utilization metrics after eventLoopUtilizationMeasurementInterval', async () => {
-    instrumentation.enable();
-    // Wait for the ELU data to be collected and exported
-    // MEASUREMENT_INTERVAL * 2 is the export interval, plus MEASUREMENT_INTERVAL as a buffer
-    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 3));
-    const resourceMetrics = metricExporter.getMetrics();
-    const scopeMetrics =
-      resourceMetrics[resourceMetrics.length - 1].scopeMetrics;
+  it('should write event loop utilization metrics after eventLoopUtilizationMeasurementInterval', async function () {
+    // arrange
+    const instrumentation = new PerfHooksInstrumentation({
+      eventLoopUtilizationMeasurementInterval: MEASUREMENT_INTERVAL,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    // act
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(
+      errors,
+      [],
+      'expected no errors from the callback during collection'
+    );
+    const scopeMetrics = resourceMetrics.scopeMetrics;
+    assert.strictEqual(
+      scopeMetrics.length,
+      1,
+      'expected one scope (one meter created by instrumentation)'
+    );
     const metrics = scopeMetrics[0].metrics;
-    assert.strictEqual(metrics.length, 1, 'one ScopeMetrics');
-    assert.strictEqual(metrics[0].dataPointType, DataPointType.GAUGE, 'gauge');
-    assert.strictEqual(metrics[0].dataPoints.length, 1, 'one data point');
-    const val = metrics[0].dataPoints[0].value;
-    assert.strictEqual(val > 0, true, `val (${val}) > 0`);
-    assert.strictEqual(val < 1, true, `val (${val}) < 1`);
+    assert.strictEqual(
+      metrics.length,
+      1,
+      'expected one metric (one metric created by instrumentation)'
+    );
+    assert.strictEqual(
+      metrics[0].dataPointType,
+      DataPointType.GAUGE,
+      'expected gauge'
+    );
     assert.strictEqual(
       metrics[0].descriptor.name,
       'nodejs.event_loop.utilization',
@@ -102,6 +127,18 @@ describe('nodejs.event_loop.utilization', () => {
       metrics[0].descriptor.description,
       'Event loop utilization'
     );
-    assert.strictEqual(metrics[0].descriptor.unit, '1');
+    assert.strictEqual(
+      metrics[0].descriptor.unit,
+      '1',
+      'expected default unit'
+    );
+    assert.strictEqual(
+      metrics[0].dataPoints.length,
+      1,
+      'expected one data point'
+    );
+    const val = metrics[0].dataPoints[0].value;
+    assert.strictEqual(val > 0, true, `val (${val}) > 0`);
+    assert.strictEqual(val < 1, true, `val (${val}) < 1`);
   });
 });
