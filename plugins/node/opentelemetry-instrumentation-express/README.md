@@ -45,7 +45,7 @@ registerInstrumentations({
 });
 ```
 
-See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express/examples) for a short example.
+See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/express) for a short example.
 
 ### Caveats
 
