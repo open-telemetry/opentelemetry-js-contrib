@@ -22,6 +22,7 @@ import {
   SpanKind,
   SpanStatusCode,
   ROOT_CONTEXT,
+  Link,
 } from '@opentelemetry/api';
 import {
   hrTime,
@@ -409,9 +410,21 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         const headers = msg.properties.headers ?? {};
         const parentContext = propagation.extract(ROOT_CONTEXT, headers);
         const exchange = msg.fields?.exchange;
-        const span = self.tracer.startSpan(
-          `${queue} process`,
-          {
+        let span: Span;
+        if (self._config.useLinksForConsume) {
+          const parentSpanContext = trace.getSpan(parentContext)?.spanContext();
+          console.log('parentContext', parentContext);
+          console.log('parentSpanContext', parentSpanContext);
+          let links: Link[] | undefined;
+          if (parentSpanContext) {
+            links = [
+              {
+                context: parentSpanContext,
+              },
+            ];
+            console.log('links', links);
+          }
+          span = self.tracer.startSpan(`${queue} process`, {
             kind: SpanKind.CONSUMER,
             attributes: {
               ...channel?.connection?.[CONNECTION_ATTRIBUTES],
@@ -427,9 +440,31 @@ export class AmqplibInstrumentation extends InstrumentationBase {
               [SemanticAttributes.MESSAGING_CONVERSATION_ID]:
                 msg?.properties.correlationId,
             },
-          },
-          parentContext
-        );
+            links: links,
+          });
+        } else {
+          span = self.tracer.startSpan(
+            `${queue} process`,
+            {
+              kind: SpanKind.CONSUMER,
+              attributes: {
+                ...channel?.connection?.[CONNECTION_ATTRIBUTES],
+                [SemanticAttributes.MESSAGING_DESTINATION]: exchange,
+                [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
+                  MessagingDestinationKindValues.TOPIC,
+                [SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY]:
+                  msg.fields?.routingKey,
+                [SemanticAttributes.MESSAGING_OPERATION]:
+                  MessagingOperationValues.PROCESS,
+                [SemanticAttributes.MESSAGING_MESSAGE_ID]:
+                  msg?.properties.messageId,
+                [SemanticAttributes.MESSAGING_CONVERSATION_ID]:
+                  msg?.properties.correlationId,
+              },
+            },
+            parentContext
+          );
+        }
 
         if (self._config.consumeHook) {
           safeExecuteInTheMiddle(
