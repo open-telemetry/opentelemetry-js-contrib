@@ -1,12 +1,14 @@
 # Overview
 
-OpenTelemetry Koa Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can use Zipkin or Jaeger for this example), to give observability to distributed systems.
+OpenTelemetry Redis Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can use Zipkin or Jaeger for this example), to give observability to distributed systems.
 
-This is a simple example that demonstrates tracing calls made in a Koa application. The example
+This is a simple example that demonstrates tracing calls to a Redis cache via an Express API. The example
 shows key aspects of tracing such as
 
 - Root Span (on Client)
 - Child Span (on Client)
+- Child Span from a Remote Parent (on Server)
+- SpanContext Propagation (from Client to Server)
 - Span Events
 - Span Attributes
 
@@ -25,6 +27,13 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
 
 ### Zipkin
 
+- Start redis via docker
+
+   ```sh
+   # from this directory
+   npm run docker:start
+   ```
+
 - Run the server
 
    ```sh
@@ -39,14 +48,29 @@ Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/
    npm run zipkin:client
    ```
 
+- Cleanup docker
+
+   ```sh
+   # from this directory
+   npm run docker:stop
+   ```
+
 #### Zipkin UI
 
-`zipkin:server` script should output the `traceid` in the terminal (e.g `traceid: 4815c3d576d930189725f1f1d1bdfcc6`).
-Go to Zipkin with your browser <http://localhost:9411/zipkin/traces/(your-trace-id)> (e.g <http://localhost:9411/zipkin/traces/4815c3d576d930189725f1f1d1bdfcc6>)
+After a short time, the generated traces should be available in the Zipkin UI.
+Visit <http://localhost:9411/zipkin> and click the "RUN QUERY" button to view
+recent traces, then click "SHOW" on a given trace.
 
 <p align="center"><img src="./images/zipkin.jpg?raw=true"/></p>
 
 ### Jaeger
+
+- Start redis via docker
+
+   ```sh
+   # from this directory
+   npm run docker:start
+   ```
 
 - Run the server
 
@@ -62,10 +86,16 @@ Go to Zipkin with your browser <http://localhost:9411/zipkin/traces/(your-trace-
    npm run jaeger:client
    ```
 
+- Cleanup docker
+
+   ```sh
+   # from this directory
+   npm run docker:stop
+   ```
+
 #### Jaeger UI
 
-`jaeger:server` script should output the `traceid` in the terminal (e.g `traceid: 4815c3d576d930189725f1f1d1bdfcc6`).
-Go to Jaeger with your browser <http://localhost:16686/trace/(your-trace-id)> (e.g <http://localhost:16686/trace/4815c3d576d930189725f1f1d1bdfcc6>)
+Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "example-express-client"), click "Find Traces", then click on a trace to view it.
 
 <p align="center"><img src="images/jaeger.jpg?raw=true"/></p>
 
