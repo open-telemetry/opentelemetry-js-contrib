@@ -43,6 +43,8 @@ registerInstrumentations({
 
 ```
 
+See [`examples/mongodb`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/mongodb) for a short example.
+
 ### Mongo instrumentation Options
 
 Mongodb instrumentation has few options available to choose from. You can set the following:

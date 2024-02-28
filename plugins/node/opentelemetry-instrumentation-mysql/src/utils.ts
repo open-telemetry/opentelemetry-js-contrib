@@ -33,10 +33,22 @@ export function getConnectionAttributes(
   config: ConnectionConfig | PoolActualConfig
 ): SpanAttributes {
   const { host, port, database, user } = getConfig(config);
-
+  const portNumber = parseInt(port, 10);
+  if (!isNaN(portNumber)) {
+    return {
+      [SemanticAttributes.NET_PEER_NAME]: host,
+      [SemanticAttributes.NET_PEER_PORT]: portNumber,
+      [SemanticAttributes.DB_CONNECTION_STRING]: getJDBCString(
+        host,
+        port,
+        database
+      ),
+      [SemanticAttributes.DB_NAME]: database,
+      [SemanticAttributes.DB_USER]: user,
+    };
+  }
   return {
     [SemanticAttributes.NET_PEER_NAME]: host,
-    [SemanticAttributes.NET_PEER_PORT]: port,
     [SemanticAttributes.DB_CONNECTION_STRING]: getJDBCString(
       host,
       port,
