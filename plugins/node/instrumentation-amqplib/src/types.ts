@@ -97,7 +97,7 @@ export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
    */
   consumeTimeoutMs?: number;
 
-  /** Used to use a span link for the consume message instead of continueing a trace */
+  /** Used to use a span link for the consume message instead of continuing a trace */
   useLinksForConsume?: boolean;
 }
 
