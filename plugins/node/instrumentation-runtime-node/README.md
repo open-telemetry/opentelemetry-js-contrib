@@ -1,4 +1,4 @@
-# OpenTelemetry Node.js Performance Hooks Instrumentation
+# OpenTelemetry Node.js Runtime Instrumentation
 
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
@@ -9,13 +9,13 @@ This module provides automatic metric instrumentation that exposes measurements 
 
 ```bash
 npm install --save @opentelemetry/sdk-node @opentelemetry/exporter-prometheus
-npm install --save @opentelemetry/instrumentation-perf-hooks
+npm install --save @opentelemetry/instrumentation-runtime-node
 ```
 
 ```js
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
-import { PerfHooksInstrumentation } from '@opentelemetry/instrumentation-perf-hooks';
+import { PerfHooksInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
 
 const prometheusExporter = new PrometheusExporter({
   port: 9464,
