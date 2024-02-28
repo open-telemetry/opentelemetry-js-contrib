@@ -21,6 +21,7 @@
     "packages/opentelemetry-redis-common": {},
     "packages/opentelemetry-sql-common": {},
     "packages/opentelemetry-test-utils": {},
+    "packages/opentelemetry-sampler-aws-xray": { "skip-github-release": true },
     "packages/winston-transport": {},
     "plugins/node/instrumentation-amqplib": {},
     "plugins/node/instrumentation-cucumber": {},
