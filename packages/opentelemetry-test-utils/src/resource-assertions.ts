@@ -17,7 +17,12 @@
 import { SDK_INFO } from '@opentelemetry/core';
 import * as assert from 'assert';
 import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SemanticResourceAttributes,
+  SEMRESATTRS_TELEMETRY_SDK_LANGUAGE,
+  SEMRESATTRS_TELEMETRY_SDK_NAME,
+  SEMRESATTRS_TELEMETRY_SDK_VERSION
+} from '@opentelemetry/semantic-conventions';
 
 /**
  * Test utility method to validate a cloud resource
@@ -198,9 +203,9 @@ export const assertTelemetrySDKResource = (
   }
 ) => {
   const defaults = {
-    name: SDK_INFO.NAME,
-    language: SDK_INFO.LANGUAGE,
-    version: SDK_INFO.VERSION,
+    name: SDK_INFO[SEMRESATTRS_TELEMETRY_SDK_NAME],
+    language: SDK_INFO[SEMRESATTRS_TELEMETRY_SDK_LANGUAGE],
+    version: SDK_INFO[SEMRESATTRS_TELEMETRY_SDK_VERSION],
   };
   validations = { ...defaults, ...validations };
 
