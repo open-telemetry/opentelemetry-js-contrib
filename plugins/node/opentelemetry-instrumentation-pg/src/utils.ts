@@ -97,7 +97,7 @@ export function getConnectionString(params: PgParsedConnectionParams) {
 function getPort(port: number | undefined): number | undefined {
   // Port may be NaN as parseInt() is used on the value, passing null will result in NaN being parsed.
   // https://github.com/brianc/node-postgres/blob/2a8efbee09a284be12748ed3962bc9b816965e36/packages/pg/lib/connection-parameters.js#L66
-  if(port != null && Number.isInteger(port)){
+  if (port != null && Number.isInteger(port)) {
     return port;
   }
 
@@ -108,8 +108,6 @@ function getPort(port: number | undefined): number | undefined {
 export function getSemanticAttributesFromConnection(
   params: PgParsedConnectionParams
 ) {
-
-
   return {
     [SemanticAttributes.DB_NAME]: params.database, // required
     [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
