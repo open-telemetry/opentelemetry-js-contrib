@@ -20,7 +20,8 @@ import {
   propagation,
   trace,
   context,
-  ROOT_CONTEXT, SpanAttributes,
+  ROOT_CONTEXT,
+  SpanAttributes,
 } from '@opentelemetry/api';
 import { pubsubPropagation } from '@opentelemetry/propagation-utils';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';

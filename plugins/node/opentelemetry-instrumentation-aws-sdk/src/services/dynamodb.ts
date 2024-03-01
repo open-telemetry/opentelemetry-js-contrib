@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {DiagLogger, Span, SpanAttributes, SpanKind, Tracer} from '@opentelemetry/api';
+import {
+  DiagLogger,
+  Span,
+  SpanAttributes,
+  SpanKind,
+  Tracer,
+} from '@opentelemetry/api';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 import {
   DbSystemValues,

@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import {Attributes, context, SpanKind, SpanStatusCode, trace} from '@opentelemetry/api';
+import {
+  Attributes,
+  context,
+  SpanKind,
+  SpanStatusCode,
+  trace,
+} from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
