@@ -112,15 +112,7 @@ const {
 } = require('@opentelemetry/exporter-trace-otlp-http');
 const { NodeSDK } = require('@opentelemetry/sdk-node');
 
-const instrumentations = getNodeAutoInstrumentations({
-  '@opentelemetry/instrumentation-http': {
-    ignoreIncomingRequestHook: request => {
-      // GET /metrics is for fetching prometheus metrics,
-      // which generates a ton of noise and is not very interesting
-      return request.method === 'GET' && request.url === '/metrics';
-    },
-  },
-});
+const instrumentations = getNodeAutoInstrumentations();
 
 const sdk = new NodeSDK({
   traceExporter: new OTLPTraceExporter(),
