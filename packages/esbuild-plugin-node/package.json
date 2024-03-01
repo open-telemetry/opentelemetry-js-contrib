@@ -42,7 +42,7 @@
     "@types/mocha": "7.0.2",
     "@types/node": "18.6.5",
     "@types/sinon": "10.0.18",
-    "fastify": "^4.15.0",
+    "fastify": "4.15.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "pino": "^8.19.0",
