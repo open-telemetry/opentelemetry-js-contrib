@@ -32,7 +32,7 @@ export class PerfHooksInstrumentation extends InstrumentationBase {
   private _interval: NodeJS.Timeout | undefined;
 
   constructor(config: PerfHooksInstrumentationConfig = DEFAULT_CONFIG) {
-    super('@opentelemetry/instrumentation-perf-hooks', VERSION, config);
+    super('@opentelemetry/instrumentation-runtime-node', VERSION, config);
   }
 
   private _addELU() {
