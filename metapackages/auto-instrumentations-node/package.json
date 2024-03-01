@@ -49,7 +49,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.48.0",
+    "@opentelemetry/instrumentation": "^0.41.2",
     "@opentelemetry/instrumentation-amqplib": "^0.34.0",
     "@opentelemetry/instrumentation-aws-lambda": "^0.38.0",
     "@opentelemetry/instrumentation-aws-sdk": "^0.38.1",
