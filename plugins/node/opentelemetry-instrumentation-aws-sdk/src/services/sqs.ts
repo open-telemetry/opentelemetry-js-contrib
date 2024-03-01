@@ -20,7 +20,7 @@ import {
   propagation,
   trace,
   context,
-  ROOT_CONTEXT,
+  ROOT_CONTEXT, SpanAttributes,
 } from '@opentelemetry/api';
 import { pubsubPropagation } from '@opentelemetry/propagation-utils';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
@@ -52,7 +52,7 @@ export class SqsServiceExtension implements ServiceExtension {
     let spanKind: SpanKind = SpanKind.CLIENT;
     let spanName: string | undefined;
 
-    const spanAttributes = {
+    const spanAttributes: SpanAttributes = {
       [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sqs',
       [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
         MessagingDestinationKindValues.QUEUE,

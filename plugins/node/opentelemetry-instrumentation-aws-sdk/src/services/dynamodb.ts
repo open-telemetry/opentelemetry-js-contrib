@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DiagLogger, Span, SpanKind, Tracer } from '@opentelemetry/api';
+import {DiagLogger, Span, SpanAttributes, SpanKind, Tracer} from '@opentelemetry/api';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 import {
   DbSystemValues,
@@ -40,7 +40,7 @@ export class DynamodbServiceExtension implements ServiceExtension {
     const isIncoming = false;
     const operation = normalizedRequest.commandName;
 
-    const spanAttributes = {
+    const spanAttributes: SpanAttributes = {
       [SemanticAttributes.DB_SYSTEM]: DbSystemValues.DYNAMODB,
       [SemanticAttributes.DB_NAME]: normalizedRequest.commandInput?.TableName,
       [SemanticAttributes.DB_OPERATION]: operation,

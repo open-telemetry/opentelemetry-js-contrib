@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
+import {Attributes, context, SpanKind, SpanStatusCode, trace} from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
@@ -41,7 +41,7 @@ const CONFIG = {
     : 27017,
 };
 
-const DEFAULT_ATTRIBUTES = {
+const DEFAULT_ATTRIBUTES: Attributes = {
   [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MEMCACHED,
   [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
   [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
