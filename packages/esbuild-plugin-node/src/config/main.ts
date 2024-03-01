@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
+import {
+  InstrumentationBase,
+  InstrumentationModuleDefinition,
+} from '@opentelemetry/instrumentation';
+
 import { EsbuildInstrumentationConfigMap } from '../types';
-import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 
 export const instrumentations: InstrumentationModuleDefinition<any>[] =
   getNodeAutoInstrumentations()
-    .flatMap(i => i.getModuleDefinitions() ?? [])
+    .flatMap(i => {
+      if (i instanceof InstrumentationBase) {
+        return i.getModuleDefinitions() ?? [];
+      }
+      return [];
+    })
     .filter(Boolean);
 
 function configGenerator<T extends { enabled?: boolean }>(
@@ -46,9 +55,11 @@ export function getOtelPackageToInstrumentationConfig() {
     }
   > = {};
   for (const instrumentation of getNodeAutoInstrumentations()) {
-    const instrumentationModuleDefinitions = [instrumentation.init()]
-      .flat()
-      .filter(Boolean);
+    const instrumentationModuleDefinitions =
+      instrumentation instanceof InstrumentationBase
+        ? instrumentation.getModuleDefinitions()
+        : [];
+
     for (const instrumentationModuleDefinition of instrumentationModuleDefinitions) {
       otelPackageToInstrumentationConfig[instrumentationModuleDefinition.name] =
         {
