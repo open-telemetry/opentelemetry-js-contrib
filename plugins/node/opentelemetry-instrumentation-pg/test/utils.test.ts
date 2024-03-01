@@ -223,7 +223,7 @@ describe('utils.ts', () => {
       );
     });
 
-    it('should set port attribute to undefined when port is an integer', () => {
+    it('should set port attribute when port is an integer', () => {
       assert.strictEqual(
         utils.getSemanticAttributesFromConnection({
           port: 1234,
