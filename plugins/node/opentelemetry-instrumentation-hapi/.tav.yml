@@ -1,0 +1,7 @@
+"@hapi/hapi":
+  - versions: "^19.2.0 || ^18.4.1 || ^17.9.0"
+    node: ">=14 <16"
+    commands: npm test
+  - versions: "^20.3.0"
+    node: ">=14"
+    commands: npm test
