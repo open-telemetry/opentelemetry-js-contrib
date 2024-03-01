@@ -14,25 +14,12 @@
  * limitations under the License.
  */
 
-import {
-  Detector,
-  DetectorSync,
-  envDetectorSync,
-  hostDetectorSync,
-  osDetectorSync,
-  processDetectorSync,
-} from '@opentelemetry/resources';
-import {
-  awsBeanstalkDetector,
-  awsEc2Detector,
-  awsEcsDetector,
-  awsEksDetector,
-  awsLambdaDetector,
-} from '@opentelemetry/resource-detector-aws';
+import { diag } from '@opentelemetry/api';
+import { Instrumentation } from '@opentelemetry/instrumentation';
 
 import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
-import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 import { AwsLambdaInstrumentation } from '@opentelemetry/instrumentation-aws-lambda';
+import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
 import { CassandraDriverInstrumentation } from '@opentelemetry/instrumentation-cassandra-driver';
 import { ConnectInstrumentation } from '@opentelemetry/instrumentation-connect';
@@ -48,8 +35,6 @@ import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
 import { HapiInstrumentation } from '@opentelemetry/instrumentation-hapi';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
-import { Instrumentation } from '@opentelemetry/instrumentation';
-import { InstrumentationAbstract } from '@opentelemetry/instrumentation/build/src/instrumentation';
 import { KnexInstrumentation } from '@opentelemetry/instrumentation-knex';
 import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
 import { LruMemoizerInstrumentation } from '@opentelemetry/instrumentation-lru-memoizer';
@@ -69,10 +54,25 @@ import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
 import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
 import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
+
 import { alibabaCloudEcsDetector } from '@opentelemetry/resource-detector-alibaba-cloud';
+import {
+  awsBeanstalkDetector,
+  awsEc2Detector,
+  awsEcsDetector,
+  awsEksDetector,
+  awsLambdaDetector,
+} from '@opentelemetry/resource-detector-aws';
 import { containerDetector } from '@opentelemetry/resource-detector-container';
-import { diag } from '@opentelemetry/api';
 import { gcpDetector } from '@opentelemetry/resource-detector-gcp';
+import {
+  Detector,
+  DetectorSync,
+  envDetectorSync,
+  hostDetectorSync,
+  osDetectorSync,
+  processDetectorSync,
+} from '@opentelemetry/resources';
 
 const RESOURCE_DETECTOR_CONTAINER = 'container';
 const RESOURCE_DETECTOR_ENVIRONMENT = 'env';
@@ -134,7 +134,7 @@ export type InstrumentationConfigMap = {
 
 export function getNodeAutoInstrumentations(
   inputConfigs: InstrumentationConfigMap = {}
-): InstrumentationAbstract[] {
+): Instrumentation[] {
   for (const name of Object.keys(inputConfigs)) {
     if (!Object.prototype.hasOwnProperty.call(InstrumentationMap, name)) {
       diag.error(`Provided instrumentation name "${name}" not found`);
@@ -142,7 +142,7 @@ export function getNodeAutoInstrumentations(
     }
   }
 
-  const instrumentations: InstrumentationAbstract[] = [];
+  const instrumentations: Instrumentation[] = [];
 
   for (const name of Object.keys(InstrumentationMap) as Array<
     keyof typeof InstrumentationMap
