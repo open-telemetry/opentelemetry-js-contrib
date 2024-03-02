@@ -34,9 +34,6 @@ export type HapiServerRouteInput =
 
 export type PatchableServerRoute = Hapi.ServerRoute<any> & {
   [handlerPatched]?: boolean;
-  options?: {
-    handler?: Hapi.Lifecycle.Method;
-  };
 };
 
 export type HapiPluginObject<T> = Hapi.ServerRegisterPluginObject<T>;

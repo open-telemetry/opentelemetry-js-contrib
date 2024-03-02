@@ -372,13 +372,13 @@ export class HapiInstrumentation extends InstrumentationBase {
     const instrumentation: HapiInstrumentation = this;
     if (route[handlerPatched] === true) return route;
     route[handlerPatched] = true;
-    const oldHandler = route.options?.handler ?? route.handler;
-    if (typeof oldHandler === 'function') {
-      const newHandler: Hapi.Lifecycle.Method = async function (
-        ...params: Parameters<Hapi.Lifecycle.Method>
-      ) {
+
+    const wrapHandler: (
+      oldHandler: Hapi.Lifecycle.Method
+    ) => Hapi.Lifecycle.Method = oldHandler => {
+      return async function (...params: Parameters<Hapi.Lifecycle.Method>) {
         if (api.trace.getSpan(api.context.active()) === undefined) {
-          return await oldHandler(...params);
+          return await oldHandler.call(this, ...params);
         }
         const rpcMetadata = getRPCMetadata(api.context.active());
         if (rpcMetadata?.type === RPCType.HTTP) {
@@ -391,7 +391,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         try {
           return await api.context.with(
             api.trace.setSpan(api.context.active(), span),
-            () => oldHandler(...params)
+            () => oldHandler.call(this, ...params)
           );
         } catch (err: any) {
           span.recordException(err);
@@ -404,11 +404,25 @@ export class HapiInstrumentation extends InstrumentationBase {
           span.end();
         }
       };
-      if (route.options?.handler) {
-        route.options.handler = newHandler;
-      } else {
-        route.handler = newHandler;
-      }
+    };
+
+    if (typeof route.handler === 'function') {
+      route.handler = wrapHandler(route.handler as Hapi.Lifecycle.Method);
+    } else if (typeof route.options === 'function') {
+      const oldOptions = route.options;
+      route.options = function (server) {
+        const options = oldOptions(server);
+        if (typeof options.handler === 'function') {
+          options.handler = wrapHandler(
+            options.handler as Hapi.Lifecycle.Method
+          );
+        }
+        return options;
+      };
+    } else if (typeof route.options?.handler === 'function') {
+      route.options.handler = wrapHandler(
+        route.options.handler as Hapi.Lifecycle.Method
+      );
     }
     return route;
   }
