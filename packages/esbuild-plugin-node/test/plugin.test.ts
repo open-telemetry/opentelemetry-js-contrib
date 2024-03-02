@@ -66,6 +66,8 @@ function getTraceId(
 }
 
 describe('Esbuild can instrument packages via a plugin', function () {
+  this.timeout(10_000);
+
   this.beforeAll(async () => {
     await exec(`ts-node ${__dirname}/test-app/build.ts`);
   });

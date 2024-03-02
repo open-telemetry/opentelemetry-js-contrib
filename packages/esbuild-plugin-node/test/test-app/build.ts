@@ -21,7 +21,7 @@ build({
   entryPoints: [`${__dirname}/app.ts`],
   bundle: true,
   outfile: 'test-dist/app.js',
-  target: 'node20',
+  target: 'node18',
   platform: 'node',
   sourcemap: true,
   plugins: [openTelemetryPlugin()],
