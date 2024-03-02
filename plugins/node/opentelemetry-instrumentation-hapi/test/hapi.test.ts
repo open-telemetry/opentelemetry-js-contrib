@@ -199,7 +199,6 @@ describe('Hapi Instrumentation - Core Tests', () => {
       });
     });
 
-
     it('should instrument the Hapi.Server (note: uppercase) method', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       server = new hapi.Server({
