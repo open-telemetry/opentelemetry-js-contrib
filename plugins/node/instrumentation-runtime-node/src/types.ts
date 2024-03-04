@@ -15,7 +15,7 @@
  */
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export interface PerfHooksInstrumentationConfig extends InstrumentationConfig {
+export interface RuntimeNodeInstrumentationConfig extends InstrumentationConfig {
   /**
    * The approximate number of milliseconds for which to calculate event loop utilization averages.
    * A larger value will result in more accurate averages at the expense of less granular data.
