@@ -1,0 +1,25 @@
+{
+  "name": "undici-example",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Example of Undici/fetch instrumentation with OpenTelemetry",
+  "scripts": {
+    "start": "node -r ./telemetry.js app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js.git"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@opentelemetry/api": "^1.3.0",
+    "@opentelemetry/instrumentation-undici": "^0.34.0",
+    "@opentelemetry/resources": "^1.8.0",
+    "@opentelemetry/sdk-node": "^0.48.0",
+    "bunyan": "^1.8.15"
+  }
+}

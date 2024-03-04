@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-export { UndiciInstrumentation } from './undici';
-export {
-  UndiciRequest,
-  UnidiciResponse,
-  IgnoreRequestFunction,
-  CustomAttributesFunction,
-  RequestHookFunction,
-  StartSpanHookFunction,
-  UndiciInstrumentationConfig,
-} from './types';
+// A small example that shows using OpenTelemetry's instrumentation of
+// Undici to get spands for undici and gloabl fetch requests. Usage:
+//    node --require ./telemetry.js app.js
+
+'use strict';
+
+const otel = require('@opentelemetry/api');
+const undici = require('undici');
+
+const tracer = otel.trace.getTracer('example');
+tracer.startActiveSpan('manual-span', (span) => {
+  
+});

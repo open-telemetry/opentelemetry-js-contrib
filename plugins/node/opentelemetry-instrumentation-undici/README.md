@@ -39,8 +39,7 @@ registerInstrumentations({
 
 ```
 
-<!-- TODO: -->
-See [examples/http](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/fetch) for a short example.
+See [examples/undici](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/undici) for a short example.
 
 ### Undici/Fetch instrumentation Options
 
