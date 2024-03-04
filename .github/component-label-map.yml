@@ -211,6 +211,10 @@ pkg:instrumentation-router:
   - changed-files:
       - any-glob-to-any-file:
           - plugins/node/opentelemetry-instrumentation-router/**
+pkg:instrumentation-runtime-node:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-runtime-node/**
 pkg:instrumentation-socket.io:
   - changed-files:
       - any-glob-to-any-file:
