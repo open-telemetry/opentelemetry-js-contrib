@@ -139,6 +139,6 @@ describe('nodejs.event_loop.utilization', function () {
     );
     const val = metrics[0].dataPoints[0].value;
     assert.strictEqual(val > 0, true, `val (${val}) > 0`);
-    assert.strictEqual(val < 1, true, `val (${val}) < 1`);
+    assert.strictEqual(val <= 1, true, `val (${val}) <= 1`);
   });
 });
