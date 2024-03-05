@@ -52,7 +52,7 @@ import {
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
 
-interface IntrumentationRecord {
+interface InstrumentationRecord {
   span: Span;
   attributes: Attributes;
   startTime: HrTime;
