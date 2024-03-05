@@ -46,11 +46,9 @@ app.use(async function simpleMiddleware(req, res, next) {
   next();
 });
 
-const router = express.Router();
-router.get('/post/:id', (req, res) => {
+app.get('/post/:id', (req, res) => {
   res.send(`Post id: ${req.params.id}`);
 });
-app.use(router);
 
 const server = http.createServer(app);
 await new Promise(resolve => server.listen(0, resolve));

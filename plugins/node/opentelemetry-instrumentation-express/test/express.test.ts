@@ -514,7 +514,7 @@ describe('ExpressInstrumentation', () => {
         //     `- span 'middleware - query'
         //     `- span 'middleware - expressInit'
         //     `- span 'middleware - simpleMiddleware'
-        //     `- span 'router - /post/:id'
+        //     `- span 'request handler - /post/:id'
         const spans = collector.sortedSpans;
         assert.strictEqual(spans[0].name, 'GET /post/:id');
         assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
@@ -527,8 +527,7 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
         assert.strictEqual(spans[3].kind, SpanKind.SERVER);
         assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
-        // assert.strictEqual(spans[4].name, 'router - /post/:id'); // TODO bug?
-        assert.strictEqual(spans[4].name, 'router - /');
+        assert.strictEqual(spans[4].name, 'request handler - /post/:id');
         assert.strictEqual(spans[4].kind, SpanKind.SERVER);
         assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
       },
