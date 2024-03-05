@@ -17,7 +17,7 @@
 export { UndiciInstrumentation } from './undici';
 export {
   UndiciRequest,
-  UnidiciResponse,
+  UndiciResponse,
   IgnoreRequestFunction,
   CustomAttributesFunction,
   RequestHookFunction,
