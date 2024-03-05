@@ -15,15 +15,25 @@
  */
 
 // A small example that shows using OpenTelemetry's instrumentation of
-// Undici to get spands for undici and gloabl fetch requests. Usage:
+// Undici to get spans for undici and gloabl fetch requests. Usage:
 //    node --require ./telemetry.js app.js
 
 'use strict';
 
 const otel = require('@opentelemetry/api');
-const undici = require('undici');
+const { request } = require('undici');
 
 const tracer = otel.trace.getTracer('example');
-tracer.startActiveSpan('manual-span', (span) => {
-  
+tracer.startActiveSpan('manual-span', async (span) => {
+  // 1st use the global fetch API
+  const fetchResponse = await fetch('https://example.com');
+  const fetchText = await fetchResponse.text();
+  console.log('fetched HTML size', fetchText.length);
+
+  const undiciResponse = await request('https://example.com');
+  const undiciText = await undiciResponse.body.text();
+  console.log('requested HTML size', undiciText.length);
+
+  // Finish the parent span
+  span.end();
 });
