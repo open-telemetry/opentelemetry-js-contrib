@@ -97,7 +97,7 @@ function assertErrorSpan(
   assert.strictEqual(spans.length, 1);
   const [span] = spans;
 
-  const attributes = {
+  const attributes: Attributes = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.CASSANDRA,
     [SemanticAttributes.DB_USER]: 'cassandra',
   };

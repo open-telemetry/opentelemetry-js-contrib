@@ -21,7 +21,7 @@ import {
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 
-import { PerfHooksInstrumentation } from '../src';
+import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 
 const MEASUREMENT_INTERVAL = 10;
@@ -34,7 +34,7 @@ const metricReader = new PeriodicExportingMetricReader({
 const meterProvider = new MeterProvider();
 meterProvider.addMetricReader(metricReader);
 
-const instrumentation = new PerfHooksInstrumentation({
+const instrumentation = new RuntimeNodeInstrumentation({
   eventLoopUtilizationMeasurementInterval: MEASUREMENT_INTERVAL,
 });
 
@@ -69,7 +69,7 @@ describe('nodejs.event_loop.utilization', () => {
 
   it('can use default eventLoopUtilizationMeasurementInterval', async () => {
     // Repeat of 'should not export immediately after enable' but with defaults
-    const localInstrumentation = new PerfHooksInstrumentation();
+    const localInstrumentation = new RuntimeNodeInstrumentation();
     localInstrumentation.setMeterProvider(meterProvider);
     localInstrumentation.disable();
     metricExporter.reset();
