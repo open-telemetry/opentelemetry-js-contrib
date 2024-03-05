@@ -39,7 +39,7 @@ export interface ResponseHeadersMessage {
 
 export interface RequestTrailersMessage {
   request: UndiciRequest;
-  response: UnidiciResponse;
+  response: UndiciResponse;
 }
 
 export interface RequestErrorMessage {
