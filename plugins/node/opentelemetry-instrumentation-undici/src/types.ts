@@ -43,7 +43,7 @@ export interface IgnoreRequestFunction<T = UndiciRequest> {
 }
 export interface CustomAttributesFunction<
   T = UndiciRequest,
-  Q = UnidiciResponse
+  Q = UndiciResponse
 > {
   (span: Span, request: T, response: Q): void;
 }
