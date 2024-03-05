@@ -33,7 +33,7 @@ export interface UndiciRequest {
   body: any;
 }
 
-export interface UnidiciResponse {
+export interface UndiciResponse {
   headers: Buffer[];
   statusCode: number;
 }
