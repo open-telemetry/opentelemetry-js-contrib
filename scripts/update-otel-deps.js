@@ -30,9 +30,9 @@ const fs = require('fs');
 const path = require('path');
 const {spawnSync} = require('child_process');
 
-const globSync = require('glob').sync; // TODO add top-level devDep on glob
-const minimatch = require('minimatch'); // TODO add top-level devDep on minimatch
-const semver = require('semver'); // TODO add top-level devDep on semver
+const globSync = require('glob').sync;
+const { minimatch } = require('minimatch');
+const semver = require('semver');
 
 const TOP = process.cwd();
 
