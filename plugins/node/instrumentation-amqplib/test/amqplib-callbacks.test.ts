@@ -25,7 +25,6 @@ const instrumentation = registerInstrumentationTesting(
   new AmqplibInstrumentation()
 );
 
-
 import * as amqpCallback from 'amqplib/callback_api';
 import {
   MessagingDestinationKindValues,
@@ -538,8 +537,12 @@ describe('amqplib instrumentation callback model', () => {
 
         // link back to publish span
         expect(consumeSpan.links.length).toBe(1);
-        expect(consumeSpan.links[0].context.traceId).toEqual(publishSpan.spanContext().traceId);
-        expect(consumeSpan.links[0].context.spanId).toEqual(publishSpan.spanContext().spanId);
+        expect(consumeSpan.links[0].context.traceId).toEqual(
+          publishSpan.spanContext().traceId
+        );
+        expect(consumeSpan.links[0].context.spanId).toEqual(
+          publishSpan.spanContext().spanId
+        );
 
         done();
       });
@@ -674,13 +677,16 @@ describe('amqplib instrumentation callback model', () => {
 
           // link back to publish span
           expect(consumeSpan.links.length).toBe(1);
-          expect(consumeSpan.links[0].context.traceId).toEqual(publishSpan.spanContext().traceId);
-          expect(consumeSpan.links[0].context.spanId).toEqual(publishSpan.spanContext().spanId);
+          expect(consumeSpan.links[0].context.traceId).toEqual(
+            publishSpan.spanContext().traceId
+          );
+          expect(consumeSpan.links[0].context.spanId).toEqual(
+            publishSpan.spanContext().spanId
+          );
 
           done();
         });
       });
     });
-
   });
 });
