@@ -1,21 +1,22 @@
-# OpenTelemetry Node.js Performance Hooks Instrumentation
+# OpenTelemetry Node.js Runtime Metrics Instrumentation
 
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
 This module provides automatic metric instrumentation that exposes measurements from the [Performance measurement APIs](https://nodejs.org/api/perf_hooks.html) (i.e. `perf_hooks`).
+While currently it is limited to metrics, it may be modified to produce other signals in the future.
 
 ## Example
 
 ```bash
 npm install --save @opentelemetry/sdk-node @opentelemetry/exporter-prometheus
-npm install --save @opentelemetry/instrumentation-perf-hooks
+npm install --save @opentelemetry/instrumentation-runtime-node
 ```
 
 ```js
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
-import { PerfHooksInstrumentation } from '@opentelemetry/instrumentation-perf-hooks';
+import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
 
 const prometheusExporter = new PrometheusExporter({
   port: 9464,
@@ -24,7 +25,7 @@ const prometheusExporter = new PrometheusExporter({
 
 const sdk = new NodeSDK({
   metricReader: prometheusExporter,
-  instrumentations: [new PerfHooksInstrumentation({
+  instrumentations: [new RuntimeNodeInstrumentation({
     eventLoopUtilizationMeasurementInterval: 5000,
   })],
 });
@@ -43,7 +44,7 @@ Go to [`localhost:9464/metrics`](http://localhost:9464/metrics), and you should 
 nodejs_performance_event_loop_utilization 0.010140079547955264
 ```
 
-> Metrics will only be exported after it has collected two ELU readings (at least approximately `PerfHooksInstrumentationConfig.eventLoopUtilizationMeasurementInterval` milliseconds after initialization). Otherwise, you may see:
+> Metrics will only be exported after it has collected two ELU readings (at least approximately `RuntimeNodeInstrumentationConfig.eventLoopUtilizationMeasurementInterval` milliseconds after initialization). Otherwise, you may see:
 >
 > ```txt
 > # no registered metrics
@@ -51,7 +52,7 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 
 ### Options
 
-`PerfHooksInstrumentation`'s constructor accepts the following options:
+`RuntimeNodeInstrumentation`'s constructor accepts the following options:
 
 | name | type | unit | default | description |
 |---|---|---|---|---|

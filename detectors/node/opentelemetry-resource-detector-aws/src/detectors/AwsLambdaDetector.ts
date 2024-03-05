@@ -17,6 +17,7 @@
 import {
   Detector,
   Resource,
+  ResourceAttributes,
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
@@ -40,7 +41,7 @@ export class AwsLambdaDetector implements Detector {
     const functionVersion = process.env.AWS_LAMBDA_FUNCTION_VERSION;
     const region = process.env.AWS_REGION;
 
-    const attributes = {
+    const attributes: ResourceAttributes = {
       [SemanticResourceAttributes.CLOUD_PROVIDER]: String(
         CloudProviderValues.AWS
       ),

@@ -1,17 +1,17 @@
 {
-  "name": "@opentelemetry/instrumentation-perf-hooks",
+  "name": "@opentelemetry/instrumentation-runtime-node",
   "version": "0.1.0",
   "description": "OpenTelemetry Node.js Performance measurement API automatic instrumentation package",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-perf-hooks",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-runtime-node",
   "scripts": {
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-perf-hooks --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-runtime-node --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
@@ -39,7 +39,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.40.0"
+    "@opentelemetry/instrumentation": "^0.49.1"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
