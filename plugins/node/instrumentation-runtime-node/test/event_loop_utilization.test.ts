@@ -19,7 +19,7 @@ import {
   MetricReader,
 } from '@opentelemetry/sdk-metrics';
 
-import { PerfHooksInstrumentation } from '../src';
+import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 
 const MEASUREMENT_INTERVAL = 10;
@@ -46,7 +46,7 @@ describe('nodejs.event_loop.utilization', function () {
 
   it('should not export before being enabled', async function () {
     // arrange
-    const instrumentation = new PerfHooksInstrumentation({
+    const instrumentation = new RuntimeNodeInstrumentation({
       eventLoopUtilizationMeasurementInterval: MEASUREMENT_INTERVAL,
       enabled: false,
     });
@@ -63,7 +63,7 @@ describe('nodejs.event_loop.utilization', function () {
   });
 
   it('should not record result when collecting immediately with custom config', async function () {
-    const instrumentation = new PerfHooksInstrumentation({
+    const instrumentation = new RuntimeNodeInstrumentation({
       eventLoopUtilizationMeasurementInterval: MEASUREMENT_INTERVAL,
     });
     instrumentation.setMeterProvider(meterProvider);
@@ -75,7 +75,7 @@ describe('nodejs.event_loop.utilization', function () {
   });
 
   it('should not record result when collecting immediately with default config', async function () {
-    const instrumentation = new PerfHooksInstrumentation();
+    const instrumentation = new RuntimeNodeInstrumentation();
     instrumentation.setMeterProvider(meterProvider);
 
     assert.deepEqual(
@@ -86,7 +86,7 @@ describe('nodejs.event_loop.utilization', function () {
 
   it('should write event loop utilization metrics after eventLoopUtilizationMeasurementInterval', async function () {
     // arrange
-    const instrumentation = new PerfHooksInstrumentation({
+    const instrumentation = new RuntimeNodeInstrumentation({
       eventLoopUtilizationMeasurementInterval: MEASUREMENT_INTERVAL,
     });
     instrumentation.setMeterProvider(meterProvider);
