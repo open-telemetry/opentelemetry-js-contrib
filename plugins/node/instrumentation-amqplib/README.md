@@ -89,6 +89,16 @@ The instrumentation's config `publishHook`, `publishConfirmHook`, `consumeHook` 
 
 The `moduleVersionAttributeName` config option is removed. To add the amqplib package version to spans, use the `moduleVersion` attribute in hook info for `publishHook` and `consumeHook` functions.
 
+## Running Tests Locally
+
+To run the tests locally, you need to have a RabbitMQ server running.  You can use the following command to start a RabbitMQ server using Docker:
+
+```bash
+npm run test:docker:run
+```
+
+By default, the tests that connect to RabbitMQ are skipped. To make sure these tests are run, you can set the `RUN_RABBIT_TESTS` environment variable to `true`
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
