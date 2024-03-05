@@ -202,7 +202,7 @@ describe('AwsEcsResourceDetector', () => {
     describe('when succesfully retrieving the data', () => {
       function generateLaunchTypeTests(
         resourceAttributes: EcsResourceAttributes,
-        suffix: String = ''
+        suffix = ''
       ) {
         let nockScope: nock.Scope;
 
