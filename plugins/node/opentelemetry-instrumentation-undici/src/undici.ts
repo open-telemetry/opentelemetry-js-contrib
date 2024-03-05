@@ -52,7 +52,7 @@ import {
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
 
-interface IntrumentationRecord {
+interface InstrumentationRecord {
   span: Span;
   attributes: Attributes;
   startTime: HrTime;
@@ -64,7 +64,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
   // Keep ref to avoid https://github.com/nodejs/node/issues/42170 bug and for
   // unsubscribing.
   private _channelSubs!: Array<ListenerRecord>;
-  private _recordFromReq = new WeakMap<UndiciRequest, IntrumentationRecord>();
+  private _recordFromReq = new WeakMap<UndiciRequest, InstrumentationRecord>();
 
   private _httpClientDurationHistogram!: Histogram;
   constructor(config?: UndiciInstrumentationConfig) {
@@ -269,9 +269,9 @@ export class UndiciInstrumentation extends InstrumentationBase {
     this._recordFromReq.set(request, { span, attributes, startTime });
   }
 
-  // This is the 2nd message we recevie for each request. It is fired when connection with
-  // the remote is stablished and about to send the first byte. Here do have info about the
-  // remote addres an port so we can poupulate some `network.*` attributes into the span
+  // This is the 2nd message we receive for each request. It is fired when connection with
+  // the remote is established and about to send the first byte. Here we do have info about the
+  // remote address and port so we can populate some `network.*` attributes into the span
   private onRequestHeaders({ request, socket }: RequestHeadersMessage): void {
     const record = this._recordFromReq.get(request as UndiciRequest);
 

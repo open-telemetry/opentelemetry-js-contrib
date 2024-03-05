@@ -15,7 +15,7 @@
  */
 import type { Channel } from 'diagnostics_channel';
 
-import { UndiciRequest, UnidiciResponse } from './types';
+import { UndiciRequest, UndiciResponse } from './types';
 
 export interface ListenerRecord {
   name: string;
@@ -34,12 +34,12 @@ export interface RequestHeadersMessage {
 
 export interface ResponseHeadersMessage {
   request: UndiciRequest;
-  response: UnidiciResponse;
+  response: UndiciResponse;
 }
 
 export interface RequestTrailersMessage {
   request: UndiciRequest;
-  response: UnidiciResponse;
+  response: UndiciResponse;
 }
 
 export interface RequestErrorMessage {
