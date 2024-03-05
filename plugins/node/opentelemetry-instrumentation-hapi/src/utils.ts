@@ -123,9 +123,12 @@ export const getExtMetadata = (
 
 export const getPluginFromInput = <T>(
   pluginObj: HapiPluginObject<T>
-): Hapi.Plugin<T, void> =>
-  'plugin' in pluginObj
-    ? 'plugin' in pluginObj.plugin
-      ? pluginObj.plugin.plugin
-      : pluginObj.plugin
-    : pluginObj;
+): Hapi.Plugin<T, void> => {
+  if ('plugin' in pluginObj) {
+    if ('plugin' in pluginObj.plugin) {
+      return pluginObj.plugin.plugin;
+    }
+    return pluginObj.plugin;
+  }
+  return pluginObj;
+};
