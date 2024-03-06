@@ -23,6 +23,7 @@ const instrumentation = registerInstrumentationTesting(
 );
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
+import type { SQS } from 'aws-sdk';
 
 import {
   MessagingDestinationKindValues,
@@ -505,8 +506,9 @@ describe('SQS', () => {
         QueueUrl: `queue/url/for/${QueueName}`,
         Entries: { Key1: { MessageBody: 'This is the first message' } },
       };
-
-      await sqs.sendMessageBatch(params).promise();
+      await sqs
+        .sendMessageBatch(params as unknown as SQS.SendMessageBatchRequest)
+        .promise();
 
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
