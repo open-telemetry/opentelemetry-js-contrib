@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DiagLogger } from '@opentelemetry/api';
+import { Attributes, DiagLogger } from '@opentelemetry/api';
 import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
 
-export function getClientAttributes(diag: DiagLogger, options: any) {
+export function getClientAttributes(
+  diag: DiagLogger,
+  options: any
+): Attributes {
   return {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
     [SemanticAttributes.NET_PEER_NAME]: options?.socket?.host,
