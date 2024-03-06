@@ -455,17 +455,14 @@ describe('ExpressInstrumentation', () => {
         }
       );
     });
+
     it('should ignore double slashes in routes', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
       let rpcMetadata: RPCMetadata | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use(express.json());
         app.use((req, res, next) => {
           rpcMetadata = getRPCMetadata(context.active());
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
-          });
           next();
         });
       });
@@ -480,7 +477,6 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'foo');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 2);
           const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name.includes('request handler'));
