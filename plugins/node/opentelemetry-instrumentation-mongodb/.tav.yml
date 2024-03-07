@@ -9,6 +9,3 @@ mongodb:
     - versions: ">=6 <6.4"
       node: '>=15.0.0'
       commands: npm run test-v5-v6
-
-  # Fix missing `contrib-test-utils` package
-  pretest: npm run --prefix ../../../ lerna:link
