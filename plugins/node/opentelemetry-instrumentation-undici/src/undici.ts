@@ -196,7 +196,8 @@ export class UndiciInstrumentation extends InstrumentationBase {
     const requestUrl = new URL(request.origin + request.path);
     const urlScheme = requestUrl.protocol.replace(':', '');
     const attributes: Attributes = {
-      [SemanticAttributes.HTTP_REQUEST_METHOD]: request.method,
+      [SemanticAttributes.HTTP_REQUEST_METHOD]: this.getRequestMethod(request.method),
+      [SemanticAttributes.HTTP_REQUEST_METHOD_ORIGINAL]: request.method,
       [SemanticAttributes.URL_FULL]: requestUrl.toString(),
       [SemanticAttributes.URL_PATH]: requestUrl.pathname,
       [SemanticAttributes.URL_QUERY]: requestUrl.search,
@@ -443,5 +444,25 @@ export class UndiciInstrumentation extends InstrumentationBase {
     // Take the duration and record it
     const duration = hrTimeToMilliseconds(hrTimeDuration(startTime, hrTime()));
     this._httpClientDurationHistogram.record(duration, metricsAttributes);
+  }
+
+  private getRequestMethod(original: string): string {
+    const knownMethods = {
+      CONNECT: true,
+      OPTIONS: true,
+      HEAD: true,
+      GET: true,
+      POST: true,
+      PUT: true,
+      PATCH: true,
+      DELETE: true,
+      TRACE: true,
+    }
+
+    if (original.toUpperCase() in knownMethods) {
+      return original.toUpperCase()
+    }
+
+    return '_OTHER';
   }
 }
