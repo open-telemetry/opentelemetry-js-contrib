@@ -142,8 +142,12 @@ describe('UndiciInstrumentation `undici` tests', function () {
           return req.path.indexOf('/ignore/path') !== -1;
         },
         requestHook: (span, req) => {
-          // TODO: maybe an intermediate request with better API
-          req.headers += 'x-requested-with: undici\r\n';
+          // We should mind the type of headers
+          if (typeof req.headers === 'string') {
+            req.headers += 'x-requested-with: undici\r\n';
+          } else {
+            req.headers.push('x-requested-with', 'undici');
+          }
         },
         startSpanHook: request => {
           return {

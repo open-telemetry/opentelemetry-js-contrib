@@ -21,9 +21,14 @@ export interface UndiciRequest {
   method: string;
   path: string;
   /**
-   * Serialized string of headers in the form `name: value\r\n`
+   * Serialized string of headers in the form `name: value\r\n` for v5
+   * Array of strings v6
    */
-  headers: string;
+  headers: string | string[];
+  /**
+   * Helper method to add headers (from v6)
+   */
+  addHeader: (name: string, value: string) => void;
   throwOnError: boolean;
   completed: boolean;
   aborted: boolean;

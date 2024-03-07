@@ -173,16 +173,6 @@ export class UndiciInstrumentation extends InstrumentationBase {
     }
 
     const startTime = hrTime();
-    const rawHeaders = request.headers.split('\r\n');
-    const reqHeaders = new Map(
-      rawHeaders.map(h => {
-        const sepIndex = h.indexOf(':');
-        const name = h.substring(0, sepIndex).toLowerCase();
-        const val = h.substring(sepIndex + 1).trim();
-        return [name, val];
-      })
-    );
-
     const requestUrl = new URL(request.origin + request.path);
     const urlScheme = requestUrl.protocol.replace(':', '');
     const requestMethod = this.getRequestMethod(request.method);
@@ -204,7 +194,17 @@ export class UndiciInstrumentation extends InstrumentationBase {
       attributes[SemanticAttributes.SERVER_PORT] = Number(serverPort);
     }
 
-    const userAgent = reqHeaders.get('user-agent');
+    // Get user agent from headers
+    let userAgent;
+    if (Array.isArray(request.headers)) {
+      const idx = request.headers.findIndex(h => h.toLowerCase() === 'user-agent');
+      userAgent = request.headers[idx + 1];
+    } else if (typeof request.headers === 'string') {
+      const headers = request.headers.split('\r\n');
+      const uaHeader = headers.find(h => h.toLowerCase().startsWith('user-agent'));
+      userAgent = uaHeader && uaHeader.substring(uaHeader.indexOf(':') + 1).trim();
+    }
+    
     if (userAgent) {
       attributes[SemanticAttributes.USER_AGENT_ORIGINAL] = userAgent;
     }
@@ -255,9 +255,17 @@ export class UndiciInstrumentation extends InstrumentationBase {
     const addedHeaders: Record<string, string> = {};
     propagation.inject(requestContext, addedHeaders);
 
-    request.headers += Object.entries(addedHeaders)
-      .map(([k, v]) => `${k}: ${v}\r\n`)
-      .join('');
+    const headerEntries = Object.entries(addedHeaders);
+
+    for (let i = 0; i < headerEntries.length; i++) {
+      const [k, v] = headerEntries[i];
+
+      if (typeof request.headers === 'string') {
+        request.headers += `${k}: ${v}\r\n`;
+      } else {
+        request.addHeader(k, v);
+      }
+    }
     this._recordFromReq.set(request, { span, attributes, startTime });
   }
 
@@ -285,16 +293,19 @@ export class UndiciInstrumentation extends InstrumentationBase {
       const headersToAttribs = new Set(
         config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase())
       );
-      const rawHeaders = request.headers.split('\r\n');
 
-      rawHeaders.forEach(h => {
+      // headers could be in form 
+      // ['name: value', ...] for v5
+      // ['name', 'value', ...] for v6
+      const rawHeaders = Array.isArray(request.headers) ? request.headers : request.headers.split('\r\n');
+      rawHeaders.forEach((h, idx) => {
         const sepIndex = h.indexOf(':');
-        const name = h.substring(0, sepIndex).toLowerCase();
+        const hasSeparator = sepIndex !== -1;
+        const name = ((hasSeparator) ? h.substring(0, sepIndex) : h).toLowerCase();
+        const value = hasSeparator ? h.substring(sepIndex + 1) : rawHeaders[idx + 1];
 
         if (headersToAttribs.has(name)) {
-          spanAttributes[`http.request.header.${name}`] = h
-            .substring(sepIndex + 1)
-            .trim();
+          spanAttributes[`http.request.header.${name}`] = value.trim();
         }
       });
     }
