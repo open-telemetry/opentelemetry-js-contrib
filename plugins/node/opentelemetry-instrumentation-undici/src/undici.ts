@@ -289,23 +289,18 @@ export class UndiciInstrumentation extends InstrumentationBase {
 
     // After hooks have been processed (which may modify request headers)
     // we can collect the headers based on the configuration
-    const rawHeaders = request.headers.split('\r\n');
-    const reqHeaders = new Map(
-      rawHeaders.map(h => {
+    if (config.headersToSpanAttributes?.requestHeaders) {
+      const headersToAttribs = new Set(config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase()));
+      const rawHeaders = request.headers.split('\r\n');
+
+      rawHeaders.forEach((h) => {
         const sepIndex = h.indexOf(':');
         const name = h.substring(0, sepIndex).toLowerCase();
-        const val = h.substring(sepIndex + 1).trim();
-        return [name, val];
-      })
-    );
 
-    if (config.headersToSpanAttributes?.requestHeaders) {
-      config.headersToSpanAttributes.requestHeaders
-        .map(name => name.toLowerCase())
-        .filter(name => reqHeaders.has(name))
-        .forEach(name => {
-          spanAttributes[`http.request.header.${name}`] = reqHeaders.get(name);
-        });
+        if (headersToAttribs.has(name)) {
+          spanAttributes[`http.request.header.${name}`] = h.substring(sepIndex + 1).trim();
+        }
+      });
     }
 
     span.setAttributes(spanAttributes);
@@ -324,7 +319,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
       return;
     }
 
-    const { span, attributes, startTime } = record;
+    const { span, attributes } = record;
     // We are currently *not* capturing response headers, even though the
     // intake API does allow it, because none of the other `setHttpContext`
     // uses currently do
@@ -332,31 +327,27 @@ export class UndiciInstrumentation extends InstrumentationBase {
       [SemanticAttributes.HTTP_RESPONSE_STATUS_CODE]: response.statusCode,
     };
 
-    // Get headers with names lowercased but values intact
-    const resHeaders = new Map<string, string>();
-    for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
-      resHeaders.set(
-        response.headers[idx].toString().toLowerCase(),
-        response.headers[idx + 1].toString()
-      );
-    }
-
-    // Put response headers as attributes based on config
     const config = this._getConfig();
+    const headersToAttribs = new Set();
+
     if (config.headersToSpanAttributes?.responseHeaders) {
-      config.headersToSpanAttributes.responseHeaders
-        .map(name => name.toLowerCase())
-        .filter(name => resHeaders.has(name))
-        .forEach(name => {
-          spanAttributes[`http.response.header.${name}`] = resHeaders.get(name);
-        });
+      config.headersToSpanAttributes?.responseHeaders
+        .forEach(name => headersToAttribs.add(name.toLowerCase()));
     }
 
-    // `content-length` header is a special case
-    if (resHeaders.has('content-length')) {
-      const contentLength = Number(resHeaders.get('content-length'));
-      if (!isNaN(contentLength)) {
-        spanAttributes['http.response.header.content-length'] = contentLength;
+    for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
+      const name = response.headers[idx].toString().toLowerCase();
+      const value = response.headers[idx + 1];
+
+      if (headersToAttribs.has(name)) {
+        spanAttributes[`http.response.header.${name}`] = value.toString();
+      }
+
+      if (name === 'content-length') {
+        const contentLength = Number(value.toString());
+        if (!isNaN(contentLength)) {
+          spanAttributes['http.response.header.content-length'] = contentLength;
+        }
       }
     }
 
@@ -367,11 +358,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
           ? SpanStatusCode.ERROR
           : SpanStatusCode.UNSET,
     });
-    this._recordFromReq.set(request, {
-      span,
-      startTime,
-      attributes: Object.assign(attributes, spanAttributes),
-    });
+    record.attributes = Object.assign(attributes, spanAttributes);
   }
 
   // This is the last event we receive if the request went without any errors
