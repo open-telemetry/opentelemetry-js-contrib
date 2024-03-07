@@ -353,7 +353,12 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           instrumentation.setPoolName(options);
           callback(err, conn);
         };
-        return original.call(this, options, patchedCallback);
+
+        const result = original.call(this, options, patchedCallback);
+        if (result && typeof result.then === 'function') {
+          result.then(() => instrumentation.setPoolName(options));
+        }
+        return result;
       };
     };
   }
@@ -493,7 +498,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         callback: any
       ) {
         const currentSpan = trace.getSpan(context.active());
-        const resultHandler = callback;
+        const resultHandler = callback || (() => undefined);  // from v6.4.0 commnad method does not have a callback param
         const commandType = Object.keys(cmd)[0];
 
         if (
@@ -504,15 +509,15 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         ) {
           return original.call(this, ns, cmd, options, callback);
         }
+
+        let patchedCallback: Function;
         if (!currentSpan) {
-          const patchedCallback = instrumentation._patchEnd(
+          patchedCallback = instrumentation._patchEnd(
             undefined,
             resultHandler,
             this.id,
             commandType
           );
-
-          return original.call(this, ns, cmd, options, patchedCallback);
         } else {
           const span = instrumentation.tracer.startSpan(
             `mongodb.${commandType}`,
@@ -527,15 +532,23 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             cmd,
             commandType
           );
-          const patchedCallback = instrumentation._patchEnd(
+          patchedCallback = instrumentation._patchEnd(
             span,
             resultHandler,
             this.id,
             commandType
           );
-
-          return original.call(this, ns, cmd, options, patchedCallback);
         }
+
+        const result = original.call(this, ns, cmd, options, patchedCallback);
+          if (result && typeof result.then === 'function') {
+            // Call patched callback in each scenario with the proper params
+            result.then(
+              (res: any) => patchedCallback(null, res),
+              (err: any) => patchedCallback(err),
+            );
+          }
+          return result;
       };
     };
   }

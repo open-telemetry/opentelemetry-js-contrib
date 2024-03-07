@@ -175,13 +175,17 @@ export type Document = {
 };
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
+// From version 6.4.0 the method does not expect a callback and returns a promise
+// this signature compacts both method signatures so it's not necessay to do extra
+// type assertions in the instrumentation code
+// https://github.com/mongodb/node-mongodb-native/blob/v6.4.2/src/cmap/connection.ts
 export type V4Connection = {
   command(
     ns: any,
     cmd: Document,
     options: undefined | unknown,
     callback: any
-  ): void;
+  ): (void | Promise<any>);
 };
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection_pool.ts
@@ -192,8 +196,12 @@ export type V4ConnectionPool = {
 };
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connect.ts
+// From version 6.4.0 the method does not expect a callback and returns a promise
+// this signature compacts both method signatures so it's not necessay to do extra
+// type assertions in the instrumentation code
+// https://github.com/mongodb/node-mongodb-native/blob/v6.4.0/src/cmap/connect.ts
 export type V4Connect = {
-  connect: (options: any, callback: any) => void;
+  connect: (options: any, callback: any) => (void | Promise<any>);
 };
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/sessions.ts
