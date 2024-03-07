@@ -31,6 +31,7 @@ export const assertSpan = (
   validations: {
     httpStatusCode?: number;
     httpMethod: string;
+    spanName?: string;
     resHeaders?: Headers | IncomingHttpHeaders;
     hostname: string;
     reqHeaders?: Headers | IncomingHttpHeaders;
@@ -46,7 +47,7 @@ export const assertSpan = (
   assert.strictEqual(span.kind, SpanKind.CLIENT, 'span.kind is correct');
   assert.strictEqual(
     span.name,
-    `HTTP ${validations.httpMethod}`,
+    validations.spanName || validations.httpMethod,
     'span.name is correct'
   );
   // TODO: check this

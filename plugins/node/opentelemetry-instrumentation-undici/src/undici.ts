@@ -195,8 +195,9 @@ export class UndiciInstrumentation extends InstrumentationBase {
 
     const requestUrl = new URL(request.origin + request.path);
     const urlScheme = requestUrl.protocol.replace(':', '');
+    const requestMethod = this.getRequestMethod(request.method);
     const attributes: Attributes = {
-      [SemanticAttributes.HTTP_REQUEST_METHOD]: this.getRequestMethod(request.method),
+      [SemanticAttributes.HTTP_REQUEST_METHOD]: requestMethod,
       [SemanticAttributes.HTTP_REQUEST_METHOD_ORIGINAL]: request.method,
       [SemanticAttributes.URL_FULL]: requestUrl.toString(),
       [SemanticAttributes.URL_PATH]: requestUrl.pathname,
@@ -242,7 +243,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
       span = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
     } else {
       span = this.tracer.startSpan(
-        `HTTP ${request.method}`,
+        requestMethod === '_OTHER' ? 'HTTP' : requestMethod,
         {
           kind: SpanKind.CLIENT,
           attributes: attributes,
