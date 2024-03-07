@@ -197,14 +197,19 @@ export class UndiciInstrumentation extends InstrumentationBase {
     // Get user agent from headers
     let userAgent;
     if (Array.isArray(request.headers)) {
-      const idx = request.headers.findIndex(h => h.toLowerCase() === 'user-agent');
+      const idx = request.headers.findIndex(
+        h => h.toLowerCase() === 'user-agent'
+      );
       userAgent = request.headers[idx + 1];
     } else if (typeof request.headers === 'string') {
       const headers = request.headers.split('\r\n');
-      const uaHeader = headers.find(h => h.toLowerCase().startsWith('user-agent'));
-      userAgent = uaHeader && uaHeader.substring(uaHeader.indexOf(':') + 1).trim();
+      const uaHeader = headers.find(h =>
+        h.toLowerCase().startsWith('user-agent')
+      );
+      userAgent =
+        uaHeader && uaHeader.substring(uaHeader.indexOf(':') + 1).trim();
     }
-    
+
     if (userAgent) {
       attributes[SemanticAttributes.USER_AGENT_ORIGINAL] = userAgent;
     }
@@ -294,15 +299,21 @@ export class UndiciInstrumentation extends InstrumentationBase {
         config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase())
       );
 
-      // headers could be in form 
+      // headers could be in form
       // ['name: value', ...] for v5
       // ['name', 'value', ...] for v6
-      const rawHeaders = Array.isArray(request.headers) ? request.headers : request.headers.split('\r\n');
+      const rawHeaders = Array.isArray(request.headers)
+        ? request.headers
+        : request.headers.split('\r\n');
       rawHeaders.forEach((h, idx) => {
         const sepIndex = h.indexOf(':');
         const hasSeparator = sepIndex !== -1;
-        const name = ((hasSeparator) ? h.substring(0, sepIndex) : h).toLowerCase();
-        const value = hasSeparator ? h.substring(sepIndex + 1) : rawHeaders[idx + 1];
+        const name = (
+          hasSeparator ? h.substring(0, sepIndex) : h
+        ).toLowerCase();
+        const value = hasSeparator
+          ? h.substring(sepIndex + 1)
+          : rawHeaders[idx + 1];
 
         if (headersToAttribs.has(name)) {
           spanAttributes[`http.request.header.${name}`] = value.trim();
@@ -449,8 +460,12 @@ export class UndiciInstrumentation extends InstrumentationBase {
     });
 
     // Take the duration and record it
-    const durationSeconds = hrTimeToMilliseconds(hrTimeDuration(startTime, hrTime())) / 1000;
-    this._httpClientDurationHistogram.record(durationSeconds, metricsAttributes);
+    const durationSeconds =
+      hrTimeToMilliseconds(hrTimeDuration(startTime, hrTime())) / 1000;
+    this._httpClientDurationHistogram.record(
+      durationSeconds,
+      metricsAttributes
+    );
   }
 
   private getRequestMethod(original: string): string {
