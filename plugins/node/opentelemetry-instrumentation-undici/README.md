@@ -6,7 +6,7 @@
 **Note: This is an experimental package under active development. New releases may include breaking changes.**
 
 This module provides automatic instrumentation for [`undici`](https://undici.nodejs.org/) and NodeJs global [`fetch`](https://nodejs.org/docs/latest/api/globals.html#fetch) API.
-If you're looking the instrumentation for browser's `fetch` API it is located at https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-fetch/
+If you're looking the instrumentation for browser's `fetch` API it is located at [https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-fetch/](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-fetch/)
 
 ## Installation
 
