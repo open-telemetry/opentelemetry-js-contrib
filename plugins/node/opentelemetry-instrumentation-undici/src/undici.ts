@@ -69,16 +69,6 @@ export class UndiciInstrumentation extends InstrumentationBase {
   private _httpClientDurationHistogram!: Histogram;
   constructor(config?: UndiciInstrumentationConfig) {
     super('@opentelemetry/instrumentation-undici', VERSION, config);
-    // Force load fetch API (since it's lazy loaded in Node 18)
-    // `fetch` Added in: v17.5.0, v16.15.0 (with flag) and we suport lower verisons
-    // https://nodejs.org/api/globals.html#fetch
-    try {
-      fetch('').catch(() => {});
-    } catch (err) {
-      // TODO: nicer message
-      diag.info('fetch API not available');
-    }
-
     this.setConfig(config);
   }
 
@@ -137,7 +127,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
       'http.client.request.duration',
       {
         description: 'Measures the duration of outbound HTTP requests.',
-        unit: 'ms',
+        unit: 's',
         valueType: ValueType.DOUBLE,
       }
     );
@@ -448,8 +438,8 @@ export class UndiciInstrumentation extends InstrumentationBase {
     });
 
     // Take the duration and record it
-    const duration = hrTimeToMilliseconds(hrTimeDuration(startTime, hrTime()));
-    this._httpClientDurationHistogram.record(duration, metricsAttributes);
+    const durationSeconds = hrTimeToMilliseconds(hrTimeDuration(startTime, hrTime())) / 1000;
+    this._httpClientDurationHistogram.record(durationSeconds, metricsAttributes);
   }
 
   private getRequestMethod(original: string): string {

@@ -118,7 +118,7 @@ describe('UndiciInstrumentation metrics tests', function () {
         metrics[0].descriptor.description,
         'Measures the duration of outbound HTTP requests.'
       );
-      assert.strictEqual(metrics[0].descriptor.unit, 'ms');
+      assert.strictEqual(metrics[0].descriptor.unit, 's');
       assert.strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
       assert.strictEqual(metrics[0].dataPoints.length, 1);
 
@@ -169,7 +169,7 @@ describe('UndiciInstrumentation metrics tests', function () {
         metrics[0].descriptor.description,
         'Measures the duration of outbound HTTP requests.'
       );
-      assert.strictEqual(metrics[0].descriptor.unit, 'ms');
+      assert.strictEqual(metrics[0].descriptor.unit, 's');
       assert.strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
       assert.strictEqual(metrics[0].dataPoints.length, 1);
 
