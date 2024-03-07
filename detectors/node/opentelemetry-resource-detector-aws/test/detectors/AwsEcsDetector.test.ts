@@ -199,7 +199,7 @@ describe('AwsEcsResourceDetector', () => {
       process.env.ECS_CONTAINER_METADATA_URI_V4 = ECS_CONTAINER_METADATA_URI_V4;
     });
 
-    describe('when succesfully retrieving the data', () => {
+    describe('when successfully retrieving the data', () => {
       function generateLaunchTypeTests(
         resourceAttributes: EcsResourceAttributes,
         suffix = ''

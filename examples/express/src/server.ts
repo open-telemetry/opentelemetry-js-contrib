@@ -34,7 +34,7 @@ const authMiddleware: RequestHandler = (req, res, next) => {
 app.use(express.json());
 app.get('/health', (req, res) => res.status(200).send("HEALTHY")); // endpoint that is called by framework/cluster
 app.get('/run_test', async (req, res) => {
-  // Calls another endpoint of the same API, somewhat mimicing an external API call
+  // Calls another endpoint of the same API, somewhat mimicking an external API call
   const createdCat = await axios.post(`http://localhost:${PORT}/cats`, {
     name: 'Tom',
     friends: [
