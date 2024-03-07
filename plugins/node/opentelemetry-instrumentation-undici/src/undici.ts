@@ -292,15 +292,19 @@ export class UndiciInstrumentation extends InstrumentationBase {
     // After hooks have been processed (which may modify request headers)
     // we can collect the headers based on the configuration
     if (config.headersToSpanAttributes?.requestHeaders) {
-      const headersToAttribs = new Set(config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase()));
+      const headersToAttribs = new Set(
+        config.headersToSpanAttributes.requestHeaders.map(n => n.toLowerCase())
+      );
       const rawHeaders = request.headers.split('\r\n');
 
-      rawHeaders.forEach((h) => {
+      rawHeaders.forEach(h => {
         const sepIndex = h.indexOf(':');
         const name = h.substring(0, sepIndex).toLowerCase();
 
         if (headersToAttribs.has(name)) {
-          spanAttributes[`http.request.header.${name}`] = h.substring(sepIndex + 1).trim();
+          spanAttributes[`http.request.header.${name}`] = h
+            .substring(sepIndex + 1)
+            .trim();
         }
       });
     }
@@ -333,8 +337,9 @@ export class UndiciInstrumentation extends InstrumentationBase {
     const headersToAttribs = new Set();
 
     if (config.headersToSpanAttributes?.responseHeaders) {
-      config.headersToSpanAttributes?.responseHeaders
-        .forEach(name => headersToAttribs.add(name.toLowerCase()));
+      config.headersToSpanAttributes?.responseHeaders.forEach(name =>
+        headersToAttribs.add(name.toLowerCase())
+      );
     }
 
     for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
@@ -458,10 +463,10 @@ export class UndiciInstrumentation extends InstrumentationBase {
       PATCH: true,
       DELETE: true,
       TRACE: true,
-    }
+    };
 
     if (original.toUpperCase() in knownMethods) {
-      return original.toUpperCase()
+      return original.toUpperCase();
     }
 
     return '_OTHER';

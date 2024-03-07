@@ -200,11 +200,17 @@ describe('UndiciInstrumentation `undici` tests', function () {
       };
 
       const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
-      // @ts-expect-error - method type expects in uppercase
-      const firstQueryResponse = await undici.request(queryRequestUrl, { headers, method: 'get' });
+      const firstQueryResponse = await undici.request(queryRequestUrl, {
+        headers,
+        // @ts-expect-error - method type expects in uppercase
+        method: 'get',
+      });
       await consumeResponseBody(firstQueryResponse.body);
-      // @ts-expect-error - method type expects known HTTP method (GET, POST, PUT, ...)
-      const secondQueryResponse = await undici.request(queryRequestUrl, { headers, method: 'custom' });
+      const secondQueryResponse = await undici.request(queryRequestUrl, {
+        headers,
+        // @ts-expect-error - method type expects known HTTP method (GET, POST, PUT, ...)
+        method: 'custom',
+      });
       await consumeResponseBody(secondQueryResponse.body);
 
       assert.ok(
