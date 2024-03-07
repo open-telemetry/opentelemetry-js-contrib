@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.9.0...instrumentation-fs-v0.10.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
 ## [0.9.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.8.4...instrumentation-fs-v0.9.0) (2024-01-29)
 
 

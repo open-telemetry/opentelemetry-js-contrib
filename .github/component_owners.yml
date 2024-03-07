@@ -102,7 +102,7 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-net:
     - seemk
-  plugins/node/opentelemetry-instrumentation-perf-hooks:
+  plugins/node/opentelemetry-instrumentation-runtime-node:
     - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
     - rauno56

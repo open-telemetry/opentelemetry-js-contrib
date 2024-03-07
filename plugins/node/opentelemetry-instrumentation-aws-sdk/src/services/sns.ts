@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span, Tracer, SpanKind } from '@opentelemetry/api';
+import { Span, Tracer, SpanKind, SpanAttributes } from '@opentelemetry/api';
 import {
   MessagingDestinationKindValues,
   SemanticAttributes,
@@ -33,7 +33,7 @@ export class SnsServiceExtension implements ServiceExtension {
   ): RequestMetadata {
     let spanKind: SpanKind = SpanKind.CLIENT;
     let spanName = `SNS ${request.commandName}`;
-    const spanAttributes = {
+    const spanAttributes: SpanAttributes = {
       [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sns',
     };
 
