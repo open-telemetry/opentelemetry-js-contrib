@@ -110,13 +110,16 @@ export class SqsServiceExtension implements ServiceExtension {
 
       case 'SendMessageBatch':
         {
-          request.commandInput?.Entries?.forEach(
-            (messageParams: SQS.SendMessageBatchRequestEntry) => {
-              messageParams.MessageAttributes = injectPropagationContext(
-                messageParams.MessageAttributes ?? {}
-              );
-            }
-          );
+          const entries = request.commandInput?.Entries;
+          if (Array.isArray(entries)) {
+            entries.forEach(
+              (messageParams: SQS.SendMessageBatchRequestEntry) => {
+                messageParams.MessageAttributes = injectPropagationContext(
+                  messageParams.MessageAttributes ?? {}
+                );
+              }
+            );
+          }
         }
         break;
     }
