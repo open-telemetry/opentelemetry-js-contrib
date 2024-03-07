@@ -6,6 +6,3 @@ undici:
     - versions: ">=6 <7"
       node: '>=18'
       commands: npm run test
-
-  # Fix missing `contrib-test-utils` package
-  pretest: npm run --prefix ../../../ lerna:link
