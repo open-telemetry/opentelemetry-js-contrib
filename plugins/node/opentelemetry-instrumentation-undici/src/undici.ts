@@ -23,7 +23,6 @@ import {
 import {
   Attributes,
   context,
-  diag,
   Histogram,
   HrTime,
   INVALID_SPAN_CONTEXT,
