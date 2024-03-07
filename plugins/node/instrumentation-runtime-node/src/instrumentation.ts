@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import { EventLoopUtilization, performance } from 'node:perf_hooks';
-import { clearInterval, setInterval } from 'node:timers';
 const { eventLoopUtilization } = performance;
 
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
@@ -79,6 +78,9 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
       (this._config as RuntimeNodeInstrumentationConfig)
         .eventLoopUtilizationMeasurementInterval
     );
+
+    // unref so that it does not keep the process running if disable() is never called
+    this._interval?.unref();
   }
 
   override disable() {
