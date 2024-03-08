@@ -37,7 +37,6 @@ import {
 } from './helper.test';
 
 const { assert } = chai as typeof import('chai');
-
 const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
