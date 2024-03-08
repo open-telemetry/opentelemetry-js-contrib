@@ -36,12 +36,14 @@ import { MockPropagation } from './utils/mock-propagation';
 import { MockServer } from './utils/mock-server';
 import { assertSpan } from './utils/assertSpan';
 
+import type {fetch, stream, request, Client, Dispatcher } from 'undici';
+
 const instrumentation = new UndiciInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
-import type { Dispatcher } from 'undici';
-import * as undici from 'undici';
+// Reference to the `undici` module
+let undici: { fetch: typeof fetch; request: typeof request; stream: typeof stream; Client: typeof Client; };
 
 const protocol = 'http';
 const hostname = 'localhost';
@@ -67,6 +69,14 @@ async function consumeResponseBody(body: Dispatcher.ResponseData['body']) {
 
 describe('UndiciInstrumentation `undici` tests', function () {
   before(function (done) {
+    // Load `undici`. It may fail if nodejs version is <18 because the module uses
+    // features only available from that version. In that case skip the test.
+    try {
+      undici = require('undici');
+    } catch (loadErr) {
+      this.skip();
+    }
+
     propagation.setGlobalPropagator(new MockPropagation());
     context.setGlobalContextManager(new AsyncHooksContextManager().enable());
     mockServer.start(done);
