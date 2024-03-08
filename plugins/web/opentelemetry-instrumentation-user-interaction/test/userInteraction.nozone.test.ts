@@ -21,7 +21,8 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/sdk-trace-base';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
-import * as assert from 'assert';
+// @ts-expect-error: not an export, but we want the prebundled version
+import chai from 'chai/chai.js';
 import * as sinon from 'sinon';
 import { UserInteractionInstrumentation } from '../src';
 import { UserInteractionInstrumentationConfig } from '../src/types';
@@ -34,6 +35,8 @@ import {
   fakeEventInteraction,
   getData,
 } from './helper.test';
+
+const { assert } = chai as typeof import('chai');
 
 const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';

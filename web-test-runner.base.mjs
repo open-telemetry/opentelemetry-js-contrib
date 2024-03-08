@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-const karmaWebpackConfig = require('../../../karma.webpack');
-const karmaBaseConfig = require('../../../karma.base');
+import { nodeResolve as nodeResolveRollup } from '@rollup/plugin-node-resolve';
+import commonjsRollup from '@rollup/plugin-commonjs';
+import { esbuildPlugin } from '@web/dev-server-esbuild';
+import { fromRollup } from '@web/dev-server-rollup';
 
-module.exports = (config) => {
-  config.set(Object.assign({}, karmaBaseConfig, {
-    frameworks: karmaBaseConfig.frameworks.concat(['jquery-1.8.3']),
-    webpack: karmaWebpackConfig,
-  }))
+const nodeResolve = fromRollup(nodeResolveRollup);
+const commonjs = fromRollup(commonjsRollup);
+
+export default {
+  files: ['test/**/*.test.ts'],
+  nodeResolve: true,
+  plugins: [
+    esbuildPlugin({ ts: true }),
+    nodeResolve({ browser: true, preferBuiltins: false }),
+    commonjs(),
+  ],
 };

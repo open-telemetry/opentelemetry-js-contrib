@@ -14,20 +14,4 @@
  * limitations under the License.
  */
 
-import { nodeResolve as nodeResolveRollup } from '@rollup/plugin-node-resolve';
-import commonjsRollup from '@rollup/plugin-commonjs';
-import { esbuildPlugin } from '@web/dev-server-esbuild';
-import { fromRollup } from '@web/dev-server-rollup';
-
-const nodeResolve = fromRollup(nodeResolveRollup);
-const commonjs = fromRollup(commonjsRollup);
-
-export default {
-  files: ['test/**/*.test.ts'],
-  nodeResolve: true,
-  plugins: [
-    esbuildPlugin({ ts: true }),
-    nodeResolve({ browser: true, preferBuiltins: false }),
-    commonjs(),
-  ],
-};
+export { default } from '../../../web-test-runner.base.mjs';
