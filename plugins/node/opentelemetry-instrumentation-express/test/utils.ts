@@ -66,6 +66,7 @@ export async function serverWithMiddleware(
 
   const router = express.Router();
   app.use('/toto', router);
+  app.use('/double-slashes/', router);
   router.get('/:id', (req, res) => {
     setImmediate(() => {
       res.status(200).end(req.params.id);
