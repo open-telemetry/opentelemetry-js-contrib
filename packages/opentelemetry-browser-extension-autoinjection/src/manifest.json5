@@ -15,7 +15,10 @@
       "open_in_tab": true,
    },
    "web_accessible_resources": [
-      "instrumentation.js"
+      "instrumentation.js",
+      "instrumentation.js.map",
+      "contentScript.js.map",
+      "js/index.js.map"
    ],
    "host_permissions": [
       '<all_urls>'

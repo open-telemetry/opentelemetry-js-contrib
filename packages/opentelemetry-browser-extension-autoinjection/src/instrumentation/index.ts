@@ -43,6 +43,9 @@ new WebInstrumentation(
       [InstrumentationType.XML_HTTP_REQUEST]: {
         enabled: true,
       },
+      [InstrumentationType.USER_INTERACTION]: {
+        enabled: true,
+      },
     },
     withZoneContextManager: true,
   },
@@ -50,5 +53,6 @@ new WebInstrumentation(
     resource: new Resource({
       [SemanticResourceAttributes.SERVICE_NAME]: window.location.hostname,
     }),
-  })
+  }),
+  console
 ).register();

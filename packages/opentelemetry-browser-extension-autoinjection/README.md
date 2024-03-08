@@ -1,10 +1,5 @@
 # OpenTelemetry Browser Extension
 
-## :warning: ARCHIVED PROJECT
-
-> This project has been archived by the maintainers on August 3 2022 because it was causing a failure in the CI and does not have any maintainer.
-> Anyone who would like to maintain this project should open a PR to move it back into the lerna project and add themselves to the component owners file.
-
 This browser extension allows you to inject [OpenTelemetry](https://opentelemetry.io/) instrumentation in any web page. It uses the [Web SDK](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-web) and can export data to Zipkin or an OpenTelemetry Collector.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
@@ -13,9 +8,9 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Supported Environments
 
-* Google Chrome (with [Manifest Version 3](https://developer.chrome.com/docs/extensions/mv3/intro/) support)
-* Chromium (with Manifest Version 2)
-* Firefox (*unstable*, with Manifest Version 2)
+- Google Chrome (with [Manifest Version 3](https://developer.chrome.com/docs/extensions/mv3/intro/) support)
+- Chromium (with Manifest Version 2)
+- Firefox (_unstable_, with Manifest Version 2)
 
 ## Installation
 
@@ -32,9 +27,9 @@ npm run build
 
 This will create a so-called unpacked extension into the `build/` folder you now can load into your browser:
 
-* Open a new browser window and go to chrome://extensions
-* Turn on "Developer Mode"
-* Click on "Load unpacked" and select the `build/mv3` (or `build/mv2`) folder, which contains the extension
+- Open a new browser window and go to chrome://extensions
+- Turn on "Developer Mode"
+- Click on "Load unpacked" and select the `build/mv3` (or `build/mv2`) folder, which contains the extension
 
 If all goes well you should see the extension listed:
 
@@ -49,6 +44,16 @@ When visiting a website, click on the extension icon, add an url filter that par
 Click on `Save & Reload`, check the developer toolbar to see how spans being are printed to the console and being sent to your collector:
 
 ![This image shows spans being printed into the console of the developer toolbar for opentelemetry.io](./images/console.png)
+
+### Usage with OTLP
+
+If you'd like to export your telemetry to an OTLP endpoint (i.e. [collector](https://github.com/open-telemetry/opentelemetry-collector)) you might run into issues
+with [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/) (CSP) and [Cross-Origin Resource Sharing](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) (CORS).
+
+To work around CSP you need another browser extension, that allows you to disable CSP for your targeted website.
+
+To work around CORS you need your OTLP endpoint to provide you with the right headers. To help you with that you find a `docker-compose.yml` in [./server] that
+starts a nginx, OTel collector and jaeger instance for you. You can leverage that example to get your own installation up and running.
 
 ## Known Limitations
 

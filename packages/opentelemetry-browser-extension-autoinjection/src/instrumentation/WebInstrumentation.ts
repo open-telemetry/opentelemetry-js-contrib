@@ -17,10 +17,11 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
+import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { OTLPTraceExporter as OTLPHttpTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
@@ -37,45 +38,64 @@ export class WebInstrumentation {
   withZoneContextManager: boolean;
   provider: WebTracerProvider;
   exporters: Exporters;
+  logger: Console;
   instrumentations: {
     [InstrumentationType.DOCUMENT_LOAD]: { enabled: boolean };
     [InstrumentationType.FETCH]: { enabled: boolean };
     [InstrumentationType.XML_HTTP_REQUEST]: { enabled: boolean };
+    [InstrumentationType.USER_INTERACTION]: { enabled: boolean };
   };
   constructor(
     config: InstrumentationConfiguration,
-    provider: WebTracerProvider
+    provider: WebTracerProvider,
+    logger: Console
   ) {
     this.exporters = config.exporters;
     this.instrumentations = config.instrumentations;
     this.provider = provider;
     this.withZoneContextManager = config.withZoneContextManager;
+    this.logger = logger;
   }
 
   addExporters() {
     if (this.exporters[ExporterType.CONSOLE].enabled) {
+      this.logger.info(
+        '[otel-extension] Logging spans to the console with ConsoleSpanExporter'
+      );
       this.provider.addSpanProcessor(
         new SimpleSpanProcessor(new ConsoleSpanExporter())
       );
     }
 
     if (this.exporters[ExporterType.ZIPKIN].enabled) {
-      this.provider.addSpanProcessor(
-        new BatchSpanProcessor(
-          new ZipkinExporter({
+      const options = this.exporters[ExporterType.ZIPKIN].url
+        ? {
             url: this.exporters[ExporterType.ZIPKIN].url,
-          })
-        )
+          }
+        : {};
+      this.logger.info(
+        '[otel-extension] Logging spans to the console with ZipkinExporter(',
+        options,
+        ')'
+      );
+      this.provider.addSpanProcessor(
+        new BatchSpanProcessor(new ZipkinExporter(options))
       );
     }
 
-    if (this.exporters[ExporterType.COLLECTOR_TRACE].enabled) {
+    if (this.exporters[ExporterType.TRACE_OTLP_HTTP].enabled) {
+      const options = this.exporters[ExporterType.TRACE_OTLP_HTTP].url
+        ? {
+            url: this.exporters[ExporterType.TRACE_OTLP_HTTP].url,
+          }
+        : {};
+      this.logger.info(
+        '[otel-extension] Logging spans to the console with OTLPHttpTraceExporter(',
+        options,
+        ')'
+      );
       this.provider.addSpanProcessor(
-        new BatchSpanProcessor(
-          new OTLPTraceExporter({
-            url: this.exporters[ExporterType.COLLECTOR_TRACE].url,
-          })
-        )
+        new BatchSpanProcessor(new OTLPHttpTraceExporter(options))
       );
     }
   }
@@ -93,6 +113,10 @@ export class WebInstrumentation {
 
     if (this.instrumentations[InstrumentationType.XML_HTTP_REQUEST].enabled) {
       instrumentations.push(new XMLHttpRequestInstrumentation());
+    }
+
+    if (this.instrumentations[InstrumentationType.USER_INTERACTION].enabled) {
+      instrumentations.push(new UserInteractionInstrumentation());
     }
 
     registerInstrumentations({
