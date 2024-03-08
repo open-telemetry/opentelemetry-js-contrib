@@ -23,6 +23,7 @@ const instrumentation = registerInstrumentationTesting(
 );
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
+import type { SQS } from 'aws-sdk';
 
 import {
   MessagingDestinationKindValues,
@@ -493,6 +494,29 @@ describe('SQS', () => {
       expect(processSpans.length).toBe(2);
       expect(processSpans[0].status.code).toStrictEqual(SpanStatusCode.UNSET);
       expect(processSpans[1].status.code).toStrictEqual(SpanStatusCode.UNSET);
+    });
+
+    it('bogus sendMessageBatch input should not crash', async () => {
+      const region = 'us-east-1';
+      const sqs = new AWS.SQS();
+      sqs.config.update({ region });
+
+      const QueueName = 'unittest';
+      const params = {
+        QueueUrl: `queue/url/for/${QueueName}`,
+        Entries: { Key1: { MessageBody: 'This is the first message' } },
+      };
+      await sqs
+        .sendMessageBatch(params as unknown as SQS.SendMessageBatchRequest)
+        .promise();
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+
+      // Spot check a single attribute as a sanity check.
+      expect(spans[0].attributes[SemanticAttributes.RPC_METHOD]).toEqual(
+        'SendMessageBatch'
+      );
     });
   });
 
