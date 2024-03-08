@@ -213,26 +213,43 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'foo-client': 'bar',
       };
 
-      const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
-      const firstQueryResponse = await undici.request(queryRequestUrl, {
-        headers,
-        // @ts-expect-error - method type expects in uppercase
-        method: 'get',
-      });
-      await consumeResponseBody(firstQueryResponse.body);
-      const secondQueryResponse = await undici.request(queryRequestUrl, {
-        headers,
-        // @ts-expect-error - method type expects known HTTP method (GET, POST, PUT, ...)
-        method: 'custom',
-      });
-      await consumeResponseBody(secondQueryResponse.body);
+      // In version v5 if `undici` you get the following error when requesting with a method
+      // that is not one of the known ones in uppercase. Using 
+      //
+      // SocketError: other side closed
+      // at Socket.onSocketEnd (node_modules/undici/lib/client.js:1118:22)
+      // at endReadableNT (internal/streams/readable.js:1333:12)
+      // at processTicksAndRejections (internal/process/task_queues.js:82:21)
+      let firstQueryResponse, secondQueryResponse;
+      try {
+        const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+        firstQueryResponse = await undici.request(queryRequestUrl, {
+          headers,
+          // @ts-expect-error - method type expects in uppercase
+          method: 'get',
+        });
+        await consumeResponseBody(firstQueryResponse.body);
+
+        secondQueryResponse = await undici.request(queryRequestUrl, {
+          headers,
+          // @ts-expect-error - method type expects known HTTP method (GET, POST, PUT, ...)
+          method: 'custom',
+        });
+        await consumeResponseBody(secondQueryResponse.body);
+      } catch (undiciErr) {
+        const { stack } = undiciErr as Error;
+
+        if (stack?.startsWith('SocketError: other side closed')) {
+          this.skip();
+        }
+      }
 
       assert.ok(
-        firstQueryResponse.headers['propagation-error'] == null,
+        firstQueryResponse!.headers['propagation-error'] === undefined,
         'propagation is set for instrumented requests'
       );
       assert.ok(
-        secondQueryResponse.headers['propagation-error'] == null,
+        secondQueryResponse!.headers['propagation-error'] === undefined,
         'propagation is set for instrumented requests'
       );
 
@@ -240,29 +257,29 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(spans.length, 2);
       assertSpan(spans[0], {
         hostname: 'localhost',
-        httpStatusCode: firstQueryResponse.statusCode,
+        httpStatusCode: firstQueryResponse!.statusCode,
         httpMethod: 'GET',
         path: '/',
         query: '?query=test',
         reqHeaders: headers,
-        resHeaders: firstQueryResponse.headers,
+        resHeaders: firstQueryResponse!.headers,
       });
-      assertSpan(spans[1], {
-        hostname: 'localhost',
-        httpStatusCode: secondQueryResponse.statusCode,
-        spanName: 'HTTP',
-        httpMethod: '_OTHER',
-        path: '/',
-        query: '?query=test',
-        reqHeaders: headers,
-        resHeaders: secondQueryResponse.headers,
-      });
-
       assert.strictEqual(
         spans[0].attributes['http.request.method_original'],
         'get',
         'request original method is captured'
       );
+
+      assertSpan(spans[1], {
+        hostname: 'localhost',
+        httpStatusCode: secondQueryResponse!.statusCode,
+        spanName: 'HTTP',
+        httpMethod: '_OTHER',
+        path: '/',
+        query: '?query=test',
+        reqHeaders: headers,
+        resHeaders: secondQueryResponse!.headers,
+      });
       assert.strictEqual(
         spans[1].attributes['http.request.method_original'],
         'custom',
