@@ -138,7 +138,7 @@ jobs:
         run: npm run test:ci:changed
       - name: Report Coverage
         if: ${{ matrix.code-coverage && !cancelled()}}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           verbose: true
 
@@ -146,7 +146,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14"]
+        node: ["16"]
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
@@ -169,6 +169,6 @@ jobs:
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           verbose: true

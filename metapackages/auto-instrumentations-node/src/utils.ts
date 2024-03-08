@@ -135,12 +135,8 @@ export type InstrumentationConfigMap = {
 export function getNodeAutoInstrumentations(
   inputConfigs: InstrumentationConfigMap = {}
 ): Instrumentation[] {
-  for (const name of Object.keys(inputConfigs)) {
-    if (!Object.prototype.hasOwnProperty.call(InstrumentationMap, name)) {
-      diag.error(`Provided instrumentation name "${name}" not found`);
-      continue;
-    }
-  }
+  checkManuallyProvidedInstrumentationNames(Object.keys(inputConfigs));
+  const enabledInstrumentationsFromEnv = getEnabledInstrumentationsFromEnv();
 
   const instrumentations: Instrumentation[] = [];
 
@@ -151,7 +147,10 @@ export function getNodeAutoInstrumentations(
     // Defaults are defined by the instrumentation itself
     const userConfig: any = inputConfigs[name] ?? {};
 
-    if (userConfig.enabled === false) {
+    if (
+      userConfig.enabled === false ||
+      !enabledInstrumentationsFromEnv.includes(name)
+    ) {
       diag.debug(`Disabling instrumentation for ${name}`);
       continue;
     }
@@ -165,6 +164,33 @@ export function getNodeAutoInstrumentations(
   }
 
   return instrumentations;
+}
+
+function checkManuallyProvidedInstrumentationNames(
+  manuallyProvidedInstrumentationNames: string[]
+) {
+  for (const name of manuallyProvidedInstrumentationNames) {
+    if (!Object.prototype.hasOwnProperty.call(InstrumentationMap, name)) {
+      diag.error(`Provided instrumentation name "${name}" not found`);
+    }
+  }
+}
+
+/**
+ * Returns the list of instrumentations that are enabled based on the environment variable.
+ */
+function getEnabledInstrumentationsFromEnv() {
+  if (!process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS) {
+    return Object.keys(InstrumentationMap);
+  }
+
+  const instrumentationsFromEnv =
+    process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS.split(',').map(
+      instrumentationPkgSuffix =>
+        `@opentelemetry/instrumentation-${instrumentationPkgSuffix.trim()}`
+    );
+  checkManuallyProvidedInstrumentationNames(instrumentationsFromEnv);
+  return instrumentationsFromEnv;
 }
 
 export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
