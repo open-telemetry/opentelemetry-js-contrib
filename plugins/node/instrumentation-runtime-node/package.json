@@ -1,0 +1,58 @@
+{
+  "name": "@opentelemetry/instrumentation-runtime-node",
+  "version": "0.2.0",
+  "description": "OpenTelemetry Node.js Performance measurement API automatic instrumentation package",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-runtime-node",
+  "scripts": {
+    "clean": "rimraf build/*",
+    "compile": "tsc -p .",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-runtime-node --include-dependencies",
+    "prewatch": "npm run precompile",
+    "prepublishOnly": "npm run compile",
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "version:update": "node ../../../scripts/version-update.js"
+  },
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=14.10.0"
+  },
+  "keywords": [
+    "perf_hooks",
+    "instrumentation",
+    "nodejs",
+    "opentelemetry"
+  ],
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@opentelemetry/instrumentation": "^0.49.1"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.3.0",
+    "@opentelemetry/sdk-metrics": "^1.20.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.2",
+    "mocha": "7.2.0",
+    "nyc": "^15.1.0",
+    "rimraf": "5.0.5",
+    "ts-mocha": "10.0.0",
+    "typescript": "4.4.4"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.3.0"
+  }
+}

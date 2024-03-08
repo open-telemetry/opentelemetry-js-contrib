@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dataloader",
-  "version": "0.5.4",
+  "version": "0.7.0",
   "description": "OpenTelemetry instrumentation for dataloader",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -53,12 +53,12 @@
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.5",
-    "test-all-versions": "6.0.0",
+    "test-all-versions": "6.1.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.46.0"
+    "@opentelemetry/instrumentation": "^0.49.1"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-dataloader#readme"
 }

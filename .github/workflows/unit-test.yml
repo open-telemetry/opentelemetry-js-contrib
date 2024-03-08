@@ -136,11 +136,9 @@ jobs:
       - name: Unit tests (Delta)
         if: ${{ !matrix.code-coverage }}
         run: npm run test:ci:changed
-      - name: Build examples
-        run: npm run compile:examples
       - name: Report Coverage
         if: ${{ matrix.code-coverage && !cancelled()}}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           verbose: true
 
@@ -171,6 +169,6 @@ jobs:
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           verbose: true

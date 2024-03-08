@@ -6,6 +6,42 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.33.0...instrumentation-memcached-v0.34.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+
+### Bug Fixes
+
+* **instrumentation-memcached:** parse attribute value for net.peer.port to a number ([038e0bf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/038e0bfda951055ce91724a3b4a3042a9f918700))
+* **instrumentation-mongodb:** parse attribute value for net.peer.port to a number ([038e0bf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/038e0bfda951055ce91724a3b4a3042a9f918700))
+* **instrumentation-mysql2:** parse attribute value for net.peer.port to a number ([038e0bf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/038e0bfda951055ce91724a3b4a3042a9f918700))
+* **instrumentation-mysql:** parse attribute value for net.peer.port to a number ([038e0bf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/038e0bfda951055ce91724a3b4a3042a9f918700))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.36.0 to ^0.37.0
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.32.5...instrumentation-memcached-v0.33.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.1 to ^0.36.0
+
 ## [0.32.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.32.4...instrumentation-memcached-v0.32.5) (2024-01-04)
 
 

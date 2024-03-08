@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.33.0...instrumentation-dns-v0.34.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+* **instrumentation-dns:** allow ignoreHostnames to be only a single IgnoreMatcher ([#1929](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1929)) ([a7861f6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a7861f6d23e07ab6f9e8d02378abd5e17d73bff3))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.32.5...instrumentation-dns-v0.33.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
 ## [0.32.5](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.32.4...instrumentation-dns-v0.32.5) (2024-01-04)
 
 

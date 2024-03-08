@@ -45,7 +45,7 @@ registerInstrumentations({
 });
 ```
 
-See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express/examples) for a short example.
+See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/express) for a short example.
 
 ### Caveats
 
@@ -141,6 +141,16 @@ const expressInstrumentation = new ExpressInstrumentation({
   }
 });
 ```
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.0+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute    | Short Description                  | Notes             |
+| ------------ | ---------------------------------- | ----------------- |
+| `http.route` | The matched route (path template). | Key: `HTTP_ROUTE` |
 
 ## Useful links
 

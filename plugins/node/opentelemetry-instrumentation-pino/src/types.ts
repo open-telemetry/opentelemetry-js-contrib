@@ -26,4 +26,11 @@ export type LogHookFunction = (
 
 export interface PinoInstrumentationConfig extends InstrumentationConfig {
   logHook?: LogHookFunction;
+
+  /** Configure the names of field injected into logs when there is span context available.  */
+  logKeys?: {
+    traceId: string;
+    spanId: string;
+    traceFlags: string;
+  };
 }

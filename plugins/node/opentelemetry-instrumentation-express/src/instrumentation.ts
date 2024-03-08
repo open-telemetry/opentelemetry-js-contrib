@@ -197,7 +197,9 @@ export class ExpressInstrumentation extends InstrumentationBase<
         storeLayerPath(req, layerPath);
         const route = (req[_LAYERS_STORE_PROPERTY] as string[])
           .filter(path => path !== '/' && path !== '/*')
-          .join('');
+          .join('')
+          // remove duplicate slashes to normalize route
+          .replace(/\/{2,}/g, '/');
 
         const attributes: Attributes = {
           [SemanticAttributes.HTTP_ROUTE]: route.length > 0 ? route : '/',
@@ -280,7 +282,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
             const isError = ![undefined, null, 'route', 'router'].includes(
               maybeError
             );
-            if (isError) {
+            if (!spanHasEnded && isError) {
               const [error, message] = asErrorAndMessage(maybeError);
               span.recordException(error);
               span.setStatus({

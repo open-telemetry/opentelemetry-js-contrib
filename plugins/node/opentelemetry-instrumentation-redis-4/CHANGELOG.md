@@ -12,6 +12,39 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.36.0...instrumentation-redis-4-v0.37.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.36.0 to ^0.37.0
+
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.35.6...instrumentation-redis-4-v0.36.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Bug Fixes
+
+* **instrumentation-redis-4:** fix multi.exec() instrumentation for redis &gt;=4.6.12 ([#1904](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1904)) ([fce7d3b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fce7d3b5e478ff7525c9ffe99e59bf35f8c06207))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.1 to ^0.36.0
+
 ## [0.35.6](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-4-v0.35.5...instrumentation-redis-4-v0.35.6) (2024-01-04)
 
 

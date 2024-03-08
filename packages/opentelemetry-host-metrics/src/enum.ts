@@ -27,9 +27,16 @@ export enum METRIC_NAMES {
   PROCESS_MEMORY_USAGE = 'process.memory.usage',
 }
 
-export enum METRIC_ATTRIBUTES {
+export enum ATTRIBUTE_NAMES {
   SYSTEM_CPU_LOGICAL_NUMBER = 'system.cpu.logical_number',
   SYSTEM_CPU_STATE = 'system.cpu.state',
+  SYSTEM_MEMORY_STATE = 'system.memory.state',
+  SYSTEM_DEVICE = 'system.device',
+  SYSTEM_NETWORK_DIRECTION = 'system.network.direction',
+  SYSTEM_NETWORK_STATE = 'system.network.state',
+  // TODO: change value if semconv changes
+  // https://github.com/open-telemetry/opentelemetry-specification/issues/3776
+  PROCESS_CPU_STATE = 'state',
 }
 
 export enum CPU_LABELS {
@@ -41,7 +48,6 @@ export enum CPU_LABELS {
 }
 
 export enum NETWORK_LABELS {
-  DEVICE = 'device',
   RECEIVE = 'receive',
   TRANSMIT = 'transmit',
 }

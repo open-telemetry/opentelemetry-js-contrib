@@ -63,6 +63,7 @@ components:
     - blumamir
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
+    - trentm
   plugins/node/opentelemetry-instrumentation-cassandra:
     - seemk
   plugins/node/opentelemetry-instrumentation-connect: []
@@ -99,6 +100,8 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-net:
     - seemk
+  plugins/node/opentelemetry-instrumentation-runtime-node:
+    - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
     - rauno56
   plugins/node/opentelemetry-instrumentation-pino:
@@ -115,7 +118,7 @@ components:
     - seemk
   plugins/web/opentelemetry-instrumentation-document-load:
     - pkanal
-    - martinkuba 
+    - martinkuba
   plugins/web/opentelemetry-instrumentation-long-task:
     - mhennoch
     - t2t2

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.37.0...instrumentation-graphql-v0.38.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.36.1...instrumentation-graphql-v0.37.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+* **instrumentation-graphql:** add option to ignore resolver spans ([#1858](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1858)) ([c365375](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c365375ce2d35c01df06c96a4faf8d5a5d9d1ec3))
+
 ## [0.36.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.36.0...instrumentation-graphql-v0.36.1) (2024-01-04)
 
 

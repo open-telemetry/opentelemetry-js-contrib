@@ -146,6 +146,116 @@
     * @opentelemetry/instrumentation-net bumped from ^0.32.3 to ^0.32.4
     * @opentelemetry/instrumentation-pino bumped from ^0.34.3 to ^0.34.4
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.38.0 to ^0.38.1
+
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.41.1...auto-instrumentations-node-v0.42.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.34.0 to ^0.35.0
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.38.0 to ^0.39.0
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.38.1 to ^0.39.0
+    * @opentelemetry/instrumentation-bunyan bumped from ^0.35.0 to ^0.36.0
+    * @opentelemetry/instrumentation-cassandra-driver bumped from ^0.35.0 to ^0.36.0
+    * @opentelemetry/instrumentation-connect bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.3.0 to ^0.4.0
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.6.0 to ^0.7.0
+    * @opentelemetry/instrumentation-dns bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-express bumped from ^0.35.0 to ^0.36.0
+    * @opentelemetry/instrumentation-fastify bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.9.0 to ^0.10.0
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-graphql bumped from ^0.37.0 to ^0.38.0
+    * @opentelemetry/instrumentation-hapi bumped from ^0.34.0 to ^0.35.0
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.37.0 to ^0.38.0
+    * @opentelemetry/instrumentation-knex bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-koa bumped from ^0.37.0 to ^0.38.0
+    * @opentelemetry/instrumentation-lru-memoizer bumped from ^0.34.0 to ^0.35.0
+    * @opentelemetry/instrumentation-memcached bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.39.0 to ^0.40.0
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.35.0 to ^0.36.0
+    * @opentelemetry/instrumentation-mysql bumped from ^0.35.0 to ^0.36.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.35.0 to ^0.36.0
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.34.0 to ^0.35.0
+    * @opentelemetry/instrumentation-net bumped from ^0.33.0 to ^0.34.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.38.0 to ^0.39.0
+    * @opentelemetry/instrumentation-pino bumped from ^0.35.0 to ^0.36.0
+    * @opentelemetry/instrumentation-redis bumped from ^0.36.0 to ^0.37.0
+    * @opentelemetry/instrumentation-redis-4 bumped from ^0.36.0 to ^0.37.0
+    * @opentelemetry/instrumentation-restify bumped from ^0.35.0 to ^0.36.0
+    * @opentelemetry/instrumentation-router bumped from ^0.34.0 to ^0.35.0
+    * @opentelemetry/instrumentation-socket.io bumped from ^0.36.0 to ^0.37.0
+    * @opentelemetry/instrumentation-tedious bumped from ^0.7.0 to ^0.8.0
+    * @opentelemetry/instrumentation-winston bumped from ^0.34.0 to ^0.35.0
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.28.6 to ^0.28.7
+    * @opentelemetry/resource-detector-aws bumped from ^1.3.6 to ^1.4.0
+    * @opentelemetry/resource-detector-container bumped from ^0.3.6 to ^0.3.7
+    * @opentelemetry/resource-detector-gcp bumped from ^0.29.6 to ^0.29.7
+
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.40.3...auto-instrumentations-node-v0.41.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.33.5 to ^0.34.0
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.37.4 to ^0.38.0
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.37.2 to ^0.38.0
+    * @opentelemetry/instrumentation-bunyan bumped from ^0.34.1 to ^0.35.0
+    * @opentelemetry/instrumentation-cassandra-driver bumped from ^0.34.2 to ^0.35.0
+    * @opentelemetry/instrumentation-connect bumped from ^0.32.4 to ^0.33.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.2.1 to ^0.3.0
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.5.4 to ^0.6.0
+    * @opentelemetry/instrumentation-dns bumped from ^0.32.5 to ^0.33.0
+    * @opentelemetry/instrumentation-express bumped from ^0.34.1 to ^0.35.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.8.4 to ^0.9.0
+    * @opentelemetry/instrumentation-fastify bumped from ^0.32.6 to ^0.33.0
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.32.5 to ^0.33.0
+    * @opentelemetry/instrumentation-graphql bumped from ^0.36.1 to ^0.37.0
+    * @opentelemetry/instrumentation-hapi bumped from ^0.33.3 to ^0.34.0
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.36.1 to ^0.37.0
+    * @opentelemetry/instrumentation-knex bumped from ^0.32.4 to ^0.33.0
+    * @opentelemetry/instrumentation-koa bumped from ^0.36.4 to ^0.37.0
+    * @opentelemetry/instrumentation-lru-memoizer bumped from ^0.33.5 to ^0.34.0
+    * @opentelemetry/instrumentation-memcached bumped from ^0.32.5 to ^0.33.0
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.38.1 to ^0.39.0
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.34.0 to ^0.35.0
+    * @opentelemetry/instrumentation-mysql bumped from ^0.34.5 to ^0.35.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.34.5 to ^0.35.0
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.33.4 to ^0.34.0
+    * @opentelemetry/instrumentation-net bumped from ^0.32.5 to ^0.33.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.37.2 to ^0.38.0
+    * @opentelemetry/instrumentation-pino bumped from ^0.34.5 to ^0.35.0
+    * @opentelemetry/instrumentation-redis bumped from ^0.35.5 to ^0.36.0
+    * @opentelemetry/instrumentation-redis-4 bumped from ^0.35.6 to ^0.36.0
+    * @opentelemetry/instrumentation-restify bumped from ^0.34.3 to ^0.35.0
+    * @opentelemetry/instrumentation-router bumped from ^0.33.4 to ^0.34.0
+    * @opentelemetry/instrumentation-socket.io bumped from ^0.35.0 to ^0.36.0
+    * @opentelemetry/instrumentation-tedious bumped from ^0.6.5 to ^0.7.0
+    * @opentelemetry/instrumentation-winston bumped from ^0.33.1 to ^0.34.0
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.28.5 to ^0.28.6
+    * @opentelemetry/resource-detector-aws bumped from ^1.3.5 to ^1.3.6
+    * @opentelemetry/resource-detector-container bumped from ^0.3.5 to ^0.3.6
+    * @opentelemetry/resource-detector-gcp bumped from ^0.29.5 to ^0.29.6
+
 ## [0.40.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.40.2...auto-instrumentations-node-v0.40.3) (2024-01-04)
 
 
