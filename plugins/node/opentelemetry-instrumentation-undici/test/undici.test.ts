@@ -36,14 +36,19 @@ import { MockPropagation } from './utils/mock-propagation';
 import { MockServer } from './utils/mock-server';
 import { assertSpan } from './utils/assertSpan';
 
-import type {fetch, stream, request, Client, Dispatcher } from 'undici';
+import type { fetch, stream, request, Client, Dispatcher } from 'undici';
 
 const instrumentation = new UndiciInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
 // Reference to the `undici` module
-let undici: { fetch: typeof fetch; request: typeof request; stream: typeof stream; Client: typeof Client; };
+let undici: {
+  fetch: typeof fetch;
+  request: typeof request;
+  stream: typeof stream;
+  Client: typeof Client;
+};
 
 const protocol = 'http';
 const hostname = 'localhost';
@@ -214,7 +219,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       };
 
       // In version v5 if `undici` you get the following error when requesting with a method
-      // that is not one of the known ones in uppercase. Using 
+      // that is not one of the known ones in uppercase. Using
       //
       // SocketError: other side closed
       // at Socket.onSocketEnd (node_modules/undici/lib/client.js:1118:22)
