@@ -63,8 +63,17 @@ describe('mongoose instrumentation', () => {
   beforeEach(async () => {
     instrumentation.disable();
     instrumentation.setConfig({
-      dbStatementSerializer: (_operation: string, payload) =>
-        JSON.stringify(payload),
+      dbStatementSerializer: (_operation: string, payload) => {
+        try {
+          return JSON.stringify(payload);
+        } catch (e) {
+          if (e instanceof TypeError) {
+            return '{}';
+          }
+
+          throw e;
+        }
+      },
     });
     instrumentation.enable();
     await loadUsers();
@@ -92,6 +101,118 @@ describe('mongoose instrumentation', () => {
     expect(spans[0].attributes[SemanticAttributes.DB_OPERATION]).toBe('save');
     const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.document).toEqual(expect.objectContaining(document));
+  });
+
+  describe('when save call does not have callback', async () => {
+    it('instrumenting save operation with promise and committed session', async () => {
+      const session = await User.startSession();
+      await session.startTransaction();
+      const document = {
+        firstName: 'Test first name',
+        lastName: 'Test last name',
+        email: 'test@example.com',
+      };
+      const user: IUser = new User(document);
+
+      await user.save({ session });
+      await session.commitTransaction();
+      session.endSession();
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      assertSpan(spans[0] as ReadableSpan);
+      expect(spans[0].attributes[SemanticAttributes.DB_OPERATION]).toBe('save');
+      const statement = getStatement(spans[0] as ReadableSpan);
+      expect(statement.document).toEqual(expect.objectContaining(document));
+
+      const createdUser = await User.findById(user._id).lean();
+      expect(createdUser?._id.toString()).toEqual(user._id.toString());
+    });
+
+    it('instrumenting save operation with promise and session with aborted transaction ', async () => {
+      const session = await User.startSession();
+      await session.startTransaction();
+      const document = {
+        firstName: 'Test first name',
+        lastName: 'Test last name',
+        email: 'test@example.com',
+      };
+      const user: IUser = new User(document);
+
+      await user.save({ session });
+      await session.abortTransaction();
+      session.endSession();
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      assertSpan(spans[0] as ReadableSpan);
+      expect(spans[0].attributes[SemanticAttributes.DB_OPERATION]).toBe('save');
+      const statement = getStatement(spans[0] as ReadableSpan);
+      expect(statement.document).toEqual(expect.objectContaining(document));
+
+      const createdUser = await User.findById(user._id).lean();
+      expect(createdUser).toEqual(null);
+    });
+  });
+
+  describe('when save call has callback', async () => {
+    it('instrumenting save operation with promise and committed session', async done => {
+      const session = await User.startSession();
+      await session.startTransaction();
+      const document = {
+        firstName: 'Test first name',
+        lastName: 'Test last name',
+        email: 'test@example.com',
+      };
+      const user: IUser = new User(document);
+
+      user.save({ session }, async () => {
+        await session.commitTransaction();
+        session.endSession();
+
+        const spans = getTestSpans();
+        expect(spans.length).toBe(1);
+        assertSpan(spans[0] as ReadableSpan);
+        expect(spans[0].attributes[SemanticAttributes.DB_OPERATION]).toBe(
+          'save'
+        );
+        const statement = getStatement(spans[0] as ReadableSpan);
+        expect(statement.document).toEqual(expect.objectContaining(document));
+
+        const createdUser = await User.findById(user._id).lean();
+        expect(createdUser?._id.toString()).toEqual(user._id.toString());
+        done();
+      });
+    });
+
+    it('instrumenting save operation with promise and session with aborted transaction ', async done => {
+      const session = await User.startSession();
+      await session.startTransaction();
+      const document = {
+        firstName: 'Test first name',
+        lastName: 'Test last name',
+        email: 'test@example.com',
+      };
+      const user: IUser = new User(document);
+
+      user.save({ session }, async () => {
+        await session.abortTransaction();
+        session.endSession();
+
+        const spans = getTestSpans();
+        expect(spans.length).toBe(1);
+        assertSpan(spans[0] as ReadableSpan);
+        expect(spans[0].attributes[SemanticAttributes.DB_OPERATION]).toBe(
+          'save'
+        );
+        const statement = getStatement(spans[0] as ReadableSpan);
+        expect(statement.document).toEqual(expect.objectContaining(document));
+
+        const createdUser = await User.findById(user._id).lean();
+        expect(createdUser).toEqual(null);
+        done();
+      });
+    });
   });
 
   it('instrumenting save operation with callback', done => {
