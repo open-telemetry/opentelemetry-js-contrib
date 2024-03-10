@@ -401,7 +401,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
         });
       });
 
-      it.skip('should attach response hook data to the resulting span for insert function', done => {
+      it('should attach response hook data to the resulting span for insert function', done => {
         const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
         const span = trace.getTracer('default').startSpan('insertRootSpan');
         context.with(trace.setSpan(context.active(), span), () => {
