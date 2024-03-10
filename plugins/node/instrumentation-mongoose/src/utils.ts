@@ -101,12 +101,12 @@ export function handleCallbackResponse(
     newArgs.push(argValue);
   }
 
-  let index = 0;
+  let callbackArgumentIndex = 0;
   if (newArgs.length === 2) {
-    index = 1;
+    callbackArgumentIndex = 1;
   }
 
-  newArgs[index] = (err: Error, response: any): any => {
+  newArgs[callbackArgumentIndex] = (err: Error, response: any): any => {
     err
       ? setErrorStatus(span, err)
       : applyResponseHook(span, response, responseHook, moduleVersion);
