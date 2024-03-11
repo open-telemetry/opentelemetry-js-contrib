@@ -18,7 +18,7 @@ All types from `types.ts` file MUST be exported from instrumentation `index.ts` 
 
 #### Breaking Changes
 
-Since these types are publicly exported, a breaking change in this file can cause transpilation issues or require code changes for existing users. Special care and attention should be put when modifiying this file to guarantee backword compatibility or proper documentation of breaking changes.
+Since these types are publicly exported, a breaking change in this file can cause transpilation issues or require code changes for existing users. Special care and attention should be put when modifiying this file to guarantee backward compatibility or proper documentation of breaking changes.
 
 ### Internal Types
 
@@ -30,7 +30,7 @@ It is sometimes convenient to place these declarations in a dedicated file which
 
 The file SHOULD be named `internal-types.ts`.
 
-Using this file is optional - when a type is used only in a single file, it is ok to declare it and use it in this file **without exporting it**. When a type is expected to be shared between multiple files, it is encourged to be declared in `internal-types.ts` to prevent circular dependencies.
+Using this file is optional - when a type is used only in a single file, it is ok to declare it and use it in this file **without exporting it**. When a type is expected to be shared between multiple files, it is encouraged to be declared in `internal-types.ts` to prevent circular dependencies.
 
 #### Exporting
 
@@ -115,7 +115,7 @@ To support this use case, you can choose one of the following options:
     ...
     ```
 
-    If possible, this is the prefered option, as it uses types from a maintained package.
+    If possible, this is the preferred option, as it uses types from a maintained package.
 
     Notice that types may introduce breaking changes in major semver releases, and instrumentation should choose a `@types/` package that is compatible with the version range it supports.
 
