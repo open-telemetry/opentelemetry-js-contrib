@@ -6,6 +6,17 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.40.0...instrumentation-mongodb-v0.41.0) (2024-03-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-mongodb:** temporarily reduce supported range to mongodb <6.4 ([#1984](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1984))
+
+### Bug Fixes
+
+* **instrumentation-mongodb:** temporarily reduce supported range to mongodb &lt;6.4 ([#1984](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1984)) ([2d3bb52](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d3bb52762a637a4d0d0c14ff254eebc4fbbd508))
+
 ## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.39.0...instrumentation-mongodb-v0.40.0) (2024-03-06)
 
 
