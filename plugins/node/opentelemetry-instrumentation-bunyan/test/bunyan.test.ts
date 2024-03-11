@@ -341,10 +341,14 @@ describe('BunyanInstrumentation', () => {
       log = Logger.createLogger({ name: 'test-logger-name', stream });
       log.info('info log');
       log.debug('debug log');
+
+      // Just the log.info() writes to `stream`.
+      sinon.assert.calledOnce(writeSpy);
+      // Both log.info() and log.debug() should be written to the OTel Logs SDK.
       const logRecords = memExporter.getFinishedLogRecords();
-      // Only one log record match configured severity
-      assert.strictEqual(logRecords.length, 1);
-      assert.strictEqual(logRecords[0].body, 'debug log');
+      assert.strictEqual(logRecords.length, 2);
+      assert.strictEqual(logRecords[0].body, 'info log');
+      assert.strictEqual(logRecords[1].body, 'debug log');
     });
   });
 
