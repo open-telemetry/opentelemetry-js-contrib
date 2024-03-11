@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.36.0...instrumentation-express-v0.36.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* **instr-express:** normalize paths with double slashes ([#1995](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1995)) ([65a9553](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65a9553e76a3e61da71c31758b6e5320f286374b))
+
 ## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.35.0...instrumentation-express-v0.36.0) (2024-03-06)
 
 
