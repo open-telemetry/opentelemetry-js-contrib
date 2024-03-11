@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.38.0...instrumentation-graphql-v0.38.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* **instrumentation-graphql:** limit support to &gt;=14 &lt;17 ([#1971](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1971)) ([ff40cc8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff40cc83d2acae431e6ad97f7421e5a1d068615b))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.37.0...instrumentation-graphql-v0.38.0) (2024-03-06)
 
 

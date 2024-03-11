@@ -18,9 +18,16 @@ components:
     - basti1302
     - kirrg001
   metapackages/auto-instrumentations-node:
-    - obecny
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
   metapackages/auto-instrumentations-web:
+    - blumamir
+    - dyladan
+    - legendecas
     - obecny
+    - pichlermarc
   packages/esbuild-plugin-node:
     - drewcorlin1
   packages/opentelemetry-host-metrics:
