@@ -74,8 +74,11 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     } = this._getV3ConnectionPatches();
 
     const { v4PatchConnect, v4UnpatchConnect } = this._getV4ConnectPatches();
-    const { v4PatchConnectionCallback, v4PatchConnectionPromise, v4UnpatchConnection } =
-      this._getV4ConnectionPatches();
+    const {
+      v4PatchConnectionCallback,
+      v4PatchConnectionPromise,
+      v4UnpatchConnection,
+    } = this._getV4ConnectionPatches();
     const { v4PatchConnectionPool, v4UnpatchConnectionPool } =
       this._getV4ConnectionPoolPatches();
     const { v4PatchSessions, v4UnpatchSessions } = this._getV4SessionsPatches();
@@ -345,7 +348,9 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4ConnectCommand() {
     const instrumentation = this;
 
-    return (original: V4Connect['connectCallback'] | V4Connect['connectPromise']) => {
+    return (
+      original: V4Connect['connectCallback'] | V4Connect['connectPromise']
+    ) => {
       return function patchedConnect(
         this: unknown,
         options: any,
@@ -354,7 +359,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         // from v6.4 `connect` method only accepts an options param and returns a promise
         // with the connection
         if (original.length === 1) {
-          const result = (original as V4Connect['connectPromise']).call(this, options);
+          const result = (original as V4Connect['connectPromise']).call(
+            this,
+            options
+          );
           if (result && typeof result.then === 'function') {
             result.then(() => instrumentation.setPoolName(options));
           }
@@ -371,7 +379,11 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           callback(err, conn);
         };
 
-        return (original as V4Connect['connectCallback']).call(this, options, patchedCallback);
+        return (original as V4Connect['connectCallback']).call(
+          this,
+          options,
+          patchedCallback
+        );
       };
     };
   }
@@ -379,7 +391,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private _getV4ConnectionPatches<T extends V4Connection>() {
     return {
-      v4PatchConnectionCallback: (moduleExports: any, moduleVersion?: string) => {
+      v4PatchConnectionCallback: (
+        moduleExports: any,
+        moduleVersion?: string
+      ) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
@@ -393,7 +408,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4PatchConnectionPromise: (moduleExports: any, moduleVersion?: string) => {
+      v4PatchConnectionPromise: (
+        moduleExports: any,
+        moduleVersion?: string
+      ) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
@@ -537,14 +555,11 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           return original.call(this, ns, cmd, options, callback);
         }
 
-        let span = undefined
+        let span = undefined;
         if (currentSpan) {
-          span = instrumentation.tracer.startSpan(
-            `mongodb.${commandType}`,
-            {
-              kind: SpanKind.CLIENT,
-            }
-          );
+          span = instrumentation.tracer.startSpan(`mongodb.${commandType}`, {
+            kind: SpanKind.CLIENT,
+          });
           instrumentation._populateV4Attributes(
             span,
             this,
@@ -572,28 +587,21 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         this: any,
         ns: any,
         cmd: any,
-        options: undefined | unknown,
+        options: undefined | unknown
       ) {
         const currentSpan = trace.getSpan(context.active());
         const commandType = Object.keys(cmd)[0];
         const resultHandler = () => undefined;
 
-        if (
-          typeof cmd !== 'object' ||
-          cmd.ismaster ||
-          cmd.hello
-        ) {
+        if (typeof cmd !== 'object' || cmd.ismaster || cmd.hello) {
           return original.call(this, ns, cmd, options);
         }
 
         let span = undefined;
         if (currentSpan) {
-          span = instrumentation.tracer.startSpan(
-            `mongodb.${commandType}`,
-            {
-              kind: SpanKind.CLIENT,
-            }
-          );
+          span = instrumentation.tracer.startSpan(`mongodb.${commandType}`, {
+            kind: SpanKind.CLIENT,
+          });
           instrumentation._populateV4Attributes(
             span,
             this,
@@ -613,7 +621,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         const result = original.call(this, ns, cmd, options);
         result.then(
           (res: any) => patchedCallback(null, res),
-          (err: any) => patchedCallback(err),
+          (err: any) => patchedCallback(err)
         );
 
         return result;

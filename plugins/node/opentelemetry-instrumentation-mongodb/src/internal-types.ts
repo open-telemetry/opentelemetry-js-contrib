@@ -174,7 +174,6 @@ export type Document = {
   [key: string]: any;
 };
 
-
 export type V4Connection = {
   command: Function;
   // From version 6.4.0 the method does not expect a callback and returns a promise
@@ -182,7 +181,7 @@ export type V4Connection = {
   commandPromise(
     ns: any,
     cmd: Document,
-    options: undefined | unknown,
+    options: undefined | unknown
   ): Promise<any>;
   // Earlier versions expect a callback param and return void
   // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
