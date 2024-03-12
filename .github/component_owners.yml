@@ -18,9 +18,15 @@ components:
     - basti1302
     - kirrg001
   metapackages/auto-instrumentations-node:
-    - obecny
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
   metapackages/auto-instrumentations-web:
-    - obecny
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:

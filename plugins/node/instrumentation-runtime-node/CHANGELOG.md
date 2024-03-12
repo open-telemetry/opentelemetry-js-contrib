@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.2.0...instrumentation-runtime-node-v0.2.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* **instrumentation-runtime-node:** use TestMetricReader, unref timer ([#1965](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1965)) ([e24797e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e24797e4211b4b39a55b1549e113a425226806b8))
+
 ## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.1.0...instrumentation-runtime-node-v0.2.0) (2024-03-06)
 
 

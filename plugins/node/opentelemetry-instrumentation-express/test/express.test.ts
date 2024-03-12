@@ -455,6 +455,39 @@ describe('ExpressInstrumentation', () => {
         }
       );
     });
+
+    it('should ignore double slashes in routes', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let rpcMetadata: RPCMetadata | undefined;
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          next();
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/double-slashes/foo`
+          );
+          assert.strictEqual(response, 'foo');
+          rootSpan.end();
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('request handler'));
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/double-slashes/:id'
+          );
+          assert.strictEqual(rpcMetadata?.route, '/double-slashes/:id');
+        }
+      );
+    });
   });
 
   describe('Disabling plugin', () => {
