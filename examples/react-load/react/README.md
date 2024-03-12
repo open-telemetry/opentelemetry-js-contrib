@@ -3,7 +3,7 @@
 The React Load plugin provides auto-instrumentation for react lifecycle methods.
 This example uses the plugin and exports them to the console.
 
-The example will show traces belong to the mounting, updating, and umounting flows as defined by React 16.4+.
+The example will show traces belong to the mounting, updating, and unmounting flows as defined by React 16.4+.
 
 ## Installation
 

@@ -62,7 +62,7 @@ Log sending can be disabled with the `disableLogSending: true` option.
 ### Log correlation
 
 Bunyan logger calls in the context of a tracing span will have fields
-indentifying the span added to the log record. This allows
+identifying the span added to the log record. This allows
 [correlating](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)
 log records with tracing data. The added fields are
 ([spec](https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/)):
