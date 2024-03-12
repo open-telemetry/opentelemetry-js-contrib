@@ -109,7 +109,7 @@ const createServer = async (setupRoutes?: Function) => {
 
     server.use(useHandler);
     server.get('/route/:param', getHandler);
-    server.get('/thowing', throwError);
+    server.get('/throwing', throwError);
     server.get('/erroring', returnError);
   }
 
