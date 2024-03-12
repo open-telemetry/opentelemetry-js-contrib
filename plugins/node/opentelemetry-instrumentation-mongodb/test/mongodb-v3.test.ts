@@ -94,8 +94,9 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
     if (shouldTest) {
       // @ts-expect-error -- v5 removed callback support
       collection.deleteMany({}, done);
+    } else {
+      done();
     }
-    done();
   });
 
   after(() => {
