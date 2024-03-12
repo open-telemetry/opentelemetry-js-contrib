@@ -28,7 +28,7 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 ## Available detectors
 
-- `containerDetector`: Populates `container.id` for processes running on contianers supporting : docker( cgroup v1 or v2 ) or with containerd
+- `containerDetector`: Populates `container.id` for processes running on containers supporting : docker( cgroup v1 or v2 ) or with containerd
 
 ## Useful links
 

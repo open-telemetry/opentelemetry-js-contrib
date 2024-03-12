@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* The following attributes are not offical, see open-telemetry/opentelemetry-specification#1652 */
+/* The following attributes are not official, see open-telemetry/opentelemetry-specification#1652 */
 export enum TLSAttributes {
   PROTOCOL = 'tls.protocol',
   AUTHORIZED = 'tls.authorized',
