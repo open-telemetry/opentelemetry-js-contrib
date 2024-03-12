@@ -38,6 +38,8 @@ import { assertSpan } from './utils/assertSpan';
 
 import type { fetch, stream, request, Client, Dispatcher } from 'undici';
 
+type PromisedValue<T> = T extends Promise<infer R> ? R : never;
+
 const instrumentation = new UndiciInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
@@ -225,7 +227,8 @@ describe('UndiciInstrumentation `undici` tests', function () {
       // at Socket.onSocketEnd (node_modules/undici/lib/client.js:1118:22)
       // at endReadableNT (internal/streams/readable.js:1333:12)
       // at processTicksAndRejections (internal/process/task_queues.js:82:21)
-      let firstQueryResponse, secondQueryResponse;
+      let firstQueryResponse: PromisedValue<ReturnType<typeof request>>;
+      let secondQueryResponse: PromisedValue<ReturnType<typeof request>>;
       try {
         const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
         firstQueryResponse = await undici.request(queryRequestUrl, {
