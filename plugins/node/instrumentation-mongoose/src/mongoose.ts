@@ -93,7 +93,7 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
       'save',
       this.patchOnModelMethods('save', moduleVersion)
     );
-    // mongoose applies this code on moudle require:
+    // mongoose applies this code on module require:
     // Model.prototype.$save = Model.prototype.save;
     // which captures the save function before it is patched.
     // so we need to apply the same logic after instrumenting the save function.
@@ -130,7 +130,7 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
   private unpatch(moduleExports: typeof mongoose): void {
     this._diag.debug('mongoose instrumentation: unpatch mongoose');
     this._unwrap(moduleExports.Model.prototype, 'save');
-    // revert the patch for $save which we applyed by aliasing it to patched `save`
+    // revert the patch for $save which we applied by aliasing it to patched `save`
     moduleExports.Model.prototype.$save = moduleExports.Model.prototype.save;
     this._unwrap(moduleExports.Model.prototype, 'remove');
     this._unwrap(moduleExports.Query.prototype, 'exec');

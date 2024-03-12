@@ -1,4 +1,4 @@
-# OpenTelemetry mysql Instrumentation for Node.js
+# OpenTelemetry MySQL Instrumentation for Node.js
 
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]

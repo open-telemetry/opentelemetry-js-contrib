@@ -246,7 +246,7 @@ describe('awsEksDetector', () => {
     });
   });
 
-  describe('on unsuccesful request', () => {
+  describe('on unsuccessful request', () => {
     it('should return an empty resource when timed out', async () => {
       fileStub = sinon
         .stub(AwsEksDetector, 'fileAccessAsync' as any)
