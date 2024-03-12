@@ -337,9 +337,6 @@ export class UndiciInstrumentation extends InstrumentationBase {
     }
 
     const { span, attributes } = record;
-    // We are currently *not* capturing response headers, even though the
-    // intake API does allow it, because none of the other `setHttpContext`
-    // uses currently do
     const spanAttributes: Attributes = {
       [SemanticAttributes.HTTP_RESPONSE_STATUS_CODE]: response.statusCode,
     };
