@@ -174,18 +174,24 @@ export type Document = {
   [key: string]: any;
 };
 
-// https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
-// From version 6.4.0 the method does not expect a callback and returns a promise
-// this signature compacts both method signatures so it's not necessay to do extra
-// type assertions in the instrumentation code
-// https://github.com/mongodb/node-mongodb-native/blob/v6.4.2/src/cmap/connection.ts
+
 export type V4Connection = {
-  command(
+  command: Function;
+  // From version 6.4.0 the method does not expect a callback and returns a promise
+  // https://github.com/mongodb/node-mongodb-native/blob/v6.4.2/src/cmap/connection.ts
+  commandPromise(
+    ns: any,
+    cmd: Document,
+    options: undefined | unknown,
+  ): Promise<any>;
+  // Earlier versions expect a callback param and return void
+  // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection.ts
+  commandCallback(
     ns: any,
     cmd: Document,
     options: undefined | unknown,
     callback: any
-  ): (void | Promise<any>);
+  ): void;
 };
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connection_pool.ts
@@ -195,13 +201,14 @@ export type V4ConnectionPool = {
   checkOut: (callback: (error: any, connection: any) => void) => void;
 };
 
-// https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connect.ts
-// From version 6.4.0 the method does not expect a callback and returns a promise
-// this signature compacts both method signatures so it's not necessay to do extra
-// type assertions in the instrumentation code
-// https://github.com/mongodb/node-mongodb-native/blob/v6.4.0/src/cmap/connect.ts
 export type V4Connect = {
-  connect: (options: any, callback: any) => (void | Promise<any>);
+  connect: Function;
+  // From version 6.4.0 the method does not expect a callback and returns a promise
+  // https://github.com/mongodb/node-mongodb-native/blob/v6.4.0/src/cmap/connect.ts
+  connectPromise: (options: any) => Promise<any>;
+  // Earlier versions expect a callback param and return void
+  // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/cmap/connect.ts
+  connectCallback: (options: any, callback: any) => void;
 };
 
 // https://github.com/mongodb/node-mongodb-native/blob/v4.2.2/src/sessions.ts

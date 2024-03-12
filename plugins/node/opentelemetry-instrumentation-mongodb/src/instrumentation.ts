@@ -74,7 +74,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     } = this._getV3ConnectionPatches();
 
     const { v4PatchConnect, v4UnpatchConnect } = this._getV4ConnectPatches();
-    const { v4PatchConnection, v4UnpatchConnection } =
+    const { v4PatchConnectionCallback, v4PatchConnectionPromise, v4UnpatchConnection } =
       this._getV4ConnectionPatches();
     const { v4PatchConnectionPool, v4UnpatchConnectionPool } =
       this._getV4ConnectionPoolPatches();
@@ -97,14 +97,20 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition<any>(
         'mongodb',
-        ['4.*', '5.*', '>=6 <6.4'],
+        ['4.*', '5.*', '6.*'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile<V4Connection>(
             'mongodb/lib/cmap/connection.js',
             ['4.*', '5.*', '>=6 <6.4'],
-            v4PatchConnection,
+            v4PatchConnectionCallback,
+            v4UnpatchConnection
+          ),
+          new InstrumentationNodeModuleFile<V4Connection>(
+            'mongodb/lib/cmap/connection.js',
+            ['>=6.4'],
+            v4PatchConnectionPromise,
             v4UnpatchConnection
           ),
           new InstrumentationNodeModuleFile<V4ConnectionPool>(
@@ -115,13 +121,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           ),
           new InstrumentationNodeModuleFile<V4Connect>(
             'mongodb/lib/cmap/connect.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['4.*', '5.*', '6.*'],
             v4PatchConnect,
             v4UnpatchConnect
           ),
           new InstrumentationNodeModuleFile<V4Session>(
             'mongodb/lib/sessions.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['4.*', '5.*', '6.*'],
             v4PatchSessions,
             v4UnpatchSessions
           ),
@@ -339,12 +345,23 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4ConnectCommand() {
     const instrumentation = this;
 
-    return (original: V4Connect['connect']) => {
+    return (original: V4Connect['connectCallback'] | V4Connect['connectPromise']) => {
       return function patchedConnect(
         this: unknown,
         options: any,
         callback: any
       ) {
+        // from v6.4 `connect` method only accepts an options param and returns a promise
+        // with the connection
+        if (original.length === 1) {
+          const result = (original as V4Connect['connectPromise']).call(this, options);
+          if (result && typeof result.then === 'function') {
+            result.then(() => instrumentation.setPoolName(options));
+          }
+          return result;
+        }
+
+        // Earlier versions expects a callback param and return void
         const patchedCallback = function (err: any, conn: any) {
           if (err || !conn) {
             callback(err, conn);
@@ -354,11 +371,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           callback(err, conn);
         };
 
-        const result = original.call(this, options, patchedCallback);
-        if (result && typeof result.then === 'function') {
-          result.then(() => instrumentation.setPoolName(options));
-        }
-        return result;
+        return (original as V4Connect['connectCallback']).call(this, options, patchedCallback);
       };
     };
   }
@@ -366,7 +379,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private _getV4ConnectionPatches<T extends V4Connection>() {
     return {
-      v4PatchConnection: (moduleExports: any, moduleVersion?: string) => {
+      v4PatchConnectionCallback: (moduleExports: any, moduleVersion?: string) => {
         diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
@@ -376,7 +389,21 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         this._wrap(
           moduleExports.Connection.prototype,
           'command',
-          this._getV4PatchCommand()
+          this._getV4PatchCommandCallback()
+        );
+        return moduleExports;
+      },
+      v4PatchConnectionPromise: (moduleExports: any, moduleVersion?: string) => {
+        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
+        // patch insert operation
+        if (isWrapped(moduleExports.Connection.prototype.command)) {
+          this._unwrap(moduleExports.Connection.prototype, 'command');
+        }
+
+        this._wrap(
+          moduleExports.Connection.prototype,
+          'command',
+          this._getV4PatchCommandPromise()
         );
         return moduleExports;
       },
@@ -487,9 +514,9 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   }
 
   /** Creates spans for command operation */
-  private _getV4PatchCommand() {
+  private _getV4PatchCommandCallback() {
     const instrumentation = this;
-    return (original: V4Connection['command']) => {
+    return (original: V4Connection['commandCallback']) => {
       return function patchedV4ServerCommand(
         this: any,
         ns: any,
@@ -498,7 +525,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         callback: any
       ) {
         const currentSpan = trace.getSpan(context.active());
-        const resultHandler = callback || (() => undefined);  // from v6.4.0 commnad method does not have a callback param
+        const resultHandler = callback;
         const commandType = Object.keys(cmd)[0];
 
         if (
@@ -510,16 +537,9 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           return original.call(this, ns, cmd, options, callback);
         }
 
-        let patchedCallback: Function;
-        if (!currentSpan) {
-          patchedCallback = instrumentation._patchEnd(
-            undefined,
-            resultHandler,
-            this.id,
-            commandType
-          );
-        } else {
-          const span = instrumentation.tracer.startSpan(
+        let span = undefined
+        if (currentSpan) {
+          span = instrumentation.tracer.startSpan(
             `mongodb.${commandType}`,
             {
               kind: SpanKind.CLIENT,
@@ -532,23 +552,71 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             cmd,
             commandType
           );
-          patchedCallback = instrumentation._patchEnd(
+        }
+        const patchedCallback = instrumentation._patchEnd(
+          span,
+          resultHandler,
+          this.id,
+          commandType
+        );
+
+        return original.call(this, ns, cmd, options, patchedCallback);
+      };
+    };
+  }
+
+  private _getV4PatchCommandPromise() {
+    const instrumentation = this;
+    return (original: V4Connection['commandPromise']) => {
+      return function patchedV4ServerCommand(
+        this: any,
+        ns: any,
+        cmd: any,
+        options: undefined | unknown,
+      ) {
+        const currentSpan = trace.getSpan(context.active());
+        const commandType = Object.keys(cmd)[0];
+        const resultHandler = () => undefined;
+
+        if (
+          typeof cmd !== 'object' ||
+          cmd.ismaster ||
+          cmd.hello
+        ) {
+          return original.call(this, ns, cmd, options);
+        }
+
+        let span = undefined;
+        if (currentSpan) {
+          span = instrumentation.tracer.startSpan(
+            `mongodb.${commandType}`,
+            {
+              kind: SpanKind.CLIENT,
+            }
+          );
+          instrumentation._populateV4Attributes(
             span,
-            resultHandler,
-            this.id,
+            this,
+            ns,
+            cmd,
             commandType
           );
         }
 
-        const result = original.call(this, ns, cmd, options, patchedCallback);
-          if (result && typeof result.then === 'function') {
-            // Call patched callback in each scenario with the proper params
-            result.then(
-              (res: any) => patchedCallback(null, res),
-              (err: any) => patchedCallback(err),
-            );
-          }
-          return result;
+        const patchedCallback = instrumentation._patchEnd(
+          span,
+          resultHandler,
+          this.id,
+          commandType
+        );
+
+        const result = original.call(this, ns, cmd, options);
+        result.then(
+          (res: any) => patchedCallback(null, res),
+          (err: any) => patchedCallback(err),
+        );
+
+        return result;
       };
     };
   }
