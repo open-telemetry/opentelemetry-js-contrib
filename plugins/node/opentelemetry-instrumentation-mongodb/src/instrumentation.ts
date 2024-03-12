@@ -364,7 +364,11 @@ export class MongoDBInstrumentation extends InstrumentationBase {
             options
           );
           if (result && typeof result.then === 'function') {
-            result.then(() => instrumentation.setPoolName(options));
+            result.then(
+              () => instrumentation.setPoolName(options),
+              // this handler is set to pass the lint rules
+              () => undefined
+            );
           }
           return result;
         }
