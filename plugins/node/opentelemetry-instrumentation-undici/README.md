@@ -57,7 +57,7 @@ Undici instrumentation has few options available to choose from. You can set the
 
 This package uses Semantic Conventions [Version 1.24.0](https://github.com/open-telemetry/semantic-conventions/tree/v1.24.0/docs/http). As for now the Semantic Conventions
 are bundled in this package but eventually will be imported from `@opentelemetry/semantic-conventions` package when it is updated to latests version.
-Ref: https://github.com/open-telemetry/opentelemetry-js/issues/4235
+Ref: [opentelemetry-js/issues/4235](https://github.com/open-telemetry/opentelemetry-js/issues/4235)
 
 Attributes collected:
 
@@ -76,9 +76,6 @@ Attributes collected:
 | `network.peer.port` | Peer port number of the network connection. | Key: `NETWORK_PEER_PORT` |
 | `http.response.status_code` | [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6). | Key: `HTTP_RESPONSE_STATUS_CODE` |
 | `error.type` | Describes a class of error the operation ended with. | Key: `ERROR_TYPE` |
-
-
-
 
 ## Useful links
 
