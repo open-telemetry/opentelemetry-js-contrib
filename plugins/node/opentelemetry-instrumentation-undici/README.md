@@ -53,6 +53,33 @@ Undici instrumentation has few options available to choose from. You can set the
 | [`requireParentforSpans`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#69) | `Boolean` | Require a parent span is present to create new span for outgoing requests. |
 | [`headersToSpanAttributes`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#71) | `Object` |  List of case insensitive HTTP headers to convert to span attributes. Headers will be converted to span attributes in the form of `http.{request\|response}.header.header-name` where the name is only lowercased, e.g. `http.response.header.content-length`|
 
+## Semantic Conventions
+
+This package uses Semantic Conventions [Version 1.24.0](https://github.com/open-telemetry/semantic-conventions/tree/v1.24.0/docs/http). As for now the Semantic Conventions
+are bundled in this package but eventually will be imported from `@opentelemetry/semantic-conventions` package when it is updated to latests version.
+Ref: https://github.com/open-telemetry/opentelemetry-js/issues/4235
+
+Attributes collected:
+
+| Attribute    | Short Description                  | Notes             |
+| ------------ | ---------------------------------- | ----------------- |
+| `http.request.method` | HTTP request method. | Key: `HTTP_REQUEST_METHOD` |
+| `http.request.method_original` | Original HTTP method sent by the client in the request line. | Key: `HTTP_REQUEST_METHOD_ORIGINAL` |
+| `url.full` | Absolute URL describing a network resource according to [RFC3986](https://www.rfc-editor.org/rfc/rfc3986). | Key: `URL_FULL` |
+| `url.path` | The [URI path](https://www.rfc-editor.org/rfc/rfc3986#section-3.3) component. | Key: `URL_PATH` |
+| `url.query` | The [URI query](https://www.rfc-editor.org/rfc/rfc3986#section-3.4) component. | Key: `URL_QUERY` |
+| `url.scheme` | HTTP request method. | Key: `URL_SCHEME` |
+| `server.address` | Server domain name, IP address or Unix domain socket name. | Key: `HTTP_REQUEST_METHOD` |
+| `server.port` | Server port number. | Key: `HTTP_REQUEST_METHOD` |
+| `user_agent.original` | Value of the HTTP User-Agent header sent by the client. | Key: `USER_AGENT_ORIGINAL` |
+| `network.peer.address` | Peer address of the network connection - IP address or Unix domain socket name. | Key: `NETWORK_PEER_ADDRESS` |
+| `network.peer.port` | Peer port number of the network connection. | Key: `NETWORK_PEER_PORT` |
+| `http.response.status_code` | [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6). | Key: `HTTP_RESPONSE_STATUS_CODE` |
+| `error.type` | Describes a class of error the operation ended with. | Key: `ERROR_TYPE` |
+
+
+
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
