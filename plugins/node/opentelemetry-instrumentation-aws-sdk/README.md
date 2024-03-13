@@ -68,8 +68,8 @@ In addition to the above attributes, the instrumentation also collect the follow
 | -------------- | ---- | ----------- | ------- |
 | `aws.operation` | string | The method name for the request. | for `SQS.sendMessage(...)` the operation is "sendMessage" |
 | `aws.signature.version` | string | AWS version of authentication signature on the request. | "v4" |
-| `aws.service.api` | string | The sdk class name for the service | "SQS" |
-| `aws.service.identifier` | string | Identifier for the service in the sdk | "sqs" |
+| `aws.service.api` | string | The SDK class name for the service | "SQS" |
+| `aws.service.identifier` | string | Identifier for the service in the SDK | "sqs" |
 | `aws.service.name` | string | Abbreviation name for the service | "Amazon SQS" |
 | `aws.request.id` | uuid | Request unique id, as returned from aws on response | "01234567-89ab-cdef-0123-456789abcdef" |
 

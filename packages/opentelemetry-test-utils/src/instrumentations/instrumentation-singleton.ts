@@ -19,10 +19,10 @@ const OTEL_TESTING_INSTRUMENTATION_SINGLETON = Symbol.for(
   'opentelemetry.testing.instrumentation_singleton'
 );
 
-type OTelInstrumentationSingeltonGlobal = {
+type OTelInstrumentationSingletonGlobal = {
   [OTEL_TESTING_INSTRUMENTATION_SINGLETON]?: InstrumentationBase;
 };
-const _global = global as OTelInstrumentationSingeltonGlobal;
+const _global = global as OTelInstrumentationSingletonGlobal;
 
 export const getInstrumentation = <T extends InstrumentationBase>():
   | T
