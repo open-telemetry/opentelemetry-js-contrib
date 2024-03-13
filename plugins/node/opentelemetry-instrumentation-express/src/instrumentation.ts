@@ -29,6 +29,7 @@ import { AttributeNames } from './enums/AttributeNames';
 import {
   asErrorAndMessage,
   getLayerMetadata,
+  getLayerPath,
   isLayerIgnored,
   storeLayerPath,
 } from './utils';
@@ -125,7 +126,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         const layer = this.stack[this.stack.length - 1] as ExpressLayer;
         instrumentation._applyPatch(
           layer,
-          typeof args[0] === 'string' ? args[0] : undefined
+          getLayerPath(args)
         );
         return route;
       };
@@ -146,7 +147,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         const layer = this.stack[this.stack.length - 1] as ExpressLayer;
         instrumentation._applyPatch(
           layer,
-          typeof args[0] === 'string' ? args[0] : undefined
+          getLayerPath(args)
         );
         return route;
       };
@@ -168,7 +169,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         instrumentation._applyPatch.call(
           instrumentation,
           layer,
-          typeof args[0] === 'string' ? args[0] : undefined
+          getLayerPath(args)
         );
         return route;
       };

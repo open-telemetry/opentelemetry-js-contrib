@@ -145,3 +145,24 @@ export const asErrorAndMessage = (
   error instanceof Error
     ? [error, error.message]
     : [String(error), String(error)];
+
+
+/**
+ * Extracts the layer path from the route arguments
+ *
+ * @param args - Arguments of the route
+ * @returns The layer path
+ */
+export const getLayerPath = (args: unknown[]) => {
+  if (typeof args[0] === 'string') {
+    return args[0];
+  }
+
+  if (Array.isArray(args[0])) {
+    return args[0].map((arg) => (
+      typeof arg === 'string' || arg instanceof RegExp ? arg : '')
+    ).join(',');
+  }
+
+  return;
+}
