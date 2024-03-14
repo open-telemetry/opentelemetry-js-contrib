@@ -23,10 +23,13 @@ components:
     - legendecas
     - blumamir
   metapackages/auto-instrumentations-web:
-    - dyladan
-    - pichlermarc
-    - legendecas
     - blumamir
+    - dyladan
+    - legendecas
+    - obecny
+    - pichlermarc
+  packages/esbuild-plugin-node:
+    - drewcorlin1
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
