@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides a Transport for [`winston`](https://www.npmjs.com/package/winston) module to send Winston logging to the OpenTelemetry Logging SDK. It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package.
+This module provides a Transport for [`winston`](https://www.npmjs.com/package/winston) module to send Winston logging to the OpenTelemetry Logging SDK.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 

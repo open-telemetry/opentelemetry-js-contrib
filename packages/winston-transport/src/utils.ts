@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { LogRecord, Logger, SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  LogAttributes,
+  LogRecord,
+  Logger,
+  SeverityNumber,
+} from '@opentelemetry/api-logs';
 
 const npmLevels: Record<string, number> = {
   error: SeverityNumber.ERROR,
@@ -58,8 +63,8 @@ export function emitLogRecord(
   record: Record<string, any>,
   logger: Logger
 ): void {
-  const { message, msg, level, meta, ...splat } = record;
-  const attributes = Object.assign(meta ?? {}, {});
+  const { message, level, ...splat } = record;
+  const attributes: LogAttributes = {};
   for (const key in splat) {
     if (Object.prototype.hasOwnProperty.call(splat, key)) {
       attributes[key] = splat[key];
@@ -68,7 +73,7 @@ export function emitLogRecord(
   const logRecord: LogRecord = {
     severityNumber: getSeverityNumber(level),
     severityText: level,
-    body: message ?? msg,
+    body: message,
     attributes: attributes,
   };
   logger.emit(logRecord);

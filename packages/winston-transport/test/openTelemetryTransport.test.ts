@@ -41,7 +41,7 @@ describe('OpenTelemetryTransportV3', () => {
   it('emit LogRecord', () => {
     const transport = new OpenTelemetryTransportV3();
     const writeSpy = sinon.spy(transport, 'emit');
-    transport.log({ message: kMessage }, () => {});
+    transport.log({ message: kMessage }, () => { });
     setImmediate(() => {
       sinon.assert.calledOnce(writeSpy);
     });
@@ -56,7 +56,8 @@ describe('OpenTelemetryTransportV3', () => {
       extraAttribute1: 'attributeValue1',
       extraAttribute2: 'attributeValue2',
     };
-    transport.log({ message: kMessage, meta: extraAttributes }, () => {});
+    const parameters = Object.assign({ message: kMessage }, extraAttributes);
+    transport.log(parameters, () => { });
     const logRecords = memoryLogExporter.getFinishedLogRecords();
     assert.strictEqual(logRecords.length, 1);
     assert.strictEqual(logRecords[0].body, kMessage);
@@ -72,7 +73,7 @@ describe('OpenTelemetryTransportV3', () => {
 
   describe('emit logRecord severity', () => {
     it('npm levels', () => {
-      const callback = () => {};
+      const callback = () => { };
       const transport = new OpenTelemetryTransportV3();
       transport.log({ message: kMessage, level: 'error' }, callback);
       transport.log({ message: kMessage, level: 'warn' }, callback);
@@ -93,7 +94,7 @@ describe('OpenTelemetryTransportV3', () => {
     });
 
     it('cli levels', () => {
-      const callback = () => {};
+      const callback = () => { };
       const transport = new OpenTelemetryTransportV3();
       transport.log({ message: kMessage, level: 'error' }, callback);
       transport.log({ message: kMessage, level: 'warn' }, callback);
@@ -120,7 +121,7 @@ describe('OpenTelemetryTransportV3', () => {
     });
 
     it('syslog levels', () => {
-      const callback = () => {};
+      const callback = () => { };
       const transport = new OpenTelemetryTransportV3();
       transport.log({ message: kMessage, level: 'emerg' }, callback);
       transport.log({ message: kMessage, level: 'alert' }, callback);
