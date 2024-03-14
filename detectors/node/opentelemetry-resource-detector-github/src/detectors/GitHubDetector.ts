@@ -49,7 +49,7 @@ class GitHubDetector implements Detector {
    * environment variables:
    * https://docs.github.com/en/free-pro-team@latest/actions/reference/environment-variables
    *
-   * If succesful it returns a promise containing a {@link Resource}
+   * If successful it returns a promise containing a {@link Resource}
    * populated with GitHub metadata. Returns a promise containing an
    * empty {@link Resource} if the connection fails.
    *

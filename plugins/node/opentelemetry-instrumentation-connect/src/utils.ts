@@ -45,9 +45,9 @@ export const replaceCurrentStackRoute = (
   }
 };
 
-// generage route from existing stack on request object.
-// splash between stack layer will be dedup
-// ["/first/", "/second", "/third/"] => /first/second/thrid/
+// generate route from existing stack on request object.
+// splash between stack layer will be deduped
+// ["/first/", "/second", "/third/"] => /first/second/third/
 export const generateRoute = (request: PatchedRequest) => {
   return request[_LAYERS_STORE_PROPERTY].reduce(
     (acc, sub) => acc.replace(/\/+$/, '') + sub

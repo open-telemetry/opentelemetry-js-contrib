@@ -36,10 +36,10 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import type { MultiErrorReply } from './internal-types';
 
 const OTEL_OPEN_SPANS = Symbol(
-  'opentelemetry.instruemntation.redis.open_spans'
+  'opentelemetry.instrumentation.redis.open_spans'
 );
 const MULTI_COMMAND_OPTIONS = Symbol(
-  'opentelemetry.instruemntation.redis.multi_command_options'
+  'opentelemetry.instrumentation.redis.multi_command_options'
 );
 
 interface MutliCommandInfo {
