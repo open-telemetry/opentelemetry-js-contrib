@@ -46,11 +46,10 @@ function getAllWorkspaceDirs() {
     const pj = JSON.parse(
         fs.readFileSync(path.join(TOP, 'package.json'), 'utf8')
     );
-    const workspaceDirs = pj.workspaces
+    return pj.workspaces
         .map((wsGlob) => globSync(path.join(wsGlob, 'package.json')))
         .flat()
         .map(path.dirname);
-    return workspaceDirs;
 }
 
 /**
@@ -70,7 +69,7 @@ function getAllWorkspaceDirs() {
  * @param {string[]} opts.patterns - An array of glob-like patterns to match
  *      against dependency names. E.g. `["@opentelemetry/*"]`.
  * @param {boolean} [opts.allowRangeBumpFor0x] - By default this update only
- *      targets to latest available version that matches the current
+ *      targets the latest available version that matches the current
  *      package.json range. Setting this to true allows any deps currently at an
  *      0.x version to be bumped to the latest, even if the latest doesn't
  *      satisfy the current range. E.g. `^0.41.0` will be bumped to `0.42.0` or
@@ -85,8 +84,6 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
         patterns && patterns.length > 0,
         'must provide one or more patterns'
     );
-
-    let p;
 
     const wsDirs = getAllWorkspaceDirs();
     const matchStr = ` matching "${patterns.join('", "')}"`;
@@ -138,26 +135,24 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
     const summaryStrs = new Set();
     const npmInstallTasks = [];
     const npmUpdatePkgNames = new Set();
-    let i = 0;
-    for (let wsDir of wsDirs) {
-        i++;
-        console.log(` - ${wsDir} (${i} of ${wsDirs.length})`);
+    wsDirs.forEach((wsDir, i) => {
+        console.log(` - ${wsDir} (${i+1} of ${wsDirs.length})`);
         const info = pkgInfoFromWsDir[wsDir];
         const depNames = Object.keys(info.deps);
         if (depNames.length === 0) {
-            continue;
+            return;
         }
         // We use 'npm outdated -j ...' as a quick way to get the current
         // installed version and latest published version of deps. The '-j'
         // output shows a limited/random subset of data such that its `wanted`
         // value cannot be used (see "npm outdated" perils above).
-        p = spawnSync('npm', ['outdated', '--json'].concat(depNames), {
+        const p = spawnSync('npm', ['outdated', '--json'].concat(depNames), {
             cwd: wsDir,
             encoding: 'utf8',
         });
         const outdated = JSON.parse(p.stdout);
         if (Object.keys(outdated).length === 0) {
-            continue;
+            return;
         }
 
         const npmInstallArgs = [];
@@ -181,13 +176,13 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
                         `${currVer} -> ${latestVer} ${depName} (range-bump)${summaryNote}`
                     );
                 } else {
-                    console.log(
+                    console.warn(
                         `WARN: not updating dep "${depName}" in "${wsDir}" to latest: currVer=${currVer}, latestVer=${latestVer}, package.json dep range="${info.deps[depName]}" (use allowRangeBumpFor0x=true to supporting bumping 0.x deps out of package.json range)`
                     );
                 }
             } else {
                 // TODO: Add support for finding a release other than latest that satisfies the package.json range.
-                console.log(
+                console.warn(
                     `WARN: dep "${depName}" in "${wsDir}" cannot be updated to latest: currVer=${currVer}, latestVer=${latestVer}, package.json dep range="${info.deps[depName]}" (this script does not yet support finding a possible published ver to update to that does satisfy the package.json range)`
                 );
             }
@@ -198,7 +193,7 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
                 argv: ['npm', 'install'].concat(npmInstallArgs),
             });
         }
-    }
+    });
 
     console.log(
         '\nPerforming updates (%d `npm install ...`s, %d `npm update ...`):',
@@ -210,7 +205,7 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
     for (let task of npmInstallTasks) {
         console.log(` $ cd ${task.cwd} && ${task.argv.join(' ')}`);
         if (!dryRun) {
-            p = spawnSync(task.argv[0], task.argv.slice(1), {
+            const p = spawnSync(task.argv[0], task.argv.slice(1), {
                 cwd: task.cwd,
                 encoding: 'utf8',
             });
@@ -253,7 +248,7 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
     // for each `npmUpdatePkgNames` we want to update.
     if (npmUpdatePkgNames.size > 0) {
         const wsDirBasenames = new Set(wsDirs.map((d) => path.basename(d)));
-        p = spawnSync(
+        const p = spawnSync(
             'npm',
             ['outdated', '-p'].concat(Array.from(npmUpdatePkgNames)),
             {cwd: TOP, encoding: 'utf8'}
@@ -273,13 +268,12 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
                 if (wsDirBasenames.has(dependedBy)) {
                     return;
                 }
-                // TODO Do we want to guard this on `patterns`?
                 npmUpdatePkgNames.add(dependedBy);
             });
 
         console.log(` $ npm update ${Array.from(npmUpdatePkgNames).join(' ')}`);
         if (!dryRun) {
-            p = spawnSync(
+            const p = spawnSync(
                 'npm',
                 ['update'].concat(Array.from(npmUpdatePkgNames)),
                 {
@@ -304,14 +298,14 @@ function updateNpmWorkspacesDeps({patterns, allowRangeBumpFor0x, dryRun}) {
             });
         });
         console.log(` $ npm outdated ${Array.from(allDeps).join(' ')}`);
-        p = spawnSync('npm', ['outdated'].concat(Array.from(allDeps)), {
+        const p = spawnSync('npm', ['outdated'].concat(Array.from(allDeps)), {
             cwd: TOP,
             encoding: 'utf8',
         });
         if (p.status !== 0) {
             // Only *warning* here because the user might still want to commit
             // what *was* updated.
-            console.log(`WARN: not all packages${matchStr} were fully updated:
+            console.warn(`WARN: not all packages${matchStr} were fully updated:
   *** 'npm outdated' exited non-zero, stdout: ***
   ${p.stdout.trimEnd().split('\n').join('\n  ')}
   ***`);
