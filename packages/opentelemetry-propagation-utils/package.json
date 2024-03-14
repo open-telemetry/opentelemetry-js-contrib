@@ -44,11 +44,11 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/contrib-test-utils": "^0.37.0",
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@types/node": "18.6.5",
     "@types/sinon": "^10.0.11",
     "expect": "29.2.0",
-    "mocha": "7.2.0",
+    "mocha": "10.3.0",
     "nyc": "15.1.0",
     "sinon": "15.2.0",
     "ts-mocha": "10.0.0",
