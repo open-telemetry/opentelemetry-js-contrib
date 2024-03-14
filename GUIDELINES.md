@@ -1,6 +1,6 @@
 # Instrumentations Implementation Guide
 
-This document captures general guidelines for implementing instrumentations in NodeJS and browser.
+This document captures general guidelines for implementing instrumentations in Node.js and browser.
 
 ## Types
 
@@ -14,11 +14,11 @@ These typescript `interface`s, `type`s, `enum`s and js `const`ants statements SH
 
 #### Exporting
 
-All types from `types.ts` file MUST be exported from instrumentation `index.ts` using export statement `export * from './types'`, which guarentee that they publicly available.
+All types from `types.ts` file MUST be exported from instrumentation `index.ts` using export statement `export * from './types'`, which guarantee that they publicly available.
 
 #### Breaking Changes
 
-Since these types are publicly exported, a breaking change in this file can cause transpilation issues or require code changes for existing users. Special care and attention should be put when modifiying this file to guarantee backword compatibility or proper documentation of breaking changes.
+Since these types are publicly exported, a breaking change in this file can cause transpilation issues or require code changes for existing users. Special care and attention should be put when modifying this file to guarantee backward compatibility or proper documentation of breaking changes.
 
 ### Internal Types
 
@@ -30,15 +30,15 @@ It is sometimes convenient to place these declarations in a dedicated file which
 
 The file SHOULD be named `internal-types.ts`.
 
-Using this file is optional - when a type is used only in a single file, it is ok to declare it and use it in this file **without exporting it**. When a type is expected to be shared between multiple files, it is encourged to be declared in `internal-types.ts` to prevent circular dependencies.
+Using this file is optional - when a type is used only in a single file, it is ok to declare it and use it in this file **without exporting it**. When a type is expected to be shared between multiple files, it is encouraged to be declared in `internal-types.ts` to prevent circular dependencies.
 
 #### Exporting
 
-This file MUST NOT be exported publicly from instrumentation package, not directly (via `index.ts`) and not transitivly via export of other files.
+This file MUST NOT be exported publicly from instrumentation package, not directly (via `index.ts`) and not transitively via export of other files.
 
 #### Changes
 
-Since the declarations in this file are not exported in the public instrumentation api, it is allowed to apply any refactors to this file, and they will not be breaking changes to users.
+Since the declarations in this file are not exported in the public instrumentation API, it is allowed to apply any refactors to this file, and they will not be breaking changes to users.
 
 ## Dependencies
 
@@ -48,7 +48,7 @@ Since instrumentations will install all their dependencies into the end user `no
 
 ### OpenTelemetry API
 
-Instrumentation SHOULD NOT add a dependency on `@opentelemetry/api`, as using multiple instrumentations might install multiple api versions into the user node_modules directory. It SHOULD add an entry in `"peerDependencies"` in `package.json` with the **minimum** api version it requires, as caret range (for example: `^1.0.0`).
+Instrumentation SHOULD NOT add a dependency on `@opentelemetry/api`, as using multiple instrumentations might install multiple API versions into the user node_modules directory. It SHOULD add an entry in `"peerDependencies"` in `package.json` with the **minimum** API version it requires, as caret range (for example: `^1.0.0`).
 
 Users and distributions need to install a version of `@opentelemetry/api` that is compatible with the instrumentation to use it.
 
@@ -64,14 +64,14 @@ Instrumentations SHOULD NOT add a `"dependency"` or `"peerDependencies"` on the 
 
 This means that the instrumentation code SHOULD NOT `import` anywhere from the instrumented package. e.g. `@opentelemetry/instrumentation-foo` cannot `import 'foo'` as it will fail for applications that installed the instrumentation but not the `foo` package itself, which is a valid and supported use case for OpenTelemetry distributions and end users.
 
-It is allowed, however, to import `types`  from the instrumented package with the [`import type`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax, as long as this type is not used in the public api:
+It is allowed, however, to import `types`  from the instrumented package with the [`import type`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax, as long as this type is not used in the public API:
 
 ```js
 // instrumentation.ts
 import type { Bar } from 'foo'; // OK
 ```
 
-Since the instrumented package is installed as a dev dependency, types are available during compiling. Since they are not part of the public api, typescript removes these imports from the build artifacts during transpilation.
+Since the instrumented package is installed as a dev dependency, types are available during compiling. Since they are not part of the public API, typescript removes these imports from the build artifacts during transpilation.
 
 ### Types Public API
 
@@ -89,7 +89,7 @@ Note that types that are used in non-public files (like `internal-types.ts` or `
 
 ### Adding Types in Public API
 
-Sometimes, instrumented package types are needed in an instrumentation's public api. These are mostly found in `types.ts` file on instrumentation config hooks that include data from the package and want to type it for consumers.
+Sometimes, instrumented package types are needed in an instrumentation's public API. These are mostly found in `types.ts` file on instrumentation config hooks that include data from the package and want to type it for consumers.
 
 To support this use case, you can choose one of the following options:
 

@@ -611,11 +611,11 @@ describe('graphql', () => {
       });
 
       await graphql({ schema: simpleSchemaWithResolver, source: '{ hello }' });
-      const resovleSpans = exporter
+      const resolveSpans = exporter
         .getFinishedSpans()
         .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
-      assert.deepStrictEqual(resovleSpans.length, 1);
-      const resolveSpan = resovleSpans[0];
+      assert.deepStrictEqual(resolveSpans.length, 1);
+      const resolveSpan = resolveSpans[0];
       assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
     });
 
@@ -631,11 +631,11 @@ describe('graphql', () => {
       };
 
       await graphql({ schema, source: '{ hello }', rootValue });
-      const resovleSpans = exporter
+      const resolveSpans = exporter
         .getFinishedSpans()
         .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
-      assert.deepStrictEqual(resovleSpans.length, 1);
-      const resolveSpan = resovleSpans[0];
+      assert.deepStrictEqual(resolveSpans.length, 1);
+      const resolveSpan = resolveSpans[0];
       assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
     });
 
@@ -651,10 +651,10 @@ describe('graphql', () => {
       };
 
       await graphql({ schema, source: '{ hello }', rootValue });
-      const resovleSpans = exporter
+      const resolveSpans = exporter
         .getFinishedSpans()
         .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
-      assert.deepStrictEqual(resovleSpans.length, 0);
+      assert.deepStrictEqual(resolveSpans.length, 0);
     });
 
     it('should create resolve span for custom field resolver', async () => {
@@ -680,11 +680,11 @@ describe('graphql', () => {
       };
 
       await graphql({ schema, source: '{ hello }', rootValue, fieldResolver });
-      const resovleSpans = exporter
+      const resolveSpans = exporter
         .getFinishedSpans()
         .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
-      assert.deepStrictEqual(resovleSpans.length, 1);
-      const resolveSpan = resovleSpans[0];
+      assert.deepStrictEqual(resolveSpans.length, 1);
+      const resolveSpan = resolveSpans[0];
       assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
     });
   });

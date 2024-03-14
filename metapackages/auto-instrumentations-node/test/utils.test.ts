@@ -70,6 +70,25 @@ describe('utils', () => {
       assert.strictEqual(instrumentation, undefined);
     });
 
+    it('should return only instrumentations enabled via OTEL_NODE_ENABLED_INSTRUMENTATIONS environment variable', () => {
+      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS =
+        'http,aws-sdk, nestjs-core'; // separator with and without whitespaces should be allowed
+      try {
+        const instrumentations = getNodeAutoInstrumentations();
+
+        assert.deepStrictEqual(
+          new Set(instrumentations.map(i => i.instrumentationName)),
+          new Set([
+            '@opentelemetry/instrumentation-http',
+            '@opentelemetry/instrumentation-aws-sdk',
+            '@opentelemetry/instrumentation-nestjs-core',
+          ])
+        );
+      } finally {
+        delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+      }
+    });
+
     it('should show error for none existing instrumentation', () => {
       const spy = sinon.stub(diag, 'error');
       const name = '@opentelemetry/instrumentation-http2';

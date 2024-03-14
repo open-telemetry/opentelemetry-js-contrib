@@ -17,7 +17,7 @@
 import * as constants from './constants';
 import * as types from './internal-types';
 
-// Detect whether a function is a router package internal plumming handler
+// Detect whether a function is a router package internal plumbing handler
 export const isInternal = (fn: Function) => {
   // Note that both of those functions are sync
   if (fn.name === 'handle' && fn.toString() === constants.ROUTER_HANDLE_FN) {

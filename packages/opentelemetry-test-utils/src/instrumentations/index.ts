@@ -15,11 +15,11 @@
  */
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { getInstrumentation } from './instrumentation-singelton';
+import { getInstrumentation } from './instrumentation-singleton';
 import { registerInstrumentationTestingProvider } from './otel-default-provider';
 import { resetMemoryExporter } from './otel-provider-api';
 
-export * from './instrumentation-singelton';
+export * from './instrumentation-singleton';
 export * from './otel-provider-api';
 export * from './otel-default-provider';
 

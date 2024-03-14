@@ -46,7 +46,7 @@ describe('dns.lookup()', () => {
     utils.checkInternet(isConnected => {
       if (!isConnected) {
         this.skip();
-        // don't disturbe people
+        // don't disturb people
       }
       done();
     });

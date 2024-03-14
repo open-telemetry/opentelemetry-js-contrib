@@ -110,7 +110,7 @@ describe('nestjs-core', () => {
     ]);
   });
 
-  it('should not ovewrite metadata set on the request handler', async () => {
+  it('should not overwrite metadata set on the request handler', async () => {
     const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/metadata';
     const url = '/metadata';
     const instance = 'MetadataController';
