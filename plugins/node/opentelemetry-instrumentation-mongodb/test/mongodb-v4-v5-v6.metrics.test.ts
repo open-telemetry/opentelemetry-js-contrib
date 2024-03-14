@@ -44,7 +44,7 @@ const instrumentation = registerInstrumentationTesting(
 );
 
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import type { MongoClient } from 'mongodb';
+import type { MongoClient, Collection } from 'mongodb';
 import * as assert from 'assert';
 
 async function waitForNumberOfExports(
@@ -80,7 +80,7 @@ describe('MongoDBInstrumentation-Metrics', () => {
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics';
   const COLLECTION_NAME = 'test-metrics';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
-  
+
   let client: MongoClient;
   let collection: Collection;
 
@@ -96,14 +96,11 @@ describe('MongoDBInstrumentation-Metrics', () => {
         done();
       })
       .catch((err: Error) => {
-        console.log(
-          'Skipping test-mongodb. ' + err.message
-        );
+        console.log('Skipping test-mongodb. ' + err.message);
         shouldTest = false;
         done();
       });
   });
-
 
   beforeEach(function mongoBeforeEach(done) {
     // Skipping all tests in beforeEach() is a workaround. Mocha does not work

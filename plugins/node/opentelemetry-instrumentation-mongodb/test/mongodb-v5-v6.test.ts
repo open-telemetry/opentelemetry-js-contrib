@@ -42,7 +42,7 @@ let instrumentation: MongoDBInstrumentation;
   }
 }
 
-import type {MongoClient, Collection} from 'mongodb';
+import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -76,9 +76,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         done();
       })
       .catch((err: Error) => {
-        console.log(
-          'Skipping test-mongodb. ' + err.message
-        );
+        console.log('Skipping test-mongodb. ' + err.message);
         shouldTest = false;
         done();
       });

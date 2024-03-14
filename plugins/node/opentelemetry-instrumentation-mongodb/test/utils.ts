@@ -45,9 +45,9 @@ export function accessCollection(
     try {
       mongodb = require('mongodb');
     } catch (err: any) {
-      reject(new Error('Could not load mongodb. ' + err.message))
+      reject(new Error('Could not load mongodb. ' + err.message));
       return;
-    } 
+    }
     mongodb.MongoClient.connect(url, {
       serverSelectionTimeoutMS: 1000,
     })
@@ -57,7 +57,9 @@ export function accessCollection(
         resolve({ client, collection });
       })
       .catch((reason: any) => {
-        reject(new Error('Could not connect. Run MongoDB to test. ' + reason.message));
+        reject(
+          new Error('Could not connect. Run MongoDB to test. ' + reason.message)
+        );
       });
   });
 }
