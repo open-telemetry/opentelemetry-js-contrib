@@ -543,8 +543,8 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
   });
 
   describe('MongoDb useUnifiedTopology enabled', () => {
-    let client: mongodb.MongoClient;
-    let collection: mongodb.Collection;
+    let client: MongoClient;
+    let collection: Collection;
     before(done => {
       accessCollection(URL, DB_NAME, COLLECTION_NAME, {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -557,9 +557,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           done();
         })
         .catch((err: Error) => {
-          console.log(
-            'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-          );
+          console.log('Skipping test-mongodb. ' + err.message);
           shouldTest = false;
           done();
         });
