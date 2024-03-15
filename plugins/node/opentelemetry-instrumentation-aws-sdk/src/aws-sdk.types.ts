@@ -89,7 +89,7 @@ export namespace SQS {
 
   export interface Message {
     /**
-     * A unique identifier for the message. A MessageIdis considered unique across all accounts for an extended period of time.
+     * A unique identifier for the message. A MessageId is considered unique across all accounts for an extended period of time.
      */
     MessageId?: string;
     /**

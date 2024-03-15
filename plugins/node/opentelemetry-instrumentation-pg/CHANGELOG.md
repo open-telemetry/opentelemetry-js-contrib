@@ -6,6 +6,13 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.39.0...instrumentation-pg-v0.39.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* **instrumentation-pg:** prevent net.peer.port from being NaN ([#1982](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1982)) ([3b2090b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3b2090b5f53ee56e8d06ef7c144588141080804c))
+
 ## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.38.0...instrumentation-pg-v0.39.0) (2024-03-06)
 
 

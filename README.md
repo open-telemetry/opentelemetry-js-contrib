@@ -36,7 +36,7 @@
 
 ---
 
-# OpenTelemetry Javascript Contrib
+# OpenTelemetry JavaScript Contrib
 
 A repository for OpenTelemetry JavaScript contributions that are not part of the [core repository](https://github.com/open-telemetry/opentelemetry-js) and core distribution of the API and the SDK.
 

@@ -97,7 +97,7 @@ const __copyProps = (
  *    `orig` is the original property value. This must synchronously return the
  *    new property value.
  * @returns {object} A new object with the wrapped property.
- * @throws {TypeError} if the subpath points to a non-existant property, or if
+ * @throws {TypeError} if the subpath points to a non-existent property, or if
  *    any but the last subpath part points to a non-Object.
  */
 export const propwrap = (obj: any, subpath: string, wrapper: Function): any => {
