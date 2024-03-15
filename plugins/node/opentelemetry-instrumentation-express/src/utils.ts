@@ -154,6 +154,10 @@ export const asErrorAndMessage = (
  * @returns The layer path
  */
 export const getLayerPath = (args: unknown[]) => {
+  if (args[0] instanceof RegExp) {
+    return args[0].toString();
+  }
+
   if (typeof args[0] === 'string') {
     return args[0];
   }

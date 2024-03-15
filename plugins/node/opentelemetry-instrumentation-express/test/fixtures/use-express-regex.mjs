@@ -25,11 +25,8 @@ import { ExpressInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-express-regex',
-  instrumentations: [
-    new HttpInstrumentation(),
-    new ExpressInstrumentation()
-  ]
-})
+  instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
+});
 sdk.start();
 
 import express from 'express';
@@ -46,8 +43,22 @@ app.use(async function simpleMiddleware(req, res, next) {
   next();
 });
 
-app.get(['/test/arr/:id', /\/test\/arr[0-9]*\/required(path)?(\/optionalPath)?\/(lastParam)?/], (_req, res) => {
-  res.send({ response: 'response' });
+app.get(
+  [
+    '/test/arr/:id',
+    /\/test\/arr[0-9]*\/required(path)?(\/optionalPath)?\/(lastParam)?/,
+  ],
+  (_req, res) => {
+    res.send({ response: 'response' });
+  }
+);
+
+app.get(/\/test\/regex/, (_req, res) => {
+  res.send({ response: 'response 2' });
+});
+
+app.get(['/test/array1', /\/test\/array[2-9]/], (_req, res) => {
+  res.send({ response: 'response 3' });
 });
 
 const server = http.createServer(app);
@@ -55,12 +66,15 @@ await new Promise(resolve => server.listen(0, resolve));
 const port = server.address().port;
 
 await new Promise(resolve => {
-  http.get(`http://localhost:${port}/test/arr/requiredPath/optionalPath/lastParam`, (res) => {
-    res.resume();
-    res.on('end', () => {
-      resolve();
-    });
-  })
+  http.get(
+    `http://localhost:${port}${process.env.TEST_REGEX_ROUTE}`,
+    res => {
+      res.resume();
+      res.on('end', () => {
+        resolve();
+      });
+    }
+  );
 });
 
 await new Promise(resolve => server.close(resolve));
