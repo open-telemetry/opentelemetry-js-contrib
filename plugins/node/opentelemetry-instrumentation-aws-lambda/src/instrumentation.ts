@@ -208,6 +208,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
                 context.invokedFunctionArn
               ),
           },
+          links: config.eventSpanLinksExtractor
+            ? config.eventSpanLinksExtractor(event, context)
+            : [],
         },
         parent
       );
