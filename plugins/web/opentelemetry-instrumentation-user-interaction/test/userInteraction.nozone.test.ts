@@ -582,6 +582,26 @@ describe('UserInteractionInstrumentation', () => {
       assertInteractionSpan(span, { name: 'play' });
     });
 
+    it('should apply custom attributes to spans', () => {
+      const customAttributeName = 'custom_attribute';
+      const customAttributeValue = 'custom_attribute_value';
+      registerTestInstrumentations({
+        eventNames: ['play'],
+        applyCustomAttributesOnSpan: (span) => {
+          span.setAttribute(customAttributeName, customAttributeValue)
+        },
+      });
+
+      fakeEventInteraction('play');
+      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      const span = exportSpy.args[0][0][0];
+      assert.strictEqual(
+        span.attributes[customAttributeName],
+        customAttributeValue,
+        'should have custom attribute on span'
+      );
+    });
+
     it('should not be exported not configured spans', () => {
       registerTestInstrumentations({
         eventNames: ['play'],
