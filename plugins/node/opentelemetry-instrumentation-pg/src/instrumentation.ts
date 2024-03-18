@@ -39,19 +39,11 @@ import {
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { AttributeNames } from './enums/AttributeNames';
-import {
-  SemanticAttributes,
-  DbSystemValues,
-} from '@opentelemetry/semantic-conventions';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import { VERSION } from './version';
 
-const PG_POOL_COMPONENT = 'pg-pool';
-
 export class PgInstrumentation extends InstrumentationBase {
-  static readonly COMPONENT = 'pg';
-
-  static readonly BASE_SPAN_NAME = PgInstrumentation.COMPONENT + '.query';
+  static readonly BASE_SPAN_NAME = 'pg.query';
 
   constructor(config: PgInstrumentationConfig = {}) {
     super(
@@ -149,16 +141,10 @@ export class PgInstrumentation extends InstrumentationBase {
           return original.call(this, callback);
         }
 
-        const span = plugin.tracer.startSpan(
-          `${PgInstrumentation.COMPONENT}.connect`,
-          {
-            kind: SpanKind.CLIENT,
-            attributes: {
-              [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-              ...utils.getSemanticAttributesFromConnection(this),
-            },
-          }
-        );
+        const span = plugin.tracer.startSpan('pg.connect', {
+          kind: SpanKind.CLIENT,
+          attributes: utils.getSemanticAttributesFromConnection(this),
+        });
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
@@ -183,9 +169,7 @@ export class PgInstrumentation extends InstrumentationBase {
   private _getClientQueryPatch() {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
-      this._diag.debug(
-        `Patching ${PgInstrumentation.COMPONENT}.Client.prototype.query`
-      );
+      this._diag.debug('Patching pg.Client.prototype.query');
       return function query(this: PgClientExtended, ...args: unknown[]) {
         if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
           return original.apply(this, args as never);
@@ -367,16 +351,16 @@ export class PgInstrumentation extends InstrumentationBase {
         }
 
         // setup span
-        const span = plugin.tracer.startSpan(`${PG_POOL_COMPONENT}.connect`, {
+        const span = plugin.tracer.startSpan('pg-pool.connect', {
           kind: SpanKind.CLIENT,
-          attributes: {
-            [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-            ...utils.getSemanticAttributesFromConnection(this.options),
-            [AttributeNames.IDLE_TIMEOUT_MILLIS]:
-              this.options.idleTimeoutMillis,
-            [AttributeNames.MAX_CLIENT]: this.options.maxClient,
-          },
+          attributes: utils.getSemanticAttributesFromConnection(this.options),
         });
+
+        span.setAttribute(
+          AttributeNames.IDLE_TIMEOUT_MILLIS,
+          this.options.idleTimeoutMillis
+        );
+        span.setAttribute(AttributeNames.MAX_CLIENT, this.options.maxClient);
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());

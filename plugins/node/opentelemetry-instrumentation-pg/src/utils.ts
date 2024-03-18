@@ -109,6 +109,7 @@ export function getSemanticAttributesFromConnection(
   params: PgParsedConnectionParams
 ) {
   return {
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
     [SemanticAttributes.DB_NAME]: params.database, // required
     [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
     [SemanticAttributes.NET_PEER_NAME]: params.host, // required
@@ -141,10 +142,7 @@ export function handleConfigQuery(
   const spanName = getQuerySpanName(dbName, queryConfig);
   const span = tracer.startSpan(spanName, {
     kind: SpanKind.CLIENT,
-    attributes: {
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
-      ...getSemanticAttributesFromConnection(connectionParameters),
-    },
+    attributes: getSemanticAttributesFromConnection(connectionParameters),
   });
 
   if (!queryConfig) {
