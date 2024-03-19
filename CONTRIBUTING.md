@@ -84,6 +84,17 @@ Remember to always work in a branch of your local copy, as you might otherwise h
 
 Please also see [GitHub workflow](https://github.com/open-telemetry/community/blob/main/CONTRIBUTING.md#github-workflow) section of general project contributing guide.
 
+## Development
+
+### Tools used
+
+- [NPM](https://npmjs.com)
+- [TypeScript](https://www.typescriptlang.org/)
+- [lerna](https://github.com/lerna/lerna) to manage dependencies, compilations, and links between packages. Most lerna commands should be run by calling the provided npm scripts.
+- [npm workspaces](https://docs.npmjs.com/cli/v10/using-npm/workspaces)
+- [MochaJS](https://mochajs.org/) for tests
+- [eslint](https://eslint.org/)
+
 ### General guidance
 
 The `opentelemetry-js-contrib` project is written in TypeScript.
