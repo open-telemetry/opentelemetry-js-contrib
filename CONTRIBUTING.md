@@ -154,9 +154,25 @@ They may not work and there are no guarantees for fixes or new features.
 Their source files may be deleted from the repository.
 Any packages released from their source will be marked as deprecated in NPM.
 
-## Pull Request Merge Requirements
+## Pull Request Merge Guidelines
 
-Pull requests MAY be merged by an approver OR a maintainer provided they meet all the following requirements:
+Pull requests MAY be merged by an approver OR a maintainer provided they meet all the following [General Merge Requirements](#general-merge-requirements).
+All requirements are at the discretion of the maintainers.
+Maintainers MAY merge pull requests which have not strictly met these requirements.
+Maintainers MAY close, block, or put on hold pull requests even if they have strictly met these requirements.
+
+It is generally expected that a maintainer ([@open-telemetry/javascript-maintainers](https://github.com/orgs/open-telemetry/teams/javascript-maintainers)) should review and merge major changes.
+Some examples include, but are not limited to:
+
+- Breaking changes
+- New modules
+- Changes which affect runtime support
+
+If a PR has not been interacted with by a reviewer within one week, please ping the component
+owners as listed in [.github/component_owners.yml](.github/component_owners.yml), if component owners are unresponsive
+please ping ([@open-telemetry/javascript-approvers](https://github.com/orgs/open-telemetry/teams/javascript-approvers)).
+
+### General Merge Requirements
 
 - Approved by
   - at least one component owner if one is defined in [.github/component_owners.yml](.github/component_owners.yml)
@@ -172,14 +188,6 @@ Pull requests MAY be merged by an approver OR a maintainer provided they meet al
 - New or changed functionality is tested by unit tests
 - New or changed functionality is documented if appropriate
 - Substantial changes should not be merged within 24 hours of opening in order to allow reviewers from all time zones to have a chance to review
-
-All requirements are at the discretion of the maintainers.
-Maintainers MAY merge pull requests which have not strictly met these requirements.
-Maintainers MAY close, block, or put on hold pull requests even if they have strictly met these requirements.
-
-If a PR has not been interacted with by a reviewer within one week, please ping the component
-owners as listed in [.github/component_owners.yml](.github/component_owners.yml), if component owners are unresponsive
-please ping ([@open-telemetry/javascript-approvers](https://github.com/orgs/open-telemetry/teams/javascript-approvers)).
 
 ## Contributing Vendor Components
 
