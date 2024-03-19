@@ -84,14 +84,18 @@ Remember to always work in a branch of your local copy, as you might otherwise h
 
 Please also see [GitHub workflow](https://github.com/open-telemetry/community/blob/main/CONTRIBUTING.md#github-workflow) section of general project contributing guide.
 
-### Running the tests
+### General guidance
 
 The `opentelemetry-js-contrib` project is written in TypeScript.
 
-- `npm install` to install dependencies.
+As a general rule, installing and then compiling from the root directory should always be done first before anything else.
+After installing and compiling from the root directory, do it again from the specific package directory you are working in.
+Some tests depend on other packages to be installed, so these steps are also required for running tests.
+
+- `npm ci` installs dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
 - `npm run compile` compiles the code, checking for type errors.
 - `npm test` tests code the same way that our CI will test it.
-- `npm run lint:fix` lint (and maybe fix) any changes.
+- `npm run lint:fix` lint any changes and fix if needed.
 
 ### Generating CHANGELOG documentation
 
