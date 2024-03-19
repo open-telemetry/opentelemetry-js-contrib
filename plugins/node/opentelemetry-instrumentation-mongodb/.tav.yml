@@ -12,6 +12,6 @@ mongodb:
     commands: npm run test-v4
   - versions: ">=5 <6"
     commands: npm run test-v5-v6
-  - versions: ">=6 <6.4"
+  - versions: ">=6 <7"
     node: '>=15.0.0'
     commands: npm run test-v5-v6
