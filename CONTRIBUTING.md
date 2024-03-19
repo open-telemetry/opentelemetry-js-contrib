@@ -23,6 +23,19 @@ We'd love your help!
   - [Adding a New Vendor Component](#adding-a-new-vendor-component)
   - [Removing Vendor Components](#removing-vendor-components)
 
+## Development Quick Start
+
+To get the project started quickly, you can follow these steps. For more
+detailed instructions, see [development](#development) below.
+
+```sh
+git clone https://github.com/open-telemetry/opentelemetry-js-contrib.git
+cd opentelemetry-js-contrib
+npm install
+npm run compile
+npm test
+```
+
 ## Report a bug or requesting feature
 
 Reporting bugs is an important contribution. Please make sure to include:
