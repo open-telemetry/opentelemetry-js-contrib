@@ -2,14 +2,16 @@
 
 We'd love your help!
 
+- [Development Quick Start](#development-quick-start)
 - [Report a bug or requesting feature](#report-a-bug-or-requesting-feature)
 - [How to contribute](#how-to-contribute)
   - [Before you start](#before-you-start)
     - [Conventional commit](#conventional-commit)
   - [Fork](#fork)
-  - [Running the tests](#running-the-tests)
-  - [Generating API documentation](#generating-api-documentation)
-  - [Generating CHANGELOG documentation](#generating-changelog-documentation)
+- [Development](#development)
+  - [Tools used](#tools-used)
+  - [General guidance](#general-guidance)
+  - [CHANGELOG](#changelog)
   - [Benchmarks](#benchmarks)
 - [Component Ownership](#component-ownership)
 - [Component Lifecycle](#component-lifecycle)
@@ -19,6 +21,8 @@ We'd love your help!
   - [Stable](#stable)
   - [Unmaintained](#unmaintained)
   - [Deprecated](#deprecated)
+- [Pull Request Merge Guidelines](#pull-request-merge-guidelines)
+  - [General Merge Requirements](#general-merge-requirements)
 - [Contributing Vendor Components](#contributing-vendor-components)
   - [Adding a New Vendor Component](#adding-a-new-vendor-component)
   - [Removing Vendor Components](#removing-vendor-components)
