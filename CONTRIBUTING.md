@@ -108,9 +108,9 @@ Some tests depend on other packages to be installed, so these steps are also req
 - `npm test` tests code the same way that our CI will test it.
 - `npm run lint:fix` lint any changes and fix if needed.
 
-### Generating CHANGELOG documentation
+### CHANGELOG
 
-- `npm run changelog` to generate CHANGELOG documentation in your terminal (see [RELEASING.md](RELEASING.md) for more details).
+- There is no need to update the CHANGELOG in a PR because it will be updated as part of the release process (see [RELEASING.md](RELEASING.md) for more details).
 
 ### Benchmarks
 
