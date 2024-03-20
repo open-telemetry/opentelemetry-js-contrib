@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export * from './instrumentation';
-export * from './types';
-export * from './enums/AttributeNames';
-export * from './enums/SpanNames';
+// Contains span names produced by instrumentation
+export enum SpanNames {
+  QUERY_PREFIX = 'pg.query',
+  CONNECT = 'pg.connect',
+  POOL_CONNECT = 'pg-pool.connect',
+}

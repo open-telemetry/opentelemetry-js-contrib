@@ -38,13 +38,11 @@ import {
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
-import { AttributeNames } from './enums/AttributeNames';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import { VERSION } from './version';
+import { SpanNames } from './enums/SpanNames';
 
 export class PgInstrumentation extends InstrumentationBase {
-  static readonly BASE_SPAN_NAME = 'pg.query';
-
   constructor(config: PgInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-pg',
@@ -141,7 +139,7 @@ export class PgInstrumentation extends InstrumentationBase {
           return original.call(this, callback);
         }
 
-        const span = plugin.tracer.startSpan('pg.connect', {
+        const span = plugin.tracer.startSpan(SpanNames.CONNECT, {
           kind: SpanKind.CLIENT,
           attributes: utils.getSemanticAttributesFromConnection(this),
         });
@@ -351,16 +349,10 @@ export class PgInstrumentation extends InstrumentationBase {
         }
 
         // setup span
-        const span = plugin.tracer.startSpan('pg-pool.connect', {
+        const span = plugin.tracer.startSpan(SpanNames.POOL_CONNECT, {
           kind: SpanKind.CLIENT,
-          attributes: utils.getSemanticAttributesFromConnection(this.options),
+          attributes: utils.getSemanticAttributesFromPool(this.options),
         });
-
-        span.setAttribute(
-          AttributeNames.IDLE_TIMEOUT_MILLIS,
-          this.options.idleTimeoutMillis
-        );
-        span.setAttribute(AttributeNames.MAX_CLIENT, this.options.maxClient);
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
