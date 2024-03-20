@@ -146,7 +146,6 @@ export const asErrorAndMessage = (
     ? [error, error.message]
     : [String(error), String(error)];
 
-
 /**
  * Extracts the layer path from the route arguments
  *
@@ -163,10 +162,10 @@ export const getLayerPath = (args: unknown[]): string | undefined => {
   }
 
   if (Array.isArray(args[0])) {
-    return args[0].map((arg) => (
-      typeof arg === 'string' || arg instanceof RegExp ? arg : '')
-    ).join(',');
+    return args[0]
+      .map(arg => (typeof arg === 'string' || arg instanceof RegExp ? arg : ''))
+      .join(',');
   }
 
   return;
-}
+};
