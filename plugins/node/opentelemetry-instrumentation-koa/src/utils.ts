@@ -27,6 +27,7 @@ export const getMiddlewareMetadata = (
 ): {
   attributes: Attributes;
   name: string;
+  layerName: string;
 } => {
   if (isRouter) {
     return {
@@ -36,6 +37,7 @@ export const getMiddlewareMetadata = (
         [SEMATTRS_HTTP_ROUTE]: layerPath?.toString(),
       },
       name: context._matchedRouteName || `router - ${layerPath}`,
+      layerName: context._matchedRouteName || layerPath?.toString() || '',
     };
   } else {
     return {
@@ -44,6 +46,7 @@ export const getMiddlewareMetadata = (
         [AttributeNames.KOA_TYPE]: KoaLayerType.MIDDLEWARE,
       },
       name: `middleware - ${layer.name}`,
+      layerName: layer.name,
     };
   }
 };
@@ -61,5 +64,21 @@ export const isLayerIgnored = (
   return !!(
     Array.isArray(config?.ignoreLayersType) &&
     config?.ignoreLayersType?.includes(type)
+  );
+};
+
+/**
+ * Check whether the given request name is ignored by configuration
+ * @param [list] List of ignore name patterns
+ * @param [onException] callback for doing something when an exception has
+ *     occurred
+ */
+export const isLayerNameIgnored = (
+  layerName: string,
+  config?: KoaInstrumentationConfig
+): boolean => {
+  return !!(
+    Array.isArray(config?.ignoreLayersName) &&
+    config?.ignoreLayersName?.includes(layerName)
   );
 };
