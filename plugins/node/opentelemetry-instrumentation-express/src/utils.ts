@@ -153,7 +153,7 @@ export const asErrorAndMessage = (
  * @param args - Arguments of the route
  * @returns The layer path
  */
-export const getLayerPath = (args: unknown[]) => {
+export const getLayerPath = (args: unknown[]): string | undefined => {
   if (args[0] instanceof RegExp) {
     return args[0].toString();
   }
