@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { KoaLayerType, KoaInstrumentationConfig } from './types';
+import { KoaLayerType, KoaInstrumentationConfig, IgnoreMatcher } from './types';
 import { KoaContext, KoaMiddleware } from './internal-types';
 import { AttributeNames } from './enums/AttributeNames';
 import { Attributes } from '@opentelemetry/api';
@@ -49,12 +49,12 @@ export const getMiddlewareMetadata = (
 };
 
 /**
- * Check whether the given request is ignored by configuration
+ * Check whether the given request layer type is ignored by configuration
  * @param [list] List of ignore patterns
  * @param [onException] callback for doing something when an exception has
  *     occurred
  */
-export const isLayerIgnored = (
+export const isLayerTypeIgnored = (
   type: KoaLayerType,
   config?: KoaInstrumentationConfig
 ): boolean => {
@@ -62,4 +62,52 @@ export const isLayerIgnored = (
     Array.isArray(config?.ignoreLayersType) &&
     config?.ignoreLayersType?.includes(type)
   );
+};
+
+/**
+ * Check whether the given request layer name is ignored by configuration
+ * @param [list] List of ignore patterns
+ * @param [onException] callback for doing something when an exception has
+ *     occurred
+ */
+export const isLayerNameIgnored = (
+  name: string,
+  config?: KoaInstrumentationConfig
+): boolean => {
+  if (Array.isArray(config?.ignoreLayers) === false || !config?.ignoreLayers)
+    return false;
+  try {
+    for (const pattern of config.ignoreLayers) {
+      if (satisfiesPattern(name, pattern)) {
+        return true;
+      }
+    }
+  } catch (e) {
+    /* catch block*/
+  }
+
+  return false;
+};
+
+/**
+ * Check whether the given obj match pattern
+ * @param constant e.g URL of request
+ * @param obj obj to inspect
+ * @param pattern Match pattern
+ */
+export const satisfiesPattern = (
+  constant: string,
+  pattern: IgnoreMatcher
+): boolean => {
+  console.warn(`constant: ${constant}`);
+  console.warn(`pattern: ${pattern}`);
+  if (typeof pattern === 'string') {
+    return pattern === constant;
+  } else if (pattern instanceof RegExp) {
+    return pattern.test(constant);
+  } else if (typeof pattern === 'function') {
+    return pattern(constant);
+  } else {
+    throw new TypeError('Pattern is in unsupported datatype');
+  }
 };

@@ -751,7 +751,7 @@ describe('Koa Instrumentation', function () {
           '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
         NODE_NO_WARNINGS: '1',
       },
-      checkResult: (err, stdout, stderr) => {
+      checkResult: (err: any, stdout: any, stderr: any) => {
         assert.ifError(err);
       },
       checkCollector: (collector: testUtils.TestCollector) => {
