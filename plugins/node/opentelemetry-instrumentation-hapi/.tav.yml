@@ -6,6 +6,6 @@
     node: ">=14"
     commands: npm test
   - versions: "^21.3.3"
-    node: ">=16"
+    node: ">=14.15.0"
     commands: npm test
 
