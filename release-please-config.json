@@ -21,6 +21,7 @@
     "packages/opentelemetry-redis-common": {},
     "packages/opentelemetry-sql-common": {},
     "packages/opentelemetry-test-utils": {},
+    "packages/winston-transport": {},
     "plugins/node/instrumentation-amqplib": {},
     "plugins/node/instrumentation-cucumber": {},
     "plugins/node/instrumentation-dataloader": {},
