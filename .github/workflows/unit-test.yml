@@ -146,7 +146,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14"]
+        node: ["18"]
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
@@ -159,9 +159,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - name: Update npm to a version that supports workspaces (v7 or later)
-        if: ${{ matrix.node < 16 }}
-        run: npm install -g npm@9 # npm@9 supports node >=14.17.0
       - name: Install
         run: npm ci
       - name: Build
