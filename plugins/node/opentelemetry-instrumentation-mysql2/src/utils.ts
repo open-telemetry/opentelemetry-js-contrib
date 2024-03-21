@@ -19,11 +19,11 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 /*
   Following types declare an expectation on mysql2 types and define a subset we
-  use in the instrumentation of the types actually defined in mysql2 pacakge
+  use in the instrumentation of the types actually defined in mysql2 package
 
   We need to import them here so that the installing party of the instrumentation
   doesn't have to absolutely install the mysql2 package as well - specially
-  important for auto-loaders and meta-pacakges.
+  important for auto-loaders and meta-packages.
 */
 interface QueryOptions {
   sql: string;

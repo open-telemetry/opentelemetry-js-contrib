@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cucumber",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "OpenTelemetry cucumber automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -57,7 +57,7 @@
     "rimraf": "5.0.5",
     "semver": "7.5.4",
     "sinon": "15.2.0",
-    "test-all-versions": "6.0.0",
+    "test-all-versions": "6.1.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
