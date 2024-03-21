@@ -35,7 +35,7 @@ detailed instructions, see [development](#development) below.
 ```sh
 git clone https://github.com/open-telemetry/opentelemetry-js-contrib.git
 cd opentelemetry-js-contrib
-npm install
+npm ci
 npm run compile
 npm test
 ```
@@ -99,18 +99,23 @@ Please also see [GitHub workflow](https://github.com/open-telemetry/community/bl
 - [MochaJS](https://mochajs.org/) for tests
 - [eslint](https://eslint.org/)
 
+Refer to the core repository for [supported runtimes](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes).
+Refer to the root-level [package.json](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/package.json) for shared dev dependency versions, and the package-level package.json for package-specific versions if different or not included in the shared root.
+
 ### General guidance
 
 The `opentelemetry-js-contrib` project is written in TypeScript.
 
 As a general rule, installing and then compiling from the root directory should always be done first before anything else.
-After installing and compiling from the root directory, do it again from the specific package directory you are working in.
+After making changes to a specific package, compile again from the specific package directory you are working in.
 Some tests depend on other packages to be installed, so these steps are also required for running tests.
 
 - `npm ci` installs dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
 - `npm run compile` compiles the code, checking for type errors.
 - `npm test` tests code the same way that our CI will test it.
 - `npm run lint:fix` lint any changes and fix if needed.
+
+Each of these commands can also be run in individual packages, as long as the initial install and compile are done first in the root directory.
 
 ### CHANGELOG
 
