@@ -81,7 +81,12 @@ export function getQuerySpanName(
 }
 
 function parseNormalizedOperationName(queryText: string) {
-  const sqlCommand = queryText.split(' ')[0].toUpperCase();
+  const indexOfFirstSpace = queryText.indexOf(' ');
+  let sqlCommand =
+    indexOfFirstSpace === -1
+      ? queryText
+      : queryText.slice(0, indexOfFirstSpace);
+  sqlCommand = sqlCommand.toUpperCase();
 
   // Handle query text being "COMMIT;", which has an extra semicolon before the space.
   return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
