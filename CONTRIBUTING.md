@@ -112,14 +112,20 @@ Some tests depend on other packages to be installed, so these steps are also req
 
 - `npm ci` installs dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
 - `npm run compile` compiles the code, checking for type errors.
-- `npm test` tests code the same way that our CI will test it.
+- `npm test` runs most unit tests, though some packages require other dependencies so are only run in CI or with a separate command in the package's `package.json` file.
 - `npm run lint:fix` lint any changes and fix if needed.
 
 Each of these commands can also be run in individual packages, as long as the initial install and compile are done first in the root directory.
 
 ### CHANGELOG
 
-- There is no need to update the CHANGELOG in a PR because it will be updated as part of the release process (see [RELEASING.md](RELEASING.md) for more details).
+The conventional commit type (in PR title) is very important to automatically bump versions on release. For instance:
+
+- any type + `!` will bump major version (or minor on pre-release)
+- `feat` will bump minor
+- `fix` will bump patch
+
+There is no need to update the CHANGELOG in a PR because it will be updated as part of the release process (see [RELEASING.md](RELEASING.md) for more details).
 
 ### Benchmarks
 
