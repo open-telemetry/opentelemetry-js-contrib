@@ -25,7 +25,7 @@ import * as assert from 'assert';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation } from '../src';
 import { createServer, httpRequest, serverWithMiddleware } from './utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 
 const instrumentation = new ExpressInstrumentation();
@@ -114,7 +114,7 @@ describe('ExpressInstrumentation', () => {
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/toto/:id'
           );
           assert.strictEqual(
@@ -481,7 +481,7 @@ describe('ExpressInstrumentation', () => {
             .getFinishedSpans()
             .find(span => span.name.includes('request handler'));
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/double-slashes/:id'
           );
           assert.strictEqual(rpcMetadata?.route, '/double-slashes/:id');

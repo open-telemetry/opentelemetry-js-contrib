@@ -27,7 +27,7 @@ import * as sinon from 'sinon';
 import { ExpressInstrumentation } from '../src';
 import { ExpressRequestInfo, SpanNameHook } from '../src/types';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_METHOD } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
@@ -178,7 +178,7 @@ describe('ExpressInstrumentation hooks', () => {
 
     it('should call requestHook when set in config', async () => {
       const requestHook = sinon.spy((span: Span, info: ExpressRequestInfo) => {
-        span.setAttribute(SemanticAttributes.HTTP_METHOD, info.request.method);
+        span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
 
         if (info.layerType) {
           span.setAttribute('express.layer_type', info.layerType);
