@@ -172,10 +172,8 @@ export const assertSpan = (
   );
 
   if (validations.reqHeaders) {
-    const userAgent = getHeader(validations.reqHeaders, 'content-length');
-    // validations.reqHeaders instanceof Headers
-    //   ? validations.reqHeaders.get('user-agent')
-    //   : validations.reqHeaders['user-agent'];
+    const userAgent = getHeader(validations.reqHeaders, 'user-agent');
+
     if (userAgent) {
       assert.strictEqual(
         span.attributes[SemanticAttributes.USER_AGENT_ORIGINAL],
