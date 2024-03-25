@@ -1,4 +1,4 @@
-/*
+/*!
  * Copyright The OpenTelemetry Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const testsContext = require.context('.', true, /test$/);
-testsContext.keys().forEach(testsContext);
 
-const srcContext = require.context('.', true, /src$/);
-srcContext.keys().forEach(srcContext);
+export { default } from '../../../web-test-runner.base.mjs';
