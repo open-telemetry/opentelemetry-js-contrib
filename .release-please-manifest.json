@@ -14,6 +14,7 @@
   "packages/opentelemetry-redis-common": "0.36.1",
   "packages/opentelemetry-sql-common": "0.40.0",
   "packages/opentelemetry-test-utils": "0.37.0",
+  "packages/winston-transport": "0.1.0",
   "plugins/node/instrumentation-amqplib": "0.35.0",
   "plugins/node/instrumentation-cucumber": "0.4.0",
   "plugins/node/instrumentation-dataloader": "0.7.0",
