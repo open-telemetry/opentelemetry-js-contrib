@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  context,
-  trace,
-  isSpanContextValid,
-  Span,
-  SpanContext,
-} from '@opentelemetry/api';
+import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -32,6 +26,7 @@ import type { WinstonInstrumentationConfig } from './types';
 import type {
   Winston2LogMethod,
   Winston2LoggerModule,
+  Winston3ConfigureMethod,
   Winston3LogMethod,
   Winston3Logger,
 } from './internal-types';
@@ -46,7 +41,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    return [
+    const winstons3instrumentationNodeModuleDefinition =
       new InstrumentationNodeModuleDefinition<{}>(
         'winston',
         winston3Versions,
@@ -61,18 +56,31 @@ export class WinstonInstrumentation extends InstrumentationBase {
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
               }
-
               this._wrap(logger.prototype, 'write', this._getPatchedWrite());
+
+              // Wrap configure
+              if (isWrapped(logger.prototype['configure'])) {
+                this._unwrap(logger.prototype, 'configure');
+              }
+              this._wrap(
+                logger.prototype,
+                'configure',
+                this._getPatchedConfigure()
+              );
+
               return logger;
             },
             (logger, moduleVersion) => {
               if (logger === undefined) return;
               this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(logger.prototype, 'write');
+              this._unwrap(logger.prototype, 'configure');
             }
           ),
         ]
-      ),
+      );
+
+    const winstons2instrumentationNodeModuleDefinition =
       new InstrumentationNodeModuleDefinition<{}>(
         'winston',
         winstonPre3Versions,
@@ -89,7 +97,6 @@ export class WinstonInstrumentation extends InstrumentationBase {
               if (isWrapped(proto.log)) {
                 this._unwrap(proto, 'log');
               }
-
               this._wrap(proto, 'log', this._getPatchedLog());
 
               return fileExports;
@@ -101,7 +108,10 @@ export class WinstonInstrumentation extends InstrumentationBase {
             }
           ),
         ]
-      ),
+      );
+    return [
+      winstons3instrumentationNodeModuleDefinition,
+      winstons2instrumentationNodeModuleDefinition,
     ];
   }
 
@@ -138,22 +148,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
         this: never,
         ...args: Parameters<typeof original>
       ) {
-        const span = trace.getSpan(context.active());
-
-        if (!span) {
-          return original.apply(this, args);
-        }
-
-        const spanContext = span.spanContext();
-
-        if (!isSpanContextValid(spanContext)) {
-          return original.apply(this, args);
-        }
-
         const record = args[0];
-        injectRecord(spanContext, record);
-        instrumentation._callHook(span, record);
-
+        instrumentation._handleLogCorrelation(record);
         return original.apply(this, args);
       };
     };
@@ -163,59 +159,89 @@ export class WinstonInstrumentation extends InstrumentationBase {
     return (original: Winston2LogMethod) => {
       const instrumentation = this;
       return function patchedLog(
-        this: unknown,
+        this: never,
         ...args: Parameters<typeof original>
       ) {
-        const span = trace.getSpan(context.active());
-
-        if (!span) {
-          return original.apply(this, args);
-        }
-
-        const spanContext = span.spanContext();
-
-        if (!isSpanContextValid(spanContext)) {
-          return original.apply(this, args);
-        }
-
+        const record: Record<string, any> = {};
+        instrumentation._handleLogCorrelation(record);
+        // Inject in metadata argument
+        let isDataInjected = false;
         for (let i = args.length - 1; i >= 0; i--) {
           if (typeof args[i] === 'object') {
-            const record = args[i];
-            injectRecord(spanContext, record);
-            instrumentation._callHook(span, record);
-            return original.apply(this, args);
+            args[i] = Object.assign(args[i], record);
+            isDataInjected = true;
+            break;
           }
         }
+        if (!isDataInjected) {
+          const insertAt =
+            typeof args[args.length - 1] === 'function'
+              ? args.length - 1
+              : args.length;
 
-        const record = injectRecord(spanContext);
-
-        const insertAt =
-          typeof args[args.length - 1] === 'function'
-            ? args.length - 1
-            : args.length;
-
-        args.splice(insertAt, 0, record);
-        instrumentation._callHook(span, record);
+          args.splice(insertAt, 0, record);
+        }
 
         return original.apply(this, args);
       };
     };
   }
-}
 
-function injectRecord(
-  spanContext: SpanContext,
-  record?: Record<string, string>
-) {
-  const fields = {
-    trace_id: spanContext.traceId,
-    span_id: spanContext.spanId,
-    trace_flags: `0${spanContext.traceFlags.toString(16)}`,
-  };
-
-  if (!record) {
-    return fields;
+  private _getPatchedConfigure() {
+    return (original: Winston3ConfigureMethod) => {
+      const instrumentation = this;
+      return function patchedConfigure(
+        this: never,
+        ...args: Parameters<typeof original>
+      ) {
+        const config = instrumentation.getConfig();
+        if (!config.disableLogSending) {
+          if (args && args.length > 0) {
+            // Try to load Winston transport
+            try {
+              const {
+                OpenTelemetryTransportV3,
+              } = require('@opentelemetry/winston-transport');
+              const originalTransports = args[0].transports;
+              let newTransports = Array.isArray(originalTransports)
+                ? originalTransports
+                : [];
+              const openTelemetryTransport = new OpenTelemetryTransportV3();
+              if (originalTransports && !Array.isArray(originalTransports)) {
+                newTransports = [originalTransports];
+              }
+              newTransports.push(openTelemetryTransport);
+              args[0].transports = newTransports;
+            } catch (err) {
+              instrumentation._diag.warn(
+                'OpenTelemetry Winston transport is not available, log records will not be automatically sent.',
+                err
+              );
+            }
+          }
+        }
+        return original.apply(this, args);
+      };
+    };
   }
 
-  return Object.assign(record, fields);
+  private _handleLogCorrelation(record: Record<string, string>) {
+    if (!this.getConfig().disableLogCorrelation) {
+      const span = trace.getSpan(context.active());
+      if (span) {
+        const spanContext = span.spanContext();
+        if (isSpanContextValid(spanContext)) {
+          const fields = {
+            trace_id: spanContext.traceId,
+            span_id: spanContext.spanId,
+            trace_flags: `0${spanContext.traceFlags.toString(16)}`,
+          };
+          const enhancedRecord = Object.assign(record, fields);
+          this._callHook(span, enhancedRecord);
+          return enhancedRecord;
+        }
+      }
+    }
+    return record;
+  }
 }

@@ -34,11 +34,12 @@ import {
   PgPoolCallback,
   PgPoolExtended,
   PgParsedConnectionParams,
+  PgPoolOptionsParams,
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
-import { PgInstrumentation } from './';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import { SpanNames } from './enums/SpanNames';
 
 /**
  * Helper function to get a low cardinality span name from whatever info we have
@@ -66,7 +67,7 @@ export function getQuerySpanName(
   // NB: when the query config is invalid, we omit the dbName too, so that
   // someone (or some tool) reading the span name doesn't misinterpret the
   // dbName as being a prepared statement or sql commit name.
-  if (!queryConfig) return PgInstrumentation.BASE_SPAN_NAME;
+  if (!queryConfig) return SpanNames.QUERY_PREFIX;
 
   // Either the name of a prepared statement; or an attempted parse
   // of the SQL command, normalized to uppercase; or unknown.
@@ -75,9 +76,7 @@ export function getQuerySpanName(
       ? queryConfig.name
       : parseNormalizedOperationName(queryConfig.text);
 
-  return `${PgInstrumentation.BASE_SPAN_NAME}:${command}${
-    dbName ? ` ${dbName}` : ''
-  }`;
+  return `${SpanNames.QUERY_PREFIX}:${command}${dbName ? ` ${dbName}` : ''}`;
 }
 
 function parseNormalizedOperationName(queryText: string) {
@@ -109,11 +108,25 @@ export function getSemanticAttributesFromConnection(
   params: PgParsedConnectionParams
 ) {
   return {
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
     [SemanticAttributes.DB_NAME]: params.database, // required
     [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
     [SemanticAttributes.NET_PEER_NAME]: params.host, // required
     [SemanticAttributes.NET_PEER_PORT]: getPort(params.port),
     [SemanticAttributes.DB_USER]: params.user,
+  };
+}
+
+export function getSemanticAttributesFromPool(params: PgPoolOptionsParams) {
+  return {
+    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
+    [SemanticAttributes.DB_NAME]: params.database, // required
+    [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
+    [SemanticAttributes.NET_PEER_NAME]: params.host, // required
+    [SemanticAttributes.NET_PEER_PORT]: getPort(params.port),
+    [SemanticAttributes.DB_USER]: params.user,
+    [AttributeNames.IDLE_TIMEOUT_MILLIS]: params.idleTimeoutMillis,
+    [AttributeNames.MAX_CLIENT]: params.maxClient,
   };
 }
 
@@ -141,10 +154,7 @@ export function handleConfigQuery(
   const spanName = getQuerySpanName(dbName, queryConfig);
   const span = tracer.startSpan(spanName, {
     kind: SpanKind.CLIENT,
-    attributes: {
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
-      ...getSemanticAttributesFromConnection(connectionParameters),
-    },
+    attributes: getSemanticAttributesFromConnection(connectionParameters),
   });
 
   if (!queryConfig) {
