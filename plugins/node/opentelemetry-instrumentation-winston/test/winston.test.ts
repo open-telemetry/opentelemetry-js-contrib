@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+import { SeverityNumber, logs } from '@opentelemetry/api-logs';
+import {
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+  InMemoryLogRecordExporter,
+} from '@opentelemetry/sdk-logs';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -34,15 +40,37 @@ const tracer = provider.getTracer('default');
 provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 context.setGlobalContextManager(new AsyncHooksContextManager());
 
+const loggerProvider = new LoggerProvider();
+const memoryLogExporter = new InMemoryLogRecordExporter();
+loggerProvider.addLogRecordProcessor(
+  new SimpleLogRecordProcessor(memoryLogExporter)
+);
+logs.setGlobalLoggerProvider(loggerProvider);
+
 const kMessage = 'log-message';
 
 describe('WinstonInstrumentation', () => {
   let logger: Winston3Logger | Winston2Logger;
   let writeSpy: sinon.SinonSpy;
   let instrumentation: WinstonInstrumentation;
+  let isWinston2 = false;
 
-  function initLogger() {
+  enum LevelsType {
+    npm,
+    syslog,
+    cli,
+  }
+
+  function initLogger(levelsType?: LevelsType) {
     const winston = require('winston');
+
+    let levels = winston.config.npm.levels;
+    if (levelsType === LevelsType.syslog) {
+      levels = winston.config.syslog.levels;
+    } else if (levelsType === LevelsType.cli) {
+      levels = winston.config.cli.levels;
+    }
+
     const stream = new Writable();
     stream._write = () => {};
     writeSpy = sinon.spy(stream, 'write');
@@ -50,6 +78,8 @@ describe('WinstonInstrumentation', () => {
     if (winston['createLogger']) {
       // winston 3.x
       logger = winston.createLogger({
+        level: 'debug',
+        levels: levels,
         transports: [
           new winston.transports.Stream({
             stream,
@@ -58,7 +88,9 @@ describe('WinstonInstrumentation', () => {
       });
     } else if (winston['Logger']) {
       // winston 2.x
+      isWinston2 = true;
       logger = new winston.Logger({
+        levels: levels,
         transports: [
           new winston.transports.File({
             stream,
@@ -91,13 +123,41 @@ describe('WinstonInstrumentation', () => {
     return record;
   }
 
+  function testEmitLogRecord(span: Span) {
+    logger.info(kMessage);
+    sinon.assert.calledOnce(writeSpy);
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    const { traceId, spanId, traceFlags } = span.spanContext();
+    assert.strictEqual(logRecords[0]['attributes']['trace_id'], traceId);
+    assert.strictEqual(logRecords[0]['attributes']['span_id'], spanId);
+    assert.strictEqual(
+      logRecords[0]['attributes']['trace_flags'],
+      `0${traceFlags.toString(16)}`
+    );
+    assert.strictEqual(kMessage, logRecords[0].body, kMessage);
+    return logRecords;
+  }
+
+  function testNoEmitLogRecord() {
+    logger.info(kMessage);
+    sinon.assert.calledOnce(writeSpy);
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 0);
+    return logRecords;
+  }
+
   before(() => {
     instrumentation = new WinstonInstrumentation();
     instrumentation.enable();
   });
 
   describe('enabled instrumentation', () => {
-    beforeEach(initLogger);
+    beforeEach(() => {
+      initLogger();
+      instrumentation.setConfig({}); // reset to defaults
+      memoryLogExporter.getFinishedLogRecords().length = 0; // clear
+    });
 
     it('wraps write', () => {
       if ('write' in logger) {
@@ -107,6 +167,13 @@ describe('WinstonInstrumentation', () => {
         // winston 2.x
         // winston 3.x also has "log", so the order for the checks has to be this
         assert.ok(isWrapped(logger['log']));
+      }
+    });
+
+    it('wraps configure', () => {
+      if (!isWinston2) {
+        // winston 3.x
+        assert.ok(isWrapped(logger['configure']));
       }
     });
 
@@ -131,9 +198,87 @@ describe('WinstonInstrumentation', () => {
       });
     });
 
+    it('emit LogRecord', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        initLogger();
+        const span = tracer.startSpan('abc');
+        context.with(trace.setSpan(context.active(), span), () => {
+          testEmitLogRecord(span);
+        });
+      }
+    });
+
+    it('emit LogRecord with extra attibutes', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        const extraAttributes = {
+          extraAttribute1: 'attributeValue1',
+          extraAttribute2: 'attributeValue2',
+        };
+        logger.log('info', kMessage, extraAttributes);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].severityText, 'info');
+        assert.strictEqual(logRecords[0].body, kMessage);
+        assert.strictEqual(
+          logRecords[0].attributes['extraAttribute1'],
+          'attributeValue1'
+        );
+        assert.strictEqual(
+          logRecords[0].attributes['extraAttribute2'],
+          'attributeValue2'
+        );
+      }
+    });
+
+    it('do not emit log record if @opentelemetry/winston-transport load fails', () => {
+      const module = require('module');
+      const originalRequire = module.prototype.require;
+      module.prototype.require = function () {
+        if (arguments[0] === '@opentelemetry/winston-transport') {
+          throw new Error('@opentelemetry/winston-transport not present');
+        }
+        return originalRequire.apply(this, arguments);
+      };
+
+      instrumentation.setConfig({
+        disableLogSending: false,
+      });
+      initLogger();
+      module.prototype.require = originalRequire;
+      testNoEmitLogRecord();
+    });
+
+    it('does not emit LogRecord if config off', () => {
+      instrumentation.setConfig({
+        disableLogSending: true,
+      });
+      initLogger();
+      const span = tracer.startSpan('abc');
+      context.with(trace.setSpan(context.active(), span), () => {
+        testNoEmitLogRecord();
+      });
+    });
+
     it('does not inject span context if no span is active', () => {
       assert.strictEqual(trace.getSpan(context.active()), undefined);
       testNoInjection();
+    });
+
+    it('does not inject span context if config off', () => {
+      instrumentation.setConfig({
+        enabled: true,
+        disableLogCorrelation: true,
+      });
+      const span = tracer.startSpan('abc');
+      context.with(trace.setSpan(context.active(), span), () => {
+        testNoInjection();
+      });
     });
 
     it('does not inject span context if span context is invalid', () => {
@@ -166,7 +311,10 @@ describe('WinstonInstrumentation', () => {
       instrumentation.enable();
     });
 
-    beforeEach(initLogger);
+    beforeEach(() => {
+      initLogger();
+      memoryLogExporter.getFinishedLogRecords().length = 0; // clear
+    });
 
     it('does not inject span context', () => {
       const span = tracer.startSpan('abc');
@@ -187,6 +335,52 @@ describe('WinstonInstrumentation', () => {
         const record = testNoInjection();
         assert.strictEqual(record['resource.service.name'], undefined);
       });
+    });
+
+    it('does not emit logRecord', () => {
+      testNoEmitLogRecord();
+    });
+  });
+
+  describe('emit logRecord severity', () => {
+    beforeEach(() => {
+      instrumentation.setConfig({
+        disableLogSending: false,
+      });
+      memoryLogExporter.getFinishedLogRecords().length = 0; // clear
+    });
+
+    it('npm levels', () => {
+      if (!isWinston2) {
+        initLogger();
+        logger.log('http', kMessage);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].severityText, 'http');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG3);
+      }
+    });
+
+    it('cli levels', () => {
+      if (!isWinston2) {
+        initLogger(LevelsType.cli);
+        logger.log('data', kMessage);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].severityText, 'data');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO2);
+      }
+    });
+
+    it('syslog levels', () => {
+      if (!isWinston2) {
+        initLogger(LevelsType.syslog);
+        logger.log('emerg', kMessage);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].severityText, 'emerg');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL3);
+      }
     });
   });
 });

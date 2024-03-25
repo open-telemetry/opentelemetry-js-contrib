@@ -499,7 +499,7 @@ describe('Hapi Instrumentation - Core Tests', () => {
     it('should not create new spans', async () => {
       plugin.disable();
 
-      // must reininitialize here for effects of disabling plugin to become apparent
+      // must reinitialize here for effects of disabling plugin to become apparent
       server = hapi.server({
         port: 3000,
         host: 'localhost',

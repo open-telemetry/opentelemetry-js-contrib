@@ -88,7 +88,7 @@ describe('Utility', () => {
       assert.strictEqual(answer1, true);
     });
 
-    it('should call isSatisfyPattern, match for a single mathcer', () => {
+    it('should call isSatisfyPattern, match for a single matcher', () => {
       const answer1 = utils.isIgnored('api.montreal.ca', url =>
         url.endsWith('montreal.ca')
       );

@@ -94,6 +94,17 @@ export function getConnectionString(params: PgParsedConnectionParams) {
   return `postgresql://${host}:${port}/${database}`;
 }
 
+function getPort(port: number | undefined): number | undefined {
+  // Port may be NaN as parseInt() is used on the value, passing null will result in NaN being parsed.
+  // https://github.com/brianc/node-postgres/blob/2a8efbee09a284be12748ed3962bc9b816965e36/packages/pg/lib/connection-parameters.js#L66
+  if (Number.isInteger(port)) {
+    return port;
+  }
+
+  // Unable to find the default used in pg code, so falling back to 'undefined'.
+  return undefined;
+}
+
 export function getSemanticAttributesFromConnection(
   params: PgParsedConnectionParams
 ) {
@@ -101,7 +112,7 @@ export function getSemanticAttributesFromConnection(
     [SemanticAttributes.DB_NAME]: params.database, // required
     [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
     [SemanticAttributes.NET_PEER_NAME]: params.host, // required
-    [SemanticAttributes.NET_PEER_PORT]: params.port,
+    [SemanticAttributes.NET_PEER_PORT]: getPort(params.port),
     [SemanticAttributes.DB_USER]: params.user,
   };
 }

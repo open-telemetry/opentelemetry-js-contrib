@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 import { EventLoopUtilization, performance } from 'node:perf_hooks';
-import { clearInterval, setInterval } from 'node:timers';
 const { eventLoopUtilization } = performance;
 
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 import { VERSION } from './version';
-import { PerfHooksInstrumentationConfig } from './types';
+import { RuntimeNodeInstrumentationConfig } from './types';
 
 const ELUS_LENGTH = 2;
-const DEFAULT_CONFIG: PerfHooksInstrumentationConfig = {
+const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
   eventLoopUtilizationMeasurementInterval: 5000,
 };
 
-export class PerfHooksInstrumentation extends InstrumentationBase {
+export class RuntimeNodeInstrumentation extends InstrumentationBase {
   private _ELUs: EventLoopUtilization[] = [];
   private _interval: NodeJS.Timeout | undefined;
 
-  constructor(config: PerfHooksInstrumentationConfig = DEFAULT_CONFIG) {
-    super('@opentelemetry/instrumentation-perf-hooks', VERSION, config);
+  constructor(config: RuntimeNodeInstrumentationConfig = DEFAULT_CONFIG) {
+    super('@opentelemetry/instrumentation-runtime-node', VERSION, config);
   }
 
   private _addELU() {
@@ -76,9 +75,12 @@ export class PerfHooksInstrumentation extends InstrumentationBase {
     clearInterval(this._interval);
     this._interval = setInterval(
       () => this._addELU(),
-      (this._config as PerfHooksInstrumentationConfig)
+      (this._config as RuntimeNodeInstrumentationConfig)
         .eventLoopUtilizationMeasurementInterval
     );
+
+    // unref so that it does not keep the process running if disable() is never called
+    this._interval?.unref();
   }
 
   override disable() {

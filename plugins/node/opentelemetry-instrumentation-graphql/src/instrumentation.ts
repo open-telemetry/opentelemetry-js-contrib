@@ -62,7 +62,7 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
   ignoreResolveSpans: false,
 };
 
-const supportedVersions = ['>=14'];
+const supportedVersions = ['>=14 <17'];
 
 export class GraphQLInstrumentation extends InstrumentationBase {
   constructor(
