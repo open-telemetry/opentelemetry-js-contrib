@@ -11,7 +11,7 @@ jobs:
       matrix:
         node: ["14", "16", "18.18.2"]
         include:
-            - node: 16
+            - node: 18.8.2
               code-coverage: true
     runs-on: ubuntu-latest
     services:
