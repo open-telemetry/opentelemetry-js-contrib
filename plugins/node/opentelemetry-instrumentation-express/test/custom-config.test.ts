@@ -21,7 +21,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
@@ -145,7 +145,7 @@ describe('ExpressInstrumentation', () => {
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/mw'
           );
 
@@ -196,7 +196,7 @@ describe('ExpressInstrumentation', () => {
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/'
           );
 
