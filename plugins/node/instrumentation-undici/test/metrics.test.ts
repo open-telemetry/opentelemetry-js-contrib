@@ -40,7 +40,6 @@ const hostname = 'localhost';
 const mockServer = new MockServer();
 const provider = new NodeTracerProvider();
 const meterProvider = new MeterProvider();
-// const memoryExporter = new InMemorySpanExporter();
 const metricsMemoryExporter = new InMemoryMetricExporter(
   AggregationTemporality.DELTA
 );
