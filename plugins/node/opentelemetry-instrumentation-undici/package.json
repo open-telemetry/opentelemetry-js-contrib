@@ -26,7 +26,6 @@
     "undici",
     "nodejs",
     "tracing",
-    "profiling",
     "instrumentation"
   ],
   "author": "OpenTelemetry Authors",
