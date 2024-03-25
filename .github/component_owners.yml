@@ -45,6 +45,8 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/winston-transport:
+    - hectorhdzg
   plugins/node/instrumentation-amqplib:
     - blumamir
   plugins/node/instrumentation-cucumber:
