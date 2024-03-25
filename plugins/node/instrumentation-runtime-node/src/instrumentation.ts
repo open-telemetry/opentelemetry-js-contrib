@@ -30,8 +30,12 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
   private _ELUs: EventLoopUtilization[] = [];
   private _interval: NodeJS.Timeout | undefined;
 
-  constructor(config: RuntimeNodeInstrumentationConfig = DEFAULT_CONFIG) {
-    super('@opentelemetry/instrumentation-runtime-node', VERSION, config);
+  constructor(config: RuntimeNodeInstrumentationConfig = {}) {
+    super(
+      '@opentelemetry/instrumentation-runtime-node',
+      VERSION,
+      Object.assign({}, DEFAULT_CONFIG, config)
+    );
   }
 
   private _addELU() {
