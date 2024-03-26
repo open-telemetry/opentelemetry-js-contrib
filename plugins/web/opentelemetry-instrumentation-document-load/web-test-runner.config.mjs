@@ -25,6 +25,7 @@ const commonjs = fromRollup(commonjsRollup);
 export default {
   files: ['test/**/*.test.ts'],
   nodeResolve: true,
+  browserStartTimeout: 35000,
   plugins: [
     esbuildPlugin({ ts: true }),
     nodeResolve({ browser: true, preferBuiltins: false }),
