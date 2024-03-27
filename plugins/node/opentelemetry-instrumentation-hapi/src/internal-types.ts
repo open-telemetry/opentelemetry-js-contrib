@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-// types for @hapi/hapi are published under @types/hapi__hapi
-import type * as Hapi from 'hapi__hapi';
+import type * as Hapi from '@hapi/hapi';
 
 export const HapiComponentName = '@hapi/hapi';
 
@@ -35,14 +34,9 @@ export type HapiServerRouteInput =
 
 export type PatchableServerRoute = Hapi.ServerRoute<any> & {
   [handlerPatched]?: boolean;
-  options?: {
-    handler?: Hapi.Lifecycle.Method;
-  };
 };
 
-export type HapiPluginObject<T> = Hapi.ServerRegisterPluginObject<T> & {
-  plugin: Hapi.ServerRegisterPluginObject<T>;
-};
+export type HapiPluginObject<T> = Hapi.ServerRegisterPluginObject<T>;
 
 export type HapiPluginInput<T> =
   | HapiPluginObject<T>
