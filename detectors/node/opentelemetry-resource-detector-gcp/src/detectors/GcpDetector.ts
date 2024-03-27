@@ -23,9 +23,17 @@ import {
   ResourceAttributes,
 } from '@opentelemetry/resources';
 import { getEnv } from '@opentelemetry/core';
-import {
-  CloudProviderValues,
-  SemanticResourceAttributes,
+import { 
+  CLOUDPROVIDERVALUES_GCP,
+  SEMRESATTRS_CLOUD_ACCOUNT_ID,
+  SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CONTAINER_NAME,
+  SEMRESATTRS_HOST_ID,
+  SEMRESATTRS_HOST_NAME,
+  SEMRESATTRS_K8S_CLUSTER_NAME,
+  SEMRESATTRS_K8S_NAMESPACE_NAME,
+  SEMRESATTRS_K8S_POD_NAME,
 } from '@opentelemetry/semantic-conventions';
 
 /**
@@ -58,12 +66,12 @@ class GcpDetector implements Detector {
       ]);
 
     const attributes: ResourceAttributes = {};
-    attributes[SemanticResourceAttributes.CLOUD_ACCOUNT_ID] = projectId;
-    attributes[SemanticResourceAttributes.HOST_ID] = instanceId;
-    attributes[SemanticResourceAttributes.HOST_NAME] = hostname;
-    attributes[SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE] = zoneId;
-    attributes[SemanticResourceAttributes.CLOUD_PROVIDER] =
-      CloudProviderValues.GCP;
+    attributes[SEMRESATTRS_CLOUD_ACCOUNT_ID] = projectId;
+    attributes[SEMRESATTRS_HOST_ID] = instanceId;
+    attributes[SEMRESATTRS_HOST_NAME] = hostname;
+    attributes[SEMRESATTRS_CLOUD_AVAILABILITY_ZONE] = zoneId;
+    attributes[SEMRESATTRS_CLOUD_PROVIDER] =
+      CLOUDPROVIDERVALUES_GCP;
 
     if (getEnv().KUBERNETES_SERVICE_HOST)
       this._addK8sAttributes(attributes, clusterName);
@@ -78,10 +86,10 @@ class GcpDetector implements Detector {
   ): void {
     const env = getEnv();
 
-    attributes[SemanticResourceAttributes.K8S_CLUSTER_NAME] = clusterName;
-    attributes[SemanticResourceAttributes.K8S_NAMESPACE_NAME] = env.NAMESPACE;
-    attributes[SemanticResourceAttributes.K8S_POD_NAME] = env.HOSTNAME;
-    attributes[SemanticResourceAttributes.CONTAINER_NAME] = env.CONTAINER_NAME;
+    attributes[SEMRESATTRS_K8S_CLUSTER_NAME] = clusterName;
+    attributes[SEMRESATTRS_K8S_NAMESPACE_NAME] = env.NAMESPACE;
+    attributes[SEMRESATTRS_K8S_POD_NAME] = env.HOSTNAME;
+    attributes[SEMRESATTRS_CONTAINER_NAME] = env.CONTAINER_NAME;
   }
 
   /** Gets project id from GCP project metadata. */

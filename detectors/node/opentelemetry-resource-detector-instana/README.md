@@ -31,7 +31,7 @@ import { NodeSDK } from "@opentelemetry/sdk-node";
 import { instanaAgentDetector } from "@opentelemetry/resource-detector-instana";
 
 const globalResource = new Resource({
-   [SemanticResourceAttributes.SERVICE_NAME]: "TestService",
+   [SEMRESATTRS_SERVICE_NAME]: "TestService",
 });
 
 const sdk = new NodeSDK({

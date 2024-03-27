@@ -21,7 +21,7 @@ const { AWSXRayIdGenerator } = require("@opentelemetry/id-generator-aws-xray");
 
 // Initialize resource, trace exporter, span processor, and ID generator
 const _resource = Resource.default().merge(new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: "remote-sampler-app",
+        [SEMRESATTRS_SERVICE_NAME]: "remote-sampler-app",
     }));
 const _traceExporter = new OTLPTraceExporter();
 const _spanProcessor = new BatchSpanProcessor(_traceExporter);

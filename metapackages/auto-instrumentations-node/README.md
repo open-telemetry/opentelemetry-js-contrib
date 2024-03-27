@@ -124,7 +124,7 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const exporter = new CollectorTraceExporter();
 const provider = new NodeTracerProvider({
   resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: 'basic-service',
+    [SEMRESATTRS_SERVICE_NAME]: 'basic-service',
   }),
 });
 provider.addSpanProcessor(new SimpleSpanProcessor(exporter));

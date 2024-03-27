@@ -23,7 +23,7 @@ import {
 } from '../types';
 import { WebInstrumentation } from './WebInstrumentation';
 import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 const configTag = document.getElementById(DomElements['CONFIG_TAG']);
 const { exporters }: Settings = configTag
@@ -48,7 +48,7 @@ new WebInstrumentation(
   },
   new WebTracerProvider({
     resource: new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: window.location.hostname,
+      [SEMRESATTRS_SERVICE_NAME]: window.location.hostname,
     }),
   })
 ).register();

@@ -66,6 +66,10 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.35.1 to ^0.36.0
 
+### Enhancement
+
+* refactor: use exported strings for Semantic Resource Attributes, Cloud Platform Values and Cloud Provider Values
+
 ## [1.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.3.6...resource-detector-aws-v1.4.0) (2024-03-06)
 
 

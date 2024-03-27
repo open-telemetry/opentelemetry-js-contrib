@@ -33,8 +33,8 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
+  SEMRESATTRS_FAAS_NAME,
   SemanticAttributes,
-  SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
 import {
   Context as OtelContext,
@@ -842,7 +842,7 @@ describe('lambda handler', () => {
         initializeHandler('lambda-test/async.handler', {
           requestHook: (span, { context }) => {
             span.setAttribute(
-              SemanticResourceAttributes.FAAS_NAME,
+              SEMRESATTRS_FAAS_NAME,
               context.functionName
             );
           },
@@ -853,7 +853,7 @@ describe('lambda handler', () => {
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
         assert.strictEqual(
-          span.attributes[SemanticResourceAttributes.FAAS_NAME],
+          span.attributes[SEMRESATTRS_FAAS_NAME],
           ctx.functionName
         );
         assertSpanSuccess(span);

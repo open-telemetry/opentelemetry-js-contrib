@@ -20,9 +20,16 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  CloudPlatformValues,
-  CloudProviderValues,
-  SemanticResourceAttributes,
+  CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS,
+  CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
+  SEMRESATTRS_CLOUD_ACCOUNT_ID,
+  SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_HOST_ID,
+  SEMRESATTRS_HOST_NAME,
+  SEMRESATTRS_HOST_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import * as http from 'http';
 
@@ -61,16 +68,16 @@ class AlibabaCloudEcsDetector implements Detector {
     const hostname = await this._fetchHost();
 
     return new Resource({
-      [SemanticResourceAttributes.CLOUD_PROVIDER]:
-        CloudProviderValues.ALIBABA_CLOUD,
-      [SemanticResourceAttributes.CLOUD_PLATFORM]:
-        CloudPlatformValues.ALIBABA_CLOUD_ECS,
-      [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: accountId,
-      [SemanticResourceAttributes.CLOUD_REGION]: region,
-      [SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE]: availabilityZone,
-      [SemanticResourceAttributes.HOST_ID]: instanceId,
-      [SemanticResourceAttributes.HOST_TYPE]: instanceType,
-      [SemanticResourceAttributes.HOST_NAME]: hostname,
+      [SEMRESATTRS_CLOUD_PROVIDER]:
+        CLOUDPROVIDERVALUES_ALIBABA_CLOUD,
+      [SEMRESATTRS_CLOUD_PLATFORM]:
+        CLOUDPLATFORMVALUES_ALIBABA_CLOUD_ECS,
+      [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
+      [SEMRESATTRS_CLOUD_REGION]: region,
+      [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
+      [SEMRESATTRS_HOST_ID]: instanceId,
+      [SEMRESATTRS_HOST_TYPE]: instanceType,
+      [SEMRESATTRS_HOST_NAME]: hostname,
     });
   }
 

@@ -6,6 +6,10 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+### Enhancement
+
+* refactor: use exported strings for Semantic Resource Attributes, Cloud Platform Values and Cloud Provider Values
+
 ## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-instana-v0.6.0...resource-detector-instana-v0.7.0) (2024-03-06)
 
 

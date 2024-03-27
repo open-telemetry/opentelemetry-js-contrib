@@ -21,9 +21,11 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { 
+  SemanticAttributes,
+  SEMRESATTRS_SERVICE_NAME
+} from '@opentelemetry/semantic-conventions';
 import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 import * as path from 'path';
 import * as assert from 'assert';
@@ -50,7 +52,7 @@ import { PassThrough } from 'stream';
 describe('CucumberInstrumentation', () => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: 'CucumberInstrumentation',
+      [SEMRESATTRS_SERVICE_NAME]: 'CucumberInstrumentation',
     }),
   });
   const memoryExporter = new InMemorySpanExporter();
