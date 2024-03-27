@@ -20,9 +20,16 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  CloudProviderValues,
-  CloudPlatformValues,
-  SemanticResourceAttributes,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_CLOUD_ACCOUNT_ID,
+  SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
+  SEMRESATTRS_HOST_ID,
+  SEMRESATTRS_HOST_TYPE,
+  SEMRESATTRS_HOST_NAME,
+  CLOUDPROVIDERVALUES_AWS,
+  CLOUDPLATFORMVALUES_AWS_EC2,
 } from '@opentelemetry/semantic-conventions';
 import * as http from 'http';
 
@@ -62,14 +69,14 @@ class AwsEc2Detector implements Detector {
     const hostname = await this._fetchHost(token);
 
     return new Resource({
-      [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AWS,
-      [SemanticResourceAttributes.CLOUD_PLATFORM]: CloudPlatformValues.AWS_EC2,
-      [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: accountId,
-      [SemanticResourceAttributes.CLOUD_REGION]: region,
-      [SemanticResourceAttributes.CLOUD_AVAILABILITY_ZONE]: availabilityZone,
-      [SemanticResourceAttributes.HOST_ID]: instanceId,
-      [SemanticResourceAttributes.HOST_TYPE]: instanceType,
-      [SemanticResourceAttributes.HOST_NAME]: hostname,
+      [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
+      [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_EC2,
+      [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
+      [SEMRESATTRS_CLOUD_REGION]: region,
+      [SEMRESATTRS_CLOUD_AVAILABILITY_ZONE]: availabilityZone,
+      [SEMRESATTRS_HOST_ID]: instanceId,
+      [SEMRESATTRS_HOST_TYPE]: instanceType,
+      [SEMRESATTRS_HOST_NAME]: hostname,
     });
   }
 
