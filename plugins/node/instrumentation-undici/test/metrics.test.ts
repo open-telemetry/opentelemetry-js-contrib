@@ -51,7 +51,7 @@ instrumentation.setMeterProvider(meterProvider);
 describe('UndiciInstrumentation metrics tests', function () {
   before(function (done) {
     // Do not test if the `fetch` global API is not available
-    // This applies to nodejs < v18 or nodejs < v16.15 wihtout the flag
+    // This applies to nodejs < v18 or nodejs < v16.15 without the flag
     // `--experimental-global-fetch` set
     // https://nodejs.org/api/globals.html#fetch
     if (typeof globalThis.fetch !== 'function') {
