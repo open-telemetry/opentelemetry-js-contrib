@@ -21,7 +21,7 @@ import {
   processDetector,
   envDetector,
 } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { instanaAgentDetector } from '../src';
 
@@ -54,7 +54,7 @@ describe('[Integration] instanaAgentDetector', () => {
 
     const serviceName = 'TestService';
     const globalResource = new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+      [SEMRESATTRS_SERVICE_NAME]: serviceName,
     });
 
     const sdk = new NodeSDK({
@@ -93,7 +93,7 @@ describe('[Integration] instanaAgentDetector', () => {
 
     const serviceName = 'TestService';
     const globalResource = new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+      [SEMRESATTRS_SERVICE_NAME]: serviceName,
     });
 
     const sdk = new NodeSDK({
