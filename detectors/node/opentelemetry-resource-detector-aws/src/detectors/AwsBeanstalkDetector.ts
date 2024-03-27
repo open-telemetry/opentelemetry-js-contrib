@@ -21,9 +21,14 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 import {
-  CloudProviderValues,
-  CloudPlatformValues,
-  SemanticResourceAttributes,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_SERVICE_NAMESPACE,
+  SEMRESATTRS_SERVICE_VERSION,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
+  CLOUDPROVIDERVALUES_AWS,
+  CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK,
 } from '@opentelemetry/semantic-conventions';
 import * as fs from 'fs';
 import * as util from 'util';
@@ -69,16 +74,12 @@ export class AwsBeanstalkDetector implements Detector {
       const parsedData = JSON.parse(rawData);
 
       return new Resource({
-        [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AWS,
-        [SemanticResourceAttributes.CLOUD_PLATFORM]:
-          CloudPlatformValues.AWS_ELASTIC_BEANSTALK,
-        [SemanticResourceAttributes.SERVICE_NAME]:
-          CloudPlatformValues.AWS_ELASTIC_BEANSTALK,
-        [SemanticResourceAttributes.SERVICE_NAMESPACE]:
-          parsedData.environment_name,
-        [SemanticResourceAttributes.SERVICE_VERSION]: parsedData.version_label,
-        [SemanticResourceAttributes.SERVICE_INSTANCE_ID]:
-          parsedData.deployment_id,
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
+        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK,
+        [SEMRESATTRS_SERVICE_NAME]: CLOUDPLATFORMVALUES_AWS_ELASTIC_BEANSTALK,
+        [SEMRESATTRS_SERVICE_NAMESPACE]: parsedData.environment_name,
+        [SEMRESATTRS_SERVICE_VERSION]: parsedData.version_label,
+        [SEMRESATTRS_SERVICE_INSTANCE_ID]: parsedData.deployment_id,
       });
     } catch (e: any) {
       diag.debug(`AwsBeanstalkDetector failed: ${e.message}`);
