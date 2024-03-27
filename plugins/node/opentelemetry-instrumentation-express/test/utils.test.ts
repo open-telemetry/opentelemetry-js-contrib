@@ -165,4 +165,28 @@ describe('Utils', () => {
       assert.strictEqual(message, '2');
     });
   });
+
+  describe('getLayerPath', () => {
+    it('should return path for a string route definition', () => {
+      assert.strictEqual(utils.getLayerPath(['/test']), '/test');
+    });
+
+    it('should return path for a regex route definition', () => {
+      assert.strictEqual(utils.getLayerPath([/^\/test$/]), '/^\\/test$/');
+    });
+
+    it('should return path for an array of route definitions', () => {
+      assert.strictEqual(
+        utils.getLayerPath([[/^\/test$/, '/test']]),
+        '/^\\/test$/,/test'
+      );
+    });
+
+    it('should return path for a mixed array of route definitions', () => {
+      assert.strictEqual(
+        utils.getLayerPath([[/^\/test$/, '/test', /^\/test$/]]),
+        '/^\\/test$/,/test,/^\\/test$/'
+      );
+    });
+  });
 });
