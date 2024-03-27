@@ -15,6 +15,7 @@
  */
 
 import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
+import { SeverityNumber } from '@opentelemetry/api-logs';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -206,7 +207,16 @@ export class WinstonInstrumentation extends InstrumentationBase {
               let newTransports = Array.isArray(originalTransports)
                 ? originalTransports
                 : [];
-              const openTelemetryTransport = new OpenTelemetryTransportV3();
+              let transportOptions = {};
+              if (config.logSeverity) {
+                const winstonLevel = winstonLevelFromSeverity(
+                  config.logSeverity
+                );
+                transportOptions = { level: winstonLevel };
+              }
+              const openTelemetryTransport = new OpenTelemetryTransportV3(
+                transportOptions
+              );
               if (originalTransports && !Array.isArray(originalTransports)) {
                 newTransports = [originalTransports];
               }
@@ -244,4 +254,21 @@ export class WinstonInstrumentation extends InstrumentationBase {
     }
     return record;
   }
+}
+
+function winstonLevelFromSeverity(
+  severity: SeverityNumber
+): string | undefined {
+  if (severity >= SeverityNumber.ERROR) {
+    return 'error';
+  } else if (severity >= SeverityNumber.WARN) {
+    return 'warn';
+  } else if (severity >= SeverityNumber.INFO) {
+    return 'info';
+  } else if (severity >= SeverityNumber.DEBUG) {
+    return 'debug';
+  } else if (severity >= SeverityNumber.TRACE) {
+    return 'silly';
+  }
+  return;
 }

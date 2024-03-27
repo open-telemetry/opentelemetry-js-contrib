@@ -15,6 +15,7 @@
  */
 
 import { Span } from '@opentelemetry/api';
+import { SeverityNumber } from '@opentelemetry/api-logs';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,6 +28,11 @@ export interface WinstonInstrumentationConfig extends InstrumentationConfig {
    * @default false
    */
   disableLogSending?: boolean;
+
+  /**
+   * Control Log sending severity level, logs will be sent for  specified severity and higher.
+   */
+  logSeverity?: SeverityNumber;
 
   /**
    * Whether to disable the injection trace-context fields, and possibly other
