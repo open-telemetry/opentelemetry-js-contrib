@@ -333,8 +333,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         const response = await fetch(fetchUrl);
 
         span.end();
-        // TODO: here we're checking the propagation works even if the instrumentation
-        // is not starting any span. Not 100% sure this is the behaviour we want
         assert.ok(
           response.headers.get('propagation-error') == null,
           'propagation is set for instrumented requests'

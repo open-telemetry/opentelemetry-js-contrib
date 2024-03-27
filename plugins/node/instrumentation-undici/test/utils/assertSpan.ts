@@ -50,12 +50,6 @@ export const assertSpan = (
     validations.spanName || validations.httpMethod,
     'span.name is correct'
   );
-  // TODO: check this
-  // assert.strictEqual(
-  //   span.attributes[AttributeNames.HTTP_ERROR_MESSAGE],
-  //   span.status.message,
-  //   `attributes['${AttributeNames.HTTP_ERROR_MESSAGE}'] is correct`,
-  // );
   assert.strictEqual(
     span.attributes[SemanticAttributes.HTTP_REQUEST_METHOD],
     validations.httpMethod,
