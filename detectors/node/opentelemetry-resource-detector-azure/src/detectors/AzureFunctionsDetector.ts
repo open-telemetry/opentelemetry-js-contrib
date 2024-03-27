@@ -17,9 +17,15 @@
 import { DetectorSync, IResource, Resource } from '@opentelemetry/resources';
 
 import {
-  CloudProviderValues,
-  CloudPlatformValues,
-  SemanticResourceAttributes,
+  SEMRESATTRS_FAAS_NAME,
+  SEMRESATTRS_FAAS_VERSION,
+  SEMRESATTRS_FAAS_MAX_MEMORY,
+  SEMRESATTRS_FAAS_INSTANCE,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CLOUD_REGION,
+  CLOUDPROVIDERVALUES_AZURE,
+  CLOUDPLATFORMVALUES_AZURE_FUNCTIONS,
 } from '@opentelemetry/semantic-conventions';
 import {
   WEBSITE_SITE_NAME,
@@ -30,10 +36,10 @@ import {
 } from '../types';
 
 const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
-  [SemanticResourceAttributes.FAAS_NAME]: WEBSITE_SITE_NAME,
-  [SemanticResourceAttributes.FAAS_VERSION]: FUNCTIONS_VERSION,
-  [SemanticResourceAttributes.FAAS_INSTANCE]: WEBSITE_INSTANCE_ID,
-  [SemanticResourceAttributes.FAAS_MAX_MEMORY]: FUNCTIONS_MEM_LIMIT,
+  [SEMRESATTRS_FAAS_NAME]: WEBSITE_SITE_NAME,
+  [SEMRESATTRS_FAAS_VERSION]: FUNCTIONS_VERSION,
+  [SEMRESATTRS_FAAS_INSTANCE]: WEBSITE_INSTANCE_ID,
+  [SEMRESATTRS_FAAS_MAX_MEMORY]: FUNCTIONS_MEM_LIMIT,
 };
 
 /**
@@ -50,34 +56,34 @@ class AzureFunctionsDetector implements DetectorSync {
       const functionMemLimit = process.env[FUNCTIONS_MEM_LIMIT];
 
       attributes = {
-        [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AZURE,
-        [SemanticResourceAttributes.CLOUD_PLATFORM]:
-          CloudPlatformValues.AZURE_FUNCTIONS,
-        [SemanticResourceAttributes.CLOUD_REGION]: process.env[REGION_NAME],
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AZURE,
+        [SEMRESATTRS_CLOUD_PLATFORM]:
+          CLOUDPLATFORMVALUES_AZURE_FUNCTIONS,
+        [SEMRESATTRS_CLOUD_REGION]: process.env[REGION_NAME],
       };
 
       if (functionName) {
         attributes = {
           ...attributes,
-          [SemanticResourceAttributes.FAAS_NAME]: functionName,
+          [SEMRESATTRS_FAAS_NAME]: functionName,
         };
       }
       if (functionVersion) {
         attributes = {
           ...attributes,
-          [SemanticResourceAttributes.FAAS_VERSION]: functionVersion,
+          [SEMRESATTRS_FAAS_VERSION]: functionVersion,
         };
       }
       if (functionInstance) {
         attributes = {
           ...attributes,
-          [SemanticResourceAttributes.FAAS_INSTANCE]: functionInstance,
+          [SEMRESATTRS_FAAS_INSTANCE]: functionInstance,
         };
       }
       if (functionMemLimit) {
         attributes = {
           ...attributes,
-          [SemanticResourceAttributes.FAAS_MAX_MEMORY]: functionMemLimit,
+          [SEMRESATTRS_FAAS_MAX_MEMORY]: functionMemLimit,
         };
       }
 

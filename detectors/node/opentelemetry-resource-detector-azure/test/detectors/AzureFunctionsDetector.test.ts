@@ -17,7 +17,16 @@
 import * as assert from 'assert';
 import { azureFunctionsDetector } from '../../src/detectors/AzureFunctionsDetector';
 import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { 
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_FAAS_INSTANCE,
+  SEMRESATTRS_FAAS_MAX_MEMORY,
+  SEMRESATTRS_FAAS_NAME,
+  SEMRESATTRS_FAAS_VERSION,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
+} from '@opentelemetry/semantic-conventions';
 import { detectResourcesSync } from '@opentelemetry/resources';
 import { AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE } from '../../src/types';
 
@@ -44,37 +53,37 @@ describe('AzureFunctionsDetector', () => {
     assert.ok(resource);
     const attributes = resource.attributes;
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.FAAS_NAME],
+      attributes[SEMRESATTRS_FAAS_NAME],
       'test-function'
     );
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_PROVIDER],
+      attributes[SEMRESATTRS_CLOUD_PROVIDER],
       'azure'
     );
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_PLATFORM],
+      attributes[SEMRESATTRS_CLOUD_PLATFORM],
       'azure_functions'
     );
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_REGION],
+      attributes[SEMRESATTRS_CLOUD_REGION],
       'test-region'
     );
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.FAAS_INSTANCE],
+      attributes[SEMRESATTRS_FAAS_INSTANCE],
       'test-instance-id'
     );
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.FAAS_MAX_MEMORY],
+      attributes[SEMRESATTRS_FAAS_MAX_MEMORY],
       '1000'
     );
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.FAAS_VERSION],
+      attributes[SEMRESATTRS_FAAS_VERSION],
       '~4'
     );
 
     // Should not detect app service values
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+      attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
       undefined
     );
 
