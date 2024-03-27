@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.35.0...instrumentation-winston-v0.36.0) (2024-03-27)
+
+
+### Features
+
+* **instrumentation-winston:** add log sending to Logs API ([#1837](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1837)) ([358345f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/358345f1384635ae2cb072082b25907dcbcaebcb))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/winston-transport bumped from ^0.1.0 to ^0.2.0
+
 ## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.34.0...instrumentation-winston-v0.35.0) (2024-03-06)
 
 

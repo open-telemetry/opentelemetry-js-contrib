@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.36.0...instrumentation-bunyan-v0.37.0) (2024-03-27)
+
+
+### Features
+
+* **instrumentation-bunyan:** Allow log level to be configured for log sending ([#1919](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1919)) ([4dc812e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4dc812efed1c26eeab19d9eda7280631a761860e))
+
 ## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.35.0...instrumentation-bunyan-v0.36.0) (2024-03-06)
 
 
