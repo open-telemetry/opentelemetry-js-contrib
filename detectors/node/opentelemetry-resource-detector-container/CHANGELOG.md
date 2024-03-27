@@ -60,6 +60,16 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.36.0 to ^0.37.0
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/semantic-conventions bumped from ^1.0.0 to ^1.22.0
+
+### Enhancement
+
+* refactor: use exported strings for Semantic Resource Attributes
+
 ## [0.3.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.3.1...resource-detector-container-v0.3.2) (2023-10-10)
 
 
