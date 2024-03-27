@@ -22,9 +22,15 @@ import {
   ResourceAttributes,
 } from '@opentelemetry/resources';
 import {
-  CloudPlatformValues,
-  CloudProviderValues,
-  SemanticResourceAttributes,
+  CLOUDPLATFORMVALUES_AZURE_VM,
+  CLOUDPROVIDERVALUES_AZURE,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_HOST_ID,
+  SEMRESATTRS_HOST_NAME,
+  SEMRESATTRS_HOST_TYPE,
+  SEMRESATTRS_OS_VERSION,
 } from '@opentelemetry/semantic-conventions';
 import {
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
@@ -90,14 +96,14 @@ class AzureVmResourceDetector implements DetectorSync {
     const attributes = {
       [AZURE_VM_SCALE_SET_NAME_ATTRIBUTE]: metadata['vmScaleSetName'],
       [AZURE_VM_SKU_ATTRIBUTE]: metadata['sku'],
-      [SemanticResourceAttributes.CLOUD_PLATFORM]: CloudPlatformValues.AZURE_VM,
-      [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AZURE,
-      [SemanticResourceAttributes.CLOUD_REGION]: metadata['location'],
+      [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AZURE_VM,
+      [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AZURE,
+      [SEMRESATTRS_CLOUD_REGION]: metadata['location'],
       [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadata['resourceId'],
-      [SemanticResourceAttributes.HOST_ID]: metadata['vmId'],
-      [SemanticResourceAttributes.HOST_NAME]: metadata['name'],
-      [SemanticResourceAttributes.HOST_TYPE]: metadata['vmSize'],
-      [SemanticResourceAttributes.OS_VERSION]: metadata['version'],
+      [SEMRESATTRS_HOST_ID]: metadata['vmId'],
+      [SEMRESATTRS_HOST_NAME]: metadata['name'],
+      [SEMRESATTRS_HOST_TYPE]: metadata['vmSize'],
+      [SEMRESATTRS_OS_VERSION]: metadata['version'],
     };
     return attributes;
   }
