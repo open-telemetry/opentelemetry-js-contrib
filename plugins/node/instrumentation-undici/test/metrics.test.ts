@@ -45,7 +45,6 @@ const metricsMemoryExporter = new InMemoryMetricExporter(
 );
 const metricReader = new MockMetricsReader(metricsMemoryExporter);
 meterProvider.addMetricReader(metricReader);
-// provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 instrumentation.setTracerProvider(provider);
 instrumentation.setMeterProvider(meterProvider);
 
