@@ -282,6 +282,68 @@ describe('Koa Instrumentation', () => {
       );
     });
 
+    it('should correctly instrument named middleware', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
+      app.use((ctx, next) =>
+        context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        )
+      );
+
+      const router = new KoaRouter();
+      router.get(
+        '/post/:id',
+        async function foo(ctx, next) {
+          await next();
+        },
+        async function bar(ctx) {
+          ctx.body = `Post id: ${ctx.params.id}`;
+        }
+      );
+
+      app.use(router.routes());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/post/0`);
+          rootSpan.end();
+
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 3);
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('router - /post/:id'));
+          const fooMiddlewareSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'middleware - foo');
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+          assert.notStrictEqual(fooMiddlewareSpan, undefined);
+
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.ROUTER
+          );
+
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            '/post/:id'
+          );
+
+          assert.strictEqual(rpcMetadata.route, '/post/:id');
+
+          assert.strictEqual(
+            fooMiddlewareSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.MIDDLEWARE
+          );
+        }
+      );
+    });
+
     it('should correctly instrument nested routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };

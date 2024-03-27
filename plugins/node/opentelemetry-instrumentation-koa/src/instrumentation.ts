@@ -123,7 +123,9 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
       const pathStack = pathLayer.stack;
       for (let j = 0; j < pathStack.length; j++) {
         const routedMiddleware: KoaMiddleware = pathStack[j];
-        pathStack[j] = this._patchLayer(routedMiddleware, true, path);
+        const isRouter = !routedMiddleware.name || j === pathStack.length - 1;
+
+        pathStack[j] = this._patchLayer(routedMiddleware, isRouter, path);
       }
     }
 
