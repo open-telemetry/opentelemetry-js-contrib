@@ -25,8 +25,14 @@ import {
 } from '@opentelemetry/api';
 import { AttributeNames } from './enums/AttributeNames';
 import {
-  SemanticAttributes,
-  DbSystemValues,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+  SEMATTRS_DB_USER,
+  SEMATTRS_DB_STATEMENT,
+  DBSYSTEMVALUES_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
 import {
   PgClientExtended,
@@ -108,23 +114,23 @@ export function getSemanticAttributesFromConnection(
   params: PgParsedConnectionParams
 ) {
   return {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-    [SemanticAttributes.DB_NAME]: params.database, // required
-    [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
-    [SemanticAttributes.NET_PEER_NAME]: params.host, // required
-    [SemanticAttributes.NET_PEER_PORT]: getPort(params.port),
-    [SemanticAttributes.DB_USER]: params.user,
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+    [SEMATTRS_DB_NAME]: params.database, // required
+    [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params), // required
+    [SEMATTRS_NET_PEER_NAME]: params.host, // required
+    [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
+    [SEMATTRS_DB_USER]: params.user,
   };
 }
 
 export function getSemanticAttributesFromPool(params: PgPoolOptionsParams) {
   return {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-    [SemanticAttributes.DB_NAME]: params.database, // required
-    [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
-    [SemanticAttributes.NET_PEER_NAME]: params.host, // required
-    [SemanticAttributes.NET_PEER_PORT]: getPort(params.port),
-    [SemanticAttributes.DB_USER]: params.user,
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+    [SEMATTRS_DB_NAME]: params.database, // required
+    [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params), // required
+    [SEMATTRS_NET_PEER_NAME]: params.host, // required
+    [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
+    [SEMATTRS_DB_USER]: params.user,
     [AttributeNames.IDLE_TIMEOUT_MILLIS]: params.idleTimeoutMillis,
     [AttributeNames.MAX_CLIENT]: params.maxClient,
   };
@@ -163,7 +169,7 @@ export function handleConfigQuery(
 
   // Set attributes
   if (queryConfig.text) {
-    span.setAttribute(SemanticAttributes.DB_STATEMENT, queryConfig.text);
+    span.setAttribute(SEMATTRS_DB_STATEMENT, queryConfig.text);
   }
 
   if (

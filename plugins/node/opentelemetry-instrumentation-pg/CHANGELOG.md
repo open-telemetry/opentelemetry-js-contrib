@@ -6,6 +6,16 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/semantic-conventions bumped from ^1.0.0 to ^1.22.0
+
+### Enhancement
+
+* refactor: use exported strings for Semantic Attributes
+
 ## [0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.39.0...instrumentation-pg-v0.39.1) (2024-03-11)
 
 
