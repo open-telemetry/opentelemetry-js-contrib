@@ -131,13 +131,19 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
     return function wrapQuery(original: () => any) {
       return function wrapped_logging_method(this: any, query: any) {
         const config = this.client.config;
+        const connection = utils.parseConnectionString(
+          config?.connection?.connectionString
+        );
 
         const table = utils.extractTableName(this.builder);
         // `method` actually refers to the knex API method - Not exactly "operation"
         // in the spec sense, but matches most of the time.
         const operation = query?.method;
         const name =
-          config?.connection?.filename || config?.connection?.database;
+          connection?.database ||
+          config?.connection?.filename ||
+          config?.connection?.database;
+
         const maxLen = (
           instrumentation._config as types.KnexInstrumentationConfig
         ).maxQueryLength!;
@@ -147,10 +153,13 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
           [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
           [SemanticAttributes.DB_SQL_TABLE]: table,
           [SemanticAttributes.DB_OPERATION]: operation,
-          [SemanticAttributes.DB_USER]: config?.connection?.user,
+          [SemanticAttributes.DB_USER]:
+            connection?.user || config?.connection?.user,
           [SemanticAttributes.DB_NAME]: name,
-          [SemanticAttributes.NET_PEER_NAME]: config?.connection?.host,
-          [SemanticAttributes.NET_PEER_PORT]: config?.connection?.port,
+          [SemanticAttributes.NET_PEER_NAME]:
+            connection?.host || config?.connection?.host,
+          [SemanticAttributes.NET_PEER_PORT]:
+            connection?.port || config?.connection?.port,
           [SemanticAttributes.NET_TRANSPORT]:
             config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
         };

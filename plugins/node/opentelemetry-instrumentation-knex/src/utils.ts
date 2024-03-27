@@ -88,3 +88,16 @@ export const extractTableName = (builder: any): string => {
   }
   return table;
 };
+
+export const parseConnectionString = (connectionString: string | undefined) => {
+  if (!connectionString) {
+    return undefined;
+  }
+  const url = new URL(connectionString);
+  return {
+    host: url.hostname,
+    port: parseInt(url.port || '5432', 10),
+    user: url.username,
+    database: url.pathname.replace(/^\//, ''),
+  };
+};
