@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.2.1...instrumentation-runtime-node-v0.2.2) (2024-03-27)
+
+
+### Bug Fixes
+
+* **instrumentation-runtime-node:** mixin default config in constructor ([#2036](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2036)) ([146edfa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/146edfa89bef0b1405d573c7373af10d90639c2a))
+
 ## [0.2.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.2.0...instrumentation-runtime-node-v0.2.1) (2024-03-11)
 
 

@@ -6,6 +6,13 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.39.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.39.1...instrumentation-pg-v0.39.2) (2024-03-27)
+
+
+### Performance Improvements
+
+* **instrumentation-pg:** reduce temp objects allocations ([#2019](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2019)) ([84ef980](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/84ef980c0be84ca84e9957bb42254cab94185c99))
+
 ## [0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.39.0...instrumentation-pg-v0.39.1) (2024-03-11)
 
 
