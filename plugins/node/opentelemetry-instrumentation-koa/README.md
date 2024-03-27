@@ -52,6 +52,7 @@ Note that generator-based middleware are deprecated and won't be instrumented.
 | Options            | Type                                | Example              | Description                                                                                              |
 | ------------------ | ----------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------- |
 | `ignoreLayersType` | `KoaLayerType[]`                    | `['middleware']`     | Ignore layers of specified type.                                                                         |
+| `ignoreLayersName` | `string[]`                          | `['logger']`         | Ignore layers with specified names.                                                                      |
 | `requestHook`      | `KoaRequestCustomAttributeFunction` | `(span, info) => {}` | Function for adding custom attributes to Koa middleware layers. Receives params: `Span, KoaRequestInfo`. |
 
 `ignoreLayersType` accepts an array of `KoaLayerType` which can take the following string values:

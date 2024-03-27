@@ -46,6 +46,8 @@ export interface KoaRequestCustomAttributeFunction {
 export interface KoaInstrumentationConfig extends InstrumentationConfig {
   /** Ignore specific layers based on their type */
   ignoreLayersType?: KoaLayerType[];
+  /** Ignore specific layers based on their name */
+  ignoreLayersName?: string[];
   /** Function for adding custom attributes to each middleware layer span */
   requestHook?: KoaRequestCustomAttributeFunction;
 }

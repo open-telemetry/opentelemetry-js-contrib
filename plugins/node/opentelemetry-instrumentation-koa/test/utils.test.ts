@@ -58,4 +58,53 @@ describe('Utils', () => {
       );
     });
   });
+  describe('isLayerNameIgnored()', () => {
+    it('should not fail with invalid config', () => {
+      assert.strictEqual(utils.isLayerNameIgnored(''), false);
+      assert.strictEqual(
+        utils.isLayerNameIgnored(
+          '',
+          {} as KoaInstrumentationConfig
+        ),
+        false
+      );
+      assert.strictEqual(
+        utils.isLayerNameIgnored('', {
+          ignoreLayersName: {},
+        } as KoaInstrumentationConfig),
+        false
+      );
+      assert.strictEqual(
+        utils.isLayerNameIgnored('logger', {
+          ignoreLayersName: {},
+        } as KoaInstrumentationConfig),
+        false
+      );
+      assert.strictEqual(
+        utils.isLayerNameIgnored('logger'),
+        false
+      );
+      assert.strictEqual(
+        utils.isLayerNameIgnored('', {
+          ignoreLayersName: []
+        } as KoaInstrumentationConfig),
+        false
+      );
+    });
+
+    it('should ignore based on type', () => {
+      assert.strictEqual(
+        utils.isLayerNameIgnored('logger', {
+          ignoreLayersName: ['logger'],
+        }),
+        true
+      );
+      assert.strictEqual(
+        utils.isLayerNameIgnored('', {
+          ignoreLayersName: ['logger'],
+        }),
+        false
+      );
+    });
+  });
 });
