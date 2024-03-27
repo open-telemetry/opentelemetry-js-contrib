@@ -111,6 +111,7 @@ components:
   plugins/node/opentelemetry-instrumentation-runtime-node:
     - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
+    - maryliag
     - rauno56
   plugins/node/opentelemetry-instrumentation-pino:
     - seemk
