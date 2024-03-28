@@ -42,6 +42,15 @@ const sdk = new NodeSDK({
 sdk.start()
 ```
 
+## Available detectors
+
+### Instana Agent Detector
+
+| Resource Attribute           | Description                                                                                                              |
+|------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| process.pid                  | The ID of the process. Value of parameter `pid` from the response to a request to `/com.instana.plugin.nodejs.discovery` |
+| service.instance.id          | The agent UUID. Value of parameter `agentUuid` from the response to a request to `/com.instana.plugin.nodejs.discovery`  |
+
 ## Useful links
 
 - For more information about Instana Agent, visit: <https://www.ibm.com/docs/en/instana-observability/current?topic=instana-host-agent>
