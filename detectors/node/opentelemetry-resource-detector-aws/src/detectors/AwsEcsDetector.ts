@@ -25,6 +25,8 @@ import {
   CloudPlatformValues,
   SemanticResourceAttributes,
 } from '@opentelemetry/semantic-conventions';
+// Patch until the OpenTelemetry SDK is updated to ship this attribute
+import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from './SemanticResourceAttributes';
 import * as http from 'http';
 import * as util from 'util';
 import * as fs from 'fs';
@@ -156,6 +158,7 @@ export class AwsEcsDetector implements Detector {
 
       [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]: accountId,
       [SemanticResourceAttributes.CLOUD_REGION]: region,
+      [AdditionalSemanticResourceAttributes.CLOUD_RESOURCE_ID]: containerArn,
     };
 
     // The availability zone is not available in all Fargate runtimes

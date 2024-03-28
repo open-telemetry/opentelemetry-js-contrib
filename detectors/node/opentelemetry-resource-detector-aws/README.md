@@ -35,7 +35,7 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 - `awsBeanstalkDetector`: Populates `service` for processes running on [AWS Elastic Beanstalk](https://aws.amazon.com/elasticbeanstalk/)
 - `awsEc2Detector`: Populates `cloud` and `host` for processes running on [Amazon EC2](https://aws.amazon.com/ec2/), including abstractions such as ECS on EC2. Notably, it does not populate anything on AWS Fargate
-- `awsEcsDetector`: Populates `container` for containers running on [Amazon ECS](https://aws.amazon.com/ecs/)
+- `awsEcsDetector`: Populates `container`, `aws.ecs` and `cloud` for containers running on [Amazon ECS](https://aws.amazon.com/ecs/)
 - `awsEksDetector`: Populates `container` and `k8s.cluster_name` for containers running on [Amazon EKS](https://aws.amazon.com/eks/)
   - `k8s.cluster_name` is not always available depending on the configuration of CloudWatch monitoring for the EKS cluster
 - `awsLambdaDetector`: Populates `faas` and `cloud` for functions running on [AWS Lambda](https://aws.amazon.com/lambda/)
