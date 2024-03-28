@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { SpanAttributes } from '@opentelemetry/api';
+import { Attributes } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 /*
@@ -41,12 +41,13 @@ interface Config {
   user?: string;
   connectionConfig?: Config;
 }
+
 /**
  * Get an SpanAttributes map from a mysql connection config object
  *
  * @param config ConnectionConfig
  */
-export function getConnectionAttributes(config: Config): SpanAttributes {
+export function getConnectionAttributes(config: Config): Attributes {
   const { host, port, database, user } = getConfig(config);
   const portNumber = parseInt(port, 10);
   if (!isNaN(portNumber)) {
@@ -105,23 +106,31 @@ function getJDBCString(
  */
 export function getDbStatement(
   query: string | Query | QueryOptions,
-  format: (
+  values?: any[],
+  format?: (
     sql: string,
     values: any[],
     stringifyObjects?: boolean,
     timeZone?: string
   ) => string,
-  values?: any[]
+  statementLimit?: number
 ): string {
+  let statement = '';
   if (typeof query === 'string') {
-    return values ? format(query, values) : query;
+    statement = format ? (values ? format(query, values) : query) : query;
   } else {
     // According to https://github.com/mysqljs/mysql#performing-queries
     // The values argument will override the values in the option object.
-    return values || (query as QueryOptions).values
-      ? format(query.sql, values || (query as QueryOptions).values)
+    statement = format
+      ? values || (query as QueryOptions).values
+        ? format(query.sql, values || (query as QueryOptions).values)
+        : query.sql
       : query.sql;
   }
+  if (statementLimit) {
+    return statement.substring(0, statementLimit) + '[...]';
+  }
+  return statement;
 }
 
 /**
