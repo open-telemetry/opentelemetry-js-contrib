@@ -41,8 +41,7 @@ import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { EventNames } from '../src/enums/EventNames';
-
-const { assert } = chai as typeof import('chai');
+import { assert } from 'chai';
 
 const exporter = new InMemorySpanExporter();
 const provider = new BasicTracerProvider();
