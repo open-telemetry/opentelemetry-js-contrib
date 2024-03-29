@@ -34,9 +34,7 @@ export enum ATTRIBUTE_NAMES {
   SYSTEM_DEVICE = 'system.device',
   SYSTEM_NETWORK_DIRECTION = 'system.network.direction',
   SYSTEM_NETWORK_STATE = 'system.network.state',
-  // TODO: change value if semconv changes
-  // https://github.com/open-telemetry/opentelemetry-specification/issues/3776
-  PROCESS_CPU_STATE = 'state',
+  PROCESS_CPU_STATE = 'process.cpu.state',
 }
 
 export enum CPU_LABELS {

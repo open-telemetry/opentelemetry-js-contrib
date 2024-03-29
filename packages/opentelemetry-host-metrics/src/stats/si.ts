@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import * as SI from 'systeminformation';
+import { networkStats } from 'systeminformation/lib/network';
 import { NetworkData } from '../types';
 
 export function getNetworkData() {
   return new Promise<NetworkData[]>(resolve => {
-    SI.networkStats()
+    networkStats()
       .then(resolve)
       .catch(() => {
         resolve([]);
