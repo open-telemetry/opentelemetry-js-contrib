@@ -110,10 +110,10 @@ export const getTracedInternalSendCommand = (
     );
 
     // Set attributes for not explicitly typed RedisPluginClientTypes
-    if (this.options) {
+    if (this.connection_options) {
       span.setAttributes({
-        [SemanticAttributes.NET_PEER_NAME]: this.options.host,
-        [SemanticAttributes.NET_PEER_PORT]: this.options.port,
+        [SemanticAttributes.NET_PEER_NAME]: this.connection_options.host,
+        [SemanticAttributes.NET_PEER_PORT]: this.connection_options.port,
       });
     }
     if (this.address) {
