@@ -15,7 +15,7 @@
  */
 
 import { Attributes } from '@opentelemetry/api';
-import { IgnoreMatcher, ExpressInstrumentationConfig } from './types';
+import { IgnoreMatcher, ExpressInstrumentationConfig, LayerPathSegment } from './types';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 import { AttributeNames } from './enums/AttributeNames';
 import {
@@ -152,20 +152,27 @@ export const asErrorAndMessage = (
  * @param args - Arguments of the route
  * @returns The layer path
  */
-export const getLayerPath = (args: unknown[]): string | undefined => {
-  if (args[0] instanceof RegExp) {
-    return args[0].toString();
-  }
-
-  if (typeof args[0] === 'string') {
-    return args[0];
-  }
+export const getLayerPath = (args: [
+  LayerPathSegment | (LayerPathSegment)[], ...unknown[]
+]): string | undefined => {
 
   if (Array.isArray(args[0])) {
     return args[0]
-      .map(arg => (typeof arg === 'string' || arg instanceof RegExp ? arg : ''))
+      .map(arg => extractLayerPathSegment(arg) || '')
       .join(',');
   }
 
-  return;
+  return extractLayerPathSegment(args[0]);
 };
+
+const extractLayerPathSegment = (arg: LayerPathSegment) => {
+  if (typeof arg === 'string') {
+    return arg;
+  }
+
+  if (arg instanceof RegExp || typeof arg === 'number') {
+    return arg.toString();
+  }
+
+  return;
+}
