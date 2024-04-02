@@ -15,10 +15,10 @@
  */
 
 import { networkStats } from 'systeminformation/lib/network';
-import { NetworkData } from '../types';
+import type { Systeminformation } from 'systeminformation';
 
 export function getNetworkData() {
-  return new Promise<NetworkData[]>(resolve => {
+  return new Promise<Systeminformation.NetworkStatsData[]>(resolve => {
     networkStats()
       .then(resolve)
       .catch(() => {
