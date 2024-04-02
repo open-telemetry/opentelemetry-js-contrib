@@ -45,7 +45,7 @@ registerInstrumentations({
 
 The `observerCallback` function is passed the created span and the `longtask` `PerformanceEntry`,
 allowing the user to add custom attributes to the span with any logic.
-For example, a webapp with client-side routing can add contextual information on the current page,
+For example, a web app with client-side routing can add contextual information on the current page,
 even if the tracer was instantiated before navigation.
 
 Usage Example:

@@ -182,12 +182,12 @@ describe('CucumberInstrumentation', () => {
 
       it('adds step args to span attributes', () => {
         const spans = memoryExporter.getFinishedSpans();
-        const parametrisedSpan = spans.find(span =>
+        const parameterisedSpan = spans.find(span =>
           span.name.startsWith('Then(it is pushed')
         );
-        assert(parametrisedSpan);
+        assert(parameterisedSpan);
 
-        assert.deepEqual(parametrisedSpan.attributes, {
+        assert.deepEqual(parameterisedSpan.attributes, {
           [`${AttributeNames.STEP_ARGS}[0]`]: 'limit',
         });
       });

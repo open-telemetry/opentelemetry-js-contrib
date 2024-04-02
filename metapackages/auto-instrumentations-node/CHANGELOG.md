@@ -152,6 +152,24 @@
   * dependencies
     * @opentelemetry/instrumentation-aws-sdk bumped from ^0.38.0 to ^0.38.1
 
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.42.0...auto-instrumentations-node-v0.43.0) (2024-03-11)
+
+
+### Features
+
+* **auto-instrumentations-node:** enabling instrumentations via env ([#1953](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1953)) ([0656f37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0656f37634e1df71d68cc34cbd210abb6b4776d9))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.39.0 to ^0.39.1
+    * @opentelemetry/instrumentation-express bumped from ^0.36.0 to ^0.36.1
+    * @opentelemetry/instrumentation-graphql bumped from ^0.38.0 to ^0.38.1
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.40.0 to ^0.41.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.39.0 to ^0.39.1
+
 ## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.41.1...auto-instrumentations-node-v0.42.0) (2024-03-06)
 
 

@@ -25,6 +25,7 @@ import { BunyanInstrumentationConfig } from './types';
 import { VERSION } from './version';
 import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';
+import { SeverityNumber } from '@opentelemetry/api-logs';
 
 const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
   disableLogSending: false,
@@ -157,10 +158,15 @@ export class BunyanInstrumentation extends InstrumentationBase<
       return;
     }
     this._diag.debug('Adding OpenTelemetryBunyanStream to logger');
+    let streamLevel = logger.level();
+    if (config.logSeverity) {
+      const bunyanLevel = bunyanLevelFromSeverity(config.logSeverity);
+      streamLevel = bunyanLevel || streamLevel;
+    }
     logger.addStream({
       type: 'raw',
       stream: new OpenTelemetryBunyanStream(),
-      level: logger.level(),
+      level: streamLevel,
     });
   }
 
@@ -181,4 +187,21 @@ export class BunyanInstrumentation extends InstrumentationBase<
       true
     );
   }
+}
+
+function bunyanLevelFromSeverity(severity: SeverityNumber): string | undefined {
+  if (severity >= SeverityNumber.FATAL) {
+    return 'fatal';
+  } else if (severity >= SeverityNumber.ERROR) {
+    return 'error';
+  } else if (severity >= SeverityNumber.WARN) {
+    return 'warn';
+  } else if (severity >= SeverityNumber.INFO) {
+    return 'info';
+  } else if (severity >= SeverityNumber.DEBUG) {
+    return 'debug';
+  } else if (severity >= SeverityNumber.TRACE) {
+    return 'trace';
+  }
+  return;
 }

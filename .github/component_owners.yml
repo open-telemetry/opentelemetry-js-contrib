@@ -18,9 +18,15 @@ components:
     - basti1302
     - kirrg001
   metapackages/auto-instrumentations-node:
-    - obecny
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
   metapackages/auto-instrumentations-web:
-    - obecny
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
@@ -39,6 +45,8 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/winston-transport:
+    - hectorhdzg
   plugins/node/instrumentation-amqplib:
     - blumamir
   plugins/node/instrumentation-cucumber:
@@ -103,6 +111,7 @@ components:
   plugins/node/opentelemetry-instrumentation-runtime-node:
     - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
+    - maryliag
     - rauno56
   plugins/node/opentelemetry-instrumentation-pino:
     - seemk

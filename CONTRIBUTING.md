@@ -2,14 +2,16 @@
 
 We'd love your help!
 
+- [Development Quick Start](#development-quick-start)
 - [Report a bug or requesting feature](#report-a-bug-or-requesting-feature)
 - [How to contribute](#how-to-contribute)
   - [Before you start](#before-you-start)
     - [Conventional commit](#conventional-commit)
   - [Fork](#fork)
-  - [Running the tests](#running-the-tests)
-  - [Generating API documentation](#generating-api-documentation)
-  - [Generating CHANGELOG documentation](#generating-changelog-documentation)
+- [Development](#development)
+  - [Tools used](#tools-used)
+  - [General guidance](#general-guidance)
+  - [CHANGELOG](#changelog)
   - [Benchmarks](#benchmarks)
 - [Component Ownership](#component-ownership)
 - [Component Lifecycle](#component-lifecycle)
@@ -19,9 +21,24 @@ We'd love your help!
   - [Stable](#stable)
   - [Unmaintained](#unmaintained)
   - [Deprecated](#deprecated)
+- [Pull Request Merge Guidelines](#pull-request-merge-guidelines)
+  - [General Merge Requirements](#general-merge-requirements)
 - [Contributing Vendor Components](#contributing-vendor-components)
   - [Adding a New Vendor Component](#adding-a-new-vendor-component)
   - [Removing Vendor Components](#removing-vendor-components)
+
+## Development Quick Start
+
+To get the project started quickly, you can follow these steps. For more
+detailed instructions, see [development](#development) below.
+
+```sh
+git clone https://github.com/open-telemetry/opentelemetry-js-contrib.git
+cd opentelemetry-js-contrib
+npm ci
+npm run compile
+npm test
+```
 
 ## Report a bug or requesting feature
 
@@ -71,18 +88,44 @@ Remember to always work in a branch of your local copy, as you might otherwise h
 
 Please also see [GitHub workflow](https://github.com/open-telemetry/community/blob/main/CONTRIBUTING.md#github-workflow) section of general project contributing guide.
 
-### Running the tests
+## Development
+
+### Tools used
+
+- [NPM](https://npmjs.com)
+- [TypeScript](https://www.typescriptlang.org/)
+- [lerna](https://github.com/lerna/lerna) to manage dependencies, compilations, and links between packages. Most lerna commands should be run by calling the provided npm scripts.
+- [npm workspaces](https://docs.npmjs.com/cli/v10/using-npm/workspaces)
+- [MochaJS](https://mochajs.org/) for tests
+- [eslint](https://eslint.org/)
+
+Refer to the core repository for [supported runtimes](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes).
+Refer to the root-level [package.json](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/package.json) for shared dev dependency versions, and the package-level package.json for package-specific versions if different or not included in the shared root.
+
+### General guidance
 
 The `opentelemetry-js-contrib` project is written in TypeScript.
 
-- `npm install` to install dependencies.
+As a general rule, installing and then compiling from the root directory should always be done first before anything else.
+After making changes to a specific package, compile again from the specific package directory you are working in.
+Some tests depend on other packages to be installed, so these steps are also required for running tests.
+
+- `npm ci` installs dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
 - `npm run compile` compiles the code, checking for type errors.
-- `npm test` tests code the same way that our CI will test it.
-- `npm run lint:fix` lint (and maybe fix) any changes.
+- `npm test` runs most unit tests, though some packages require other dependencies so are only run in CI or with a separate command in the package's `package.json` file.
+- `npm run lint:fix` lint any changes and fix if needed.
 
-### Generating CHANGELOG documentation
+Each of these commands can also be run in individual packages, as long as the initial install and compile are done first in the root directory.
 
-- `npm run changelog` to generate CHANGELOG documentation in your terminal (see [RELEASING.md](RELEASING.md) for more details).
+### CHANGELOG
+
+The conventional commit type (in PR title) is very important to automatically bump versions on release. For instance:
+
+- any type + `!` will bump major version (or minor on pre-release)
+- `feat` will bump minor
+- `fix` will bump patch
+
+There is no need to update the CHANGELOG in a PR because it will be updated as part of the release process (see [RELEASING.md](RELEASING.md) for more details).
 
 ### Benchmarks
 
@@ -154,9 +197,25 @@ They may not work and there are no guarantees for fixes or new features.
 Their source files may be deleted from the repository.
 Any packages released from their source will be marked as deprecated in NPM.
 
-## Pull Request Merge Requirements
+## Pull Request Merge Guidelines
 
-Pull requests MAY be merged by an approver OR a maintainer provided they meet all the following requirements:
+Pull requests MAY be merged by an approver OR a maintainer provided they meet all the following [General Merge Requirements](#general-merge-requirements).
+All requirements are at the discretion of the maintainers.
+Maintainers MAY merge pull requests which have not strictly met these requirements.
+Maintainers MAY close, block, or put on hold pull requests even if they have strictly met these requirements.
+
+It is generally expected that a maintainer ([@open-telemetry/javascript-maintainers](https://github.com/orgs/open-telemetry/teams/javascript-maintainers)) should review and merge major changes.
+Some examples include, but are not limited to:
+
+- Breaking changes
+- New modules
+- Changes which affect runtime support
+
+If a PR has not been interacted with by a reviewer within one week, please ping the component
+owners as listed in [.github/component_owners.yml](.github/component_owners.yml), if component owners are unresponsive
+please ping ([@open-telemetry/javascript-approvers](https://github.com/orgs/open-telemetry/teams/javascript-approvers)).
+
+### General Merge Requirements
 
 - Approved by
   - at least one component owner if one is defined in [.github/component_owners.yml](.github/component_owners.yml)
@@ -172,14 +231,6 @@ Pull requests MAY be merged by an approver OR a maintainer provided they meet al
 - New or changed functionality is tested by unit tests
 - New or changed functionality is documented if appropriate
 - Substantial changes should not be merged within 24 hours of opening in order to allow reviewers from all time zones to have a chance to review
-
-All requirements are at the discretion of the maintainers.
-Maintainers MAY merge pull requests which have not strictly met these requirements.
-Maintainers MAY close, block, or put on hold pull requests even if they have strictly met these requirements.
-
-If a PR has not been interacted with by a reviewer within one week, please ping the component
-owners as listed in [.github/component_owners.yml](.github/component_owners.yml), if component owners are unresponsive
-please ping ([@open-telemetry/javascript-approvers](https://github.com/orgs/open-telemetry/teams/javascript-approvers)).
 
 ## Contributing Vendor Components
 

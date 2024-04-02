@@ -18,13 +18,13 @@ import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import * as assert from 'assert';
-import * as mongodb from 'mongodb';
+import type { MongoClient, MongoClientOptions, Collection } from 'mongodb';
 
 export const DEFAULT_MONGO_HOST = '127.0.0.1';
 
 export interface MongoDBAccess {
-  client: mongodb.MongoClient;
-  collection: mongodb.Collection;
+  client: MongoClient;
+  collection: Collection;
 }
 
 /**
@@ -38,19 +38,28 @@ export function accessCollection(
   url: string,
   dbName: string,
   collectionName: string,
-  options: mongodb.MongoClientOptions = {}
+  options: MongoClientOptions = {}
 ): Promise<MongoDBAccess> {
   return new Promise((resolve, reject) => {
+    let mongodb;
+    try {
+      mongodb = require('mongodb');
+    } catch (err: any) {
+      reject(new Error('Could not load mongodb. ' + err.message));
+      return;
+    }
     mongodb.MongoClient.connect(url, {
       serverSelectionTimeoutMS: 1000,
     })
-      .then(client => {
+      .then((client: MongoClient) => {
         const db = client.db(dbName);
         const collection = db.collection(collectionName);
         resolve({ client, collection });
       })
-      .catch(reason => {
-        reject(reason);
+      .catch((reason: any) => {
+        reject(
+          new Error('Could not connect. Run MongoDB to test. ' + reason.message)
+        );
       });
   });
 }

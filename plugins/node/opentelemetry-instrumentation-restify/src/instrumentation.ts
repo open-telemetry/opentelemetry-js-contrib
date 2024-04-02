@@ -151,7 +151,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
     };
   }
 
-  // will return the same type as `handler`, but all functions recusively patched
+  // will return the same type as `handler`, but all functions recursively patched
   private _handlerPatcher(
     metadata: types.Metadata,
     handler: restify.RequestHandler | types.NestedRequestHandlers
