@@ -31,7 +31,7 @@ const instrumentation = registerInstrumentationTesting(
   new MongoDBInstrumentation()
 );
 
-import * as mongodb from 'mongodb';
+import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -54,8 +54,8 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
   const COLLECTION_NAME = 'test';
 
-  let client: mongodb.MongoClient;
-  let collection: mongodb.Collection;
+  let client: MongoClient;
+  let collection: Collection;
 
   before(done => {
     shouldTest = true;
@@ -66,9 +66,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
         done();
       })
       .catch((err: Error) => {
-        console.log(
-          'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-        );
+        console.log('Skipping test-mongodb. ' + err.message);
         shouldTest = false;
         done();
       });
@@ -83,6 +81,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
     }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+    // @ts-expect-error -- v5 removed callback support
     collection.insertMany(insertData, (err: any, result: any) => {
       resetMemoryExporter();
       done();
@@ -91,9 +90,11 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
 
   afterEach(done => {
     if (shouldTest) {
-      return collection.deleteMany({}, done);
+      // @ts-expect-error -- v5 removed callback support
+      collection.deleteMany({}, done);
+    } else {
+      done();
     }
-    done();
   });
 
   after(() => {
@@ -542,8 +543,8 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
   });
 
   describe('MongoDb useUnifiedTopology enabled', () => {
-    let client: mongodb.MongoClient;
-    let collection: mongodb.Collection;
+    let client: MongoClient;
+    let collection: Collection;
     before(done => {
       accessCollection(URL, DB_NAME, COLLECTION_NAME, {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -556,9 +557,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           done();
         })
         .catch((err: Error) => {
-          console.log(
-            'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-          );
+          console.log('Skipping test-mongodb. ' + err.message);
           shouldTest = false;
           done();
         });
@@ -571,6 +570,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
     it('should generate correct span attributes', done => {
       const span = trace.getTracer('default').startSpan('findRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
+        // @ts-expect-error -- v5 removed callback support
         collection.find({ a: 1 }).toArray((err, results) => {
           span.end();
           const [mongoSpan] = getTestSpans();

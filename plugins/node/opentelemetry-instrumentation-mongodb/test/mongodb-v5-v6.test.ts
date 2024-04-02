@@ -42,7 +42,7 @@ let instrumentation: MongoDBInstrumentation;
   }
 }
 
-import * as mongodb from 'mongodb';
+import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -65,8 +65,8 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
   const COLLECTION_NAME = 'test-traces';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
 
-  let client: mongodb.MongoClient;
-  let collection: mongodb.Collection;
+  let client: MongoClient;
+  let collection: Collection;
 
   before(done => {
     accessCollection(URL, DB_NAME, COLLECTION_NAME)
@@ -76,9 +76,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
         done();
       })
       .catch((err: Error) => {
-        console.log(
-          'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-        );
+        console.log('Skipping test-mongodb. ' + err.message);
         shouldTest = false;
         done();
       });
