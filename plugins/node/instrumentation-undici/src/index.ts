@@ -19,7 +19,6 @@ export {
   UndiciRequest,
   UndiciResponse,
   IgnoreRequestFunction,
-  CustomAttributesFunction,
   RequestHookFunction,
   StartSpanHookFunction,
   UndiciInstrumentationConfig,

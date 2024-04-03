@@ -139,9 +139,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         ignoreRequestHook: () => {
           throw new Error('ignoreRequestHook error');
         },
-        applyCustomAttributesOnSpan: () => {
-          throw new Error('ignoreRequestHook error');
-        },
         requestHook: () => {
           throw new Error('requestHook error');
         },
@@ -225,9 +222,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
           requestHeaders: ['foo-client', 'x-requested-with'],
           responseHeaders: ['foo-server'],
         },
-        applyCustomAttributesOnSpan: (span, req, res) => {
-          span.setAttribute('user.defined.attribute', 'user.defined.value');
-        },
       });
 
       // Do some requests
@@ -286,11 +280,6 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         span.attributes['test.hook.attribute'],
         'hook-value',
         'startSpanHook is called'
-      );
-      assert.strictEqual(
-        span.attributes['user.defined.attribute'],
-        'user.defined.value',
-        'applyCustomAttributesOnSpan is called'
       );
     });
 

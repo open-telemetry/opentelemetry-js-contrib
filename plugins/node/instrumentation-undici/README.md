@@ -46,8 +46,7 @@ Undici instrumentation has few options available to choose from. You can set the
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`ignoreRequestHook`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#61) | `IgnoreRequestFunction` | Undici instrumentation will not trace all incoming requests that matched with custom function. |
-| [`applyCustomAttributesOnSpan`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#63) | `CustomAttributesFunction` | Function for adding custom attributes before response is handled. |
+| [`ignoreRequestHook`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#63) | `IgnoreRequestFunction` | Undici instrumentation will not trace all incoming requests that matched with custom function. |
 | [`requestHook`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#65) | `RequestHookFunction` | Function for adding custom attributes before request is handled. |
 | [`startSpanHook`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#67) | `StartSpanHookFunction` | Function for adding custom attributes before a span is started. |
 | [`requireParentforSpans`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#69) | `Boolean` | Require a parent span is present to create new span for outgoing requests. |
