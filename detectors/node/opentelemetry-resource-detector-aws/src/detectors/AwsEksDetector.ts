@@ -26,11 +26,13 @@ import {
   SEMRESATTRS_CONTAINER_ID,
   CLOUDPROVIDERVALUES_AWS,
   CLOUDPLATFORMVALUES_AWS_EKS,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from '@opentelemetry/semantic-conventions';
 import * as https from 'https';
 import * as fs from 'fs';
 import * as util from 'util';
 import { diag } from '@opentelemetry/api';
+import { randomUUID } from 'crypto';
 
 /**
  * The AwsEksDetector can be used to detect if a process is running in AWS Elastic
@@ -86,6 +88,7 @@ export class AwsEksDetector implements Detector {
             [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_EKS,
             [SEMRESATTRS_K8S_CLUSTER_NAME]: clusterName || '',
             [SEMRESATTRS_CONTAINER_ID]: containerId || '',
+            [SEMRESATTRS_SERVICE_INSTANCE_ID]: randomUUID(),
           });
     } catch (e) {
       diag.warn('Process is not running on K8S', e);

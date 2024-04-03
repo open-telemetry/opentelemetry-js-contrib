@@ -40,12 +40,14 @@ import {
   SEMRESATTRS_AWS_LOG_STREAM_ARNS,
   CLOUDPROVIDERVALUES_AWS,
   CLOUDPLATFORMVALUES_AWS_ECS,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from '@opentelemetry/semantic-conventions';
 import * as http from 'http';
 import * as util from 'util';
 import * as fs from 'fs';
 import * as os from 'os';
 import { getEnv } from '@opentelemetry/core';
+import { randomUUID } from 'crypto';
 
 const HTTP_TIMEOUT_IN_MS = 1000;
 
@@ -76,6 +78,7 @@ export class AwsEcsDetector implements Detector {
     let resource = new Resource({
       [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
       [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_ECS,
+      [SEMRESATTRS_SERVICE_INSTANCE_ID]: randomUUID(),
     }).merge(await AwsEcsDetector._getContainerIdAndHostnameResource());
 
     const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;

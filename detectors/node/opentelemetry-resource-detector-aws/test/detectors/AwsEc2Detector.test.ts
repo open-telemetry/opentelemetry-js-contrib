@@ -22,6 +22,7 @@ import {
   assertCloudResource,
   assertHostResource,
 } from '@opentelemetry/contrib-test-utils';
+import { SEMRESATTRS_SERVICE_INSTANCE_ID } from '@opentelemetry/semantic-conventions';
 
 const AWS_HOST = 'http://' + awsEc2Detector.AWS_IDMS_ENDPOINT;
 const AWS_TOKEN_PATH = awsEc2Detector.AWS_INSTANCE_TOKEN_DOCUMENT_PATH;
@@ -81,6 +82,10 @@ describe('awsEc2Detector', () => {
         hostType: 'my-instance-type',
         name: 'my-hostname',
       });
+      assert.equal(
+        resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID]?.toString().length,
+        36
+      );
     });
   });
 

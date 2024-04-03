@@ -24,6 +24,7 @@ import {
   assertContainerResource,
   assertEmptyResource,
 } from '@opentelemetry/contrib-test-utils';
+import { SEMRESATTRS_SERVICE_INSTANCE_ID } from '@opentelemetry/semantic-conventions';
 
 const K8S_SVC_URL = awsEksDetector.K8S_SVC_URL;
 const AUTH_CONFIGMAP_PATH = awsEksDetector.AUTH_CONFIGMAP_PATH;
@@ -86,6 +87,10 @@ describe('awsEksDetector', () => {
       assertContainerResource(resource, {
         id: 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm',
       });
+      assert.equal(
+        resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID]?.toString().length,
+        36
+      );
     });
 
     it('should return a resource with clusterName attribute without cgroup file', async () => {

@@ -30,7 +30,9 @@ import {
   SEMRESATTRS_HOST_NAME,
   CLOUDPROVIDERVALUES_AWS,
   CLOUDPLATFORMVALUES_AWS_EC2,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from '@opentelemetry/semantic-conventions';
+import { randomUUID } from 'crypto';
 import * as http from 'http';
 
 /**
@@ -77,6 +79,7 @@ class AwsEc2Detector implements Detector {
       [SEMRESATTRS_HOST_ID]: instanceId,
       [SEMRESATTRS_HOST_TYPE]: instanceType,
       [SEMRESATTRS_HOST_NAME]: hostname,
+      [SEMRESATTRS_SERVICE_INSTANCE_ID]: randomUUID(),
     });
   }
 

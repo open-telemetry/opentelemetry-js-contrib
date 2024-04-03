@@ -41,6 +41,7 @@ import {
   SEMRESATTRS_AWS_LOG_STREAM_ARNS,
   CLOUDPROVIDERVALUES_AWS,
   CLOUDPLATFORMVALUES_AWS_ECS,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from '@opentelemetry/semantic-conventions';
 import { readFileSync } from 'fs';
 import * as os from 'os';
@@ -126,6 +127,11 @@ const assertEcsResource = (
       resource.attributes[SEMRESATTRS_AWS_LOG_STREAM_ARNS],
       validations.logStreamArns
     );
+
+  assert.equal(
+    resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID]?.toString().length,
+    36
+  );
 };
 
 describe('AwsEcsResourceDetector', () => {
