@@ -182,7 +182,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       instrumentation.setConfig({ enabled: false });
     });
 
-    it('should ingore requests based on the result of ignoreRequestHook', async function () {
+    it('should ignore requests based on the result of ignoreRequestHook', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 
