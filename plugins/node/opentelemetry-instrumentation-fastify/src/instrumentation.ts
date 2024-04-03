@@ -16,7 +16,7 @@
 
 import {
   context,
-  SpanAttributes,
+  Attributes,
   SpanStatusCode,
   trace,
 } from '@opentelemetry/api';
@@ -26,7 +26,7 @@ import {
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import type {
   HookHandlerDoneFunction,
   FastifyInstance,
@@ -275,10 +275,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
         handlerName || this.pluginName || ANONYMOUS_NAME
       }`;
 
-      const spanAttributes: SpanAttributes = {
+      const spanAttributes: Attributes = {
         [AttributeNames.PLUGIN_NAME]: this.pluginName,
         [AttributeNames.FASTIFY_TYPE]: FastifyTypes.REQUEST_HANDLER,
-        [SemanticAttributes.HTTP_ROUTE]: anyRequest.routeOptions
+        [SEMATTRS_HTTP_ROUTE]: anyRequest.routeOptions
           ? anyRequest.routeOptions.url // since fastify@4.10.0
           : request.routerPath,
       };
