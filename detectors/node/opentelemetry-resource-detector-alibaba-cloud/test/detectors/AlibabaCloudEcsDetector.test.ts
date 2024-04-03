@@ -22,6 +22,7 @@ import { alibabaCloudEcsDetector } from '../../src';
 import {
   assertCloudResource,
   assertHostResource,
+  assertServiceResource,
 } from '@opentelemetry/contrib-test-utils';
 
 const ALIYUN_HOST =
@@ -79,6 +80,9 @@ describe('alibabaCloudEcsDetector', () => {
         id: 'my-instance-id',
         hostType: 'my-instance-type',
         name: 'my-hostname',
+      });
+      assertServiceResource(resource, {
+        instanceId: 'my-serial-number',
       });
     });
   });

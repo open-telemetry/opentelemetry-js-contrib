@@ -30,6 +30,7 @@ import {
   SEMRESATTRS_HOST_ID,
   SEMRESATTRS_HOST_NAME,
   SEMRESATTRS_HOST_TYPE,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from '@opentelemetry/semantic-conventions';
 import * as http from 'http';
 
@@ -59,10 +60,11 @@ class AlibabaCloudEcsDetector implements Detector {
    */
   async detect(_config?: ResourceDetectionConfig): Promise<Resource> {
     const {
-      'owner-account-id': accountId,
       'instance-id': instanceId,
       'instance-type': instanceType,
+      'owner-account-id': accountId,
       'region-id': region,
+      'serial-number': serviceInstanceId,
       'zone-id': availabilityZone,
     } = await this._fetchIdentity();
     const hostname = await this._fetchHost();
@@ -76,6 +78,7 @@ class AlibabaCloudEcsDetector implements Detector {
       [SEMRESATTRS_HOST_ID]: instanceId,
       [SEMRESATTRS_HOST_TYPE]: instanceType,
       [SEMRESATTRS_HOST_NAME]: hostname,
+      [SEMRESATTRS_SERVICE_INSTANCE_ID]: serviceInstanceId,
     });
   }
 

@@ -261,20 +261,24 @@ export const assertTelemetrySDKResource = (
 export const assertServiceResource = (
   resource: Resource,
   validations: {
-    name: string;
-    instanceId: string;
+    name?: string;
+    instanceId?: string;
     namespace?: string;
     version?: string;
   }
 ) => {
-  assert.strictEqual(
-    resource.attributes[SEMRESATTRS_SERVICE_NAME],
-    validations.name
-  );
-  assert.strictEqual(
-    resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
-    validations.instanceId
-  );
+  if (validations.name) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_SERVICE_NAME],
+      validations.name
+    );
+  }
+  if (validations.instanceId) {
+    assert.strictEqual(
+      resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
+      validations.instanceId
+    );
+  }
   if (validations.namespace)
     assert.strictEqual(
       resource.attributes[SEMRESATTRS_SERVICE_NAMESPACE],
