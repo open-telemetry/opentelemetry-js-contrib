@@ -642,8 +642,6 @@ describe('UndiciInstrumentation `undici` tests', function () {
       const response = await undici.request(requestUrl);
       await consumeResponseBody(response.body);
 
-      // TODO: here we're checking the propagation works even if the instrumentation
-      // is not starting any span. Not 100% sure this is the behaviour we want
       assert.ok(
         response.headers['propagation-error'] == null,
         'propagation is set for instrumented requests'
