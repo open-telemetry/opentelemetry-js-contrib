@@ -54,7 +54,7 @@ Undici instrumentation has few options available to choose from. You can set the
 
 ### Observations
 
-This instrumetation subscribes to certain [diagnostics_channel](https://nodejs.org/api/diagnostics_channel.html) to intercept the client requests
+This instrumentation subscribes to certain [diagnostics_channel](https://nodejs.org/api/diagnostics_channel.html) to intercept the client requests
 and generate traces and metrics. In particular tracing spans are started when [undici:request:create](https://undici.nodejs.org/#/docs/api/DiagnosticsChannel?id=undicirequestcreate)
 channel receives a message and ended when [undici:request:trailers](https://undici.nodejs.org/#/docs/api/DiagnosticsChannel?id=undicirequesttrailers) channel receive a message.
 This means the full response body has been received when the instrumentation ends the span.
