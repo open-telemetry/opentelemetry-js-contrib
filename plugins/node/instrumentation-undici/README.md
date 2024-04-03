@@ -52,6 +52,13 @@ Undici instrumentation has few options available to choose from. You can set the
 | [`requireParentforSpans`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#69) | `Boolean` | Require a parent span is present to create new span for outgoing requests. |
 | [`headersToSpanAttributes`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-undici/src/types.ts#71) | `Object` |  List of case insensitive HTTP headers to convert to span attributes. Headers will be converted to span attributes in the form of `http.{request\|response}.header.header-name` where the name is only lowercased, e.g. `http.response.header.content-length`|
 
+### Observations
+
+This instrumetation subscribes to certain [diagnostics_channel](https://nodejs.org/api/diagnostics_channel.html) to intercept the client requests
+and generate traces and metrics. In particular tracing spans are started when [undici:request:create](https://undici.nodejs.org/#/docs/api/DiagnosticsChannel?id=undicirequestcreate)
+channel receives a message and ended when [undici:request:trailers](https://undici.nodejs.org/#/docs/api/DiagnosticsChannel?id=undicirequesttrailers) channel receive a message.
+This means the full reponse body is received when the instrumentation ends the span.
+
 ## Semantic Conventions
 
 This package uses Semantic Conventions [Version 1.24.0](https://github.com/open-telemetry/semantic-conventions/tree/v1.24.0/docs/http). As for now the Semantic Conventions
