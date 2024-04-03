@@ -41,8 +41,14 @@ import * as pgPool from 'pg-pool';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
 import {
-  SemanticAttributes,
-  DbSystemValues,
+  DBSYSTEMVALUES_POSTGRESQL,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_NET_PEER_PORT,
+  SEMATTRS_DB_USER,
+  SEMATTRS_DB_STATEMENT,
 } from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
@@ -60,23 +66,23 @@ const CONFIG = {
 };
 
 const DEFAULT_PGPOOL_ATTRIBUTES = {
-  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-  [SemanticAttributes.DB_NAME]: CONFIG.database,
-  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
-  [SemanticAttributes.DB_USER]: CONFIG.user,
+  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+  [SEMATTRS_DB_NAME]: CONFIG.database,
+  [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
+  [SEMATTRS_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
+  [SEMATTRS_DB_USER]: CONFIG.user,
   [AttributeNames.MAX_CLIENT]: CONFIG.maxClient,
   [AttributeNames.IDLE_TIMEOUT_MILLIS]: CONFIG.idleTimeoutMillis,
 };
 
 const DEFAULT_PG_ATTRIBUTES = {
-  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-  [SemanticAttributes.DB_NAME]: CONFIG.database,
-  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
-  [SemanticAttributes.DB_USER]: CONFIG.user,
+  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+  [SEMATTRS_DB_NAME]: CONFIG.database,
+  [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
+  [SEMATTRS_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
+  [SEMATTRS_DB_USER]: CONFIG.user,
 };
 
 const unsetStatus: SpanStatus = {
@@ -179,7 +185,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
+        [SEMATTRS_DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
@@ -211,7 +217,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
+        [SEMATTRS_DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const parentSpan = provider
@@ -284,7 +290,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
+        [SEMATTRS_DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = provider.getTracer('test-pg-pool').startSpan('test span');
@@ -303,7 +309,7 @@ describe('pg-pool', () => {
       };
       const pgAttributes = {
         ...DEFAULT_PG_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
+        [SEMATTRS_DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const parentSpan = provider
@@ -340,7 +346,7 @@ describe('pg-pool', () => {
         };
         const pgAttributes = {
           ...DEFAULT_PG_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: query,
+          [SEMATTRS_DB_STATEMENT]: query,
           [dataAttributeName]: '{"rowCount":1}',
         };
 
@@ -422,7 +428,7 @@ describe('pg-pool', () => {
         };
         const pgAttributes = {
           ...DEFAULT_PG_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: query,
+          [SEMATTRS_DB_STATEMENT]: query,
         };
 
         beforeEach(async () => {
