@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  context,
-  Attributes,
-  SpanStatusCode,
-  trace,
-} from '@opentelemetry/api';
+import { context, Attributes, SpanStatusCode, trace } from '@opentelemetry/api';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   InstrumentationBase,
