@@ -28,7 +28,7 @@ import { PgInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { PgClientExtended } from '../src/internal-types';
 import * as utils from '../src/utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_NET_PEER_PORT } from '@opentelemetry/semantic-conventions';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -200,25 +200,25 @@ describe('utils.ts', () => {
       assert.strictEqual(
         utils.getSemanticAttributesFromConnection({
           port: Infinity,
-        })[SemanticAttributes.NET_PEER_PORT],
+        })[SEMATTRS_NET_PEER_PORT],
         undefined
       );
       assert.strictEqual(
         utils.getSemanticAttributesFromConnection({
           port: -Infinity,
-        })[SemanticAttributes.NET_PEER_PORT],
+        })[SEMATTRS_NET_PEER_PORT],
         undefined
       );
       assert.strictEqual(
         utils.getSemanticAttributesFromConnection({
           port: NaN,
-        })[SemanticAttributes.NET_PEER_PORT],
+        })[SEMATTRS_NET_PEER_PORT],
         undefined
       );
       assert.strictEqual(
         utils.getSemanticAttributesFromConnection({
           port: 1.234,
-        })[SemanticAttributes.NET_PEER_PORT],
+        })[SEMATTRS_NET_PEER_PORT],
         undefined
       );
     });
@@ -227,13 +227,13 @@ describe('utils.ts', () => {
       assert.strictEqual(
         utils.getSemanticAttributesFromConnection({
           port: 1234,
-        })[SemanticAttributes.NET_PEER_PORT],
+        })[SEMATTRS_NET_PEER_PORT],
         1234
       );
       assert.strictEqual(
         utils.getSemanticAttributesFromConnection({
           port: Number.MAX_VALUE,
-        })[SemanticAttributes.NET_PEER_PORT],
+        })[SEMATTRS_NET_PEER_PORT],
         Number.MAX_VALUE
       );
     });
