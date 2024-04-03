@@ -62,7 +62,7 @@ This means the full response body has been received when the instrumentation end
 ## Semantic Conventions
 
 This package uses Semantic Conventions [Version 1.24.0](https://github.com/open-telemetry/semantic-conventions/tree/v1.24.0/docs/http). As for now the Semantic Conventions
-are bundled in this package but eventually will be imported from `@opentelemetry/semantic-conventions` package when it is updated to latests version.
+are bundled in this package but eventually will be imported from `@opentelemetry/semantic-conventions` package when it is updated to latest version.
 Ref: [opentelemetry-js/issues/4235](https://github.com/open-telemetry/opentelemetry-js/issues/4235)
 
 Attributes collected:
