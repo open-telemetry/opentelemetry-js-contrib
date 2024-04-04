@@ -151,7 +151,7 @@ export class HostMetrics extends BaseMetrics {
     networkUsages: Systeminformation.NetworkStatsData[]
   ): void {
     const deviceAttr = ATTRIBUTE_NAMES.SYSTEM_DEVICE;
-    const directionAttr = ATTRIBUTE_NAMES.SYSTEM_NETWORK_DIRECTION;
+    const directionAttr = ATTRIBUTE_NAMES.NETWORK_NETWORK_DIRECTION;
 
     for (let i = 0, j = networkUsages.length; i < j; i++) {
       const networkUsage = networkUsages[i];

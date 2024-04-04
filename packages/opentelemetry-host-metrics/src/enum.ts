@@ -32,7 +32,7 @@ export enum ATTRIBUTE_NAMES {
   SYSTEM_CPU_STATE = 'system.cpu.state',
   SYSTEM_MEMORY_STATE = 'system.memory.state',
   SYSTEM_DEVICE = 'system.device',
-  SYSTEM_NETWORK_DIRECTION = 'system.network.direction',
+  NETWORK_NETWORK_DIRECTION = 'network.io.direction',
   SYSTEM_NETWORK_STATE = 'system.network.state',
   PROCESS_CPU_STATE = 'process.cpu.state',
 }

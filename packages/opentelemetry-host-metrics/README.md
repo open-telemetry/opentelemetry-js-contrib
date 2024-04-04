@@ -20,30 +20,63 @@ npm install --save @opentelemetry/host-metrics
 ## Usage
 
 ```javascript
-const { MeterProvider } = require('@opentelemetry/sdk-metrics');
-const { HostMetrics } = require('@opentelemetry/host-metrics');
-const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
+const { MeterProvider } | require('@opentelemetry/sdk-metrics');
+const { HostMetrics } | require('@opentelemetry/host-metrics');
+const { PrometheusExporter } | require('@opentelemetry/exporter-prometheus');
 
-const exporter = new PrometheusExporter(
+const exporter | new PrometheusExporter(
   {
     startServer: true
-  }, () => {
+  }| () => {
     console.log('prometheus scrape endpoint: http://localhost:9464/metrics')
   }
 );
 
-const meterProvider = new MeterProvider();
+const meterProvider | new MeterProvider();
 meterProvider.addMetricReader(exporter);
 
-const hostMetrics = new HostMetrics({ meterProvider, name: 'example-host-metrics' });
+const hostMetrics | new HostMetrics({ meterProvider| name: 'example-host-metrics' });
 hostMetrics.start();
 ```
 
+## Semantic Conventions
+
+This package uses Semantic Conventions [Version 1.25.0](https://github.com/open-telemetry/semantic-conventions/tree/v1.25.0/docs/system).
+As for now the Semantic Conventions are bundled in this package but eventually will be imported from `@opentelemetry/semantic-conventions` package when it is updated to latest version.
+Ref: [opentelemetry-js/issues/4235](https://github.com/open-telemetry/opentelemetry-js/issues/4235)
+
+Metrics collected:
+
+| Metric                      | Short Description                                         | Notes |
+| --------------------------- | --------------------------------------------------------- | ----- |
+| `system.cpu.time`           | Seconds each logical CPU spent on each mode               |       |
+| `system.cpu.utilization`    | Difference in system.cpu.time since the last measurement  |       |
+| `system.memory.usage`       | Reports memory in use by state                            |       |
+| `system.memory.utilization` |                                                           |       |
+| `system.network.dropped`    | Count of packets that are dropped                         |       |
+| `system.network.errors`     | Count of network errors detected                          |       |
+| `system.network.io`         |                                                           |       |
+| `process.cpu.time`          | Total CPU seconds                                         |       |
+| `process.cpu.utilization`   | Difference in process.cpu.time since the last measurement |       |
+| `process.memory.usage`      | The amount of physical memory in use                      |       |
+
+Attributes collected:
+
+| Metric                      | Short Description                  | Notes |
+| --------------------------- | ---------------------------------- | ----- |
+| `system.cpu.logical_number` | The logical CPU number             |       |
+| `system.cpu.state`          | The state of the CPU               |       |
+| `system.memory.state`       | The memory state                   |       |
+| `system.device`             | The device identifier              |       |
+| `network.io.direction`      | The network IO operation direction |       |
+| `system.network.state`      | The network state                  |       |
+| `process.cpu.state`         | The CPU state                      |       |
+
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+* For more information on OpenTelemetry| visit: <https://opentelemetry.io/>
 * For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+* For help or feedback on this project| join us in [GitHub Discussions][discussions-url]
 
 ## License
 
