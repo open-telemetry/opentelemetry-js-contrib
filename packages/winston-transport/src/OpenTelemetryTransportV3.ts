@@ -15,14 +15,14 @@
  */
 
 import { Logger, logs } from '@opentelemetry/api-logs';
-import * as Transport from 'winston-transport';
+import TransportStream = require('winston-transport');
 import { VERSION } from './version';
 import { emitLogRecord } from './utils';
 
-export class OpenTelemetryTransportV3 extends Transport {
+export class OpenTelemetryTransportV3 extends TransportStream {
   private _logger: Logger;
 
-  constructor(options?: Transport.TransportStreamOptions) {
+  constructor(options?: TransportStream.TransportStreamOptions) {
     super(options);
     this._logger = logs.getLogger('@opentelemetry/winston-transport', VERSION);
   }
