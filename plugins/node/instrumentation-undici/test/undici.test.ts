@@ -210,13 +210,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.ok(spans.length === 0, 'ignoreRequestHook is filtering requests');
     });
 
-    it.only('should create valid spans for different request methods', async function () {
-      if (semver.lt(UNDICI_VERSION, '5.12.0')) {
-        // undici versions <5.12.0 fail on a request with a weird request
-        // method in a way that is not worth debugging just for this test case.
-        this.skip();
-      }
-
+    it('should create valid spans for different request methods', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 
@@ -226,37 +220,20 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'foo-client': 'bar',
       };
 
-      // In version v5 if `undici` you get the following error when requesting with a method
-      // that is not one of the known ones in uppercase. Using
-      //
-      // SocketError: other side closed
-      // at Socket.onSocketEnd (node_modules/undici/lib/client.js:1118:22)
-      // at endReadableNT (internal/streams/readable.js:1333:12)
-      // at processTicksAndRejections (internal/process/task_queues.js:82:21)
-      let firstQueryResponse: PromisedValue<ReturnType<typeof request>>;
-      let secondQueryResponse: PromisedValue<ReturnType<typeof request>>;
-      try {
-        const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
-        firstQueryResponse = await undici.request(queryRequestUrl, {
-          headers,
-          // @ts-expect-error - method type expects in uppercase
-          method: 'get',
-        });
-        await consumeResponseBody(firstQueryResponse.body);
+      const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      const firstQueryResponse = await undici.request(queryRequestUrl, {
+        headers,
+        // @ts-expect-error - method type expects in uppercase
+        method: 'get',
+      });
+      await consumeResponseBody(firstQueryResponse.body);
 
-        secondQueryResponse = await undici.request(queryRequestUrl, {
-          headers,
-          // @ts-expect-error - method type expects known HTTP method (GET, POST, PUT, ...)
-          method: 'custom',
-        });
-        await consumeResponseBody(secondQueryResponse.body);
-      } catch (undiciErr) {
-        const { stack } = undiciErr as Error;
-
-        if (stack?.startsWith('SocketError: other side closed')) {
-          this.skip();
-        }
-      }
+      const secondQueryResponse = await undici.request(queryRequestUrl, {
+        headers,
+        // @ts-expect-error - method type expects known HTTP method (GET, POST, PUT, ...)
+        method: 'custom',
+      });
+      await consumeResponseBody(secondQueryResponse.body);
 
       assert.ok(
         firstQueryResponse!.headers['propagation-error'] === undefined,
