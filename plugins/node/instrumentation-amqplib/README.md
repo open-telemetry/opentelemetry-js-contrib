@@ -81,6 +81,27 @@ The instrumentation's config `publishHook`, `publishConfirmHook`, `consumeHook` 
 
 The `moduleVersionAttributeName` config option is removed. To add the amqplib package version to spans, use the `moduleVersion` attribute in hook info for `publishHook` and `consumeHook` functions.
 
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute                        | Short Description                                                      | Notes                                          |
+| -------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------- |
+| `messaging.destination`          | The message destination name.                                          | Key: `SEMATTRS_MESSAGING_DESTINATION`          |
+| `messaging.destination_kind`     | The kind of message destination.                                       | Key: `SEMATTRS_MESSAGING_DESTINATION_KIND`     |
+| `messaging.rabbitmq.routing_key` | RabbitMQ message routing key.                                          | Key: `SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY` |
+| `messaging.operation`            | A string identifying the kind of message consumption.                  | Key: `SEMATTRS_MESSAGING_OPERATION`            |
+| `messaging.message_id`           | A value used by the messaging system as an identifier for the message. | Key: `SEMATTRS_MESSAGING_MESSAGE_ID`           |
+| `messaging.conversation_id`      | The ID identifying the conversation to which the message belongs.      | Key: `SEMATTRS_MESSAGING_CONVERSATION_ID`      |
+| `messaging.protocol`             | The name of the transport protocol.                                    | Key: `SEMATTRS_MESSAGING_PROTOCOL`             |
+| `messaging.protocol_version`     | The version of the transport protocol.                                 | Key: `SEMATTRS_MESSAGING_PROTOCOL_VERSION`     |
+| `messaging.system`               | A string identifying the messaging system.                             | Key: `SEMATTRS_MESSAGING_SYSTEM`               |
+| `messaging.url`                  | The connection string.                                                 | Key: `SEMATTRS_MESSAGING_URL`                  |
+| `net.peer.name`                  | Remote hostname or similar.                                            | Key: `SEMATTRS_NET_PEER_NAME`                  |
+| `net.peer.port`                  | Remote port number.                                                    | Key: `SEMATTRS_NET_PEER_PORT`                  |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
