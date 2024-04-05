@@ -55,6 +55,22 @@ Mongodb instrumentation has few options available to choose from. You can set th
 | `responseHook` | `MongoDBInstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
 | `dbStatementSerializer` | `DbStatementSerializer` (function) | Custom serializer function for the db.statement tag |
 
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute               | Short Description                                                              | Notes                                 |
+| ----------------------- | ------------------------------------------------------------------------------ | ------------------------------------- |
+| `db.system`             | An identifier for the database management system (DBMS) product being used.    | Key: `SEMATTRS_DB_SYSTEM`             |
+| `db.connection_string`  | The connection string used to connect to the database.                         | Key: `SEMATTRS_DB_CONNECTION_STRING`  |
+| `db.name`               | This attribute is used to report the name of the database being accessed.      | Key: `SEMATTRS_DB_NAME`               |
+| `db.operation`          | The name of the operation being executed.                                      | Key: `SEMATTRS_DB_OPERATION`          |
+| `db.mongodb.collection` | The collection being accessed within the database stated in `db.name`.         | Key: `SEMATTRS_DB_MONGODB_COLLECTION` |
+| `net.peer.name`         | Remote hostname or similar.                                                    | Key: `SEMATTRS_NET_PEER_NAME`         |
+| `net.peer.port`         | Remote port number.                                                            | Key: `SEMATTRS_NET_PEER_PORT`         |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
