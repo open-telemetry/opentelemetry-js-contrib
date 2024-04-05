@@ -20,22 +20,22 @@ npm install --save @opentelemetry/host-metrics
 ## Usage
 
 ```javascript
-const { MeterProvider } | require('@opentelemetry/sdk-metrics');
-const { HostMetrics } | require('@opentelemetry/host-metrics');
-const { PrometheusExporter } | require('@opentelemetry/exporter-prometheus');
+const { MeterProvider } = require('@opentelemetry/sdk-metrics');
+const { HostMetrics } = require('@opentelemetry/host-metrics');
+const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
 
-const exporter | new PrometheusExporter(
+const exporter = new PrometheusExporter(
   {
     startServer: true
-  }| () => {
+  }, () => {
     console.log('prometheus scrape endpoint: http://localhost:9464/metrics')
   }
 );
 
-const meterProvider | new MeterProvider();
+const meterProvider = new MeterProvider();
 meterProvider.addMetricReader(exporter);
 
-const hostMetrics | new HostMetrics({ meterProvider| name: 'example-host-metrics' });
+const hostMetrics = new HostMetrics({ meterProvider, name: 'example-host-metrics' });
 hostMetrics.start();
 ```
 
@@ -74,9 +74,9 @@ Attributes collected:
 
 ## Useful links
 
-* For more information on OpenTelemetry| visit: <https://opentelemetry.io/>
+* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 * For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project| join us in [GitHub Discussions][discussions-url]
+* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 
