@@ -166,21 +166,21 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
     ) {
       arguments[1] = createWrapHandler(tracer, moduleVersion, callback);
       const handler = original.apply(this, arguments as any);
+      const callbackName = callback.name;
+      const instanceName =
+        instance.constructor && instance.constructor.name
+          ? instance.constructor.name
+          : 'UnnamedInstance';
+      const spanName = callbackName
+        ? `${instanceName}.${callbackName}`
+        : instanceName;
+
       return function (
         this: any,
         req: any,
         res: any,
         next: (...args: any[]) => unknown
       ) {
-        const callbackName = callback.name;
-        const instanceName =
-          instance.constructor && instance.constructor.name
-            ? instance.constructor.name
-            : 'UnnamedInstance';
-        const spanName = callbackName
-          ? `${instanceName}.${callbackName}`
-          : instanceName;
-
         const span = tracer.startSpan(spanName, {
           attributes: {
             ...Instrumentation.COMMON_ATTRIBUTES,
@@ -215,15 +215,17 @@ function createWrapHandler(
   moduleVersion: string | undefined,
   handler: Function
 ) {
+  const spanName = handler.name || 'anonymous nest handler';
+  const options = {
+    attributes: {
+      ...Instrumentation.COMMON_ATTRIBUTES,
+      [AttributeNames.VERSION]: moduleVersion,
+      [AttributeNames.TYPE]: NestType.REQUEST_HANDLER,
+      [AttributeNames.CALLBACK]: handler.name,
+    },
+  };
   const wrappedHandler = function (this: RouterExecutionContext) {
-    const span = tracer.startSpan(handler.name || 'anonymous nest handler', {
-      attributes: {
-        ...Instrumentation.COMMON_ATTRIBUTES,
-        [AttributeNames.VERSION]: moduleVersion,
-        [AttributeNames.TYPE]: NestType.REQUEST_HANDLER,
-        [AttributeNames.CALLBACK]: handler.name,
-      },
-    });
+    const span = tracer.startSpan(spanName, options);
     const spanContext = api.trace.setSpan(api.context.active(), span);
 
     return api.context.with(spanContext, async () => {
