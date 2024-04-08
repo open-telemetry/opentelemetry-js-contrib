@@ -28,9 +28,19 @@ import {
 } from '@opentelemetry/contrib-test-utils';
 import { Resource } from '@opentelemetry/resources';
 import {
-  CloudProviderValues,
-  CloudPlatformValues,
-  SemanticResourceAttributes,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_AWS_ECS_CONTAINER_ARN,
+  SEMRESATTRS_AWS_ECS_CLUSTER_ARN,
+  SEMRESATTRS_AWS_ECS_LAUNCHTYPE,
+  SEMRESATTRS_AWS_ECS_TASK_ARN,
+  SEMRESATTRS_AWS_ECS_TASK_REVISION,
+  SEMRESATTRS_AWS_ECS_TASK_FAMILY,
+  SEMRESATTRS_AWS_LOG_GROUP_NAMES,
+  SEMRESATTRS_AWS_LOG_GROUP_ARNS,
+  SEMRESATTRS_AWS_LOG_STREAM_NAMES,
+  SEMRESATTRS_AWS_LOG_STREAM_ARNS,
+  CLOUDPROVIDERVALUES_AWS,
+  CLOUDPLATFORMVALUES_AWS_ECS,
 } from '@opentelemetry/semantic-conventions';
 import { readFileSync } from 'fs';
 import * as os from 'os';
@@ -57,63 +67,63 @@ const assertEcsResource = (
   validations: EcsResourceAttributes
 ) => {
   assertCloudResource(resource, {
-    provider: CloudProviderValues.AWS,
+    provider: CLOUDPROVIDERVALUES_AWS,
     accountId: validations.accountId,
     region: validations.region,
     zone: validations.zone,
   });
   assert.strictEqual(
-    resource.attributes[SemanticResourceAttributes.CLOUD_PLATFORM],
-    CloudPlatformValues.AWS_ECS
+    resource.attributes[SEMRESATTRS_CLOUD_PLATFORM],
+    CLOUDPLATFORMVALUES_AWS_ECS
   );
   if (validations.containerArn)
     assert.strictEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_ECS_CONTAINER_ARN],
+      resource.attributes[SEMRESATTRS_AWS_ECS_CONTAINER_ARN],
       validations.containerArn
     );
   if (validations.clusterArn)
     assert.strictEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_ECS_CLUSTER_ARN],
+      resource.attributes[SEMRESATTRS_AWS_ECS_CLUSTER_ARN],
       validations.clusterArn
     );
   if (validations.launchType)
     assert.strictEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_ECS_LAUNCHTYPE],
+      resource.attributes[SEMRESATTRS_AWS_ECS_LAUNCHTYPE],
       validations.launchType
     );
   if (validations.taskArn)
     assert.strictEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_ECS_TASK_ARN],
+      resource.attributes[SEMRESATTRS_AWS_ECS_TASK_ARN],
       validations.taskArn
     );
   if (validations.taskFamily)
     assert.strictEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_ECS_TASK_FAMILY],
+      resource.attributes[SEMRESATTRS_AWS_ECS_TASK_FAMILY],
       validations.taskFamily
     );
   if (validations.taskRevision)
     assert.strictEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_ECS_TASK_REVISION],
+      resource.attributes[SEMRESATTRS_AWS_ECS_TASK_REVISION],
       validations.taskRevision
     );
   if (validations.logGroupNames)
     assert.deepEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_LOG_GROUP_NAMES],
+      resource.attributes[SEMRESATTRS_AWS_LOG_GROUP_NAMES],
       validations.logGroupNames
     );
   if (validations.logGroupArns)
     assert.deepEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_LOG_GROUP_ARNS],
+      resource.attributes[SEMRESATTRS_AWS_LOG_GROUP_ARNS],
       validations.logGroupArns
     );
   if (validations.logStreamNames)
     assert.deepEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_LOG_STREAM_NAMES],
+      resource.attributes[SEMRESATTRS_AWS_LOG_STREAM_NAMES],
       validations.logStreamNames
     );
   if (validations.logStreamArns)
     assert.deepEqual(
-      resource.attributes[SemanticResourceAttributes.AWS_LOG_STREAM_ARNS],
+      resource.attributes[SEMRESATTRS_AWS_LOG_STREAM_ARNS],
       validations.logStreamArns
     );
 };
@@ -199,7 +209,7 @@ describe('AwsEcsResourceDetector', () => {
       process.env.ECS_CONTAINER_METADATA_URI_V4 = ECS_CONTAINER_METADATA_URI_V4;
     });
 
-    describe('when succesfully retrieving the data', () => {
+    describe('when successfully retrieving the data', () => {
       function generateLaunchTypeTests(
         resourceAttributes: EcsResourceAttributes,
         suffix = ''

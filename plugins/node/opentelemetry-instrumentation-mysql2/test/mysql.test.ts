@@ -1101,7 +1101,7 @@ describe('mysql2@2.x', () => {
   describe('#responseHook', () => {
     const queryResultAttribute = 'query_result';
 
-    describe('invalid repsonse hook', () => {
+    describe('invalid response hook', () => {
       beforeEach(() => {
         const config: MySQL2InstrumentationConfig = {
           responseHook: (span, responseHookInfo) => {
