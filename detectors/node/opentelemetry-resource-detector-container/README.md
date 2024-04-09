@@ -26,7 +26,7 @@ const resource = await detectResources({
 const tracerProvider = new NodeTracerProvider({ resource });
 ```
 
-## Available detectors & Semantic Conventions
+## Available detectors
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
@@ -34,9 +34,9 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Populates `container.id` for processes running on containers supporting : docker( cgroup v1 or v2 ) or with containerd
 
-| Resource Attribute  |  Description                                                    | Notes               |
-|---------------------|-----------------------------------------------------------------| ------------------- |
-| container.id        | Value parsed from file `/proc/self/cgroup` (cgroup v1). If it doesn't exist, parse the value from file `/proc/self/mountinfo` (cgroup v2)| Key: `SEMRESATTRS_CONTAINER_ID` |
+| Resource Attribute |  Description                                                                                                                             |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| `container.id`     | Value parsed from file `/proc/self/cgroup` (cgroup v1). If it doesn't exist, parse the value from file `/proc/self/mountinfo` (cgroup v2)|
 
 ## Useful links
 
