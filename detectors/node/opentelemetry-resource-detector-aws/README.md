@@ -35,7 +35,7 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-### Aws Beanstalk Detector
+### AWS Beanstalk Detector
 
 Populates `service` for processes running on [AWS Elastic Beanstalk](https://aws.amazon.com/elasticbeanstalk/)
 
@@ -48,7 +48,7 @@ Populates `service` for processes running on [AWS Elastic Beanstalk](https://aws
 | service.namespace   | Value of `environment_name` from config file `environment.conf`          | Key: `SEMRESATTRS_SERVICE_NAMESPACE`   |
 | service.version     | Value of `version_label` from config file `environment.conf`             | Key: `SEMRESATTRS_SERVICE_VERSION`     |
 
-### AWS Ec2 Detector
+### AWS EC2 Detector
 
 Populates `cloud` and `host` for processes running on [Amazon EC2](https://aws.amazon.com/ec2/), including abstractions such as ECS on EC2. Notably, it does not populate anything on AWS Fargate.
 
@@ -63,7 +63,7 @@ Populates `cloud` and `host` for processes running on [Amazon EC2](https://aws.a
 | host.name               | Value of `hostname` from `/latest/dynamic/instance-identity/document` request         | Key: `SEMRESATTRS_HOST_NAME`               |
 | host.type               | Value of `instanceType` from `/latest/dynamic/instance-identity/document` request     | Key: `SEMRESATTRS_HOST_TYPE`               |
 
-### AWS Ecs Detector
+### AWS ECS Detector
 
 Populates `container` for containers running on [Amazon ECS](https://aws.amazon.com/ecs/).
 
@@ -87,7 +87,7 @@ Populates `container` for containers running on [Amazon ECS](https://aws.amazon.
 | container.id            | Value of from file `/proc/self/cgroup`                                                 | Key: `SEMRESATTRS_CONTAINER_ID`            |
 | container.name          | The hostname of the operating system                                                   | Key: `SEMRESATTRS_CONTAINER_NAME`          |
 
-### AWS Eks Detector
+### AWS EKS Detector
 
 Populates `container` and `k8s.cluster_name` for containers running on [Amazon EKS](https://aws.amazon.com/eks/).
 `k8s.cluster_name` is not always available depending on the configuration of CloudWatch monitoring for the EKS cluster.
