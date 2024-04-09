@@ -42,16 +42,16 @@ const sdk = new NodeSDK({
 sdk.start()
 ```
 
-## Available detectors & Semantic Conventions
+## Available detectors
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
 ### Instana Agent Detector
 
-| Resource Attribute           | Description                                                                                                              | Notes                                      |
-|------------------------------|--------------------------------------------------------------------------------------------------------------------------| ------------------------------------------ |
-| process.pid                  | The ID of the process. Value of parameter `pid` from the response to a request to `/com.instana.plugin.nodejs.discovery` | Key: `SEMRESATTRS_PROCESS_PID` |
-| service.instance.id          | The agent UUID. Value of parameter `agentUuid` from the response to a request to `/com.instana.plugin.nodejs.discovery`  | Key: `SEMRESATTRS_SERVICE_INSTANCE_ID` |
+| Resource Attribute           | Description                                                                                                              |
+|------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| process.pid                  | The ID of the process. Value of parameter `pid` from the response to a request to `/com.instana.plugin.nodejs.discovery` |
+| service.instance.id          | The agent UUID. Value of parameter `agentUuid` from the response to a request to `/com.instana.plugin.nodejs.discovery`  |
 
 ## Useful links
 
