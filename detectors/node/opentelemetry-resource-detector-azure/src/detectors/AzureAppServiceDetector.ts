@@ -29,16 +29,22 @@ import {
   FUNCTIONS_VERSION,
 } from '../types';
 import {
-  CloudProviderValues,
-  CloudPlatformValues,
-  SemanticResourceAttributes,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+  SEMRESATTRS_HOST_ID,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  CLOUDPROVIDERVALUES_AZURE,
+  CLOUDPLATFORMVALUES_AZURE_APP_SERVICE,
 } from '@opentelemetry/semantic-conventions';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
-  [SemanticResourceAttributes.CLOUD_REGION]: REGION_NAME,
-  [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: WEBSITE_SLOT_NAME,
-  [SemanticResourceAttributes.HOST_ID]: WEBSITE_HOSTNAME,
-  [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: WEBSITE_INSTANCE_ID,
+  [SEMRESATTRS_CLOUD_REGION]: REGION_NAME,
+  [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: WEBSITE_SLOT_NAME,
+  [SEMRESATTRS_HOST_ID]: WEBSITE_HOSTNAME,
+  [SEMRESATTRS_SERVICE_INSTANCE_ID]: WEBSITE_INSTANCE_ID,
   [AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE]: WEBSITE_HOME_STAMPNAME,
 };
 
@@ -54,16 +60,15 @@ class AzureAppServiceDetector implements DetectorSync {
     if (websiteSiteName && !isAzureFunction) {
       attributes = {
         ...attributes,
-        [SemanticResourceAttributes.SERVICE_NAME]: websiteSiteName,
+        [SEMRESATTRS_SERVICE_NAME]: websiteSiteName,
       };
       attributes = {
         ...attributes,
-        [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AZURE,
+        [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AZURE,
       };
       attributes = {
         ...attributes,
-        [SemanticResourceAttributes.CLOUD_PLATFORM]:
-          CloudPlatformValues.AZURE_APP_SERVICE,
+        [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AZURE_APP_SERVICE,
       };
 
       const azureResourceUri = this.getAzureResourceUri(websiteSiteName);
