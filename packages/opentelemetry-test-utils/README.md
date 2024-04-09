@@ -69,37 +69,37 @@ That's it - supper short and easy.
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-| Attributes              | Description                                                                                   | Notes                                     |
-| ------------------------| --------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| cloud.account.id        | The cloud account ID the resource is assigned to.                                             | Key: `SEMRESATTRS_CLOUD_ACCOUNT_ID`       |
-| cloud.availability_zone | Availability zone represents the zone where the resource is running.                          | Key: `SEMRESATTRS_CLOUD_AVAILABILITY_ZONE`|
-| cloud.provider          | Name of the cloud provider.                                                                   | Key: `SEMRESATTRS_CLOUD_PROVIDER`         |
-| cloud.region            | The geographical region the resource is running.                                              | Key: `SEMRESATTRS_CLOUD_REGION`           |
-| container.id            | Container ID. Usually a UUID.                                                                 | Key: `SEMRESATTRS_CONTAINER_ID`           |
-| container.image.name    | Name of the image the container was built on.                                                 | Key: `SEMRESATTRS_CONTAINER_IMAGE_NAME`   |
-| container.image.tag     | Container image tag.                                                                          | Key: `SEMRESATTRS_CONTAINER_IMAGE_TAG`    |
-| container.name          | Container name.                                                                               | Key: `SEMRESATTRS_CONTAINER_NAME`         |
-| host.id                 | Unique host ID.                                                                               | Key: `SEMRESATTRS_HOST_ID`                |
-| host.image.id           | VM image ID.                                                                                  | Key: `SEMRESATTRS_HOST_IMAGE_ID`          |
-| host.image.name         | Name of the VM image or OS install the host was instantiated from.                            | Key: `SEMRESATTRS_HOST_IMAGE_NAME`        |
-| host.image.version      | The version string of the VM image.                                                           | Key: `SEMRESATTRS_HOST_IMAGE_VERSION`     |
-| host.name               | Name of the host.                                                                             | Key: `SEMRESATTRS_HOST_NAME`              |
-| host.type               | Type of host.                                                                                 | Key: `SEMRESATTRS_HOST_TYPE`              |
-| k8s.cluster.name        | The name of the cluster.                                                                      | Key: `SEMRESATTRS_K8S_CLUSTER_NAME`       |
-| k8s.deployment.name     | The name of the Deployment.                                                                   | Key: `SEMRESATTRS_K8S_DEPLOYMENT_NAME`    |
-| k8s.namespace.name      | The name of the namespace that the pod is running in.                                         | Key: `SEMRESATTRS_K8S_NAMESPACE_NAME`     |
-| k8s.pod.name            | The name of the Pod.                                                                          | Key: `SEMRESATTRS_K8S_POD_NAME`           |
-| process.command         | The command used to launch the process (i.e. the command name).                               | Key: `SEMRESATTRS_PROCESS_COMMAND`        |
-| process.command_line    | The full command used to launch the process as a single string representing the full command. | Key: `SEMRESATTRS_PROCESS_COMMAND_LINE`   |
-| process.executable.name | The name of the process executable.                                                           | Key: `SEMRESATTRS_PROCESS_EXECUTABLE_NAME`|
-| process.pid             | Process identifier (PID).                                                                     | Key: `SEMRESATTRS_PROCESS_PID`            |
-| service.instance.id     | The string ID of the service instance.                                                        | Key: `SEMRESATTRS_SERVICE_INSTANCE_ID`    |
-| service.name            | Logical name of the service.                                                                  | Key: `SEMRESATTRS_SERVICE_NAME`           |
-| service.namespace       | A namespace for `service.name`.                                                               | Key: `SEMRESATTRS_SERVICE_NAMESPACE`      |
-| service.version         | The version string of the service API or implementation.                                      | Key: `SEMRESATTRS_SERVICE_VERSION`        |
-| telemetry.sdk.language  | The language of the telemetry SDK.                                                            | Key: `SEMRESATTRS_TELEMETRY_SDK_LANGUAGE` |
-| telemetry.sdk.name      | The name of the telemetry SDK.                                                                | Key: `SEMRESATTRS_TELEMETRY_SDK_NAME`     |
-| telemetry.sdk.version   | The version string of the telemetry SDK.                                                      | Key: `SEMRESATTRS_TELEMETRY_SDK_VERSION`  |
+| Attributes              | Description                                                                                   |
+| ------------------------| --------------------------------------------------------------------------------------------- |
+| cloud.account.id        | The cloud account ID the resource is assigned to.                                             |
+| cloud.availability_zone | Availability zone represents the zone where the resource is running.                          |
+| cloud.provider          | Name of the cloud provider.                                                                   |
+| cloud.region            | The geographical region the resource is running.                                              |
+| container.id            | Container ID. Usually a UUID.                                                                 |
+| container.image.name    | Name of the image the container was built on.                                                 |
+| container.image.tag     | Container image tag.                                                                          |
+| container.name          | Container name.                                                                               |
+| host.id                 | Unique host ID.                                                                               |
+| host.image.id           | VM image ID.                                                                                  |
+| host.image.name         | Name of the VM image or OS install the host was instantiated from.                            |
+| host.image.version      | The version string of the VM image.                                                           |
+| host.name               | Name of the host.                                                                             |
+| host.type               | Type of host.                                                                                 |
+| k8s.cluster.name        | The name of the cluster.                                                                      |
+| k8s.deployment.name     | The name of the Deployment.                                                                   |
+| k8s.namespace.name      | The name of the namespace that the pod is running in.                                         |
+| k8s.pod.name            | The name of the Pod.                                                                          |
+| process.command         | The command used to launch the process (i.e. the command name).                               |
+| process.command_line    | The full command used to launch the process as a single string representing the full command. |
+| process.executable.name | The name of the process executable.                                                           |
+| process.pid             | Process identifier (PID).                                                                     |
+| service.instance.id     | The string ID of the service instance.                                                        |
+| service.name            | Logical name of the service.                                                                  |
+| service.namespace       | A namespace for `service.name`.                                                               |
+| service.version         | The version string of the service API or implementation.                                      |
+| telemetry.sdk.language  | The language of the telemetry SDK.                                                            |
+| telemetry.sdk.name      | The name of the telemetry SDK.                                                                |
+| telemetry.sdk.version   | The version string of the telemetry SDK.                                                      |
 
 ## Useful links
 
