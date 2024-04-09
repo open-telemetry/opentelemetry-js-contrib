@@ -69,38 +69,6 @@ That's it - supper short and easy.
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
-| Attributes              | Description                                                                                   |
-| ------------------------| --------------------------------------------------------------------------------------------- |
-| cloud.account.id        | The cloud account ID the resource is assigned to.                                             |
-| cloud.availability_zone | Availability zone represents the zone where the resource is running.                          |
-| cloud.provider          | Name of the cloud provider.                                                                   |
-| cloud.region            | The geographical region the resource is running.                                              |
-| container.id            | Container ID. Usually a UUID.                                                                 |
-| container.image.name    | Name of the image the container was built on.                                                 |
-| container.image.tag     | Container image tag.                                                                          |
-| container.name          | Container name.                                                                               |
-| host.id                 | Unique host ID.                                                                               |
-| host.image.id           | VM image ID.                                                                                  |
-| host.image.name         | Name of the VM image or OS install the host was instantiated from.                            |
-| host.image.version      | The version string of the VM image.                                                           |
-| host.name               | Name of the host.                                                                             |
-| host.type               | Type of host.                                                                                 |
-| k8s.cluster.name        | The name of the cluster.                                                                      |
-| k8s.deployment.name     | The name of the Deployment.                                                                   |
-| k8s.namespace.name      | The name of the namespace that the pod is running in.                                         |
-| k8s.pod.name            | The name of the Pod.                                                                          |
-| process.command         | The command used to launch the process (i.e. the command name).                               |
-| process.command_line    | The full command used to launch the process as a single string representing the full command. |
-| process.executable.name | The name of the process executable.                                                           |
-| process.pid             | Process identifier (PID).                                                                     |
-| service.instance.id     | The string ID of the service instance.                                                        |
-| service.name            | Logical name of the service.                                                                  |
-| service.namespace       | A namespace for `service.name`.                                                               |
-| service.version         | The version string of the service API or implementation.                                      |
-| telemetry.sdk.language  | The language of the telemetry SDK.                                                            |
-| telemetry.sdk.name      | The name of the telemetry SDK.                                                                |
-| telemetry.sdk.version   | The version string of the telemetry SDK.                                                      |
-
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
