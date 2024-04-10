@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.2.1...instrumentation-runtime-node-v0.3.0) (2024-04-03)
+
+
+### Features
+
+* **deps:** update otel-js to 1.23.0/0.50.0 ([#2076](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2076)) ([d5f079b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d5f079b3992395dcfb3b791c9fdaeefd6d6526f8))
+
+
+### Bug Fixes
+
+* **instrumentation-runtime-node:** mixin default config in constructor ([#2036](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2036)) ([146edfa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/146edfa89bef0b1405d573c7373af10d90639c2a))
+
 ## [0.2.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.2.0...instrumentation-runtime-node-v0.2.1) (2024-03-11)
 
 
