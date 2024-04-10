@@ -61,15 +61,15 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Attributes collected:
 
-| Attribute               | Short Description                                                              | Notes                                 |
-| ----------------------- | ------------------------------------------------------------------------------ | ------------------------------------- |
-| `db.system`             | An identifier for the database management system (DBMS) product being used.    | Key: `SEMATTRS_DB_SYSTEM`             |
-| `db.connection_string`  | The connection string used to connect to the database.                         | Key: `SEMATTRS_DB_CONNECTION_STRING`  |
-| `db.name`               | This attribute is used to report the name of the database being accessed.      | Key: `SEMATTRS_DB_NAME`               |
-| `db.operation`          | The name of the operation being executed.                                      | Key: `SEMATTRS_DB_OPERATION`          |
-| `db.mongodb.collection` | The collection being accessed within the database stated in `db.name`.         | Key: `SEMATTRS_DB_MONGODB_COLLECTION` |
-| `net.peer.name`         | Remote hostname or similar.                                                    | Key: `SEMATTRS_NET_PEER_NAME`         |
-| `net.peer.port`         | Remote port number.                                                            | Key: `SEMATTRS_NET_PEER_PORT`         |
+| Attribute               | Short Description                                                              |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
+| `db.connection_string`  | The connection string used to connect to the database.                         |
+| `db.name`               | This attribute is used to report the name of the database being accessed.      |
+| `db.operation`          | The name of the operation being executed.                                      |
+| `db.mongodb.collection` | The collection being accessed within the database stated in `db.name`.         |
+| `net.peer.name`         | Remote hostname or similar.                                                    |
+| `net.peer.port`         | Remote port number.                                                            |
 
 ## Useful links
 
