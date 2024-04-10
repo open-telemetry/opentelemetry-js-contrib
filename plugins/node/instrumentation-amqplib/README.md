@@ -87,20 +87,20 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Attributes collected:
 
-| Attribute                        | Short Description                                                      | Notes                                          |
-| -------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------- |
-| `messaging.destination`          | The message destination name.                                          | Key: `SEMATTRS_MESSAGING_DESTINATION`          |
-| `messaging.destination_kind`     | The kind of message destination.                                       | Key: `SEMATTRS_MESSAGING_DESTINATION_KIND`     |
-| `messaging.rabbitmq.routing_key` | RabbitMQ message routing key.                                          | Key: `SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY` |
-| `messaging.operation`            | A string identifying the kind of message consumption.                  | Key: `SEMATTRS_MESSAGING_OPERATION`            |
-| `messaging.message_id`           | A value used by the messaging system as an identifier for the message. | Key: `SEMATTRS_MESSAGING_MESSAGE_ID`           |
-| `messaging.conversation_id`      | The ID identifying the conversation to which the message belongs.      | Key: `SEMATTRS_MESSAGING_CONVERSATION_ID`      |
-| `messaging.protocol`             | The name of the transport protocol.                                    | Key: `SEMATTRS_MESSAGING_PROTOCOL`             |
-| `messaging.protocol_version`     | The version of the transport protocol.                                 | Key: `SEMATTRS_MESSAGING_PROTOCOL_VERSION`     |
-| `messaging.system`               | A string identifying the messaging system.                             | Key: `SEMATTRS_MESSAGING_SYSTEM`               |
-| `messaging.url`                  | The connection string.                                                 | Key: `SEMATTRS_MESSAGING_URL`                  |
-| `net.peer.name`                  | Remote hostname or similar.                                            | Key: `SEMATTRS_NET_PEER_NAME`                  |
-| `net.peer.port`                  | Remote port number.                                                    | Key: `SEMATTRS_NET_PEER_PORT`                  |
+| Attribute                        | Short Description                                                      |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| `messaging.destination`          | The message destination name.                                          |
+| `messaging.destination_kind`     | The kind of message destination.                                       |
+| `messaging.rabbitmq.routing_key` | RabbitMQ message routing key.                                          |
+| `messaging.operation`            | A string identifying the kind of message consumption.                  |
+| `messaging.message_id`           | A value used by the messaging system as an identifier for the message. |
+| `messaging.conversation_id`      | The ID identifying the conversation to which the message belongs.      |
+| `messaging.protocol`             | The name of the transport protocol.                                    |
+| `messaging.protocol_version`     | The version of the transport protocol.                                 |
+| `messaging.system`               | A string identifying the messaging system.                             |
+| `messaging.url`                  | The connection string.                                                 |
+| `net.peer.name`                  | Remote hostname or similar.                                            |
+| `net.peer.port`                  | Remote port number.                                                    |
 
 ## Useful links
 
