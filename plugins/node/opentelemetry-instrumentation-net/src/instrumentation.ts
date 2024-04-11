@@ -27,20 +27,20 @@ import {
   NetTransportValues,
 } from '@opentelemetry/semantic-conventions';
 import { TLSAttributes } from './types';
-import { Net, NormalizedOptions, SocketEvent } from './internal-types';
+import { NormalizedOptions, SocketEvent } from './internal-types';
 import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
 import { VERSION } from './version';
 import { Socket } from 'net';
 import { TLSSocket } from 'tls';
 
-export class NetInstrumentation extends InstrumentationBase<Net> {
+export class NetInstrumentation extends InstrumentationBase {
   constructor(_config?: InstrumentationConfig) {
     super('@opentelemetry/instrumentation-net', VERSION, _config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<Net>[] {
+  init(): InstrumentationNodeModuleDefinition[] {
     return [
-      new InstrumentationNodeModuleDefinition<Net>(
+      new InstrumentationNodeModuleDefinition(
         'net',
         ['*'],
         moduleExports => {

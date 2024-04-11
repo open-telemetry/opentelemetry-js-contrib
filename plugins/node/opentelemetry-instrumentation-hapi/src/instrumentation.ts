@@ -54,7 +54,7 @@ export class HapiInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    return new InstrumentationNodeModuleDefinition<typeof Hapi>(
+    return new InstrumentationNodeModuleDefinition(
       HapiComponentName,
       ['>=17 <21'],
       moduleExports => {

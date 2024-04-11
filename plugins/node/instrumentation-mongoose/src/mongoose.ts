@@ -59,7 +59,7 @@ const contextCaptureFunctions = [
 // calls. this bypass the unlinked spans issue on thenables await operations.
 export const _STORED_PARENT_SPAN: unique symbol = Symbol('stored-parent-span');
 
-export class MongooseInstrumentation extends InstrumentationBase<any> {
+export class MongooseInstrumentation extends InstrumentationBase {
   protected override _config!: MongooseInstrumentationConfig;
 
   constructor(config: MongooseInstrumentationConfig = {}) {
@@ -74,8 +74,8 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
     this._config = Object.assign({}, config);
   }
 
-  protected init(): InstrumentationModuleDefinition<any> {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+  protected init(): InstrumentationModuleDefinition {
+    const module = new InstrumentationNodeModuleDefinition(
       'mongoose',
       ['>=5.9.7 <7'],
       this.patch.bind(this),

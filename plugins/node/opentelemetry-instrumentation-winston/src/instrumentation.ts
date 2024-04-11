@@ -25,10 +25,8 @@ import {
 import type { WinstonInstrumentationConfig } from './types';
 import type {
   Winston2LogMethod,
-  Winston2LoggerModule,
   Winston3ConfigureMethod,
   Winston3LogMethod,
-  Winston3Logger,
 } from './internal-types';
 import { VERSION } from './version';
 
@@ -42,13 +40,13 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
   protected init() {
     const winstons3instrumentationNodeModuleDefinition =
-      new InstrumentationNodeModuleDefinition<{}>(
+      new InstrumentationNodeModuleDefinition(
         'winston',
         winston3Versions,
         moduleExports => moduleExports,
         () => {},
         [
-          new InstrumentationNodeModuleFile<Winston3Logger>(
+          new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winston3Versions,
             (logger, moduleVersion) => {
@@ -81,13 +79,13 @@ export class WinstonInstrumentation extends InstrumentationBase {
       );
 
     const winstons2instrumentationNodeModuleDefinition =
-      new InstrumentationNodeModuleDefinition<{}>(
+      new InstrumentationNodeModuleDefinition(
         'winston',
         winstonPre3Versions,
         moduleExports => moduleExports,
         () => {},
         [
-          new InstrumentationNodeModuleFile<Winston2LoggerModule>(
+          new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winstonPre3Versions,
             (fileExports, moduleVersion) => {

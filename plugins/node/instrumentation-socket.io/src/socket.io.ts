@@ -50,7 +50,7 @@ const reservedEvents = [
   'removeListener',
 ];
 
-export class SocketIoInstrumentation extends InstrumentationBase<any> {
+export class SocketIoInstrumentation extends InstrumentationBase {
   protected override _config!: SocketIoInstrumentationConfig;
 
   constructor(config: SocketIoInstrumentationConfig = {}) {
@@ -62,7 +62,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
   }
 
   protected init() {
-    const socketInstrumentation = new InstrumentationNodeModuleFile<any>(
+    const socketInstrumentation = new InstrumentationNodeModuleFile(
       'socket.io/dist/socket.js',
       ['>=3 <5'],
       (moduleExports, moduleVersion) => {
@@ -103,7 +103,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
     );
 
     const broadcastOperatorInstrumentation =
-      new InstrumentationNodeModuleFile<any>(
+      new InstrumentationNodeModuleFile(
         'socket.io/dist/broadcast-operator.js',
         ['>=4 <5'],
         (moduleExports, moduleVersion) => {
@@ -133,7 +133,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           return moduleExports;
         }
       );
-    const namespaceInstrumentation = new InstrumentationNodeModuleFile<any>(
+    const namespaceInstrumentation = new InstrumentationNodeModuleFile(
       'socket.io/dist/namespace.js',
       ['<4'],
       (moduleExports, moduleVersion) => {
@@ -162,7 +162,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         }
       }
     );
-    const socketInstrumentationLegacy = new InstrumentationNodeModuleFile<any>(
+    const socketInstrumentationLegacy = new InstrumentationNodeModuleFile(
       'socket.io/lib/socket.js',
       ['2'],
       (moduleExports, moduleVersion) => {
@@ -198,7 +198,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
       }
     );
     const namespaceInstrumentationLegacy =
-      new InstrumentationNodeModuleFile<any>(
+      new InstrumentationNodeModuleFile(
         'socket.io/lib/namespace.js',
         ['2'],
         (moduleExports, moduleVersion) => {
@@ -229,7 +229,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
       );
 
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'socket.io',
         ['>=3 <5'],
         (moduleExports, moduleVersion) => {
@@ -264,7 +264,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           socketInstrumentation,
         ]
       ),
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'socket.io',
         ['2'],
         (moduleExports, moduleVersion) => {

@@ -27,8 +27,6 @@ import { DnsInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
 import {
-  Dns,
-  DnsPromises,
   LookupCallbackSignature,
   LookupPromiseSignature,
 } from './internal-types';
@@ -36,17 +34,17 @@ import {
 /**
  * Dns instrumentation for Opentelemetry
  */
-export class DnsInstrumentation extends InstrumentationBase<Dns> {
+export class DnsInstrumentation extends InstrumentationBase {
   constructor(protected override _config: DnsInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-dns', VERSION, _config);
   }
 
   init(): (
-    | InstrumentationNodeModuleDefinition<Dns>
-    | InstrumentationNodeModuleDefinition<DnsPromises>
+    | InstrumentationNodeModuleDefinition
+    | InstrumentationNodeModuleDefinition
   )[] {
     return [
-      new InstrumentationNodeModuleDefinition<Dns>(
+      new InstrumentationNodeModuleDefinition(
         'dns',
         ['*'],
         moduleExports => {
@@ -71,7 +69,7 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
           this._unwrap(moduleExports.promises, 'lookup');
         }
       ),
-      new InstrumentationNodeModuleDefinition<DnsPromises>(
+      new InstrumentationNodeModuleDefinition(
         'dns/promises',
         ['*'],
         moduleExports => {

@@ -44,7 +44,7 @@ export class PinoInstrumentation extends InstrumentationBase {
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'pino',
         pinoVersions,
         (module, moduleVersion?: string) => {

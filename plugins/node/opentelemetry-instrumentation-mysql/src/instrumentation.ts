@@ -50,9 +50,7 @@ type getConnectionCallbackType = (
   connection: mysqlTypes.PoolConnection
 ) => void;
 
-export class MySQLInstrumentation extends InstrumentationBase<
-  typeof mysqlTypes
-> {
+export class MySQLInstrumentation extends InstrumentationBase {
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
@@ -81,7 +79,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof mysqlTypes>(
+      new InstrumentationNodeModuleDefinition(
         'mysql',
         ['2.*'],
         (moduleExports, moduleVersion) => {

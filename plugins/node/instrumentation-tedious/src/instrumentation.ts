@@ -25,7 +25,6 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
-import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
 import { VERSION } from './version';
@@ -61,9 +60,7 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
   });
 }
 
-export class TediousInstrumentation extends InstrumentationBase<
-  typeof tedious
-> {
+export class TediousInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'tedious';
 
   constructor(config?: TediousInstrumentationConfig) {
@@ -72,7 +69,7 @@ export class TediousInstrumentation extends InstrumentationBase<
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof tedious>(
+      new InstrumentationNodeModuleDefinition(
         TediousInstrumentation.COMPONENT,
         ['>=1.11.0 <=15'],
         (moduleExports: any, moduleVersion) => {
