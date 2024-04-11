@@ -16,7 +16,10 @@
 
 import * as assert from 'assert';
 import { context, SpanStatusCode } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_HTTP_ROUTE,
+  SEMATTRS_HTTP_METHOD,
+} from '@opentelemetry/semantic-conventions';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
@@ -157,7 +160,7 @@ describe('fastify', () => {
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
         'plugin.name': 'fastify -> @fastify/express',
-        [SemanticAttributes.HTTP_ROUTE]: '/test',
+        [SEMATTRS_HTTP_ROUTE]: '/test',
       });
       assert.strictEqual(
         span.name,
@@ -183,7 +186,7 @@ describe('fastify', () => {
         'fastify.type': 'request_handler',
         'fastify.name': 'namedHandler',
         'plugin.name': 'fastify -> @fastify/express',
-        [SemanticAttributes.HTTP_ROUTE]: '/test',
+        [SEMATTRS_HTTP_ROUTE]: '/test',
       });
       assert.strictEqual(span.name, 'request handler - namedHandler');
 
@@ -474,10 +477,7 @@ describe('fastify', () => {
     describe('using requestHook in config', () => {
       it('calls requestHook provided function when set in config', async () => {
         const requestHook = (span: Span, info: FastifyRequestInfo) => {
-          span.setAttribute(
-            SemanticAttributes.HTTP_METHOD,
-            info.request.method
-          );
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
         };
 
         instrumentation.setConfig({
@@ -498,17 +498,14 @@ describe('fastify', () => {
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'request_handler',
           'plugin.name': 'fastify -> @fastify/express',
-          [SemanticAttributes.HTTP_ROUTE]: '/test',
-          [SemanticAttributes.HTTP_METHOD]: 'GET',
+          [SEMATTRS_HTTP_ROUTE]: '/test',
+          [SEMATTRS_HTTP_METHOD]: 'GET',
         });
       });
 
       it('does not propagate an error from a requestHook that throws exception', async () => {
         const requestHook = (span: Span, info: FastifyRequestInfo) => {
-          span.setAttribute(
-            SemanticAttributes.HTTP_METHOD,
-            info.request.method
-          );
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
 
           throw Error('error thrown in requestHook');
         };
@@ -531,8 +528,8 @@ describe('fastify', () => {
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'request_handler',
           'plugin.name': 'fastify -> @fastify/express',
-          [SemanticAttributes.HTTP_ROUTE]: '/test',
-          [SemanticAttributes.HTTP_METHOD]: 'GET',
+          [SEMATTRS_HTTP_ROUTE]: '/test',
+          [SEMATTRS_HTTP_METHOD]: 'GET',
         });
       });
     });
