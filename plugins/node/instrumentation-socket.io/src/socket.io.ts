@@ -102,37 +102,36 @@ export class SocketIoInstrumentation extends InstrumentationBase {
       }
     );
 
-    const broadcastOperatorInstrumentation =
-      new InstrumentationNodeModuleFile(
-        'socket.io/dist/broadcast-operator.js',
-        ['>=4 <5'],
-        (moduleExports, moduleVersion) => {
-          if (moduleExports === undefined || moduleExports === null) {
-            return moduleExports;
-          }
-          if (moduleVersion === undefined) {
-            return moduleExports;
-          }
-          this._diag.debug(
-            `applying patch to socket.io@${moduleVersion} StrictEventEmitter`
-          );
-          if (isWrapped(moduleExports?.BroadcastOperator?.prototype?.emit)) {
-            this._unwrap(moduleExports.BroadcastOperator.prototype, 'emit');
-          }
-          this._wrap(
-            moduleExports.BroadcastOperator.prototype,
-            'emit',
-            this._patchEmit(moduleVersion)
-          );
-          return moduleExports;
-        },
-        moduleExports => {
-          if (isWrapped(moduleExports?.BroadcastOperator?.prototype?.emit)) {
-            this._unwrap(moduleExports.BroadcastOperator.prototype, 'emit');
-          }
+    const broadcastOperatorInstrumentation = new InstrumentationNodeModuleFile(
+      'socket.io/dist/broadcast-operator.js',
+      ['>=4 <5'],
+      (moduleExports, moduleVersion) => {
+        if (moduleExports === undefined || moduleExports === null) {
           return moduleExports;
         }
-      );
+        if (moduleVersion === undefined) {
+          return moduleExports;
+        }
+        this._diag.debug(
+          `applying patch to socket.io@${moduleVersion} StrictEventEmitter`
+        );
+        if (isWrapped(moduleExports?.BroadcastOperator?.prototype?.emit)) {
+          this._unwrap(moduleExports.BroadcastOperator.prototype, 'emit');
+        }
+        this._wrap(
+          moduleExports.BroadcastOperator.prototype,
+          'emit',
+          this._patchEmit(moduleVersion)
+        );
+        return moduleExports;
+      },
+      moduleExports => {
+        if (isWrapped(moduleExports?.BroadcastOperator?.prototype?.emit)) {
+          this._unwrap(moduleExports.BroadcastOperator.prototype, 'emit');
+        }
+        return moduleExports;
+      }
+    );
     const namespaceInstrumentation = new InstrumentationNodeModuleFile(
       'socket.io/dist/namespace.js',
       ['<4'],
@@ -197,36 +196,35 @@ export class SocketIoInstrumentation extends InstrumentationBase {
         return moduleExports;
       }
     );
-    const namespaceInstrumentationLegacy =
-      new InstrumentationNodeModuleFile(
-        'socket.io/lib/namespace.js',
-        ['2'],
-        (moduleExports, moduleVersion) => {
-          if (moduleExports === undefined || moduleExports === null) {
-            return moduleExports;
-          }
-          if (moduleVersion === undefined) {
-            return moduleExports;
-          }
-          this._diag.debug(
-            `applying patch to socket.io@${moduleVersion} Namespace`
-          );
-          if (isWrapped(moduleExports?.prototype?.emit)) {
-            this._unwrap(moduleExports.prototype, 'emit');
-          }
-          this._wrap(
-            moduleExports.prototype,
-            'emit',
-            this._patchEmit(moduleVersion)
-          );
+    const namespaceInstrumentationLegacy = new InstrumentationNodeModuleFile(
+      'socket.io/lib/namespace.js',
+      ['2'],
+      (moduleExports, moduleVersion) => {
+        if (moduleExports === undefined || moduleExports === null) {
           return moduleExports;
-        },
-        moduleExports => {
-          if (isWrapped(moduleExports?.prototype?.emit)) {
-            this._unwrap(moduleExports.prototype, 'emit');
-          }
         }
-      );
+        if (moduleVersion === undefined) {
+          return moduleExports;
+        }
+        this._diag.debug(
+          `applying patch to socket.io@${moduleVersion} Namespace`
+        );
+        if (isWrapped(moduleExports?.prototype?.emit)) {
+          this._unwrap(moduleExports.prototype, 'emit');
+        }
+        this._wrap(
+          moduleExports.prototype,
+          'emit',
+          this._patchEmit(moduleVersion)
+        );
+        return moduleExports;
+      },
+      moduleExports => {
+        if (isWrapped(moduleExports?.prototype?.emit)) {
+          this._unwrap(moduleExports.prototype, 'emit');
+        }
+      }
+    );
 
     return [
       new InstrumentationNodeModuleDefinition(

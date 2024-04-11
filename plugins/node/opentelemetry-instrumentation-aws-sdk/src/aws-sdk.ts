@@ -106,10 +106,13 @@ export class AwsInstrumentation extends InstrumentationBase {
     // as for aws-sdk v3.13.1, constructStack is exported from @aws-sdk/middleware-stack as
     // getter instead of function, which fails shimmer.
     // so we are patching the MiddlewareStack.js file directly to get around it.
-    const v3MiddlewareStack = new InstrumentationNodeModuleDefinition('@aws-sdk/middleware-stack', ['^3.1.0'], undefined, undefined, [
-      v3MiddlewareStackFileOldVersions,
-      v3MiddlewareStackFileNewVersions,
-    ]);
+    const v3MiddlewareStack = new InstrumentationNodeModuleDefinition(
+      '@aws-sdk/middleware-stack',
+      ['^3.1.0'],
+      undefined,
+      undefined,
+      [v3MiddlewareStackFileOldVersions, v3MiddlewareStackFileNewVersions]
+    );
 
     // Patch for @smithy/middleware-stack for @aws-sdk/* packages v3.363.0+.
     // As of @smithy/middleware-stack@2.1.0 `constructStack` is only available
