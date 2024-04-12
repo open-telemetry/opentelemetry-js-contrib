@@ -431,6 +431,61 @@ describe('Knex instrumentation', () => {
         );
       });
     });
+
+    describe('connectionString', () => {
+      const user = process.env.POSTGRES_USER || 'postgres';
+      const password = process.env.POSTGRES_PASSWORD || 'postgres';
+      const database = process.env.POSTGRES_DB || 'postgres';
+      const host = process.env.POSTGRES_HOST || 'localhost';
+      const port = process.env.POSTGRES_PORT
+        ? parseInt(process.env.POSTGRES_PORT, 10)
+        : 54320;
+      let pgClient: any;
+
+      beforeEach(() => {
+        pgClient = knex({
+          client: 'pg',
+          connection: {
+            connectionString: `postgres://${user}:${password}@${host}:${port}/${database}`,
+            // connectionString takes precedence over other connection options in knex
+            host: 'ignored',
+            user: 'ignored',
+            port: 1111,
+            db: 'ignored',
+          },
+        });
+      });
+
+      afterEach(async () => {
+        await pgClient.destroy();
+      });
+
+      it('should extract connection attributes from connectionString when available', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        const statement = "select date('now')";
+
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await pgClient.raw(statement);
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+
+            const span = instrumentationSpans[0];
+            assertMatch(span.name, new RegExp('raw'));
+            assertMatch(span.name, new RegExp(database));
+            assert.strictEqual(span.attributes['db.system'], 'postgresql');
+            assert.strictEqual(span.attributes['db.name'], database);
+            assert.strictEqual(span.attributes['db.user'], user);
+            assert.strictEqual(span.attributes['db.operation'], 'raw');
+            assert.strictEqual(span.attributes['db.statement'], statement);
+            assert.strictEqual(span.attributes['net.peer.name'], host);
+            assert.strictEqual(span.attributes['net.peer.port'], port);
+          }
+        );
+      });
+    });
   });
 
   describe('Disabling instrumentation', () => {
