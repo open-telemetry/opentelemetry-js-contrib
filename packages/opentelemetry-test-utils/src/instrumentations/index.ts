@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { getInstrumentation } from './instrumentation-singleton';
 import { registerInstrumentationTestingProvider } from './otel-default-provider';
 import { resetMemoryExporter } from './otel-provider-api';
@@ -40,7 +40,7 @@ export const mochaHooks = {
     }
     const provider = registerInstrumentationTestingProvider({
       resource: new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+        [SEMRESATTRS_SERVICE_NAME]: serviceName,
       }),
     });
     getInstrumentation()?.setTracerProvider(provider);

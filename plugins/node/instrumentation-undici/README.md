@@ -14,6 +14,10 @@ If you're looking the instrumentation for browser's `fetch` API it is located at
 npm install --save @opentelemetry/instrumentation-undici
 ```
 
+## Supported Versions
+
+- `undici@>=5.12.0`
+
 ## Usage
 
 OpenTelemetry Undici/fetch Instrumentation allows the user to automatically collect trace data and export them to their backend of choice, to give observability to distributed systems.
