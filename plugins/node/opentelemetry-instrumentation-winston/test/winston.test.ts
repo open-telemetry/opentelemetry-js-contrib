@@ -391,77 +391,48 @@ describe('WinstonInstrumentation', () => {
       memoryLogExporter.getFinishedLogRecords().length = 0; // clear
     });
 
-    it('error severity', () => {
+    it('npm levels', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
           disableLogSending: false,
           logSeverity: SeverityNumber.ERROR,
         });
-        initLogger();
-        logger.warn('warn');
-        logger.error('error');
+        initLogger(LevelsType.npm);
+        logger.log('verbose', 'verbose');
+        logger.log('error', 'error');
         const logRecords = memoryLogExporter.getFinishedLogRecords();
         assert.strictEqual(logRecords.length, 1);
         assert.strictEqual(logRecords[0].body, 'error');
       }
     });
 
-    it('warn severity', () => {
+    it('cli levels', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
           disableLogSending: false,
           logSeverity: SeverityNumber.WARN,
         });
-        initLogger();
-        logger.info('info');
-        logger.warn('warn');
+        initLogger(LevelsType.cli);
+        logger.log('prompt', 'prompt');
+        logger.log('warn', 'warn');
         const logRecords = memoryLogExporter.getFinishedLogRecords();
         assert.strictEqual(logRecords.length, 1);
         assert.strictEqual(logRecords[0].body, 'warn');
       }
     });
 
-    it('info severity', () => {
+    it('syslog levels', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
           disableLogSending: false,
-          logSeverity: SeverityNumber.INFO,
+          logSeverity: SeverityNumber.WARN,
         });
-        initLogger();
-        logger.debug('debug');
-        logger.info('info');
+        initLogger(LevelsType.syslog);
+        logger.log('notice', 'notice');
+        logger.log('emerg', 'emerg');
         const logRecords = memoryLogExporter.getFinishedLogRecords();
         assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].body, 'info');
-      }
-    });
-
-    it('debug severity', () => {
-      if (!isWinston2) {
-        instrumentation.setConfig({
-          disableLogSending: false,
-          logSeverity: SeverityNumber.DEBUG,
-        });
-        initLogger();
-        logger.silly('silly');
-        logger.debug('debug');
-        const logRecords = memoryLogExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].body, 'debug');
-      }
-    });
-
-    it('trace severity', () => {
-      if (!isWinston2) {
-        instrumentation.setConfig({
-          disableLogSending: false,
-          logSeverity: SeverityNumber.TRACE,
-        });
-        initLogger();
-        logger.silly('silly');
-        const logRecords = memoryLogExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].body, 'silly');
+        assert.strictEqual(logRecords[0].body, 'emerg');
       }
     });
   });

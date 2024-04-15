@@ -209,8 +209,9 @@ export class WinstonInstrumentation extends InstrumentationBase {
                 : [];
               let transportOptions = {};
               if (config.logSeverity) {
-                const winstonLevel = winstonLevelFromSeverity(
-                  config.logSeverity
+                const winstonLevel = instrumentation._winstonLevelFromSeverity(
+                  config.logSeverity,
+                  args[0].levels
                 );
                 transportOptions = { level: winstonLevel };
               }
@@ -254,21 +255,118 @@ export class WinstonInstrumentation extends InstrumentationBase {
     }
     return record;
   }
-}
 
-function winstonLevelFromSeverity(
-  severity: SeverityNumber
-): string | undefined {
-  if (severity >= SeverityNumber.ERROR) {
-    return 'error';
-  } else if (severity >= SeverityNumber.WARN) {
-    return 'warn';
-  } else if (severity >= SeverityNumber.INFO) {
-    return 'info';
-  } else if (severity >= SeverityNumber.DEBUG) {
-    return 'debug';
-  } else if (severity >= SeverityNumber.TRACE) {
-    return 'silly';
+  private _winstonLevelFromSeverity(
+    severity: SeverityNumber,
+    winstonLevels: { [key: string]: number } | undefined
+  ): string | undefined {
+    if (winstonLevels) {
+      if (isNpmLevels(winstonLevels)) {
+        if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity >= SeverityNumber.WARN) {
+          return 'warn';
+        } else if (severity >= SeverityNumber.INFO) {
+          return 'info';
+        } else if (severity >= SeverityNumber.DEBUG3) {
+          return 'http';
+        } else if (severity >= SeverityNumber.DEBUG2) {
+          return 'verbose';
+        } else if (severity >= SeverityNumber.DEBUG) {
+          return 'debug';
+        } else if (severity >= SeverityNumber.TRACE) {
+          return 'silly';
+        }
+      } else if (isCliLevels(winstonLevels)) {
+        if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity >= SeverityNumber.WARN) {
+          return 'warn';
+        } else if (severity >= SeverityNumber.INFO3) {
+          return 'help';
+        } else if (severity >= SeverityNumber.INFO2) {
+          return 'data';
+        } else if (severity >= SeverityNumber.INFO) {
+          return 'info';
+        } else if (severity >= SeverityNumber.DEBUG) {
+          return 'debug';
+        } else if (severity >= SeverityNumber.TRACE4) {
+          return 'prompt';
+        } else if (severity >= SeverityNumber.TRACE3) {
+          return 'verbose';
+        } else if (severity >= SeverityNumber.TRACE2) {
+          return 'input';
+        } else if (severity >= SeverityNumber.TRACE) {
+          return 'silly';
+        }
+      } else if (isSyslogLevels(winstonLevels)) {
+        if (severity >= SeverityNumber.FATAL2) {
+          return 'emerg';
+        } else if (severity >= SeverityNumber.FATAL) {
+          return 'alert';
+        } else if (severity >= SeverityNumber.ERROR2) {
+          return 'crit';
+        } else if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity >= SeverityNumber.WARN) {
+          return 'warning';
+        } else if (severity >= SeverityNumber.INFO2) {
+          return 'notice';
+        } else if (severity >= SeverityNumber.INFO) {
+          return 'info';
+        } else if (severity >= SeverityNumber.TRACE) {
+          return 'debug';
+        }
+      }
+      // Unknown level
+      this._diag.warn(
+        'failed to configure severity with existing winston levels'
+      );
+    }
+
+    function isCliLevels(arg: any): boolean {
+      return (
+        arg &&
+        arg.error !== undefined &&
+        arg.warn &&
+        arg.help &&
+        arg.data &&
+        arg.info &&
+        arg.debug &&
+        arg.prompt &&
+        arg.verbose &&
+        arg.input &&
+        arg.silly
+      );
+    }
+
+    function isNpmLevels(arg: any): boolean {
+      return (
+        arg &&
+        arg.error !== undefined &&
+        arg.warn &&
+        arg.info &&
+        arg.http &&
+        arg.verbose &&
+        arg.debug &&
+        arg.silly
+      );
+    }
+
+    function isSyslogLevels(arg: any): boolean {
+      return (
+        arg &&
+        arg.emerg !== undefined &&
+        arg.alert &&
+        arg.crit &&
+        arg.error &&
+        arg.warning &&
+        arg.notice &&
+        arg.info &&
+        arg.debug
+      );
+    }
+
+    return;
   }
-  return;
 }
