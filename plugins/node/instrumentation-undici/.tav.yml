@@ -1,8 +1,12 @@
 undici:
   jobs:
-    - versions: ">=5 <6"
+    - versions:
+        include: ">=5.12.0 <6"
+        mode: max-7
       node: '>=14'
       commands: npm run test
-    - versions: ">=6 <7"
+    - versions:
+        include: ">=6 <7"
+        mode: max-7
       node: '>=18'
       commands: npm run test
