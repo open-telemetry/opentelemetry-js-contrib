@@ -15,7 +15,7 @@
  */
 
 import { context, trace, Span } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_METHOD } from '@opentelemetry/semantic-conventions';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -494,7 +494,7 @@ describe('Restify Instrumentation', () => {
       it('calls requestHook provided function when set in config', async () => {
         const requestHook = (span: Span, info: RestifyRequestInfo) => {
           span.setAttribute(
-            SemanticAttributes.HTTP_METHOD,
+            SEMATTRS_HTTP_METHOD,
             info.request.method
           );
           span.setAttribute('restify.layer', info.layerType);
@@ -519,7 +519,7 @@ describe('Restify Instrumentation', () => {
               const span = memoryExporter.getFinishedSpans()[2];
               assert.notStrictEqual(span, undefined);
               assert.strictEqual(
-                span.attributes[SemanticAttributes.HTTP_METHOD],
+                span.attributes[SEMATTRS_HTTP_METHOD],
                 'GET'
               );
               assert.strictEqual(
@@ -534,7 +534,7 @@ describe('Restify Instrumentation', () => {
       it('does not propagate an error from a requestHook that throws exception', async () => {
         const requestHook = (span: Span, info: RestifyRequestInfo) => {
           span.setAttribute(
-            SemanticAttributes.HTTP_METHOD,
+            SEMATTRS_HTTP_METHOD,
             info.request.method
           );
 
@@ -560,7 +560,7 @@ describe('Restify Instrumentation', () => {
               const span = memoryExporter.getFinishedSpans()[2];
               assert.notStrictEqual(span, undefined);
               assert.strictEqual(
-                span.attributes[SemanticAttributes.HTTP_METHOD],
+                span.attributes[SEMATTRS_HTTP_METHOD],
                 'GET'
               );
             }
