@@ -72,6 +72,7 @@ import {
   hostDetectorSync,
   osDetectorSync,
   processDetectorSync,
+  serviceInstanceIdDetectorSync,
 } from '@opentelemetry/resources';
 import {
   azureAppServiceDetector,
@@ -83,6 +84,7 @@ const RESOURCE_DETECTOR_CONTAINER = 'container';
 const RESOURCE_DETECTOR_ENVIRONMENT = 'env';
 const RESOURCE_DETECTOR_HOST = 'host';
 const RESOURCE_DETECTOR_OS = 'os';
+const RESOURCE_DETECTOR_SERVICE_INSTANCE_ID = 'serviceinstance';
 const RESOURCE_DETECTOR_PROCESS = 'process';
 const RESOURCE_DETECTOR_ALIBABA = 'alibaba';
 const RESOURCE_DETECTOR_AWS = 'aws';
@@ -208,6 +210,7 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
     [RESOURCE_DETECTOR_ENVIRONMENT, envDetectorSync],
     [RESOURCE_DETECTOR_HOST, hostDetectorSync],
     [RESOURCE_DETECTOR_OS, osDetectorSync],
+    [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetectorSync],
     [RESOURCE_DETECTOR_PROCESS, processDetectorSync],
     [RESOURCE_DETECTOR_ALIBABA, alibabaCloudEcsDetector],
     [RESOURCE_DETECTOR_GCP, gcpDetector],
