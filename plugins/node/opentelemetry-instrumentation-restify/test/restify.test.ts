@@ -493,10 +493,7 @@ describe('Restify Instrumentation', () => {
     describe('using requestHook in config', () => {
       it('calls requestHook provided function when set in config', async () => {
         const requestHook = (span: Span, info: RestifyRequestInfo) => {
-          span.setAttribute(
-            SEMATTRS_HTTP_METHOD,
-            info.request.method
-          );
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
           span.setAttribute('restify.layer', info.layerType);
         };
 
@@ -518,10 +515,7 @@ describe('Restify Instrumentation', () => {
               // span from get
               const span = memoryExporter.getFinishedSpans()[2];
               assert.notStrictEqual(span, undefined);
-              assert.strictEqual(
-                span.attributes[SEMATTRS_HTTP_METHOD],
-                'GET'
-              );
+              assert.strictEqual(span.attributes[SEMATTRS_HTTP_METHOD], 'GET');
               assert.strictEqual(
                 span.attributes['restify.layer'],
                 'request_handler'
@@ -533,10 +527,7 @@ describe('Restify Instrumentation', () => {
 
       it('does not propagate an error from a requestHook that throws exception', async () => {
         const requestHook = (span: Span, info: RestifyRequestInfo) => {
-          span.setAttribute(
-            SEMATTRS_HTTP_METHOD,
-            info.request.method
-          );
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
 
           throw Error('error thrown in requestHook');
         };
@@ -559,10 +550,7 @@ describe('Restify Instrumentation', () => {
               // span from get
               const span = memoryExporter.getFinishedSpans()[2];
               assert.notStrictEqual(span, undefined);
-              assert.strictEqual(
-                span.attributes[SEMATTRS_HTTP_METHOD],
-                'GET'
-              );
+              assert.strictEqual(span.attributes[SEMATTRS_HTTP_METHOD], 'GET');
             }
           }
         );
