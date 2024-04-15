@@ -29,8 +29,15 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_MONGODB,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_DB_MONGODB_COLLECTION,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_OPERATION,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
@@ -898,18 +905,18 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   ) {
     // add database related attributes
     span.setAttributes({
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MONGODB,
-      [SemanticAttributes.DB_NAME]: dbName,
-      [SemanticAttributes.DB_MONGODB_COLLECTION]: dbCollection,
-      [SemanticAttributes.DB_OPERATION]: operation,
-      [SemanticAttributes.DB_CONNECTION_STRING]: `mongodb://${host}:${port}/${dbName}`,
+      [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MONGODB,
+      [SEMATTRS_DB_NAME]: dbName,
+      [SEMATTRS_DB_MONGODB_COLLECTION]: dbCollection,
+      [SEMATTRS_DB_OPERATION]: operation,
+      [SEMATTRS_DB_CONNECTION_STRING]: `mongodb://${host}:${port}/${dbName}`,
     });
 
     if (host && port) {
-      span.setAttribute(SemanticAttributes.NET_PEER_NAME, host);
+      span.setAttribute(SEMATTRS_NET_PEER_NAME, host);
       const portNumber = parseInt(port, 10);
       if (!isNaN(portNumber)) {
-        span.setAttribute(SemanticAttributes.NET_PEER_PORT, portNumber);
+        span.setAttribute(SEMATTRS_NET_PEER_PORT, portNumber);
       }
     }
     if (!commandObj) return;
@@ -921,7 +928,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     safeExecuteInTheMiddle(
       () => {
         const query = dbStatementSerializer(commandObj);
-        span.setAttribute(SemanticAttributes.DB_STATEMENT, query);
+        span.setAttribute(SEMATTRS_DB_STATEMENT, query);
       },
       err => {
         if (err) {
