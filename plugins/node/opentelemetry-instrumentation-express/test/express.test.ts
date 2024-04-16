@@ -620,10 +620,7 @@ describe('ExpressInstrumentation', () => {
       checkCollector: (collector: testUtils.TestCollector) => {
         const spans = collector.sortedSpans;
 
-        assert.strictEqual(
-          spans[0].name,
-          'GET /test,6,/test/'
-        );
+        assert.strictEqual(spans[0].name, 'GET /test,6,/test/');
         assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
         assert.strictEqual(spans[1].name, 'middleware - query');
         assert.strictEqual(spans[1].kind, SpanKind.SERVER);
@@ -634,10 +631,7 @@ describe('ExpressInstrumentation', () => {
         assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
         assert.strictEqual(spans[3].kind, SpanKind.SERVER);
         assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
-        assert.strictEqual(
-          spans[4].name,
-          'request handler - /test,6,/test/'
-        );
+        assert.strictEqual(spans[4].name, 'request handler - /test,6,/test/');
         assert.strictEqual(spans[4].kind, SpanKind.SERVER);
         assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
       },
