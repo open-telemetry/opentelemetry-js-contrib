@@ -79,9 +79,9 @@ Attributes collected:
 
 | Attribute              | Short Description                                                            |
 | ---------------------- | ---------------------------------------------------------------------------- |
+| `db.connection_string` | The connection string used to connect to the database (without credentials). |
 | `db.statement`         | The database statement being executed.                                       |
 | `db.system`            | An identifier for the database management system (DBMS) product being used.  |
-| `db.connection_string` | The connection string used to connect to the database (without credentials). |
 | `net.peer.name`        | Remote hostname or similar, see note below.                                  |
 | `net.peer.port`        | Remote port number.                                                          |
 
