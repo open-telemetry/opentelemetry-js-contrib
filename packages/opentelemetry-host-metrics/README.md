@@ -47,18 +47,18 @@ Ref: [opentelemetry-js/issues/4235](https://github.com/open-telemetry/openteleme
 
 Metrics collected:
 
-| Metric                      | Short Description                                         | Notes |
-| --------------------------- | --------------------------------------------------------- | ----- |
-| `system.cpu.time`           | Seconds each logical CPU spent on each mode               |       |
-| `system.cpu.utilization`    | Difference in system.cpu.time since the last measurement  |       |
-| `system.memory.usage`       | Reports memory in use by state                            |       |
-| `system.memory.utilization` |                                                           |       |
-| `system.network.dropped`    | Count of packets that are dropped                         |       |
-| `system.network.errors`     | Count of network errors detected                          |       |
-| `system.network.io`         |                                                           |       |
-| `process.cpu.time`          | Total CPU seconds                                         |       |
-| `process.cpu.utilization`   | Difference in process.cpu.time since the last measurement |       |
-| `process.memory.usage`      | The amount of physical memory in use                      |       |
+| Metric                      | Short Description                                         |
+| --------------------------- | --------------------------------------------------------- |
+| `system.cpu.time`           | Seconds each logical CPU spent on each mode               |
+| `system.cpu.utilization`    | Difference in system.cpu.time since the last measurement  |
+| `system.memory.usage`       | Reports memory in use by state                            |
+| `system.memory.utilization` |                                                           |
+| `system.network.dropped`    | Count of packets that are dropped                         |
+| `system.network.errors`     | Count of network errors detected                          |
+| `system.network.io`         |                                                           |
+| `process.cpu.time`          | Total CPU seconds                                         |
+| `process.cpu.utilization`   | Difference in process.cpu.time since the last measurement |
+| `process.memory.usage`      | The amount of physical memory in use                      |
 
 Attributes collected:
 
