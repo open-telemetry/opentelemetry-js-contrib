@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, diag, Span, SpanOptions } from '@opentelemetry/api';
+import { context, Span, SpanOptions } from '@opentelemetry/api';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { HandleFunction, NextFunction, Server } from 'connect';
 import type { ServerResponse } from 'http';
