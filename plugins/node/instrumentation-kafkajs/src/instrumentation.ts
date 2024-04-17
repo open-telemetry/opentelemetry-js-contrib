@@ -23,7 +23,6 @@ import {
   Link,
   trace,
   context,
-  diag,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import {
@@ -79,7 +78,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
     const unpatch: InstrumentationModuleDefinition<
       typeof kafkaJs
     >['unpatch'] = moduleExports => {
-      diag.debug('Removing patch for kafkajs');
+      this._diag.debug('Removing patch for kafkajs');
       if (isWrapped(moduleExports?.Kafka?.prototype.producer)) {
         this._unwrap(moduleExports.Kafka.prototype, 'producer');
       }
@@ -92,7 +91,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
         'kafkajs',
         ['*'],
         (moduleExports, moduleVersion) => {
-          diag.debug('Applying patch for kafkajs');
+          this._diag.debug('Applying patch for kafkajs');
           this.moduleVersion = moduleVersion;
 
           unpatch(moduleExports);
@@ -412,7 +411,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
       safeExecuteInTheMiddle(
         () => this._config.consumerHook!(span, topic, message),
         e => {
-          if (e) diag.error('consumerHook error', e);
+          if (e) this._diag.error('consumerHook error', e);
         },
         true
       );
@@ -441,7 +440,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
       safeExecuteInTheMiddle(
         () => this._config.producerHook!(span, topic, message),
         e => {
-          if (e) diag.error('producerHook error', e);
+          if (e) this._diag.error('producerHook error', e);
         },
         true
       );
