@@ -36,9 +36,14 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  SemanticAttributes,
-  MessagingOperationValues,
-  MessagingDestinationKindValues,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY,
+  SEMATTRS_MESSAGING_OPERATION,
+  MESSAGINGOPERATIONVALUES_PROCESS,
+  SEMATTRS_MESSAGING_MESSAGE_ID,
+  SEMATTRS_MESSAGING_CONVERSATION_ID,
 } from '@opentelemetry/semantic-conventions';
 import type {
   Connection,
@@ -415,16 +420,13 @@ export class AmqplibInstrumentation extends InstrumentationBase {
             kind: SpanKind.CONSUMER,
             attributes: {
               ...channel?.connection?.[CONNECTION_ATTRIBUTES],
-              [SemanticAttributes.MESSAGING_DESTINATION]: exchange,
-              [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
-                MessagingDestinationKindValues.TOPIC,
-              [SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY]:
-                msg.fields?.routingKey,
-              [SemanticAttributes.MESSAGING_OPERATION]:
-                MessagingOperationValues.PROCESS,
-              [SemanticAttributes.MESSAGING_MESSAGE_ID]:
-                msg?.properties.messageId,
-              [SemanticAttributes.MESSAGING_CONVERSATION_ID]:
+              [SEMATTRS_MESSAGING_DESTINATION]: exchange,
+              [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+                MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+              [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: msg.fields?.routingKey,
+              [SEMATTRS_MESSAGING_OPERATION]: MESSAGINGOPERATIONVALUES_PROCESS,
+              [SEMATTRS_MESSAGING_MESSAGE_ID]: msg?.properties.messageId,
+              [SEMATTRS_MESSAGING_CONVERSATION_ID]:
                 msg?.properties.correlationId,
             },
           },
@@ -636,13 +638,12 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         kind: SpanKind.PRODUCER,
         attributes: {
           ...channel.connection[CONNECTION_ATTRIBUTES],
-          [SemanticAttributes.MESSAGING_DESTINATION]: exchange,
-          [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
-            MessagingDestinationKindValues.TOPIC,
-          [SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
-          [SemanticAttributes.MESSAGING_MESSAGE_ID]: options?.messageId,
-          [SemanticAttributes.MESSAGING_CONVERSATION_ID]:
-            options?.correlationId,
+          [SEMATTRS_MESSAGING_DESTINATION]: exchange,
+          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+          [SEMATTRS_MESSAGING_RABBITMQ_ROUTING_KEY]: routingKey,
+          [SEMATTRS_MESSAGING_MESSAGE_ID]: options?.messageId,
+          [SEMATTRS_MESSAGING_CONVERSATION_ID]: options?.correlationId,
         },
       }
     );

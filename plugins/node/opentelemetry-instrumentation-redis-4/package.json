@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-redis-4",
-  "version": "0.37.0",
+  "version": "0.38.0",
   "description": "Automatic OpenTelemetry instrumentation for redis package version 4",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -50,7 +50,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/contrib-test-utils": "^0.37.0",
+    "@opentelemetry/contrib-test-utils": "^0.38.0",
     "@opentelemetry/core": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
@@ -66,9 +66,9 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.49.1",
+    "@opentelemetry/instrumentation": "^0.50.0",
     "@opentelemetry/redis-common": "^0.36.1",
-    "@opentelemetry/semantic-conventions": "^1.0.0"
+    "@opentelemetry/semantic-conventions": "^1.22.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis-4#readme"
 }
