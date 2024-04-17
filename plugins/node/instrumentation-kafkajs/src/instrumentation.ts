@@ -60,18 +60,13 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
   typeof kafkaJs
 > {
   protected override _config!: KafkaJsInstrumentationConfig;
-  private moduleVersion?: string;
 
   constructor(config: KafkaJsInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-kafkajs',
       VERSION,
-      Object.assign({}, config)
+      config
     );
-  }
-
-  override setConfig(config: KafkaJsInstrumentationConfig = {}) {
-    this._config = Object.assign({}, config);
   }
 
   protected init(): InstrumentationModuleDefinition<typeof kafkaJs> {
@@ -90,9 +85,8 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
       new InstrumentationNodeModuleDefinition<typeof kafkaJs>(
         'kafkajs',
         ['*'],
-        (moduleExports, moduleVersion) => {
+        (moduleExports) => {
           this._diag.debug('Applying patch for kafkajs');
-          this.moduleVersion = moduleVersion;
 
           unpatch(moduleExports);
           this._wrap(
@@ -367,21 +361,6 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
       });
   }
 
-  private _addModuleVersion(span: Span) {
-    if (this._config.moduleVersionAttributeName === undefined) {
-      return;
-    }
-
-    if (this.moduleVersion === undefined) {
-      return;
-    }
-
-    span.setAttribute(
-      this._config.moduleVersionAttributeName,
-      this.moduleVersion
-    );
-  }
-
   private _startConsumerSpan(
     topic: string,
     message: KafkaMessage | undefined,
@@ -404,8 +383,6 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
       },
       context
     );
-
-    this._addModuleVersion(span);
 
     if (this._config?.consumerHook && message) {
       safeExecuteInTheMiddle(
@@ -430,8 +407,6 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
           MESSAGINGDESTINATIONKINDVALUES_TOPIC,
       },
     });
-
-    this._addModuleVersion(span);
 
     message.headers = message.headers ?? {};
     propagation.inject(trace.setSpan(context.active(), span), message.headers);

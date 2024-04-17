@@ -31,10 +31,4 @@ export interface KafkaJsInstrumentationConfig extends InstrumentationConfig {
 
   /** hook for adding custom attributes before consumer message is processed */
   consumerHook?: KafkaConsumerCustomAttributeFunction;
-
-  /**
-   * If passed, a span attribute will be added to all spans with key of the provided "moduleVersionAttributeName"
-   * and value of the module version.
-   */
-  moduleVersionAttributeName?: string;
 }

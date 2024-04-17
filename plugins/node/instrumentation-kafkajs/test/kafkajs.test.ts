@@ -417,33 +417,6 @@ describe('instrumentation-kafkajs', () => {
         assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
       });
     });
-
-    describe('moduleVersionAttributeName config', () => {
-      beforeEach(async () => {
-        const config: KafkaJsInstrumentationConfig = {
-          moduleVersionAttributeName: 'module.version',
-        };
-        instrumentation.disable();
-        instrumentation.setConfig(config);
-        instrumentation.enable();
-        producer = kafka.producer();
-      });
-
-      it('adds module version to producer span', async () => {
-        await producer.send({
-          topic: 'topic-name-1',
-          messages: [{ value: 'testing message content' }],
-        });
-
-        const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
-        const span = spans[0];
-        assert.match(
-          span.attributes['module.version'] as string,
-          /\d{1,4}\.\d{1,4}\.\d{1,5}.*/
-        );
-      });
-    });
   });
 
   describe('consumer', () => {
@@ -769,38 +742,6 @@ describe('instrumentation-kafkajs', () => {
 
         const spans = getTestSpans();
         assert.strictEqual(spans.length, 3);
-      });
-    });
-
-    describe('moduleVersionAttributeName config', () => {
-      beforeEach(async () => {
-        const config: KafkaJsInstrumentationConfig = {
-          moduleVersionAttributeName: 'module.version',
-        };
-        instrumentation.disable();
-        instrumentation.setConfig(config);
-        instrumentation.enable();
-        consumer = kafka.consumer({
-          groupId: 'testing-group-id',
-        });
-        consumer.run({
-          eachMessage: async (
-            _payload: EachMessagePayload
-          ): Promise<void> => {},
-        });
-      });
-
-      it('adds module version to consumer span', async () => {
-        const payload: EachMessagePayload = createEachMessagePayload();
-        await runConfig?.eachMessage!(payload);
-
-        const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
-        const span = spans[0];
-        assert.match(
-          span.attributes['module.version'] as string,
-          /\d{1,4}\.\d{1,4}\.\d{1,5}.*/
-        );
       });
     });
   });

@@ -46,7 +46,6 @@ You can set the following:
 | ---------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `producerHook`               | `KafkaProducerCustomAttributeFunction` | Function called before a producer message is sent. Allows for adding custom attributes to the span.                  |
 | `consumerHook`               | `KafkaConsumerCustomAttributeFunction` | Function called before a consumer message is processed. Allows for adding custom attributes to the span.             |
-| `moduleVersionAttributeName` | `string`                               | When set, the kafkajs module version will be added to span attributes under the key of `moduleVersionAttributeName`. |
 
 ## Useful links
 
