@@ -20,7 +20,6 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  diag,
   trace,
   context,
   Link,
