@@ -56,21 +56,14 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
         'memcached',
         ['>=2.2'],
         (moduleExports, moduleVersion) => {
-          this._diag.debug(
-            `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
-          );
           this.ensureWrapped(
-            moduleVersion,
             moduleExports.prototype,
             'command',
             this.wrapCommand.bind(this, moduleVersion)
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          this._diag.debug(
-            `Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`
-          );
+        moduleExports => {
           if (moduleExports === undefined) return;
           // `command` is documented API missing from the types
           this._unwrap(moduleExports.prototype, 'command' as keyof Memcached);
@@ -175,14 +168,10 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
   }
 
   private ensureWrapped(
-    moduleVersion: string | undefined,
     obj: any,
     methodName: string,
     wrapper: (original: any) => any
   ) {
-    this._diag.debug(
-      `Applying ${methodName} patch for ${Instrumentation.COMPONENT}@${moduleVersion}`
-    );
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
     }

@@ -75,9 +75,7 @@ export class TediousInstrumentation extends InstrumentationBase<
       new InstrumentationNodeModuleDefinition<typeof tedious>(
         TediousInstrumentation.COMPONENT,
         ['>=1.11.0 <=15'],
-        (moduleExports: any, moduleVersion) => {
-          this._diag.debug(`Patching tedious@${moduleVersion}`);
-
+        (moduleExports: any) => {
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
           for (const method of PATCHED_METHODS) {
             if (isWrapped(ConnectionPrototype[method])) {

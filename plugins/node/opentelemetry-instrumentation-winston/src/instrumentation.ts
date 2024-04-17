@@ -52,7 +52,6 @@ export class WinstonInstrumentation extends InstrumentationBase {
             'winston/lib/winston/logger.js',
             winston3Versions,
             (logger, moduleVersion) => {
-              this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
               }
@@ -72,7 +71,6 @@ export class WinstonInstrumentation extends InstrumentationBase {
             },
             (logger, moduleVersion) => {
               if (logger === undefined) return;
-              this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(logger.prototype, 'write');
               this._unwrap(logger.prototype, 'configure');
             }
@@ -91,7 +89,6 @@ export class WinstonInstrumentation extends InstrumentationBase {
             'winston/lib/winston/logger.js',
             winstonPre3Versions,
             (fileExports, moduleVersion) => {
-              this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               const proto = fileExports.Logger.prototype;
 
               if (isWrapped(proto.log)) {
@@ -101,9 +98,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return fileExports;
             },
-            (fileExports, moduleVersion) => {
+            fileExports => {
               if (fileExports === undefined) return;
-              this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(fileExports.Logger.prototype, 'log');
             }
           ),

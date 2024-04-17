@@ -47,8 +47,7 @@ export class PinoInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition<any>(
         'pino',
         pinoVersions,
-        (module, moduleVersion?: string) => {
-          diag.debug(`Applying patch for pino@${moduleVersion}`);
+        module => {
           const isESM = module[Symbol.toStringTag] === 'Module';
           const moduleExports = isESM ? module.default : module;
           const instrumentation = this;

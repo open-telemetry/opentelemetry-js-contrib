@@ -33,8 +33,6 @@ export default class LruMemoizerInstrumentation extends InstrumentationBase {
         'lru-memoizer',
         ['>=1.3 <3'],
         moduleExports => {
-          this._diag.debug('applying patch for lru-memoizer');
-
           // moduleExports is a function which receives an options object,
           // and returns a "memoizer" function upon invocation.
           // We want to patch this "memoizer's" internal function

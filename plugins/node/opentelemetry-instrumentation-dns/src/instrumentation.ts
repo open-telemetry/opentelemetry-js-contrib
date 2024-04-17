@@ -50,7 +50,6 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
         'dns',
         ['*'],
         moduleExports => {
-          diag.debug('Applying patch for dns');
           if (isWrapped(moduleExports.lookup)) {
             this._unwrap(moduleExports, 'lookup');
           }
@@ -66,7 +65,6 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch for dns');
           this._unwrap(moduleExports, 'lookup');
           this._unwrap(moduleExports.promises, 'lookup');
         }
@@ -75,7 +73,6 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
         'dns/promises',
         ['*'],
         moduleExports => {
-          diag.debug('Applying patch for dns/promises');
           if (isWrapped(moduleExports.lookup)) {
             this._unwrap(moduleExports, 'lookup');
           }
@@ -85,7 +82,6 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch for dns/promises');
           this._unwrap(moduleExports, 'lookup');
         }
       ),

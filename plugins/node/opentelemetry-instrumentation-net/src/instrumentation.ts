@@ -44,7 +44,6 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
         'net',
         ['*'],
         moduleExports => {
-          diag.debug('Applying patch for net module');
           if (isWrapped(moduleExports.Socket.prototype.connect)) {
             this._unwrap(moduleExports.Socket.prototype, 'connect');
           }
@@ -58,7 +57,6 @@ export class NetInstrumentation extends InstrumentationBase<Net> {
         },
         moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch from net module');
           this._unwrap(moduleExports.Socket.prototype, 'connect');
         }
       ),

@@ -55,12 +55,8 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
       new InstrumentationNodeModuleDefinition<any>(
         'connect',
         ['^3.0.0'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for connect@${moduleVersion}`);
+        moduleExports => {
           return this._patchConstructor(moduleExports);
-        },
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Removing patch for connect@${moduleVersion}`);
         }
       ),
     ];

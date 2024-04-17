@@ -54,17 +54,13 @@ export class DataloaderInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition<typeof Dataloader>(
         MODULE_NAME,
         ['^2.0.0'],
-        (dataloader, moduleVersion) => {
-          diag.debug(`Applying patch for ${MODULE_NAME}@${moduleVersion}`);
-
+        dataloader => {
           this._patchLoad(dataloader.prototype);
           this._patchLoadMany(dataloader.prototype);
 
           return this._getPatchedConstructor(dataloader);
         },
-        (dataloader, moduleVersion) => {
-          diag.debug(`Removing patch for ${MODULE_NAME}@${moduleVersion}`);
-
+        dataloader => {
           if (isWrapped(dataloader.prototype.load)) {
             this._unwrap(dataloader.prototype, 'load');
           }

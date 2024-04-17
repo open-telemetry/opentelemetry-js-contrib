@@ -149,7 +149,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV3ConnectionPatches<T extends WireProtocolInternal>() {
     return {
       v3PatchConnection: (moduleExports: T, moduleVersion?: string) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.insert)) {
           this._unwrap(moduleExports, 'insert');
@@ -210,7 +209,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4SessionsPatches<T extends V4Session>() {
     return {
       v4PatchSessions: (moduleExports: any, moduleVersion?: string) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         if (isWrapped(moduleExports.acquire)) {
           this._unwrap(moduleExports, 'acquire');
         }
@@ -295,7 +293,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4ConnectionPoolPatches<T extends V4ConnectionPool>() {
     return {
       v4PatchConnectionPool: (moduleExports: any, moduleVersion?: string) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         const poolPrototype = moduleExports.ConnectionPool.prototype;
 
         if (isWrapped(poolPrototype.checkOut)) {
@@ -324,7 +321,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _getV4ConnectPatches<T extends V4Connect>() {
     return {
       v4PatchConnect: (moduleExports: any, moduleVersion?: string) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         if (isWrapped(moduleExports.connect)) {
           this._unwrap(moduleExports, 'connect');
         }
@@ -406,7 +402,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         moduleExports: any,
         moduleVersion?: string
       ) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
           this._unwrap(moduleExports.Connection.prototype, 'command');
@@ -423,7 +418,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         moduleExports: any,
         moduleVersion?: string
       ) => {
-        diag.debug(`Applying patch for mongodb@${moduleVersion}`);
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
           this._unwrap(moduleExports.Connection.prototype, 'command');

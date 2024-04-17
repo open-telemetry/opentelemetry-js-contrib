@@ -150,7 +150,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             module,
             ['*'],
             (moduleExports: LambdaModule) => {
-              diag.debug('Applying patch for lambda handler');
               if (isWrapped(moduleExports[functionName])) {
                 this._unwrap(moduleExports, functionName);
               }
@@ -159,7 +158,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             },
             (moduleExports?: LambdaModule) => {
               if (moduleExports == null) return;
-              diag.debug('Removing patch for lambda handler');
               this._unwrap(moduleExports, functionName);
             }
           ),

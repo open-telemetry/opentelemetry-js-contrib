@@ -72,7 +72,6 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        this._diag.debug(`applying patch to socket.io@${moduleVersion} Socket`);
         if (isWrapped(moduleExports?.Socket?.prototype?.on)) {
           this._unwrap(moduleExports.Socket.prototype, 'on');
         }
@@ -113,9 +112,6 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          this._diag.debug(
-            `applying patch to socket.io@${moduleVersion} StrictEventEmitter`
-          );
           if (isWrapped(moduleExports?.BroadcastOperator?.prototype?.emit)) {
             this._unwrap(moduleExports.BroadcastOperator.prototype, 'emit');
           }
@@ -143,9 +139,6 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        this._diag.debug(
-          `applying patch to socket.io@${moduleVersion} Namespace`
-        );
         if (isWrapped(moduleExports?.Namespace?.prototype?.emit)) {
           this._unwrap(moduleExports.Namespace.prototype, 'emit');
         }
@@ -172,7 +165,6 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        this._diag.debug(`applying patch to socket.io@${moduleVersion} Socket`);
         if (isWrapped(moduleExports.prototype?.on)) {
           this._unwrap(moduleExports.prototype, 'on');
         }
@@ -208,9 +200,6 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          this._diag.debug(
-            `applying patch to socket.io@${moduleVersion} Namespace`
-          );
           if (isWrapped(moduleExports?.prototype?.emit)) {
             this._unwrap(moduleExports.prototype, 'emit');
           }
@@ -239,9 +228,6 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          this._diag.debug(
-            `applying patch to socket.io@${moduleVersion} Server`
-          );
           if (isWrapped(moduleExports?.Server?.prototype?.on)) {
             this._unwrap(moduleExports.Server.prototype, 'on');
           }
@@ -274,9 +260,6 @@ export class SocketIoInstrumentation extends InstrumentationBase<any> {
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          this._diag.debug(
-            `applying patch to socket.io@${moduleVersion} Server`
-          );
           if (isWrapped(moduleExports?.prototype?.on)) {
             this._unwrap(moduleExports.prototype, 'on');
           }

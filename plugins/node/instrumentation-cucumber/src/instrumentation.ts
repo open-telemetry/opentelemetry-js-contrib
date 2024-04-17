@@ -53,10 +53,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition<Cucumber>(
         '@cucumber/cucumber',
         ['^8.0.0', '^9.0.0', '^10.0.0'],
-        (moduleExports, moduleVersion) => {
-          this._diag.debug(
-            `Applying patch for @cucumber/cucumber@${moduleVersion}`
-          );
+        moduleExports => {
           this.module = moduleExports;
           steps.forEach(step => {
             if (isWrapped(moduleExports[step])) {
@@ -72,11 +69,8 @@ export class CucumberInstrumentation extends InstrumentationBase {
           });
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           if (moduleExports === undefined) return;
-          this._diag.debug(
-            `Removing patch for @cucumber/cucumber@${moduleVersion}`
-          );
           [...hooks, ...steps].forEach(method => {
             this._unwrap(moduleExports, method);
           });
@@ -88,9 +82,6 @@ export class CucumberInstrumentation extends InstrumentationBase {
             '@cucumber/cucumber/lib/runtime/test_case_runner.js',
             ['^8.0.0', '^9.0.0', '^10.0.0'],
             (moduleExports, moduleVersion) => {
-              this._diag.debug(
-                `Applying patch for @cucumber/cucumber/lib/runtime/test_case_runner.js@${moduleVersion}`
-              );
               if (isWrapped(moduleExports.default.prototype.run)) {
                 this._unwrap(moduleExports.default.prototype, 'run');
                 this._unwrap(moduleExports.default.prototype, 'runStep');
@@ -119,9 +110,6 @@ export class CucumberInstrumentation extends InstrumentationBase {
             },
             (moduleExports, moduleVersion) => {
               if (moduleExports === undefined) return;
-              this._diag.debug(
-                `Removing patch for @cucumber/cucumber/lib/runtime/test_case_runner.js@${moduleVersion}`
-              );
               this._unwrap(moduleExports.default.prototype, 'run');
               this._unwrap(moduleExports.default.prototype, 'runStep');
               if ('runAttempt' in moduleExports.default.prototype) {

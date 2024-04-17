@@ -96,7 +96,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
           : 'attachCommands';
         // this is the function that extend a redis client with a list of commands.
         // the function patches the commandExecutor to record a span
-        this._diag.debug('Patching redis commands executor');
         if (isWrapped(moduleExports?.[functionToPatch])) {
           this._unwrap(moduleExports, functionToPatch);
         }
@@ -109,7 +108,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         return moduleExports;
       },
       (moduleExports: any) => {
-        this._diag.debug('Unpatching redis commands executor');
         if (isWrapped(moduleExports?.extendWithCommands)) {
           this._unwrap(moduleExports, 'extendWithCommands');
         }
@@ -123,7 +121,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       `${basePackageName}/dist/lib/client/multi-command.js`,
       ['^1.0.0'],
       (moduleExports: any) => {
-        this._diag.debug('Patching redis multi commands executor');
         const redisClientMultiCommandPrototype =
           moduleExports?.default?.prototype;
 
@@ -148,7 +145,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         return moduleExports;
       },
       (moduleExports: any) => {
-        this._diag.debug('Unpatching redis multi commands executor');
         const redisClientMultiCommandPrototype =
           moduleExports?.default?.prototype;
         if (isWrapped(redisClientMultiCommandPrototype?.exec)) {
@@ -164,7 +160,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       `${basePackageName}/dist/lib/client/index.js`,
       ['^1.0.0'],
       (moduleExports: any) => {
-        this._diag.debug('Patching redis client');
         const redisClientPrototype = moduleExports?.default?.prototype;
 
         // In some @redis/client versions 'multi' is a method. In later
@@ -211,7 +206,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         return moduleExports;
       },
       (moduleExports: any) => {
-        this._diag.debug('Unpatching redis client');
         const redisClientPrototype = moduleExports?.default?.prototype;
         if (isWrapped(redisClientPrototype?.multi)) {
           this._unwrap(redisClientPrototype, 'multi');
