@@ -28,8 +28,12 @@ import { RedisCommand, RedisInstrumentationConfig } from './types';
 import { EventEmitter } from 'events';
 import { RedisInstrumentation } from './';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_REDIS,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { RedisPluginClientTypes } from './internal-types';
@@ -100,11 +104,8 @@ export const getTracedInternalSendCommand = (
       {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
-            cmd.command,
-            cmd.args
-          ),
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+          [SEMATTRS_DB_STATEMENT]: dbStatementSerializer(cmd.command, cmd.args),
         },
       }
     );
@@ -112,13 +113,13 @@ export const getTracedInternalSendCommand = (
     // Set attributes for not explicitly typed RedisPluginClientTypes
     if (this.options) {
       span.setAttributes({
-        [SemanticAttributes.NET_PEER_NAME]: this.options.host,
-        [SemanticAttributes.NET_PEER_PORT]: this.options.port,
+        [SEMATTRS_NET_PEER_NAME]: this.options.host,
+        [SEMATTRS_NET_PEER_PORT]: this.options.port,
       });
     }
     if (this.address) {
       span.setAttribute(
-        SemanticAttributes.DB_CONNECTION_STRING,
+        SEMATTRS_DB_CONNECTION_STRING,
         `redis://${this.address}`
       );
     }
