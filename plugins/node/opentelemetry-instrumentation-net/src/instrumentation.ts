@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, Span, SpanStatusCode, context, trace } from '@opentelemetry/api';
+import { Span, SpanStatusCode, context, trace } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationConfig,

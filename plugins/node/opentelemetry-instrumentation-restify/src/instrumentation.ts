@@ -35,8 +35,6 @@ import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
 
-const { diag } = api;
-
 export class RestifyInstrumentation extends InstrumentationBase<any> {
   constructor(config: RestifyInstrumentationConfig = {}) {
     super(
