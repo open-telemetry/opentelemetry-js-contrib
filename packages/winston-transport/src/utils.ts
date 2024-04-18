@@ -65,10 +65,8 @@ export function emitLogRecord(
 ): void {
   const { message, level, ...splat } = record;
   const attributes: LogAttributes = {};
-  for (const key in splat) {
-    if (Object.prototype.hasOwnProperty.call(splat, key)) {
-      attributes[key] = splat[key];
-    }
+  for (const [key, value] of Object.entries(splat)) {
+    attributes[key] = typeof value === 'object' ? JSON.stringify(value) : value;
   }
   const logRecord: LogRecord = {
     severityNumber: getSeverityNumber(level),

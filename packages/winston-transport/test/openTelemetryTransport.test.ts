@@ -71,6 +71,25 @@ describe('OpenTelemetryTransportV3', () => {
     );
   });
 
+  it('emit LogRecord with nested objects', () => {
+    const errorMsg = 'test error';
+    const transport = new OpenTelemetryTransportV3();
+    const errorEvent = {
+      message: errorMsg,
+      meta: { error: 'test error' },
+      level: 'error',
+    };
+    const parameters = Object.assign({ message: kMessage }, errorEvent);
+    transport.log(parameters, () => {});
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 1);
+    assert.strictEqual(logRecords[0].body, errorMsg);
+    assert.strictEqual(
+      logRecords[0].attributes['meta'],
+      JSON.stringify(errorEvent.meta)
+    );
+  });
+
   describe('emit logRecord severity', () => {
     it('npm levels', () => {
       const callback = () => {};
