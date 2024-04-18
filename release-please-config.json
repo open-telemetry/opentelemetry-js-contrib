@@ -63,7 +63,6 @@
     "plugins/web/opentelemetry-instrumentation-long-task": {},
     "plugins/web/opentelemetry-instrumentation-user-interaction": {},
     "plugins/web/opentelemetry-plugin-react-load": {},
-    "propagators/opentelemetry-propagator-aws-xray": {},
     "propagators/opentelemetry-propagator-grpc-census-binary": {},
     "propagators/opentelemetry-propagator-instana": {},
     "propagators/opentelemetry-propagator-ot-trace": {}
