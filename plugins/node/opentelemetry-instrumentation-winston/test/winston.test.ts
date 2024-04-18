@@ -395,14 +395,24 @@ describe('WinstonInstrumentation', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
           disableLogSending: false,
-          logSeverity: SeverityNumber.ERROR,
+          logSeverity: SeverityNumber.DEBUG,
         });
         initLogger(LevelsType.npm);
+        logger.log('silly', 'silly');
+        logger.log('debug', 'debug');
         logger.log('verbose', 'verbose');
+        logger.log('http', 'http');
+        logger.log('info', 'info');
+        logger.log('warn', 'warn');
         logger.log('error', 'error');
         const logRecords = memoryLogExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].body, 'error');
+        assert.strictEqual(logRecords.length, 6);
+        assert.strictEqual(logRecords[0].body, 'debug');
+        assert.strictEqual(logRecords[1].body, 'verbose');
+        assert.strictEqual(logRecords[2].body, 'http');
+        assert.strictEqual(logRecords[3].body, 'info');
+        assert.strictEqual(logRecords[4].body, 'warn');
+        assert.strictEqual(logRecords[5].body, 'error');
       }
     });
 
@@ -410,14 +420,26 @@ describe('WinstonInstrumentation', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
           disableLogSending: false,
-          logSeverity: SeverityNumber.WARN,
+          logSeverity: SeverityNumber.INFO,
         });
         initLogger(LevelsType.cli);
+        logger.log('silly', 'silly');
+        logger.log('input', 'input');
+        logger.log('verbose', 'verbose');
         logger.log('prompt', 'prompt');
+        logger.log('debug', 'debug');
+        logger.log('info', 'info');
+        logger.log('data', 'data');
+        logger.log('help', 'help');
         logger.log('warn', 'warn');
+        logger.log('error', 'error');
         const logRecords = memoryLogExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].body, 'warn');
+        assert.strictEqual(logRecords.length, 5);
+        assert.strictEqual(logRecords[0].body, 'info');
+        assert.strictEqual(logRecords[1].body, 'data');
+        assert.strictEqual(logRecords[2].body, 'help');
+        assert.strictEqual(logRecords[3].body, 'warn');
+        assert.strictEqual(logRecords[4].body, 'error');
       }
     });
 
@@ -428,11 +450,21 @@ describe('WinstonInstrumentation', () => {
           logSeverity: SeverityNumber.WARN,
         });
         initLogger(LevelsType.syslog);
+        logger.log('debug', 'debug');
+        logger.log('info', 'info');
         logger.log('notice', 'notice');
+        logger.log('warning', 'warning');
+        logger.log('error', 'error');
+        logger.log('crit', 'crit');
+        logger.log('alert', 'alert');
         logger.log('emerg', 'emerg');
         const logRecords = memoryLogExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 1);
-        assert.strictEqual(logRecords[0].body, 'emerg');
+        assert.strictEqual(logRecords.length, 5);
+        assert.strictEqual(logRecords[0].body, 'warning');
+        assert.strictEqual(logRecords[1].body, 'error');
+        assert.strictEqual(logRecords[2].body, 'crit');
+        assert.strictEqual(logRecords[3].body, 'alert');
+        assert.strictEqual(logRecords[4].body, 'emerg');
       }
     });
   });
