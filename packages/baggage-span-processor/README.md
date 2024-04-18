@@ -1,4 +1,4 @@
-# OpenTelemetry Host Metrics for Node.js
+# OpenTelemetry Baggage Span Processor for Node.js
 
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-url]
