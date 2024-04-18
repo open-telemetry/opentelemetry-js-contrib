@@ -8,6 +8,7 @@
   "detectors/node/opentelemetry-resource-detector-instana": "0.8.0",
   "metapackages/auto-instrumentations-node": "0.44.0",
   "metapackages/auto-instrumentations-web": "0.38.0",
+  "packages/opentelemetry-baggage-span-processor": "0.0.1",
   "packages/opentelemetry-host-metrics": "0.35.0",
   "packages/opentelemetry-id-generator-aws-xray": "1.2.1",
   "packages/opentelemetry-propagation-utils": "0.30.8",
