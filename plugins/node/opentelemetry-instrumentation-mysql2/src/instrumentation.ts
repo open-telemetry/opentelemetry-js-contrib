@@ -38,13 +38,17 @@ import { VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
-export class MySQL2Instrumentation extends InstrumentationBase<any> {
+export class MySQL2Instrumentation extends InstrumentationBase {
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
   };
 
-  constructor(config?: MySQL2InstrumentationConfig) {
-    super('@opentelemetry/instrumentation-mysql2', VERSION, config);
+  constructor(protected override _config: MySQL2InstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-mysql2', VERSION, _config);
+  }
+
+  override setConfig(config: MySQL2InstrumentationConfig = {}) {
+    this._config = config;
   }
 
   protected init() {
@@ -100,9 +104,6 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
         _valuesOrCallback?: unknown[] | Function,
         _callback?: Function
       ) {
-        const thisPluginConfig: MySQL2InstrumentationConfig =
-          thisPlugin._config;
-
         let values;
         if (Array.isArray(_valuesOrCallback)) {
           values = _valuesOrCallback;
@@ -117,13 +118,16 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
             ...getConnectionAttributes(this.config),
             [SemanticAttributes.DB_STATEMENT]: getDbStatement(
               query,
-              format,
-              values
+              values,
+              thisPlugin._config.includeValuesInDbStatement
+                ? format
+                : undefined,
+              thisPlugin._config.dbStatementMaxLength
             ),
           },
         });
 
-        if (!isPrepared && thisPluginConfig.addSqlCommenterCommentToQueries) {
+        if (!isPrepared && thisPlugin._config.addSqlCommenterCommentToQueries) {
           arguments[0] = query =
             typeof query === 'string'
               ? addSqlCommenterComment(span, query)
@@ -139,10 +143,10 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
               message: err.message,
             });
           } else {
-            if (typeof thisPluginConfig.responseHook === 'function') {
+            if (typeof thisPlugin._config.responseHook === 'function') {
               safeExecuteInTheMiddle(
                 () => {
-                  thisPluginConfig.responseHook!(span, {
+                  thisPlugin._config.responseHook!(span, {
                     queryResults: results,
                   });
                 },
@@ -155,7 +159,6 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
               );
             }
           }
-
           span.end();
         });
 

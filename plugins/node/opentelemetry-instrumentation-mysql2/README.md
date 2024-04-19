@@ -44,10 +44,12 @@ registerInstrumentations({
 
 You can set the following instrumentation options:
 
-| Options | Type | Description |
-| ------- | ---- | ----------- |
+| Options | Type | Description                                                                                                                                                                                                                                                                                                                  |
+| ------- | ---- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `responseHook` | `MySQL2InstrumentationExecutionResponseHook` (function) | Function for adding custom attributes from db response |
 | `addSqlCommenterCommentToQueries` | `boolean` | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
+| `includeValuesInDbStatement` | `boolean` | If true, adds parameterized values to `db.statement` Span attribute (default false) |
+| `dbStatementMaxLength` | `integer` | If set, truncates the value of `db.statement` Span attribute to the configured length (default unlimited) |
 
 ## Useful links
 
