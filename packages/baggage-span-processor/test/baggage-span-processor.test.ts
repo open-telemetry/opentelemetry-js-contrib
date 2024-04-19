@@ -24,7 +24,6 @@ import {
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
 
-
 describe('BaggageSpanProcessor', () => {
   const baggageProcessor = new BaggageSpanProcessor();
 
@@ -48,7 +47,7 @@ describe('BaggageSpanProcessor', () => {
         spanId: '7e0c63257de34c92',
         traceFlags: TraceFlags.SAMPLED,
       },
-      SpanKind.SERVER,
+      SpanKind.SERVER
     );
   });
 

@@ -58,9 +58,9 @@ export class BaggageSpanProcessor implements SpanProcessor {
    */
   onStart(span: Span, parentContext: Context): void {
     (propagation.getBaggage(parentContext)?.getAllEntries() ?? []).forEach(
-      (entry) => {
+      entry => {
         span.setAttribute(entry[0], entry[1].value);
-      },
+      }
     );
   }
 
@@ -69,7 +69,7 @@ export class BaggageSpanProcessor implements SpanProcessor {
    * returns true.
    * @param span the Span that just ended.
    */
-  onEnd(span: ReadableSpan): void {
+  onEnd(_: ReadableSpan): void {
     // no-op
   }
 
