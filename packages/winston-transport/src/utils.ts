@@ -60,6 +60,7 @@ function getSeverityNumber(level: string): SeverityNumber | undefined {
 }
 
 export function emitLogRecord(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   record: Record<string, any>,
   logger: Logger
 ): void {

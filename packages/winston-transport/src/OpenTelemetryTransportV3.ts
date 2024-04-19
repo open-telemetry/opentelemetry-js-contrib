@@ -27,6 +27,7 @@ export class OpenTelemetryTransportV3 extends TransportStream {
     this._logger = logs.getLogger('@opentelemetry/winston-transport', VERSION);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public override log(info: any, next: () => void) {
     try {
       emitLogRecord(info, this._logger);
