@@ -16,8 +16,9 @@
 
 import { Context, propagation } from '@opentelemetry/api';
 import {
-  NoopSpanProcessor,
+  SpanProcessor,
   Span,
+  ReadableSpan,
 } from '@opentelemetry/sdk-trace-base';
 
 /**
@@ -41,19 +42,43 @@ import {
  * To repeat: a consequence of adding data to Baggage is that the keys and
  * values will appear in all outgoing HTTP headers from the application.
  */
-export class BaggageSpanProcessor extends NoopSpanProcessor {
+export class BaggageSpanProcessor implements SpanProcessor {
   /**
-   * Adds an attribute to the `span` for each {@link Baggage} key and {@link BaggageEntry | entry value}
-   * present in the `parentContext`.
-   *
-   * @param span a {@link Span} being started
-   * @param parentContext the {@link Context} in which `span` was started
+   * Forces to export all finished spans
    */
-  override onStart(span: Span, parentContext: Context): void {
+  forceFlush(): Promise<void> {
+    // no-op
+    return Promise.resolve();
+  }
+
+  /**
+   * Called when a {@link Span} is started, if the `span.isRecording()`
+   * returns true.
+   * @param span the Span that just started.
+   */
+  onStart(span: Span, parentContext: Context): void {
     (propagation.getBaggage(parentContext)?.getAllEntries() ?? []).forEach(
       (entry) => {
         span.setAttribute(entry[0], entry[1].value);
       },
     );
+  }
+
+  /**
+   * Called when a {@link ReadableSpan} is ended, if the `span.isRecording()`
+   * returns true.
+   * @param span the Span that just ended.
+   */
+  onEnd(span: ReadableSpan): void {
+    // no-op
+  }
+
+  /**
+   * Shuts down the processor. Called when SDK is shut down. This is an
+   * opportunity for processor to do any cleanup required.
+   */
+  shutdown(): Promise<void> {
+    // no-op
+    return Promise.resolve();
   }
 }
