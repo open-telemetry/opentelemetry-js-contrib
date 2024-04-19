@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-url]
 
-The BaggageSpanProcessor reads entries stored in Baggage from the parent context and adds the baggage entries' keys and
+The BaggageSpanProcessor reads entries stored in Baggage from the parent context and adds the [baggage](https://opentelemetry.io/docs/concepts/signals/baggage) entries' keys and
 values to the span as attributes on span start.
 
 Add this span processor to a tracer provider.
