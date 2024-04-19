@@ -8,7 +8,7 @@ values to the span as attributes on span start.
 
 Add this span processor to a tracer provider.
 
-Keys and values added to Baggage will appear on subsequent child spans for a trace within this service *and* be propagated to external services in accordance with any configured propagation formatsconfigured.
+Keys and values added to Baggage will appear on subsequent child spans for a trace within this service *and* be propagated to external services in accordance with any configured propagation formats configured.
 If the external services also have a Baggage span processor, the keys and values will appear in those child spans as well.
 
 ⚠ Warning ⚠️
@@ -23,6 +23,27 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ```bash
 npm install --save @opentelemetry/baggage-span-processor
+```
+
+### Usage
+
+Add to the span processors during configurtion:
+
+```javascript
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { BaggageSpanProcessor } from "@opentelemetry/baggage-span-processor";
+
+const globalResource = new Resource({
+   [SemanticResourceAttributes.SERVICE_NAME]: "TestService",
+});
+
+const sdk = new NodeSDK({
+   resource: globalResource,
+   SemanticResourceAttributes: new BaggageSpanProcessor(),
+});
+
+sdk.start()
 ```
 
 ## Useful links
