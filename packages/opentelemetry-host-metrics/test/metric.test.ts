@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-const SI = require('systeminformation');
+import * as Network from 'systeminformation/lib/network';
+import type { Systeminformation } from 'systeminformation';
 import { Attributes } from '@opentelemetry/api';
 import {
   AggregationTemporality,
@@ -45,7 +46,7 @@ class TestMetricReader extends MetricReader {
 let countSI = 0;
 const mockedSI = {
   networkStats: function () {
-    return new Promise((resolve, reject) => {
+    return new Promise<Systeminformation.NetworkStatsData[]>((resolve, reject) => {
       countSI++;
       const stats: any[] = networkJson
         .slice()
@@ -137,7 +138,7 @@ describe('Host Metrics', () => {
       sandbox
         .stub(process.memoryUsage, 'rss')
         .callsFake(mockedProcess.memoryUsage.rss);
-      sandbox.stub(SI, 'networkStats').callsFake(mockedSI.networkStats);
+      sandbox.stub(Network, 'networkStats').callsFake(mockedSI.networkStats);
 
       reader = new TestMetricReader();
 

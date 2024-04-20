@@ -45,8 +45,7 @@ export abstract class BaseMetrics {
 
   constructor(config: MetricsCollectorConfig) {
     this._name = config.name || DEFAULT_NAME;
-    const meterProvider =
-      config.meterProvider || metrics.getMeterProvider();
+    const meterProvider = config.meterProvider || metrics.getMeterProvider();
     if (!config.meterProvider) {
       this._logger.warn('No meter provider, using default');
     }

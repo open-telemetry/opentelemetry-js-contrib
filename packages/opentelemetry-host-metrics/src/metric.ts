@@ -15,8 +15,18 @@
  */
 
 import { BaseMetrics } from './BaseMetrics';
-import { BatchObservableResult, ObservableCounter, ObservableGauge } from '@opentelemetry/api';
-import { ATTRIBUTE_NAMES, CPU_LABELS, MEMORY_LABELS, METRIC_NAMES, NETWORK_LABELS } from './enum';
+import {
+  BatchObservableResult,
+  ObservableCounter,
+  ObservableGauge,
+} from '@opentelemetry/api';
+import {
+  ATTRIBUTE_NAMES,
+  CPU_LABELS,
+  MEMORY_LABELS,
+  METRIC_NAMES,
+  NETWORK_LABELS,
+} from './enum';
 
 import {
   getCpuUsageData,
@@ -25,11 +35,7 @@ import {
   getProcessMemoryData,
 } from './stats/common';
 import { getNetworkData } from './stats/si';
-import type {
-  CpuUsageData,
-  MemoryData,
-  ProcessCpuUsageData,
-} from './types';
+import type { CpuUsageData, MemoryData, ProcessCpuUsageData } from './types';
 import type { Systeminformation } from 'systeminformation';
 
 /**
@@ -188,13 +194,10 @@ export class HostMetrics extends BaseMetrics {
    * Creates metrics
    */
   protected _createMetrics(): void {
-    this._cpuTime = this._meter.createObservableCounter(
-      METRIC_NAMES.CPU_TIME,
-      {
-        description: 'Cpu time in seconds',
-        unit: 's',
-      }
-    );
+    this._cpuTime = this._meter.createObservableCounter(METRIC_NAMES.CPU_TIME, {
+      description: 'Cpu time in seconds',
+      unit: 's',
+    });
     this._cpuUtilization = this._meter.createObservableGauge(
       METRIC_NAMES.CPU_UTILIZATION,
       {

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { type CpuInfo, cpus, totalmem, freemem } from 'os';
-
+import { cpus, totalmem, freemem } from 'os';
+import type { CpuInfo } from 'os';
 import type { CpuUsageData, MemoryData, ProcessCpuUsageData } from '../types';
 
 const MILLISECOND = 1 / 1e3;
