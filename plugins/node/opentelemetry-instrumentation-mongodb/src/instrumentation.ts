@@ -193,9 +193,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         this._wrap(moduleExports, 'getMore', this._getV3PatchCursor());
         return moduleExports;
       },
-      v3UnpatchConnection: (moduleExports?: T, moduleVersion?: string) => {
+      v3UnpatchConnection: (moduleExports?: T) => {
         if (moduleExports === undefined) return;
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         this._unwrap(moduleExports, 'insert');
         this._unwrap(moduleExports, 'remove');
         this._unwrap(moduleExports, 'update');
@@ -208,7 +207,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   private _getV4SessionsPatches<T extends V4Session>() {
     return {
-      v4PatchSessions: (moduleExports: any, moduleVersion?: string) => {
+      v4PatchSessions: (moduleExports: any) => {
         if (isWrapped(moduleExports.acquire)) {
           this._unwrap(moduleExports, 'acquire');
         }
@@ -228,8 +227,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4UnpatchSessions: (moduleExports?: T, moduleVersion?: string) => {
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
+      v4UnpatchSessions: (moduleExports?: T) => {
         if (moduleExports === undefined) return;
         if (isWrapped(moduleExports.acquire)) {
           this._unwrap(moduleExports, 'acquire');
@@ -292,7 +290,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   private _getV4ConnectionPoolPatches<T extends V4ConnectionPool>() {
     return {
-      v4PatchConnectionPool: (moduleExports: any, moduleVersion?: string) => {
+      v4PatchConnectionPool: (moduleExports: any) => {
         const poolPrototype = moduleExports.ConnectionPool.prototype;
 
         if (isWrapped(poolPrototype.checkOut)) {
@@ -306,11 +304,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4UnpatchConnectionPool: (
-        moduleExports?: any,
-        moduleVersion?: string
-      ) => {
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
+      v4UnpatchConnectionPool: (moduleExports?: any) => {
         if (moduleExports === undefined) return;
 
         this._unwrap(moduleExports.ConnectionPool.prototype, 'checkOut');
@@ -329,7 +323,6 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         return moduleExports;
       },
       v4UnpatchConnect: (moduleExports?: T, moduleVersion?: string) => {
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         if (moduleExports === undefined) return;
 
         this._unwrap(moduleExports, 'connect');
@@ -430,9 +423,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4UnpatchConnection: (moduleExports?: any, moduleVersion?: string) => {
+      v4UnpatchConnection: (moduleExports?: any) => {
         if (moduleExports === undefined) return;
-        diag.debug(`Removing internal patch for mongodb@${moduleVersion}`);
         this._unwrap(moduleExports.Connection.prototype, 'command');
       },
     };

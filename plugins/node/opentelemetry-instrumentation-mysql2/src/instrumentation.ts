@@ -52,9 +52,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<any> {
       new InstrumentationNodeModuleDefinition<any>(
         'mysql2',
         ['>= 1.4.2 < 4.0'],
-        (moduleExports: any, moduleVersion) => {
-          api.diag.debug(`Patching mysql2@${moduleVersion}`);
-
+        (moduleExports: any) => {
           const ConnectionPrototype: mysqlTypes.Connection =
             moduleExports.Connection.prototype;
           api.diag.debug('Patching Connection.prototype.query');

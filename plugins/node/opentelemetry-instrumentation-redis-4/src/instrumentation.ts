@@ -222,17 +222,10 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     return new InstrumentationNodeModuleDefinition<unknown>(
       basePackageName,
       ['^1.0.0'],
-      (moduleExports: any, moduleVersion?: string) => {
-        diag.debug(
-          `Patching ${basePackageName}/client@${moduleVersion} (redis@^4.0.0)`
-        );
+      (moduleExports: any) => {
         return moduleExports;
       },
-      (_moduleExports: any, moduleVersion?: string) => {
-        diag.debug(
-          `Unpatching ${basePackageName}/client@${moduleVersion} (redis@^4.0.0)`
-        );
-      },
+      () => {},
       [commanderModuleFile, multiCommanderModule, clientIndexModule]
     );
   }

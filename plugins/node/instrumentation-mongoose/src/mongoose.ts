@@ -128,7 +128,6 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
   }
 
   private unpatch(moduleExports: typeof mongoose): void {
-    this._diag.debug('mongoose instrumentation: unpatch mongoose');
     this._unwrap(moduleExports.Model.prototype, 'save');
     // revert the patch for $save which we applied by aliasing it to patched `save`
     moduleExports.Model.prototype.$save = moduleExports.Model.prototype.save;
