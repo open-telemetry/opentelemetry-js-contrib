@@ -59,7 +59,7 @@ export default class RouterInstrumentation extends InstrumentationBase<any> {
       new InstrumentationNodeModuleFile<typeof Router>(
         'router/lib/layer.js',
         constants.SUPPORTED_VERSIONS,
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           const Layer: any = moduleExports;
           if (isWrapped(Layer.prototype.handle_request)) {
             this._unwrap(Layer.prototype, 'handle_request');
@@ -79,7 +79,7 @@ export default class RouterInstrumentation extends InstrumentationBase<any> {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           const Layer: any = moduleExports;
           this._unwrap(Layer.prototype, 'handle_request');
           this._unwrap(Layer.prototype, 'handle_error');

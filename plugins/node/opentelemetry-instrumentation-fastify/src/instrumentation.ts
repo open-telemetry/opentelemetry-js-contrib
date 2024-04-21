@@ -68,7 +68,7 @@ export class FastifyInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition<any>(
         'fastify',
         ['^3.0.0', '^4.0.0'],
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           return this._patchConstructor(moduleExports);
         }
       ),

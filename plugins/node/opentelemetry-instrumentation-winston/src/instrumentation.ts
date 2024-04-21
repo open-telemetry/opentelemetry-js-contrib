@@ -51,7 +51,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile<Winston3Logger>(
             'winston/lib/winston/logger.js',
             winston3Versions,
-            (logger, moduleVersion) => {
+            logger => {
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
               }
@@ -69,7 +69,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return logger;
             },
-            (logger, moduleVersion) => {
+            logger => {
               if (logger === undefined) return;
               this._unwrap(logger.prototype, 'write');
               this._unwrap(logger.prototype, 'configure');
@@ -88,7 +88,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile<Winston2LoggerModule>(
             'winston/lib/winston/logger.js',
             winstonPre3Versions,
-            (fileExports, moduleVersion) => {
+            fileExports => {
               const proto = fileExports.Logger.prototype;
 
               if (isWrapped(proto.log)) {

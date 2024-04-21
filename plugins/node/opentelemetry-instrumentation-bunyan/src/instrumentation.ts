@@ -48,7 +48,7 @@ export class BunyanInstrumentation extends InstrumentationBase<
       new InstrumentationNodeModuleDefinition<typeof BunyanLogger>(
         'bunyan',
         ['<2.0'],
-        (module: any, moduleVersion) => {
+        (module: any) => {
           const instrumentation = this;
           const Logger =
             module[Symbol.toStringTag] === 'Module'

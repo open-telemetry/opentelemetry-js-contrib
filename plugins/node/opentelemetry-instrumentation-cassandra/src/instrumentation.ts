@@ -51,7 +51,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
     return new InstrumentationNodeModuleDefinition<any>(
       'cassandra-driver',
       supportedVersions,
-      (driverModule, moduleVersion) => {
+      driverModule => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const Client = driverModule.Client.prototype as any;
 
@@ -73,7 +73,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
 
         return driverModule;
       },
-      (driverModule, moduleVersion) => {
+      driverModule => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const Client = driverModule.Client.prototype as any;
 

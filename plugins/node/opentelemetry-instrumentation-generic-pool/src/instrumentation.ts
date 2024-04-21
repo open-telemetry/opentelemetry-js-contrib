@@ -41,7 +41,7 @@ export default class Instrumentation extends InstrumentationBase<any> {
       new InstrumentationNodeModuleDefinition<any>(
         MODULE_NAME,
         ['>=3'],
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {
             this._unwrap(Pool.prototype, 'acquire');
@@ -62,7 +62,7 @@ export default class Instrumentation extends InstrumentationBase<any> {
       new InstrumentationNodeModuleDefinition<any>(
         MODULE_NAME,
         ['^2.4'],
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {
             this._unwrap(Pool.prototype, 'acquire');
@@ -83,7 +83,7 @@ export default class Instrumentation extends InstrumentationBase<any> {
       new InstrumentationNodeModuleDefinition<any>(
         MODULE_NAME,
         ['2 - 2.3'],
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           this._isDisabled = false;
           if (isWrapped(moduleExports.Pool)) {
             this._unwrap(moduleExports, 'Pool');

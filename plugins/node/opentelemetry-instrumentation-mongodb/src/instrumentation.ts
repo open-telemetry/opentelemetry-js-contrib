@@ -148,7 +148,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   private _getV3ConnectionPatches<T extends WireProtocolInternal>() {
     return {
-      v3PatchConnection: (moduleExports: T, moduleVersion?: string) => {
+      v3PatchConnection: (moduleExports: T) => {
         // patch insert operation
         if (isWrapped(moduleExports.insert)) {
           this._unwrap(moduleExports, 'insert');
@@ -314,7 +314,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
 
   private _getV4ConnectPatches<T extends V4Connect>() {
     return {
-      v4PatchConnect: (moduleExports: any, moduleVersion?: string) => {
+      v4PatchConnect: (moduleExports: any) => {
         if (isWrapped(moduleExports.connect)) {
           this._unwrap(moduleExports, 'connect');
         }
@@ -322,7 +322,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         this._wrap(moduleExports, 'connect', this._getV4ConnectCommand());
         return moduleExports;
       },
-      v4UnpatchConnect: (moduleExports?: T, moduleVersion?: string) => {
+      v4UnpatchConnect: (moduleExports?: T) => {
         if (moduleExports === undefined) return;
 
         this._unwrap(moduleExports, 'connect');
@@ -391,10 +391,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private _getV4ConnectionPatches<T extends V4Connection>() {
     return {
-      v4PatchConnectionCallback: (
-        moduleExports: any,
-        moduleVersion?: string
-      ) => {
+      v4PatchConnectionCallback: (moduleExports: any) => {
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
           this._unwrap(moduleExports.Connection.prototype, 'command');
@@ -407,10 +404,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      v4PatchConnectionPromise: (
-        moduleExports: any,
-        moduleVersion?: string
-      ) => {
+      v4PatchConnectionPromise: (moduleExports: any) => {
         // patch insert operation
         if (isWrapped(moduleExports.Connection.prototype.command)) {
           this._unwrap(moduleExports.Connection.prototype, 'command');

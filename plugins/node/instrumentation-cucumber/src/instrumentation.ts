@@ -81,7 +81,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
           }>(
             '@cucumber/cucumber/lib/runtime/test_case_runner.js',
             ['^8.0.0', '^9.0.0', '^10.0.0'],
-            (moduleExports, moduleVersion) => {
+            moduleExports => {
               if (isWrapped(moduleExports.default.prototype.run)) {
                 this._unwrap(moduleExports.default.prototype, 'run');
                 this._unwrap(moduleExports.default.prototype, 'runStep');
@@ -108,7 +108,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
               }
               return moduleExports;
             },
-            (moduleExports, moduleVersion) => {
+            moduleExports => {
               if (moduleExports === undefined) return;
               this._unwrap(moduleExports.default.prototype, 'run');
               this._unwrap(moduleExports.default.prototype, 'runStep');

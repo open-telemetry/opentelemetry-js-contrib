@@ -128,7 +128,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
       'graphql/language/parser.js',
       supportedVersions,
-      (moduleExports, moduleVersion) => {
+      moduleExports => {
         if (isWrapped(moduleExports.parse)) {
           this._unwrap(moduleExports, 'parse');
         }

@@ -82,7 +82,7 @@ export class PgInstrumentation extends InstrumentationBase {
 
         return module;
       },
-      (module: any, moduleVersion) => {
+      (module: any) => {
         const moduleExports: typeof pgTypes =
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
@@ -109,7 +109,7 @@ export class PgInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      (moduleExports, moduleVersion) => {
+      moduleExports => {
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
