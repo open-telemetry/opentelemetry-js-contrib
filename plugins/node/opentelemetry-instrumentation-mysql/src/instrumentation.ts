@@ -29,8 +29,9 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_MYSQL,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
@@ -54,7 +55,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
   typeof mysqlTypes
 > {
   static readonly COMMON_ATTRIBUTES = {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
   };
   private _connectionsUsage!: UpDownCounter;
 
@@ -329,10 +330,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           },
         });
 
-        span.setAttribute(
-          SemanticAttributes.DB_STATEMENT,
-          getDbStatement(query)
-        );
+        span.setAttribute(SEMATTRS_DB_STATEMENT, getDbStatement(query));
 
         const instrumentationConfig: MySQLInstrumentationConfig =
           thisPlugin.getConfig();

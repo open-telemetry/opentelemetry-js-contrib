@@ -22,7 +22,7 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 
 import * as http from 'http';
 import type * as Router from 'router';
@@ -167,7 +167,7 @@ export default class RouterInstrumentation extends InstrumentationBase<any> {
       [AttributeNames.NAME]: fnName,
       [AttributeNames.VERSION]: this._moduleVersion,
       [AttributeNames.TYPE]: type,
-      [SemanticAttributes.HTTP_ROUTE]: route,
+      [SEMATTRS_HTTP_ROUTE]: route,
     };
 
     const parent = api.context.active();

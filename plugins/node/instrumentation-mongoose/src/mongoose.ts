@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  context,
-  Span,
-  trace,
-  SpanAttributes,
-  SpanKind,
-} from '@opentelemetry/api';
+import { context, Span, trace, Attributes, SpanKind } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import type * as mongoose from 'mongoose';
 import { MongooseInstrumentationConfig, SerializerPayload } from './types';
@@ -34,7 +28,11 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 import { VERSION } from './version';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_DB_OPERATION,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+} from '@opentelemetry/semantic-conventions';
 
 const contextCaptureFunctions = [
   'remove',
@@ -154,9 +152,9 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
         }
 
         const parentSpan = this[_STORED_PARENT_SPAN];
-        const attributes: SpanAttributes = {};
+        const attributes: Attributes = {};
         if (self._config.dbStatementSerializer) {
-          attributes[SemanticAttributes.DB_STATEMENT] =
+          attributes[SEMATTRS_DB_STATEMENT] =
             self._config.dbStatementSerializer('aggregate', {
               options: this.options,
               aggregatePipeline: this._pipeline,
@@ -196,9 +194,9 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
         }
 
         const parentSpan = this[_STORED_PARENT_SPAN];
-        const attributes: SpanAttributes = {};
+        const attributes: Attributes = {};
         if (self._config.dbStatementSerializer) {
-          attributes[SemanticAttributes.DB_STATEMENT] =
+          attributes[SEMATTRS_DB_STATEMENT] =
             self._config.dbStatementSerializer(this.op, {
               condition: this._conditions,
               updates: this._update,
@@ -242,9 +240,9 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
         if (options && !(options instanceof Function)) {
           serializePayload.options = options;
         }
-        const attributes: SpanAttributes = {};
+        const attributes: Attributes = {};
         if (self._config.dbStatementSerializer) {
-          attributes[SemanticAttributes.DB_STATEMENT] =
+          attributes[SEMATTRS_DB_STATEMENT] =
             self._config.dbStatementSerializer(op, serializePayload);
         }
         const span = self._startSpan(
@@ -307,7 +305,7 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
     collection: mongoose.Collection,
     modelName: string,
     operation: string,
-    attributes: SpanAttributes,
+    attributes: Attributes,
     parentSpan?: Span
   ): Span {
     return this.tracer.startSpan(
@@ -317,8 +315,8 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
         attributes: {
           ...attributes,
           ...getAttributesFromCollection(collection),
-          [SemanticAttributes.DB_OPERATION]: operation,
-          [SemanticAttributes.DB_SYSTEM]: 'mongoose',
+          [SEMATTRS_DB_OPERATION]: operation,
+          [SEMATTRS_DB_SYSTEM]: 'mongoose',
         },
       },
       parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
