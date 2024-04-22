@@ -30,20 +30,20 @@ npm install --save @opentelemetry/baggage-span-processor
 Add to the span processors during configuration:
 
 ```javascript
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-import { NodeSDK } from "@opentelemetry/sdk-node";
+import { NodeSDK, tracing } from "@opentelemetry/sdk-node";
 import { BaggageSpanProcessor } from "@opentelemetry/baggage-span-processor";
 
-const globalResource = new Resource({
-   [SemanticResourceAttributes.SERVICE_NAME]: "TestService",
-});
+const spanProcessors = [
+  new tracing.SimpleSpanProcessor(
+    new tracing.ConsoleSpanExporter()),
+  new BaggageSpanProcessor()];
 
 const sdk = new NodeSDK({
-   resource: globalResource,
-   SemanticResourceAttributes: new BaggageSpanProcessor(),
+  serviceName: "example-service",
+  spanProcessors
 });
 
-sdk.start()
+sdk.start();
 ```
 
 ## Useful links
