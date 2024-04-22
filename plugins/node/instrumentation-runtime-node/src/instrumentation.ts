@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { EventLoopUtilization, performance } from 'node:perf_hooks';
-const { eventLoopUtilization } = performance;
-
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
 import { VERSION } from './version';
 import { RuntimeNodeInstrumentationConfig } from './types';
+import { MetricCollector } from './types/metricCollector';
+import { EventLoopUtilizationCollector } from './metrics/eventLoopUtilizationCollector';
+import { EventLoopLagCollector } from './metrics/eventLoopLagCollector';
+import { GCCollector } from './metrics/gcCollector';
+import { HeapSizeAndUsedCollector } from './metrics/heapSizeAndUsedCollector';
+import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedCollector';
 
-const ELUS_LENGTH = 2;
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
-  eventLoopUtilizationMeasurementInterval: 5000,
+  monitoringPrecision: 5000,
 };
 
+const namePrefix = 'nodejs';
+
 export class RuntimeNodeInstrumentation extends InstrumentationBase {
-  private _ELUs: EventLoopUtilization[] = [];
-  private _interval: NodeJS.Timeout | undefined;
+  private _collectors: MetricCollector[] = [];
 
   constructor(config: RuntimeNodeInstrumentationConfig = {}) {
     super(
@@ -36,37 +39,27 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
       VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
-  }
-
-  private _addELU() {
-    this._ELUs.unshift(eventLoopUtilization());
-    if (this._ELUs.length > ELUS_LENGTH) {
-      this._ELUs.pop();
+    this._collectors = [
+      new EventLoopUtilizationCollector(this._config, namePrefix),
+      new EventLoopLagCollector(this._config, namePrefix),
+      new GCCollector(this._config, namePrefix),
+      new HeapSizeAndUsedCollector(this._config, namePrefix),
+      new HeapSpacesSizeAndUsedCollector(this._config, namePrefix),
+    ];
+    if (this._config.enabled) {
+      for (const collector of this._collectors) {
+        collector.enable();
+      }
     }
-  }
-
-  private _clearELU() {
-    if (!this._ELUs) {
-      this._ELUs = [];
-    }
-    this._ELUs.length = 0;
   }
 
   // Called when a new `MeterProvider` is set
   // the Meter (result of @opentelemetry/api's getMeter) is available as this.meter within this method
   override _updateMetricInstruments() {
-    this.meter
-      .createObservableGauge('nodejs.event_loop.utilization', {
-        description: 'Event loop utilization',
-        unit: '1',
-      })
-      .addCallback(async observableResult => {
-        if (this._ELUs.length !== ELUS_LENGTH) {
-          return;
-        }
-        const elu = eventLoopUtilization(...this._ELUs);
-        observableResult.observe(elu.utilization);
-      });
+    if (!this._collectors) return;
+    for (const collector of this._collectors) {
+      collector.updateMetricInstruments(this.meter);
+    }
   }
 
   init() {
@@ -74,22 +67,16 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
   }
 
   override enable() {
-    this._clearELU();
-    this._addELU();
-    clearInterval(this._interval);
-    this._interval = setInterval(
-      () => this._addELU(),
-      (this._config as RuntimeNodeInstrumentationConfig)
-        .eventLoopUtilizationMeasurementInterval
-    );
+    if (!this._collectors) return;
 
-    // unref so that it does not keep the process running if disable() is never called
-    this._interval?.unref();
+    for (const collector of this._collectors) {
+      collector.enable();
+    }
   }
 
   override disable() {
-    this._clearELU();
-    clearInterval(this._interval);
-    this._interval = undefined;
+    for (const collector of this._collectors) {
+      collector.disable();
+    }
   }
 }

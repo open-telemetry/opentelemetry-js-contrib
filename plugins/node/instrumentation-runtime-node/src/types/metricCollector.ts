@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import { Meter } from '@opentelemetry/api';
 
-export interface RuntimeNodeInstrumentationConfig
-  extends InstrumentationConfig {
-  monitoringPrecision?: number;
+export interface MetricCollector {
+  updateMetricInstruments(meter: Meter): void;
+
+  enable(): void;
+
+  disable(): void;
 }
