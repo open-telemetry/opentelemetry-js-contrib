@@ -22,7 +22,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 
 /**
- * The BaggageSpanProcessor reads entries stored in {@link Baggage}
+ * BaggageSpanProcessor is a {@link SpanProcessor} that reads entries stored in {@link Baggage}
  * from the parent context and adds the baggage entries' keys and
  * values to the span as attributes on span start.
  *

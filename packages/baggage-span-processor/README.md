@@ -27,7 +27,7 @@ npm install --save @opentelemetry/baggage-span-processor
 
 ### Usage
 
-Add to the span processors during configurtion:
+Add to the span processors during configuration:
 
 ```javascript
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
