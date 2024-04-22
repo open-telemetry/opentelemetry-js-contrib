@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MeterProvider, DataPointType } from '@opentelemetry/sdk-metrics';
+import { MeterProvider } from '@opentelemetry/sdk-metrics';
 
 import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
@@ -21,7 +21,7 @@ import { TestMetricReader } from './testMetricsReader';
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe('nodejs.event_loop.utilization', function () {
+describe('instrumentation', function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -49,61 +49,59 @@ describe('nodejs.event_loop.utilization', function () {
     assert.strictEqual(scopeMetrics.length, 0);
   });
 
-  it('should write event loop utilization metrics after monitoringPrecision', async function () {
+  it('should export after being enabled', async function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
+      enabled: false,
     });
     instrumentation.setMeterProvider(meterProvider);
 
     // act
     await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
-    const { resourceMetrics, errors } = await metricReader.collect();
+    const firstCollections = await metricReader.collect();
 
     // assert
+    assert.deepEqual(firstCollections.errors, []);
+    const scopeMetrics = firstCollections.resourceMetrics.scopeMetrics;
+    assert.strictEqual(scopeMetrics.length, 0);
+
+    instrumentation.enable();
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
+
+    const secondCollection = await metricReader.collect();
     assert.deepEqual(
-      errors,
+      secondCollection.errors,
       [],
       'expected no errors from the callback during collection'
     );
-    const scopeMetrics = resourceMetrics.scopeMetrics;
-    const utilizationMetric = scopeMetrics[0].metrics.find(
-      x => x.descriptor.name === 'nodejs.event_loop.utilization'
-    );
-
-    assert.notEqual(utilizationMetric, undefined, 'metric not found');
-
+    const secondScopeMetrics = secondCollection.resourceMetrics.scopeMetrics;
     assert.strictEqual(
-      utilizationMetric!.dataPointType,
-      DataPointType.GAUGE,
-      'expected gauge'
-    );
-
-    assert.strictEqual(
-      utilizationMetric!.descriptor.name,
-      'nodejs.event_loop.utilization',
-      'descriptor.name'
-    );
-
-    assert.strictEqual(
-      utilizationMetric!.descriptor.description,
-      'Event loop utilization'
-    );
-
-    assert.strictEqual(
-      utilizationMetric!.descriptor.unit,
-      '1',
-      'expected default unit'
-    );
-
-    assert.strictEqual(
-      utilizationMetric!.dataPoints.length,
+      secondScopeMetrics.length,
       1,
-      'expected one data point'
+      'expected one scope (one meter created by instrumentation)'
     );
+  });
 
-    const val = utilizationMetric!.dataPoints[0].value;
-    assert.strictEqual(val > 0, true, `val (${val}) > 0`);
-    assert.strictEqual(val <= 1, true, `val (${val}) <= 1`);
+  it('should not record result when collecting immediately with custom config', async function () {
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    assert.deepEqual(
+      (await metricReader.collect()).resourceMetrics.scopeMetrics,
+      []
+    );
+  });
+
+  it('should not record result when collecting immediately with default config', async function () {
+    const instrumentation = new RuntimeNodeInstrumentation();
+    instrumentation.setMeterProvider(meterProvider);
+
+    assert.deepEqual(
+      (await metricReader.collect()).resourceMetrics.scopeMetrics,
+      []
+    );
   });
 });
