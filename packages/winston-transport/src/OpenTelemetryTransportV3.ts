@@ -27,17 +27,15 @@ export class OpenTelemetryTransportV3 extends TransportStream {
     this._logger = logs.getLogger('@opentelemetry/winston-transport', VERSION);
   }
 
-  public override log(info: any, next: () => void) {
+  public override log(info: any, callback: () => void) {
     try {
       emitLogRecord(info, this._logger);
     } catch (error) {
       this.emit('warn', error);
     }
-    setImmediate(() => {
-      this.emit('logged', info);
-    });
-    if (next) {
-      setImmediate(next);
+    this.emit('logged', info);
+    if (callback) {
+      callback();
     }
   }
 }
