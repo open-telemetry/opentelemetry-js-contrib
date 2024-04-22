@@ -165,8 +165,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
       ) {
         const route = original.apply(this, args);
         const layer = this._router.stack[this._router.stack.length - 1];
-        instrumentation._applyPatch.call(
-          instrumentation,
+        instrumentation._applyPatch(
           layer,
           typeof args[0] === 'string' ? args[0] : undefined
         );
@@ -189,7 +188,8 @@ export class ExpressInstrumentation extends InstrumentationBase<
     this._wrap(layer, 'handle', (original: Function) => {
       // TODO: instrument error handlers
       if (original.length === 4) return original;
-      return function (
+      
+      const patched = function (
         this: ExpressLayer,
         req: PatchedRequest,
         res: express.Response
@@ -326,6 +326,25 @@ export class ExpressInstrumentation extends InstrumentationBase<
           }
         }
       };
+
+      // `handle` isn't just a regular function in some cases. It also contains
+      // some properties holding metadata and state so we need to proxy them
+      // through through patched function 
+      // ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1950
+      Object.keys(original).forEach((key) => {
+        Object.defineProperty(patched, key, {
+          get() {
+            // @ts-expect-error -- the original function has hidden props indexed by strings
+            return original[key];
+          },
+          set(value) {
+            // @ts-expect-error -- the original function has hidden props indexed by strings
+            original[key] = value;
+          }
+        })
+      });
+
+      return patched;
     });
   }
 
