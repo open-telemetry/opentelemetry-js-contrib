@@ -26,7 +26,7 @@ const prometheusExporter = new PrometheusExporter({
 const sdk = new NodeSDK({
   metricReader: prometheusExporter,
   instrumentations: [new RuntimeNodeInstrumentation({
-    eventLoopUtilizationMeasurementInterval: 5000,
+    monitoringPrecision: 5000,
   })],
 });
 
@@ -44,7 +44,7 @@ Go to [`localhost:9464/metrics`](http://localhost:9464/metrics), and you should 
 nodejs_performance_event_loop_utilization 0.010140079547955264
 ```
 
-> Metrics will only be exported after it has collected two ELU readings (at least approximately `RuntimeNodeInstrumentationConfig.eventLoopUtilizationMeasurementInterval` milliseconds after initialization). Otherwise, you may see:
+> Metrics will only be exported after it has collected two ELU readings (at least approximately `RuntimeNodeInstrumentationConfig.monitoringPrecision` milliseconds after initialization). Otherwise, you may see:
 >
 > ```txt
 > # no registered metrics
@@ -56,7 +56,7 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 
 | name | type | unit | default | description |
 |---|---|---|---|---|
-| [`eventLoopUtilizationMeasurementInterval`](./src/types.ts#L25) | `int` | millisecond | `5000` | The approximate number of milliseconds for which to calculate event loop utilization averages. A larger value will result in more accurate averages at the expense of less granular data. Should be set to below the scrape interval of your metrics collector to avoid duplicated data points. |
+| [`monitoringPrecision`](./src/types.ts#L25) | `int` | millisecond | `5000` | The approximate number of milliseconds for which to calculate event loop utilization averages. A larger value will result in more accurate averages at the expense of less granular data. Should be set to below the scrape interval of your metrics collector to avoid duplicated data points. |
 
 ## Supported Node.js versions
 
