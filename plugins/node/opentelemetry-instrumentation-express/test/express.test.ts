@@ -554,7 +554,7 @@ describe('ExpressInstrumentation', () => {
     });
   });
 
-  it.skip('should work with ESM usage', async () => {
+  it('should work with ESM usage', async () => {
     await testUtils.runTestFixture({
       cwd: __dirname,
       argv: ['fixtures/use-express.mjs'],
