@@ -59,4 +59,16 @@ describe('BaggageSpanProcessor', () => {
 
     expect(span.attributes).toEqual(expectedAttrs);
   });
+
+  it('forceFlush is a no-op and does not throw error', async () => {
+    await expect(baggageProcessor.forceFlush()).resolves.not.toThrow();
+  });
+
+  it('onEnd is a no-op and does not throw error', async () => {
+    expect(() => baggageProcessor.onEnd(span)).not.toThrow();
+  });
+
+  it('shutdown is a no-op and does not throw error', async () => {
+    await expect(baggageProcessor.shutdown()).resolves.not.toThrow();
+  });
 });
