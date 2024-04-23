@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-import { SpanAttributes } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { Attributes } from '@opentelemetry/api';
+import {
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_USER,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 /*
   Following types declare an expectation on mysql2 types and define a subset we
@@ -42,35 +48,27 @@ interface Config {
   connectionConfig?: Config;
 }
 /**
- * Get an SpanAttributes map from a mysql connection config object
+ * Get an Attributes map from a mysql connection config object
  *
  * @param config ConnectionConfig
  */
-export function getConnectionAttributes(config: Config): SpanAttributes {
+export function getConnectionAttributes(config: Config): Attributes {
   const { host, port, database, user } = getConfig(config);
   const portNumber = parseInt(port, 10);
   if (!isNaN(portNumber)) {
     return {
-      [SemanticAttributes.NET_PEER_NAME]: host,
-      [SemanticAttributes.NET_PEER_PORT]: portNumber,
-      [SemanticAttributes.DB_CONNECTION_STRING]: getJDBCString(
-        host,
-        port,
-        database
-      ),
-      [SemanticAttributes.DB_NAME]: database,
-      [SemanticAttributes.DB_USER]: user,
+      [SEMATTRS_NET_PEER_NAME]: host,
+      [SEMATTRS_NET_PEER_PORT]: portNumber,
+      [SEMATTRS_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
+      [SEMATTRS_DB_NAME]: database,
+      [SEMATTRS_DB_USER]: user,
     };
   }
   return {
-    [SemanticAttributes.NET_PEER_NAME]: host,
-    [SemanticAttributes.DB_CONNECTION_STRING]: getJDBCString(
-      host,
-      port,
-      database
-    ),
-    [SemanticAttributes.DB_NAME]: database,
-    [SemanticAttributes.DB_USER]: user,
+    [SEMATTRS_NET_PEER_NAME]: host,
+    [SEMATTRS_DB_CONNECTION_STRING]: getJDBCString(host, port, database),
+    [SEMATTRS_DB_NAME]: database,
+    [SEMATTRS_DB_USER]: user,
   };
 }
 

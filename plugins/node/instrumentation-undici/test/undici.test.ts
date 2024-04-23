@@ -38,8 +38,6 @@ import { assertSpan } from './utils/assertSpan';
 
 import type { fetch, stream, request, Client, Dispatcher } from 'undici';
 
-type PromisedValue<T> = T extends Promise<infer R> ? R : never;
-
 const instrumentation = new UndiciInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
@@ -121,6 +119,10 @@ describe('UndiciInstrumentation `undici` tests', function () {
     propagation.disable();
     mockServer.mockListener(undefined);
     mockServer.stop(done);
+
+    // Close kept-alive sockets. This can save a 4s keep-alive delay before the
+    // process exits.
+    (undici as any).getGlobalDispatcher().close();
   });
 
   beforeEach(function () {
@@ -217,37 +219,36 @@ describe('UndiciInstrumentation `undici` tests', function () {
         'foo-client': 'bar',
       };
 
-      // In version v5 if `undici` you get the following error when requesting with a method
-      // that is not one of the known ones in uppercase. Using
-      //
-      // SocketError: other side closed
-      // at Socket.onSocketEnd (node_modules/undici/lib/client.js:1118:22)
-      // at endReadableNT (internal/streams/readable.js:1333:12)
-      // at processTicksAndRejections (internal/process/task_queues.js:82:21)
-      let firstQueryResponse: PromisedValue<ReturnType<typeof request>>;
-      let secondQueryResponse: PromisedValue<ReturnType<typeof request>>;
+      const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      let firstQueryResponse;
       try {
-        const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
         firstQueryResponse = await undici.request(queryRequestUrl, {
           headers,
           // @ts-expect-error - method type expects in uppercase
           method: 'get',
         });
-        await consumeResponseBody(firstQueryResponse.body);
-
-        secondQueryResponse = await undici.request(queryRequestUrl, {
-          headers,
-          // @ts-expect-error - method type expects known HTTP method (GET, POST, PUT, ...)
-          method: 'custom',
-        });
-        await consumeResponseBody(secondQueryResponse.body);
-      } catch (undiciErr) {
-        const { stack } = undiciErr as Error;
-
-        if (stack?.startsWith('SocketError: other side closed')) {
-          this.skip();
-        }
+      } catch (err: any) {
+        // This request is using a bogus HTTP method `get`. If (a) using Node.js
+        // v14, v16, or early v18.x versions and (b) this request is re-using
+        // a socket (from an earlier keep-alive request in this test file),
+        // then Node.js will emit 'end' on the socket. Undici then throws
+        // `SocketError: other side closed`.  Given this is only for old Node.js
+        // versions and for this rare case of using a bogus HTTP method, we will
+        // skip out of this test instead of attempting to fully understand it.
+        assert.strictEqual(err.message, 'other side closed');
+        this.skip();
       }
+      if (!firstQueryResponse) {
+        return;
+      }
+      await consumeResponseBody(firstQueryResponse.body);
+
+      const secondQueryResponse = await undici.request(queryRequestUrl, {
+        headers,
+        // @ts-expect-error - method type expects known HTTP method (GET, POST, PUT, ...)
+        method: 'custom',
+      });
+      await consumeResponseBody(secondQueryResponse.body);
 
       assert.ok(
         firstQueryResponse!.headers['propagation-error'] === undefined,

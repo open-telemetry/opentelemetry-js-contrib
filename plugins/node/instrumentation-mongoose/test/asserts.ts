@@ -15,21 +15,26 @@
  */
 import { expect } from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_DB_MONGODB_COLLECTION,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+} from '@opentelemetry/semantic-conventions';
 import { SpanStatusCode } from '@opentelemetry/api';
 import { SerializerPayload } from '../src';
 import { DB_NAME, MONGO_HOST, MONGO_PORT } from './config';
 
 export const assertSpan = (span: ReadableSpan) => {
   expect(span.status.code).toBe(SpanStatusCode.UNSET);
-  expect(span.attributes[SemanticAttributes.DB_SYSTEM]).toEqual('mongoose');
-  expect(span.attributes[SemanticAttributes.DB_MONGODB_COLLECTION]).toEqual(
-    'users'
-  );
-  expect(span.attributes[SemanticAttributes.DB_NAME]).toEqual(DB_NAME);
-  expect(span.attributes[SemanticAttributes.NET_PEER_NAME]).toEqual(MONGO_HOST);
-  expect(span.attributes[SemanticAttributes.NET_PEER_PORT]).toEqual(MONGO_PORT);
+  expect(span.attributes[SEMATTRS_DB_SYSTEM]).toEqual('mongoose');
+  expect(span.attributes[SEMATTRS_DB_MONGODB_COLLECTION]).toEqual('users');
+  expect(span.attributes[SEMATTRS_DB_NAME]).toEqual(DB_NAME);
+  expect(span.attributes[SEMATTRS_NET_PEER_NAME]).toEqual(MONGO_HOST);
+  expect(span.attributes[SEMATTRS_NET_PEER_PORT]).toEqual(MONGO_PORT);
 };
 
 export const getStatement = (span: ReadableSpan): SerializerPayload =>
-  JSON.parse(span.attributes[SemanticAttributes.DB_STATEMENT] as string);
+  JSON.parse(span.attributes[SEMATTRS_DB_STATEMENT] as string);
