@@ -188,7 +188,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
     this._wrap(layer, 'handle', (original: Function) => {
       // TODO: instrument error handlers
       if (original.length === 4) return original;
-      
+
       const patched = function (
         this: ExpressLayer,
         req: PatchedRequest,
@@ -329,9 +329,9 @@ export class ExpressInstrumentation extends InstrumentationBase<
 
       // `handle` isn't just a regular function in some cases. It also contains
       // some properties holding metadata and state so we need to proxy them
-      // through through patched function 
+      // through through patched function
       // ref: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1950
-      Object.keys(original).forEach((key) => {
+      Object.keys(original).forEach(key => {
         Object.defineProperty(patched, key, {
           get() {
             // @ts-expect-error -- the original function has hidden props indexed by strings
@@ -340,8 +340,8 @@ export class ExpressInstrumentation extends InstrumentationBase<
           set(value) {
             // @ts-expect-error -- the original function has hidden props indexed by strings
             original[key] = value;
-          }
-        })
+          },
+        });
       });
 
       return patched;

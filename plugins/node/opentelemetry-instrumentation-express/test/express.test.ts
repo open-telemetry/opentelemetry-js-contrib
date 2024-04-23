@@ -496,7 +496,7 @@ describe('ExpressInstrumentation', () => {
         app.use(express.json());
         app.get('/bare_route', (req, res) => {
           const stack = req.app._router.stack as any[];
-          routerLayer = stack.find((layer) => layer.name === 'router');
+          routerLayer = stack.find(layer => layer.name === 'router');
           return res.status(200).end('test');
         });
       });
@@ -510,7 +510,10 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'test');
           rootSpan.end();
-          assert.ok(routerLayer?.handle?.stack?.length === 1, 'router layer stack is accessible');
+          assert.ok(
+            routerLayer?.handle?.stack?.length === 1,
+            'router layer stack is accessible'
+          );
         }
       );
     });
