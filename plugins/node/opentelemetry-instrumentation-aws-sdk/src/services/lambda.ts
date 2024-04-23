@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  Span,
-  SpanKind,
-  Tracer,
-  diag,
-  SpanAttributes,
-} from '@opentelemetry/api';
+import { Span, SpanKind, Tracer, diag, Attributes } from '@opentelemetry/api';
 import {
   SEMATTRS_FAAS_EXECUTION,
   SEMATTRS_FAAS_INVOKED_NAME,
@@ -45,7 +39,7 @@ export class LambdaServiceExtension implements ServiceExtension {
   ): RequestMetadata {
     const functionName = this.extractFunctionName(request.commandInput);
 
-    let spanAttributes: SpanAttributes = {};
+    let spanAttributes: Attributes = {};
     let spanName: string | undefined;
 
     switch (request.commandName) {
