@@ -22,7 +22,6 @@ import {
   context,
   SpanKind,
   SpanStatusCode,
-  Span,
   Baggage,
 } from '@opentelemetry/api';
 import {
@@ -356,8 +355,11 @@ describe('instrumentation-kafkajs', () => {
         patchProducerSend(async (): Promise<RecordMetadata[]> => []);
 
         const config: KafkaJsInstrumentationConfig = {
-          producerHook: (span: Span, _topic: string, message: Message) => {
-            span.setAttribute('attribute-from-hook', message.value as string);
+          producerHook: (span, info) => {
+            span.setAttribute(
+              'attribute-from-hook',
+              info.message.value as string
+            );
           },
         };
         instrumentation.disable();
@@ -391,7 +393,7 @@ describe('instrumentation-kafkajs', () => {
         patchProducerSend(async (): Promise<RecordMetadata[]> => []);
 
         const config: KafkaJsInstrumentationConfig = {
-          producerHook: (_span: Span, _topic: string, _message: Message) => {
+          producerHook: (_span, _info) => {
             throw new Error('error thrown from producer hook');
           },
         };
@@ -514,10 +516,10 @@ describe('instrumentation-kafkajs', () => {
     describe('successful consumer hook', () => {
       beforeEach(async () => {
         const config: KafkaJsInstrumentationConfig = {
-          consumerHook: (span: Span, _topic: string, message: Message) => {
+          consumerHook: (span, info) => {
             span.setAttribute(
               'attribute key from hook',
-              message.value!.toString()
+              info.message.value!.toString()
             );
           },
         };
@@ -551,7 +553,7 @@ describe('instrumentation-kafkajs', () => {
     describe('throwing consumer hook', () => {
       beforeEach(async () => {
         const config: KafkaJsInstrumentationConfig = {
-          consumerHook: (_span: Span, _topic: string, _message: Message) => {
+          consumerHook: (_span, _info) => {
             throw new Error('error thrown from consumer hook');
           },
         };

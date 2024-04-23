@@ -15,14 +15,26 @@
  */
 import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import type { Message } from 'kafkajs';
+
+export interface KafkajsMessage {
+  key?: Buffer | string | null;
+  value: Buffer | string | null;
+  partition?: number;
+  headers?: Record<string, Buffer | string | (Buffer | string)[] | undefined>;
+  timestamp?: string;
+}
+
+export interface MessageInfo {
+  topic: string;
+  message: KafkajsMessage;
+}
 
 export interface KafkaProducerCustomAttributeFunction {
-  (span: Span, topic: string, message: Message): void;
+  (span: Span, info: MessageInfo): void;
 }
 
 export interface KafkaConsumerCustomAttributeFunction {
-  (span: Span, topic: string, message: Message): void;
+  (span: Span, info: MessageInfo): void;
 }
 
 export interface KafkaJsInstrumentationConfig extends InstrumentationConfig {

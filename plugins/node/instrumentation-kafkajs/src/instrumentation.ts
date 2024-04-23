@@ -62,11 +62,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
   protected override _config!: KafkaJsInstrumentationConfig;
 
   constructor(config: KafkaJsInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-kafkajs',
-      VERSION,
-      config
-    );
+    super('@opentelemetry/instrumentation-kafkajs', VERSION, config);
   }
 
   protected init(): InstrumentationModuleDefinition<typeof kafkaJs> {
@@ -85,7 +81,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
       new InstrumentationNodeModuleDefinition<typeof kafkaJs>(
         'kafkajs',
         ['*'],
-        (moduleExports) => {
+        moduleExports => {
           this._diag.debug('Applying patch for kafkajs');
 
           unpatch(moduleExports);
@@ -386,7 +382,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
 
     if (this._config?.consumerHook && message) {
       safeExecuteInTheMiddle(
-        () => this._config.consumerHook!(span, topic, message),
+        () => this._config.consumerHook!(span, { topic, message }),
         e => {
           if (e) this._diag.error('consumerHook error', e);
         },
@@ -413,7 +409,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<
 
     if (this._config?.producerHook) {
       safeExecuteInTheMiddle(
-        () => this._config.producerHook!(span, topic, message),
+        () => this._config.producerHook!(span, { topic, message }),
         e => {
           if (e) this._diag.error('producerHook error', e);
         },
