@@ -26,7 +26,6 @@ import * as util from 'util';
 import { diag } from '@opentelemetry/api';
 
 const { KubeConfig, CoreV1Api } = require('@kubernetes/client-node');
-require('dotenv').config();
 
 export class ContainerDetector implements Detector {
   readonly CONTAINER_ID_LENGTH = 64;

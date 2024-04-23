@@ -139,8 +139,8 @@ describe('ContainerDetector', () => {
     });
   });
 
-  describe('Detect containerId in k8 environment', () => {
-    it('should return an empty Resource when not in a K8 environment', async () => {
+  describe('Detect containerId in k8s environment', () => {
+    it('should return an empty Resource when not in a k8s environment', async () => {
       const containerDetector = new ContainerDetector();
       sinon
         .stub(containerDetector, '_isInKubernetesEnvironment' as any)
