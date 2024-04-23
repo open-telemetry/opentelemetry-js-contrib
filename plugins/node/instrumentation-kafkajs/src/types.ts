@@ -24,17 +24,17 @@ export interface KafkajsMessage {
   timestamp?: string;
 }
 
-export interface MessageInfo {
+export interface MessageInfo<T = KafkajsMessage> {
   topic: string;
-  message: KafkajsMessage;
+  message: T;
 }
 
-export interface KafkaProducerCustomAttributeFunction {
-  (span: Span, info: MessageInfo): void;
+export interface KafkaProducerCustomAttributeFunction<T = KafkajsMessage> {
+  (span: Span, info: MessageInfo<T>): void;
 }
 
-export interface KafkaConsumerCustomAttributeFunction {
-  (span: Span, info: MessageInfo): void;
+export interface KafkaConsumerCustomAttributeFunction<T = KafkajsMessage> {
+  (span: Span, info: MessageInfo<T>): void;
 }
 
 export interface KafkaJsInstrumentationConfig extends InstrumentationConfig {
