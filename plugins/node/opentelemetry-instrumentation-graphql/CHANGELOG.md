@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.38.1...instrumentation-graphql-v0.39.0) (2024-04-03)
+
+
+### Features
+
+* **deps:** update otel-js to 1.23.0/0.50.0 ([#2076](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2076)) ([d5f079b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d5f079b3992395dcfb3b791c9fdaeefd6d6526f8))
+
+## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.38.0...instrumentation-graphql-v0.38.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* **instrumentation-graphql:** limit support to &gt;=14 &lt;17 ([#1971](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1971)) ([ff40cc8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ff40cc83d2acae431e6ad97f7421e5a1d068615b))
+
+## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.37.0...instrumentation-graphql-v0.38.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
 ## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-graphql-v0.36.1...instrumentation-graphql-v0.37.0) (2024-01-29)
 
 

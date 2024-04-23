@@ -27,7 +27,7 @@ export const kLayerPatched: unique symbol = Symbol('express-layer-patched');
  * This const define where on the `request` object the Instrumentation will mount the
  * current stack of express layer.
  *
- * It is necessary because express doesnt store the different layers
+ * It is necessary because express doesn't store the different layers
  * (ie: middleware, router etc) that it called to get to the current layer.
  * Given that, the only way to know the route of a given layer is to
  * store the path of where each previous layer has been mounted.

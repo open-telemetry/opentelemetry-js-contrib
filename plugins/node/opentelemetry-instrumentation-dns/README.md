@@ -38,13 +38,13 @@ registerInstrumentations({
 });
 ```
 
-### Dns Instrumentation Options
+### DNS Instrumentation Options
 
-Dns instrumentation has currently one option. You can set the following:
+DNS instrumentation has currently one option. You can set the following:
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher | IgnoreMatcher[]` | Dns instrumentation will not trace all requests that match hostnames |
+| [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher | IgnoreMatcher[]` | DNS instrumentation will not trace all requests that match hostnames |
 
 ## Useful links
 

@@ -19,7 +19,7 @@ import {
   ResourceDetectionConfig,
 } from '@opentelemetry/resources';
 
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMRESATTRS_CONTAINER_ID } from '@opentelemetry/semantic-conventions';
 
 import * as fs from 'fs';
 import * as util from 'util';
@@ -47,7 +47,7 @@ export class ContainerDetector implements Detector {
       return !containerId
         ? Resource.empty()
         : new Resource({
-            [SemanticResourceAttributes.CONTAINER_ID]: containerId,
+            [SEMRESATTRS_CONTAINER_ID]: containerId,
           });
     } catch (e) {
       diag.info(

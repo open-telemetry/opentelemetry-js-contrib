@@ -35,11 +35,17 @@ import {
   StackContextManager,
 } from '@opentelemetry/sdk-trace-web';
 
-import * as assert from 'assert';
+// @ts-expect-error: not an export, but we want the prebundled version
+import chai from 'chai/chai.js';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH,
+  SEMATTRS_HTTP_URL,
+} from '@opentelemetry/semantic-conventions';
 import { EventNames } from '../src/enums/EventNames';
+
+const { assert } = chai as typeof import('chai');
 
 const exporter = new InMemorySpanExporter();
 const provider = new BasicTracerProvider();
@@ -344,7 +350,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.ok(
           (rootSpan.attributes[
-            SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH
+            SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH
           ] as number) > 0
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
@@ -445,11 +451,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SemanticAttributes.HTTP_URL],
+          spanResource1.attributes[SEMATTRS_HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[SemanticAttributes.HTTP_URL],
+          spanResource2.attributes[SEMATTRS_HTTP_URL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -481,7 +487,7 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SemanticAttributes.HTTP_URL],
+          spanResource1.attributes[SEMATTRS_HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
 
@@ -535,14 +541,16 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fetchSpan.name, 'documentFetch');
         assert.strictEqual(rootSpan.name, 'documentLoad');
 
-        assert.strictEqual(
-          fetchSpan.attributes['http.url'],
-          'http://localhost:9876/context.html'
+        assert.isOk(
+          (fetchSpan.attributes['http.url'] as string).startsWith(
+            'http://localhost:8000/?wtr-session-id='
+          )
         );
 
-        assert.strictEqual(
-          rootSpan.attributes['http.url'],
-          'http://localhost:9876/context.html'
+        assert.isOk(
+          (rootSpan.attributes['http.url'] as string).startsWith(
+            'http://localhost:8000/?wtr-session-id='
+          )
         );
         assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
 

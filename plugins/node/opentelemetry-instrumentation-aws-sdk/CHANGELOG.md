@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.39.1...instrumentation-aws-sdk-v0.40.0) (2024-04-03)
+
+
+### Features
+
+* **deps:** update otel-js to 1.23.0/0.50.0 ([#2076](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2076)) ([d5f079b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d5f079b3992395dcfb3b791c9fdaeefd6d6526f8))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.30.7 to ^0.30.8
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.37.0 to ^0.38.0
+
+## [0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.39.0...instrumentation-aws-sdk-v0.39.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* **instr-aws-sdk:** ensure that instrumentation does not crash on bogus SQS.sendMessageBatch input ([#1999](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1999)) ([fa7e2f5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fa7e2f52d3869f8349895bcd3abb8cc428946cd1))
+
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.38.1...instrumentation-aws-sdk-v0.39.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/propagation-utils bumped from ^0.30.6 to ^0.30.7
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.36.0 to ^0.37.0
+
 ## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.38.0...instrumentation-aws-sdk-v0.38.1) (2024-02-06)
 
 

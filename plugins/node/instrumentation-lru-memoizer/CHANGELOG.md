@@ -6,6 +6,34 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-lru-memoizer-v0.35.0...instrumentation-lru-memoizer-v0.36.0) (2024-04-03)
+
+
+### Features
+
+* **deps:** update otel-js to 1.23.0/0.50.0 ([#2076](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2076)) ([d5f079b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d5f079b3992395dcfb3b791c9fdaeefd6d6526f8))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.37.0 to ^0.38.0
+
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-lru-memoizer-v0.34.0...instrumentation-lru-memoizer-v0.35.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.36.0 to ^0.37.0
+
 ## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-lru-memoizer-v0.33.5...instrumentation-lru-memoizer-v0.34.0) (2024-01-29)
 
 

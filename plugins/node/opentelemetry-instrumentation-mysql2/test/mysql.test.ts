@@ -18,8 +18,13 @@ import * as semver from 'semver';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_MYSQL,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_USER,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
@@ -177,10 +182,7 @@ describe('mysql2@2.x', () => {
         query.on('end', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans[0].name, 'SELECT');
-          assert.strictEqual(
-            spans[0].attributes[SemanticAttributes.DB_STATEMENT],
-            sql
-          );
+          assert.strictEqual(spans[0].attributes[SEMATTRS_DB_STATEMENT], sql);
           done();
         });
       });
@@ -198,7 +200,7 @@ describe('mysql2@2.x', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans[0].name, 'SELECT');
           assert.strictEqual(
-            spans[0].attributes[SemanticAttributes.DB_STATEMENT],
+            spans[0].attributes[SEMATTRS_DB_STATEMENT],
             query.sql
           );
           done();
@@ -1101,7 +1103,7 @@ describe('mysql2@2.x', () => {
   describe('#responseHook', () => {
     const queryResultAttribute = 'query_result';
 
-    describe('invalid repsonse hook', () => {
+    describe('invalid response hook', () => {
       beforeEach(() => {
         const config: MySQL2InstrumentationConfig = {
           responseHook: (span, responseHookInfo) => {
@@ -1215,16 +1217,13 @@ function assertSpan(
   values?: any,
   errorMessage?: string
 ) {
+  assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], DBSYSTEMVALUES_MYSQL);
+  assert.strictEqual(span.attributes[SEMATTRS_DB_NAME], database);
+  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_PORT], port);
+  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_NAME], host);
+  assert.strictEqual(span.attributes[SEMATTRS_DB_USER], user);
   assert.strictEqual(
-    span.attributes[SemanticAttributes.DB_SYSTEM],
-    DbSystemValues.MYSQL
-  );
-  assert.strictEqual(span.attributes[SemanticAttributes.DB_NAME], database);
-  assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[SemanticAttributes.DB_USER], user);
-  assert.strictEqual(
-    span.attributes[SemanticAttributes.DB_STATEMENT],
+    span.attributes[SEMATTRS_DB_STATEMENT],
     mysqlTypes.format(sql, values)
   );
   if (errorMessage) {

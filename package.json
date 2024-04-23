@@ -16,7 +16,6 @@
     "precompile": "tsc --version && npm run version:update",
     "version:update": "lerna run version:update",
     "compile": "lerna run compile",
-    "compile:examples": "lerna run compile:examples",
     "prewatch": "npm run precompile",
     "test": "lerna run test",
     "test:ci:changed": "lerna run test --since origin/main",
@@ -49,9 +48,12 @@
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
+    "glob": "^10.3.10",
     "lerna": "6.6.2",
     "lerna-changelog": "2.2.0",
+    "minimatch": "^9.0.3",
     "prettier": "2.8.8",
+    "semver": "^7.6.0",
     "typescript": "4.4.4"
   },
   "changelog": {
@@ -71,11 +73,12 @@
   "workspaces": [
     "packages/*",
     "plugins/node/*",
-    "plugins/node/*/examples",
     "plugins/web/*",
-    "plugins/web/*/examples",
     "propagators/*",
     "detectors/node/*",
     "metapackages/*"
-  ]
+  ],
+  "dependencies": {
+    "@kubernetes/client-node": "^0.20.0"
+  }
 }

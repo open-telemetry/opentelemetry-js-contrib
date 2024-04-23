@@ -6,6 +6,46 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.39.1...instrumentation-pg-v0.40.0) (2024-04-03)
+
+
+### Features
+
+* **deps:** update otel-js to 1.23.0/0.50.0 ([#2076](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2076)) ([d5f079b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d5f079b3992395dcfb3b791c9fdaeefd6d6526f8))
+
+
+### Performance Improvements
+
+* **instrumentation-pg:** reduce temp objects allocations ([#2019](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2019)) ([84ef980](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/84ef980c0be84ca84e9957bb42254cab94185c99))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.37.0 to ^0.38.0
+
+## [0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.39.0...instrumentation-pg-v0.39.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* **instrumentation-pg:** prevent net.peer.port from being NaN ([#1982](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1982)) ([3b2090b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3b2090b5f53ee56e8d06ef7c144588141080804c))
+
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.38.0...instrumentation-pg-v0.39.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.36.0 to ^0.37.0
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.37.2...instrumentation-pg-v0.38.0) (2024-01-29)
 
 

@@ -32,14 +32,14 @@ import { getClientAttributes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 import type { MultiErrorReply } from './internal-types';
 
 const OTEL_OPEN_SPANS = Symbol(
-  'opentelemetry.instruemntation.redis.open_spans'
+  'opentelemetry.instrumentation.redis.open_spans'
 );
 const MULTI_COMMAND_OPTIONS = Symbol(
-  'opentelemetry.instruemntation.redis.multi_command_options'
+  'opentelemetry.instrumentation.redis.multi_command_options'
 );
 
 interface MutliCommandInfo {
@@ -405,7 +405,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     try {
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
       if (dbStatement != null) {
-        attributes[SemanticAttributes.DB_STATEMENT] = dbStatement;
+        attributes[SEMATTRS_DB_STATEMENT] = dbStatement;
       }
     } catch (e) {
       this._diag.error('dbStatementSerializer throw an exception', e, {

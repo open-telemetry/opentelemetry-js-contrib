@@ -1,14 +1,17 @@
 mongodb:
-  jobs:
-    - versions: ">=3.3 <4"
-      commands: npm run test-v3
-    - versions: ">=4 <5"
-      commands: npm run test-v4
-    - versions: ">=5 <6"
-      commands: npm run test-v5-v6
-    - versions: ">=6 <7"
-      node: '>=15.0.0'
-      commands: npm run test-v5-v6
-
-  # Fix missing `contrib-test-utils` package
-  pretest: npm run --prefix ../../../ lerna:link
+  - versions: ">=3.3 <4"
+    commands: npm run test-v3
+  - versions:
+      include: ">=4 <5"
+      # This version has been excluded because `mongoose` instrumentation has it
+      # pined as a transitive dependency.
+      # When `test-all-versions` tries to install it npm actually does nothing and
+      # we end up running tests for the wrong version (v6.5.0)
+      # Ref: https://github.com/open-telemetry/opentelemetry-js-contrib/pull/2001#issuecomment-1992202942
+      exclude: "4.17.1"
+    commands: npm run test-v4
+  - versions: ">=5 <6"
+    commands: npm run test-v5-v6
+  - versions: ">=6 <7"
+    node: '>=15.0.0'
+    commands: npm run test-v5-v6

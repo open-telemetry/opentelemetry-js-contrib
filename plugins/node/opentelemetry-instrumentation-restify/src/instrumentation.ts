@@ -20,7 +20,7 @@ import type * as restify from 'restify';
 import * as api from '@opentelemetry/api';
 import type { Server } from 'restify';
 import { LayerType } from './types';
-import * as AttributeNames from './enums/AttributeNames';
+import { AttributeNames } from './enums/AttributeNames';
 import { VERSION } from './version';
 import * as constants from './constants';
 import {
@@ -30,7 +30,7 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
@@ -151,7 +151,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
     };
   }
 
-  // will return the same type as `handler`, but all functions recusively patched
+  // will return the same type as `handler`, but all functions recursively patched
   private _handlerPatcher(
     metadata: types.Metadata,
     handler: restify.RequestHandler | types.NestedRequestHandlers
@@ -185,11 +185,11 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
             ? `request handler - ${route}`
             : `middleware - ${fnName || 'anonymous'}`;
         const attributes = {
-          [AttributeNames.AttributeNames.NAME]: fnName,
-          [AttributeNames.AttributeNames.VERSION]: this._moduleVersion || 'n/a',
-          [AttributeNames.AttributeNames.TYPE]: metadata.type,
-          [AttributeNames.AttributeNames.METHOD]: metadata.methodName,
-          [SemanticAttributes.HTTP_ROUTE]: route,
+          [AttributeNames.NAME]: fnName,
+          [AttributeNames.VERSION]: this._moduleVersion || 'n/a',
+          [AttributeNames.TYPE]: metadata.type,
+          [AttributeNames.METHOD]: metadata.methodName,
+          [SEMATTRS_HTTP_ROUTE]: route,
         };
         const span = this.tracer.startSpan(
           spanName,
