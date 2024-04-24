@@ -25,6 +25,7 @@ import {
   DbSystemValues,
   SemanticAttributes,
 } from '@opentelemetry/semantic-conventions';
+import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
 import { VERSION } from './version';
