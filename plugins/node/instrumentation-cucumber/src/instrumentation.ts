@@ -21,7 +21,12 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_CODE_FILEPATH,
+  SEMATTRS_CODE_FUNCTION,
+  SEMATTRS_CODE_LINENO,
+  SEMATTRS_CODE_NAMESPACE,
+} from '@opentelemetry/semantic-conventions';
 
 import type * as cucumber from '@cucumber/cucumber';
 import type * as messages from '@cucumber/messages';
@@ -188,10 +193,10 @@ export class CucumberInstrumentation extends InstrumentationBase {
           {
             kind: SpanKind.CLIENT,
             attributes: {
-              [SemanticAttributes.CODE_FILEPATH]: gherkinDocument.uri,
-              [SemanticAttributes.CODE_LINENO]: scenario.location.line,
-              [SemanticAttributes.CODE_FUNCTION]: scenario.name,
-              [SemanticAttributes.CODE_NAMESPACE]: feature.name,
+              [SEMATTRS_CODE_FILEPATH]: gherkinDocument.uri,
+              [SEMATTRS_CODE_LINENO]: scenario.location.line,
+              [SEMATTRS_CODE_FUNCTION]: scenario.name,
+              [SEMATTRS_CODE_NAMESPACE]: feature.name,
               [AttributeNames.FEATURE_TAGS]: CucumberInstrumentation.mapTags(
                 feature.tags
               ),
