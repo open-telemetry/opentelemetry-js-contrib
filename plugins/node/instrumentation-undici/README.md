@@ -71,21 +71,21 @@ Ref: [opentelemetry-js/issues/4235](https://github.com/open-telemetry/openteleme
 
 Attributes collected:
 
-| Attribute    | Short Description                  | Notes             |
-| ------------ | ---------------------------------- | ----------------- |
-| `http.request.method` | HTTP request method. | Key: `HTTP_REQUEST_METHOD` |
-| `http.request.method_original` | Original HTTP method sent by the client in the request line. | Key: `HTTP_REQUEST_METHOD_ORIGINAL` |
-| `url.full` | Absolute URL describing a network resource according to [RFC3986](https://www.rfc-editor.org/rfc/rfc3986). | Key: `URL_FULL` |
-| `url.path` | The [URI path](https://www.rfc-editor.org/rfc/rfc3986#section-3.3) component. | Key: `URL_PATH` |
-| `url.query` | The [URI query](https://www.rfc-editor.org/rfc/rfc3986#section-3.4) component. | Key: `URL_QUERY` |
-| `url.scheme` | HTTP request method. | Key: `URL_SCHEME` |
-| `server.address` | Server domain name, IP address or Unix domain socket name. | Key: `HTTP_REQUEST_METHOD` |
-| `server.port` | Server port number. | Key: `HTTP_REQUEST_METHOD` |
-| `user_agent.original` | Value of the HTTP User-Agent header sent by the client. | Key: `USER_AGENT_ORIGINAL` |
-| `network.peer.address` | Peer address of the network connection - IP address or Unix domain socket name. | Key: `NETWORK_PEER_ADDRESS` |
-| `network.peer.port` | Peer port number of the network connection. | Key: `NETWORK_PEER_PORT` |
-| `http.response.status_code` | [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6). | Key: `HTTP_RESPONSE_STATUS_CODE` |
-| `error.type` | Describes a class of error the operation ended with. | Key: `ERROR_TYPE` |
+| Attribute                      | Short Description                                                                                          |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `error.type`                   | Describes a class of error the operation ended with.                                                       |
+| `http.request.method`          | HTTP request method.                                                                                       |
+| `http.request.method_original` | Original HTTP method sent by the client in the request line.                                               |
+| `http.response.status_code`    | [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).                                |
+| `network.peer.address`         | Peer address of the network connection - IP address or Unix domain socket name.                            |
+| `network.peer.port`            | Peer port number of the network connection.                                                                |
+| `server.address`               | Server domain name, IP address or Unix domain socket name.                                                 |
+| `server.port`                  | Server port number.                                                                                        |
+| `url.full`                     | Absolute URL describing a network resource according to [RFC3986](https://www.rfc-editor.org/rfc/rfc3986). |
+| `url.path`                     | The [URI path](https://www.rfc-editor.org/rfc/rfc3986#section-3.3) component.                              |
+| `url.query`                    | The [URI query](https://www.rfc-editor.org/rfc/rfc3986#section-3.4) component.                             |
+| `url.scheme`                   | HTTP request method.                                                                                       |
+| `user_agent.original`          | Value of the HTTP User-Agent header sent by the client.                                                    |
 
 ## Useful links
 
