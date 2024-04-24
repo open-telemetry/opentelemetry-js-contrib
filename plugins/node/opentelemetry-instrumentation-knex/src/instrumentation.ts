@@ -23,7 +23,17 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_OPERATION,
+  SEMATTRS_DB_SQL_TABLE,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_USER,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+  SEMATTRS_NET_TRANSPORT,
+} from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
 import * as types from './types';
 
@@ -142,18 +152,18 @@ export class KnexInstrumentation extends InstrumentationBase {
 
         const attributes: api.SpanAttributes = {
           'knex.version': moduleVersion,
-          [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
-          [SemanticAttributes.DB_SQL_TABLE]: table,
-          [SemanticAttributes.DB_OPERATION]: operation,
-          [SemanticAttributes.DB_USER]: config?.connection?.user,
-          [SemanticAttributes.DB_NAME]: name,
-          [SemanticAttributes.NET_PEER_NAME]: config?.connection?.host,
-          [SemanticAttributes.NET_PEER_PORT]: config?.connection?.port,
-          [SemanticAttributes.NET_TRANSPORT]:
+          [SEMATTRS_DB_SYSTEM]: utils.mapSystem(config.client),
+          [SEMATTRS_DB_SQL_TABLE]: table,
+          [SEMATTRS_DB_OPERATION]: operation,
+          [SEMATTRS_DB_USER]: config?.connection?.user,
+          [SEMATTRS_DB_NAME]: name,
+          [SEMATTRS_NET_PEER_NAME]: config?.connection?.host,
+          [SEMATTRS_NET_PEER_PORT]: config?.connection?.port,
+          [SEMATTRS_NET_TRANSPORT]:
             config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
         };
         if (maxLen !== 0) {
-          attributes[SemanticAttributes.DB_STATEMENT] = utils.limitLength(
+          attributes[SEMATTRS_DB_STATEMENT] = utils.limitLength(
             query?.sql,
             maxLen
           );
