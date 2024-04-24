@@ -34,7 +34,6 @@ import type {
 
 import { AttributeNames, CucumberInstrumentationConfig } from './types';
 import { VERSION } from './version';
-import { TestCaseRunnerModuleExportType } from './internal-types';
 
 const hooks = ['Before', 'BeforeStep', 'AfterStep', 'After'] as const;
 const steps = ['Given', 'When', 'Then'] as const;
@@ -86,7 +85,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile(
             '@cucumber/cucumber/lib/runtime/test_case_runner.js',
             ['^8.0.0', '^9.0.0', '^10.0.0'],
-            (moduleExports: TestCaseRunnerModuleExportType, moduleVersion) => {
+            (moduleExports, moduleVersion) => {
               this._diag.debug(
                 `Applying patch for @cucumber/cucumber/lib/runtime/test_case_runner.js@${moduleVersion}`
               );
@@ -116,7 +115,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
               }
               return moduleExports;
             },
-            (moduleExports: TestCaseRunnerModuleExportType, moduleVersion) => {
+            (moduleExports, moduleVersion) => {
               if (moduleExports === undefined) return;
               this._diag.debug(
                 `Removing patch for @cucumber/cucumber/lib/runtime/test_case_runner.js@${moduleVersion}`
