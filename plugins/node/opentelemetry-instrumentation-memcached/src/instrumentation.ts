@@ -55,7 +55,7 @@ export class Instrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         'memcached',
         ['>=2.2'],
-        (moduleExports, moduleVersion) => {
+        (moduleExports: typeof Memcached, moduleVersion) => {
           this._diag.debug(
             `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
           );
@@ -67,7 +67,7 @@ export class Instrumentation extends InstrumentationBase {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        (moduleExports: typeof Memcached, moduleVersion) => {
           this._diag.debug(
             `Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`
           );

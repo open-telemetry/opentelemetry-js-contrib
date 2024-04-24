@@ -72,7 +72,7 @@ export class TediousInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         TediousInstrumentation.COMPONENT,
         ['>=1.11.0 <=15'],
-        (moduleExports: any, moduleVersion) => {
+        (moduleExports: typeof tedious, moduleVersion) => {
           this._diag.debug(`Patching tedious@${moduleVersion}`);
 
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
@@ -94,7 +94,7 @@ export class TediousInstrumentation extends InstrumentationBase {
 
           return moduleExports;
         },
-        (moduleExports: any) => {
+        (moduleExports: typeof tedious) => {
           if (moduleExports === undefined) return;
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
           for (const method of PATCHED_METHODS) {

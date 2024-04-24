@@ -83,7 +83,7 @@ export class MySQLInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         'mysql',
         ['2.*'],
-        (moduleExports, moduleVersion) => {
+        (moduleExports: typeof mysqlTypes, moduleVersion) => {
           diag.debug(`Patching mysql@${moduleVersion}`);
 
           diag.debug('Patching mysql.createConnection');
@@ -118,7 +118,7 @@ export class MySQLInstrumentation extends InstrumentationBase {
 
           return moduleExports;
         },
-        moduleExports => {
+        (moduleExports: typeof mysqlTypes) => {
           if (moduleExports === undefined) return;
           this._unwrap(moduleExports, 'createConnection');
           this._unwrap(moduleExports, 'createPool');

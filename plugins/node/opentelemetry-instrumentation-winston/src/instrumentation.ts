@@ -25,9 +25,11 @@ import {
 } from '@opentelemetry/instrumentation';
 import type { WinstonInstrumentationConfig } from './types';
 import type {
+  Winston2LoggerModule,
   Winston2LogMethod,
   Winston3ConfigureMethod,
   Winston3LogMethod,
+  Winston3Logger,
 } from './internal-types';
 import { VERSION } from './version';
 
@@ -50,7 +52,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winston3Versions,
-            (logger, moduleVersion) => {
+            (logger: Winston3Logger, moduleVersion) => {
               this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
@@ -69,7 +71,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return logger;
             },
-            (logger, moduleVersion) => {
+            (logger: Winston3Logger, moduleVersion) => {
               if (logger === undefined) return;
               this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(logger.prototype, 'write');
@@ -89,7 +91,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winstonPre3Versions,
-            (fileExports, moduleVersion) => {
+            (fileExports: Winston2LoggerModule, moduleVersion) => {
               this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               const proto = fileExports.Logger.prototype;
 
@@ -100,7 +102,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return fileExports;
             },
-            (fileExports, moduleVersion) => {
+            (fileExports: Winston2LoggerModule, moduleVersion) => {
               if (fileExports === undefined) return;
               this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(fileExports.Logger.prototype, 'log');

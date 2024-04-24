@@ -15,6 +15,8 @@
  */
 
 import { LookupAddress } from 'dns';
+import type * as dns from 'dns';
+import * as dnsPromises from 'dns/promises';
 import { diag, Span, SpanKind } from '@opentelemetry/api';
 import {
   InstrumentationBase,
@@ -47,7 +49,7 @@ export class DnsInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         'dns',
         ['*'],
-        moduleExports => {
+        (moduleExports: typeof dns) => {
           diag.debug('Applying patch for dns');
           if (isWrapped(moduleExports.lookup)) {
             this._unwrap(moduleExports, 'lookup');
@@ -72,7 +74,7 @@ export class DnsInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         'dns/promises',
         ['*'],
-        moduleExports => {
+        (moduleExports: typeof dnsPromises) => {
           diag.debug('Applying patch for dns/promises');
           if (isWrapped(moduleExports.lookup)) {
             this._unwrap(moduleExports, 'lookup');

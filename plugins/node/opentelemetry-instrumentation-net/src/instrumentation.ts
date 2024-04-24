@@ -32,6 +32,7 @@ import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
 import { VERSION } from './version';
 import { Socket } from 'net';
 import { TLSSocket } from 'tls';
+import type * as net from 'net';
 
 export class NetInstrumentation extends InstrumentationBase {
   constructor(_config?: InstrumentationConfig) {
@@ -43,7 +44,7 @@ export class NetInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         'net',
         ['*'],
-        moduleExports => {
+        (moduleExports: typeof net) => {
           diag.debug('Applying patch for net module');
           if (isWrapped(moduleExports.Socket.prototype.connect)) {
             this._unwrap(moduleExports.Socket.prototype, 'connect');
@@ -56,7 +57,7 @@ export class NetInstrumentation extends InstrumentationBase {
           );
           return moduleExports;
         },
-        moduleExports => {
+        (moduleExports: typeof net) => {
           if (moduleExports === undefined) return;
           diag.debug('Removing patch from net module');
           this._unwrap(moduleExports.Socket.prototype, 'connect');

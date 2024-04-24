@@ -34,6 +34,7 @@ import type {
 
 import { AttributeNames, CucumberInstrumentationConfig } from './types';
 import { VERSION } from './version';
+import { TestCaseRunnerModuleExportType } from './internal-types';
 
 const hooks = ['Before', 'BeforeStep', 'AfterStep', 'After'] as const;
 const steps = ['Given', 'When', 'Then'] as const;
@@ -53,7 +54,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         '@cucumber/cucumber',
         ['^8.0.0', '^9.0.0', '^10.0.0'],
-        (moduleExports, moduleVersion) => {
+        (moduleExports: Cucumber, moduleVersion) => {
           this._diag.debug(
             `Applying patch for @cucumber/cucumber@${moduleVersion}`
           );
@@ -72,7 +73,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
           });
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        (moduleExports: Cucumber, moduleVersion) => {
           if (moduleExports === undefined) return;
           this._diag.debug(
             `Removing patch for @cucumber/cucumber@${moduleVersion}`
@@ -85,7 +86,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
           new InstrumentationNodeModuleFile(
             '@cucumber/cucumber/lib/runtime/test_case_runner.js',
             ['^8.0.0', '^9.0.0', '^10.0.0'],
-            (moduleExports, moduleVersion) => {
+            (moduleExports: TestCaseRunnerModuleExportType, moduleVersion) => {
               this._diag.debug(
                 `Applying patch for @cucumber/cucumber/lib/runtime/test_case_runner.js@${moduleVersion}`
               );
@@ -115,7 +116,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
               }
               return moduleExports;
             },
-            (moduleExports, moduleVersion) => {
+            (moduleExports: TestCaseRunnerModuleExportType, moduleVersion) => {
               if (moduleExports === undefined) return;
               this._diag.debug(
                 `Removing patch for @cucumber/cucumber/lib/runtime/test_case_runner.js@${moduleVersion}`

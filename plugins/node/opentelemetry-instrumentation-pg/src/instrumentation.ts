@@ -98,7 +98,7 @@ export class PgInstrumentation extends InstrumentationBase {
     const modulePGPool = new InstrumentationNodeModuleDefinition(
       'pg-pool',
       ['2.*', '3.*'],
-      (moduleExports, moduleVersion) => {
+      (moduleExports: typeof pgPoolTypes, moduleVersion) => {
         this._diag.debug(`Applying patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
@@ -110,7 +110,7 @@ export class PgInstrumentation extends InstrumentationBase {
         );
         return moduleExports;
       },
-      (moduleExports, moduleVersion) => {
+      (moduleExports: typeof pgPoolTypes, moduleVersion) => {
         this._diag.debug(`Removing patch for pg-pool@${moduleVersion}`);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');

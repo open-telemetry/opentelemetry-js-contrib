@@ -128,7 +128,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     return new InstrumentationNodeModuleFile(
       'graphql/language/parser.js',
       supportedVersions,
-      (moduleExports, moduleVersion) => {
+      (moduleExports: typeof graphqlTypes, moduleVersion) => {
         this._diag.debug(`Applying patch for graphql@${moduleVersion} parse`);
         if (isWrapped(moduleExports.parse)) {
           this._unwrap(moduleExports, 'parse');
@@ -136,7 +136,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
         this._wrap(moduleExports, 'parse', this._patchParse());
         return moduleExports;
       },
-      (moduleExports, moduleVersion) => {
+      (moduleExports: typeof graphqlTypes, moduleVersion) => {
         if (moduleExports) {
           this._diag.debug(`Removing patch for graphql@${moduleVersion} parse`);
           this._unwrap(moduleExports, 'parse');
