@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.50.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.22.0",
     "@types/tedious": "^4.0.10"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-tedious#readme"
