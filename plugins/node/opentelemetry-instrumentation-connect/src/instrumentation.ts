@@ -41,7 +41,7 @@ import {
 export const ANONYMOUS_NAME = 'anonymous';
 
 /** Connect instrumentation for OpenTelemetry */
-export class ConnectInstrumentation extends InstrumentationBase<Server> {
+export class ConnectInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-connect',
@@ -52,7 +52,7 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'connect',
         ['^3.0.0'],
         (moduleExports, moduleVersion) => {

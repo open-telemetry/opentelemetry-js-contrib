@@ -45,7 +45,7 @@ export class RedisInstrumentation extends InstrumentationBase {
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'redis',
         ['^2.6.0', '^3.0.0'],
         (moduleExports, moduleVersion) => {

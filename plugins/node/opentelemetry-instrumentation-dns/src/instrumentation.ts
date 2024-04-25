@@ -15,6 +15,8 @@
  */
 
 import { LookupAddress } from 'dns';
+import type * as dns from 'dns';
+import * as dnsPromises from 'dns/promises';
 import { diag, Span, SpanKind } from '@opentelemetry/api';
 import {
   InstrumentationBase,
@@ -27,8 +29,6 @@ import { DnsInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { VERSION } from './version';
 import {
-  Dns,
-  DnsPromises,
   LookupCallbackSignature,
   LookupPromiseSignature,
 } from './internal-types';
@@ -36,20 +36,20 @@ import {
 /**
  * Dns instrumentation for Opentelemetry
  */
-export class DnsInstrumentation extends InstrumentationBase<Dns> {
+export class DnsInstrumentation extends InstrumentationBase {
   constructor(protected override _config: DnsInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-dns', VERSION, _config);
   }
 
   init(): (
-    | InstrumentationNodeModuleDefinition<Dns>
-    | InstrumentationNodeModuleDefinition<DnsPromises>
+    | InstrumentationNodeModuleDefinition
+    | InstrumentationNodeModuleDefinition
   )[] {
     return [
-      new InstrumentationNodeModuleDefinition<Dns>(
+      new InstrumentationNodeModuleDefinition(
         'dns',
         ['*'],
-        moduleExports => {
+        (moduleExports: typeof dns) => {
           diag.debug('Applying patch for dns');
           if (isWrapped(moduleExports.lookup)) {
             this._unwrap(moduleExports, 'lookup');
@@ -71,10 +71,10 @@ export class DnsInstrumentation extends InstrumentationBase<Dns> {
           this._unwrap(moduleExports.promises, 'lookup');
         }
       ),
-      new InstrumentationNodeModuleDefinition<DnsPromises>(
+      new InstrumentationNodeModuleDefinition(
         'dns/promises',
         ['*'],
-        moduleExports => {
+        (moduleExports: typeof dnsPromises) => {
           diag.debug('Applying patch for dns/promises');
           if (isWrapped(moduleExports.lookup)) {
             this._unwrap(moduleExports, 'lookup');
