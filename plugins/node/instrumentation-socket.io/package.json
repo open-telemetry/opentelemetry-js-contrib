@@ -59,7 +59,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.50.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0"
+    "@opentelemetry/semantic-conventions": "^1.22.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-socket.io#readme"
 }
