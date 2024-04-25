@@ -5,12 +5,12 @@ import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
 import { diag, DiagConsoleLogger } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
 
 export default (serviceName) => {
   const provider = new WebTracerProvider({
     resource: new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: "react-load-example"
+        [SEMRESATTRS_SERVICE_NAME]: "react-load-example"
     }),
   });
 
