@@ -84,7 +84,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       'graphql',
       supportedVersions
     );
@@ -95,10 +95,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     return module;
   }
 
-  private _addPatchingExecute(): InstrumentationNodeModuleFile<
-    typeof graphqlTypes
-  > {
-    return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
+  private _addPatchingExecute(): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
       'graphql/execution/execute.js',
       supportedVersions,
       // cannot make it work with appropriate type as execute function has 2
@@ -126,13 +124,11 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     );
   }
 
-  private _addPatchingParser(): InstrumentationNodeModuleFile<
-    typeof graphqlTypes
-  > {
-    return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
+  private _addPatchingParser(): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
       'graphql/language/parser.js',
       supportedVersions,
-      (moduleExports, moduleVersion) => {
+      (moduleExports: typeof graphqlTypes, moduleVersion) => {
         this._diag.debug(`Applying patch for graphql@${moduleVersion} parse`);
         if (isWrapped(moduleExports.parse)) {
           this._unwrap(moduleExports, 'parse');
@@ -140,7 +136,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
         this._wrap(moduleExports, 'parse', this._patchParse());
         return moduleExports;
       },
-      (moduleExports, moduleVersion) => {
+      (moduleExports: typeof graphqlTypes, moduleVersion) => {
         if (moduleExports) {
           this._diag.debug(`Removing patch for graphql@${moduleVersion} parse`);
           this._unwrap(moduleExports, 'parse');
@@ -149,10 +145,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     );
   }
 
-  private _addPatchingValidate(): InstrumentationNodeModuleFile<
-    typeof graphqlTypes
-  > {
-    return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
+  private _addPatchingValidate(): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
       'graphql/validation/validate.js',
       supportedVersions,
       (moduleExports, moduleVersion) => {

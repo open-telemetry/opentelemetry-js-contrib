@@ -29,7 +29,7 @@ import * as utils from './utils';
 import { InstrumentationConfig } from './types';
 import { VERSION } from './version';
 
-export class Instrumentation extends InstrumentationBase<typeof Memcached> {
+export class Instrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'memcached';
   static readonly COMMON_ATTRIBUTES = {
     [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MEMCACHED,
@@ -52,10 +52,10 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof Memcached>(
+      new InstrumentationNodeModuleDefinition(
         'memcached',
         ['>=2.2'],
-        (moduleExports, moduleVersion) => {
+        (moduleExports: typeof Memcached, moduleVersion) => {
           this._diag.debug(
             `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
           );
@@ -67,7 +67,7 @@ export class Instrumentation extends InstrumentationBase<typeof Memcached> {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        (moduleExports: typeof Memcached, moduleVersion) => {
           this._diag.debug(
             `Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`
           );
