@@ -80,13 +80,13 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Attributes collected:
 
-| Attribute              | Short Description                                            | Notes                                |
-|------------------------|--------------------------------------------------------------|--------------------------------------|
-| `db.connection_string` | URL to Redis server address, of the form `redis://host:port` | Key: `SEMATTRS_DB_CONNECTION_STRING` |
-| `db.statement`         | Executed Redis statement                                     | Key: `SEMATTRS_DB_STATEMENT`         |
-| `db.system`            | Database identifier; always `redis`                          | Key: `SEMATTRS_DB_SYSTEM`            |
-| `net.peer.name`        | Hostname or IP of the connected Redis server                 | Key: `SEMATTRS_NET_PEER_NAME`        |
-| `net.peer.port`        | Port of the connected Redis server                           | Key: `SEMATTRS_NET_PORT_NAME`        |
+| Attribute              | Short Description                                            |
+|------------------------|--------------------------------------------------------------|
+| `db.connection_string` | URL to Redis server address, of the form `redis://host:port` |
+| `db.statement`         | Executed Redis statement                                     |
+| `db.system`            | Database identifier; always `redis`                          |
+| `net.peer.name`        | Hostname or IP of the connected Redis server                 |
+| `net.peer.port`        | Port of the connected Redis server                           |
 
 ## Useful links
 
