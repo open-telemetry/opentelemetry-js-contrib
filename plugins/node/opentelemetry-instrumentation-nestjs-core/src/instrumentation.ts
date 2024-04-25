@@ -29,7 +29,7 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
 import { AttributeNames, NestType } from './enums';
 
-export class Instrumentation extends InstrumentationBase<any> {
+export class Instrumentation extends InstrumentationBase {
   static readonly COMPONENT = '@nestjs/core';
   static readonly COMMON_ATTRIBUTES = {
     component: Instrumentation.COMPONENT,
@@ -40,21 +40,9 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       Instrumentation.COMPONENT,
-      ['>=4.0.0'],
-      (moduleExports, moduleVersion) => {
-        this._diag.debug(
-          `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
-        );
-        return moduleExports;
-      },
-      (moduleExports, moduleVersion) => {
-        this._diag.debug(
-          `Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`
-        );
-        if (moduleExports === undefined) return;
-      }
+      ['>=4.0.0']
     );
 
     module.files.push(
@@ -66,12 +54,11 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   getNestFactoryFileInstrumentation(versions: string[]) {
-    return new InstrumentationNodeModuleFile<any>(
+    return new InstrumentationNodeModuleFile(
       '@nestjs/core/nest-factory.js',
       versions,
       (NestFactoryStatic: any, moduleVersion?: string) => {
         this.ensureWrapped(
-          moduleVersion,
           NestFactoryStatic.NestFactoryStatic.prototype,
           'create',
           createWrapNestFactoryCreate(this.tracer, moduleVersion)
@@ -85,12 +72,11 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   getRouterExecutionContextFileInstrumentation(versions: string[]) {
-    return new InstrumentationNodeModuleFile<any>(
+    return new InstrumentationNodeModuleFile(
       '@nestjs/core/router/router-execution-context.js',
       versions,
       (RouterExecutionContext: any, moduleVersion?: string) => {
         this.ensureWrapped(
-          moduleVersion,
           RouterExecutionContext.RouterExecutionContext.prototype,
           'create',
           createWrapCreateHandler(this.tracer, moduleVersion)
@@ -107,14 +93,10 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   private ensureWrapped(
-    moduleVersion: string | undefined,
     obj: any,
     methodName: string,
     wrapper: (original: any) => any
   ) {
-    this._diag.debug(
-      `Applying ${methodName} patch for ${Instrumentation.COMPONENT}@${moduleVersion}`
-    );
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
     }
