@@ -58,12 +58,10 @@ describe('SocketIoInstrumentation', () => {
       io.emit('test');
       expectSpan('/ send', span => {
         expect(span.kind).toEqual(SpanKind.PRODUCER);
-        expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
-          'socket.io'
+        expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('socket.io');
+        expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toEqual(
+          MESSAGINGDESTINATIONKINDVALUES_TOPIC
         );
-        expect(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
-        ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
       });
     });
 
@@ -109,12 +107,10 @@ describe('SocketIoInstrumentation', () => {
       io.send('test');
       expectSpan('/ send', span => {
         expect(span.kind).toEqual(SpanKind.PRODUCER);
-        expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
-          'socket.io'
+        expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual('socket.io');
+        expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]).toEqual(
+          MESSAGINGDESTINATIONKINDVALUES_TOPIC
         );
-        expect(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND]
-        ).toEqual(MESSAGINGDESTINATIONKINDVALUES_TOPIC);
       });
     });
 
@@ -175,9 +171,9 @@ describe('SocketIoInstrumentation', () => {
                 span => {
                   try {
                     expect(span.kind).toEqual(SpanKind.CONSUMER);
-                    expect(
-                      span.attributes[SEMATTRS_MESSAGING_SYSTEM]
-                    ).toEqual('socket.io');
+                    expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+                      'socket.io'
+                    );
                     expect(span.attributes['payload']).toEqual(
                       JSON.stringify([data])
                     );
@@ -215,9 +211,9 @@ describe('SocketIoInstrumentation', () => {
           setTimeout(() => {
             expectSpan('connection receive', span => {
               expect(span.kind).toEqual(SpanKind.CONSUMER);
-              expect(
-                span.attributes[SEMATTRS_MESSAGING_SYSTEM]
-              ).toEqual('socket.io');
+              expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+                'socket.io'
+              );
               done();
             });
           });
@@ -246,9 +242,9 @@ describe('SocketIoInstrumentation', () => {
                 span => {
                   try {
                     expect(span.kind).toEqual(SpanKind.CONSUMER);
-                    expect(
-                      span.attributes[SEMATTRS_MESSAGING_SYSTEM]
-                    ).toEqual('socket.io');
+                    expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+                      'socket.io'
+                    );
                     done();
                   } catch (e) {
                     done(e);
@@ -296,9 +292,7 @@ describe('SocketIoInstrumentation', () => {
       const sio = createServerInstance();
       sio.to(roomName).emit('broadcast', '1234');
       expectSpan('/[room] send', span => {
-        expect(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION]
-        ).toEqual('/');
+        expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual('/');
         expect(
           span.attributes[SocketIoInstrumentationAttributes.SOCKET_IO_ROOMS]
         ).toEqual([roomName]);
@@ -309,9 +303,7 @@ describe('SocketIoInstrumentation', () => {
       const sio = createServerInstance();
       sio.to('room1').to('room2').emit('broadcast', '1234');
       expectSpan('/[room1,room2] send', span => {
-        expect(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION]
-        ).toEqual('/');
+        expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual('/');
         expect(
           span.attributes[SocketIoInstrumentationAttributes.SOCKET_IO_ROOMS]
         ).toEqual(['room1', 'room2']);
@@ -325,9 +317,9 @@ describe('SocketIoInstrumentation', () => {
       const namespace = io.of('/testing');
       namespace.emit('namespace');
       expectSpan('/testing send', span => {
-        expect(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION]
-        ).toEqual('/testing');
+        expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+          '/testing'
+        );
         expect(
           span.attributes[SocketIoInstrumentationAttributes.SOCKET_IO_NAMESPACE]
         ).toEqual('/testing');
@@ -340,9 +332,9 @@ describe('SocketIoInstrumentation', () => {
       const namespace = io.of('/testing');
       namespace.to(roomName).emit('broadcast', '1234');
       expectSpan('/testing[room] send', span => {
-        expect(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION]
-        ).toEqual('/testing');
+        expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+          '/testing'
+        );
         expect(
           span.attributes[SocketIoInstrumentationAttributes.SOCKET_IO_ROOMS]
         ).toEqual([roomName]);
@@ -357,9 +349,9 @@ describe('SocketIoInstrumentation', () => {
       const namespace = io.of('/testing');
       namespace.to('room1').to('room2').emit('broadcast', '1234');
       expectSpan('/testing[room1,room2] send', span => {
-        expect(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION]
-        ).toEqual('/testing');
+        expect(span.attributes[SEMATTRS_MESSAGING_DESTINATION]).toEqual(
+          '/testing'
+        );
         expect(
           span.attributes[SocketIoInstrumentationAttributes.SOCKET_IO_NAMESPACE]
         ).toEqual('/testing');
@@ -391,9 +383,9 @@ describe('SocketIoInstrumentation', () => {
                 span => {
                   try {
                     expect(span.kind).toEqual(SpanKind.CONSUMER);
-                    expect(
-                      span.attributes[SEMATTRS_MESSAGING_SYSTEM]
-                    ).toEqual('socket.io');
+                    expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+                      'socket.io'
+                    );
                     expect(
                       span.attributes[SEMATTRS_MESSAGING_DESTINATION]
                     ).toEqual('/testing');
@@ -433,9 +425,9 @@ describe('SocketIoInstrumentation', () => {
               span => {
                 try {
                   expect(span.kind).toEqual(SpanKind.PRODUCER);
-                  expect(
-                    span.attributes[SEMATTRS_MESSAGING_SYSTEM]
-                  ).toEqual('socket.io');
+                  expect(span.attributes[SEMATTRS_MESSAGING_SYSTEM]).toEqual(
+                    'socket.io'
+                  );
                   done();
                 } catch (e) {
                   done(e);
