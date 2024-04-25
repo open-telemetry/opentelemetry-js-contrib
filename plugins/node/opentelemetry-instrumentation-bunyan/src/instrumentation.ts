@@ -46,8 +46,7 @@ export class BunyanInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         'bunyan',
         ['<2.0'],
-        (module: any, moduleVersion) => {
-          this._diag.debug(`Applying patch for bunyan@${moduleVersion}`);
+        (module: any) => {
           const instrumentation = this;
           const Logger =
             module[Symbol.toStringTag] === 'Module'

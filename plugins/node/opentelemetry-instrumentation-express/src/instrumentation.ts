@@ -71,8 +71,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         'express',
         ['^4.0.0'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for express@${moduleVersion}`);
+        moduleExports => {
           const routerProto = moduleExports.Router as unknown as express.Router;
           // patch express.Router.route
           if (isWrapped(routerProto.route)) {
@@ -97,9 +96,8 @@ export class ExpressInstrumentation extends InstrumentationBase {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug(`Removing patch for express@${moduleVersion}`);
           const routerProto = moduleExports.Router as unknown as express.Router;
           this._unwrap(routerProto, 'route');
           this._unwrap(routerProto, 'use');
