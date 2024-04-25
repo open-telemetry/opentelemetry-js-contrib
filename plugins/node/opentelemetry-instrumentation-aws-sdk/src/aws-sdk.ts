@@ -174,9 +174,6 @@ export class AwsInstrumentation extends InstrumentationBase {
   }
 
   protected patchV3ConstructStack(moduleExports: any, moduleVersion?: string) {
-    diag.debug(
-      'aws-sdk instrumentation: applying patch to aws-sdk v3 constructStack'
-    );
     this._wrap(
       moduleExports,
       'constructStack',
@@ -186,17 +183,11 @@ export class AwsInstrumentation extends InstrumentationBase {
   }
 
   protected unpatchV3ConstructStack(moduleExports: any) {
-    diag.debug(
-      'aws-sdk instrumentation: applying unpatch to aws-sdk v3 constructStack'
-    );
     this._unwrap(moduleExports, 'constructStack');
     return moduleExports;
   }
 
   protected patchV3SmithyClient(moduleExports: any) {
-    diag.debug(
-      'aws-sdk instrumentation: applying patch to aws-sdk v3 client send'
-    );
     this._wrap(
       moduleExports.Client.prototype,
       'send',
@@ -206,17 +197,11 @@ export class AwsInstrumentation extends InstrumentationBase {
   }
 
   protected unpatchV3SmithyClient(moduleExports: any) {
-    diag.debug(
-      'aws-sdk instrumentation: applying patch to aws-sdk v3 constructStack'
-    );
     this._unwrap(moduleExports.Client.prototype, 'send');
     return moduleExports;
   }
 
   protected patchV2(moduleExports: any, moduleVersion?: string) {
-    diag.debug(
-      `aws-sdk instrumentation: applying patch to ${AwsInstrumentation.component}`
-    );
     this.unpatchV2(moduleExports);
     this._wrap(
       moduleExports?.Request.prototype,

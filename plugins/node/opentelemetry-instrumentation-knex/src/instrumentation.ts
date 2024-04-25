@@ -73,11 +73,7 @@ export class KnexInstrumentation extends InstrumentationBase {
       `knex/${basePath}/runner.js`,
       constants.SUPPORTED_VERSIONS,
       (Runner: any, moduleVersion) => {
-        api.diag.debug(
-          `Applying ${basePath}/runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         this.ensureWrapped(
-          moduleVersion,
           Runner.prototype,
           'query',
           this.createQueryWrapper(moduleVersion)
@@ -85,9 +81,6 @@ export class KnexInstrumentation extends InstrumentationBase {
         return Runner;
       },
       (Runner: any, moduleVersion) => {
-        api.diag.debug(
-          `Removing ${basePath}/runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         this._unwrap(Runner.prototype, 'query');
         return Runner;
       }
@@ -98,24 +91,18 @@ export class KnexInstrumentation extends InstrumentationBase {
     return new InstrumentationNodeModuleFile(
       `knex/${basePath}/client.js`,
       constants.SUPPORTED_VERSIONS,
-      (Client: any, moduleVersion) => {
-        api.diag.debug(
-          `Applying ${basePath}/client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
+      (Client: any) => {
         this.ensureWrapped(
-          moduleVersion,
           Client.prototype,
           'queryBuilder',
           this.storeContext.bind(this)
         );
         this.ensureWrapped(
-          moduleVersion,
           Client.prototype,
           'schemaBuilder',
           this.storeContext.bind(this)
         );
         this.ensureWrapped(
-          moduleVersion,
           Client.prototype,
           'raw',
           this.storeContext.bind(this)
@@ -214,15 +201,7 @@ export class KnexInstrumentation extends InstrumentationBase {
     };
   }
 
-  ensureWrapped(
-    moduleVersion: string | undefined,
-    obj: any,
-    methodName: string,
-    wrapper: (original: any) => any
-  ) {
-    api.diag.debug(
-      `Applying ${methodName} patch for ${constants.MODULE_NAME}@${moduleVersion}`
-    );
+  ensureWrapped(obj: any, methodName: string, wrapper: (original: any) => any) {
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
     }
