@@ -52,7 +52,7 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
 };
 
-export class RedisInstrumentation extends InstrumentationBase<any> {
+export class RedisInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'redis';
 
   constructor(protected override _config: RedisInstrumentationConfig = {}) {
@@ -75,8 +75,8 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
 
   private _getInstrumentationNodeModuleDefinition(
     basePackageName: string
-  ): InstrumentationNodeModuleDefinition<any> {
-    const commanderModuleFile = new InstrumentationNodeModuleFile<any>(
+  ): InstrumentationNodeModuleDefinition {
+    const commanderModuleFile = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/commander.js`,
       ['^1.0.0'],
       (moduleExports: any, moduleVersion?: string) => {
@@ -119,7 +119,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       }
     );
 
-    const multiCommanderModule = new InstrumentationNodeModuleFile<any>(
+    const multiCommanderModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/multi-command.js`,
       ['^1.0.0'],
       (moduleExports: any) => {
@@ -160,7 +160,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       }
     );
 
-    const clientIndexModule = new InstrumentationNodeModuleFile<any>(
+    const clientIndexModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/index.js`,
       ['^1.0.0'],
       (moduleExports: any) => {
@@ -225,7 +225,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       }
     );
 
-    return new InstrumentationNodeModuleDefinition<unknown>(
+    return new InstrumentationNodeModuleDefinition(
       basePackageName,
       ['^1.0.0'],
       (moduleExports: any, moduleVersion?: string) => {

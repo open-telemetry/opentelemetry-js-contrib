@@ -27,9 +27,9 @@ export default class LruMemoizerInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-lru-memoizer', VERSION, config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<any>[] {
+  init(): InstrumentationNodeModuleDefinition[] {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'lru-memoizer',
         ['>=1.3 <3'],
         moduleExports => {
