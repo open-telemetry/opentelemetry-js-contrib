@@ -37,7 +37,7 @@ import type { RestifyInstrumentationConfig } from './types';
 
 const { diag } = api;
 
-export class RestifyInstrumentation extends InstrumentationBase<any> {
+export class RestifyInstrumentation extends InstrumentationBase {
   constructor(config: RestifyInstrumentationConfig = {}) {
     super(
       `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
@@ -58,7 +58,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
@@ -68,7 +68,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<any>(
+      new InstrumentationNodeModuleFile(
         'restify/lib/server.js',
         constants.SUPPORTED_VERSIONS,
         (moduleExports, moduleVersion) => {

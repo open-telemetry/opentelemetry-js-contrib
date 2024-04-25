@@ -91,13 +91,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const { v4PatchSessions, v4UnpatchSessions } = this._getV4SessionsPatches();
 
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'mongodb',
         ['>=3.3 <4'],
         undefined,
         undefined,
         [
-          new InstrumentationNodeModuleFile<WireProtocolInternal>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/core/wireprotocol/index.js',
             ['>=3.3 <4'],
             v3PatchConnection,
@@ -105,37 +105,37 @@ export class MongoDBInstrumentation extends InstrumentationBase {
           ),
         ]
       ),
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'mongodb',
         ['4.*', '5.*', '6.*'],
         undefined,
         undefined,
         [
-          new InstrumentationNodeModuleFile<V4Connection>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
             ['4.*', '5.*', '>=6 <6.4'],
             v4PatchConnectionCallback,
             v4UnpatchConnection
           ),
-          new InstrumentationNodeModuleFile<V4Connection>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
             ['>=6.4'],
             v4PatchConnectionPromise,
             v4UnpatchConnection
           ),
-          new InstrumentationNodeModuleFile<V4ConnectionPool>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection_pool.js',
             ['4.*', '5.*', '>=6 <6.4'],
             v4PatchConnectionPool,
             v4UnpatchConnectionPool
           ),
-          new InstrumentationNodeModuleFile<V4Connect>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connect.js',
             ['4.*', '5.*', '6.*'],
             v4PatchConnect,
             v4UnpatchConnect
           ),
-          new InstrumentationNodeModuleFile<V4Session>(
+          new InstrumentationNodeModuleFile(
             'mongodb/lib/sessions.js',
             ['4.*', '5.*', '6.*'],
             v4PatchSessions,

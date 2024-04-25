@@ -25,8 +25,8 @@ import {
 } from '@opentelemetry/instrumentation';
 import type { WinstonInstrumentationConfig } from './types';
 import type {
-  Winston2LogMethod,
   Winston2LoggerModule,
+  Winston2LogMethod,
   Winston3ConfigureMethod,
   Winston3LogMethod,
   Winston3Logger,
@@ -43,16 +43,16 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
   protected init() {
     const winstons3instrumentationNodeModuleDefinition =
-      new InstrumentationNodeModuleDefinition<{}>(
+      new InstrumentationNodeModuleDefinition(
         'winston',
         winston3Versions,
         moduleExports => moduleExports,
         () => {},
         [
-          new InstrumentationNodeModuleFile<Winston3Logger>(
+          new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winston3Versions,
-            (logger, moduleVersion) => {
+            (logger: Winston3Logger, moduleVersion) => {
               this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
@@ -71,7 +71,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return logger;
             },
-            (logger, moduleVersion) => {
+            (logger: Winston3Logger, moduleVersion) => {
               if (logger === undefined) return;
               this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(logger.prototype, 'write');
@@ -82,16 +82,16 @@ export class WinstonInstrumentation extends InstrumentationBase {
       );
 
     const winstons2instrumentationNodeModuleDefinition =
-      new InstrumentationNodeModuleDefinition<{}>(
+      new InstrumentationNodeModuleDefinition(
         'winston',
         winstonPre3Versions,
         moduleExports => moduleExports,
         () => {},
         [
-          new InstrumentationNodeModuleFile<Winston2LoggerModule>(
+          new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winstonPre3Versions,
-            (fileExports, moduleVersion) => {
+            (fileExports: Winston2LoggerModule, moduleVersion) => {
               this._diag.debug(`Applying patch for winston@${moduleVersion}`);
               const proto = fileExports.Logger.prototype;
 
@@ -102,7 +102,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return fileExports;
             },
-            (fileExports, moduleVersion) => {
+            (fileExports: Winston2LoggerModule, moduleVersion) => {
               if (fileExports === undefined) return;
               this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(fileExports.Logger.prototype, 'log');

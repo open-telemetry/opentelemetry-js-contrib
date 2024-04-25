@@ -30,8 +30,32 @@ import { AWSError } from 'aws-sdk';
 
 import { mockV2AwsSend } from './testing-utils';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_DYNAMODB,
+  SEMATTRS_AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS,
+  SEMATTRS_AWS_DYNAMODB_CONSISTENT_READ,
+  SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY,
+  SEMATTRS_AWS_DYNAMODB_COUNT,
+  SEMATTRS_AWS_DYNAMODB_EXCLUSIVE_START_TABLE,
+  SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES,
+  SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES,
+  SEMATTRS_AWS_DYNAMODB_INDEX_NAME,
+  SEMATTRS_AWS_DYNAMODB_ITEM_COLLECTION_METRICS,
+  SEMATTRS_AWS_DYNAMODB_LIMIT,
+  SEMATTRS_AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES,
+  SEMATTRS_AWS_DYNAMODB_PROJECTION,
+  SEMATTRS_AWS_DYNAMODB_PROVISIONED_READ_CAPACITY,
+  SEMATTRS_AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY,
+  SEMATTRS_AWS_DYNAMODB_SCAN_FORWARD,
+  SEMATTRS_AWS_DYNAMODB_SCANNED_COUNT,
+  SEMATTRS_AWS_DYNAMODB_SEGMENT,
+  SEMATTRS_AWS_DYNAMODB_SELECT,
+  SEMATTRS_AWS_DYNAMODB_TABLE_COUNT,
+  SEMATTRS_AWS_DYNAMODB_TABLE_NAMES,
+  SEMATTRS_AWS_DYNAMODB_TOTAL_SEGMENTS,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_OPERATION,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import { expect } from 'expect';
 import type { ConsumedCapacity as ConsumedCapacityV2 } from 'aws-sdk/clients/dynamodb';
@@ -90,33 +114,27 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_NAME]).toStrictEqual('test-table');
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual('Query');
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_SCAN_FORWARD]
-          ).toStrictEqual(true);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSISTENT_READ]
-          ).toStrictEqual(true);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_INDEX_NAME]
-          ).toStrictEqual('name_to_group');
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_SELECT]).toStrictEqual(
+          expect(attrs[SEMATTRS_DB_NAME]).toStrictEqual('test-table');
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('Query');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SCAN_FORWARD]).toStrictEqual(true);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_CONSISTENT_READ]).toStrictEqual(
+            true
+          );
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_INDEX_NAME]).toStrictEqual(
+            'name_to_group'
+          );
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SELECT]).toStrictEqual(
             'ALL_ATTRIBUTES'
           );
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(
-            10
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROJECTION]
-          ).toStrictEqual('id');
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_LIMIT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_PROJECTION]).toStrictEqual('id');
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -157,39 +175,29 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_NAME]).toStrictEqual('test-table');
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual('Scan');
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_SEGMENT]).toStrictEqual(
-            10
+          expect(attrs[SEMATTRS_DB_NAME]).toStrictEqual('test-table');
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('Scan');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SEGMENT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TOTAL_SEGMENTS]).toStrictEqual(
+            100
           );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TOTAL_SEGMENTS]
-          ).toStrictEqual(100);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_INDEX_NAME]
-          ).toStrictEqual('index_name');
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_SELECT]).toStrictEqual(
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_INDEX_NAME]).toStrictEqual(
+            'index_name'
+          );
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SELECT]).toStrictEqual(
             'ALL_ATTRIBUTES'
           );
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_COUNT]).toStrictEqual(
-            10
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_SCANNED_COUNT]
-          ).toStrictEqual(50);
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(
-            10
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROJECTION]
-          ).toStrictEqual('id');
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_COUNT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SCANNED_COUNT]).toStrictEqual(50);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_LIMIT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_PROJECTION]).toStrictEqual('id');
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -226,16 +234,16 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
+            attrs[SEMATTRS_AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
           ).toStrictEqual([
             JSON.stringify({ ItemCollectionKey: [], SizeEstimateRangeGB: [0] }),
           ]);
 
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -321,29 +329,29 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
+            attrs[SEMATTRS_AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
           ).toStrictEqual([
             JSON.stringify({ ItemCollectionKey: [], SizeEstimateRangeGB: [0] }),
           ]);
 
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES]
+            attrs[SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES]
           ).toStrictEqual([JSON.stringify(globalSecondaryIndexMockData)]);
 
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES]
+            attrs[SEMATTRS_AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES]
           ).toStrictEqual([JSON.stringify(localSecondaryIndexMockData)]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROVISIONED_READ_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_PROVISIONED_READ_CAPACITY]
           ).toStrictEqual(20);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY]
           ).toStrictEqual(30);
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -394,14 +402,12 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
 
           expect(
-            attrs[
-              SemanticAttributes.AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES
-            ]
+            attrs[SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES]
           ).toStrictEqual([
             JSON.stringify({
               Update: {
@@ -414,7 +420,7 @@ describe('DynamoDB', () => {
             }),
           ]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS]
+            attrs[SEMATTRS_AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS]
           ).toStrictEqual([
             JSON.stringify({
               AttributeName: 'test_attr',
@@ -422,12 +428,12 @@ describe('DynamoDB', () => {
             }),
           ]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROVISIONED_READ_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_PROVISIONED_READ_CAPACITY]
           ).toStrictEqual(10);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY]
           ).toStrictEqual(15);
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -455,21 +461,17 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
 
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_EXCLUSIVE_START_TABLE]
+            attrs[SEMATTRS_AWS_DYNAMODB_EXCLUSIVE_START_TABLE]
           ).toStrictEqual('start_table');
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(
-            10
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_COUNT]
-          ).toStrictEqual(3);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_LIMIT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_COUNT]).toStrictEqual(3);
 
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -511,19 +513,17 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'BatchGetItem'
-          );
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('BatchGetItem');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY]
           ).toBeUndefined();
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -556,23 +556,19 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'BatchGetItem'
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
-          ).toStrictEqual(
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('BatchGetItem');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY]).toStrictEqual(
             consumedCapacityResponseMockData.map((x: ConsumedCapacity) =>
               JSON.stringify(x)
             )
           );
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -605,17 +601,15 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'BatchGetItem'
-          );
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('BatchGetItem');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY]
           ).toBeUndefined();
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -644,15 +638,11 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'PutItem'
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
-          ).toStrictEqual([
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('PutItem');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY]).toStrictEqual([
             JSON.stringify({
               TableName: 'test-table',
               CapacityUnits: 0.5,
@@ -681,14 +671,12 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'PutItem'
-          );
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('PutItem');
           expect(attrs).not.toHaveProperty(
-            SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY
+            SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY
           );
           expect(err).toBeFalsy();
           done();
@@ -753,7 +741,7 @@ describe('DynamoDB', () => {
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
 
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -796,7 +784,7 @@ describe('DynamoDB', () => {
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
 
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -839,7 +827,7 @@ describe('DynamoDB', () => {
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
 
-          expect(attrs).not.toHaveProperty(SemanticAttributes.DB_STATEMENT);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -939,7 +927,7 @@ describe('DynamoDB', () => {
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
 
-          expect(attrs[SemanticAttributes.DB_STATEMENT]).toStrictEqual(
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
             SERIALIZED_DB_STATEMENT
           );
           expect(err).toBeFalsy();
@@ -1023,7 +1011,7 @@ describe('DynamoDB', () => {
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
 
-          expect(attrs[SemanticAttributes.DB_STATEMENT]).toStrictEqual(
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
             SERIALIZED_DB_STATEMENT
           );
           expect(err).toBeFalsy();
@@ -1072,7 +1060,7 @@ describe('DynamoDB', () => {
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
 
-          expect(attrs[SemanticAttributes.DB_STATEMENT]).toStrictEqual(
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
             SERIALIZED_DB_STATEMENT
           );
           expect(err).toBeFalsy();
@@ -1101,7 +1089,7 @@ describe('DynamoDB', () => {
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
 
-          expect(attrs[SemanticAttributes.DB_STATEMENT]).toStrictEqual(
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
             SERIALIZED_DB_STATEMENT
           );
           expect(err).toBeFalsy();
@@ -1136,7 +1124,7 @@ describe('DynamoDB', () => {
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
 
-          expect(attrs[SemanticAttributes.DB_STATEMENT]).toStrictEqual(
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
             SERIALIZED_DB_STATEMENT
           );
           expect(err).toBeFalsy();
