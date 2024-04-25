@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-import type * as net from 'net';
-
-export type Net = typeof net;
-
 export interface NormalizedOptions {
   host?: string;
   port?: number;

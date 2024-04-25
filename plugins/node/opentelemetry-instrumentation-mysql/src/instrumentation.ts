@@ -51,9 +51,7 @@ type getConnectionCallbackType = (
   connection: mysqlTypes.PoolConnection
 ) => void;
 
-export class MySQLInstrumentation extends InstrumentationBase<
-  typeof mysqlTypes
-> {
+export class MySQLInstrumentation extends InstrumentationBase {
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
   };
@@ -82,12 +80,10 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof mysqlTypes>(
+      new InstrumentationNodeModuleDefinition(
         'mysql',
         ['2.*'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Patching mysql@${moduleVersion}`);
-
+        (moduleExports: typeof mysqlTypes) => {
           diag.debug('Patching mysql.createConnection');
           if (isWrapped(moduleExports.createConnection)) {
             this._unwrap(moduleExports, 'createConnection');
@@ -120,7 +116,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
           return moduleExports;
         },
-        moduleExports => {
+        (moduleExports: typeof mysqlTypes) => {
           if (moduleExports === undefined) return;
           this._unwrap(moduleExports, 'createConnection');
           this._unwrap(moduleExports, 'createPool');

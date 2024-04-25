@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-ot-trace-v0.27.1...propagator-ot-trace-v0.27.2) (2024-04-25)
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
 ## [0.27.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-ot-trace-v0.27.0...propagator-ot-trace-v0.27.1) (2023-08-14)
 
 
