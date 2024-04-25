@@ -23,6 +23,7 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 
 import RestifyInstrumentation from '../src';
 import * as types from '../src/internal-types';
@@ -578,6 +579,28 @@ describe('Restify Instrumentation', () => {
           );
         }
       );
+    });
+  });
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-restify.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        // use-restify.mjs creates a restify app with a 'GET /post/:id' endpoint,
+        // then makes a single 'GET /post/0' request. We expect to see a span like this:
+        //    span 'request handler - /post/:id'
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans.length, 1);
+        assert.strictEqual(spans[0].name, 'request handler - /post/:id');
+      },
     });
   });
 });
