@@ -49,9 +49,7 @@ import {
 } from './internal-types';
 
 /** Express instrumentation for OpenTelemetry */
-export class ExpressInstrumentation extends InstrumentationBase<
-  typeof express
-> {
+export class ExpressInstrumentation extends InstrumentationBase {
   constructor(config: ExpressInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-express',
@@ -70,7 +68,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof express>(
+      new InstrumentationNodeModuleDefinition(
         'express',
         ['^4.0.0'],
         (moduleExports, moduleVersion) => {
