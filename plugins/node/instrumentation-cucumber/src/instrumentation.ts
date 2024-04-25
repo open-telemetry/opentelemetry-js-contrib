@@ -48,12 +48,12 @@ export class CucumberInstrumentation extends InstrumentationBase {
     super('@opentelemetry/instrumentation-cucumber', VERSION, config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<any>[] {
+  init(): InstrumentationNodeModuleDefinition[] {
     return [
-      new InstrumentationNodeModuleDefinition<Cucumber>(
+      new InstrumentationNodeModuleDefinition(
         '@cucumber/cucumber',
         ['^8.0.0', '^9.0.0', '^10.0.0'],
-        moduleExports => {
+        (moduleExports: Cucumber) => {
           this.module = moduleExports;
           steps.forEach(step => {
             if (isWrapped(moduleExports[step])) {
@@ -69,16 +69,14 @@ export class CucumberInstrumentation extends InstrumentationBase {
           });
           return moduleExports;
         },
-        moduleExports => {
+        (moduleExports: Cucumber) => {
           if (moduleExports === undefined) return;
           [...hooks, ...steps].forEach(method => {
             this._unwrap(moduleExports, method);
           });
         },
         [
-          new InstrumentationNodeModuleFile<{
-            default: { new (): TestCaseRunner; prototype: TestCaseRunner };
-          }>(
+          new InstrumentationNodeModuleFile(
             '@cucumber/cucumber/lib/runtime/test_case_runner.js',
             ['^8.0.0', '^9.0.0', '^10.0.0'],
             moduleExports => {

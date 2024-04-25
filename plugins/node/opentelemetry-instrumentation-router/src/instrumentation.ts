@@ -34,7 +34,7 @@ import * as utils from './utils';
 import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
-export default class RouterInstrumentation extends InstrumentationBase<any> {
+export default class RouterInstrumentation extends InstrumentationBase {
   constructor(config?: InstrumentationConfig) {
     super(
       `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
@@ -46,7 +46,7 @@ export default class RouterInstrumentation extends InstrumentationBase<any> {
   private _moduleVersion?: string;
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
@@ -56,7 +56,7 @@ export default class RouterInstrumentation extends InstrumentationBase<any> {
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<typeof Router>(
+      new InstrumentationNodeModuleFile(
         'router/lib/layer.js',
         constants.SUPPORTED_VERSIONS,
         moduleExports => {

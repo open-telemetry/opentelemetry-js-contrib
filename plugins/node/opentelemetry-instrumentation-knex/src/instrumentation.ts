@@ -37,14 +37,12 @@ import {
 import * as utils from './utils';
 import * as types from './types';
 
-import type * as knex from 'knex';
-
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: types.KnexInstrumentationConfig = {
   maxQueryLength: 1022,
 };
 
-export class KnexInstrumentation extends InstrumentationBase<any> {
+export class KnexInstrumentation extends InstrumentationBase {
   constructor(config: types.KnexInstrumentationConfig = {}) {
     super(
       `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
@@ -54,7 +52,7 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS
     );
@@ -71,7 +69,7 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
   }
 
   private getRunnerNodeModuleFileInstrumentation(basePath: string) {
-    return new InstrumentationNodeModuleFile<typeof knex>(
+    return new InstrumentationNodeModuleFile(
       `knex/${basePath}/runner.js`,
       constants.SUPPORTED_VERSIONS,
       (Runner: any, moduleVersion) => {
@@ -90,7 +88,7 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
   }
 
   private getClientNodeModuleFileInstrumentation(basePath: string) {
-    return new InstrumentationNodeModuleFile<typeof knex>(
+    return new InstrumentationNodeModuleFile(
       `knex/${basePath}/client.js`,
       constants.SUPPORTED_VERSIONS,
       (Client: any) => {

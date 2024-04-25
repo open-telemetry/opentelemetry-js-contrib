@@ -58,7 +58,7 @@ import {
 } from './utils';
 import { propwrap } from './propwrap';
 import { RequestMetadata } from './services/ServiceExtension';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 const V3_CLIENT_CONFIG_KEY = Symbol(
   'opentelemetry.instrumentation.aws-sdk.client.config'
@@ -72,7 +72,7 @@ type V2PluginRequest = AWS.Request<any, any> & {
   [REQUEST_SPAN_KEY]?: Span;
 };
 
-export class AwsInstrumentation extends InstrumentationBase<any> {
+export class AwsInstrumentation extends InstrumentationBase {
   static readonly component = 'aws-sdk';
   protected override _config!: AwsSdkInstrumentationConfig;
   private servicesExtensions: ServicesExtensions = new ServicesExtensions();
@@ -89,7 +89,7 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
     this._config = Object.assign({}, config);
   }
 
-  protected init(): InstrumentationModuleDefinition<any>[] {
+  protected init(): InstrumentationModuleDefinition[] {
     const v3MiddlewareStackFileOldVersions = new InstrumentationNodeModuleFile(
       '@aws-sdk/middleware-stack/dist/cjs/MiddlewareStack.js',
       ['>=3.1.0 <3.35.0'],
@@ -106,12 +106,13 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
     // as for aws-sdk v3.13.1, constructStack is exported from @aws-sdk/middleware-stack as
     // getter instead of function, which fails shimmer.
     // so we are patching the MiddlewareStack.js file directly to get around it.
-    const v3MiddlewareStack = new InstrumentationNodeModuleDefinition<
-      typeof AWS
-    >('@aws-sdk/middleware-stack', ['^3.1.0'], undefined, undefined, [
-      v3MiddlewareStackFileOldVersions,
-      v3MiddlewareStackFileNewVersions,
-    ]);
+    const v3MiddlewareStack = new InstrumentationNodeModuleDefinition(
+      '@aws-sdk/middleware-stack',
+      ['^3.1.0'],
+      undefined,
+      undefined,
+      [v3MiddlewareStackFileOldVersions, v3MiddlewareStackFileNewVersions]
+    );
 
     // Patch for @smithy/middleware-stack for @aws-sdk/* packages v3.363.0+.
     // As of @smithy/middleware-stack@2.1.0 `constructStack` is only available
@@ -133,7 +134,7 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       }
     );
 
-    const v3SmithyClient = new InstrumentationNodeModuleDefinition<typeof AWS>(
+    const v3SmithyClient = new InstrumentationNodeModuleDefinition(
       '@aws-sdk/smithy-client',
       ['^3.1.0'],
       this.patchV3SmithyClient.bind(this),
@@ -148,14 +149,14 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
       this.unpatchV3SmithyClient.bind(this)
     );
 
-    const v2Request = new InstrumentationNodeModuleFile<typeof AWS>(
+    const v2Request = new InstrumentationNodeModuleFile(
       'aws-sdk/lib/core.js',
       ['^2.308.0'],
       this.patchV2.bind(this),
       this.unpatchV2.bind(this)
     );
 
-    const v2Module = new InstrumentationNodeModuleDefinition<typeof AWS>(
+    const v2Module = new InstrumentationNodeModuleDefinition(
       'aws-sdk',
       ['^2.308.0'],
       undefined,
@@ -354,10 +355,7 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
 
         const httpStatusCode = response.httpResponse?.statusCode;
         if (httpStatusCode) {
-          span.setAttribute(
-            SemanticAttributes.HTTP_STATUS_CODE,
-            httpStatusCode
-          );
+          span.setAttribute(SEMATTRS_HTTP_STATUS_CODE, httpStatusCode);
         }
         span.end();
       });
@@ -511,7 +509,7 @@ export class AwsInstrumentation extends InstrumentationBase<any> {
                     response.output?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
                     span.setAttribute(
-                      SemanticAttributes.HTTP_STATUS_CODE,
+                      SEMATTRS_HTTP_STATUS_CODE,
                       httpStatusCode
                     );
                   }

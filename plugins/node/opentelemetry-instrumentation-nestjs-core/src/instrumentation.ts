@@ -29,7 +29,7 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
 import { AttributeNames, NestType } from './enums';
 
-export class Instrumentation extends InstrumentationBase<any> {
+export class Instrumentation extends InstrumentationBase {
   static readonly COMPONENT = '@nestjs/core';
   static readonly COMMON_ATTRIBUTES = {
     component: Instrumentation.COMPONENT,
@@ -40,7 +40,7 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       Instrumentation.COMPONENT,
       ['>=4.0.0']
     );
@@ -54,7 +54,7 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   getNestFactoryFileInstrumentation(versions: string[]) {
-    return new InstrumentationNodeModuleFile<any>(
+    return new InstrumentationNodeModuleFile(
       '@nestjs/core/nest-factory.js',
       versions,
       (NestFactoryStatic: any, moduleVersion?: string) => {
@@ -72,7 +72,7 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   getRouterExecutionContextFileInstrumentation(versions: string[]) {
-    return new InstrumentationNodeModuleFile<any>(
+    return new InstrumentationNodeModuleFile(
       '@nestjs/core/router/router-execution-context.js',
       versions,
       (RouterExecutionContext: any, moduleVersion?: string) => {

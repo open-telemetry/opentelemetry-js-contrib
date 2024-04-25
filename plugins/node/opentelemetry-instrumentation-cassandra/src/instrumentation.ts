@@ -48,7 +48,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    return new InstrumentationNodeModuleDefinition<any>(
+    return new InstrumentationNodeModuleDefinition(
       'cassandra-driver',
       supportedVersions,
       driverModule => {

@@ -84,7 +84,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       'graphql',
       supportedVersions
     );
@@ -95,10 +95,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     return module;
   }
 
-  private _addPatchingExecute(): InstrumentationNodeModuleFile<
-    typeof graphqlTypes
-  > {
-    return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
+  private _addPatchingExecute(): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
       'graphql/execution/execute.js',
       supportedVersions,
       // cannot make it work with appropriate type as execute function has 2
@@ -122,20 +120,18 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     );
   }
 
-  private _addPatchingParser(): InstrumentationNodeModuleFile<
-    typeof graphqlTypes
-  > {
-    return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
+  private _addPatchingParser(): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
       'graphql/language/parser.js',
       supportedVersions,
-      moduleExports => {
+      (moduleExports: typeof graphqlTypes) => {
         if (isWrapped(moduleExports.parse)) {
           this._unwrap(moduleExports, 'parse');
         }
         this._wrap(moduleExports, 'parse', this._patchParse());
         return moduleExports;
       },
-      moduleExports => {
+      (moduleExports: typeof graphqlTypes) => {
         if (moduleExports) {
           this._unwrap(moduleExports, 'parse');
         }
@@ -143,10 +139,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     );
   }
 
-  private _addPatchingValidate(): InstrumentationNodeModuleFile<
-    typeof graphqlTypes
-  > {
-    return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
+  private _addPatchingValidate(): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
       'graphql/validation/validate.js',
       supportedVersions,
       moduleExports => {

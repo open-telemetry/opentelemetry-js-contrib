@@ -34,7 +34,7 @@ import {
 } from './internal-types';
 
 /** Koa instrumentation for OpenTelemetry */
-export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
+export class KoaInstrumentation extends InstrumentationBase {
   constructor(config: KoaInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-koa',
@@ -52,7 +52,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   }
 
   protected init() {
-    return new InstrumentationNodeModuleDefinition<typeof koa>(
+    return new InstrumentationNodeModuleDefinition(
       'koa',
       ['^2.0.0'],
       (module: any) => {

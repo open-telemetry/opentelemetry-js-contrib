@@ -25,8 +25,8 @@ import {
 } from '@opentelemetry/instrumentation';
 import type { WinstonInstrumentationConfig } from './types';
 import type {
-  Winston2LogMethod,
   Winston2LoggerModule,
+  Winston2LogMethod,
   Winston3ConfigureMethod,
   Winston3LogMethod,
   Winston3Logger,
@@ -43,16 +43,16 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
   protected init() {
     const winstons3instrumentationNodeModuleDefinition =
-      new InstrumentationNodeModuleDefinition<{}>(
+      new InstrumentationNodeModuleDefinition(
         'winston',
         winston3Versions,
         moduleExports => moduleExports,
         () => {},
         [
-          new InstrumentationNodeModuleFile<Winston3Logger>(
+          new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winston3Versions,
-            logger => {
+            (logger: Winston3Logger) => {
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
               }
@@ -70,7 +70,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return logger;
             },
-            logger => {
+            (logger: Winston3Logger) => {
               if (logger === undefined) return;
               this._unwrap(logger.prototype, 'write');
               this._unwrap(logger.prototype, 'configure');
@@ -80,16 +80,16 @@ export class WinstonInstrumentation extends InstrumentationBase {
       );
 
     const winstons2instrumentationNodeModuleDefinition =
-      new InstrumentationNodeModuleDefinition<{}>(
+      new InstrumentationNodeModuleDefinition(
         'winston',
         winstonPre3Versions,
         moduleExports => moduleExports,
         () => {},
         [
-          new InstrumentationNodeModuleFile<Winston2LoggerModule>(
+          new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winstonPre3Versions,
-            fileExports => {
+            (fileExports: Winston2LoggerModule) => {
               const proto = fileExports.Logger.prototype;
 
               if (isWrapped(proto.log)) {
@@ -99,7 +99,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return fileExports;
             },
-            fileExports => {
+            (fileExports: Winston2LoggerModule) => {
               if (fileExports === undefined) return;
               this._unwrap(fileExports.Logger.prototype, 'log');
             }

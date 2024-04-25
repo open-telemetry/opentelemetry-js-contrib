@@ -51,17 +51,17 @@ function patchedFunctionWithOriginalProperties<
   return Object.assign(patchedFunction, original);
 }
 
-export default class FsInstrumentation extends InstrumentationBase<FS> {
+export default class FsInstrumentation extends InstrumentationBase {
   constructor(config?: FsInstrumentationConfig) {
     super('@opentelemetry/instrumentation-fs', VERSION, config);
   }
 
   init(): (
-    | InstrumentationNodeModuleDefinition<FS>
-    | InstrumentationNodeModuleDefinition<FSPromises>
+    | InstrumentationNodeModuleDefinition
+    | InstrumentationNodeModuleDefinition
   )[] {
     return [
-      new InstrumentationNodeModuleDefinition<FS>(
+      new InstrumentationNodeModuleDefinition(
         'fs',
         ['*'],
         (fs: FS) => {
@@ -131,7 +131,7 @@ export default class FsInstrumentation extends InstrumentationBase<FS> {
           }
         }
       ),
-      new InstrumentationNodeModuleDefinition<FSPromises>(
+      new InstrumentationNodeModuleDefinition(
         'fs/promises',
         ['*'],
         (fsPromises: FSPromises) => {

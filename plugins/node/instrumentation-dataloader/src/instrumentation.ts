@@ -50,7 +50,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof Dataloader>(
+      new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
         ['^2.0.0'],
         dataloader => {
@@ -68,8 +68,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
             this._unwrap(dataloader.prototype, 'loadMany');
           }
         }
-        // cast it to module definition of unknown type to avoid exposing Dataloader types on public APIs
-      ) as InstrumentationNodeModuleDefinition<unknown>,
+      ) as InstrumentationNodeModuleDefinition,
     ];
   }
 

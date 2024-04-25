@@ -35,7 +35,7 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
 };
 
-export class IORedisInstrumentation extends InstrumentationBase<any> {
+export class IORedisInstrumentation extends InstrumentationBase {
   constructor(_config: IORedisInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-ioredis',
@@ -44,9 +44,9 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
     );
   }
 
-  init(): InstrumentationNodeModuleDefinition<any>[] {
+  init(): InstrumentationNodeModuleDefinition[] {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'ioredis',
         ['>1', '<6'],
         (module, moduleVersion?: string) => {
