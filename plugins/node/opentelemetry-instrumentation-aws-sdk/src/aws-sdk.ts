@@ -58,7 +58,7 @@ import {
 } from './utils';
 import { propwrap } from './propwrap';
 import { RequestMetadata } from './services/ServiceExtension';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 const V3_CLIENT_CONFIG_KEY = Symbol(
   'opentelemetry.instrumentation.aws-sdk.client.config'
@@ -370,10 +370,7 @@ export class AwsInstrumentation extends InstrumentationBase {
 
         const httpStatusCode = response.httpResponse?.statusCode;
         if (httpStatusCode) {
-          span.setAttribute(
-            SemanticAttributes.HTTP_STATUS_CODE,
-            httpStatusCode
-          );
+          span.setAttribute(SEMATTRS_HTTP_STATUS_CODE, httpStatusCode);
         }
         span.end();
       });
@@ -527,7 +524,7 @@ export class AwsInstrumentation extends InstrumentationBase {
                     response.output?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
                     span.setAttribute(
-                      SemanticAttributes.HTTP_STATUS_CODE,
+                      SEMATTRS_HTTP_STATUS_CODE,
                       httpStatusCode
                     );
                   }

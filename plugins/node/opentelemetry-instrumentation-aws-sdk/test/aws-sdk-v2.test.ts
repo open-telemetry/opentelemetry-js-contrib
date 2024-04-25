@@ -32,7 +32,7 @@ import { SpanStatusCode, Span, SpanKind } from '@opentelemetry/api';
 import { AttributeNames } from '../src/enums';
 import { mockV2AwsSend } from './testing-utils';
 import { expect } from 'expect';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import { AWSError } from 'aws-sdk';
 import { HttpResponse } from 'aws-sdk/lib/http_response';
 
@@ -131,9 +131,9 @@ describe('instrumentation-aws-sdk-v2', () => {
         expect(spanCreateBucket.attributes[AttributeNames.AWS_REGION]).toBe(
           'us-east-1'
         );
-        expect(
-          spanCreateBucket.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(200);
+        expect(spanCreateBucket.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(
+          200
+        );
 
         expect(spanCreateBucket.name).toBe('S3.CreateBucket');
         expect(spanCreateBucket.kind).toEqual(SpanKind.CLIENT);
@@ -159,9 +159,7 @@ describe('instrumentation-aws-sdk-v2', () => {
           'us-east-1'
         );
         expect(spanPutObject.name).toBe('S3.PutObject');
-        expect(
-          spanPutObject.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(200);
+        expect(spanPutObject.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(200);
       });
 
       it('adds proper number of spans with correct attributes if both, promise and callback were used', async () => {
@@ -210,9 +208,7 @@ describe('instrumentation-aws-sdk-v2', () => {
         expect(spanPutObjectCb.attributes[AttributeNames.AWS_REGION]).toBe(
           'us-east-1'
         );
-        expect(
-          spanPutObjectCb.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(200);
+        expect(spanPutObjectCb.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(200);
       });
 
       it('adds proper number of spans with correct attributes if only promise was used', async () => {
@@ -248,9 +244,7 @@ describe('instrumentation-aws-sdk-v2', () => {
         expect(spanPutObjectCb.attributes[AttributeNames.AWS_REGION]).toBe(
           'us-east-1'
         );
-        expect(
-          spanPutObjectCb.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(200);
+        expect(spanPutObjectCb.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(200);
       });
 
       it('should create span if no callback is supplied', done => {
@@ -304,9 +298,9 @@ describe('instrumentation-aws-sdk-v2', () => {
           })
         );
 
-        expect(
-          spanCreateBucket.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(400);
+        expect(spanCreateBucket.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(
+          400
+        );
       });
     });
   });

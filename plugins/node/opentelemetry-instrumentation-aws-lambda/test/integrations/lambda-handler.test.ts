@@ -33,8 +33,9 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
-  SemanticAttributes,
-  SemanticResourceAttributes,
+  SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_FAAS_EXECUTION,
+  SEMRESATTRS_FAAS_NAME,
 } from '@opentelemetry/semantic-conventions';
 import {
   Context as OtelContext,
@@ -56,7 +57,7 @@ const assertSpanSuccess = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
   assert.strictEqual(span.name, 'my_function');
   assert.strictEqual(
-    span.attributes[SemanticAttributes.FAAS_EXECUTION],
+    span.attributes[SEMATTRS_FAAS_EXECUTION],
     'aws_request_id'
   );
   assert.strictEqual(span.attributes['faas.id'], 'my_arn');
@@ -68,7 +69,7 @@ const assertSpanFailure = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
   assert.strictEqual(span.name, 'my_function');
   assert.strictEqual(
-    span.attributes[SemanticAttributes.FAAS_EXECUTION],
+    span.attributes[SEMATTRS_FAAS_EXECUTION],
     'aws_request_id'
   );
   assert.strictEqual(span.attributes['faas.id'], 'my_arn');
@@ -76,7 +77,7 @@ const assertSpanFailure = (span: ReadableSpan) => {
   assert.strictEqual(span.status.message, 'handler error');
   assert.strictEqual(span.events.length, 1);
   assert.strictEqual(
-    span.events[0].attributes![SemanticAttributes.EXCEPTION_MESSAGE],
+    span.events[0].attributes![SEMATTRS_EXCEPTION_MESSAGE],
     'handler error'
   );
 };
@@ -841,10 +842,7 @@ describe('lambda handler', () => {
       it('sync - success', async () => {
         initializeHandler('lambda-test/async.handler', {
           requestHook: (span, { context }) => {
-            span.setAttribute(
-              SemanticResourceAttributes.FAAS_NAME,
-              context.functionName
-            );
+            span.setAttribute(SEMRESATTRS_FAAS_NAME, context.functionName);
           },
         });
 
@@ -853,7 +851,7 @@ describe('lambda handler', () => {
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
         assert.strictEqual(
-          span.attributes[SemanticResourceAttributes.FAAS_NAME],
+          span.attributes[SEMRESATTRS_FAAS_NAME],
           ctx.functionName
         );
         assertSpanSuccess(span);
