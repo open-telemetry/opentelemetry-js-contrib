@@ -35,8 +35,6 @@ import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
 
-const { diag } = api;
-
 export class RestifyInstrumentation extends InstrumentationBase {
   constructor(config: RestifyInstrumentationConfig = {}) {
     super(
@@ -71,10 +69,7 @@ export class RestifyInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleFile(
         'restify/lib/server.js',
         constants.SUPPORTED_VERSIONS,
-        (moduleExports, moduleVersion) => {
-          diag.debug(
-            `Applying patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           this._isDisabled = false;
           const Server: any = moduleExports;
           for (const name of constants.RESTIFY_METHODS) {
@@ -99,10 +94,7 @@ export class RestifyInstrumentation extends InstrumentationBase {
           }
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          diag.debug(
-            `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           this._isDisabled = true;
           if (moduleExports) {
             const Server: any = moduleExports;

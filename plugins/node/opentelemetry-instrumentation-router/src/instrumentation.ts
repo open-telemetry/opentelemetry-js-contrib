@@ -50,16 +50,7 @@ export default class RouterInstrumentation extends InstrumentationBase {
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
-        api.diag.debug(
-          `Applying patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         this._moduleVersion = moduleVersion;
-        return moduleExports;
-      },
-      (moduleExports, moduleVersion) => {
-        api.diag.debug(
-          `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         return moduleExports;
       }
     );
@@ -68,10 +59,7 @@ export default class RouterInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleFile(
         'router/lib/layer.js',
         constants.SUPPORTED_VERSIONS,
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(
-            `Applying patch for "lib/layer.js" of ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           const Layer: any = moduleExports;
           if (isWrapped(Layer.prototype.handle_request)) {
             this._unwrap(Layer.prototype, 'handle_request');
@@ -91,10 +79,7 @@ export default class RouterInstrumentation extends InstrumentationBase {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(
-            `Removing patch for "lib/layer.js" of ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           const Layer: any = moduleExports;
           this._unwrap(Layer.prototype, 'handle_request');
           this._unwrap(Layer.prototype, 'handle_error');

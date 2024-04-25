@@ -83,9 +83,7 @@ export class MySQLInstrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         'mysql',
         ['2.*'],
-        (moduleExports: typeof mysqlTypes, moduleVersion) => {
-          diag.debug(`Patching mysql@${moduleVersion}`);
-
+        (moduleExports: typeof mysqlTypes) => {
           diag.debug('Patching mysql.createConnection');
           if (isWrapped(moduleExports.createConnection)) {
             this._unwrap(moduleExports, 'createConnection');
