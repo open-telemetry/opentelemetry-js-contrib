@@ -63,7 +63,6 @@ export class KoaInstrumentation extends InstrumentationBase {
         if (moduleExports == null) {
           return moduleExports;
         }
-        api.diag.debug('Patching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }
@@ -79,7 +78,6 @@ export class KoaInstrumentation extends InstrumentationBase {
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
             : module; // CommonJS
-        api.diag.debug('Unpatching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag, Span, SpanStatusCode, context, trace } from '@opentelemetry/api';
+import { Span, SpanStatusCode, context, trace } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -45,7 +45,6 @@ export class NetInstrumentation extends InstrumentationBase {
         'net',
         ['*'],
         (moduleExports: typeof net) => {
-          diag.debug('Applying patch for net module');
           if (isWrapped(moduleExports.Socket.prototype.connect)) {
             this._unwrap(moduleExports.Socket.prototype, 'connect');
           }
@@ -59,7 +58,6 @@ export class NetInstrumentation extends InstrumentationBase {
         },
         (moduleExports: typeof net) => {
           if (moduleExports === undefined) return;
-          diag.debug('Removing patch from net module');
           this._unwrap(moduleExports.Socket.prototype, 'connect');
         }
       ),

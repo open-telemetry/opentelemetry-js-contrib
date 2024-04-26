@@ -41,8 +41,7 @@ export default class Instrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
         ['>=3'],
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Applying patch for ${MODULE_NAME}@${moduleVersion}`);
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {
             this._unwrap(Pool.prototype, 'acquire');
@@ -54,8 +53,7 @@ export default class Instrumentation extends InstrumentationBase {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Removing patch for ${MODULE_NAME}@${moduleVersion}`);
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           this._unwrap(Pool.prototype, 'acquire');
           return moduleExports;
@@ -64,8 +62,7 @@ export default class Instrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
         ['^2.4'],
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Applying patch for ${MODULE_NAME}@${moduleVersion}`);
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {
             this._unwrap(Pool.prototype, 'acquire');
@@ -77,8 +74,7 @@ export default class Instrumentation extends InstrumentationBase {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Removing patch for ${MODULE_NAME}@${moduleVersion}`);
+        moduleExports => {
           const Pool: any = moduleExports.Pool;
           this._unwrap(Pool.prototype, 'acquire');
           return moduleExports;
@@ -87,8 +83,7 @@ export default class Instrumentation extends InstrumentationBase {
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
         ['2 - 2.3'],
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Applying patch for ${MODULE_NAME}@${moduleVersion}`);
+        moduleExports => {
           this._isDisabled = false;
           if (isWrapped(moduleExports.Pool)) {
             this._unwrap(moduleExports, 'Pool');
@@ -96,8 +91,7 @@ export default class Instrumentation extends InstrumentationBase {
           this._wrap(moduleExports, 'Pool', this._poolWrapper.bind(this));
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(`Removing patch for ${MODULE_NAME}@${moduleVersion}`);
+        moduleExports => {
           // since the object is created on the fly every time, we need to use
           // a boolean switch here to disable the instrumentation
           this._isDisabled = true;
