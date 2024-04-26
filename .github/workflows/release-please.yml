@@ -54,14 +54,14 @@ jobs:
 
       # get main again
       - name: Checkout Repository
-        # only checkout if releases have been created
+        # only checkout if a release has been created
         if: ${{ steps.release.outputs.releases_created }}
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Rebuild Packages
-        # only checkout if releases have been created
+        # only checkout if a release has been created
         if: ${{ steps.release.outputs.releases_created }}
         run: |
           npm ci
@@ -71,7 +71,7 @@ jobs:
       # need to publish all unpublished versions to npm here
       # See: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
       - name: Publish to npm
-        # only checkout if releases have been created
+        # only checkout if a release has been created
         if: ${{ steps.release.outputs.releases_created }}
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
