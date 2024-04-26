@@ -53,13 +53,10 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    return new InstrumentationNodeModuleDefinition<any>(
+    return new InstrumentationNodeModuleDefinition(
       'cassandra-driver',
       supportedVersions,
-      (driverModule, moduleVersion) => {
-        this._diag.debug(
-          `Applying patch for cassandra-driver@${moduleVersion}`
-        );
+      driverModule => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const Client = driverModule.Client.prototype as any;
 
@@ -81,10 +78,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
 
         return driverModule;
       },
-      (driverModule, moduleVersion) => {
-        this._diag.debug(
-          `Removing patch for cassandra-driver@${moduleVersion}`
-        );
+      driverModule => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const Client = driverModule.Client.prototype as any;
 

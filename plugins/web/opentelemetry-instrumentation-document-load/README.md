@@ -117,10 +117,10 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Attributes collected:
 
-| Attribute         | Short Description                                                              | Notes                           |
-| ----------------- | ------------------------------------------------------------------------------ | ------------------------------- |
-| `http.url`        | Full HTTP request URL in the form `scheme://host[:port]/path?query[#fragment]` | Key: `SEMATTRS_HTTP_URL`        |
-| `http.user_agent` | Value of the HTTP User-Agent header sent by the client                         | Key: `SEMATTRS_HTTP_USER_AGENT` |
+| Attribute         | Short Description                                                              |
+| ----------------- | ------------------------------------------------------------------------------ |
+| `http.url`        | Full HTTP request URL in the form `scheme://host[:port]/path?query[#fragment]` |
+| `http.user_agent` | Value of the HTTP User-Agent header sent by the client                         |
 
 ## Useful links
 

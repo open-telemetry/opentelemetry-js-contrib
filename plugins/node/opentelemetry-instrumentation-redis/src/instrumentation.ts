@@ -45,11 +45,10 @@ export class RedisInstrumentation extends InstrumentationBase {
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'redis',
         ['^2.6.0', '^3.0.0'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Patching redis@${moduleVersion}`);
+        moduleExports => {
           diag.debug('Patching redis.RedisClient.internal_send_command');
           if (
             isWrapped(
