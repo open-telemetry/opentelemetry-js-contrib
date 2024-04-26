@@ -67,9 +67,7 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
   });
 }
 
-export class TediousInstrumentation extends InstrumentationBase<
-  typeof tedious
-> {
+export class TediousInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'tedious';
 
   constructor(config?: TediousInstrumentationConfig) {
@@ -78,12 +76,10 @@ export class TediousInstrumentation extends InstrumentationBase<
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof tedious>(
+      new InstrumentationNodeModuleDefinition(
         TediousInstrumentation.COMPONENT,
         ['>=1.11.0 <=15'],
-        (moduleExports: any, moduleVersion) => {
-          this._diag.debug(`Patching tedious@${moduleVersion}`);
-
+        (moduleExports: typeof tedious) => {
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
           for (const method of PATCHED_METHODS) {
             if (isWrapped(ConnectionPrototype[method])) {
@@ -103,7 +99,7 @@ export class TediousInstrumentation extends InstrumentationBase<
 
           return moduleExports;
         },
-        (moduleExports: any) => {
+        (moduleExports: typeof tedious) => {
           if (moduleExports === undefined) return;
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
           for (const method of PATCHED_METHODS) {
