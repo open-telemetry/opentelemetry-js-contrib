@@ -39,6 +39,7 @@
     "@opentelemetry/instrumentation-koa": "^0.31.0",
     "@opentelemetry/sdk-trace-node": "^1.0.0",
     "@opentelemetry/sdk-trace-base": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.23.0",
     "axios": "^1.6.0",
     "koa": "^2.13.0"
   },
