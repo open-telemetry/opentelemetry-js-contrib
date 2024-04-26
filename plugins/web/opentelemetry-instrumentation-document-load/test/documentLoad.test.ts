@@ -555,42 +555,43 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
 
         ensureNetworkEventsExists(fsEvents);
-
-        assert.strictEqual(rsEvents[0].name, PTN.FETCH_START);
-        assert.strictEqual(rsEvents[1].name, PTN.UNLOAD_EVENT_START);
-        assert.strictEqual(rsEvents[2].name, PTN.UNLOAD_EVENT_END);
-        assert.strictEqual(rsEvents[3].name, PTN.DOM_INTERACTIVE);
-        assert.strictEqual(
-          rsEvents[4].name,
-          PTN.DOM_CONTENT_LOADED_EVENT_START
-        );
-        assert.strictEqual(rsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
-        assert.strictEqual(rsEvents[6].name, PTN.DOM_COMPLETE);
-        assert.strictEqual(rsEvents[7].name, PTN.LOAD_EVENT_START);
-        assert.strictEqual(rsEvents[8].name, PTN.LOAD_EVENT_END);
-
         assert.strictEqual(fsEvents.length, 8);
-        assert.strictEqual(rsEvents.length, 9);
+
+        const rsEventNames = rsEvents.map(e => e.name);
+        // Allow the unloadEvent{Start,End} events to be missing. Tests that
+        // are simulating a fallback to window.performance.timing are using
+        // values (entriesFallback) for that result in those network span
+        // events being dropped after https://github.com/open-telemetry/opentelemetry-js/pull/4486
+        // (@opentelemetry/sdk-trace-web@1.24.0).
+        const expectedRsEventNames =
+          rsEventNames[1] === PTN.UNLOAD_EVENT_START
+            ? [
+                PTN.FETCH_START,
+                PTN.UNLOAD_EVENT_START,
+                PTN.UNLOAD_EVENT_END,
+                PTN.DOM_INTERACTIVE,
+                PTN.DOM_CONTENT_LOADED_EVENT_START,
+                PTN.DOM_CONTENT_LOADED_EVENT_END,
+                PTN.DOM_COMPLETE,
+                PTN.LOAD_EVENT_START,
+                PTN.LOAD_EVENT_END,
+              ]
+            : [
+                PTN.FETCH_START,
+                PTN.DOM_INTERACTIVE,
+                PTN.DOM_CONTENT_LOADED_EVENT_START,
+                PTN.DOM_CONTENT_LOADED_EVENT_END,
+                PTN.DOM_COMPLETE,
+                PTN.LOAD_EVENT_START,
+                PTN.LOAD_EVENT_END,
+              ];
+        assert.deepStrictEqual(rsEventNames, expectedRsEventNames);
+
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
       });
     });
   }
-
-  describe('when navigation entries types are NOT available then fallback to "performance.timing"', () => {
-    const sandbox = sinon.createSandbox();
-    beforeEach(() => {
-      sandbox.stub(window.performance, 'getEntriesByType').value(undefined);
-      sandbox.stub(window.performance, 'timing').get(() => {
-        return entriesFallback;
-      });
-    });
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    shouldExportCorrectSpan();
-  });
 
   describe('when getEntriesByType is not defined then fallback to "performance.timing"', () => {
     const sandbox = sinon.createSandbox();
