@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
