@@ -103,7 +103,6 @@ export class DnsInstrumentation extends InstrumentationBase {
   private _getPatchLookupFunction(
     original: (hostname: string, ...args: unknown[]) => void
   ) {
-    diag.debug('patch lookup function');
     const plugin = this;
     return function patchedLookup(
       this: {},
