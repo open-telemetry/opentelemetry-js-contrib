@@ -84,7 +84,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
         'mysql',
         ['2.*'],
         (moduleExports: typeof mysqlTypes) => {
-          diag.debug('Patching mysql.createConnection');
           if (isWrapped(moduleExports.createConnection)) {
             this._unwrap(moduleExports, 'createConnection');
           }
@@ -94,7 +93,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
             this._patchCreateConnection() as any
           );
 
-          diag.debug('Patching mysql.createPool');
           if (isWrapped(moduleExports.createPool)) {
             this._unwrap(moduleExports, 'createPool');
           }
@@ -104,7 +102,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
             this._patchCreatePool() as any
           );
 
-          diag.debug('Patching mysql.createPoolCluster');
           if (isWrapped(moduleExports.createPoolCluster)) {
             this._unwrap(moduleExports, 'createPoolCluster');
           }
@@ -130,7 +127,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
   private _patchCreateConnection() {
     return (originalCreateConnection: Function) => {
       const thisPlugin = this;
-      diag.debug('MySQLInstrumentation#patch: patched mysql createConnection');
 
       return function createConnection(
         _connectionUri: string | mysqlTypes.ConnectionConfig
@@ -153,7 +149,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
   private _patchCreatePool() {
     return (originalCreatePool: Function) => {
       const thisPlugin = this;
-      diag.debug('MySQLInstrumentation#patch: patched mysql createPool');
       return function createPool(_config: string | mysqlTypes.PoolConfig) {
         const pool = originalCreatePool(...arguments);
 
@@ -173,7 +168,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
   private _patchPoolEnd(pool: any) {
     return (originalPoolEnd: Function) => {
       const thisPlugin = this;
-      diag.debug('MySQLInstrumentation#patch: patched mysql pool end');
       return function end(callback?: unknown) {
         const nAll = (pool as any)._allConnections.length;
         const nFree = (pool as any)._freeConnections.length;
@@ -196,7 +190,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
   private _patchCreatePoolCluster() {
     return (originalCreatePoolCluster: Function) => {
       const thisPlugin = this;
-      diag.debug('MySQLInstrumentation#patch: patched mysql createPoolCluster');
       return function createPool(_config: string | mysqlTypes.PoolConfig) {
         const cluster = originalCreatePoolCluster(...arguments);
 
@@ -215,7 +208,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
   private _patchAdd(cluster: mysqlTypes.PoolCluster) {
     return (originalAdd: Function) => {
       const thisPlugin = this;
-      diag.debug('MySQLInstrumentation#patch: patched mysql pool cluster add');
       return function add(id: string, config: unknown) {
         // Unwrap if unpatch has been called
         if (!thisPlugin['_enabled']) {
@@ -241,9 +233,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
   private _patchGetConnection(pool: mysqlTypes.Pool | mysqlTypes.PoolCluster) {
     return (originalGetConnection: Function) => {
       const thisPlugin = this;
-      diag.debug(
-        'MySQLInstrumentation#patch: patched mysql pool getConnection'
-      );
 
       return function getConnection(
         arg1?: unknown,
@@ -308,7 +297,6 @@ export class MySQLInstrumentation extends InstrumentationBase {
   private _patchQuery(connection: mysqlTypes.Connection | mysqlTypes.Pool) {
     return (originalQuery: Function): mysqlTypes.QueryFunction => {
       const thisPlugin = this;
-      diag.debug('MySQLInstrumentation: patched mysql query');
 
       return function query(
         query: string | mysqlTypes.Query | mysqlTypes.QueryOptions,
