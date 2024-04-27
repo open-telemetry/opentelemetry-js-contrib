@@ -57,7 +57,7 @@ export class MySQLInstrumentation extends InstrumentationBase {
   };
   private _connectionsUsage!: UpDownCounter;
 
-  constructor(config?: MySQLInstrumentationConfig) {
+  constructor(config: MySQLInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mysql', VERSION, config);
     this._setMetricInstruments();
   }

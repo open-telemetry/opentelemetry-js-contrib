@@ -51,11 +51,7 @@ import {
 /** Express instrumentation for OpenTelemetry */
 export class ExpressInstrumentation extends InstrumentationBase {
   constructor(config: ExpressInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-express',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-express', VERSION, config);
   }
 
   override setConfig(config: ExpressInstrumentationConfig = {}) {

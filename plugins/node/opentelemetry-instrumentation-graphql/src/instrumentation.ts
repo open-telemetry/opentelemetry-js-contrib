@@ -65,9 +65,7 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
 const supportedVersions = ['>=14 <17'];
 
 export class GraphQLInstrumentation extends InstrumentationBase {
-  constructor(
-    config: GraphQLInstrumentationConfig & InstrumentationConfig = {}
-  ) {
+  constructor(config: GraphQLInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-graphql',
       VERSION,

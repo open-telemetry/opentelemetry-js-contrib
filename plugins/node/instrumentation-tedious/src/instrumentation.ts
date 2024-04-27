@@ -64,7 +64,7 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
 export class TediousInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'tedious';
 
-  constructor(config?: TediousInstrumentationConfig) {
+  constructor(config: TediousInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-tedious', VERSION, config);
   }
 

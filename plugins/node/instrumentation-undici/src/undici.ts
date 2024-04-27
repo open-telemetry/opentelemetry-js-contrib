@@ -66,7 +66,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
   private _recordFromReq = new WeakMap<UndiciRequest, InstrumentationRecord>();
 
   private _httpClientDurationHistogram!: Histogram;
-  constructor(config?: UndiciInstrumentationConfig) {
+  constructor(config: UndiciInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-undici', VERSION, config);
     this.setConfig(config);
   }

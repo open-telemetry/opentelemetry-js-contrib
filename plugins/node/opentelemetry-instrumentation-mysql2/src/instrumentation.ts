@@ -44,7 +44,7 @@ export class MySQL2Instrumentation extends InstrumentationBase {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
   };
 
-  constructor(config?: MySQL2InstrumentationConfig) {
+  constructor(config: MySQL2InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-mysql2', VERSION, config);
   }
 
