@@ -17,7 +17,6 @@
 import {
   context,
   Context,
-  diag,
   trace,
   Span,
   SpanKind,
