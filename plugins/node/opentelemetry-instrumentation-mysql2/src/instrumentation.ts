@@ -56,7 +56,6 @@ export class MySQL2Instrumentation extends InstrumentationBase {
         (moduleExports: any) => {
           const ConnectionPrototype: mysqlTypes.Connection =
             moduleExports.Connection.prototype;
-          api.diag.debug('Patching Connection.prototype.query');
           if (isWrapped(ConnectionPrototype.query)) {
             this._unwrap(ConnectionPrototype, 'query');
           }
@@ -91,8 +90,6 @@ export class MySQL2Instrumentation extends InstrumentationBase {
   private _patchQuery(format: formatType, isPrepared: boolean) {
     return (originalQuery: Function): Function => {
       const thisPlugin = this;
-      api.diag.debug('MySQL2Instrumentation: patched mysql query/execute');
-
       return function query(
         this: mysqlTypes.Connection,
         query: string | mysqlTypes.Query | mysqlTypes.QueryOptions,
