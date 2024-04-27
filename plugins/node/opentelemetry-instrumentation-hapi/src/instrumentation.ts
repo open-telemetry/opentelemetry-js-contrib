@@ -137,7 +137,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     original: RegisterFunction<T>
   ): RegisterFunction<T> {
     const instrumentation: HapiInstrumentation = this;
-    api.diag.debug('Patching Hapi.Server register function');
     return function register(
       this: Hapi.Server,
       pluginInput: HapiPluginInput<T>,
@@ -173,7 +172,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     pluginName?: string
   ) {
     const instrumentation: HapiInstrumentation = this;
-    api.diag.debug('Patching Hapi.Server ext function');
 
     return function ext(
       this: ThisParameterType<typeof original>,
@@ -235,7 +233,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     pluginName?: string
   ) {
     const instrumentation: HapiInstrumentation = this;
-    api.diag.debug('Patching Hapi.Server route function');
     return function route(
       this: Hapi.Server,
       route: HapiServerRouteInput
