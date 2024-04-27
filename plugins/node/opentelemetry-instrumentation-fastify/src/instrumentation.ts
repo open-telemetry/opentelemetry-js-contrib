@@ -198,7 +198,6 @@ export class FastifyInstrumentation extends InstrumentationBase {
     fastify: () => FastifyInstance;
   }): () => FastifyInstance {
     const instrumentation = this;
-    this._diag.debug('Patching fastify constructor function');
 
     function fastify(this: FastifyInstance, ...args: any) {
       const app: FastifyInstance = moduleExports.fastify.apply(this, args);
