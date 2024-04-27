@@ -18,7 +18,6 @@ import { context, trace } from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   safeExecuteInTheMiddle,
