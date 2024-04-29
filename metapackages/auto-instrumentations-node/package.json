@@ -86,6 +86,7 @@
     "@opentelemetry/instrumentation-router": "^0.37.0",
     "@opentelemetry/instrumentation-socket.io": "^0.39.0",
     "@opentelemetry/instrumentation-tedious": "^0.10.0",
+    "@opentelemetry/instrumentation-undici": "^0.2.0",
     "@opentelemetry/instrumentation-winston": "^0.37.0",
     "@opentelemetry/resource-detector-alibaba-cloud": "^0.28.9",
     "@opentelemetry/resource-detector-aws": "^1.4.2",
