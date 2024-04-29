@@ -157,6 +157,7 @@ export class KnexInstrumentation extends InstrumentationBase {
         const span = instrumentation.tracer.startSpan(
           utils.getName(name, operation, table),
           {
+            kind: api.SpanKind.CLIENT,
             attributes,
           },
           parent
