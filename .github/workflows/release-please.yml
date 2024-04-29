@@ -61,7 +61,7 @@ jobs:
           fetch-depth: 0
 
       - name: Rebuild Packages
-        # only checkout if a release has been created
+        # only rebuild if a release has been created
         if: ${{ steps.release.outputs.releases_created }}
         run: |
           npm ci
