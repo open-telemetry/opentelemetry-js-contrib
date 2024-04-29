@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, diag, Span, SpanOptions } from '@opentelemetry/api';
+import { context, Span, SpanOptions } from '@opentelemetry/api';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { HandleFunction, NextFunction, Server } from 'connect';
 import type { ServerResponse } from 'http';
@@ -41,7 +41,7 @@ import {
 export const ANONYMOUS_NAME = 'anonymous';
 
 /** Connect instrumentation for OpenTelemetry */
-export class ConnectInstrumentation extends InstrumentationBase<Server> {
+export class ConnectInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-connect',
@@ -52,15 +52,11 @@ export class ConnectInstrumentation extends InstrumentationBase<Server> {
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'connect',
         ['^3.0.0'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for connect@${moduleVersion}`);
+        moduleExports => {
           return this._patchConstructor(moduleExports);
-        },
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Removing patch for connect@${moduleVersion}`);
         }
       ),
     ];

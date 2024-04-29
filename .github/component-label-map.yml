@@ -61,7 +61,6 @@ pkg:instrumentation-aws-lambda:
   - changed-files:
       - any-glob-to-any-file:
           - plugins/node/opentelemetry-instrumentation-aws-lambda/**
-          - propagators/opentelemetry-propagator-aws-xray/**
 pkg:instrumentation-aws-sdk:
   - changed-files:
       - any-glob-to-any-file:
@@ -225,6 +224,10 @@ pkg:instrumentation-tedious:
       - any-glob-to-any-file:
           - plugins/node/instrumentation-tedious/**
           - packages/opentelemetry-test-utils/**
+pkg:instrumentation-undici:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-undici/**
 pkg:instrumentation-user-interaction:
   - changed-files:
       - any-glob-to-any-file:
@@ -242,10 +245,6 @@ pkg:propagation-utils:
       - any-glob-to-any-file:
           - packages/opentelemetry-propagation-utils/**
           - packages/opentelemetry-test-utils/**
-pkg:propagator-aws-xray:
-  - changed-files:
-      - any-glob-to-any-file:
-          - propagators/opentelemetry-propagator-aws-xray/**
 pkg:propagator-grpc-census-binary:
   - changed-files:
       - any-glob-to-any-file:

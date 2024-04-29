@@ -21,7 +21,7 @@ import {
   trace,
   context,
   ROOT_CONTEXT,
-  SpanAttributes,
+  Attributes,
 } from '@opentelemetry/api';
 import { pubsubPropagation } from '@opentelemetry/propagation-utils';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
@@ -32,9 +32,15 @@ import {
   NormalizedResponse,
 } from '../types';
 import {
-  MessagingDestinationKindValues,
-  MessagingOperationValues,
-  SemanticAttributes,
+  MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+  MESSAGINGOPERATIONVALUES_PROCESS,
+  MESSAGINGOPERATIONVALUES_RECEIVE,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_MESSAGE_ID,
+  SEMATTRS_MESSAGING_OPERATION,
+  SEMATTRS_MESSAGING_SYSTEM,
+  SEMATTRS_MESSAGING_URL,
 } from '@opentelemetry/semantic-conventions';
 import {
   contextGetter,
@@ -53,12 +59,12 @@ export class SqsServiceExtension implements ServiceExtension {
     let spanKind: SpanKind = SpanKind.CLIENT;
     let spanName: string | undefined;
 
-    const spanAttributes: SpanAttributes = {
-      [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sqs',
-      [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
-        MessagingDestinationKindValues.QUEUE,
-      [SemanticAttributes.MESSAGING_DESTINATION]: queueName,
-      [SemanticAttributes.MESSAGING_URL]: queueUrl,
+    const spanAttributes: Attributes = {
+      [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
+      [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+        MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+      [SEMATTRS_MESSAGING_DESTINATION]: queueName,
+      [SEMATTRS_MESSAGING_URL]: queueUrl,
     };
 
     let isIncoming = false;
@@ -69,8 +75,8 @@ export class SqsServiceExtension implements ServiceExtension {
           isIncoming = true;
           spanKind = SpanKind.CONSUMER;
           spanName = `${queueName} receive`;
-          spanAttributes[SemanticAttributes.MESSAGING_OPERATION] =
-            MessagingOperationValues.RECEIVE;
+          spanAttributes[SEMATTRS_MESSAGING_OPERATION] =
+            MESSAGINGOPERATIONVALUES_RECEIVE;
 
           request.commandInput.MessageAttributeNames =
             addPropagationFieldsToAttributeNames(
@@ -134,7 +140,7 @@ export class SqsServiceExtension implements ServiceExtension {
     switch (response.request.commandName) {
       case 'SendMessage':
         span.setAttribute(
-          SemanticAttributes.MESSAGING_MESSAGE_ID,
+          SEMATTRS_MESSAGING_MESSAGE_ID,
           response?.data?.MessageId
         );
         break;
@@ -164,14 +170,14 @@ export class SqsServiceExtension implements ServiceExtension {
                 contextGetter
               ),
               attributes: {
-                [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sqs',
-                [SemanticAttributes.MESSAGING_DESTINATION]: queueName,
-                [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
-                  MessagingDestinationKindValues.QUEUE,
-                [SemanticAttributes.MESSAGING_MESSAGE_ID]: message.MessageId,
-                [SemanticAttributes.MESSAGING_URL]: queueUrl,
-                [SemanticAttributes.MESSAGING_OPERATION]:
-                  MessagingOperationValues.PROCESS,
+                [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sqs',
+                [SEMATTRS_MESSAGING_DESTINATION]: queueName,
+                [SEMATTRS_MESSAGING_DESTINATION_KIND]:
+                  MESSAGINGDESTINATIONKINDVALUES_QUEUE,
+                [SEMATTRS_MESSAGING_MESSAGE_ID]: message.MessageId,
+                [SEMATTRS_MESSAGING_URL]: queueUrl,
+                [SEMATTRS_MESSAGING_OPERATION]:
+                  MESSAGINGOPERATIONVALUES_PROCESS,
               },
             }),
             processHook: (span: Span, message: SQS.Message) =>

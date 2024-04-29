@@ -23,18 +23,26 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_OPERATION,
+  SEMATTRS_DB_SQL_TABLE,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_USER,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+  SEMATTRS_NET_TRANSPORT,
+} from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
 import * as types from './types';
-
-import type * as knex from 'knex';
 
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: types.KnexInstrumentationConfig = {
   maxQueryLength: 1022,
 };
 
-export class KnexInstrumentation extends InstrumentationBase<any> {
+export class KnexInstrumentation extends InstrumentationBase {
   constructor(config: types.KnexInstrumentationConfig = {}) {
     super(
       `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
@@ -44,7 +52,7 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS
     );
@@ -61,15 +69,11 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
   }
 
   private getRunnerNodeModuleFileInstrumentation(basePath: string) {
-    return new InstrumentationNodeModuleFile<typeof knex>(
+    return new InstrumentationNodeModuleFile(
       `knex/${basePath}/runner.js`,
       constants.SUPPORTED_VERSIONS,
       (Runner: any, moduleVersion) => {
-        api.diag.debug(
-          `Applying ${basePath}/runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         this.ensureWrapped(
-          moduleVersion,
           Runner.prototype,
           'query',
           this.createQueryWrapper(moduleVersion)
@@ -77,9 +81,6 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
         return Runner;
       },
       (Runner: any, moduleVersion) => {
-        api.diag.debug(
-          `Removing ${basePath}/runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         this._unwrap(Runner.prototype, 'query');
         return Runner;
       }
@@ -87,27 +88,21 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
   }
 
   private getClientNodeModuleFileInstrumentation(basePath: string) {
-    return new InstrumentationNodeModuleFile<typeof knex>(
+    return new InstrumentationNodeModuleFile(
       `knex/${basePath}/client.js`,
       constants.SUPPORTED_VERSIONS,
-      (Client: any, moduleVersion) => {
-        api.diag.debug(
-          `Applying ${basePath}/client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
+      (Client: any) => {
         this.ensureWrapped(
-          moduleVersion,
           Client.prototype,
           'queryBuilder',
           this.storeContext.bind(this)
         );
         this.ensureWrapped(
-          moduleVersion,
           Client.prototype,
           'schemaBuilder',
           this.storeContext.bind(this)
         );
         this.ensureWrapped(
-          moduleVersion,
           Client.prototype,
           'raw',
           this.storeContext.bind(this)
@@ -144,18 +139,18 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
 
         const attributes: api.SpanAttributes = {
           'knex.version': moduleVersion,
-          [SemanticAttributes.DB_SYSTEM]: utils.mapSystem(config.client),
-          [SemanticAttributes.DB_SQL_TABLE]: table,
-          [SemanticAttributes.DB_OPERATION]: operation,
-          [SemanticAttributes.DB_USER]: config?.connection?.user,
-          [SemanticAttributes.DB_NAME]: name,
-          [SemanticAttributes.NET_PEER_NAME]: config?.connection?.host,
-          [SemanticAttributes.NET_PEER_PORT]: config?.connection?.port,
-          [SemanticAttributes.NET_TRANSPORT]:
+          [SEMATTRS_DB_SYSTEM]: utils.mapSystem(config.client),
+          [SEMATTRS_DB_SQL_TABLE]: table,
+          [SEMATTRS_DB_OPERATION]: operation,
+          [SEMATTRS_DB_USER]: config?.connection?.user,
+          [SEMATTRS_DB_NAME]: name,
+          [SEMATTRS_NET_PEER_NAME]: config?.connection?.host,
+          [SEMATTRS_NET_PEER_PORT]: config?.connection?.port,
+          [SEMATTRS_NET_TRANSPORT]:
             config?.connection?.filename === ':memory:' ? 'inproc' : undefined,
         };
         if (maxLen !== 0) {
-          attributes[SemanticAttributes.DB_STATEMENT] = utils.limitLength(
+          attributes[SEMATTRS_DB_STATEMENT] = utils.limitLength(
             query?.sql,
             maxLen
           );
@@ -165,6 +160,7 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
         const span = instrumentation.tracer.startSpan(
           utils.getName(name, operation, table),
           {
+            kind: api.SpanKind.CLIENT,
             attributes,
           },
           parent
@@ -206,15 +202,7 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
     };
   }
 
-  ensureWrapped(
-    moduleVersion: string | undefined,
-    obj: any,
-    methodName: string,
-    wrapper: (original: any) => any
-  ) {
-    api.diag.debug(
-      `Applying ${methodName} patch for ${constants.MODULE_NAME}@${moduleVersion}`
-    );
+  ensureWrapped(obj: any, methodName: string, wrapper: (original: any) => any) {
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
     }

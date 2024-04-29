@@ -15,7 +15,10 @@
  */
 import { Detector, Resource, IResource } from '@opentelemetry/resources';
 import { diag } from '@opentelemetry/api';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMRESATTRS_PROCESS_PID,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
+} from '@opentelemetry/semantic-conventions';
 import * as http from 'http';
 
 class InstanaAgentDetector implements Detector {
@@ -32,8 +35,8 @@ class InstanaAgentDetector implements Detector {
     const data = await this._retryHandler(host, port, 0);
 
     return new Resource({
-      [SemanticResourceAttributes.PROCESS_PID]: data.pid,
-      [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: data.agentUuid,
+      [SEMRESATTRS_PROCESS_PID]: data.pid,
+      [SEMRESATTRS_SERVICE_INSTANCE_ID]: data.agentUuid,
     });
   }
 
