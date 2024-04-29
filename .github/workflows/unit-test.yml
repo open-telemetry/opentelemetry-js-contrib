@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14", "16", "18.18.2"]
+        node: ["14", "16", "18.18.2", "20", "22"]
         include:
             - node: 18.18.2
               code-coverage: true
