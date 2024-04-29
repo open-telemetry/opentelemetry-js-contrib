@@ -74,6 +74,20 @@ const redisInstrumentation = new RedisInstrumentation({
 });
 ```
 
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute              | Short Description                                            |
+|------------------------|--------------------------------------------------------------|
+| `db.connection_string` | URL to Redis server address, of the form `redis://host:port` |
+| `db.statement`         | Executed Redis statement                                     |
+| `db.system`            | Database identifier; always `redis`                          |
+| `net.peer.name`        | Hostname or IP of the connected Redis server                 |
+| `net.peer.port`        | Port of the connected Redis server                           |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

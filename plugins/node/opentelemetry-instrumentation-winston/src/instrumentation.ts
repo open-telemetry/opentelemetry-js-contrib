@@ -15,6 +15,7 @@
  */
 
 import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
+import { SeverityNumber } from '@opentelemetry/api-logs';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -24,8 +25,8 @@ import {
 } from '@opentelemetry/instrumentation';
 import type { WinstonInstrumentationConfig } from './types';
 import type {
-  Winston2LogMethod,
   Winston2LoggerModule,
+  Winston2LogMethod,
   Winston3ConfigureMethod,
   Winston3LogMethod,
   Winston3Logger,
@@ -42,17 +43,16 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
   protected init() {
     const winstons3instrumentationNodeModuleDefinition =
-      new InstrumentationNodeModuleDefinition<{}>(
+      new InstrumentationNodeModuleDefinition(
         'winston',
         winston3Versions,
         moduleExports => moduleExports,
         () => {},
         [
-          new InstrumentationNodeModuleFile<Winston3Logger>(
+          new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winston3Versions,
-            (logger, moduleVersion) => {
-              this._diag.debug(`Applying patch for winston@${moduleVersion}`);
+            (logger: Winston3Logger) => {
               if (isWrapped(logger.prototype['write'])) {
                 this._unwrap(logger.prototype, 'write');
               }
@@ -70,9 +70,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return logger;
             },
-            (logger, moduleVersion) => {
+            (logger: Winston3Logger) => {
               if (logger === undefined) return;
-              this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(logger.prototype, 'write');
               this._unwrap(logger.prototype, 'configure');
             }
@@ -81,17 +80,16 @@ export class WinstonInstrumentation extends InstrumentationBase {
       );
 
     const winstons2instrumentationNodeModuleDefinition =
-      new InstrumentationNodeModuleDefinition<{}>(
+      new InstrumentationNodeModuleDefinition(
         'winston',
         winstonPre3Versions,
         moduleExports => moduleExports,
         () => {},
         [
-          new InstrumentationNodeModuleFile<Winston2LoggerModule>(
+          new InstrumentationNodeModuleFile(
             'winston/lib/winston/logger.js',
             winstonPre3Versions,
-            (fileExports, moduleVersion) => {
-              this._diag.debug(`Applying patch for winston@${moduleVersion}`);
+            (fileExports: Winston2LoggerModule) => {
               const proto = fileExports.Logger.prototype;
 
               if (isWrapped(proto.log)) {
@@ -101,9 +99,8 @@ export class WinstonInstrumentation extends InstrumentationBase {
 
               return fileExports;
             },
-            (fileExports, moduleVersion) => {
+            (fileExports: Winston2LoggerModule) => {
               if (fileExports === undefined) return;
-              this._diag.debug(`Removing patch for winston@${moduleVersion}`);
               this._unwrap(fileExports.Logger.prototype, 'log');
             }
           ),
@@ -206,7 +203,17 @@ export class WinstonInstrumentation extends InstrumentationBase {
               let newTransports = Array.isArray(originalTransports)
                 ? originalTransports
                 : [];
-              const openTelemetryTransport = new OpenTelemetryTransportV3();
+              let transportOptions = {};
+              if (config.logSeverity) {
+                const winstonLevel = instrumentation._winstonLevelFromSeverity(
+                  config.logSeverity,
+                  args[0].levels
+                );
+                transportOptions = { level: winstonLevel };
+              }
+              const openTelemetryTransport = new OpenTelemetryTransportV3(
+                transportOptions
+              );
               if (originalTransports && !Array.isArray(originalTransports)) {
                 newTransports = [originalTransports];
               }
@@ -243,5 +250,119 @@ export class WinstonInstrumentation extends InstrumentationBase {
       }
     }
     return record;
+  }
+
+  private _winstonLevelFromSeverity(
+    severity: SeverityNumber,
+    winstonLevels: { [key: string]: number } | undefined
+  ): string | undefined {
+    if (winstonLevels) {
+      if (isNpmLevels(winstonLevels)) {
+        if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity >= SeverityNumber.WARN) {
+          return 'warn';
+        } else if (severity >= SeverityNumber.INFO) {
+          return 'info';
+        } else if (severity >= SeverityNumber.DEBUG3) {
+          return 'http';
+        } else if (severity >= SeverityNumber.DEBUG2) {
+          return 'verbose';
+        } else if (severity >= SeverityNumber.DEBUG) {
+          return 'debug';
+        } else if (severity >= SeverityNumber.TRACE) {
+          return 'silly';
+        }
+      } else if (isCliLevels(winstonLevels)) {
+        if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity >= SeverityNumber.WARN) {
+          return 'warn';
+        } else if (severity >= SeverityNumber.INFO3) {
+          return 'help';
+        } else if (severity >= SeverityNumber.INFO2) {
+          return 'data';
+        } else if (severity >= SeverityNumber.INFO) {
+          return 'info';
+        } else if (severity >= SeverityNumber.DEBUG) {
+          return 'debug';
+        } else if (severity >= SeverityNumber.TRACE4) {
+          return 'prompt';
+        } else if (severity >= SeverityNumber.TRACE3) {
+          return 'verbose';
+        } else if (severity >= SeverityNumber.TRACE2) {
+          return 'input';
+        } else if (severity >= SeverityNumber.TRACE) {
+          return 'silly';
+        }
+      } else if (isSyslogLevels(winstonLevels)) {
+        if (severity >= SeverityNumber.FATAL2) {
+          return 'emerg';
+        } else if (severity >= SeverityNumber.FATAL) {
+          return 'alert';
+        } else if (severity >= SeverityNumber.ERROR2) {
+          return 'crit';
+        } else if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity >= SeverityNumber.WARN) {
+          return 'warning';
+        } else if (severity >= SeverityNumber.INFO2) {
+          return 'notice';
+        } else if (severity >= SeverityNumber.INFO) {
+          return 'info';
+        } else if (severity >= SeverityNumber.TRACE) {
+          return 'debug';
+        }
+      }
+      // Unknown level
+      this._diag.warn(
+        'failed to configure severity with existing winston levels'
+      );
+    }
+
+    function isCliLevels(arg: any): boolean {
+      return (
+        arg &&
+        arg.error !== undefined &&
+        arg.warn &&
+        arg.help &&
+        arg.data &&
+        arg.info &&
+        arg.debug &&
+        arg.prompt &&
+        arg.verbose &&
+        arg.input &&
+        arg.silly
+      );
+    }
+
+    function isNpmLevels(arg: any): boolean {
+      return (
+        arg &&
+        arg.error !== undefined &&
+        arg.warn &&
+        arg.info &&
+        arg.http &&
+        arg.verbose &&
+        arg.debug &&
+        arg.silly
+      );
+    }
+
+    function isSyslogLevels(arg: any): boolean {
+      return (
+        arg &&
+        arg.emerg !== undefined &&
+        arg.alert &&
+        arg.crit &&
+        arg.error &&
+        arg.warning &&
+        arg.notice &&
+        arg.info &&
+        arg.debug
+      );
+    }
+
+    return;
   }
 }

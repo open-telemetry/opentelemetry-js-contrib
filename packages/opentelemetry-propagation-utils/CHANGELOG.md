@@ -60,6 +60,20 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.36.0 to ^0.37.0
 
+## [0.30.9](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.8...propagation-utils-v0.30.9) (2024-04-25)
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.38.0 to ^0.39.0
+
 ## [0.30.8](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.7...propagation-utils-v0.30.8) (2024-04-03)
 
 
