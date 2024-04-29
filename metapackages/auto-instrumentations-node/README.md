@@ -65,6 +65,7 @@ By default, all SDK resource detectors are used, but you can use the environment
 - `container`
 - `alibaba`
 - `aws`
+- `azure`
 - `gcp`
 - `all` - enable all resource detectors
 - `none` - disable resource detection
