@@ -9,7 +9,7 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
   MeterProvider,
   PeriodicExportingMetricReader,
@@ -33,7 +33,7 @@ export const setupTracing = (serviceName: string) => {
   //traces:
   const tracerProvider = new NodeTracerProvider({
     resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+    [SEMRESATTRS_SERVICE_NAME]: serviceName,
   }),});
 
   if (EXPORTER.toLowerCase().startsWith('z')) {

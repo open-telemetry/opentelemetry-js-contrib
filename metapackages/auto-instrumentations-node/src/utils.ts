@@ -73,6 +73,11 @@ import {
   osDetectorSync,
   processDetectorSync,
 } from '@opentelemetry/resources';
+import {
+  azureAppServiceDetector,
+  azureFunctionsDetector,
+  azureVmDetector,
+} from '@opentelemetry/resource-detector-azure';
 
 const RESOURCE_DETECTOR_CONTAINER = 'container';
 const RESOURCE_DETECTOR_ENVIRONMENT = 'env';
@@ -81,6 +86,7 @@ const RESOURCE_DETECTOR_OS = 'os';
 const RESOURCE_DETECTOR_PROCESS = 'process';
 const RESOURCE_DETECTOR_ALIBABA = 'alibaba';
 const RESOURCE_DETECTOR_AWS = 'aws';
+const RESOURCE_DETECTOR_AZURE = 'azure';
 const RESOURCE_DETECTOR_GCP = 'gcp';
 
 const InstrumentationMap = {
@@ -196,7 +202,7 @@ function getEnabledInstrumentationsFromEnv() {
 export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
   const resourceDetectors = new Map<
     string,
-    Detector | DetectorSync | Detector[]
+    Detector | DetectorSync | Detector[] | DetectorSync[]
   >([
     [RESOURCE_DETECTOR_CONTAINER, containerDetector],
     [RESOURCE_DETECTOR_ENVIRONMENT, envDetectorSync],
@@ -214,6 +220,10 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
         awsBeanstalkDetector,
         awsLambdaDetector,
       ],
+    ],
+    [
+      RESOURCE_DETECTOR_AZURE,
+      [azureAppServiceDetector, azureFunctionsDetector, azureVmDetector],
     ],
   ]);
 

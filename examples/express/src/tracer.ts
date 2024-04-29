@@ -14,7 +14,7 @@ import { Sampler, AlwaysOnSampler, SimpleSpanProcessor } from '@opentelemetry/sd
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { Resource } from '@opentelemetry/resources';
-import { SemanticAttributes, SemanticResourceAttributes as ResourceAttributesSC } from '@opentelemetry/semantic-conventions';
+import { SEMRESATTRS_SERVICE_NAME, SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 
 const Exporter = (process.env.EXPORTER || '').toLowerCase().startsWith('z') ? ZipkinExporter : OTLPTraceExporter;
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
@@ -23,7 +23,7 @@ const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 export const setupTracing = (serviceName: string) => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
-      [ResourceAttributesSC.SERVICE_NAME]: serviceName,
+      [SEMRESATTRS_SERVICE_NAME]: serviceName,
     }),
     sampler: filterSampler(ignoreHealthCheck, new AlwaysOnSampler()),
   });
@@ -65,5 +65,5 @@ function filterSampler(filterFn: FilterFunction, parent: Sampler): Sampler {
 }
 
 function ignoreHealthCheck(spanName: string, spanKind: SpanKind, attributes: Attributes) {
-  return spanKind !== opentelemetry.SpanKind.SERVER || attributes[SemanticAttributes.HTTP_ROUTE] !== "/health";
+  return spanKind !== opentelemetry.SpanKind.SERVER || attributes[SEMATTRS_HTTP_ROUTE] !== "/health";
 }

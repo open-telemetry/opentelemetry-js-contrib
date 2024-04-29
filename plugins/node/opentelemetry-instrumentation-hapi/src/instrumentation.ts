@@ -54,12 +54,11 @@ export class HapiInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    return new InstrumentationNodeModuleDefinition<typeof Hapi>(
+    return new InstrumentationNodeModuleDefinition(
       HapiComponentName,
       ['>=17 <22'],
-      moduleExports => {
+      (moduleExports: typeof Hapi) => {
         if (!isWrapped(moduleExports.server)) {
-          api.diag.debug('Patching Hapi.server');
           this._wrap(
             moduleExports,
             'server',
@@ -68,7 +67,6 @@ export class HapiInstrumentation extends InstrumentationBase {
         }
 
         if (!isWrapped(moduleExports.Server)) {
-          api.diag.debug('Patching Hapi.Server');
           this._wrap(
             moduleExports,
             'Server',
@@ -77,8 +75,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         }
         return moduleExports;
       },
-      moduleExports => {
-        api.diag.debug('Unpatching Hapi');
+      (moduleExports: typeof Hapi) => {
         this._massUnwrap([moduleExports], ['server', 'Server']);
       }
     );
