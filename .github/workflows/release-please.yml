@@ -71,7 +71,7 @@ jobs:
       # need to publish all unpublished versions to npm here
       # See: https://github.com/lerna/lerna/tree/main/commands/publish#bump-from-package
       - name: Publish to npm
-        # only checkout if a release has been created
+        # only publish if a release has been created
         if: ${{ steps.release.outputs.releases_created }}
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
