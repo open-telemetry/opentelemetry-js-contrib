@@ -32,9 +32,7 @@ const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
   disableLogCorrelation: false,
 };
 
-export class BunyanInstrumentation extends InstrumentationBase<
-  typeof BunyanLogger
-> {
+export class BunyanInstrumentation extends InstrumentationBase {
   constructor(config: BunyanInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-bunyan',
@@ -45,11 +43,10 @@ export class BunyanInstrumentation extends InstrumentationBase<
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof BunyanLogger>(
+      new InstrumentationNodeModuleDefinition(
         'bunyan',
         ['<2.0'],
-        (module: any, moduleVersion) => {
-          this._diag.debug(`Applying patch for bunyan@${moduleVersion}`);
+        (module: any) => {
           const instrumentation = this;
           const Logger =
             module[Symbol.toStringTag] === 'Module'

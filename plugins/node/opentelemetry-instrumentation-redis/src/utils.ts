@@ -111,10 +111,10 @@ export const getTracedInternalSendCommand = (
     );
 
     // Set attributes for not explicitly typed RedisPluginClientTypes
-    if (this.options) {
+    if (this.connection_options) {
       span.setAttributes({
-        [SEMATTRS_NET_PEER_NAME]: this.options.host,
-        [SEMATTRS_NET_PEER_PORT]: this.options.port,
+        [SEMATTRS_NET_PEER_NAME]: this.connection_options.host,
+        [SEMATTRS_NET_PEER_PORT]: this.connection_options.port,
       });
     }
     if (this.address) {

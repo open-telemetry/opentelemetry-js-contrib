@@ -29,8 +29,9 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_MYSQL,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
@@ -50,11 +51,9 @@ type getConnectionCallbackType = (
   connection: mysqlTypes.PoolConnection
 ) => void;
 
-export class MySQLInstrumentation extends InstrumentationBase<
-  typeof mysqlTypes
-> {
+export class MySQLInstrumentation extends InstrumentationBase {
   static readonly COMMON_ATTRIBUTES = {
-    [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MYSQL,
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MYSQL,
   };
   private _connectionsUsage!: UpDownCounter;
 
@@ -81,12 +80,10 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof mysqlTypes>(
+      new InstrumentationNodeModuleDefinition(
         'mysql',
         ['2.*'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Patching mysql@${moduleVersion}`);
-
+        (moduleExports: typeof mysqlTypes) => {
           diag.debug('Patching mysql.createConnection');
           if (isWrapped(moduleExports.createConnection)) {
             this._unwrap(moduleExports, 'createConnection');
@@ -119,7 +116,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
 
           return moduleExports;
         },
-        moduleExports => {
+        (moduleExports: typeof mysqlTypes) => {
           if (moduleExports === undefined) return;
           this._unwrap(moduleExports, 'createConnection');
           this._unwrap(moduleExports, 'createPool');
@@ -331,10 +328,7 @@ export class MySQLInstrumentation extends InstrumentationBase<
           },
         });
 
-        span.setAttribute(
-          SemanticAttributes.DB_STATEMENT,
-          getDbStatement(query)
-        );
+        span.setAttribute(SEMATTRS_DB_STATEMENT, getDbStatement(query));
 
         const instrumentationConfig: MySQLInstrumentationConfig =
           thisPlugin.getConfig();
