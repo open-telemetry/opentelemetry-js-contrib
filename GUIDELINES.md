@@ -196,4 +196,4 @@ Instrumentation may add additional patch/unpatch messages for specific functions
 - When the patch is not applied directly on a `moduleExports` object in the `BaseInstrumentation` callbacks, but rather from an event in the package, like creating new client instance, registering a listener, etc. `fastify` instrumentation applies a patch when a hook is added to the fastify app instance, which is patched from `moduleExports`.
 - In situations where the patch logic is not trivial and it helps to specify patch events in the right context and nuances. `aws-lambda` logs additional properties extracted from the lambda framework and exposes them for troubleshooting.
 
-The cases above are not covered by the base class and offer additional context to the user trouble shooting an issue with the instrumentation.
+The cases above are not covered by the base class and offer additional context to the user troubleshooting an issue with the instrumentation.
