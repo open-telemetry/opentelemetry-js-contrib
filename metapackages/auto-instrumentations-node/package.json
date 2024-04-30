@@ -86,13 +86,14 @@
     "@opentelemetry/instrumentation-router": "^0.37.0",
     "@opentelemetry/instrumentation-socket.io": "^0.39.0",
     "@opentelemetry/instrumentation-tedious": "^0.10.0",
+    "@opentelemetry/instrumentation-undici": "^0.2.0",
     "@opentelemetry/instrumentation-winston": "^0.37.0",
     "@opentelemetry/resource-detector-alibaba-cloud": "^0.28.9",
     "@opentelemetry/resource-detector-aws": "^1.4.2",
     "@opentelemetry/resource-detector-azure": "^0.2.6",
     "@opentelemetry/resource-detector-container": "^0.3.9",
     "@opentelemetry/resource-detector-gcp": "^0.29.9",
-    "@opentelemetry/resources": "^1.12.0",
+    "@opentelemetry/resources": "^1.24.0",
     "@opentelemetry/sdk-node": "^0.51.0"
   },
   "files": [
