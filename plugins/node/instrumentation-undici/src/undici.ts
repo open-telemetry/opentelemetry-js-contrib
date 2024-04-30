@@ -111,7 +111,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
     this.subscribeToChannel('undici:request:error', this.onError.bind(this));
   }
 
-  override setConfig(config?: UndiciInstrumentationConfig): void {
+  override setConfig(config: UndiciInstrumentationConfig = {}): void {
     super.setConfig(config);
 
     if (config?.enabled) {
