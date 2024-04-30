@@ -192,7 +192,7 @@ Instrumentation should not add additional debug messages for triggering the patc
 
 Instrumentation may add additional patch/unpatch messages for specific functions if it is expected to help in troubleshooting issues with the instrumentation. Few examples:
 
-- If the patch logic is conditional, and user can benefit from ensuring the condition is met and the patch happened. `koa` patching logic examine an object and branch between patching it as router vs middleware, which is applied at runtime. `awslambda` will aboard patching if the environment is not configured properly.
+- If the patch logic is conditional, and user can benefit from ensuring the condition is met and the patch happened. `koa` patching logic examine an object and branch between patching it as router vs middleware, which is applied at runtime. `aws-lambda` will abort patching if the environment is not configured properly.
 - When the patch is not applied directly on a `moduleExports` object in the `BaseInstrumentation` callbacks, but rather from an event in the package, like creating new client instance, registering a listener, etc. `fastify` instrumentation applies a patch when an hook is added to the fastify app instance, which is patched from `moduleExports`.
 - In situations where the patch logic is not trivial and it helps to specify patch events in the right context and nuances. `aws-lambda` logs additional properties extracted from the labmda framework and exposes them for troubleshooting.
 
