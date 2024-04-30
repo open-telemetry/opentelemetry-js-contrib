@@ -114,25 +114,28 @@ describe('utils', () => {
 
   describe('getResourceDetectorsFromEnv', () => {
     it('should return all resource detectors by default', () => {
-      assert.equal(getResourceDetectorsFromEnv().length, 15);
+      assert.equal(getResourceDetectorsFromEnv().length, 16);
     });
 
     it('should return all resource detectors when OTEL_NODE_RESOURCE_DETECTORS contains "all"', () => {
       process.env.OTEL_NODE_RESOURCE_DETECTORS = 'all';
-
-      assert.equal(getResourceDetectorsFromEnv().length, 15);
+      assert.equal(getResourceDetectorsFromEnv().length, 16);
 
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
 
     it('should return specific resource detectors depending on OTEL_NODE_RESOURCE_DETECTORS', () => {
-      process.env.OTEL_NODE_RESOURCE_DETECTORS = 'env,host';
+      process.env.OTEL_NODE_RESOURCE_DETECTORS = 'env,host,serviceinstance';
 
       const resourceDetectors = getResourceDetectorsFromEnv();
 
-      assert.equal(resourceDetectors.length, 2);
+      assert.equal(resourceDetectors.length, 3);
       assert.equal(resourceDetectors[0].constructor.name, 'EnvDetectorSync');
       assert.equal(resourceDetectors[1].constructor.name, 'HostDetectorSync');
+      assert.equal(
+        resourceDetectors[2].constructor.name,
+        'ServiceInstanceIdDetectorSync'
+      );
 
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
