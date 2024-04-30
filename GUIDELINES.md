@@ -184,7 +184,7 @@ Instrumentation packages should use the `@opentelemetry/instrumentation` package
 @opentelemetry/instrumentation-foo Applying instrumentation patch for module on require hook {
   module: 'foo',
   version: '1.2.3',
-  baseDir: '<your directory>/node_modules/mongoose'
+  baseDir: '<your directory>/node_modules/foo'
 }
 ```
 
