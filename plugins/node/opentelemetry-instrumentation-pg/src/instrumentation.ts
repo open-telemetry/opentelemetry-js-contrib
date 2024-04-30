@@ -157,6 +157,7 @@ export class PgInstrumentation extends InstrumentationBase {
   private _getClientQueryPatch() {
     const plugin = this;
     return (original: typeof pgTypes.Client.prototype.query) => {
+      this._diag.debug('Patching pg.Client.prototype.query');
       return function query(this: PgClientExtended, ...args: unknown[]) {
         if (utils.shouldSkipInstrumentation(plugin.getConfig())) {
           return original.apply(this, args as never);
