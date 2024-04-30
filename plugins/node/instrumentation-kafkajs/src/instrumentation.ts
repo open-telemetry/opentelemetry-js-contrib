@@ -64,7 +64,6 @@ export class KafkaJsInstrumentation extends InstrumentationBase {
 
   protected init() {
     const unpatch = (moduleExports: typeof kafkaJs) => {
-      this._diag.debug('Removing patch for kafkajs');
       if (isWrapped(moduleExports?.Kafka?.prototype.producer)) {
         this._unwrap(moduleExports.Kafka.prototype, 'producer');
       }
@@ -75,10 +74,8 @@ export class KafkaJsInstrumentation extends InstrumentationBase {
 
     const module = new InstrumentationNodeModuleDefinition(
       'kafkajs',
-      ['*'],
+      ['< 3'],
       (moduleExports: typeof kafkaJs) => {
-        this._diag.debug('Applying patch for kafkajs');
-
         unpatch(moduleExports);
         this._wrap(
           moduleExports?.Kafka?.prototype,
