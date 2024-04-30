@@ -47,6 +47,19 @@ You can set the following:
 | `producerHook`               | `KafkaProducerCustomAttributeFunction` | Function called before a producer message is sent. Allows for adding custom attributes to the span.                  |
 | `consumerHook`               | `KafkaConsumerCustomAttributeFunction` | Function called before a consumer message is processed. Allows for adding custom attributes to the span.             |
 
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.24+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute                    | Short Description                                     |
+| -----------------------------| ----------------------------------------------------- |
+| `messaging.system`           | An identifier for the messaging system being used.    |
+| `messaging.destination_kind` | The kind of message destination.                      |
+| `messaging.destination`      | The message destination name.                         |
+| `messaging.operation`        | A string identifying the kind of messaging operation. |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
