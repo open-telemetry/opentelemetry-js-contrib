@@ -174,7 +174,7 @@ The diag channel can be used to troubleshoot issues with instrumentation package
 When OpenTelemetry is installed in a user application, and expected spans are missing from generated traces, it is often useful to differentiate between the following scenarios:
 
 - The instrumentation is not auto loaded - due to issue with the require/import interception, an unsupported version of the instrumented package, or some other issue. This knowledge can pin-point the issue to the instrumentation package.
-- The instrumentation patch was applied but expected spans are missing - this can spot the light on the instrumented package logic, configuration, limits, otel sdk, or other issues.
+- The instrumentation patch was applied but expected spans are missing -- this can suggest an issue with instrumented package logic, configuration, limits, otel sdk, or other issues.
 
 It can also be useful to know when the instrumentation is loaded and patched, to understand the order of operations in the application.
 
