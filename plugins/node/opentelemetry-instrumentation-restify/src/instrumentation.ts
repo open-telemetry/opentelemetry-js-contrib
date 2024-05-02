@@ -40,7 +40,7 @@ export class RestifyInstrumentation extends InstrumentationBase {
     super(
       `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
       VERSION,
-      Object.assign({}, config)
+      config
     );
   }
 

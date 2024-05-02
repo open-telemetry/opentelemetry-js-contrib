@@ -23,7 +23,7 @@ import {
 import { VERSION } from './version';
 
 export default class LruMemoizerInstrumentation extends InstrumentationBase {
-  constructor(config?: InstrumentationConfig) {
+  constructor(config: InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-lru-memoizer', VERSION, config);
   }
 

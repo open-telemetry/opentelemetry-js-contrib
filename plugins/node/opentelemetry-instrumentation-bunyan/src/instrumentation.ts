@@ -103,7 +103,7 @@ export class BunyanInstrumentation extends InstrumentationBase {
     return this._config;
   }
 
-  override setConfig(config: BunyanInstrumentationConfig) {
+  override setConfig(config: BunyanInstrumentationConfig = {}) {
     this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 

@@ -67,7 +67,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase {
   private _eventNames: Set<EventName>;
   private _shouldPreventSpanCreation: ShouldPreventSpanCreation;
 
-  constructor(config?: UserInteractionInstrumentationConfig) {
+  constructor(config: UserInteractionInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
     this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES);
     this._shouldPreventSpanCreation =
