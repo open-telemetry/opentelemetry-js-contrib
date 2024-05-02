@@ -147,6 +147,7 @@ export function getNodeAutoInstrumentations(
 ): Instrumentation[] {
   checkManuallyProvidedInstrumentationNames(Object.keys(inputConfigs));
   const enabledInstrumentationsFromEnv = getEnabledInstrumentationsFromEnv();
+  const disabledInstrumentationsFromEnv = getDisabledInstrumentationsFromEnv();
 
   const instrumentations: Instrumentation[] = [];
 
@@ -159,7 +160,8 @@ export function getNodeAutoInstrumentations(
 
     if (
       userConfig.enabled === false ||
-      !enabledInstrumentationsFromEnv.includes(name)
+      !enabledInstrumentationsFromEnv.includes(name) ||
+      disabledInstrumentationsFromEnv.includes(name)
     ) {
       diag.debug(`Disabling instrumentation for ${name}`);
       continue;
@@ -196,6 +198,23 @@ function getEnabledInstrumentationsFromEnv() {
 
   const instrumentationsFromEnv =
     process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS.split(',').map(
+      instrumentationPkgSuffix =>
+        `@opentelemetry/instrumentation-${instrumentationPkgSuffix.trim()}`
+    );
+  checkManuallyProvidedInstrumentationNames(instrumentationsFromEnv);
+  return instrumentationsFromEnv;
+}
+
+/**
+ * Returns the list of instrumentations that are disabled based on the environment variable.
+ */
+function getDisabledInstrumentationsFromEnv() {
+  if (!process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS) {
+    return [];
+  }
+
+  const instrumentationsFromEnv =
+    process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS.split(',').map(
       instrumentationPkgSuffix =>
         `@opentelemetry/instrumentation-${instrumentationPkgSuffix.trim()}`
     );
