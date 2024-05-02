@@ -35,8 +35,8 @@ import { TLSSocket } from 'tls';
 import type * as net from 'net';
 
 export class NetInstrumentation extends InstrumentationBase {
-  constructor(_config?: InstrumentationConfig) {
-    super('@opentelemetry/instrumentation-net', VERSION, _config);
+  constructor(config: InstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-net', VERSION, config);
   }
 
   init(): InstrumentationNodeModuleDefinition[] {

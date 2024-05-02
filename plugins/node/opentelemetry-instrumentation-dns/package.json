@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dns",
-  "version": "0.36.0",
+  "version": "0.36.1",
   "description": "OpenTelemetry dns automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

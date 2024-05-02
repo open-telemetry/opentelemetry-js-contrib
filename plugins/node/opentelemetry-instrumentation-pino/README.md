@@ -63,7 +63,7 @@ When no span context is active or the span context is invalid, injection is skip
 
 ### Supported versions
 
-`>=5.14.0 <9`
+`>=5.14.0 <10`
 
 ## Useful links
 
