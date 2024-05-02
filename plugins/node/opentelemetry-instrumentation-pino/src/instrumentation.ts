@@ -97,7 +97,7 @@ export class PinoInstrumentation extends InstrumentationBase {
     return this._config;
   }
 
-  override setConfig(config: PinoInstrumentationConfig) {
+  override setConfig(config: PinoInstrumentationConfig = {}) {
     this._config = config;
   }
 

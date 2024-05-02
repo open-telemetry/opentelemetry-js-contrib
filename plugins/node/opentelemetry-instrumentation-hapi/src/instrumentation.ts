@@ -49,7 +49,7 @@ import {
 
 /** Hapi instrumentation for OpenTelemetry */
 export class HapiInstrumentation extends InstrumentationBase {
-  constructor(config?: InstrumentationConfig) {
+  constructor(config: InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-hapi', VERSION, config);
   }
 

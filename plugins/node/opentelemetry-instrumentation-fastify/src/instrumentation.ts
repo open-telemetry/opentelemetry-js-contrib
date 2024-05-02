@@ -48,11 +48,7 @@ export const ANONYMOUS_NAME = 'anonymous';
 /** Fastify instrumentation for OpenTelemetry */
 export class FastifyInstrumentation extends InstrumentationBase {
   constructor(config: FastifyInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-fastify',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-fastify', VERSION, config);
   }
 
   override setConfig(config: FastifyInstrumentationConfig = {}) {

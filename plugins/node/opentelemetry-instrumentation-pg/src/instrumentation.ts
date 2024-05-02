@@ -44,11 +44,7 @@ import { SpanNames } from './enums/SpanNames';
 
 export class PgInstrumentation extends InstrumentationBase {
   constructor(config: PgInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-pg',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-pg', VERSION, config);
   }
 
   protected init() {
