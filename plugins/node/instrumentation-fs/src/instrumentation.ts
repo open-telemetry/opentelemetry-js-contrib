@@ -52,7 +52,7 @@ function patchedFunctionWithOriginalProperties<
 }
 
 export default class FsInstrumentation extends InstrumentationBase {
-  constructor(config?: FsInstrumentationConfig) {
+  constructor(config: FsInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-fs', VERSION, config);
   }
 

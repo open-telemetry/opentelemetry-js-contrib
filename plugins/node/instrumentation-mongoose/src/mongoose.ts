@@ -61,11 +61,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
   protected override _config!: MongooseInstrumentationConfig;
 
   constructor(config: MongooseInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-mongoose',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-mongoose', VERSION, config);
   }
 
   override setConfig(config: MongooseInstrumentationConfig = {}) {
