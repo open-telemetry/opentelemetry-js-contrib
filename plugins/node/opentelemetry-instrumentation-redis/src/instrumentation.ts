@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
@@ -51,7 +50,6 @@ export class RedisInstrumentation extends InstrumentationBase {
         'redis',
         ['^2.6.0', '^3.0.0'],
         moduleExports => {
-          diag.debug('Patching redis.RedisClient.internal_send_command');
           if (
             isWrapped(
               moduleExports.RedisClient.prototype['internal_send_command']
@@ -68,7 +66,6 @@ export class RedisInstrumentation extends InstrumentationBase {
             this._getPatchInternalSendCommand()
           );
 
-          diag.debug('patching redis.RedisClient.create_stream');
           if (isWrapped(moduleExports.RedisClient.prototype['create_stream'])) {
             this._unwrap(moduleExports.RedisClient.prototype, 'create_stream');
           }
@@ -78,7 +75,6 @@ export class RedisInstrumentation extends InstrumentationBase {
             this._getPatchCreateStream()
           );
 
-          diag.debug('patching redis.createClient');
           if (isWrapped(moduleExports.createClient)) {
             this._unwrap(moduleExports, 'createClient');
           }

@@ -129,9 +129,6 @@ export class TediousInstrumentation extends InstrumentationBase {
   private _patchQuery(operation: string) {
     return (originalMethod: UnknownFunction): UnknownFunction => {
       const thisPlugin = this;
-      this._diag.debug(
-        `TediousInstrumentation: patched Connection.prototype.${operation}`
-      );
 
       function patchedMethod(this: ApproxConnection, request: ApproxRequest) {
         if (!(request instanceof EventEmitter)) {
