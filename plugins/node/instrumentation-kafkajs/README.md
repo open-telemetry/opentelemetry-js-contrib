@@ -56,7 +56,6 @@ Attributes collected:
 | Attribute                    | Short Description                                     |
 | -----------------------------| ----------------------------------------------------- |
 | `messaging.system`           | An identifier for the messaging system being used.    |
-| `messaging.destination_kind` | The kind of message destination.                      |
 | `messaging.destination`      | The message destination name.                         |
 | `messaging.operation`        | A string identifying the kind of messaging operation. |
 

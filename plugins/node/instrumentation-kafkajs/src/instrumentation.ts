@@ -26,11 +26,9 @@ import {
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
 import {
-  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
   MESSAGINGOPERATIONVALUES_PROCESS,
   MESSAGINGOPERATIONVALUES_RECEIVE,
   SEMATTRS_MESSAGING_SYSTEM,
-  SEMATTRS_MESSAGING_DESTINATION_KIND,
   SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_OPERATION,
 } from '@opentelemetry/semantic-conventions';
@@ -362,8 +360,6 @@ export class KafkaJsInstrumentation extends InstrumentationBase {
         attributes: {
           [SEMATTRS_MESSAGING_SYSTEM]: 'kafka',
           [SEMATTRS_MESSAGING_DESTINATION]: topic,
-          [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-            MESSAGINGDESTINATIONKINDVALUES_TOPIC,
           [SEMATTRS_MESSAGING_OPERATION]: operation,
         },
         links: link ? [link] : [],
@@ -390,8 +386,6 @@ export class KafkaJsInstrumentation extends InstrumentationBase {
       attributes: {
         [SEMATTRS_MESSAGING_SYSTEM]: 'kafka',
         [SEMATTRS_MESSAGING_DESTINATION]: topic,
-        [SEMATTRS_MESSAGING_DESTINATION_KIND]:
-          MESSAGINGDESTINATIONKINDVALUES_TOPIC,
       },
     });
 

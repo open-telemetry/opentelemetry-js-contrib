@@ -25,9 +25,7 @@ import {
   Baggage,
 } from '@opentelemetry/api';
 import {
-  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
   SEMATTRS_MESSAGING_SYSTEM,
-  SEMATTRS_MESSAGING_DESTINATION_KIND,
   SEMATTRS_MESSAGING_DESTINATION,
   SEMATTRS_MESSAGING_OPERATION,
 } from '@opentelemetry/semantic-conventions';
@@ -166,10 +164,6 @@ describe('instrumentation-kafkajs', () => {
         assert.strictEqual(span.name, 'topic-name-1');
         assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
         assert.strictEqual(span.attributes[SEMATTRS_MESSAGING_SYSTEM], 'kafka');
-        assert.strictEqual(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND],
-          MESSAGINGDESTINATIONKINDVALUES_TOPIC
-        );
         assert.strictEqual(
           span.attributes[SEMATTRS_MESSAGING_DESTINATION],
           'topic-name-1'
@@ -486,10 +480,6 @@ describe('instrumentation-kafkajs', () => {
         assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
         assert.strictEqual(span.attributes[SEMATTRS_MESSAGING_SYSTEM], 'kafka');
         assert.strictEqual(
-          span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND],
-          MESSAGINGDESTINATIONKINDVALUES_TOPIC
-        );
-        assert.strictEqual(
           span.attributes[SEMATTRS_MESSAGING_DESTINATION],
           'topic-name-1'
         );
@@ -693,10 +683,6 @@ describe('instrumentation-kafkajs', () => {
           assert.strictEqual(
             span.attributes[SEMATTRS_MESSAGING_SYSTEM],
             'kafka'
-          );
-          assert.strictEqual(
-            span.attributes[SEMATTRS_MESSAGING_DESTINATION_KIND],
-            MESSAGINGDESTINATIONKINDVALUES_TOPIC
           );
           assert.strictEqual(
             span.attributes[SEMATTRS_MESSAGING_DESTINATION],
