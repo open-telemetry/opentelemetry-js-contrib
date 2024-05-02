@@ -55,6 +55,8 @@ components:
     - henrinormak
   plugins/node/instrumentation-fs:
     - rauno56
+  plugins/node/instrumentation-kafkajs:
+    - seemk
   plugins/node/instrumentation-lru-memoizer:
     - blumamir
   plugins/node/instrumentation-mongoose:
