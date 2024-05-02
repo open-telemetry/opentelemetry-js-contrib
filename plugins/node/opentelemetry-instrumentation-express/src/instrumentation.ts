@@ -50,15 +50,9 @@ import {
 } from './internal-types';
 
 /** Express instrumentation for OpenTelemetry */
-export class ExpressInstrumentation extends InstrumentationBase<
-  typeof express
-> {
+export class ExpressInstrumentation extends InstrumentationBase {
   constructor(config: ExpressInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-express',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-express', VERSION, config);
   }
 
   override setConfig(config: ExpressInstrumentationConfig = {}) {
@@ -71,11 +65,10 @@ export class ExpressInstrumentation extends InstrumentationBase<
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof express>(
+      new InstrumentationNodeModuleDefinition(
         'express',
         ['^4.0.0'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for express@${moduleVersion}`);
+        moduleExports => {
           const routerProto = moduleExports.Router as unknown as express.Router;
           // patch express.Router.route
           if (isWrapped(routerProto.route)) {
@@ -100,9 +93,8 @@ export class ExpressInstrumentation extends InstrumentationBase<
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug(`Removing patch for express@${moduleVersion}`);
           const routerProto = moduleExports.Router as unknown as express.Router;
           this._unwrap(routerProto, 'route');
           this._unwrap(routerProto, 'use');

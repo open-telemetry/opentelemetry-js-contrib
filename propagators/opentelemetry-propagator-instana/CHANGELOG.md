@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-instana-v0.3.1...propagator-instana-v0.3.2) (2024-04-25)
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
 ## [0.3.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagator-instana-v0.3.0...propagator-instana-v0.3.1) (2023-08-14)
 
 

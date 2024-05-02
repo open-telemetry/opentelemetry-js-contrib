@@ -29,7 +29,7 @@ import {
 import { PinoInstrumentationConfig } from './types';
 import { VERSION } from './version';
 
-const pinoVersions = ['>=5.14.0 <9'];
+const pinoVersions = ['>=5.14.0 <10'];
 
 const DEFAULT_LOG_KEYS = {
   traceId: 'trace_id',
@@ -44,57 +44,52 @@ export class PinoInstrumentation extends InstrumentationBase {
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
-        'pino',
-        pinoVersions,
-        (module, moduleVersion?: string) => {
-          diag.debug(`Applying patch for pino@${moduleVersion}`);
-          const isESM = module[Symbol.toStringTag] === 'Module';
-          const moduleExports = isESM ? module.default : module;
-          const instrumentation = this;
-          const patchedPino = Object.assign((...args: unknown[]) => {
-            if (args.length === 0) {
-              return moduleExports({
+      new InstrumentationNodeModuleDefinition('pino', pinoVersions, module => {
+        const isESM = module[Symbol.toStringTag] === 'Module';
+        const moduleExports = isESM ? module.default : module;
+        const instrumentation = this;
+        const patchedPino = Object.assign((...args: unknown[]) => {
+          if (args.length === 0) {
+            return moduleExports({
+              mixin: instrumentation._getMixinFunction(),
+            });
+          }
+
+          if (args.length === 1) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const optsOrStream = args[0] as any;
+            if (
+              typeof optsOrStream === 'string' ||
+              typeof optsOrStream?.write === 'function'
+            ) {
+              args.splice(0, 0, {
                 mixin: instrumentation._getMixinFunction(),
               });
+              return moduleExports(...args);
             }
-
-            if (args.length === 1) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const optsOrStream = args[0] as any;
-              if (
-                typeof optsOrStream === 'string' ||
-                typeof optsOrStream?.write === 'function'
-              ) {
-                args.splice(0, 0, {
-                  mixin: instrumentation._getMixinFunction(),
-                });
-                return moduleExports(...args);
-              }
-            }
-
-            args[0] = instrumentation._combineOptions(args[0]);
-
-            return moduleExports(...args);
-          }, moduleExports);
-
-          if (typeof patchedPino.pino === 'function') {
-            patchedPino.pino = patchedPino;
-          }
-          if (typeof patchedPino.default === 'function') {
-            patchedPino.default = patchedPino;
-          }
-          if (isESM) {
-            if (module.pino) {
-              // This was added in pino@6.8.0 (https://github.com/pinojs/pino/pull/936).
-              module.pino = patchedPino;
-            }
-            module.default = patchedPino;
           }
 
-          return patchedPino;
+          args[0] = instrumentation._combineOptions(args[0]);
+
+          return moduleExports(...args);
+        }, moduleExports);
+
+        if (typeof patchedPino.pino === 'function') {
+          patchedPino.pino = patchedPino;
         }
-      ),
+        if (typeof patchedPino.default === 'function') {
+          patchedPino.default = patchedPino;
+        }
+        if (isESM) {
+          if (module.pino) {
+            // This was added in pino@6.8.0 (https://github.com/pinojs/pino/pull/936).
+            module.pino = patchedPino;
+          }
+          module.default = patchedPino;
+        }
+
+        return patchedPino;
+      }),
     ];
   }
 
@@ -102,7 +97,7 @@ export class PinoInstrumentation extends InstrumentationBase {
     return this._config;
   }
 
-  override setConfig(config: PinoInstrumentationConfig) {
+  override setConfig(config: PinoInstrumentationConfig = {}) {
     this._config = config;
   }
 

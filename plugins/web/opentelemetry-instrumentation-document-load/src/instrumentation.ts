@@ -52,7 +52,7 @@ import {
 /**
  * This class represents a document load plugin
  */
-export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
+export class DocumentLoadInstrumentation extends InstrumentationBase {
   readonly component: string = 'document-load';
   readonly version: string = '1';
   moduleName = this.component;
