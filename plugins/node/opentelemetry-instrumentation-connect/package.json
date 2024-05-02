@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-connect",
-  "version": "0.35.0",
+  "version": "0.36.0",
   "description": "OpenTelemetry connect automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -56,8 +56,8 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.50.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "@opentelemetry/instrumentation": "^0.51.0",
+    "@opentelemetry/semantic-conventions": "^1.22.0",
     "@types/connect": "3.4.36"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-connect#readme"

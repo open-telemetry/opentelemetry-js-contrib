@@ -48,11 +48,7 @@ export const ANONYMOUS_NAME = 'anonymous';
 /** Fastify instrumentation for OpenTelemetry */
 export class FastifyInstrumentation extends InstrumentationBase {
   constructor(config: FastifyInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-fastify',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-fastify', VERSION, config);
   }
 
   override setConfig(config: FastifyInstrumentationConfig = {}) {
@@ -65,11 +61,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'fastify',
         ['^3.0.0', '^4.0.0'],
-        (moduleExports, moduleVersion) => {
-          this._diag.debug(`Applying patch for fastify@${moduleVersion}`);
+        moduleExports => {
           return this._patchConstructor(moduleExports);
         }
       ),
@@ -199,7 +194,6 @@ export class FastifyInstrumentation extends InstrumentationBase {
     fastify: () => FastifyInstance;
   }): () => FastifyInstance {
     const instrumentation = this;
-    this._diag.debug('Patching fastify constructor function');
 
     function fastify(this: FastifyInstance, ...args: any) {
       const app: FastifyInstance = moduleExports.fastify.apply(this, args);

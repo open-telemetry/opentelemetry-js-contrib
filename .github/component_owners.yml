@@ -27,6 +27,9 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/baggage-span-processor:
+    - mikegoldsmith
+    - jamiedanielson
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
@@ -138,8 +141,6 @@ components:
     - obecny
   plugins/web/opentelemetry-plugin-react-load:
     - martinkuba
-  propagators/opentelemetry-propagator-aws-xray:
-    - carolabadeer
   propagators/opentelemetry-propagator-grpc-census-binary: []
     # Unmaintained?
   propagators/opentelemetry-propagator-instana:
