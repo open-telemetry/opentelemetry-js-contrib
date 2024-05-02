@@ -36,11 +36,13 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
 };
 
 export class IORedisInstrumentation extends InstrumentationBase {
-  constructor(_config: IORedisInstrumentationConfig = {}) {
+  protected override _config!: IORedisInstrumentationConfig;
+
+  constructor(config: IORedisInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-ioredis',
       VERSION,
-      Object.assign({}, DEFAULT_CONFIG, _config)
+      Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
 

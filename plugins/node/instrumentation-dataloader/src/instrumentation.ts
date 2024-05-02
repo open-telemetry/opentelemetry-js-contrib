@@ -76,7 +76,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     return this._config;
   }
 
-  override setConfig(config: DataloaderInstrumentationConfig) {
+  override setConfig(config: DataloaderInstrumentationConfig = {}) {
     this._config = config;
   }
 

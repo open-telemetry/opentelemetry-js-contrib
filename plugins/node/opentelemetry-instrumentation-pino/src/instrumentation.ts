@@ -29,7 +29,7 @@ import {
 import { PinoInstrumentationConfig } from './types';
 import { VERSION } from './version';
 
-const pinoVersions = ['>=5.14.0 <9'];
+const pinoVersions = ['>=5.14.0 <10'];
 
 const DEFAULT_LOG_KEYS = {
   traceId: 'trace_id',
@@ -97,7 +97,7 @@ export class PinoInstrumentation extends InstrumentationBase {
     return this._config;
   }
 
-  override setConfig(config: PinoInstrumentationConfig) {
+  override setConfig(config: PinoInstrumentationConfig = {}) {
     this._config = config;
   }
 

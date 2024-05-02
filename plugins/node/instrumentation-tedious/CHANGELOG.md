@@ -6,6 +6,13 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.10.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.10.0...instrumentation-tedious-v0.10.1) (2024-05-02)
+
+
+### Bug Fixes
+
+* remove unuseful patch message from instrumentations ([#2161](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2161)) ([34f56e0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/34f56e0e28a0873b69a499c9e91798b19fea8e96))
+
 ## [0.10.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.9.0...instrumentation-tedious-v0.10.0) (2024-04-25)
 
 

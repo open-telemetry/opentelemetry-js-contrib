@@ -58,8 +58,10 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   private _connectionsUsage!: UpDownCounter;
   private _poolName!: string;
 
-  constructor(protected override _config: MongoDBInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mongodb', VERSION, _config);
+  protected override _config!: MongoDBInstrumentationConfig;
+
+  constructor(config: MongoDBInstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-mongodb', VERSION, config);
   }
 
   override _updateMetricInstruments() {

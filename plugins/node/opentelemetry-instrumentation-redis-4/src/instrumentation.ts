@@ -54,8 +54,10 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
 export class RedisInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'redis';
 
-  constructor(protected override _config: RedisInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-redis-4', VERSION, _config);
+  protected override _config!: RedisInstrumentationConfig;
+
+  constructor(config: RedisInstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-redis-4', VERSION, config);
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
