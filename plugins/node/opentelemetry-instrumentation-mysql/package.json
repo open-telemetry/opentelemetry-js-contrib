@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-mysql",
-  "version": "0.38.0",
+  "version": "0.38.1",
   "description": "OpenTelemetry mysql automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

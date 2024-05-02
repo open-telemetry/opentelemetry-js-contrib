@@ -70,7 +70,7 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
 export class TediousInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'tedious';
 
-  constructor(config?: TediousInstrumentationConfig) {
+  constructor(config: TediousInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-tedious', VERSION, config);
   }
 
@@ -129,9 +129,6 @@ export class TediousInstrumentation extends InstrumentationBase {
   private _patchQuery(operation: string) {
     return (originalMethod: UnknownFunction): UnknownFunction => {
       const thisPlugin = this;
-      this._diag.debug(
-        `TediousInstrumentation: patched Connection.prototype.${operation}`
-      );
 
       function patchedMethod(this: ApproxConnection, request: ApproxRequest) {
         if (!(request instanceof EventEmitter)) {
