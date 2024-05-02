@@ -29,7 +29,7 @@ export const bufferTextMapGetter: TextMapGetter = {
     const keys = Object.keys(carrier);
 
     for (const carrierKey of keys) {
-      if (carrierKey.toLowerCase() === key) {
+      if (carrierKey === key || carrierKey.toLowerCase() === key) {
         return carrier[carrierKey]?.toString();
       }
     }

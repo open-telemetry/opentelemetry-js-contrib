@@ -56,6 +56,7 @@ import {
   KafkaMessage,
 } from 'kafkajs';
 import { DummyPropagation } from './DummyPropagation';
+import { bufferTextMapGetter } from '../src/propagator';
 
 describe('instrumentation-kafkajs', () => {
   propagation.setGlobalPropagator(
@@ -878,6 +879,20 @@ describe('instrumentation-kafkajs', () => {
       assert.notStrictEqual(
         receivingSpan.spanContext().traceId,
         producerSpan.spanContext().traceId
+      );
+    });
+  });
+
+  describe('bufferTextMapGetter', () => {
+    it('is possible to retrieve keys case insensitively', () => {
+      assert.strictEqual(
+        bufferTextMapGetter.get(
+          {
+            'X-B3-Trace-Id': '123',
+          },
+          'x-b3-trace-id'
+        ),
+        '123'
       );
     });
   });
