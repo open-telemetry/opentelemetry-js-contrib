@@ -6,6 +6,13 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.38.0...instrumentation-mysql2-v0.38.1) (2024-05-02)
+
+
+### Bug Fixes
+
+* remove unuseful patch message from instrumentations ([#2161](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2161)) ([34f56e0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/34f56e0e28a0873b69a499c9e91798b19fea8e96))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql2-v0.37.0...instrumentation-mysql2-v0.38.0) (2024-04-25)
 
 

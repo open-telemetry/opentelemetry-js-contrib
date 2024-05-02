@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.38.0...instrumentation-pino-v0.39.0) (2024-05-02)
+
+
+### Features
+
+* **pino:** support new pino version ^9.0.0 ([#2163](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2163)) ([585b833](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/585b833dc8e911c17b483e871f752ad4988cee5a))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pino-v0.37.0...instrumentation-pino-v0.38.0) (2024-04-25)
 
 
