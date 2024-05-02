@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { context, trace } from '@opentelemetry/api';
+import { SpanKind, context, trace } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -471,6 +471,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
     try {
       assert.notStrictEqual(span, undefined);
       assert.notStrictEqual(expected, undefined);
+      assert.strictEqual(span.kind, SpanKind.CLIENT);
       assertMatch(span.name, new RegExp(expected.op));
       assertMatch(span.name, new RegExp(':memory:'));
       assert.strictEqual(span.attributes['db.system'], 'sqlite');

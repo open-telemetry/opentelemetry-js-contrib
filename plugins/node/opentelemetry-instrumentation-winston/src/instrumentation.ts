@@ -116,7 +116,7 @@ export class WinstonInstrumentation extends InstrumentationBase {
     return this._config;
   }
 
-  override setConfig(config: WinstonInstrumentationConfig) {
+  override setConfig(config: WinstonInstrumentationConfig = {}) {
     this._config = config;
   }
 

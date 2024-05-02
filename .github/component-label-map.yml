@@ -71,7 +71,7 @@ pkg:instrumentation-bunyan:
   - changed-files:
       - any-glob-to-any-file:
           - plugins/node/opentelemetry-instrumentation-bunyan/**
-pkg:instrumentation-cassandra:
+pkg:instrumentation-cassandra-driver:
   - changed-files:
       - any-glob-to-any-file:
           - plugins/node/opentelemetry-instrumentation-cassandra/**

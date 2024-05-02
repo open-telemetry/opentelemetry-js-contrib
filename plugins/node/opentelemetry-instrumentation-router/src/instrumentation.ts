@@ -35,7 +35,7 @@ import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
 export default class RouterInstrumentation extends InstrumentationBase {
-  constructor(config?: InstrumentationConfig) {
+  constructor(config: InstrumentationConfig = {}) {
     super(
       `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
       VERSION,

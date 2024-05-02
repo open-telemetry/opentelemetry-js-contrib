@@ -22,8 +22,14 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_MSSQL,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_SQL_TABLE,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_USER,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
@@ -64,7 +70,7 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
 export class TediousInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'tedious';
 
-  constructor(config?: TediousInstrumentationConfig) {
+  constructor(config: TediousInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-tedious', VERSION, config);
   }
 
@@ -123,9 +129,6 @@ export class TediousInstrumentation extends InstrumentationBase {
   private _patchQuery(operation: string) {
     return (originalMethod: UnknownFunction): UnknownFunction => {
       const thisPlugin = this;
-      this._diag.debug(
-        `TediousInstrumentation: patched Connection.prototype.${operation}`
-      );
 
       function patchedMethod(this: ApproxConnection, request: ApproxRequest) {
         if (!(request instanceof EventEmitter)) {
@@ -155,16 +158,16 @@ export class TediousInstrumentation extends InstrumentationBase {
           {
             kind: api.SpanKind.CLIENT,
             attributes: {
-              [SemanticAttributes.DB_SYSTEM]: DbSystemValues.MSSQL,
-              [SemanticAttributes.DB_NAME]: databaseName,
-              [SemanticAttributes.NET_PEER_PORT]: this.config?.options?.port,
-              [SemanticAttributes.NET_PEER_NAME]: this.config?.server,
+              [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MSSQL,
+              [SEMATTRS_DB_NAME]: databaseName,
+              [SEMATTRS_NET_PEER_PORT]: this.config?.options?.port,
+              [SEMATTRS_NET_PEER_NAME]: this.config?.server,
               // >=4 uses `authentication` object, older versions just userName and password pair
-              [SemanticAttributes.DB_USER]:
+              [SEMATTRS_DB_USER]:
                 this.config?.userName ??
                 this.config?.authentication?.options?.userName,
-              [SemanticAttributes.DB_STATEMENT]: sql,
-              [SemanticAttributes.DB_SQL_TABLE]: request.table,
+              [SEMATTRS_DB_STATEMENT]: sql,
+              [SEMATTRS_DB_SQL_TABLE]: request.table,
             },
           }
         );

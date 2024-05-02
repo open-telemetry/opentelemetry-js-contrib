@@ -61,11 +61,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
   protected override _config!: MongooseInstrumentationConfig;
 
   constructor(config: MongooseInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-mongoose',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-mongoose', VERSION, config);
   }
 
   override setConfig(config: MongooseInstrumentationConfig = {}) {
@@ -141,7 +137,6 @@ export class MongooseInstrumentation extends InstrumentationBase {
 
   private patchAggregateExec(moduleVersion: string | undefined) {
     const self = this;
-    this._diag.debug('patched mongoose Aggregate exec function');
     return (originalAggregate: Function) => {
       return function exec(this: any, callback?: Function) {
         if (
@@ -183,7 +178,6 @@ export class MongooseInstrumentation extends InstrumentationBase {
 
   private patchQueryExec(moduleVersion: string | undefined) {
     const self = this;
-    this._diag.debug('patched mongoose Query exec function');
     return (originalExec: Function) => {
       return function exec(this: any, callback?: Function) {
         if (
@@ -226,7 +220,6 @@ export class MongooseInstrumentation extends InstrumentationBase {
 
   private patchOnModelMethods(op: string, moduleVersion: string | undefined) {
     const self = this;
-    this._diag.debug(`patching mongoose Model '${op}' operation`);
     return (originalOnModelFunction: Function) => {
       return function method(this: any, options?: any, callback?: Function) {
         if (
@@ -275,7 +268,6 @@ export class MongooseInstrumentation extends InstrumentationBase {
   // the aggregate of Model, and set the context on the Aggregate object
   private patchModelAggregate() {
     const self = this;
-    this._diag.debug('patched mongoose model aggregate function');
     return (original: Function) => {
       return function captureSpanContext(this: any) {
         const currentSpan = trace.getSpan(context.active());
@@ -290,7 +282,6 @@ export class MongooseInstrumentation extends InstrumentationBase {
 
   private patchAndCaptureSpanContext(funcName: string) {
     const self = this;
-    this._diag.debug(`patching mongoose query ${funcName} function`);
     return (original: Function) => {
       return function captureSpanContext(this: any) {
         this[_STORED_PARENT_SPAN] = trace.getSpan(context.active());
