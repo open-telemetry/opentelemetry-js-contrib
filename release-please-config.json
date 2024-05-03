@@ -35,6 +35,7 @@
     "plugins/node/instrumentation-undici": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},
     "plugins/node/opentelemetry-instrumentation-aws-sdk": {},
+    "plugins/node/opentelemetry-instrumentation-azure-functions": {},
     "plugins/node/opentelemetry-instrumentation-bunyan": {},
     "plugins/node/opentelemetry-instrumentation-cassandra": {},
     "plugins/node/opentelemetry-instrumentation-connect": {},

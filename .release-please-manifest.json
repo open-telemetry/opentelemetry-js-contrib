@@ -28,6 +28,7 @@
   "plugins/node/instrumentation-undici": "0.2.0",
   "plugins/node/opentelemetry-instrumentation-aws-lambda": "0.41.1",
   "plugins/node/opentelemetry-instrumentation-aws-sdk": "0.41.0",
+  "plugins/node/opentelemetry-instrumentation-azure-functions": "0.1.0",
   "plugins/node/opentelemetry-instrumentation-bunyan": "0.38.0",
   "plugins/node/opentelemetry-instrumentation-cassandra": "0.38.0",
   "plugins/node/opentelemetry-instrumentation-connect": "0.36.1",
