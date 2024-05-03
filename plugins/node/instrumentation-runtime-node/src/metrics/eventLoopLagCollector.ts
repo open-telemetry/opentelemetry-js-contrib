@@ -13,52 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RuntimeNodeInstrumentationConfig } from '../types';
-import { Meter } from '@opentelemetry/api';
-import { IntervalHistogram } from 'node:perf_hooks';
-import { BaseCollector } from './baseCollector';
+import {RuntimeNodeInstrumentationConfig} from '../types';
+import {Meter} from '@opentelemetry/api';
 import * as perf_hooks from 'node:perf_hooks';
+import {IntervalHistogram} from 'node:perf_hooks';
+import {BaseCollector} from './baseCollector';
+import {NODE_JS_VERSION_ATTRIBUTE} from "../consts/attributes";
 
-const NODEJS_EVENTLOOP_LAG = 'event_loop.lag_seconds';
-const NODEJS_EVENTLOOP_LAG_MIN = 'event_loop.lag_min_seconds';
-const NODEJS_EVENTLOOP_LAG_MAX = 'event_loop.lag_max_seconds';
-const NODEJS_EVENTLOOP_LAG_MEAN = 'event_loop.lag_mean_seconds';
-const NODEJS_EVENTLOOP_LAG_STDDEV = 'event_loop.lag_stddev_seconds';
-const NODEJS_EVENTLOOP_LAG_P50 = 'event_loop.lag_p50_seconds';
-const NODEJS_EVENTLOOP_LAG_P90 = 'event_loop.lag_p90_seconds';
-const NODEJS_EVENTLOOP_LAG_P99 = 'event_loop.lag_p99_seconds';
+const NODEJS_EVENTLOOP_LAG = 'eventloop.lag';
+const NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE = 'nodejs.eventloop.lag.type';
 
-export const metricNames = [
-  { name: NODEJS_EVENTLOOP_LAG, description: 'Lag of event loop in seconds.' },
-  {
-    name: NODEJS_EVENTLOOP_LAG_MIN,
-    description: 'The minimum recorded event loop delay.',
-  },
-  {
-    name: NODEJS_EVENTLOOP_LAG_MAX,
-    description: 'The maximum recorded event loop delay.',
-  },
-  {
-    name: NODEJS_EVENTLOOP_LAG_MEAN,
-    description: 'The mean of the recorded event loop delays.',
-  },
-  {
-    name: NODEJS_EVENTLOOP_LAG_STDDEV,
-    description: 'The standard deviation of the recorded event loop delays.',
-  },
-  {
-    name: NODEJS_EVENTLOOP_LAG_P50,
-    description: 'The 50th percentile of the recorded event loop delays.',
-  },
-  {
-    name: NODEJS_EVENTLOOP_LAG_P90,
-    description: 'The 90th percentile of the recorded event loop delays.',
-  },
-  {
-    name: NODEJS_EVENTLOOP_LAG_P99,
-    description: 'The 99th percentile of the recorded event loop delays.',
-  },
-];
 
 export interface EventLoopLagInformation {
   min: number;
@@ -84,65 +48,14 @@ export class EventLoopLagCollector extends BaseCollector<EventLoopLagInformation
   }
 
   updateMetricInstruments(meter: Meter): void {
-    const lag = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[0].name}`,
+    meter.createObservableGauge(
+      `${this.namePrefix}.${NODEJS_EVENTLOOP_LAG}`,
       {
-        description: metricNames[0].description,
-        unit: '1',
-      }
-    );
-    const lagMin = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[1].name}`,
-      {
-        description: metricNames[1].description,
-        unit: '1',
-      }
-    );
-    const lagMax = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[2].name}`,
-      {
-        description: metricNames[2].description,
-        unit: '1',
-      }
-    );
-    const lagMean = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[3].name}`,
-      {
-        description: metricNames[3].description,
-        unit: '1',
-      }
-    );
-    const lagStddev = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[4].name}`,
-      {
-        description: metricNames[4].description,
-        unit: '1',
-      }
-    );
-    const lagp50 = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[5].name}`,
-      {
-        description: metricNames[5].description,
-        unit: '1',
-      }
-    );
-    const lagp90 = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[6].name}`,
-      {
-        description: metricNames[6].description,
-        unit: '1',
-      }
-    );
-    const lagp99 = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[7].name}`,
-      {
-        description: metricNames[7].description,
-        unit: '1',
-      }
-    );
-
-    meter.addBatchObservableCallback(
-      async observableResult => {
+        description: "Event loop lag.",
+        unit: 's'
+      },
+    )
+      .addCallback(async observableResult => {
         if (this._scrapeQueue.length === 0) return;
 
         const data = this._scrapeQueue.shift();
@@ -155,19 +68,18 @@ export class EventLoopLagCollector extends BaseCollector<EventLoopLagInformation
           }, start);
         });
 
-        observableResult.observe(lag, lagResult);
-        observableResult.observe(lagMin, data.min);
-        observableResult.observe(lagMax, data.max);
-        observableResult.observe(lagMean, data.mean);
-        observableResult.observe(lagStddev, data.stddev);
-        observableResult.observe(lagp50, data.p50);
-        observableResult.observe(lagp90, data.p90);
-        observableResult.observe(lagp99, data.p99);
+        observableResult.observe(lagResult, {
+          [NODE_JS_VERSION_ATTRIBUTE]: process.version
+        });
 
-        this._histogram.reset();
-      },
-      [lag, lagMin, lagMax, lagMean, lagStddev, lagp50, lagp90, lagp99]
-    );
+        for(const  [value, attributeType] of Object.keys(data).entries()) {
+          observableResult.observe(value, {
+            [NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE]: attributeType,
+            [NODE_JS_VERSION_ATTRIBUTE]: process.version
+          });
+        }
+
+      });
   }
 
   internalEnable(): void {
@@ -193,8 +105,7 @@ export class EventLoopLagCollector extends BaseCollector<EventLoopLagInformation
   private _reportEventloopLag(start: [number, number]): number {
     const delta = process.hrtime(start);
     const nanosec = delta[0] * 1e9 + delta[1];
-    const seconds = nanosec / 1e9;
-    return seconds;
+    return nanosec / 1e9;
   }
 
   private checkNan(value: number) {
