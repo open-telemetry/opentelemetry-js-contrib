@@ -21,7 +21,7 @@ import { TestMetricReader } from './testMetricsReader';
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe('nodejs.event_loop.utilization', function () {
+describe('jsruntime.eventloop.utilization', function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -68,7 +68,7 @@ describe('nodejs.event_loop.utilization', function () {
     );
     const scopeMetrics = resourceMetrics.scopeMetrics;
     const utilizationMetric = scopeMetrics[0].metrics.find(
-      x => x.descriptor.name === 'nodejs.event_loop.utilization'
+      x => x.descriptor.name === 'jsruntime.eventloop.utilization'
     );
 
     assert.notEqual(utilizationMetric, undefined, 'metric not found');
@@ -81,7 +81,7 @@ describe('nodejs.event_loop.utilization', function () {
 
     assert.strictEqual(
       utilizationMetric!.descriptor.name,
-      'nodejs.event_loop.utilization',
+      'jsruntime.eventloop.utilization',
       'descriptor.name'
     );
 
@@ -92,7 +92,7 @@ describe('nodejs.event_loop.utilization', function () {
 
     assert.strictEqual(
       utilizationMetric!.descriptor.unit,
-      '1',
+      's',
       'expected default unit'
     );
 

@@ -16,13 +16,11 @@
 import {RuntimeNodeInstrumentationConfig} from '../types';
 import {Meter} from '@opentelemetry/api';
 import * as perf_hooks from 'node:perf_hooks';
-import {version} from 'node:process';
 import {IntervalHistogram} from 'node:perf_hooks';
 import {BaseCollector} from './baseCollector';
-import {NODE_JS_VERSION_ATTRIBUTE} from "../consts/attributes";
 
 const NODEJS_EVENTLOOP_LAG = 'eventloop.lag';
-const NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE = 'eventloop.lag.type';
+export const NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE = 'eventloop.lag.type';
 
 
 export interface EventLoopLagInformation {
@@ -68,14 +66,11 @@ export class EventLoopLagCollector extends BaseCollector<EventLoopLagInformation
         }, start);
       });
 
-      observableResult.observe(lagResult, {
-        [NODE_JS_VERSION_ATTRIBUTE]: version
-      });
+      observableResult.observe(lagResult);
 
       for (const [value, attributeType] of Object.keys(data).entries()) {
         observableResult.observe(value, {
-          [NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE]: attributeType,
-          [`${this.namePrefix}.${NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE}`]: version
+          [`${this.namePrefix}.${NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE}`]: attributeType
         });
       }
 
