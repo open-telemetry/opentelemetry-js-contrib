@@ -33,7 +33,7 @@ export function wrapModule(
   let mod = module.exports;
 
   const { ${oTelInstrumentationClass} } = require('${oTelInstrumentationPackage}');
-  const instrumentations = new ${oTelInstrumentationClass}(${oTelInstrumentationConstructorArgs}).init();
+  const instrumentations = new ${oTelInstrumentationClass}(${oTelInstrumentationConstructorArgs}).getModuleDefinitions();
   if (instrumentations.length > 1 && !'${instrumentationName}') {
     throw new Error('instrumentationName must be specified because ${oTelInstrumentationClass} has multiple instrumentations');
   }
