@@ -16,25 +16,10 @@
 import { RuntimeNodeInstrumentationConfig } from '../types';
 import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
+import {HeapSizes} from "../types/heapSizes";
 
-const NODEJS_HEAP_SIZE_TOTAL = 'heap_size_total_bytes';
-const NODEJS_HEAP_SIZE_USED = 'heap_size_used_bytes';
-const NODEJS_EXTERNAL_MEMORY = 'external_memory_bytes';
-
-export const metricNames = [
-  {
-    name: NODEJS_HEAP_SIZE_TOTAL,
-    description: 'Process heap size from Node.js in bytes.',
-  },
-  {
-    name: NODEJS_HEAP_SIZE_USED,
-    description: 'Process heap size used from Node.js in bytes.',
-  },
-  {
-    name: NODEJS_EXTERNAL_MEMORY,
-    description: 'Node.js external memory size in bytes.',
-  },
-];
+const NODEJS_HEAP_SIZE = 'heap.size';
+const NODEJS_HEAP_SIZE_STATE = 'heap.size.state';
 
 export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> {
   constructor(
@@ -45,42 +30,24 @@ export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> 
   }
 
   updateMetricInstruments(meter: Meter): void {
-    const heapSizeTotal = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[0].name}`,
+   meter.createObservableGauge(
+      `${this.namePrefix}.${NODEJS_HEAP_SIZE}`,
       {
-        description: metricNames[0].description,
-        unit: '1',
+        description: "Process heap size from Node.js in bytes.",
+        unit: 'By',
       }
-    );
-    const heapSizeUsed = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[1].name}`,
-      {
-        description: metricNames[1].description,
-        unit: '1',
-      }
-    );
-    const externalMemUsed = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[2].name}`,
-      {
-        description: metricNames[2].description,
-        unit: '1',
-      }
-    );
+    ).addCallback(async observableResult => {
+      if (this._scrapeQueue.length === 0) return;
 
-    meter.addBatchObservableCallback(
-      observableResult => {
-        if (this._scrapeQueue.length === 0) return;
-
-        const data = this._scrapeQueue.shift();
-        if (data === undefined) return;
-        observableResult.observe(heapSizeTotal, data.heapTotal);
-        observableResult.observe(heapSizeUsed, data.heapUsed);
-        if (data.external !== undefined) {
-          observableResult.observe(externalMemUsed, data.external);
-        }
-      },
-      [heapSizeTotal, heapSizeUsed, externalMemUsed]
-    );
+      const data = this._scrapeQueue.shift();
+      if (data === undefined) return;
+      observableResult.observe(data.heapTotal, {
+        [`${this.namePrefix}.${NODEJS_HEAP_SIZE_STATE}`]: HeapSizes.Total
+      });
+      observableResult.observe(data.heapUsed, {
+        [`${this.namePrefix}.${NODEJS_HEAP_SIZE_STATE}`]: HeapSizes.Used
+      });
+    });
   }
 
   internalEnable(): void {}

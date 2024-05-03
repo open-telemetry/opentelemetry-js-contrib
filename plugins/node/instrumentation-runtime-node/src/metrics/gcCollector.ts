@@ -20,7 +20,7 @@ import { BaseCollector } from './baseCollector';
 import * as perf_hooks from 'node:perf_hooks';
 import { PerformanceObserver } from 'node:perf_hooks';
 
-const NODEJS_GC_DURATION_SECONDS = 'gc.duration_seconds';
+const NODEJS_GC_DURATION_SECONDS = 'gc.duration';
 const DEFAULT_GC_DURATION_BUCKETS = [0.001, 0.01, 0.1, 1, 2, 5];
 
 const kinds: string[] = [];
@@ -59,7 +59,7 @@ export class GCCollector extends BaseCollector<null> {
       {
         description:
           'Garbage collection duration by kind, one of major, minor, incremental or weakcb.',
-        unit: 'double',
+        unit: 's',
         valueType: ValueType.DOUBLE,
         advice: {
           explicitBucketBoundaries: DEFAULT_GC_DURATION_BUCKETS,

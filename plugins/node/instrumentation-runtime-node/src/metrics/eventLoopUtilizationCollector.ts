@@ -20,7 +20,7 @@ import { BaseCollector } from './baseCollector';
 
 const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 
-const NODEJS_EVENT_LOOP_UTILIZATION = 'event_loop.utilization';
+const NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
 
 export class EventLoopUtilizationCollector extends BaseCollector<EventLoopUtilization> {
   constructor(
@@ -36,7 +36,7 @@ export class EventLoopUtilizationCollector extends BaseCollector<EventLoopUtiliz
         `${this.namePrefix}.${NODEJS_EVENT_LOOP_UTILIZATION}`,
         {
           description: 'Event loop utilization',
-          unit: '1',
+          unit: 's',
         }
       )
       .addCallback(async observableResult => {

@@ -16,12 +16,13 @@
 import {RuntimeNodeInstrumentationConfig} from '../types';
 import {Meter} from '@opentelemetry/api';
 import * as perf_hooks from 'node:perf_hooks';
+import {version} from 'node:process';
 import {IntervalHistogram} from 'node:perf_hooks';
 import {BaseCollector} from './baseCollector';
 import {NODE_JS_VERSION_ATTRIBUTE} from "../consts/attributes";
 
 const NODEJS_EVENTLOOP_LAG = 'eventloop.lag';
-const NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE = 'nodejs.eventloop.lag.type';
+const NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE = 'eventloop.lag.type';
 
 
 export interface EventLoopLagInformation {
@@ -54,32 +55,31 @@ export class EventLoopLagCollector extends BaseCollector<EventLoopLagInformation
         description: "Event loop lag.",
         unit: 's'
       },
-    )
-      .addCallback(async observableResult => {
-        if (this._scrapeQueue.length === 0) return;
+    ).addCallback(async observableResult => {
+      if (this._scrapeQueue.length === 0) return;
 
-        const data = this._scrapeQueue.shift();
-        if (data === undefined) return;
+      const data = this._scrapeQueue.shift();
+      if (data === undefined) return;
 
-        const start = process.hrtime();
-        const lagResult = await new Promise<number>(res => {
-          setImmediate((start: [number, number]) => {
-            res(this._reportEventloopLag(start));
-          }, start);
-        });
-
-        observableResult.observe(lagResult, {
-          [NODE_JS_VERSION_ATTRIBUTE]: process.version
-        });
-
-        for(const  [value, attributeType] of Object.keys(data).entries()) {
-          observableResult.observe(value, {
-            [NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE]: attributeType,
-            [NODE_JS_VERSION_ATTRIBUTE]: process.version
-          });
-        }
-
+      const start = process.hrtime();
+      const lagResult = await new Promise<number>(res => {
+        setImmediate((start: [number, number]) => {
+          res(this._reportEventloopLag(start));
+        }, start);
       });
+
+      observableResult.observe(lagResult, {
+        [NODE_JS_VERSION_ATTRIBUTE]: version
+      });
+
+      for (const [value, attributeType] of Object.keys(data).entries()) {
+        observableResult.observe(value, {
+          [NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE]: attributeType,
+          [`${this.namePrefix}.${NODEJS_EVENTLOOP_LAG_ATTRIBUTE_TYPE}`]: version
+        });
+      }
+
+    });
   }
 
   internalEnable(): void {

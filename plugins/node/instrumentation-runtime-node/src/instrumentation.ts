@@ -28,7 +28,7 @@ const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
   monitoringPrecision: 5000,
 };
 
-const namePrefix = 'nodejs';
+const namePrefix = 'jsruntime';
 
 export class RuntimeNodeInstrumentation extends InstrumentationBase {
   private _collectors: MetricCollector[] = [];

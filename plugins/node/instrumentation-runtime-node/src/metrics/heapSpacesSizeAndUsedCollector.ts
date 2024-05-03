@@ -13,30 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RuntimeNodeInstrumentationConfig } from '../types';
-import { Meter } from '@opentelemetry/api';
-import { BaseCollector } from './baseCollector';
+import {RuntimeNodeInstrumentationConfig} from '../types';
+import {Meter} from '@opentelemetry/api';
+import {BaseCollector} from './baseCollector';
 import * as v8 from 'node:v8';
-import { HeapSpaceInfo } from 'v8';
+import {HeapSpaceInfo} from 'v8';
+import {HeapSpaces} from "../types/heapSpaces";
 
-const NODEJS_HEAP_SPACE_TOTAL = 'heap_space_total_bytes';
-const NODEJS_HEAP_SPACE_USED = 'heap_space_used_bytes';
-const NODEJS_HEAP_SPACE_AVAILABLE = 'heap_space_available_bytes';
+const NODEJS_HEAP_SPACE = 'heap.space';
+const NODEJS_HEAP_SPACE_STATE = 'heap.space.state';
+const NODEJS_HEAP_SPACE_SPACENAME = 'heap.space.spacename';
 
-export const metricNames = [
-  {
-    name: NODEJS_HEAP_SPACE_TOTAL,
-    description: 'Process heap space size total from Node.js in bytes.',
-  },
-  {
-    name: NODEJS_HEAP_SPACE_USED,
-    description: 'Process heap space size used from Node.js in bytes.',
-  },
-  {
-    name: NODEJS_HEAP_SPACE_AVAILABLE,
-    description: 'Process heap space size available from Node.js in bytes.',
-  },
-];
 
 export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
   HeapSpaceInfo[]
@@ -49,59 +36,48 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
   }
 
   updateMetricInstruments(meter: Meter): void {
-    const heapSpaceTotal = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[0].name}`,
+    meter.createObservableGauge(
+      `${this.namePrefix}.${NODEJS_HEAP_SPACE}`,
       {
-        description: metricNames[0].description,
-        unit: 'bytes',
+        description: "Process heap space size total from Node.js in bytes.",
+        unit: 'By',
       }
-    );
-    const heapSpaceUsed = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[1].name}`,
-      {
-        description: metricNames[1].description,
-        unit: 'bytes',
-      }
-    );
-    const heapSpaceAvailable = meter.createObservableGauge(
-      `${this.namePrefix}.${metricNames[2].name}`,
-      {
-        description: metricNames[2].description,
-        unit: 'bytes',
-      }
-    );
+    ).addCallback(async observableResult => {
+      if (this._scrapeQueue.length === 0) return;
 
-    meter.addBatchObservableCallback(
-      observableResult => {
-        if (this._scrapeQueue.length === 0) return;
+      const data = this._scrapeQueue.shift();
+      if (data === undefined) return;
+      for (const space of data) {
+        const spaceName = space.space_name.substring(
+          0,
+          space.space_name.indexOf('_space')
+        );
+        observableResult.observe(space.space_size, {
+          [`${this.namePrefix}.${NODEJS_HEAP_SPACE_SPACENAME}`]: spaceName,
+          [`${this.namePrefix}.${NODEJS_HEAP_SPACE_STATE}`]: HeapSpaces.Total
+        });
+        observableResult.observe(space.space_used_size, {
+          [`${this.namePrefix}.${NODEJS_HEAP_SPACE_SPACENAME}`]: spaceName,
+          [`${this.namePrefix}.${NODEJS_HEAP_SPACE_STATE}`]: HeapSpaces.Used
 
-        const data = this._scrapeQueue.shift();
-        if (data === undefined) return;
-        for (const space of data) {
-          const spaceName = space.space_name.substring(
-            0,
-            space.space_name.indexOf('_space')
-          );
-          observableResult.observe(heapSpaceTotal, space.space_size, {
-            space: spaceName,
-          });
-          observableResult.observe(heapSpaceUsed, space.space_used_size, {
-            space: spaceName,
-          });
-          observableResult.observe(
-            heapSpaceAvailable,
-            space.space_available_size,
-            { space: spaceName }
-          );
-        }
-      },
-      [heapSpaceTotal, heapSpaceUsed, heapSpaceAvailable]
-    );
+        });
+        observableResult.observe(
+          space.space_available_size,
+          {
+            [`${this.namePrefix}.${NODEJS_HEAP_SPACE_SPACENAME}`]: spaceName,
+            [`${this.namePrefix}.${NODEJS_HEAP_SPACE_STATE}`]: HeapSpaces.Availabe
+          }
+        );
+      }
+    });
+
   }
 
-  internalEnable(): void {}
+  internalEnable(): void {
+  }
 
-  internalDisable(): void {}
+  internalDisable(): void {
+  }
 
   protected scrape(): HeapSpaceInfo[] {
     return v8.getHeapSpaceStatistics();
