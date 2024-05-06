@@ -1,0 +1,5 @@
+[Based on the instrumentation written by Aspecto](https://github.com/aspecto-io/opentelemetry-ext-js/tree/master/packages/instrumentation-typeorm).
+
+The library contains the following changes compared to the original:
+* Removed `moduleVersionAttributeName` configuration option.
+* Changed the function signature of `responseHook`.
