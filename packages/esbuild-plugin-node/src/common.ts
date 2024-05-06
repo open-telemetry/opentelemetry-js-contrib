@@ -33,9 +33,11 @@ export function wrapModule(
   let mod = module.exports;
 
   const { ${oTelInstrumentationClass} } = require('${oTelInstrumentationPackage}');
+  const { diag } = require('@opentelemetry/api');
   const instrumentations = new ${oTelInstrumentationClass}(${oTelInstrumentationConstructorArgs}).getModuleDefinitions();
   if (instrumentations.length > 1 && !'${instrumentationName}') {
-    throw new Error('instrumentationName must be specified because ${oTelInstrumentationClass} has multiple instrumentations');
+    diag.error('instrumentationName must be specified because ${oTelInstrumentationClass} has multiple instrumentations');
+    return;
   }
   const instrumentation = ${
     instrumentationName
@@ -44,14 +46,17 @@ export function wrapModule(
   };
 
   if (instrumentation.patch && instrumentation.files?.length) {
-    throw new Error('Not sure how to handle patch and files on instrumentation for ${oTelInstrumentationClass} ${instrumentationName}');
+    diag.error('Not sure how to handle patch and files on instrumentation for ${oTelInstrumentationClass} ${instrumentationName}');
+    return;
   }
 
   if (!instrumentation.patch) {
     if (!instrumentation.files?.length) {
-      throw new Error('No patch nor files exist on instrumentation for ${oTelInstrumentationClass} ${instrumentationName}');
+      diag.error('No patch nor files exist on instrumentation for ${oTelInstrumentationClass} ${instrumentationName}');
+      return;
     } else if (instrumentation.files.length > 1) {
-      throw new Error('Not sure how to handle multiple files for nstrumentations for ${instrumentationName}');
+      diag.error('Not sure how to handle multiple files for instrumentations for ${instrumentationName}');
+      return;
     }
   }
 
