@@ -189,12 +189,13 @@ function checkManuallyProvidedInstrumentationNames(
 }
 
 function getInstrumentationsFromEnv(envVar: string): string[] {
-  if (!process.env[envVar]) {
+  const envVarValue = process.env[envVar];
+  if (envVarValue == null) {
     return [];
   }
 
-  const instrumentationsFromEnv = process.env[envVar]
-    .split(',')
+  const instrumentationsFromEnv = envVarValue
+    ?.split(',')
     .map(
       instrumentationPkgSuffix =>
         `@opentelemetry/instrumentation-${instrumentationPkgSuffix.trim()}`
