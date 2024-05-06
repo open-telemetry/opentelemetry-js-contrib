@@ -152,10 +152,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
       ) {
         const route = original.apply(this, args);
         const layer = this._router.stack[this._router.stack.length - 1];
-        instrumentation._applyPatch(
-          layer,
-          getLayerPath(args)
-        );
+        instrumentation._applyPatch(layer, getLayerPath(args));
         return route;
       };
     };
