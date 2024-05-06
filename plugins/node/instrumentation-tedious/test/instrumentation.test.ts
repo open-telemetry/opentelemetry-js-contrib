@@ -73,7 +73,7 @@ const config: ConnectionConfig & { userName: string; password: string } = {
 };
 
 const processVersion = process.version;
-const tediousVersion = testUtils.getPackageVersion('../../../');
+const tediousVersion = testUtils.getPackageVersion('tedious');
 const incompatVersions = 
   // tedious@16 removed support for node v14 https://github.com/tediousjs/tedious/releases/tag/v16.0.0
   (semver.lt(processVersion, '15.0.0') && semver.gte(tediousVersion, '16.0.0')) ||
@@ -109,7 +109,7 @@ describe('tedious', () => {
 
   after(function () {
     if (shouldTestLocally) {
-      this.timeout(5000);
+      this.timeout(15000);
       testUtils.cleanUpDocker('mssql');
     }
   });
