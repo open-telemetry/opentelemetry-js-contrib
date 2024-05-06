@@ -29,6 +29,7 @@ import { AttributeNames } from './enums/AttributeNames';
 import {
   asErrorAndMessage,
   getLayerMetadata,
+  getLayerPath,
   isLayerIgnored,
   storeLayerPath,
 } from './utils';
@@ -51,11 +52,7 @@ import {
 /** Express instrumentation for OpenTelemetry */
 export class ExpressInstrumentation extends InstrumentationBase {
   constructor(config: ExpressInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-express',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-express', VERSION, config);
   }
 
   override setConfig(config: ExpressInstrumentationConfig = {}) {
@@ -119,10 +116,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
       ) {
         const route = original.apply(this, args);
         const layer = this.stack[this.stack.length - 1] as ExpressLayer;
-        instrumentation._applyPatch(
-          layer,
-          typeof args[0] === 'string' ? args[0] : undefined
-        );
+        instrumentation._applyPatch(layer, getLayerPath(args));
         return route;
       };
     };
@@ -140,10 +134,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
       ) {
         const route = original.apply(this, args);
         const layer = this.stack[this.stack.length - 1] as ExpressLayer;
-        instrumentation._applyPatch(
-          layer,
-          typeof args[0] === 'string' ? args[0] : undefined
-        );
+        instrumentation._applyPatch(layer, getLayerPath(args));
         return route;
       };
     };
@@ -163,7 +154,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
         const layer = this._router.stack[this._router.stack.length - 1];
         instrumentation._applyPatch(
           layer,
-          typeof args[0] === 'string' ? args[0] : undefined
+          getLayerPath(args)
         );
         return route;
       };

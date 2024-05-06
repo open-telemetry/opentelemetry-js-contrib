@@ -33,7 +33,7 @@ export default class Instrumentation extends InstrumentationBase {
   private _isDisabled = false;
 
   constructor(config: InstrumentationConfig = {}) {
-    super(`@opentelemetry/instrumentation-${MODULE_NAME}`, VERSION);
+    super(`@opentelemetry/instrumentation-${MODULE_NAME}`, VERSION, config);
   }
 
   init() {

@@ -27,6 +27,9 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/baggage-span-processor:
+    - mikegoldsmith
+    - jamiedanielson
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
