@@ -188,6 +188,21 @@ function checkManuallyProvidedInstrumentationNames(
   }
 }
 
+function getInstrumentationsFromEnv(envVar: string): string[] {
+  if (!process.env[envVar]) {
+    return [];
+  }
+
+  const instrumentationsFromEnv = process.env[envVar]
+    .split(',')
+    .map(
+      instrumentationPkgSuffix =>
+        `@opentelemetry/instrumentation-${instrumentationPkgSuffix.trim()}`
+    );
+  checkManuallyProvidedInstrumentationNames(instrumentationsFromEnv);
+  return instrumentationsFromEnv;
+}
+
 /**
  * Returns the list of instrumentations that are enabled based on the environment variable.
  */
@@ -196,12 +211,9 @@ function getEnabledInstrumentationsFromEnv() {
     return Object.keys(InstrumentationMap);
   }
 
-  const instrumentationsFromEnv =
-    process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS.split(',').map(
-      instrumentationPkgSuffix =>
-        `@opentelemetry/instrumentation-${instrumentationPkgSuffix.trim()}`
-    );
-  checkManuallyProvidedInstrumentationNames(instrumentationsFromEnv);
+  const instrumentationsFromEnv = getInstrumentationsFromEnv(
+    'OTEL_NODE_ENABLED_INSTRUMENTATIONS'
+  );
   return instrumentationsFromEnv;
 }
 
@@ -213,12 +225,9 @@ function getDisabledInstrumentationsFromEnv() {
     return [];
   }
 
-  const instrumentationsFromEnv =
-    process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS.split(',').map(
-      instrumentationPkgSuffix =>
-        `@opentelemetry/instrumentation-${instrumentationPkgSuffix.trim()}`
-    );
-  checkManuallyProvidedInstrumentationNames(instrumentationsFromEnv);
+  const instrumentationsFromEnv = getInstrumentationsFromEnv(
+    'OTEL_NODE_DISABLED_INSTRUMENTATIONS'
+  );
   return instrumentationsFromEnv;
 }
 
