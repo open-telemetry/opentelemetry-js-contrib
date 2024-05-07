@@ -52,6 +52,10 @@ For more details on setting up the global tracer provider to send traces to AWS 
 
 Please note that AWS Lambda does not support X-Ray remote sampling.
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
 - [More information on OpenTelemetry](https://opentelemetry.io/)
