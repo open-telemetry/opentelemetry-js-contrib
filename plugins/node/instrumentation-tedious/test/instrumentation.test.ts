@@ -74,9 +74,10 @@ const config: ConnectionConfig & { userName: string; password: string } = {
 
 const processVersion = process.version;
 const tediousVersion = testUtils.getPackageVersion('tedious');
-const incompatVersions = 
+const incompatVersions =
   // tedious@16 removed support for node v14 https://github.com/tediousjs/tedious/releases/tag/v16.0.0
-  (semver.lt(processVersion, '15.0.0') && semver.gte(tediousVersion, '16.0.0')) ||
+  (semver.lt(processVersion, '15.0.0') &&
+    semver.gte(tediousVersion, '16.0.0')) ||
   // tedious@17 removed support for node v16 and v19 https://github.com/tediousjs/tedious/releases/tag/v17.0.0
   (semver.lt(processVersion, '17.0.0') && semver.gte(tediousVersion, '17.0.0'));
 
