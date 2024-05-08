@@ -34,7 +34,7 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "peerDependencies": {
-    "esbuild": "0.20.x"
+    "esbuild": "0.21.x"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.7.0",
