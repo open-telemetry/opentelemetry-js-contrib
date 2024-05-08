@@ -69,9 +69,6 @@ Attributes collected:
 | `net.peer.name` | Remote address of the database.                                             |
 | `net.peer.port` | Peer port number of the network connection.                                 |
 
-
-
-
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

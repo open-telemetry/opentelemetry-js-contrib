@@ -32,6 +32,7 @@
     "plugins/node/instrumentation-runtime-node": {},
     "plugins/node/instrumentation-socket.io": {},
     "plugins/node/instrumentation-tedious": {},
+    "plugins/node/instrumentation-typeorm": {},
     "plugins/node/instrumentation-undici": {},
     "plugins/node/opentelemetry-instrumentation-aws-lambda": {},
     "plugins/node/opentelemetry-instrumentation-aws-sdk": {},
