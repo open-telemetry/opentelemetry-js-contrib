@@ -3,3 +3,5 @@
 The library contains the following changes compared to the original:
 * Removed `moduleVersionAttributeName` configuration option.
 * Changed the function signature of `responseHook`.
+* Removed dependency on `is-promise` package.
+* Removed usage of SemanticAttributes in favor of explicit values.

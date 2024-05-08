@@ -1,5 +1,5 @@
 /*
- * Copyright The OpenTelemetry Authors
+ * Copyright The OpenTelemetry Authors, Aspecto
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -443,11 +443,9 @@ export class TypeormInstrumentation extends InstrumentationBase {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const buildStatement = (func: Function, args: any[]) => {
   const paramNames = getParamNames(func) || [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const statement = {} as any;
+  const statement: Record<string, any> = {};
   paramNames.forEach((pName, i) => {
     const value = args[i];
     if (!value) return;
