@@ -131,7 +131,7 @@ function dotFriendlyResolve(path: string, directory: string): string {
  *   input: '/foo/node_modules/@co/stuff/foo/bar/baz.js'
  *   output: { package: '@co/stuff', path: 'foo/bar/baz.js' }
  */
-export function extractPackageAndModulePath(
+function extractPackageAndModulePath(
   path: string,
   resolveDir: string
 ): { path: string; extractedModule: ExtractedModule } {

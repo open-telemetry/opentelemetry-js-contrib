@@ -17,13 +17,6 @@
 import type { OnLoadArgs as EsbuildOnLoadArgs } from 'esbuild';
 import type { InstrumentationConfigMap } from '@opentelemetry/auto-instrumentations-node';
 
-// TODO: Get all names
-export type InstrumentedPackage =
-  | 'fastify'
-  | 'pino'
-  | '@smithy/smithy-client'
-  | '@smithy/middleware-stack';
-
 export interface ExtractedModule {
   package: string | null;
   path: string | null;
@@ -32,9 +25,9 @@ export interface ExtractedModule {
 export type OnLoadArgs = Omit<EsbuildOnLoadArgs, 'pluginData'> & {
   pluginData?: {
     shouldPatchPackage: boolean;
-    package: InstrumentedPackage;
+    package: string;
     instrumentation: {
-      name: InstrumentedPackage;
+      name: string;
     };
     extractedModule: ExtractedModule;
   };

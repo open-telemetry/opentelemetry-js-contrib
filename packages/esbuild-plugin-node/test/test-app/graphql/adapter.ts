@@ -40,7 +40,10 @@ interface GraphQLArgs {
   typeResolver?: Maybe<GraphQLTypeResolver<any, any>>;
 }
 
-const executeGraphqlQuery = (queryFunc: Function, args: GraphQLArgs) => {
+const executeGraphqlQuery = (
+  queryFunc: (...args: unknown[]) => unknown,
+  args: GraphQLArgs
+) => {
   const pre16Version =
     !version || version.startsWith('14.') || version.startsWith('15.');
   if (pre16Version) {

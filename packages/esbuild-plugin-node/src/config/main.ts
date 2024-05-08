@@ -17,7 +17,6 @@
 import {
   Instrumentation,
   InstrumentationBase,
-  InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
 import { EsbuildInstrumentationConfigMap } from '../types';
@@ -31,9 +30,8 @@ function getModuleDefinitions(instrumentation: Instrumentation) {
   return [];
 }
 
-export const instrumentations: InstrumentationModuleDefinition<any>[] =
+export const instrumentations =
   getNodeAutoInstrumentations().flatMap(getModuleDefinitions);
-// console.log({ instrumentations });
 
 function configGenerator<T extends { enabled?: boolean }>(
   config?: T

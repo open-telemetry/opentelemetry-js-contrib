@@ -17,7 +17,8 @@
 import * as assert from 'assert';
 
 import { exec as execCb, spawnSync } from 'child_process';
-import { inspect, promisify } from 'util';
+
+import { promisify } from 'util';
 
 const exec = promisify(execCb);
 
