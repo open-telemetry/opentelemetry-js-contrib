@@ -49,7 +49,7 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { isPromise } from 'util/types';
+import * as util from 'util';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SelectQueryBuilderMethod = keyof typeorm.SelectQueryBuilder<any>;
@@ -411,7 +411,7 @@ export class TypeormInstrumentation extends InstrumentationBase {
     };
     try {
       const response = traced();
-      if (isPromise(response)) {
+      if (util.types.isPromise(response)) {
         return Promise.resolve(response)
           .then(response => executeResponseHook(response))
           .catch(err => {
