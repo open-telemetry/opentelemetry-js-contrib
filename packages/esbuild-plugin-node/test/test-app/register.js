@@ -23,7 +23,7 @@ diag.setLogger(
 );
 
 const sdk = new opentelemetry.NodeSDK({
-  // Notably instrumentation fastify and pino are not in here
+  // Notably instrumentation fastify, pino and graphql are not in here
   instrumentations: [],
 });
 
