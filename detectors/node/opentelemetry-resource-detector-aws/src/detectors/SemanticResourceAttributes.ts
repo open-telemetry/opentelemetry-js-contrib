@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const testsContext = require.context('.', true, /test$/);
-testsContext.keys().forEach(testsContext);
-
-const srcContext = require.context('.', true, /src$/);
-srcContext.keys().forEach(srcContext);
+export const SemanticResourceAttributes = {
+  /**
+   * Cloud provider-specific native identifier of the monitored cloud resource
+   * (e.g. an ARN on AWS, a fully qualified resource ID on Azure, a full resource
+   * name on GCP)
+   */
+  CLOUD_RESOURCE_ID: 'cloud.resource_id',
+};

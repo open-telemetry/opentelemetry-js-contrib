@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.37.0...instrumentation-hapi-v0.38.0) (2024-05-02)
+
+
+### Features
+
+* **instrumentation-hapi:** support v21 ([#1985](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1985)) ([eb6e8ef](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/eb6e8ef6b4c72710a98ed3590392b85c8c3b79e5))
+
+
+### Bug Fixes
+
+* remove unuseful patch message from instrumentations ([#2161](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2161)) ([34f56e0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/34f56e0e28a0873b69a499c9e91798b19fea8e96))
+
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.36.0...instrumentation-hapi-v0.37.0) (2024-04-25)
+
+
+### Features
+
+* **deps:** update otel-js to 0.51.0 ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+* remove generic type from instrumentations ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
 ## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-hapi-v0.35.0...instrumentation-hapi-v0.36.0) (2024-04-03)
 
 

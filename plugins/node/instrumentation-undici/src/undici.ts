@@ -66,7 +66,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
   private _recordFromReq = new WeakMap<UndiciRequest, InstrumentationRecord>();
 
   private _httpClientDurationHistogram!: Histogram;
-  constructor(config?: UndiciInstrumentationConfig) {
+  constructor(config: UndiciInstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-undici', VERSION, config);
     this.setConfig(config);
   }
@@ -111,7 +111,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
     this.subscribeToChannel('undici:request:error', this.onError.bind(this));
   }
 
-  override setConfig(config?: UndiciInstrumentationConfig): void {
+  override setConfig(config: UndiciInstrumentationConfig = {}): void {
     super.setConfig(config);
 
     if (config?.enabled) {
@@ -270,10 +270,13 @@ export class UndiciInstrumentation extends InstrumentationBase {
     for (let i = 0; i < headerEntries.length; i++) {
       const [k, v] = headerEntries[i];
 
-      if (typeof request.headers === 'string') {
-        request.headers += `${k}: ${v}\r\n`;
-      } else {
+      if (typeof request.addHeader === 'function') {
         request.addHeader(k, v);
+      } else if (typeof request.headers === 'string') {
+        request.headers += `${k}: ${v}\r\n`;
+      } else if (Array.isArray(request.headers)) {
+        // undici@6.11.0 accidentally, briefly removed `request.addHeader()`.
+        request.headers.push(k, v);
       }
     }
     this._recordFromReq.set(request, { span, attributes, startTime });

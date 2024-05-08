@@ -19,10 +19,17 @@ import {
   diag,
   HrTime,
   Span,
-  SpanAttributes,
-  SpanAttributeValue,
+  Attributes,
+  AttributeValue,
 } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_MESSAGING_PROTOCOL,
+  SEMATTRS_MESSAGING_PROTOCOL_VERSION,
+  SEMATTRS_MESSAGING_SYSTEM,
+  SEMATTRS_MESSAGING_URL,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+} from '@opentelemetry/semantic-conventions';
 import type * as amqp from 'amqplib';
 
 export const MESSAGE_STORED_SPAN: unique symbol = Symbol(
@@ -41,9 +48,9 @@ export const CONNECTION_ATTRIBUTES: unique symbol = Symbol(
 export type InstrumentationPublishChannel = (
   | amqp.Channel
   | amqp.ConfirmChannel
-) & { connection: { [CONNECTION_ATTRIBUTES]: SpanAttributes } };
+) & { connection: { [CONNECTION_ATTRIBUTES]: Attributes } };
 export type InstrumentationConsumeChannel = amqp.Channel & {
-  connection: { [CONNECTION_ATTRIBUTES]: SpanAttributes };
+  connection: { [CONNECTION_ATTRIBUTES]: Attributes };
   [CHANNEL_SPANS_NOT_ENDED]?: {
     msg: amqp.ConsumeMessage;
     timeOfConsume: HrTime;
@@ -93,9 +100,9 @@ const getHostname = (hostnameFromUrl: string | undefined): string => {
 const extractConnectionAttributeOrLog = (
   url: string | amqp.Options.Connect,
   attributeKey: string,
-  attributeValue: SpanAttributeValue,
+  attributeValue: AttributeValue,
   nameForLog: string
-): SpanAttributes => {
+): Attributes => {
   if (attributeValue) {
     return { [attributeKey]: attributeValue };
   } else {
@@ -111,11 +118,11 @@ const extractConnectionAttributeOrLog = (
 
 export const getConnectionAttributesFromServer = (
   conn: amqp.Connection['connection']
-): SpanAttributes => {
+): Attributes => {
   const product = conn.serverProperties.product?.toLowerCase?.();
   if (product) {
     return {
-      [SemanticAttributes.MESSAGING_SYSTEM]: product,
+      [SEMATTRS_MESSAGING_SYSTEM]: product,
     };
   } else {
     return {};
@@ -124,9 +131,9 @@ export const getConnectionAttributesFromServer = (
 
 export const getConnectionAttributesFromUrl = (
   url: string | amqp.Options.Connect
-): SpanAttributes => {
-  const attributes: SpanAttributes = {
-    [SemanticAttributes.MESSAGING_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
+): Attributes => {
+  const attributes: Attributes = {
+    [SEMATTRS_MESSAGING_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
   };
 
   url = url || 'amqp://localhost';
@@ -137,7 +144,7 @@ export const getConnectionAttributesFromUrl = (
     Object.assign(attributes, {
       ...extractConnectionAttributeOrLog(
         url,
-        SemanticAttributes.MESSAGING_PROTOCOL,
+        SEMATTRS_MESSAGING_PROTOCOL,
         protocol,
         'protocol'
       ),
@@ -147,7 +154,7 @@ export const getConnectionAttributesFromUrl = (
     Object.assign(attributes, {
       ...extractConnectionAttributeOrLog(
         url,
-        SemanticAttributes.NET_PEER_NAME,
+        SEMATTRS_NET_PEER_NAME,
         hostname,
         'hostname'
       ),
@@ -157,14 +164,14 @@ export const getConnectionAttributesFromUrl = (
     Object.assign(attributes, {
       ...extractConnectionAttributeOrLog(
         url,
-        SemanticAttributes.NET_PEER_PORT,
+        SEMATTRS_NET_PEER_PORT,
         port,
         'port'
       ),
     });
   } else {
     const censoredUrl = censorPassword(url);
-    attributes[SemanticAttributes.MESSAGING_URL] = censoredUrl;
+    attributes[SEMATTRS_MESSAGING_URL] = censoredUrl;
     try {
       const urlParts = new URL(censoredUrl);
 
@@ -172,7 +179,7 @@ export const getConnectionAttributesFromUrl = (
       Object.assign(attributes, {
         ...extractConnectionAttributeOrLog(
           censoredUrl,
-          SemanticAttributes.MESSAGING_PROTOCOL,
+          SEMATTRS_MESSAGING_PROTOCOL,
           protocol,
           'protocol'
         ),
@@ -182,7 +189,7 @@ export const getConnectionAttributesFromUrl = (
       Object.assign(attributes, {
         ...extractConnectionAttributeOrLog(
           censoredUrl,
-          SemanticAttributes.NET_PEER_NAME,
+          SEMATTRS_NET_PEER_NAME,
           hostname,
           'hostname'
         ),
@@ -195,7 +202,7 @@ export const getConnectionAttributesFromUrl = (
       Object.assign(attributes, {
         ...extractConnectionAttributeOrLog(
           censoredUrl,
-          SemanticAttributes.NET_PEER_PORT,
+          SEMATTRS_NET_PEER_PORT,
           port,
           'port'
         ),

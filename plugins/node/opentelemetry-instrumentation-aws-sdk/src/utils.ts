@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 import { NormalizedRequest } from './types';
-import { Context, SpanAttributes, context } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { Attributes, Context, context } from '@opentelemetry/api';
+import {
+  SEMATTRS_RPC_METHOD,
+  SEMATTRS_RPC_SERVICE,
+  SEMATTRS_RPC_SYSTEM,
+} from '@opentelemetry/semantic-conventions';
 import { AttributeNames } from './enums';
 
 const toPascalCase = (str: string): string =>
@@ -60,11 +64,11 @@ export const normalizeV3Request = (
 
 export const extractAttributesFromNormalizedRequest = (
   normalizedRequest: NormalizedRequest
-): SpanAttributes => {
+): Attributes => {
   return {
-    [SemanticAttributes.RPC_SYSTEM]: 'aws-api',
-    [SemanticAttributes.RPC_METHOD]: normalizedRequest.commandName,
-    [SemanticAttributes.RPC_SERVICE]: normalizedRequest.serviceName,
+    [SEMATTRS_RPC_SYSTEM]: 'aws-api',
+    [SEMATTRS_RPC_METHOD]: normalizedRequest.commandName,
+    [SEMATTRS_RPC_SERVICE]: normalizedRequest.serviceName,
     [AttributeNames.AWS_REGION]: normalizedRequest.region,
   };
 };

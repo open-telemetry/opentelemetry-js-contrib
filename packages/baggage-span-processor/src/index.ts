@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export * from './AWSXRayPropagator';
+export { BaggageSpanProcessor } from './baggage-span-processor';

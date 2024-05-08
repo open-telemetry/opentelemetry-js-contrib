@@ -33,6 +33,21 @@ async function run() {
 run()
 ```
 
+## Available detectors
+
+### GitHub Detector
+
+| Resource Attribute | Description                                               |
+|--------------------|-----------------------------------------------------------|
+| github.actor       | Value of Process Environment Variable `GITHUB_ACTOR`      |
+| github.base_ref    | Value of Process Environment Variable `GITHUB_BASE_REF`   |
+| github.head_ref    | Value of Process Environment Variable `GITHUB_HEAD_REF`   |
+| github.ref         | Value of Process Environment Variable `GITHUB_REF`        |
+| github.run_id      | Value of Process Environment Variable `GITHUB_RUN_ID`     |
+| github.run_number  | Value of Process Environment Variable `GITHUB_RUN_NUMBER` |
+| github.sha         | Value of Process Environment Variable `GITHUB_SHA`        |
+| github.workflow    | Value of Process Environment Variable `GITHUB_WORKFLOW`   |
+
 ## Useful links
 
 - [GitHub Action Environment Variables](https://docs.github.com/en/free-pro-team@latest/actions/reference/environment-variables)

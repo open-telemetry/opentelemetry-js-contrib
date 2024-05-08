@@ -15,6 +15,7 @@
     "detectors/node/opentelemetry-resource-detector-instana": {},
     "metapackages/auto-instrumentations-node": {},
     "metapackages/auto-instrumentations-web": {},
+    "packages/baggage-span-processor": {},
     "packages/esbuild-plugin-node": {},
     "packages/opentelemetry-host-metrics": {},
     "packages/opentelemetry-id-generator-aws-xray": {},
@@ -64,7 +65,6 @@
     "plugins/web/opentelemetry-instrumentation-long-task": {},
     "plugins/web/opentelemetry-instrumentation-user-interaction": {},
     "plugins/web/opentelemetry-plugin-react-load": {},
-    "propagators/opentelemetry-propagator-aws-xray": {},
     "propagators/opentelemetry-propagator-grpc-census-binary": {},
     "propagators/opentelemetry-propagator-instana": {},
     "propagators/opentelemetry-propagator-ot-trace": {}
