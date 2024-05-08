@@ -58,7 +58,6 @@ type NonBuiltinInstrumentationConfigMap = Omit<
   BuiltinPackages
 >;
 
-// TODO: Remove builtins from this
 export type EsbuildInstrumentationConfigMap = {
   [K in keyof NonBuiltinInstrumentationConfigMap]: RemoveFunctions<
     NonBuiltinInstrumentationConfigMap[K]
