@@ -23,18 +23,16 @@ import {
 import { VERSION } from './version';
 
 export default class LruMemoizerInstrumentation extends InstrumentationBase {
-  constructor(config?: InstrumentationConfig) {
+  constructor(config: InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-lru-memoizer', VERSION, config);
   }
 
-  init(): InstrumentationNodeModuleDefinition<any>[] {
+  init(): InstrumentationNodeModuleDefinition[] {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'lru-memoizer',
         ['>=1.3 <3'],
         moduleExports => {
-          this._diag.debug('applying patch for lru-memoizer');
-
           // moduleExports is a function which receives an options object,
           // and returns a "memoizer" function upon invocation.
           // We want to patch this "memoizer's" internal function
