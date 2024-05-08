@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+import { buildTestSchema } from './graphql/schema';
 import fastify from 'fastify';
+import { graphql } from './graphql/adapter';
 import pino from 'pino';
 
 export const server = fastify({
@@ -26,18 +28,40 @@ server.get('/test', req => {
   req.log.info({ hi: 'there' }, 'Log message from handler');
   return { hi: 'there' };
 });
+const schema = buildTestSchema();
+const sourceList = `
+  query {
+    books {
+      name
+    }
+  }
+`;
+
+server.get('/graphql', async req => {
+  await graphql({ schema, source: sourceList });
+
+  return { success: true };
+});
 
 server
   .listen({ port: 8080 })
-  .then(() => {
-    server
-      .inject()
-      .get('/test')
-      .end()
-      .catch(err => {
-        throw err;
-      })
-      .finally(() => server.close());
+  .then(async () => {
+    await Promise.all([
+      server
+        .inject()
+        .get('/test')
+        .end()
+        .catch(err => {
+          throw err;
+        }),
+      server
+        .inject()
+        .get('/graphql')
+        .end()
+        .catch(err => {
+          throw err;
+        }),
+    ]).finally(() => server.close());
   })
   .catch(err => {
     throw err;

@@ -33,6 +33,7 @@ function getModuleDefinitions(instrumentation: Instrumentation) {
 
 export const instrumentations: InstrumentationModuleDefinition<any>[] =
   getNodeAutoInstrumentations().flatMap(getModuleDefinitions);
+// console.log({ instrumentations });
 
 function configGenerator<T extends { enabled?: boolean }>(
   config?: T

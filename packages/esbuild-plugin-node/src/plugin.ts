@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-import { OnLoadArgs, OpenTelemetryPluginParams } from './types';
+import {
+  ExtractedModule,
+  OnLoadArgs,
+  OpenTelemetryPluginParams,
+} from './types';
 import { Plugin, PluginBuild } from 'esbuild';
 import {
   instrumentations,
@@ -30,11 +34,6 @@ import { wrapModule } from './common';
 const NODE_MODULES = 'node_modules/';
 
 const BUILT_INS = new Set(builtinModules.flatMap(b => [b, `node:${b}`]));
-
-interface ExtractedModule {
-  package: string | null;
-  path: string | null;
-}
 
 export function openTelemetryPlugin(
   pluginConfig?: OpenTelemetryPluginParams
@@ -76,6 +75,7 @@ export function openTelemetryPlugin(
         return {
           path,
           pluginData: {
+            extractedModule,
             shouldPatchPackage: true,
             instrumentation: { name: matchingInstrumentation.name },
           },
@@ -103,6 +103,7 @@ export function openTelemetryPlugin(
               instrumentationName: pluginData.instrumentation.name,
               oTelInstrumentationClass: config.oTelInstrumentationClass,
               oTelInstrumentationPackage: config.oTelInstrumentationPackage,
+              instrumentedFileName: `${pluginData.extractedModule.package}/${pluginData.extractedModule.path}`,
               oTelInstrumentationConstructorArgs:
                 config.configGenerator(packageConfig),
             }),
@@ -130,7 +131,7 @@ function dotFriendlyResolve(path: string, directory: string): string {
  *   input: '/foo/node_modules/@co/stuff/foo/bar/baz.js'
  *   output: { package: '@co/stuff', path: 'foo/bar/baz.js' }
  */
-function extractPackageAndModulePath(
+export function extractPackageAndModulePath(
   path: string,
   resolveDir: string
 ): { path: string; extractedModule: ExtractedModule } {

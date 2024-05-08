@@ -22,6 +22,7 @@ export function wrapModule(
     oTelInstrumentationPackage,
     oTelInstrumentationClass,
     instrumentationName,
+    instrumentedFileName,
     oTelInstrumentationConstructorArgs = '',
   }: ModuleParams
 ) {
@@ -35,6 +36,7 @@ export function wrapModule(
   const { ${oTelInstrumentationClass} } = require('${oTelInstrumentationPackage}');
   const { diag } = require('@opentelemetry/api');
   const instrumentations = new ${oTelInstrumentationClass}(${oTelInstrumentationConstructorArgs}).getModuleDefinitions();
+
   if (instrumentations.length > 1 && !'${instrumentationName}') {
     diag.error('instrumentationName must be specified because ${oTelInstrumentationClass} has multiple instrumentations');
     return;
@@ -55,8 +57,12 @@ export function wrapModule(
       diag.error('No patch nor files exist on instrumentation for ${oTelInstrumentationClass} ${instrumentationName}');
       return;
     } else if (instrumentation.files.length > 1) {
-      diag.error('Not sure how to handle multiple files for instrumentations for ${instrumentationName}');
-      return;
+      const instrumentationFile = instrumentation.files.find(file => file.name === '${instrumentedFileName}');
+      if (!instrumentationFile) {
+        diag.error('Not sure how to handle multiple files for instrumentations for ${instrumentationName} when none is found with name ${instrumentedFileName}');
+        return;
+      }
+      mod = instrumentationFile.patch(mod);
     }
   }
 

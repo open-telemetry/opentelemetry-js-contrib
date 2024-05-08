@@ -17,8 +17,7 @@
 import * as assert from 'assert';
 
 import { exec as execCb, spawnSync } from 'child_process';
-
-import { promisify } from 'util';
+import { inspect, promisify } from 'util';
 
 const exec = promisify(execCb);
 
@@ -47,6 +46,14 @@ function getTraceId(
   stdOutLines: string[],
   spanName: string
 ): string | undefined {
+  const traceLines = getTrace(stdOutLines, spanName);
+  if (!traceLines) return;
+  const traceId = /traceId: '([0-9a-f]+)'/.exec(traceLines)?.[1];
+
+  return traceId;
+}
+
+function getTrace(stdOutLines: string[], spanName: string) {
   const traceLogNameLineIndex = stdOutLines.findIndex(logLine =>
     logLine.includes(`name: '${spanName}'`)
   );
@@ -58,21 +65,17 @@ function getTraceId(
   const closingBracketLineIndex =
     traceLogNameLineIndex + logsIncludingAndAfterName.indexOf('}') + 1;
 
-  const traceId = /traceId: '([0-9a-f]+)'/.exec(
-    stdOutLines.slice(openingBracketLineIndex, closingBracketLineIndex).join('')
-  )?.[1];
-
-  return traceId;
+  return stdOutLines
+    .slice(openingBracketLineIndex, closingBracketLineIndex)
+    .join('');
 }
 
 describe('Esbuild can instrument packages via a plugin', function () {
-  this.timeout(10_000);
+  let stdOutLines: string[] = [];
 
   this.beforeAll(async () => {
     await exec(`ts-node ${__dirname}/test-app/build.ts`);
-  });
 
-  it('fastify and pino', async () => {
     const proc = startTestApp();
 
     assert.ifError(proc.error);
@@ -80,8 +83,18 @@ describe('Esbuild can instrument packages via a plugin', function () {
     assert.equal(proc.signal, null, `proc.signal (${proc.signal})`);
 
     const stdOut = proc.stdout.toString();
-    const stdOutLines = stdOut.split('\n');
+    stdOutLines = stdOut.split('\n');
 
+    assert.ok(
+      stdOutLines.find(
+        logLine =>
+          logLine ===
+          'OpenTelemetry automatic instrumentation started successfully'
+      )
+    );
+  });
+
+  it('fastify and pino', async () => {
     assert.ok(
       stdOutLines.find(
         logLine =>
@@ -101,5 +114,22 @@ describe('Esbuild can instrument packages via a plugin', function () {
     assert.ok(requestHandlerLogMessage, 'Log message handler is triggered');
     const { trace_id } = JSON.parse(requestHandlerLogMessage);
     assert.equal(traceId, trace_id, 'Pino logs include trace ID');
+  });
+
+  describe('graphql', () => {
+    it('should instrument parse', () => {
+      const parseSpan = getTrace(stdOutLines, 'graphql.parse');
+      assert.ok(parseSpan, 'There is a span for graphql.parse');
+    });
+
+    it('should instrument validate', () => {
+      const parseSpan = getTrace(stdOutLines, 'graphql.validate');
+      assert.ok(parseSpan, 'There is a span for graphql.validate');
+    });
+
+    it('should instrument execute', () => {
+      const parseSpan = getTrace(stdOutLines, 'query');
+      assert.ok(parseSpan, 'There is a span for query');
+    });
   });
 });
