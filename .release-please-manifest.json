@@ -25,6 +25,7 @@
   "plugins/node/instrumentation-runtime-node": "0.4.0",
   "plugins/node/instrumentation-socket.io": "0.39.0",
   "plugins/node/instrumentation-tedious": "0.10.1",
+  "plugins/node/instrumentation-typeorm": "0.0.1",
   "plugins/node/instrumentation-undici": "0.2.0",
   "plugins/node/opentelemetry-instrumentation-aws-lambda": "0.41.0",
   "plugins/node/opentelemetry-instrumentation-aws-sdk": "0.41.0",

@@ -67,6 +67,8 @@ components:
     - rauno56
   plugins/node/instrumentation-tedious:
     - rauno56
+  plugins/node/instrumentation-typeorm:
+    - seemk
   plugins/node/opentelemetry-instrumentation-aws-lambda:
     - carolabadeer
   plugins/node/opentelemetry-instrumentation-aws-sdk:
