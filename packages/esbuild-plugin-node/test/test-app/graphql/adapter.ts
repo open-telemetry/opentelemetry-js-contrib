@@ -19,11 +19,7 @@ import type {
   GraphQLTypeResolver,
   Source,
 } from 'graphql';
-import {
-  graphql as origAsyncGraphQl,
-  graphqlSync as origSyncGraphQl,
-  version,
-} from 'graphql';
+import { graphql as origAsyncGraphQl, version } from 'graphql';
 
 import { Maybe } from 'graphql/jsutils/Maybe';
 
@@ -64,5 +60,3 @@ const executeGraphqlQuery = (
 
 export const graphql = (args: GraphQLArgs) =>
   executeGraphqlQuery(origAsyncGraphQl, args);
-export const graphqlSync = (args: GraphQLArgs) =>
-  executeGraphqlQuery(origSyncGraphQl, args);

@@ -15,30 +15,7 @@
  */
 
 import * as graphql from 'graphql';
-import * as https from 'https';
 
-const url1 =
-  'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
-
-function getData(url: string): any {
-  return new Promise((resolve, reject) => {
-    https
-      .get(url, response => {
-        let data = '';
-        response.on('data', chunk => {
-          data += chunk;
-        });
-        response.on('end', () => {
-          resolve(JSON.parse(data));
-        });
-      })
-      .on('error', err => {
-        reject(err);
-      });
-  });
-}
-
-const authors: Author[] = [];
 const books: Book[] = [];
 
 interface Book {
@@ -47,49 +24,13 @@ interface Book {
   authorIds: number[];
 }
 
-interface Address {
-  country: string;
-  city: string;
-}
-
-interface Author {
-  id: number;
-  name: string;
-  address: Address;
-}
-
-function addBook(name: string, authorIds: string | number[] = []) {
-  if (typeof authorIds === 'string') {
-    authorIds = authorIds.split(',').map(id => parseInt(id, 10));
-  }
+function addBook(name: string, authorIds: number[] = []) {
   const id = books.length;
-  books.push({
-    id: id,
-    name: name,
-    authorIds: authorIds,
-  });
+  books.push({ id, name, authorIds });
   return books[books.length - 1];
 }
 
-function addAuthor(name: string, country: string, city: string) {
-  const id = authors.length;
-  authors.push({ id, name, address: { country, city } });
-  return authors[authors.length - 1];
-}
-
-function getBook(id: number) {
-  return books[id];
-}
-
-function getAuthor(id: number) {
-  return authors[id];
-}
-
 function prepareData() {
-  addAuthor('John', 'Poland', 'Szczecin');
-  addAuthor('Alice', 'Poland', 'Warsaw');
-  addAuthor('Bob', 'England', 'London');
-  addAuthor('Christine', 'France', 'Paris');
   addBook('First Book', [0, 1]);
   addBook('Second Book', [2]);
   addBook('Third Book', [3]);
@@ -98,77 +39,13 @@ function prepareData() {
 prepareData();
 
 export function buildTestSchema() {
-  const Author = new graphql.GraphQLObjectType({
-    name: 'Author',
-    fields: {
-      id: {
-        type: graphql.GraphQLString,
-        resolve(obj, args) {
-          return obj.id;
-        },
-      },
-      name: {
-        type: graphql.GraphQLString,
-        resolve(obj, args) {
-          return obj.name;
-        },
-      },
-      description: {
-        type: graphql.GraphQLString,
-        resolve(obj, args) {
-          return new Promise((resolve, reject) => {
-            getData(url1).then((response: { [key: string]: string }) => {
-              resolve(response.description);
-            }, reject);
-          });
-        },
-      },
-      address: {
-        type: new graphql.GraphQLObjectType({
-          name: 'Address',
-          fields: {
-            country: {
-              type: graphql.GraphQLString,
-              resolve(obj, args) {
-                return obj.country;
-              },
-            },
-            city: {
-              type: graphql.GraphQLString,
-              resolve(obj, args) {
-                return obj.city;
-              },
-            },
-          },
-        }),
-        resolve(obj, args) {
-          return obj.address;
-        },
-      },
-    },
-  });
-
   const Book = new graphql.GraphQLObjectType({
     name: 'Book',
     fields: {
-      id: {
-        type: graphql.GraphQLInt,
-        resolve(obj, args) {
-          return obj.id;
-        },
-      },
       name: {
         type: graphql.GraphQLString,
-        resolve(obj, args) {
+        resolve(obj) {
           return obj.name;
-        },
-      },
-      authors: {
-        type: new graphql.GraphQLList(Author),
-        resolve(obj, args) {
-          return obj.authorIds.map((id: number) => {
-            return authors[id];
-          });
         },
       },
     },
@@ -177,33 +54,9 @@ export function buildTestSchema() {
   const query = new graphql.GraphQLObjectType({
     name: 'Query',
     fields: {
-      author: {
-        type: Author,
-        args: {
-          id: { type: graphql.GraphQLInt },
-        },
-        resolve(obj, args, context) {
-          return Promise.resolve(getAuthor(args.id));
-        },
-      },
-      authors: {
-        type: new graphql.GraphQLList(Author),
-        resolve(obj, args, context) {
-          return Promise.resolve(authors);
-        },
-      },
-      book: {
-        type: Book,
-        args: {
-          id: { type: graphql.GraphQLInt },
-        },
-        resolve(obj, args, context) {
-          return Promise.resolve(getBook(args.id));
-        },
-      },
       books: {
         type: new graphql.GraphQLList(Book),
-        resolve(obj, args, context) {
+        resolve() {
           return Promise.resolve(books);
         },
       },
