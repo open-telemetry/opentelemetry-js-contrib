@@ -23,11 +23,10 @@ components:
     - legendecas
     - blumamir
   metapackages/auto-instrumentations-web:
-    - blumamir
     - dyladan
-    - legendecas
-    - obecny
     - pichlermarc
+    - legendecas
+    - blumamir
   packages/esbuild-plugin-node:
     - drewcorlin1
   packages/baggage-span-processor:
