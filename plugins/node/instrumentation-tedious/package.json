@@ -6,7 +6,6 @@
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "docker:start": "docker run -e ACCEPT_EULA=Y -e SA_PASSWORD=mssql_passw0rd -e MSSQL_PID=Developer --platform linux/amd64 --rm mcr.microsoft.com/mssql/server",
     "clean": "rimraf build/*",
     "compile": "tsc -p .",
     "lint:fix": "eslint . --ext .ts --fix",

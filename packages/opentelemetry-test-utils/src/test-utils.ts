@@ -163,7 +163,7 @@ export const getPackageVersion = (packageName: string) => {
   // Some packages are resolved to a subfolder because their "main" points to it.
   // As a consequence the "package.json" path is wrong and we get a MODULE_NOT_FOUND
   // error. We should walk up the folder structure to lookup for the file.
-  // `tedious` packages is an example
+  // `tedious` package is an example
   // {
   //   "name: "tedious",
   //   "main: "lib/tedious.js",
