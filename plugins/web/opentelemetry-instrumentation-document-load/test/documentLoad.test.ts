@@ -756,7 +756,7 @@ describe('DocumentLoad Instrumentation', () => {
     });
   });
 
-  describe.only('ignore span events if specified', () => {
+  describe('ignore span events if specified', () => {
     let spyEntries: any;
     beforeEach(() => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
