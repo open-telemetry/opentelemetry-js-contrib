@@ -755,6 +755,70 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
   });
+
+  describe.only('ignore span events if specified', () => {
+    let spyEntries: any;
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resources);
+      spyEntries.withArgs('paint').returns(paintEntries);
+    });
+
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should ignore network span events if ignoreNetworkEvents is set to true', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        ignoreNetworkEvents: true,
+      });
+      plugin.enable();
+
+      setTimeout(() => {
+        const rootSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+        const fetchSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
+        const loadSpan = exporter.getFinishedSpans()[3] as ReadableSpan;
+
+        const rsEvents = rootSpan.events;
+        const fsEvents = fetchSpan.events;
+        const lsEvents = loadSpan.events;
+
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        assert.strictEqual(rootSpan.name, 'documentFetch');
+        assert.strictEqual(rsEvents.length, 0)
+
+        assert.strictEqual(fetchSpan.name, 'resourceFetch');
+        assert.strictEqual(fsEvents.length, 0)
+
+        assert.strictEqual(loadSpan.name, 'documentLoad');
+        assert.deepEqual(lsEvents.map(event => event.name), ['firstPaint', 'firstContentfulPaint'])
+
+        done();
+      });
+    });
+
+    it('should ignore performance events if ignorePerformanceEvents is set to true', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        ignorePerformanceEvents: true,
+      });
+      plugin.enable();
+
+      setTimeout(() => {
+        const loadSpan = exporter.getFinishedSpans()[3] as ReadableSpan;
+        const lsEvents = loadSpan.events;
+
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+
+        assert.strictEqual(loadSpan.name, 'documentLoad');
+        assert.notInclude(lsEvents.map(event => event.name), ['firstPaint', 'firstContentfulPaint'])
+
+        done();
+      });
+    });
+  });
 });
 
 /**

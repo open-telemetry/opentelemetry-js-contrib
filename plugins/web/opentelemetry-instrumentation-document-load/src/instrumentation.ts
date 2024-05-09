@@ -120,7 +120,9 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
         if (fetchSpan) {
           fetchSpan.setAttribute(SEMATTRS_HTTP_URL, location.href);
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
-            addSpanNetworkEvents(fetchSpan, entries);
+            if (!this._getConfig().ignoreNetworkEvents) {
+              addSpanNetworkEvents(fetchSpan, entries);
+            }
             this._addCustomAttributesOnSpan(
               fetchSpan,
               this._getConfig().applyCustomAttributesOnSpan?.documentFetch
@@ -156,6 +158,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
       }
 
       if (!this._getConfig().ignorePerformanceEvents) {
+        console.log('hi')
         addSpanPerformancePaintEvents(rootSpan);
       }
 
@@ -206,7 +209,9 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
     );
     if (span) {
       span.setAttribute(SEMATTRS_HTTP_URL, resource.name);
-      addSpanNetworkEvents(span, resource);
+      if (!this._getConfig().ignoreNetworkEvents) {
+        addSpanNetworkEvents(span, resource);
+      }
       this._addCustomAttributesOnResourceSpan(
         span,
         resource,
