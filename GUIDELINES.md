@@ -197,3 +197,59 @@ Instrumentation may add additional patch/unpatch messages for specific functions
 - In situations where the patch logic is not trivial and it helps to specify patch events in the right context and nuances. `aws-lambda` logs additional properties extracted from the lambda framework and exposes them for troubleshooting.
 
 The cases above are not covered by the base class and offer additional context to the user troubleshooting an issue with the instrumentation.
+
+
+## Supported Versions
+
+### Usage
+
+Instrumentation can specify the supported version to patch for each instrumented module and instrumented module file by specifying it in the `InstrumentationNodeModuleFile` and `InstrumentationNodeModuleDefinition` like so:
+
+```js
+const supporterVersions = ['>=1.2.3 <3'];
+
+  protected init() {
+
+    const connectModuleFile = new InstrumentationNodeModuleFile(
+      'foo/lib/some-file.js',
+      supporterVersions,
+      myFilePatch,
+      myFileUnpatch,
+    );
+
+    const module = new InstrumentationNodeModuleDefinition(
+      'foo',
+      supporterVersions,
+      myModulePatch,
+      myModuleUnpatch,
+      [channelModelModuleFile, connectModuleFile, callbackModelModuleFile]
+    );
+    return module
+  }
+```
+
+### Range Considerations
+
+Instrumentations SHOULD specify the supported versions of the instrumented package, and have upper and lower bounds for the version range. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior. Instrumentations for nodejs internal modules can specify version range of `['*']`.
+
+New major versions should be reviewed and tested by before being added to the supported versions list.
+
+Versions should preferably be specified as a range, for example `>=1.2.3 <3`, as oppose to caret / tilde range `['^2.0.0']`, astrix syntax `['2.*']` or multiple consistent ranges `['4.*', '^5', '>=6 <6.4']`. 
+
+### Documentation
+
+Instrumentations usually targets one or more users-facing packages to by automatically instrumented. Sometimes, the functions that ends up being patched are of internal modules or files which can carry different names and versions. Instrumentation can also choose to patch multiple modules of different versions to achieve it's goals. 
+
+Instrumentation should document in it's README file, the supported versions range of the user-facing package. It should aim to give the range in short format of the form `>=x.y.z <w`, which hides any internal implementation details and focuses on relevance to the consumer. If the instrumentation patches multiple modules, it should list them in the documentation.
+
+### Add New Supported Versions
+
+When a new major version of the instrumented package is released, renovate bot will open a PR in contrib which is an easy was to become aware of it. The instrumentation maintainer should review the new version and decide if it should be added to the supported versions list. Then a PR can add it to the list and it will be published in the next release.
+
+Checklist for adding a new version to the supported versions list:
+- Review which functions are patched by the instrumentation and if they were changed in the new version.
+- Check for breaking changes in the new version that could affect the instrumentation.
+- Test the instrumentation with the new version to ensure it works as expected.
+- Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition` that target the new version.
+- Update the README file with the new supported version range.
+- For instrumentations that uses test-all-verions `.tav.yaml`, add the new version to the list of versions to test.
