@@ -175,8 +175,7 @@ export const getPackageVersion = (packageName: string) => {
 
   while (
     !existsSync(packageJsonPath) &&
-    !packageJsonDir.endsWith('node_modules') &&
-    packageJsonDir !== '/'
+    !packageJsonDir.endsWith('node_modules')
   ) {
     packageJsonDir = path.join(packageJsonDir, '..');
     packageJsonPath = path.join(packageJsonDir, 'package.json');
