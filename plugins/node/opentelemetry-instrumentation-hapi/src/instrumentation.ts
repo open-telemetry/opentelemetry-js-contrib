@@ -23,8 +23,7 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 
-// types for @hapi/hapi are published under @types/hapi__hapi
-import type * as Hapi from 'hapi__hapi';
+import type * as Hapi from '@hapi/hapi';
 import { VERSION } from './version';
 import {
   HapiComponentName,
@@ -45,42 +44,38 @@ import {
   getExtMetadata,
   isDirectExtInput,
   isPatchableExtMethod,
+  getPluginFromInput,
 } from './utils';
 
 /** Hapi instrumentation for OpenTelemetry */
 export class HapiInstrumentation extends InstrumentationBase {
-  constructor(config?: InstrumentationConfig) {
+  constructor(config: InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-hapi', VERSION, config);
   }
 
   protected init() {
-    return new InstrumentationNodeModuleDefinition<typeof Hapi>(
+    return new InstrumentationNodeModuleDefinition(
       HapiComponentName,
-      ['>=17 <21'],
-      moduleExports => {
+      ['>=17 <22'],
+      (moduleExports: typeof Hapi) => {
         if (!isWrapped(moduleExports.server)) {
-          api.diag.debug('Patching Hapi.server');
-          this._wrap(moduleExports, 'server', this._getServerPatch.bind(this));
+          this._wrap(
+            moduleExports,
+            'server',
+            this._getServerPatch.bind(this) as any
+          );
         }
 
-        // Casting as any is necessary here due to an issue with the @types/hapi__hapi
-        // type definition for Hapi.Server. Hapi.Server (note the uppercase) can also function
-        // as a factory function, similarly to Hapi.server (lowercase), and so should
-        // also be supported and instrumented. This is an issue with the DefinitelyTyped repo.
-        // Function is defined at: https://github.com/hapijs/hapi/blob/main/lib/index.js#L9
         if (!isWrapped(moduleExports.Server)) {
-          api.diag.debug('Patching Hapi.Server');
           this._wrap(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            moduleExports as any,
+            moduleExports,
             'Server',
-            this._getServerPatch.bind(this)
+            this._getServerPatch.bind(this) as any
           );
         }
         return moduleExports;
       },
-      moduleExports => {
-        api.diag.debug('Unpatching Hapi');
+      (moduleExports: typeof Hapi) => {
         this._massUnwrap([moduleExports], ['server', 'Server']);
       }
     );
@@ -140,7 +135,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     original: RegisterFunction<T>
   ): RegisterFunction<T> {
     const instrumentation: HapiInstrumentation = this;
-    api.diag.debug('Patching Hapi.Server register function');
     return function register(
       this: Hapi.Server,
       pluginInput: HapiPluginInput<T>,
@@ -148,14 +142,12 @@ export class HapiInstrumentation extends InstrumentationBase {
     ) {
       if (Array.isArray(pluginInput)) {
         for (const pluginObj of pluginInput) {
-          instrumentation._wrapRegisterHandler(
-            pluginObj.plugin?.plugin ?? pluginObj.plugin ?? pluginObj
-          );
+          const plugin = getPluginFromInput(pluginObj);
+          instrumentation._wrapRegisterHandler(plugin);
         }
       } else {
-        instrumentation._wrapRegisterHandler(
-          pluginInput.plugin?.plugin ?? pluginInput.plugin ?? pluginInput
-        );
+        const plugin = getPluginFromInput(pluginInput);
+        instrumentation._wrapRegisterHandler(plugin);
       }
       return original.apply(this, [pluginInput, options]);
     };
@@ -176,7 +168,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     pluginName?: string
   ) {
     const instrumentation: HapiInstrumentation = this;
-    api.diag.debug('Patching Hapi.Server ext function');
 
     return function ext(
       this: ThisParameterType<typeof original>,
@@ -238,7 +229,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     pluginName?: string
   ) {
     const instrumentation: HapiInstrumentation = this;
-    api.diag.debug('Patching Hapi.Server route function');
     return function route(
       this: Hapi.Server,
       route: HapiServerRouteInput
@@ -275,7 +265,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     const oldHandler = plugin.register;
     const self = this;
     const newRegisterHandler = function (server: Hapi.Server, options: T) {
-      server.route;
       self._wrap(server, 'route', original => {
         return instrumentation._getServerRoutePatch.bind(instrumentation)(
           original,
@@ -315,7 +304,6 @@ export class HapiInstrumentation extends InstrumentationBase {
     pluginName?: string
   ): T {
     const instrumentation: HapiInstrumentation = this;
-
     if (method instanceof Array) {
       for (let i = 0; i < method.length; i++) {
         method[i] = instrumentation._wrapExtMethods(
@@ -378,13 +366,13 @@ export class HapiInstrumentation extends InstrumentationBase {
     const instrumentation: HapiInstrumentation = this;
     if (route[handlerPatched] === true) return route;
     route[handlerPatched] = true;
-    const oldHandler = route.options?.handler ?? route.handler;
-    if (typeof oldHandler === 'function') {
-      const newHandler: Hapi.Lifecycle.Method = async function (
-        ...params: Parameters<Hapi.Lifecycle.Method>
-      ) {
+
+    const wrapHandler: (
+      oldHandler: Hapi.Lifecycle.Method
+    ) => Hapi.Lifecycle.Method = oldHandler => {
+      return async function (...params: Parameters<Hapi.Lifecycle.Method>) {
         if (api.trace.getSpan(api.context.active()) === undefined) {
-          return await oldHandler(...params);
+          return await oldHandler.call(this, ...params);
         }
         const rpcMetadata = getRPCMetadata(api.context.active());
         if (rpcMetadata?.type === RPCType.HTTP) {
@@ -397,7 +385,7 @@ export class HapiInstrumentation extends InstrumentationBase {
         try {
           return await api.context.with(
             api.trace.setSpan(api.context.active(), span),
-            () => oldHandler(...params)
+            () => oldHandler.call(this, ...params)
           );
         } catch (err: any) {
           span.recordException(err);
@@ -410,11 +398,25 @@ export class HapiInstrumentation extends InstrumentationBase {
           span.end();
         }
       };
-      if (route.options?.handler) {
-        route.options.handler = newHandler;
-      } else {
-        route.handler = newHandler;
-      }
+    };
+
+    if (typeof route.handler === 'function') {
+      route.handler = wrapHandler(route.handler as Hapi.Lifecycle.Method);
+    } else if (typeof route.options === 'function') {
+      const oldOptions = route.options;
+      route.options = function (server) {
+        const options = oldOptions(server);
+        if (typeof options.handler === 'function') {
+          options.handler = wrapHandler(
+            options.handler as Hapi.Lifecycle.Method
+          );
+        }
+        return options;
+      };
+    } else if (typeof route.options?.handler === 'function') {
+      route.options.handler = wrapHandler(
+        route.options.handler as Hapi.Lifecycle.Method
+      );
     }
     return route;
   }

@@ -57,23 +57,19 @@ const contextCaptureFunctions = [
 // calls. this bypass the unlinked spans issue on thenables await operations.
 export const _STORED_PARENT_SPAN: unique symbol = Symbol('stored-parent-span');
 
-export class MongooseInstrumentation extends InstrumentationBase<any> {
+export class MongooseInstrumentation extends InstrumentationBase {
   protected override _config!: MongooseInstrumentationConfig;
 
   constructor(config: MongooseInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-mongoose',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-mongoose', VERSION, config);
   }
 
   override setConfig(config: MongooseInstrumentationConfig = {}) {
     this._config = Object.assign({}, config);
   }
 
-  protected init(): InstrumentationModuleDefinition<any> {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+  protected init(): InstrumentationModuleDefinition {
+    const module = new InstrumentationNodeModuleDefinition(
       'mongoose',
       ['>=5.9.7 <7'],
       this.patch.bind(this),
@@ -126,7 +122,6 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
   }
 
   private unpatch(moduleExports: typeof mongoose): void {
-    this._diag.debug('mongoose instrumentation: unpatch mongoose');
     this._unwrap(moduleExports.Model.prototype, 'save');
     // revert the patch for $save which we applied by aliasing it to patched `save`
     moduleExports.Model.prototype.$save = moduleExports.Model.prototype.save;
@@ -142,7 +137,6 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
 
   private patchAggregateExec(moduleVersion: string | undefined) {
     const self = this;
-    this._diag.debug('patched mongoose Aggregate exec function');
     return (originalAggregate: Function) => {
       return function exec(this: any, callback?: Function) {
         if (
@@ -184,7 +178,6 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
 
   private patchQueryExec(moduleVersion: string | undefined) {
     const self = this;
-    this._diag.debug('patched mongoose Query exec function');
     return (originalExec: Function) => {
       return function exec(this: any, callback?: Function) {
         if (
@@ -227,7 +220,6 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
 
   private patchOnModelMethods(op: string, moduleVersion: string | undefined) {
     const self = this;
-    this._diag.debug(`patching mongoose Model '${op}' operation`);
     return (originalOnModelFunction: Function) => {
       return function method(this: any, options?: any, callback?: Function) {
         if (
@@ -276,7 +268,6 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
   // the aggregate of Model, and set the context on the Aggregate object
   private patchModelAggregate() {
     const self = this;
-    this._diag.debug('patched mongoose model aggregate function');
     return (original: Function) => {
       return function captureSpanContext(this: any) {
         const currentSpan = trace.getSpan(context.active());
@@ -291,7 +282,6 @@ export class MongooseInstrumentation extends InstrumentationBase<any> {
 
   private patchAndCaptureSpanContext(funcName: string) {
     const self = this;
-    this._diag.debug(`patching mongoose query ${funcName} function`);
     return (original: Function) => {
       return function captureSpanContext(this: any) {
         this[_STORED_PARENT_SPAN] = trace.getSpan(context.active());

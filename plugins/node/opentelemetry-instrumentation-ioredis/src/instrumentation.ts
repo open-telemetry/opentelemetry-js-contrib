@@ -35,18 +35,20 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
 };
 
-export class IORedisInstrumentation extends InstrumentationBase<any> {
-  constructor(_config: IORedisInstrumentationConfig = {}) {
+export class IORedisInstrumentation extends InstrumentationBase {
+  protected override _config!: IORedisInstrumentationConfig;
+
+  constructor(config: IORedisInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-ioredis',
       VERSION,
-      Object.assign({}, DEFAULT_CONFIG, _config)
+      Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
 
-  init(): InstrumentationNodeModuleDefinition<any>[] {
+  init(): InstrumentationNodeModuleDefinition[] {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'ioredis',
         ['>1', '<6'],
         (module, moduleVersion?: string) => {
@@ -54,7 +56,6 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
             module[Symbol.toStringTag] === 'Module'
               ? module.default // ESM
               : module; // CommonJS
-          diag.debug('Applying patch for ioredis');
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
           }
@@ -79,7 +80,6 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
             module[Symbol.toStringTag] === 'Module'
               ? module.default // ESM
               : module; // CommonJS
-          diag.debug('Removing patch for ioredis');
           this._unwrap(moduleExports.prototype, 'sendCommand');
           this._unwrap(moduleExports.prototype, 'connect');
         }

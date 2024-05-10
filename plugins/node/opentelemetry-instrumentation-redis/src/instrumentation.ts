@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
@@ -35,8 +34,10 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
 export class RedisInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'redis';
 
-  constructor(protected override _config: RedisInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-redis', VERSION, _config);
+  protected override _config!: RedisInstrumentationConfig;
+
+  constructor(config: RedisInstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-redis', VERSION, config);
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
@@ -45,12 +46,10 @@ export class RedisInstrumentation extends InstrumentationBase {
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'redis',
         ['^2.6.0', '^3.0.0'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Patching redis@${moduleVersion}`);
-          diag.debug('Patching redis.RedisClient.internal_send_command');
+        moduleExports => {
           if (
             isWrapped(
               moduleExports.RedisClient.prototype['internal_send_command']
@@ -67,7 +66,6 @@ export class RedisInstrumentation extends InstrumentationBase {
             this._getPatchInternalSendCommand()
           );
 
-          diag.debug('patching redis.RedisClient.create_stream');
           if (isWrapped(moduleExports.RedisClient.prototype['create_stream'])) {
             this._unwrap(moduleExports.RedisClient.prototype, 'create_stream');
           }
@@ -77,7 +75,6 @@ export class RedisInstrumentation extends InstrumentationBase {
             this._getPatchCreateStream()
           );
 
-          diag.debug('patching redis.createClient');
           if (isWrapped(moduleExports.createClient)) {
             this._unwrap(moduleExports, 'createClient');
           }
