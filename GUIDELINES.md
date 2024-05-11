@@ -209,7 +209,7 @@ const supporterVersions = ['>=1.2.3 <3'];
 
   protected init() {
 
-    const connectModuleFile = new InstrumentationNodeModuleFile(
+    const someModuleFile = new InstrumentationNodeModuleFile(
       'foo/lib/some-file.js',
       supporterVersions,
       myFilePatch,
@@ -221,7 +221,7 @@ const supporterVersions = ['>=1.2.3 <3'];
       supporterVersions,
       myModulePatch,
       myModuleUnpatch,
-      [channelModelModuleFile, connectModuleFile, callbackModelModuleFile]
+      [someModuleFile]
     );
     return module
   }
