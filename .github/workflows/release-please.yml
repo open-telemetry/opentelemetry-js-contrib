@@ -46,6 +46,7 @@ jobs:
         if: ${{ steps.release.outputs.pr }}
         run: |
           npm install --ignore-scripts --package-lock-only
+          npm run distnode:update-readme
           git add package-lock.json
           git config user.name opentelemetrybot
           git config user.email 107717825+opentelemetrybot@users.noreply.github.com
