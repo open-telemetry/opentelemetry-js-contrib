@@ -70,7 +70,7 @@ export class RestifyInstrumentation extends InstrumentationBase {
     module.files.push(
       new InstrumentationNodeModuleFile(
         'restify/lib/server.js',
-        constants.SUPPORTED_VERSIONS,
+        supportedVersions,
         moduleExports => {
           this._isDisabled = false;
           const Server: any = moduleExports;
