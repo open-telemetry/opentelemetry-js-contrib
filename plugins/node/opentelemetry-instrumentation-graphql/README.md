@@ -21,7 +21,7 @@ npm install @opentelemetry/instrumentation-graphql
 
 ### Supported Versions
 
-`^14.0 | ^15.0 | ^16.0`
+[](https://www.npmjs.com/package/graphql) versions `'>=14.0.0 <17'`
 
 ## Usage
 

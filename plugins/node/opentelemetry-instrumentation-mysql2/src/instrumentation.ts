@@ -52,7 +52,7 @@ export class MySQL2Instrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'mysql2',
-        ['>= 1.4.2 < 4.0'],
+        ['>=1.4.2 <4'],
         (moduleExports: any) => {
           const ConnectionPrototype: mysqlTypes.Connection =
             moduleExports.Connection.prototype;

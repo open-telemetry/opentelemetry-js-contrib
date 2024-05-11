@@ -42,12 +42,12 @@ export class Instrumentation extends InstrumentationBase {
   init() {
     const module = new InstrumentationNodeModuleDefinition(
       Instrumentation.COMPONENT,
-      ['>=4.0.0']
+      ['>=4.0.0 <11']
     );
 
     module.files.push(
-      this.getNestFactoryFileInstrumentation(['>=4.0.0']),
-      this.getRouterExecutionContextFileInstrumentation(['>=4.0.0'])
+      this.getNestFactoryFileInstrumentation(['>=4.0.0 <11']),
+      this.getRouterExecutionContextFileInstrumentation(['>=4.0.0 <11'])
     );
 
     return module;

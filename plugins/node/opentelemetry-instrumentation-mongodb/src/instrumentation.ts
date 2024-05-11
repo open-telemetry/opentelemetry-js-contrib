@@ -94,13 +94,13 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'mongodb',
-        ['>=3.3 <4'],
+        ['>=3.3.0 <4'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile(
             'mongodb/lib/core/wireprotocol/index.js',
-            ['>=3.3 <4'],
+            ['>=3.3.0 <4'],
             v3PatchConnection,
             v3UnpatchConnection
           ),
@@ -108,37 +108,37 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition(
         'mongodb',
-        ['4.*', '5.*', '6.*'],
+        ['>=4.0.0 <7'],
         undefined,
         undefined,
         [
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['>=4.0.0 <6.4'],
             v4PatchConnectionCallback,
             v4UnpatchConnection
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection.js',
-            ['>=6.4'],
+            ['>=6.4.0 <7'],
             v4PatchConnectionPromise,
             v4UnpatchConnection
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connection_pool.js',
-            ['4.*', '5.*', '>=6 <6.4'],
+            ['>=4.0.0 <6.4'],
             v4PatchConnectionPool,
             v4UnpatchConnectionPool
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/cmap/connect.js',
-            ['4.*', '5.*', '6.*'],
+            ['>=4.0.0 <7'],
             v4PatchConnect,
             v4UnpatchConnect
           ),
           new InstrumentationNodeModuleFile(
             'mongodb/lib/sessions.js',
-            ['4.*', '5.*', '6.*'],
+            ['>=4.0.0 <7'],
             v4PatchSessions,
             v4UnpatchSessions
           ),

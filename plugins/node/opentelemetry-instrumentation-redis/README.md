@@ -17,7 +17,8 @@ npm install --save @opentelemetry/instrumentation-redis
 
 ### Supported Versions
 
-This package supports `redis@^2.6.0` and `redis@^3.0.0`
+[`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0 <4`
+
 For version `redis@^4.0.0`, please use `@opentelemetry/instrumentation-redis-4`
 
 ## Usage

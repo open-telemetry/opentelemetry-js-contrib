@@ -15,6 +15,12 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-winston
 ```
 
+### Supported versions
+
+[`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4`
+
+Log sending: [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`
+
 ## Usage
 
 ```js
@@ -97,14 +103,6 @@ logHook: (span, record) => {
 ```
 
 Log injection can be disabled with the `disableLogCorrelation: true` option.
-
-### Supported versions
-
-`1.x`, `2.x`, `3.x`
-
-Log sending
-
-`3.x`
 
 ## Useful links
 

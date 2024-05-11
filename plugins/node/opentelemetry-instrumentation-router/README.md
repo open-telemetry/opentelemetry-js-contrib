@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-router
 
 ### Supported Versions
 
-- `>=1.0.0`
+[`router`](https://www.npmjs.com/package/route) versions `>=1.0.0 <2`
 
 ## Usage
 

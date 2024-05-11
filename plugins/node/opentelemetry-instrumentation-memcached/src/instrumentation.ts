@@ -54,7 +54,7 @@ export class Instrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'memcached',
-        ['>=2.2'],
+        ['>=2.2.0 <3'],
         (moduleExports: typeof Memcached, moduleVersion) => {
           this.ensureWrapped(
             moduleExports.prototype,

@@ -57,7 +57,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         '@cucumber/cucumber',
-        ['^8.0.0', '^9.0.0', '^10.0.0'],
+        ['>=8.0.0 <11'],
         (moduleExports: Cucumber) => {
           this.module = moduleExports;
           steps.forEach(step => {

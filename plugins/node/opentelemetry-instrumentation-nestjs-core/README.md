@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-nestjs-core
 
 ### Supported Versions
 
-- `>=4.0.0`
+[`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <11`
 
 ## Usage
 

@@ -17,6 +17,10 @@ See the full list of instrumented functions in [constants.ts](src/constants.ts);
 npm install --save @opentelemetry/instrumentation-fs
 ```
 
+## Supported Versions
+
+Nodejs `>=14`
+
 ## Usage
 
 ```js

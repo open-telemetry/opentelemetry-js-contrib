@@ -23,7 +23,7 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 
 ### Supported Versions
 
-- `^3.0.0`
+[`connect`](https://github.com/senchalabs/connect) versions `^3.0.0`
 
 ## Usage
 

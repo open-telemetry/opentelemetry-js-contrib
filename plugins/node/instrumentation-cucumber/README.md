@@ -15,6 +15,10 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-cucumber
 ```
 
+## Supported Versions
+
+[`@cucumber/cucumber`](https://www.npmjs.com/package/@cucumber/cucumber) versions `>=8.0.0 <11`
+
 ## Usage
 
 ```js
