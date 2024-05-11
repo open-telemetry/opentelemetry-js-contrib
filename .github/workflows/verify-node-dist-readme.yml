@@ -20,7 +20,7 @@ jobs:
       run: npm ci
 
     - name: Verify READMEs
-      run: npm run verify:readme
+      run: npm run distnode:update-readme
     
     - name: Verify Clean
       run: |
