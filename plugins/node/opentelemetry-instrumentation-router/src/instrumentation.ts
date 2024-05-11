@@ -34,6 +34,8 @@ import * as utils from './utils';
 import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
+const supportedVersions = ['^1.0.0'];
+
 export default class RouterInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
     super(
@@ -48,7 +50,7 @@ export default class RouterInstrumentation extends InstrumentationBase {
   init() {
     const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
-      constants.SUPPORTED_VERSIONS,
+      supportedVersions,
       (moduleExports, moduleVersion) => {
         this._moduleVersion = moduleVersion;
         return moduleExports;
@@ -58,7 +60,7 @@ export default class RouterInstrumentation extends InstrumentationBase {
     module.files.push(
       new InstrumentationNodeModuleFile(
         'router/lib/layer.js',
-        constants.SUPPORTED_VERSIONS,
+        supportedVersions,
         moduleExports => {
           const Layer: any = moduleExports;
           if (isWrapped(Layer.prototype.handle_request)) {

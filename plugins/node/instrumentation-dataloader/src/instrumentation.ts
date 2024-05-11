@@ -52,7 +52,7 @@ export class DataloaderInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['>=2.0.0 <3'],
+        ['^2.0.0'],
         dataloader => {
           this._patchLoad(dataloader.prototype);
           this._patchLoadMany(dataloader.prototype);

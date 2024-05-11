@@ -254,7 +254,7 @@ One instrumentation package can potentially instrument multiple modules of diffe
 
 ### Range Syntax
 
-Instrumentations should prefer to specify the supported versions of the instrumented package as `>=x.y.z <w` to promote consistency and readability across the code-base. This is the preferred format for specifying version ranges in the supported versions list.
+Instrumentations should prefer to specify the supported versions of the instrumented package as `>=x.y.z <w` to promote consistency and readability across the code-base. This is the preferred format for specifying version ranges in the supported versions list. If Instrumentations supports just one major version of the instrumented package, it can specify the version range as `^x.y.z` or `^x`.
 
 Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior. Instrumentations for nodejs internal modules can specify version range of `['*']`.
 

@@ -67,7 +67,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'express',
-        ['>=4.0.0 <5'],
+        ['^4.0.0'],
         moduleExports => {
           const routerProto = moduleExports.Router as unknown as express.Router;
           // patch express.Router.route

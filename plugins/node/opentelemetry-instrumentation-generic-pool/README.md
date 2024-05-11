@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-generic-pool
 
 ### Supported Versions
 
-[`generic-pool`](https://www.npmjs.com/package/generic-pool) version `>=2.0.0 <4`
+[`generic-pool`](https://www.npmjs.com/package/generic-pool) version `^3.0.0`
 
 ## Usage
 

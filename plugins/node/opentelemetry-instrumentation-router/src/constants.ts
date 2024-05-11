@@ -15,7 +15,6 @@
  */
 
 export const MODULE_NAME = 'router';
-export const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
 
 // Router.prototype.handle
 export const ROUTE_ROUTER_FN = `function router(req, res, next) {

@@ -45,7 +45,7 @@ export class BunyanInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'bunyan',
-        ['>=1.0.0 <2'],
+        ['^1.0.0'],
         (module: any) => {
           const instrumentation = this;
           const Logger =
