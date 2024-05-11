@@ -148,6 +148,7 @@ registerInstrumentations({
 ```
 
 ## Supported instrumentations
+
 - [@opentelemetry/instrumentation-amqplib](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-amqplib-v0.37.0/plugins/node/instrumentation-amqplib)
   - [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <1`
 - [@opentelemetry/instrumentation-aws-lambda](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-aws-lambda-v0.41.0/plugins/node/opentelemetry-instrumentation-aws-lambda)
@@ -227,6 +228,7 @@ registerInstrumentations({
   - [`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4`
   
   Log sending: [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

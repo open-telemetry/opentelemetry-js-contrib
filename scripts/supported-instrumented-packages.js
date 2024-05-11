@@ -209,7 +209,7 @@ const supportedVersions = Promise.all(
   // We include "## Supported instrumentations" and append the new content, then find the next heading to maintain it.
   const newContent = autoInstrumentationReadme.replace(
     regex,
-    `## Supported instrumentations\n${mdContent.join('\n')}\n##`
+    `## Supported instrumentations\n\n${mdContent.join('\n')}\n\n##`
   );
 
   console.log(
