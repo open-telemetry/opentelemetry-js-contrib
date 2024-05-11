@@ -149,85 +149,40 @@ registerInstrumentations({
 
 ## Supported instrumentations
 
-- [@opentelemetry/instrumentation-amqplib](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-amqplib-v0.37.0/plugins/node/instrumentation-amqplib)
-  - [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <1`
-- [@opentelemetry/instrumentation-aws-lambda](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-aws-lambda-v0.41.0/plugins/node/opentelemetry-instrumentation-aws-lambda)
-  - This package will instrument the lambda execution regardless of versions.
-- [@opentelemetry/instrumentation-aws-sdk](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-aws-sdk-v0.41.0/plugins/node/opentelemetry-instrumentation-aws-sdk)
-  - [`aws-sdk`](https://www.npmjs.com/package/aws-sdk) versions `>=2.308.0 <3`
-  - `@aws-sdk/client-*` versions `>=3.0.0 <4`
-- [@opentelemetry/instrumentation-bunyan](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-bunyan-v0.38.0/plugins/node/opentelemetry-instrumentation-bunyan)
-  - [`bunyan`](https://www.npmjs.com/package/bunyan) versions `^1.0.0`
-- [@opentelemetry/instrumentation-cassandra-driver](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-cassandra-driver-v0.38.0/plugins/node/opentelemetry-instrumentation-cassandra)
-  - [`cassandra-driver`](https://www.npmjs.com/package/cassandra-driver) versions `>=4.4 <5.0`
-- [@opentelemetry/instrumentation-connect](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-connect-v0.36.0/plugins/node/opentelemetry-instrumentation-connect)
-  - [`connect`](https://github.com/senchalabs/connect) versions `^3.0.0`
-- [@opentelemetry/instrumentation-cucumber](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-cucumber-v0.6.0/plugins/node/instrumentation-cucumber)
-  - [`@cucumber/cucumber`](https://www.npmjs.com/package/@cucumber/cucumber) versions `>=8.0.0 <11`
-- [@opentelemetry/instrumentation-dataloader](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-dataloader-v0.9.0/plugins/node/instrumentation-dataloader)
-  - [`dataloader`](https://www.npmjs.com/package/dataloader) versions `^2.0.0`
-- [@opentelemetry/instrumentation-dns](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-dns-v0.36.1/plugins/node/opentelemetry-instrumentation-dns)
-  - Nodejs `>=14`
-- [@opentelemetry/instrumentation-express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-express-v0.38.0/plugins/node/opentelemetry-instrumentation-express)
-  - [`express`](https://www.npmjs.com/package/express) version `^4.0.0`
-- [@opentelemetry/instrumentation-fastify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-fastify-v0.36.1/plugins/node/opentelemetry-instrumentation-fastify)
-  - [`fastify`](https://www.npmjs.com/package/fastify) versions `>=3.0.0 <5`
-- [@opentelemetry/instrumentation-fs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-fs-v0.12.0/plugins/node/instrumentation-fs)
-  - Nodejs `>=14`
-- [@opentelemetry/instrumentation-generic-pool](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-generic-pool-v0.36.0/plugins/node/opentelemetry-instrumentation-generic-pool)
-  - [`generic-pool`](https://www.npmjs.com/package/generic-pool) version `^3.0.0`
-- [@opentelemetry/instrumentation-graphql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-graphql-v0.40.0/plugins/node/opentelemetry-instrumentation-graphql)
-  - [`graphql`](https://www.npmjs.com/package/graphql) versions `'>=14.0.0 <17'`
-- [@opentelemetry/instrumentation-grpc](https://github.com/open-telemetry/opentelemetry-js/tree/experimental/v0.51.0/experimental/packages/opentelemetry-instrumentation-grpc)
-- [@opentelemetry/instrumentation-hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-hapi-v0.38.0/plugins/node/opentelemetry-instrumentation-hapi)
-  - [`@hapi/hapi`](https://www.npmjs.com/package/@hapi/hapi) versions `>=17.0.0 <22`
-- [@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/experimental/v0.51.0/experimental/packages/opentelemetry-instrumentation-http)
-- [@opentelemetry/instrumentation-ioredis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-ioredis-v0.40.0/plugins/node/opentelemetry-instrumentation-ioredis)
-  - [`ioredis`](https://www.npmjs.com/package/ioredis) versions `>=2.0.0 <6`
-- [@opentelemetry/instrumentation-knex](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-knex-v0.36.1/plugins/node/opentelemetry-instrumentation-knex)
-  - [`knex`](https://www.npmjs.com/package/knex) versions `>=0.10.0 <4`
-- [@opentelemetry/instrumentation-koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-koa-v0.40.0/plugins/node/opentelemetry-instrumentation-koa)
-  - [`koa`](https://www.npmjs.com/package/koa) versions `^2.0.0`
-  - [`@koa/router`] versions `>=8.0.0`
-- [@opentelemetry/instrumentation-lru-memoizer](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-lru-memoizer-v0.37.0/plugins/node/instrumentation-lru-memoizer)
-  - [`lru-memorizer`](https://github.com/jfromaniello/lru-memoizer) versions `>=1.3 <3`
-- [@opentelemetry/instrumentation-memcached](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-memcached-v0.36.0/plugins/node/opentelemetry-instrumentation-memcached)
-  - [`memcached`](https://www.npmjs.com/package/memcached) versions `>=2.2.0 <3`
-- [@opentelemetry/instrumentation-mongodb](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-mongodb-v0.43.0/plugins/node/opentelemetry-instrumentation-mongodb)
-  - [`mongodb`](https://www.npmjs.com/package/mongodb) version `>=3.3 <7`
-- [@opentelemetry/instrumentation-mongoose](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-mongoose-v0.38.1/plugins/node/instrumentation-mongoose)
-  - [`mongoose`](https://www.npmjs.com/package/mongoose) versions `>=5.9.7 <7`
-- [@opentelemetry/instrumentation-mysql2](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-mysql2-v0.38.1/plugins/node/opentelemetry-instrumentation-mysql2)
-  - [`mysql2`](https://www.npmjs.com/package/mysql2) versions `>=1.4.2 <4`
-- [@opentelemetry/instrumentation-mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-mysql-v0.38.1/plugins/node/opentelemetry-instrumentation-mysql)
-  - [`mysql`](https://www.npmjs.com/package/mysql) versions `^2.0.0`
-- [@opentelemetry/instrumentation-nestjs-core](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-nestjs-core-v0.37.1/plugins/node/opentelemetry-instrumentation-nestjs-core)
-  - [`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <11`
-- [@opentelemetry/instrumentation-net](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-net-v0.36.0/plugins/node/opentelemetry-instrumentation-net)
-  - Nodejs `>=14`
-- [@opentelemetry/instrumentation-pg](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-pg-v0.41.0/plugins/node/opentelemetry-instrumentation-pg)
-  - [`pg`](https://www.npmjs.com/package/pg) versions `^8.0.0`
-  - [`pg-pool`](https://www.npmjs.com/package/pg-pool) versions `>=2.0.0 <4`
-- [@opentelemetry/instrumentation-pino](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-pino-v0.39.0/plugins/node/opentelemetry-instrumentation-pino)
-  - [`pino`](https://www.npmjs.com/package/pino) versions `>=5.14.0 <10`
-- [@opentelemetry/instrumentation-redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-redis-v0.39.1/plugins/node/opentelemetry-instrumentation-redis)
-  - [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0 <4`
-- [@opentelemetry/instrumentation-redis-4](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-redis-4-v0.39.0/plugins/node/opentelemetry-instrumentation-redis-4)
-  - [`redis`](https://www.npmjs.com/package/redis) versions `>=4.0.0`
-- [@opentelemetry/instrumentation-restify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-restify-v0.38.0/plugins/node/opentelemetry-instrumentation-restify)
-  - [`restify`](https://www.npmjs.com/package/restify) versions `>=4.0.0 <12`
-- [@opentelemetry/instrumentation-router](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-router-v0.37.0/plugins/node/opentelemetry-instrumentation-router)
-  - [`router`](https://www.npmjs.com/package/route) versions `>=1.0.0 <2`
-- [@opentelemetry/instrumentation-socket.io](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-socket.io-v0.39.0/plugins/node/instrumentation-socket.io)
-  - [socket.io](https://www.npmjs.com/package/socket.io) versions `>=2 <5`
-- [@opentelemetry/instrumentation-tedious](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-tedious-v0.10.1/plugins/node/instrumentation-tedious)
-  - [tedious](https://www.npmjs.com/package/tedious) `>=1.11.0 <16`
-- [@opentelemetry/instrumentation-undici](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-undici-v0.2.0/plugins/node/instrumentation-undici)
-  - [`undici`](https://www.npmjs.com/package/undici) version `>=5.12.0`
-- [@opentelemetry/instrumentation-winston](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/instrumentation-winston-v0.37.0/plugins/node/opentelemetry-instrumentation-winston)
-  - [`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4`
-  
-  Log sending: [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`
+- [@opentelemetry/instrumentation-amqplib](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-amqplib)
+- [@opentelemetry/instrumentation-aws-lambda](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-aws-lambda)
+- [@opentelemetry/instrumentation-aws-sdk](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-aws-sdk)
+- [@opentelemetry/instrumentation-bunyan](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-bunyan)
+- [@opentelemetry/instrumentation-cassandra-driver](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-cassandra)
+- [@opentelemetry/instrumentation-connect](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-connect)
+- [@opentelemetry/instrumentation-cucumber](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-cucumber)
+- [@opentelemetry/instrumentation-dataloader](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-dataloader)
+- [@opentelemetry/instrumentation-dns](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns)
+- [@opentelemetry/instrumentation-express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express)
+- [@opentelemetry/instrumentation-fastify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-fastify)
+- [@opentelemetry/instrumentation-generic-pool](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-generic-pool)
+- [@opentelemetry/instrumentation-graphql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-graphql)
+- [@opentelemetry/instrumentation-grpc](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-grpc)
+- [@opentelemetry/instrumentation-hapi](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-hapi)
+- [@opentelemetry/instrumentation-http](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http)
+- [@opentelemetry/instrumentation-ioredis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis)
+- [@opentelemetry/instrumentation-knex](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-knex)
+- [@opentelemetry/instrumentation-koa](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa)
+- [@opentelemetry/instrumentation-lru-memoizer](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-lru-memoizer)
+- [@opentelemetry/instrumentation-memcached](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-memcached)
+- [@opentelemetry/instrumentation-mongodb](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb)
+- [@opentelemetry/instrumentation-mongoose](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-mongoose)
+- [@opentelemetry/instrumentation-mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql)
+- [@opentelemetry/instrumentation-mysql2](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql2)
+- [@opentelemetry/instrumentation-nestjs-core](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-nestjs-core)
+- [@opentelemetry/instrumentation-net](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-net)
+- [@opentelemetry/instrumentation-pg](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pg)
+- [@opentelemetry/instrumentation-pino](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pino)
+- [@opentelemetry/instrumentation-redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis)
+- [@opentelemetry/instrumentation-restify](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify)
+- [@opentelemetry/instrumentation-socket.io](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-socket.io)
+- [@opentelemetry/instrumentation-undici](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-undici)
+- [@opentelemetry/instrumentation-winston](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-winston)
 
 ## Useful links
 
