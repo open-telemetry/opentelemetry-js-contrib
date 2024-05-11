@@ -230,7 +230,7 @@ const supporterVersions = ['>=1.2.3 <3'];
 ### Variations
 
 Instrumentation usually targets some user-facing package that is used by the end user. 
-However, to achieve the instrumentation goals, it may need to patch one or more modules of the same or different packages, with potentially different behaviors depending on the version.
+However, to achieve the instrumentation goals, it may need to patch one or more modules of the same or different packages, with potentially different patch implementations depending on the patched version.
 
 We will refer to them as "instrumented package" which is the user-facing package, and "patched package" which is the package/s that are patched by the instrumentation.
 
@@ -242,19 +242,19 @@ This is the easy and common case, where the instrumented package is also also th
 
 #### Different Modules
 
-In this case, the instrumentation patches some internal modules (like with `redis-4` instrumentations, or `aws-sdk`). In this case the supported versions range is set on the patched packages, but the supported version range of the instrumented package is unknown as it depends on future versioning of the instrumented package dependencies.
+In this case, the instrumentation patches some internal modules (like with `redis-4` instrumentations, or `aws-sdk`). In this case the supported versions range is set on the patched packages, but the supported version upper range of the instrumented package is unknown as it depends on future versioning of the instrumented package dependencies.
 
 #### Nodejs Core Modules
 
-In this case, the instrumentation patches a nodejs internal module, which is not versioned. The supported versions range is set to `['*']`, and the supported versions is the same as the support of OpenTelemetry for Nodejs versions. The README should specify the supported versions of NodeJS and align with the "engines" field in `package.json`.
+In this case, the instrumentation patches a nodejs internal module, which is not versioned (carry the same version of the node runtime). The supported versions range is set to `['*']`, and the supported versions is the same as the support of OpenTelemetry for Nodejs versions. The README should specify the supported versions of NodeJS and align with the "engines" field in `package.json`.
 
 #### Multiple Modules
 
-One instrumentation package can potentially instrument multiple modules of different packages and version ranges. This makes sense if they are related, for example: `pg` and `pg-pool`, `aws-sdk` dozens of client packages etc. In this case, the instrumentation should specify the supported versions range for each module, and the README should list them.
+One instrumentation package can potentially instrument multiple modules of different packages and version ranges. This makes sense if they are related, for example: `pg` and `pg-pool`, `aws-sdk` dozens of client packages etc. In this case, the instrumentation should specify the supported versions range for each module (if possible), and the README should list them.
 
 #### Different Patch Logic
 
-In some cases, instrumentations does not use the moduleExports in order to patch, it can hook up nodejs diagnostics channel, patch globals (like browser instrumentations that patches the `window`), patch arbitrary lambda function handler, etc. In this cases, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
+In some cases, instrumentations does not use the moduleExports in order to patch, it can hook up to nodejs diagnostics channel, patch globals (like browser instrumentations that patches the `window`), patch arbitrary lambda function handler, etc. In this cases, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
 
 ### Range Specification
 
@@ -282,9 +282,10 @@ When a new major version of the instrumented package is released, renovate bot w
 
 Checklist for adding a new version to the supported versions list:
 
-[ ] Review which functions are patched by the instrumentation and if they were changed in the new version that need support in code.
-[ ] Check for breaking changes in the new version that could affect the instrumentation.
-[ ] Test the instrumentation with the new version to ensure it works as expected.
-[ ] Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition` that target the new version.
-[ ] Update the README file to reflect the support for new versions.
-[ ] For instrumentations that uses test-all-verions `.tav.yaml`, add the new version to the list of versions to test.
+[] Review which functions are patched by the instrumentation and if they were changed in the new version that need support in code.
+
+- [ ] Check for breaking changes in the new version that could affect the instrumentation.
+- [ ] Test the instrumentation with the new version to ensure it works as expected.
+- [ ] Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition` that target the new version.
+- [ ] Update the README file to reflect the support for new versions.
+- [ ] For instrumentations that uses test-all-verions `.tav.yaml`, add the new version to the list of versions to test.
