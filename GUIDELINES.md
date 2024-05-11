@@ -198,7 +198,6 @@ Instrumentation may add additional patch/unpatch messages for specific functions
 
 The cases above are not covered by the base class and offer additional context to the user troubleshooting an issue with the instrumentation.
 
-
 ## Supported Versions
 
 ### Usage
@@ -234,11 +233,11 @@ Instrumentations SHOULD specify the supported versions of the instrumented packa
 
 New major versions should be reviewed and tested by before being added to the supported versions list.
 
-Versions should preferably be specified as a range, for example `>=1.2.3 <3`, as oppose to caret / tilde range `['^2.0.0']`, astrix syntax `['2.*']` or multiple consistent ranges `['4.*', '^5', '>=6 <6.4']`. 
+Versions should preferably be specified as a range, for example `>=1.2.3 <3`, as oppose to caret / tilde range `['^2.0.0']`, astrix syntax `['2.*']` or multiple consistent ranges `['4.*', '^5', '>=6 <6.4']`.
 
 ### Documentation
 
-Instrumentations usually targets one or more users-facing packages to by automatically instrumented. Sometimes, the functions that ends up being patched are of internal modules or files which can carry different names and versions. Instrumentation can also choose to patch multiple modules of different versions to achieve it's goals. 
+Instrumentations usually targets one or more users-facing packages to by automatically instrumented. Sometimes, the functions that ends up being patched are of internal modules or files which can carry different names and versions. Instrumentation can also choose to patch multiple modules of different versions to achieve it's goals.
 
 Instrumentation should document in it's README file, the supported versions range of the user-facing package. It should aim to give the range in short format of the form `>=x.y.z <w`, which hides any internal implementation details and focuses on relevance to the consumer. If the instrumentation patches multiple modules, it should list them in the documentation.
 
@@ -247,6 +246,7 @@ Instrumentation should document in it's README file, the supported versions rang
 When a new major version of the instrumented package is released, renovate bot will open a PR in contrib which is an easy was to become aware of it. The instrumentation maintainer should review the new version and decide if it should be added to the supported versions list. Then a PR can add it to the list and it will be published in the next release.
 
 Checklist for adding a new version to the supported versions list:
+
 - Review which functions are patched by the instrumentation and if they were changed in the new version.
 - Check for breaking changes in the new version that could affect the instrumentation.
 - Test the instrumentation with the new version to ensure it works as expected.
