@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-cucumber
 
 ## Supported Versions
 
-[`@cucumber/cucumber`](https://www.npmjs.com/package/@cucumber/cucumber) versions `>=8.0.0 <11`
+- [`@cucumber/cucumber`](https://www.npmjs.com/package/@cucumber/cucumber) versions `>=8.0.0 <11`
 
 ## Usage
 

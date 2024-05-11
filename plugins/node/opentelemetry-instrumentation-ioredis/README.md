@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-ioredis
 
 ### Supported Versions
 
-[`ioredis`](https://www.npmjs.com/package/ioredis) versions `>=2.0.0 <6`
+- [`ioredis`](https://www.npmjs.com/package/ioredis) versions `>=2.0.0 <6`
 
 ## Usage
 

@@ -21,7 +21,7 @@ npm install --save @opentelemetry/instrumentation-dns
 
 ## Supported Versions
 
-Nodejs `>=14`
+- Nodejs `>=14`
 
 ## Usage
 

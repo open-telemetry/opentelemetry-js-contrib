@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-winston
 
 ### Supported Versions
 
-[`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4`
+- [`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4`
 
 Log sending: [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`
 

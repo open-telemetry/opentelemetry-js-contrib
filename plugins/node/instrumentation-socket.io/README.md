@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-socket.io
 
 ## Supported Versions
 
-[socket.io](https://www.npmjs.com/package/socket.io) versions `>=2 <5`
+- [socket.io](https://www.npmjs.com/package/socket.io) versions `>=2 <5`
 
 ## Usage
 

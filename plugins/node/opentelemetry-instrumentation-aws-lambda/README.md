@@ -21,7 +21,7 @@ npm install --save @opentelemetry/instrumentation-aws-lambda
 
 ## Supported Versions
 
-This package will instrument the lambda execution regardless of versions.
+- This package will instrument the lambda execution regardless of versions.
 
 ## Usage
 
