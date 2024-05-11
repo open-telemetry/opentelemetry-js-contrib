@@ -252,11 +252,19 @@ In this case, the instrumentation patches a nodejs internal module, which is not
 
 One instrumentation package can potentially instrument multiple modules of different packages and version ranges. This makes sense if they are related, for example: `pg` and `pg-pool`, `aws-sdk` dozens of client packages etc. In this case, the instrumentation should specify the supported versions range for each module, and the README should list them.
 
-### Range Syntax
+#### Different Patch Logic
 
-Instrumentations should prefer to specify the supported versions of the instrumented package as `>=x.y.z <w` to promote consistency and readability across the code-base. This is the preferred format for specifying version ranges in the supported versions list. If Instrumentations supports just one major version of the instrumented package, it can specify the version range as `^x.y.z` or `^x`.
+In some cases, instrumentations does not use the moduleExports in order to patch, it can hook up nodejs diagnostics channel, patch globals (like browser instrumentations that patches the `window`), patch arbitrary lambda function handler, etc. In this cases, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
 
-Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior. Instrumentations for nodejs internal modules can specify version range of `['*']`.
+### Range Specification
+
+For versions that are a closed range, instrumentations should prefer to specify the supported versions of the instrumented package as `>=x.y.z <w` to promote consistency and readability across the code-base.
+
+If Instrumentations supports just one major version of the instrumented package, it can specify the version range as `^x.y.z` or `^x` which are equivalent but more readable.
+
+Instrumentations for nodejs internal modules can specify version range of `['*']`.
+
+Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior. 
 
 New major versions should be reviewed and tested by before being added to the supported versions list.
 
@@ -266,17 +274,17 @@ Instrumentation should have a "## Supported Versions" section in the README file
 
 This range should hide any internal implementation details like the use of internal modules, different patch logic for different versions, etc. It should focus on the relevance to the human consumer.
 
-For cases where the range is not capped by an upper limit, the README should specify a version with an open upper limit `>=4.0.0` and should be revisited when new versions are released.
+For cases where the range is not capped by an upper limit, the README should specify a version with an open upper limit `>=4.0.0`. This should be revisited when new versions are released.
 
 ### Add New Supported Versions
 
-When a new major version of the instrumented package is released, renovate bot will open a PR in contrib which is an easy was to become aware of it. The instrumentation maintainer should review the new version and decide if it should be added to the supported versions list. Then a PR can add it to the list and it will be published in the next release.
+When a new major version of the instrumented package is released, renovate bot will open a PR in contrib which is an easy was to become aware of it. The instrumentation maintainer should review the new version and check compatibility with existing code. It can then be added to the supported versions list to be released in the next version of the instrumentation.
 
 Checklist for adding a new version to the supported versions list:
 
-- Review which functions are patched by the instrumentation and if they were changed in the new version.
-- Check for breaking changes in the new version that could affect the instrumentation.
-- Test the instrumentation with the new version to ensure it works as expected.
-- Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition` that target the new version.
-- Update the README file with the new supported version range.
-- For instrumentations that uses test-all-verions `.tav.yaml`, add the new version to the list of versions to test.
+[ ] Review which functions are patched by the instrumentation and if they were changed in the new version that need support in code.
+[ ] Check for breaking changes in the new version that could affect the instrumentation.
+[ ] Test the instrumentation with the new version to ensure it works as expected.
+[ ] Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition` that target the new version.
+[ ] Update the README file to reflect the support for new versions.
+[ ] For instrumentations that uses test-all-verions `.tav.yaml`, add the new version to the list of versions to test.
