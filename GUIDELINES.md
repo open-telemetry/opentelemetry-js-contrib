@@ -227,19 +227,46 @@ const supporterVersions = ['>=1.2.3 <3'];
   }
 ```
 
-### Range Considerations
+### Variations
 
-Instrumentations SHOULD specify the supported versions of the instrumented package, and have upper and lower bounds for the version range. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior. Instrumentations for nodejs internal modules can specify version range of `['*']`.
+Instrumentation usually targets some user-facing package that is used by the end user. 
+However, to achieve the instrumentation goals, it may need to patch one or more modules of the same or different packages, with potentially different behaviors depending on the version.
+
+We will refer to them as "instrumented package" which is the user-facing package, and "patched package" which is the package/s that are patched by the instrumentation.
+
+The contrib repo has a few examples of different variations of common cases
+
+#### Single Module
+
+This is the easy and common case, where the instrumented package is also also the patched package, thus the supported versions align.
+
+#### Different Modules
+
+In this case, the instrumentation patches some internal modules (like with `redis-4` instrumentations, or `aws-sdk`). In this case the supported versions range is set on the patched packages, but the supported version range of the instrumented package is unknown as it depends on future versioning of the instrumented package dependencies.
+
+#### Nodejs Core Modules
+
+In this case, the instrumentation patches a nodejs internal module, which is not versioned. The supported versions range is set to `['*']`, and the supported versions is the same as the support of OpenTelemetry for Nodejs versions. The README should specify the supported versions of NodeJS and align with the "engines" field in `package.json`.
+
+#### Multiple Modules
+
+One instrumentation package can potentially instrument multiple modules of different packages and version ranges. This makes sense if they are related, for example: `pg` and `pg-pool`, `aws-sdk` dozens of client packages etc. In this case, the instrumentation should specify the supported versions range for each module, and the README should list them.
+
+### Range Syntax
+
+Instrumentations should prefer to specify the supported versions of the instrumented package as `>=x.y.z <w` to promote consistency and readability across the code-base. This is the preferred format for specifying version ranges in the supported versions list.
+
+Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior. Instrumentations for nodejs internal modules can specify version range of `['*']`.
 
 New major versions should be reviewed and tested by before being added to the supported versions list.
 
-Versions should preferably be specified as a range, for example `>=1.2.3 <3`, as oppose to caret / tilde range `['^2.0.0']`, astrix syntax `['2.*']` or multiple consistent ranges `['4.*', '^5', '>=6 <6.4']`.
-
 ### Documentation
 
-Instrumentations usually targets one or more users-facing packages to by automatically instrumented. Sometimes, the functions that ends up being patched are of internal modules or files which can carry different names and versions. Instrumentation can also choose to patch multiple modules of different versions to achieve it's goals.
+Instrumentation should have a "## Supported Versions" section in the README file that lists the supported versions range of the instrumented package - the user-facing package which makes most sense to human consumer.
 
-Instrumentation should document in it's README file, the supported versions range of the user-facing package. It should aim to give the range in short format of the form `>=x.y.z <w`, which hides any internal implementation details and focuses on relevance to the consumer. If the instrumentation patches multiple modules, it should list them in the documentation.
+This range should hide any internal implementation details like the use of internal modules, different patch logic for different versions, etc. It should focus on the relevance to the human consumer.
+
+For cases where the range is not capped by an upper limit, the README should specify a version with an open upper limit `>=4.0.0` and should be revisited when new versions are released.
 
 ### Add New Supported Versions
 
