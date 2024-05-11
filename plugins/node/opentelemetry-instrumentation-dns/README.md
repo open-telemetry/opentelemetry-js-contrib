@@ -19,6 +19,10 @@ If total installation size is not constrained, it is recommended to use the [`@o
 npm install --save @opentelemetry/instrumentation-dns
 ```
 
+## Supported Versions
+
+Nodejs `>=14`
+
 ## Usage
 
 ```js
