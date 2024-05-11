@@ -23,7 +23,7 @@ import {
 import { IORedisInstrumentationConfig } from './types';
 import { IORedisCommand, RedisInterface } from './internal-types';
 import {
-  DbSystemValues,
+  DBSYSTEMVALUES_REDIS,
   SEMATTRS_DB_CONNECTION_STRING,
   SEMATTRS_DB_STATEMENT,
   SEMATTRS_DB_SYSTEM,
@@ -125,7 +125,7 @@ export class IORedisInstrumentation extends InstrumentationBase {
       const span = instrumentation.tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SEMATTRS_DB_SYSTEM]: DbSystemValues.REDIS,
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
           [SEMATTRS_DB_STATEMENT]: dbStatementSerializer(cmd.name, cmd.args),
         },
       });
@@ -202,7 +202,7 @@ export class IORedisInstrumentation extends InstrumentationBase {
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SEMATTRS_DB_SYSTEM]: DbSystemValues.REDIS,
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
           [SEMATTRS_DB_STATEMENT]: 'connect',
         },
       });
