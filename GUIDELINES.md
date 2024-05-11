@@ -282,8 +282,7 @@ When a new major version of the instrumented package is released, renovate bot w
 
 Checklist for adding a new version to the supported versions list:
 
-[] Review which functions are patched by the instrumentation and if they were changed in the new version that need support in code.
-
+- [ ] Review which functions are patched by the instrumentation and if they were changed in the new version that need support in code.
 - [ ] Check for breaking changes in the new version that could affect the instrumentation.
 - [ ] Test the instrumentation with the new version to ensure it works as expected.
 - [ ] Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition` that target the new version.
