@@ -229,7 +229,7 @@ const supporterVersions = ['>=1.2.3 <3'];
 
 ### Variations
 
-Instrumentation usually targets some user-facing package that is used by the end user. 
+Instrumentation usually targets some user-facing package that is used by the end user.
 However, to achieve the instrumentation goals, it may need to patch one or more modules of the same or different packages, with potentially different patch implementations depending on the patched version.
 
 We will refer to them as "instrumented package" which is the user-facing package, and "patched package" which is the package/s that are patched by the instrumentation.
@@ -264,7 +264,7 @@ If Instrumentations supports just one major version of the instrumented package,
 
 Instrumentations for nodejs internal modules can specify version range of `['*']`.
 
-Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior. 
+Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior.
 
 New major versions should be reviewed and tested by before being added to the supported versions list.
 
