@@ -15,7 +15,7 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-cassandra-driver
 ```
 
-### Supported versions
+### Supported Versions
 
 [`cassandra-driver`](https://www.npmjs.com/package/cassandra-driver) versions `>=4.4 <5.0`
 

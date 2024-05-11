@@ -15,7 +15,7 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-winston
 ```
 
-### Supported versions
+### Supported Versions
 
 [`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4`
 
