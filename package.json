@@ -77,5 +77,8 @@
     "propagators/*",
     "detectors/node/*",
     "metapackages/*"
-  ]
+  ],
+  "dependencies": {
+    "@kubernetes/client-node": "^0.20.0"
+  }
 }
