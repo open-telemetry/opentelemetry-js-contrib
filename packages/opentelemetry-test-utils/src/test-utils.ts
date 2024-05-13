@@ -29,7 +29,7 @@ import {
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
 import * as path from 'path';
-import { existsSync } from 'fs';
+import * as fs from 'fs';
 
 const dockerRunCmds = {
   cassandra:
@@ -154,7 +154,7 @@ export const getPackageVersion = (packageName: string) => {
   // "test-all-versions" tests that tend to install conflicting package
   // versions. Prefix the search paths with the cwd to include the workspace
   // dir.
-  const packagePath = require?.resolve(packageName, {
+  const mainPath = require?.resolve(packageName, {
     paths: [path.join(process.cwd(), 'node_modules')].concat(
       require?.main?.paths || []
     ),
@@ -162,7 +162,7 @@ export const getPackageVersion = (packageName: string) => {
 
   // Some packages are resolved to a subfolder because their "main" points to it.
   // As a consequence the "package.json" path is wrong and we get a MODULE_NOT_FOUND
-  // error. We should walk up the folder structure to lookup for the file.
+  // error. We should resolve the package folder from the closest `node_modules` ancestor.
   // `tedious` package is an example
   // {
   //   "name: "tedious",
@@ -170,15 +170,12 @@ export const getPackageVersion = (packageName: string) => {
   //   ...
   // }
   // resolving `packagePath` to `/path/to/opentelemetry-js-contrib/node_modules/tedious/lib/tedious.js`
-  let packageJsonDir = path.dirname(packagePath);
-  let packageJsonPath = path.join(path.dirname(packagePath), 'package.json');
-
-  while (
-    !existsSync(packageJsonPath) &&
-    !packageJsonDir.endsWith('node_modules')
-  ) {
-    packageJsonDir = path.join(packageJsonDir, '..');
-    packageJsonPath = path.join(packageJsonDir, 'package.json');
-  }
-  return require(packageJsonPath).version;
+  const idx = mainPath.lastIndexOf('node_modules');
+  const pjPath = path.join(
+    mainPath.slice(0, idx),
+    'node_modules',
+    packageName,
+    'package.json'
+  );
+  return JSON.parse(fs.readFileSync(pjPath, 'utf8')).version;
 };
