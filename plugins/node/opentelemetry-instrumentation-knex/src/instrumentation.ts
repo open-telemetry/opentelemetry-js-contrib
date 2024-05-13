@@ -109,10 +109,7 @@ export class KnexInstrumentation extends InstrumentationBase {
         );
         return Client;
       },
-      (Client: any, moduleVersion) => {
-        api.diag.debug(
-          `Removing ${basePath}/client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
+      (Client: any) => {
         this._unwrap(Client.prototype, 'queryBuilder');
         this._unwrap(Client.prototype, 'schemaBuilder');
         this._unwrap(Client.prototype, 'raw');
@@ -160,6 +157,7 @@ export class KnexInstrumentation extends InstrumentationBase {
         const span = instrumentation.tracer.startSpan(
           utils.getName(name, operation, table),
           {
+            kind: api.SpanKind.CLIENT,
             attributes,
           },
           parent

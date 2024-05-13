@@ -12,6 +12,14 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
 
+## [0.39.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.39.0...instrumentation-redis-v0.39.1) (2024-05-02)
+
+
+### Bug Fixes
+
+* **instrumentation-redis:** Take host and port used for connection ([#2072](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2072)) ([3ad9fdf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3ad9fdfe1e18e597f31bb546d9b00824a7d1ffe9))
+* remove unuseful patch message from instrumentations ([#2161](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2161)) ([34f56e0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/34f56e0e28a0873b69a499c9e91798b19fea8e96))
+
 ## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-redis-v0.38.0...instrumentation-redis-v0.39.0) (2024-04-25)
 
 

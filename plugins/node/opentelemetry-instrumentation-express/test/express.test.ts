@@ -566,4 +566,168 @@ describe('ExpressInstrumentation', () => {
       },
     });
   });
+
+  it('should set a correct transaction name for routes specified in RegEx', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-express-regex.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+        TEST_REGEX_ROUTE: '/test/regex',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+
+        assert.strictEqual(spans[0].name, 'GET /\\/test\\/regex/');
+        assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'middleware - query');
+        assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'middleware - expressInit');
+        assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+        assert.strictEqual(
+          spans[4].name,
+          'request handler - /\\/test\\/regex/'
+        );
+        assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+      },
+    });
+  });
+
+  it('should set a correct transaction name for routes consisting of array including numbers', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-express-regex.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+        TEST_REGEX_ROUTE: '/test/6/test',
+      },
+      checkResult: err => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        const spans = collector.sortedSpans;
+
+        assert.strictEqual(spans[0].name, 'GET /test,6,/test/');
+        assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'middleware - query');
+        assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'middleware - expressInit');
+        assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[4].name, 'request handler - /test,6,/test/');
+        assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+      },
+    });
+  });
+
+  for (const segment of ['array1', 'array5']) {
+    it('should set a correct transaction name for routes consisting of arrays of routes', async () => {
+      await testUtils.runTestFixture({
+        cwd: __dirname,
+        argv: ['fixtures/use-express-regex.mjs'],
+        env: {
+          NODE_OPTIONS:
+            '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+          NODE_NO_WARNINGS: '1',
+          TEST_REGEX_ROUTE: `/test/${segment}`,
+        },
+        checkResult: err => {
+          assert.ifError(err);
+        },
+        checkCollector: (collector: testUtils.TestCollector) => {
+          const spans = collector.sortedSpans;
+
+          assert.strictEqual(
+            spans[0].name,
+            'GET /test/array1,/\\/test\\/array[2-9]/'
+          );
+          assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+          assert.strictEqual(spans[1].name, 'middleware - query');
+          assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+          assert.strictEqual(spans[2].name, 'middleware - expressInit');
+          assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+          assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+          assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+          assert.strictEqual(
+            spans[4].name,
+            'request handler - /test/array1,/\\/test\\/array[2-9]/'
+          );
+          assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+        },
+      });
+    });
+  }
+
+  for (const segment of [
+    'arr/545',
+    'arr/required',
+    'arr/required',
+    'arr/requiredPath',
+    'arr/required/lastParam',
+    'arr55/required/lastParam',
+    'arr/requiredPath/optionalPath/',
+    'arr/requiredPath/optionalPath/lastParam',
+  ]) {
+    it('should handle more complex regexes in route arrays correctly', async () => {
+      await testUtils.runTestFixture({
+        cwd: __dirname,
+        argv: ['fixtures/use-express-regex.mjs'],
+        env: {
+          NODE_OPTIONS:
+            '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+          NODE_NO_WARNINGS: '1',
+          TEST_REGEX_ROUTE: `/test/${segment}`,
+        },
+        checkResult: err => {
+          assert.ifError(err);
+        },
+        checkCollector: (collector: testUtils.TestCollector) => {
+          const spans = collector.sortedSpans;
+
+          assert.strictEqual(
+            spans[0].name,
+            'GET /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
+          );
+          assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+          assert.strictEqual(spans[1].name, 'middleware - query');
+          assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+          assert.strictEqual(spans[2].name, 'middleware - expressInit');
+          assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[2].parentSpanId, spans[0].spanId);
+          assert.strictEqual(spans[3].name, 'middleware - simpleMiddleware');
+          assert.strictEqual(spans[3].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[3].parentSpanId, spans[0].spanId);
+          assert.strictEqual(
+            spans[4].name,
+            'request handler - /test/arr/:id,/\\/test\\/arr[0-9]*\\/required(path)?(\\/optionalPath)?\\/(lastParam)?/'
+          );
+          assert.strictEqual(spans[4].kind, SpanKind.SERVER);
+          assert.strictEqual(spans[4].parentSpanId, spans[0].spanId);
+        },
+      });
+    });
+  }
 });
