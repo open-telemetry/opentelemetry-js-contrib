@@ -34,7 +34,7 @@ import {
   ValueType,
 } from '@opentelemetry/api';
 
-import { NPM_PACKAGE_VERSION } from './version';
+import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
 
 import {
   ListenerRecord,
@@ -67,7 +67,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
 
   private _httpClientDurationHistogram!: Histogram;
   constructor(config: UndiciInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-undici', NPM_PACKAGE_VERSION, config);
+    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
     this.setConfig(config);
   }
 

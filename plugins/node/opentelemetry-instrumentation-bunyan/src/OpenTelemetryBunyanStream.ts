@@ -16,10 +16,9 @@
 
 import { logs, SeverityNumber, Logger } from '@opentelemetry/api-logs';
 import type { LogLevelString } from 'bunyan';
-import { NPM_PACKAGE_VERSION } from './version';
+import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
 
-const DEFAULT_INSTRUMENTATION_SCOPE_NAME =
-  '@opentelemetry/instrumentation-bunyan';
+const DEFAULT_INSTRUMENTATION_SCOPE_NAME = NPM_PACKAGE_NAME;
 const DEFAULT_INSTRUMENTATION_SCOPE_VERSION = NPM_PACKAGE_VERSION;
 
 // This block is a copy (modulo code style and TypeScript types) of the Bunyan

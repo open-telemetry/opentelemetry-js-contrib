@@ -27,7 +27,7 @@ import {
   SpanKind,
 } from '@opentelemetry/api';
 import { DataloaderInstrumentationConfig } from './types';
-import { NPM_PACKAGE_VERSION } from './version';
+import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
 import type * as Dataloader from 'dataloader';
 
 const MODULE_NAME = 'dataloader';
@@ -45,7 +45,7 @@ type LoadManyFn = (typeof Dataloader.prototype)['loadMany'];
 
 export class DataloaderInstrumentation extends InstrumentationBase {
   constructor(config: DataloaderInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-dataloader', NPM_PACKAGE_VERSION, config);
+    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
   }
 
   protected init() {

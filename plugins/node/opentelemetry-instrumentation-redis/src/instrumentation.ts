@@ -25,7 +25,7 @@ import {
   getTracedInternalSendCommand,
 } from './utils';
 import { RedisInstrumentationConfig } from './types';
-import { NPM_PACKAGE_VERSION } from './version';
+import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
@@ -37,7 +37,7 @@ export class RedisInstrumentation extends InstrumentationBase {
   protected override _config!: RedisInstrumentationConfig;
 
   constructor(config: RedisInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-redis', NPM_PACKAGE_VERSION, config);
+    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {

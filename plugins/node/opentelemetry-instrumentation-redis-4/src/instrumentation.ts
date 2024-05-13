@@ -30,7 +30,7 @@ import {
 import { getClientAttributes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { RedisInstrumentationConfig } from './types';
-import { NPM_PACKAGE_VERSION } from './version';
+import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
 import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 import type { MultiErrorReply } from './internal-types';
 
@@ -57,7 +57,7 @@ export class RedisInstrumentation extends InstrumentationBase {
   protected override _config!: RedisInstrumentationConfig;
 
   constructor(config: RedisInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-redis-4', NPM_PACKAGE_VERSION, config);
+    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {

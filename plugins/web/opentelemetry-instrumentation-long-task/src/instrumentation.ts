@@ -16,7 +16,7 @@
 import { hrTime } from '@opentelemetry/core';
 import { diag } from '@opentelemetry/api';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
-import { NPM_PACKAGE_VERSION } from './version';
+import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
 import type {
   PerformanceLongTaskTiming,
   LongtaskInstrumentationConfig,
@@ -35,7 +35,7 @@ export class LongTaskInstrumentation extends InstrumentationBase {
    * @param config
    */
   constructor(config: LongtaskInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-long-task', NPM_PACKAGE_VERSION, config);
+    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
   }
 
   init() {}
