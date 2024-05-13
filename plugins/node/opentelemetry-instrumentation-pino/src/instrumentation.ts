@@ -27,7 +27,7 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { PinoInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 
 const pinoVersions = ['>=5.14.0 <10'];
 
@@ -39,7 +39,7 @@ const DEFAULT_LOG_KEYS = {
 
 export class PinoInstrumentation extends InstrumentationBase {
   constructor(config: PinoInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-pino', VERSION, config);
+    super('@opentelemetry/instrumentation-pino', NPM_PACKAGE_VERSION, config);
   }
 
   protected init() {

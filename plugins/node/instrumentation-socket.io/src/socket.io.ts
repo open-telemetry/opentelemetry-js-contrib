@@ -37,7 +37,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { SocketIoInstrumentationConfig } from './types';
 import { SocketIoInstrumentationAttributes } from './AttributeNames';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import {
   extractRoomsAttributeValue,
   isPromise,
@@ -59,7 +59,7 @@ export class SocketIoInstrumentation extends InstrumentationBase {
   constructor(config: SocketIoInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-socket.io',
-      VERSION,
+      NPM_PACKAGE_VERSION,
       normalizeConfig(config)
     );
   }

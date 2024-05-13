@@ -22,7 +22,7 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { BunyanInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';
 import { SeverityNumber } from '@opentelemetry/api-logs';
@@ -36,7 +36,7 @@ export class BunyanInstrumentation extends InstrumentationBase {
   constructor(config: BunyanInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-bunyan',
-      VERSION,
+      NPM_PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }

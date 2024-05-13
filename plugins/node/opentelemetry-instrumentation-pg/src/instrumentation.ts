@@ -39,12 +39,12 @@ import {
 import { PgInstrumentationConfig } from './types';
 import * as utils from './utils';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import { SpanNames } from './enums/SpanNames';
 
 export class PgInstrumentation extends InstrumentationBase {
   constructor(config: PgInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-pg', VERSION, config);
+    super('@opentelemetry/instrumentation-pg', NPM_PACKAGE_VERSION, config);
   }
 
   protected init() {

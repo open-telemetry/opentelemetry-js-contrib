@@ -29,14 +29,14 @@ import {
 import { TLSAttributes } from './types';
 import { NormalizedOptions, SocketEvent } from './internal-types';
 import { getNormalizedArgs, IPC_TRANSPORT } from './utils';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import { Socket } from 'net';
 import { TLSSocket } from 'tls';
 import type * as net from 'net';
 
 export class NetInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-net', VERSION, config);
+    super('@opentelemetry/instrumentation-net', NPM_PACKAGE_VERSION, config);
   }
 
   init(): InstrumentationNodeModuleDefinition[] {

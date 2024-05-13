@@ -49,7 +49,7 @@ import {
   wrapFields,
 } from './utils';
 
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
 import { GraphQLInstrumentationConfig } from './types';
@@ -67,7 +67,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   constructor(config: GraphQLInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-graphql',
-      VERSION,
+      NPM_PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }

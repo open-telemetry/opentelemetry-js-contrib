@@ -50,7 +50,7 @@ import {
   V4ConnectionPool,
 } from './internal-types';
 import { V4Connect, V4Session } from './internal-types';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
@@ -61,7 +61,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   protected override _config!: MongoDBInstrumentationConfig;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mongodb', VERSION, config);
+    super('@opentelemetry/instrumentation-mongodb', NPM_PACKAGE_VERSION, config);
   }
 
   override _updateMetricInstruments() {

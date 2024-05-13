@@ -26,7 +26,7 @@ import type { NestFactory } from '@nestjs/core/nest-factory.js';
 import type { RouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
 import type { Controller } from '@nestjs/common/interfaces';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import { AttributeNames, NestType } from './enums';
 
 export class Instrumentation extends InstrumentationBase {
@@ -36,7 +36,7 @@ export class Instrumentation extends InstrumentationBase {
   };
 
   constructor(config: InstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-nestjs-core', VERSION, config);
+    super('@opentelemetry/instrumentation-nestjs-core', NPM_PACKAGE_VERSION, config);
   }
 
   init() {

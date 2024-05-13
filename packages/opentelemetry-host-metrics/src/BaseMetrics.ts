@@ -17,7 +17,7 @@
 import * as api from '@opentelemetry/api';
 import * as metrics from '@opentelemetry/sdk-metrics';
 
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 
 /**
  * Metrics Collector Configuration
@@ -50,7 +50,7 @@ export abstract class BaseMetrics {
     if (!config.meterProvider) {
       this._logger.warn('No meter provider, using default');
     }
-    this._meter = meterProvider.getMeter(this._name, VERSION);
+    this._meter = meterProvider.getMeter(this._name, NPM_PACKAGE_VERSION);
   }
 
   /**

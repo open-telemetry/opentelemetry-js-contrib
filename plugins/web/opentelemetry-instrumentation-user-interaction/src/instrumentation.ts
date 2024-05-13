@@ -34,7 +34,7 @@ import {
   WindowWithZone,
   ZoneTypeWithPrototype,
 } from './internal-types';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
@@ -50,7 +50,7 @@ function defaultShouldPreventSpanCreation() {
  * addEventListener of HTMLElement
  */
 export class UserInteractionInstrumentation extends InstrumentationBase {
-  readonly version = VERSION;
+  readonly version = NPM_PACKAGE_VERSION;
   readonly moduleName: string = 'user-interaction';
   private _spansData = new WeakMap<api.Span, SpanData>();
   private _zonePatched?: boolean;
@@ -68,7 +68,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase {
   private _shouldPreventSpanCreation: ShouldPreventSpanCreation;
 
   constructor(config: UserInteractionInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-user-interaction', VERSION, config);
+    super('@opentelemetry/instrumentation-user-interaction', NPM_PACKAGE_VERSION, config);
     this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES);
     this._shouldPreventSpanCreation =
       typeof config?.shouldPreventSpanCreation === 'function'

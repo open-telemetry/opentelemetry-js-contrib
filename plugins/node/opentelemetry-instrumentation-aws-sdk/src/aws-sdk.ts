@@ -33,7 +33,7 @@ import {
   NormalizedRequest,
   NormalizedResponse,
 } from './types';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,
   InstrumentationModuleDefinition,
@@ -78,7 +78,7 @@ export class AwsInstrumentation extends InstrumentationBase {
   private servicesExtensions: ServicesExtensions = new ServicesExtensions();
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-aws-sdk', VERSION, config);
+    super('@opentelemetry/instrumentation-aws-sdk', NPM_PACKAGE_VERSION, config);
   }
 
   override setConfig(config: AwsSdkInstrumentationConfig = {}) {

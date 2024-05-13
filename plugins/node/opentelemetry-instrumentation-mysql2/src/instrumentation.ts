@@ -35,7 +35,7 @@ import {
   getSpanName,
   once,
 } from './utils';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 
 type formatType = typeof mysqlTypes.format;
 
@@ -45,7 +45,7 @@ export class MySQL2Instrumentation extends InstrumentationBase {
   };
 
   constructor(config: MySQL2InstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mysql2', VERSION, config);
+    super('@opentelemetry/instrumentation-mysql2', NPM_PACKAGE_VERSION, config);
   }
 
   protected init() {

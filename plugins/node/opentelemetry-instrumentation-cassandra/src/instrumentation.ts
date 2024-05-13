@@ -39,7 +39,7 @@ import {
   SEMATTRS_NET_PEER_NAME,
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import { EventEmitter } from 'events';
 import type * as CassandraDriver from 'cassandra-driver';
 
@@ -49,7 +49,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase {
   protected override _config!: CassandraDriverInstrumentationConfig;
 
   constructor(config: CassandraDriverInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-cassandra-driver', VERSION, config);
+    super('@opentelemetry/instrumentation-cassandra-driver', NPM_PACKAGE_VERSION, config);
   }
 
   protected init() {

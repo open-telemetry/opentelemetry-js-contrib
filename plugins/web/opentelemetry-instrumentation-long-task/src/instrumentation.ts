@@ -16,7 +16,7 @@
 import { hrTime } from '@opentelemetry/core';
 import { diag } from '@opentelemetry/api';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import type {
   PerformanceLongTaskTiming,
   LongtaskInstrumentationConfig,
@@ -25,7 +25,7 @@ import type {
 const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 
 export class LongTaskInstrumentation extends InstrumentationBase {
-  readonly version: string = VERSION;
+  readonly version: string = NPM_PACKAGE_VERSION;
 
   private _observer?: PerformanceObserver;
   override _config!: LongtaskInstrumentationConfig;
@@ -35,7 +35,7 @@ export class LongTaskInstrumentation extends InstrumentationBase {
    * @param config
    */
   constructor(config: LongtaskInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-long-task', VERSION, config);
+    super('@opentelemetry/instrumentation-long-task', NPM_PACKAGE_VERSION, config);
   }
 
   init() {}

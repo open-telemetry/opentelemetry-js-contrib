@@ -38,7 +38,7 @@ import type {
 } from '@cucumber/cucumber/lib/support_code_library_builder/types';
 
 import { AttributeNames, CucumberInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 
 const hooks = ['Before', 'BeforeStep', 'AfterStep', 'After'] as const;
 const steps = ['Given', 'When', 'Then'] as const;
@@ -50,7 +50,7 @@ export class CucumberInstrumentation extends InstrumentationBase {
   private module: Cucumber | undefined;
 
   constructor(config: CucumberInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-cucumber', VERSION, config);
+    super('@opentelemetry/instrumentation-cucumber', NPM_PACKAGE_VERSION, config);
   }
 
   init(): InstrumentationNodeModuleDefinition[] {

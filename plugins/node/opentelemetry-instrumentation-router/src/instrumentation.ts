@@ -28,7 +28,7 @@ import * as http from 'http';
 import type * as Router from 'router';
 
 import * as types from './internal-types';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import * as utils from './utils';
 import AttributeNames from './enums/AttributeNames';
@@ -38,7 +38,7 @@ export default class RouterInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
     super(
       `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
-      VERSION,
+      NPM_PACKAGE_VERSION,
       config
     );
   }

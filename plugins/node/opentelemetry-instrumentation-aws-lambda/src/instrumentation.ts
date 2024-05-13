@@ -57,7 +57,7 @@ import {
 } from 'aws-lambda';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
-import { VERSION } from './version';
+import { NPM_PACKAGE_VERSION } from './version';
 import { env } from 'process';
 import { LambdaModule } from './internal-types';
 
@@ -80,7 +80,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   protected override _config!: AwsLambdaInstrumentationConfig;
 
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-aws-lambda', VERSION, config);
+    super('@opentelemetry/instrumentation-aws-lambda', NPM_PACKAGE_VERSION, config);
     if (this._config.disableAwsContextPropagation == null) {
       if (
         typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
