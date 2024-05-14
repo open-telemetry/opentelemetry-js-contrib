@@ -21,7 +21,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { Span, SpanStatusCode } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_EXCEPTION_MESSAGE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLInstrumentation } from '../src';
@@ -1399,7 +1399,7 @@ describe('graphql', () => {
       const resolveEvent = resolveSpan.events[0];
       assert.deepStrictEqual(resolveEvent.name, 'exception');
       assert.deepStrictEqual(
-        resolveEvent.attributes?.[SemanticAttributes.EXCEPTION_MESSAGE],
+        resolveEvent.attributes?.[SEMATTRS_EXCEPTION_MESSAGE],
         'sync resolver error from tests'
       );
 
