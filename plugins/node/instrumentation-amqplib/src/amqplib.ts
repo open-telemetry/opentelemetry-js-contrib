@@ -94,28 +94,28 @@ export class AmqplibInstrumentation extends InstrumentationBase {
   protected init() {
     const channelModelModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/channel_model.js',
-      supporterVersions,
+      supportedVersions,
       this.patchChannelModel.bind(this),
       this.unpatchChannelModel.bind(this)
     );
 
     const callbackModelModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/callback_model.js',
-      supporterVersions,
+      supportedVersions,
       this.patchChannelModel.bind(this),
       this.unpatchChannelModel.bind(this)
     );
 
     const connectModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/connect.js',
-      supporterVersions,
+      supportedVersions,
       this.patchConnect.bind(this),
       this.unpatchConnect.bind(this)
     );
 
     const module = new InstrumentationNodeModuleDefinition(
       'amqplib',
-      supporterVersions,
+      supportedVersions,
       undefined,
       undefined,
       [channelModelModuleFile, connectModuleFile, callbackModelModuleFile]
