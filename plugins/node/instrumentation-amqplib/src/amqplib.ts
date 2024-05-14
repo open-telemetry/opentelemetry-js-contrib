@@ -74,7 +74,7 @@ import {
 } from './utils';
 import { VERSION } from './version';
 
-const supporterVersions = ['>=0.5.5 <1'];
+const supportedVersions = ['>=0.5.5 <1'];
 
 export class AmqplibInstrumentation extends InstrumentationBase {
   protected override _config!: AmqplibInstrumentationConfig;
