@@ -50,7 +50,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/api-logs": "^0.51.0",
+    "@opentelemetry/api-logs": "^0.51.1",
     "winston-transport": "4.*"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/winston-transport#readme"
