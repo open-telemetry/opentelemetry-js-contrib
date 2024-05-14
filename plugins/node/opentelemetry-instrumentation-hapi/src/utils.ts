@@ -15,7 +15,10 @@
  */
 
 import { SpanAttributes } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_HTTP_METHOD,
+  SEMATTRS_HTTP_ROUTE,
+} from '@opentelemetry/semantic-conventions';
 import type * as Hapi from '@hapi/hapi';
 import {
   HapiLayerType,
@@ -77,8 +80,8 @@ export const getRouteMetadata = (
   if (pluginName) {
     return {
       attributes: {
-        [SemanticAttributes.HTTP_ROUTE]: route.path,
-        [SemanticAttributes.HTTP_METHOD]: route.method,
+        [SEMATTRS_HTTP_ROUTE]: route.path,
+        [SEMATTRS_HTTP_METHOD]: route.method,
         [AttributeNames.HAPI_TYPE]: HapiLayerType.PLUGIN,
         [AttributeNames.PLUGIN_NAME]: pluginName,
       },
@@ -87,8 +90,8 @@ export const getRouteMetadata = (
   }
   return {
     attributes: {
-      [SemanticAttributes.HTTP_ROUTE]: route.path,
-      [SemanticAttributes.HTTP_METHOD]: route.method,
+      [SEMATTRS_HTTP_ROUTE]: route.path,
+      [SEMATTRS_HTTP_METHOD]: route.method,
       [AttributeNames.HAPI_TYPE]: HapiLayerType.ROUTER,
     },
     name: `route - ${route.path}`,
