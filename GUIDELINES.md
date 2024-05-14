@@ -205,7 +205,7 @@ The cases above are not covered by the base class and offer additional context t
 Instrumentation can specify the supported version to patch for each instrumented module and instrumented module file by specifying it in the `InstrumentationNodeModuleFile` and `InstrumentationNodeModuleDefinition` like so:
 
 ```js
-const supporterVersions = ['>=1.2.3 <3'];
+const supportedVersions = ['>=1.2.3 <3'];
 
   protected init() {
 
