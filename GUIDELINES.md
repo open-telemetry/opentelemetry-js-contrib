@@ -211,7 +211,7 @@ const supportedVersions = ['>=1.2.3 <3'];
 
     const someModuleFile = new InstrumentationNodeModuleFile(
       'foo/lib/some-file.js',
-      supporterVersions,
+      supportedVersions,
       myFilePatch,
       myFileUnpatch,
     );
