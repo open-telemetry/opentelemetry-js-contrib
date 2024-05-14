@@ -14,7 +14,7 @@ OpenTelemetry gRPC Census propagator provides gRPC header propagation for system
 const api = require("@opentelemetry/api");
 const { GrpcCensusPropagator } = require("@opentelemetry/propagator-grpc-census-binary");
 
-/- Set Global Propagator */
+/* Set Global Propagator */
 api.propagation.setGlobalPropagator(new GrpcCensusPropagator());
 ```
 
