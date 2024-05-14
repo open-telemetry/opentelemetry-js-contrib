@@ -218,7 +218,7 @@ const supportedVersions = ['>=1.2.3 <3'];
 
     const module = new InstrumentationNodeModuleDefinition(
       'foo',
-      supporterVersions,
+      supportedVersions,
       myModulePatch,
       myModuleUnpatch,
       [someModuleFile]
