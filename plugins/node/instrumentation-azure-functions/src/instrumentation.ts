@@ -14,46 +14,50 @@
  * limitations under the License.
  */
 
+import type * as AzureFunctions from '@azure/functions';
+import type { Disposable } from '@azure/functions';
 import { context as otelContext, propagation } from '@opentelemetry/api';
 import {
   InstrumentationBase,
-  InstrumentationNodeModuleDefinition,
   InstrumentationConfig,
+  InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import type * as azFunc from '@azure/functions';
 import { VERSION } from './version';
 
 export class AzureFunctionsInstrumentation extends InstrumentationBase {
+  private _funcDisposable: Disposable | undefined;
+
   constructor(config: InstrumentationConfig = {}) {
     super('@opentelemetry/instrumentation-azure-functions', VERSION, config);
   }
 
   protected init() {
-    let disposable: azFunc.Disposable | undefined;
-
     return new InstrumentationNodeModuleDefinition(
       '@azure/functions',
       ['^4.0.0'],
-      (moduleExports: typeof azFunc) => {
-        disposable = moduleExports.app.hook.preInvocation(context =>
-          this._preInvocationHook(context)
-        );
-        return moduleExports;
-      },
-      () => disposable?.dispose()
+      (moduleExports: typeof AzureFunctions) => this._patch(moduleExports),
+      () => this._unPatch()
     );
   }
 
-  private _preInvocationHook(context: azFunc.PreInvocationContext): void {
-    const traceContext = context.invocationContext.traceContext;
-    if (traceContext) {
-      context.functionHandler = otelContext.bind(
-        propagation.extract(otelContext.active(), {
-          traceparent: traceContext.traceParent,
-          tracestate: traceContext.traceState,
-        }),
-        context.functionHandler
-      );
-    }
+  private _patch(func: typeof AzureFunctions): typeof AzureFunctions {
+    this._funcDisposable = func.app.hook.preInvocation(context => {
+      const traceContext = context.invocationContext.traceContext;
+      if (traceContext) {
+        context.functionHandler = otelContext.bind(
+          propagation.extract(otelContext.active(), {
+            traceparent: traceContext.traceParent,
+            tracestate: traceContext.traceState,
+          }),
+          context.functionHandler
+        );
+      }
+    });
+
+    return func;
+  }
+
+  private _unPatch(): void {
+    this._funcDisposable?.dispose();
   }
 }
