@@ -287,4 +287,4 @@ Checklist for adding a new version to the supported versions list:
 - [ ] Test the instrumentation with the new version to ensure it works as expected.
 - [ ] Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition`s that target the new version.
 - [ ] Update the README file to reflect the support for new versions.
-- [ ] For instrumentations that uses test-all-verions `.tav.yaml`, add the new version to the list of versions to test.
+- [ ] For instrumentations that use test-all-versions `.tav.yaml`, add the new version to the list of versions to test.
