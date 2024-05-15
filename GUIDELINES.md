@@ -250,7 +250,7 @@ In this case, the instrumentation patches a Node.js internal module, which is no
 
 #### Multiple Modules
 
-One instrumentation package can potentially instrument multiple modules of different packages and version ranges. This makes sense if they are related, for example: `pg` and `pg-pool`, `aws-sdk` dozens of client packages etc. In this case, the instrumentation should specify the supported versions range for each module (if possible), and the README should list them.
+One instrumentation package can potentially instrument multiple modules of different packages and version ranges. This makes sense if they are closely related, such as `pg` and `pg-pool`. In this case, the instrumentation should specify the supported versions range for each module (if possible), and the README should list them.
 
 #### Different Patch Logic
 
