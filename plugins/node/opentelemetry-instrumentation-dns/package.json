@@ -60,7 +60,6 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.51.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
     "semver": "^7.5.4"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns#readme"
