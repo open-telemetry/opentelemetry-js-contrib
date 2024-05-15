@@ -65,6 +65,10 @@ When no span context is active or the span context is invalid, injection is skip
 
 `>=5.14.0 <10`
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
