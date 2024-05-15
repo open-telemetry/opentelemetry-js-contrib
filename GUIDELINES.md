@@ -244,7 +244,7 @@ This is the typical case, where the instrumented package is also the patched pac
 
 In this case, the instrumentation patches some internal modules (like with `redis-4` instrumentations, or `aws-sdk`). In this case the supported versions range is set on the patched packages, but the supported version upper range of the instrumented package is unknown as it depends on future versioning of the instrumented package dependencies.
 
-#### Nodejs Core Modules
+#### Node.js Core Modules
 
 In this case, the instrumentation patches a nodejs internal module, which is not versioned (carry the same version of the node runtime). The supported versions range is set to `['*']`, and the supported versions is the same as the support of OpenTelemetry for Nodejs versions. The README should specify the supported versions of NodeJS and align with the "engines" field in `package.json`.
 
