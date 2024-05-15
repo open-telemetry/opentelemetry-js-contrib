@@ -35,6 +35,6 @@ export interface DocumentLoadInstrumentationConfig
     documentFetch?: DocumentLoadCustomAttributeFunction;
     resourceFetch?: ResourceFetchCustomAttributeFunction;
   };
-  ignoreNetworkEvents?: Boolean;
-  ignorePerformanceEvents?: Boolean;
+  ignoreNetworkEvents?: boolean;
+  ignorePerformanceEvents?: boolean;
 }

@@ -158,7 +158,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
       }
 
       if (!this._getConfig().ignorePerformanceEvents) {
-        console.log('hi')
         addSpanPerformancePaintEvents(rootSpan);
       }
 

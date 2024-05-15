@@ -787,13 +787,16 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
         assert.strictEqual(rootSpan.name, 'documentFetch');
-        assert.strictEqual(rsEvents.length, 0)
+        assert.strictEqual(rsEvents.length, 0);
 
         assert.strictEqual(fetchSpan.name, 'resourceFetch');
-        assert.strictEqual(fsEvents.length, 0)
+        assert.strictEqual(fsEvents.length, 0);
 
         assert.strictEqual(loadSpan.name, 'documentLoad');
-        assert.deepEqual(lsEvents.map(event => event.name), ['firstPaint', 'firstContentfulPaint'])
+        assert.deepEqual(
+          lsEvents.map(event => event.name),
+          ['firstPaint', 'firstContentfulPaint']
+        );
 
         done();
       });
@@ -813,7 +816,10 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
 
         assert.strictEqual(loadSpan.name, 'documentLoad');
-        assert.notInclude(lsEvents.map(event => event.name), ['firstPaint', 'firstContentfulPaint'])
+        assert.notInclude(
+          lsEvents.map(event => event.name),
+          ['firstPaint', 'firstContentfulPaint']
+        );
 
         done();
       });
