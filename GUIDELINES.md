@@ -278,7 +278,7 @@ For cases where the range is not capped by an upper limit, the README should spe
 
 ### Add New Supported Versions
 
-When a new major version of the instrumented package is released, renovate bot will open a PR in contrib which is an easy was to become aware of it. The instrumentation maintainer should review the new version and check compatibility with existing code. It can then be added to the supported versions list to be released in the next version of the instrumentation.
+When a new major version of the instrumented package is released, renovate bot will open a PR in contrib which helps maintainers to become aware of it. The instrumentation maintainer should review the new version and check compatibility with existing code. It can then be added to the supported versions list to be released in the next version of the instrumentation.
 
 Checklist for adding a new version to the supported versions list:
 
