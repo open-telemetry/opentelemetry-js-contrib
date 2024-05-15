@@ -152,6 +152,44 @@
   * dependencies
     * @opentelemetry/instrumentation-aws-sdk bumped from ^0.38.0 to ^0.38.1
 
+## [0.46.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.46.0...auto-instrumentations-node-v0.46.1) (2024-05-15)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.41.0 to ^0.41.1
+    * @opentelemetry/instrumentation-connect bumped from ^0.36.0 to ^0.36.1
+    * @opentelemetry/instrumentation-express bumped from ^0.38.0 to ^0.39.0
+    * @opentelemetry/resource-detector-aws bumped from ^1.4.2 to ^1.5.0
+
+## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.45.0...auto-instrumentations-node-v0.46.0) (2024-05-02)
+
+
+### Features
+
+* **auto-instrumentation-node:** add azure detector ([#2101](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2101)) ([af2f3f1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/af2f3f1e5a2608900fcea721f08b2e541a17927c))
+* **auto-instrumentation-node:** add options for `serviceinstance` ([#2158](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2158)) ([379b757](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/379b7571fe3fead239285b503581094f42a79d66))
+* **auto-instrumentation-node:** add undici instrumentation ([#2131](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2131)) ([4463483](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4463483515c335de4cbb5b066f92c7ce0336619a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-dns bumped from ^0.36.0 to ^0.36.1
+    * @opentelemetry/instrumentation-fastify bumped from ^0.36.0 to ^0.36.1
+    * @opentelemetry/instrumentation-hapi bumped from ^0.37.0 to ^0.38.0
+    * @opentelemetry/instrumentation-knex bumped from ^0.36.0 to ^0.36.1
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.38.0 to ^0.38.1
+    * @opentelemetry/instrumentation-mysql bumped from ^0.38.0 to ^0.38.1
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.38.0 to ^0.38.1
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.37.0 to ^0.37.1
+    * @opentelemetry/instrumentation-pino bumped from ^0.38.0 to ^0.39.0
+    * @opentelemetry/instrumentation-redis bumped from ^0.39.0 to ^0.39.1
+    * @opentelemetry/instrumentation-tedious bumped from ^0.10.0 to ^0.10.1
+
 ## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.44.0...auto-instrumentations-node-v0.45.0) (2024-04-25)
 
 

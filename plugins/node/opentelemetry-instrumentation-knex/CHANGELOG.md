@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.36.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.36.0...instrumentation-knex-v0.36.1) (2024-05-02)
+
+
+### Bug Fixes
+
+* **instr-knex:** set correct SpanKind for traces ([#2157](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2157)) ([2d07c18](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2d07c1858bad8461dd7bd411e56f6305664ca331))
+* remove unuseful patch message from instrumentations ([#2161](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2161)) ([34f56e0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/34f56e0e28a0873b69a499c9e91798b19fea8e96))
+
 ## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.35.0...instrumentation-knex-v0.36.0) (2024-04-25)
 
 

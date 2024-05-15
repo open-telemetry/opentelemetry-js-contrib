@@ -77,8 +77,10 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _traceForceFlusher?: () => Promise<void>;
   private _metricForceFlusher?: () => Promise<void>;
 
-  constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+  protected override _config!: AwsLambdaInstrumentationConfig;
+
+  constructor(config: AwsLambdaInstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-aws-lambda', VERSION, config);
     if (this._config.disableAwsContextPropagation == null) {
       if (
         typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===

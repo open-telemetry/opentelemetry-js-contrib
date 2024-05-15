@@ -36,11 +36,7 @@ import {
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase {
   constructor(config: KoaInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-koa',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-koa', VERSION, config);
   }
 
   override setConfig(config: KoaInstrumentationConfig = {}) {
