@@ -238,7 +238,7 @@ The contrib repo has a few examples of different variations of common cases
 
 #### Single Module
 
-This is the easy and common case, where the instrumented package is also also the patched package, thus the supported versions align.
+This is the typical case, where the instrumented package is also the patched package, thus the supported versions align.
 
 #### Different Modules
 
