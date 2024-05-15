@@ -23,8 +23,13 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import {
-  SemanticAttributes,
-  NetTransportValues,
+  SEMATTRS_NET_HOST_IP,
+  SEMATTRS_NET_HOST_PORT,
+  SEMATTRS_NET_PEER_IP,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+  SEMATTRS_NET_TRANSPORT,
+  NETTRANSPORTVALUES_IP_TCP,
 } from '@opentelemetry/semantic-conventions';
 import { TLSAttributes } from './types';
 import { NormalizedOptions, SocketEvent } from './internal-types';
@@ -35,8 +40,8 @@ import { TLSSocket } from 'tls';
 import type * as net from 'net';
 
 export class NetInstrumentation extends InstrumentationBase {
-  constructor(_config?: InstrumentationConfig) {
-    super('@opentelemetry/instrumentation-net', VERSION, _config);
+  constructor(config: InstrumentationConfig = {}) {
+    super('@opentelemetry/instrumentation-net', VERSION, config);
   }
 
   init(): InstrumentationNodeModuleDefinition[] {
@@ -184,8 +189,8 @@ export class NetInstrumentation extends InstrumentationBase {
   private _startIpcSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('ipc.connect', {
       attributes: {
-        [SemanticAttributes.NET_TRANSPORT]: IPC_TRANSPORT,
-        [SemanticAttributes.NET_PEER_NAME]: options.path,
+        [SEMATTRS_NET_TRANSPORT]: IPC_TRANSPORT,
+        [SEMATTRS_NET_PEER_NAME]: options.path,
       },
     });
 
@@ -197,9 +202,9 @@ export class NetInstrumentation extends InstrumentationBase {
   private _startTcpSpan(options: NormalizedOptions, socket: Socket) {
     const span = this.tracer.startSpan('tcp.connect', {
       attributes: {
-        [SemanticAttributes.NET_TRANSPORT]: NetTransportValues.IP_TCP,
-        [SemanticAttributes.NET_PEER_NAME]: options.host,
-        [SemanticAttributes.NET_PEER_PORT]: options.port,
+        [SEMATTRS_NET_TRANSPORT]: NETTRANSPORTVALUES_IP_TCP,
+        [SEMATTRS_NET_PEER_NAME]: options.host,
+        [SEMATTRS_NET_PEER_PORT]: options.port,
       },
     });
 
@@ -240,9 +245,9 @@ function registerListeners(
 
   const setHostAttributes = () => {
     span.setAttributes({
-      [SemanticAttributes.NET_PEER_IP]: socket.remoteAddress,
-      [SemanticAttributes.NET_HOST_IP]: socket.localAddress,
-      [SemanticAttributes.NET_HOST_PORT]: socket.localPort,
+      [SEMATTRS_NET_PEER_IP]: socket.remoteAddress,
+      [SEMATTRS_NET_HOST_IP]: socket.localAddress,
+      [SEMATTRS_NET_HOST_PORT]: socket.localPort,
     });
   };
 

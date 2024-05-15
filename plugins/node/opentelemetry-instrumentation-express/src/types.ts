@@ -18,6 +18,8 @@ import { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import { ExpressLayerType } from './enums/ExpressLayerType';
 
+export type LayerPathSegment = string | RegExp | number;
+
 export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
 
 export type ExpressRequestInfo<T = any> = {

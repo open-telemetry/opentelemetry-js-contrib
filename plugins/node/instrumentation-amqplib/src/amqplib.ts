@@ -77,7 +77,7 @@ import { VERSION } from './version';
 export class AmqplibInstrumentation extends InstrumentationBase {
   protected override _config!: AmqplibInstrumentationConfig;
 
-  constructor(config?: AmqplibInstrumentationConfig) {
+  constructor(config: AmqplibInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-amqplib',
       VERSION,

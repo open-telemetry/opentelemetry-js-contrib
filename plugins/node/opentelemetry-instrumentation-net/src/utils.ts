@@ -15,11 +15,14 @@
  */
 
 import { NormalizedOptions } from './internal-types';
-import { NetTransportValues } from '@opentelemetry/semantic-conventions';
+import {
+  NETTRANSPORTVALUES_PIPE,
+  NETTRANSPORTVALUES_UNIX,
+} from '@opentelemetry/semantic-conventions';
 import { platform } from 'os';
 
 export const IPC_TRANSPORT =
-  platform() === 'win32' ? NetTransportValues.PIPE : NetTransportValues.UNIX;
+  platform() === 'win32' ? NETTRANSPORTVALUES_PIPE : NETTRANSPORTVALUES_UNIX;
 
 function getHost(args: unknown[]) {
   return typeof args[1] === 'string' ? args[1] : 'localhost';
