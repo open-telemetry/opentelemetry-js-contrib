@@ -246,7 +246,7 @@ In this case, the instrumentation patches some internal modules (like with `redi
 
 #### Node.js Core Modules
 
-In this case, the instrumentation patches a nodejs internal module, which is not versioned (carry the same version of the node runtime). The supported versions range is set to `['*']`, and the supported versions is the same as the support of OpenTelemetry for Nodejs versions. The README should specify the supported versions of NodeJS and align with the "engines" field in `package.json`.
+In this case, the instrumentation patches a Node.js internal module, which is not versioned because it carries the same version of the Node.js runtime. The supported versions range is set to `['*']`, and the supported versions will match OpenTelemetry for Node.js supported versions. The README should specify the supported versions of Node.js and align with the "engines" field in `package.json`.
 
 #### Multiple Modules
 
