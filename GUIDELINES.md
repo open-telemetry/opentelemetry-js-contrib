@@ -266,7 +266,7 @@ Instrumentations for nodejs internal modules can specify version range of `['*']
 
 Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior.
 
-New major versions should be reviewed and tested by before being added to the supported versions list.
+New major versions should be reviewed and tested before being added to the supported versions list.
 
 ### Documentation
 
