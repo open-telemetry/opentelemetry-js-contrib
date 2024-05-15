@@ -10,7 +10,7 @@
     "nodejs",
     "opentelemetry"
   ],
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-azure-functions#readme",
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-azure-functions#readme",
   "license": "Apache-2.0",
   "author": "OpenTelemetry Authors",
   "repository": "open-telemetry/opentelemetry-js-contrib",

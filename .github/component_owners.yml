@@ -52,6 +52,10 @@ components:
     - hectorhdzg
   plugins/node/instrumentation-amqplib:
     - blumamir
+  plugins/node/instrumentation-azure-functions:
+    - ejizba
+    - castrodd
+    - anatolib
   plugins/node/instrumentation-cucumber:
     - Ugzuzg
   plugins/node/instrumentation-dataloader:
@@ -72,10 +76,6 @@ components:
   plugins/node/opentelemetry-instrumentation-aws-sdk:
     - carolabadeer
     - blumamir
-  plugins/node/opentelemetry-instrumentation-azure-functions:
-    - ejizba
-    - castrodd
-    - anatolib
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
     - trentm
