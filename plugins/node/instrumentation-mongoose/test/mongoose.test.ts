@@ -34,11 +34,13 @@ const instrumentation = registerInstrumentationTesting(
 import * as mongoose from 'mongoose';
 import User, { IUser, loadUsers } from './user';
 import { assertSpan, getStatement } from './asserts';
-import { DB_NAME, MONGO_URI } from './config';
+import { shouldTest, DB_NAME, MONGO_URI } from './config';
 
-// Please run mongodb in the background: docker run -d -p 27017:27017 -v ~/data:/data/db mongo
 describe('mongoose instrumentation', () => {
   before(async () => {
+    if (!shouldTest) {
+      return;
+    }
     try {
       await mongoose.connect(MONGO_URI, {
         useNewUrlParser: true,
@@ -63,7 +65,13 @@ describe('mongoose instrumentation', () => {
     await mongoose.connection.close();
   });
 
-  beforeEach(async () => {
+  beforeEach(async function mongooseBeforeEach() {
+    // Skipping all tests in beforeEach() is a workaround. Mocha does not work
+    // properly when skipping tests in before() on nested describe() calls.
+    // https://github.com/mochajs/mocha/issues/2819
+    if (!shouldTest) {
+      this.skip();
+    }
     instrumentation.disable();
     instrumentation.setConfig({
       dbStatementSerializer: (_operation: string, payload) =>
@@ -75,6 +83,9 @@ describe('mongoose instrumentation', () => {
   });
 
   afterEach(async () => {
+    if (!shouldTest) {
+      return;
+    }
     instrumentation.disable();
     await User.collection.drop().catch();
   });

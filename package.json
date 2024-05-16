@@ -21,6 +21,9 @@
     "test:ci:changed": "lerna run test --since origin/main",
     "test:browser": "lerna run test:browser --concurrency 1",
     "test-all-versions": "npm run --if-present --workspaces test-all-versions",
+    "test-services:start": "docker compose -f ./test/docker-compose.yaml up -d --wait",
+    "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
+    "test:with-test-services": "NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env npm test",
     "bump": "lerna publish",
     "changelog": "lerna-changelog",
     "lint": "lerna run lint",
@@ -41,6 +44,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "5.8.1",
     "@typescript-eslint/parser": "5.8.1",
+    "dotenv": "^16.4.5",
     "eslint": "8.7.0",
     "eslint-config-airbnb-base": "15.0.0",
     "eslint-config-prettier": "8.8.0",

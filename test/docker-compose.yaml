@@ -1,0 +1,33 @@
+# A `docker compose` config file to run services required for testing some
+# packages.
+#
+# Note: This isn't used in CI. CI uses GitHub Actions' `services: ...` for
+# defining test services.
+#
+# Usage:
+#   npm run test-services:start [SERVICE ...]
+#   npm run test:with-test-services   # runs test with 'test-services.env' envvars
+#   npm run test-services:stop [SERVICE ...]
+
+name: oteljs-test-services
+
+services:
+  redis:
+    image: redis:7
+    ports:
+      - "63790:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 10s
+      retries: 30
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok", "--quiet"]
+      interval: 1s
+      timeout: 10s
+      retries: 30

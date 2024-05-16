@@ -18,3 +18,8 @@ export const MONGO_HOST = process.env.MONGODB_HOST || 'localhost';
 export const MONGO_PORT = Number(process.env.MONGODB_PORT || 27017);
 
 export const MONGO_URI = `mongodb://${MONGO_HOST}/${MONGO_PORT}`;
+
+export const shouldTest = process.env.RUN_MONGODB_TESTS != null;
+if (!shouldTest) {
+  console.log('Skipping mongodb tests. Set RUN_MONGODB_TESTS=1 to run them.');
+}
