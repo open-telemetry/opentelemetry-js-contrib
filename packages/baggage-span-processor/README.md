@@ -46,7 +46,7 @@ const sdk = new NodeSDK({
 sdk.start();
 ```
 
-A predicate function that determines what baggage entries are copied can be provided as a constructor paramter.
+A predicate function that determines what baggage entries are copied can be provided as a constructor parameter.
 
 For example, to only copy baggage entries that start with `my-key`:
 
