@@ -21,11 +21,7 @@ import { RedisInstrumentation } from '../src';
 import type { MultiErrorReply } from '../src/internal-types';
 import * as assert from 'assert';
 
-import {
-  redisTestConfig,
-  redisTestUrl,
-  shouldTest,
-} from './utils';
+import { redisTestConfig, redisTestUrl, shouldTest } from './utils';
 
 const instrumentation = registerInstrumentationTesting(
   new RedisInstrumentation()
