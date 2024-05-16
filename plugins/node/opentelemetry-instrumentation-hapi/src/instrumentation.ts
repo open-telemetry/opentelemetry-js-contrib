@@ -57,7 +57,9 @@ export class HapiInstrumentation extends InstrumentationBase {
     return new InstrumentationNodeModuleDefinition(
       HapiComponentName,
       ['>=17 <22'],
-      (moduleExports: typeof Hapi) => {
+      (module: any) => {
+        const moduleExports: typeof Hapi =
+          module[Symbol.toStringTag] === 'Module' ? module.default : module;
         if (!isWrapped(moduleExports.server)) {
           this._wrap(
             moduleExports,
@@ -75,7 +77,9 @@ export class HapiInstrumentation extends InstrumentationBase {
         }
         return moduleExports;
       },
-      (moduleExports: typeof Hapi) => {
+      (module: any) => {
+        const moduleExports: typeof Hapi =
+          module[Symbol.toStringTag] === 'Module' ? module.default : module;
         this._massUnwrap([moduleExports], ['server', 'Server']);
       }
     );
