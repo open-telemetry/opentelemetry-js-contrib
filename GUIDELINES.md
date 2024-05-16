@@ -270,7 +270,7 @@ New major versions should be reviewed and tested before being added to the suppo
 
 ### Documentation
 
-Instrumentation should have a "## Supported Versions" section in the README file that lists the supported versions range of the instrumented package - the user-facing package which makes most sense to human consumer.
+Instrumentation should have a "## Supported Versions" section in the README file that lists the supported versions range of the instrumented package.
 
 This range should hide any internal implementation details like the use of internal modules, different patch logic for different versions, etc. It should focus on the relevance to the human consumer.
 
