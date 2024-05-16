@@ -14,37 +14,57 @@
  * limitations under the License.
  */
 
+import { trace } from '@opentelemetry/api';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
   getTestSpans,
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
+import {
+  InMemoryLogRecordExporter,
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
 import { AzureFunctionsInstrumentation } from '../src';
 
 const instrumentation = registerInstrumentationTesting(
   new AzureFunctionsInstrumentation()
 );
 
-import * as assert from 'assert';
-import * as sinon from 'sinon';
-import { trace } from '@opentelemetry/api';
+const loggerProvider = new LoggerProvider();
+const memoryLogExporter = new InMemoryLogRecordExporter();
+loggerProvider.addLogRecordProcessor(
+  new SimpleLogRecordProcessor(memoryLogExporter)
+);
+instrumentation.setLoggerProvider(loggerProvider);
+logs.setGlobalLoggerProvider(loggerProvider);
+
 import {
   HttpRequest,
   InvocationContext,
+  LogHookHandler,
+  LogLevel,
   PreInvocationContext,
   PreInvocationHandler,
   TraceContext,
   app,
 } from '@azure/functions';
+import * as assert from 'assert';
+import * as sinon from 'sinon';
 
 describe('Azure Functions', () => {
   const preInvocHookStub = sinon.stub(app.hook, 'preInvocation');
+  const logHookStub = sinon.stub(app.hook, 'log');
   let preInvocationHook: PreInvocationHandler;
+  let logHook: LogHookHandler;
 
   beforeEach(() => {
     instrumentation.disable();
     preInvocHookStub.reset();
+    logHookStub.reset();
     instrumentation.enable();
     preInvocationHook = preInvocHookStub.getCall(0).args[0];
+    logHook = logHookStub.getCall(0).args[0];
   });
 
   function mockHttpTrigger(traceContext?: TraceContext) {
@@ -90,5 +110,46 @@ describe('Azure Functions', () => {
     assert.strictEqual(spans.length, 1);
     const [span] = spans;
     assert.strictEqual(span.parentSpanId, undefined);
+  });
+
+  it('log hook severity conversion', async () => {
+    const levels: LogLevel[] = [
+      'information',
+      'debug',
+      'error',
+      'trace',
+      'warning',
+      'critical',
+      'none',
+    ];
+    for (const level of levels) {
+      logHook({
+        level,
+        category: 'user',
+        message: level,
+        invocationContext: undefined,
+        hookData: {},
+      });
+    }
+
+    const logRecords = memoryLogExporter.getFinishedLogRecords();
+    assert.strictEqual(logRecords.length, 7);
+    assert.strictEqual(logRecords[0].body, 'information');
+    assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO);
+    assert.strictEqual(logRecords[1].body, 'debug');
+    assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.DEBUG);
+    assert.strictEqual(logRecords[2].body, 'error');
+    assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.ERROR);
+    assert.strictEqual(logRecords[3].body, 'trace');
+    assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.TRACE);
+    assert.strictEqual(logRecords[4].body, 'warning');
+    assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.WARN);
+    assert.strictEqual(logRecords[5].body, 'critical');
+    assert.strictEqual(logRecords[5].severityNumber, SeverityNumber.FATAL);
+    assert.strictEqual(logRecords[6].body, 'none');
+    assert.strictEqual(
+      logRecords[6].severityNumber,
+      SeverityNumber.UNSPECIFIED
+    );
   });
 });
