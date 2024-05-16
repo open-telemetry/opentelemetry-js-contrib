@@ -146,7 +146,6 @@ npm run test-services:stop      # stops Docker containers
 This set of commands works in the top-level directory to test all packages, or
 in a specific package directory that requires a test service (e.g. `plugins/node/opentelemetry-instrumentation-mongodb`).
 
-
 ### Benchmarks
 
 When two or more approaches must be compared, please write a benchmark in the benchmark/index.js module so that we can keep track of the most efficient algorithm.
