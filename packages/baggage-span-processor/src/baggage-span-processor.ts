@@ -50,7 +50,7 @@ export class BaggageSpanProcessor implements SpanProcessor {
    * @param keyFilter An optional function that can be used to filter keys
    * added to the span. If the function returns true, the key will be added
    * to the span. If the function returns false, the key will not be added
-   * to the span.
+   * to the span. The default behavior is to add all keys to the span.
    */
   constructor(keyFilter?: (key: string) => boolean) {
     this._keyFilter = keyFilter ?? (() => true);
