@@ -19,6 +19,8 @@ npm install --save @opentelemetry/instrumentation-redis-4
 
 - [`redis`](https://www.npmjs.com/package/redis) versions `>=4.0.0`
 
+For versions `redis@^2.6.0` and `redis@^3.0.0`, please use `@opentelemetry/instrumentation-redis`
+
 ## Usage
 
 OpenTelemetry Redis Instrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [redis](https://www.npmjs.com/package/redis).
