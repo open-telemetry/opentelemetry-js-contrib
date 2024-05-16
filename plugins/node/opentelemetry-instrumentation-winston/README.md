@@ -85,7 +85,7 @@ npm install --save @opentelemetry/winston-transport
 ### Log correlation
 
 Winston logger calls in the context of a tracing span will have fields
-indentifying the span added to the log record. This allows
+identifying the span added to the log record. This allows
 [correlating](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)
 log records with tracing data. The added fields are
 ([spec](https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/)):
@@ -103,6 +103,10 @@ logHook: (span, record) => {
 ```
 
 Log injection can be disabled with the `disableLogCorrelation: true` option.
+
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
 
 ## Useful links
 

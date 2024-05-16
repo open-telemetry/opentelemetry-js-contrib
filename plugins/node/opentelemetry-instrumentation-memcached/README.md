@@ -48,6 +48,20 @@ registerInstrumentations({
 | ------- | ---- | ------- | ----------- |
 | `enhancedDatabaseReporting` | `boolean` | `false` | Include full command statement in the span - **leaks potentially sensitive information to your spans**. Defaults to `false`. |
 
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute       | Short Description                                                           |
+|-----------------|-----------------------------------------------------------------------------|
+| `db.operation`  | The name of the operation being executed.                                   |
+| `db.statement`  | The database statement being executed.                                      |
+| `db.system`     | An identifier for the database management system (DBMS) product being used. |
+| `net.peer.name` | Remote hostname or similar.                                                 |
+| `net.peer.port` | Remote port number.                                                         |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

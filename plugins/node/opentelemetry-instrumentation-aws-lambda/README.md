@@ -86,6 +86,18 @@ The `lambdaHandler` should be specified as a string in the format `<file>.<handl
 
 One way to determine if the `lambdaHandler` option should be used is to check the handler defined on your Lambda. This can be done by determining the value of the `_HANDLER` environment variable or by viewing the **Runtime Settings** of your Lambda in AWS Console. If the handler is what you expect, then the instrumentation should work without the `lambdaHandler` option. If the handler points to something else, then the `lambdaHandler` option should be used to explicitly specify the handler that should be instrumented.
 
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute          | Short Description                                                         |
+| ------------------ | ------------------------------------------------------------------------- |
+| `cloud.account.id` | The cloud account ID the resource is assigned to.                         |
+| `faas.execution`   | The execution ID of the current function execution.                       |
+| `faas.id`          | The unique ID of the single function that this runtime instance executes. |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

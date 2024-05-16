@@ -48,19 +48,23 @@ registerInstrumentations({
 `<ControllerName>.<memberName>` | `request_context` | Traces the whole request context. | `http.*`, `nestjs.callback`
 `<memberName>` | `handler` | Traces the work of a specific controller member function. | `nestjs.callback`
 
-### Attributes
+## Semantic Conventions
 
-| Name | Description
-| ---- | ----
-| `component`* | "@nestjs/core"
-| `nestjs.version`* | Version of instrumented `@nestjs/core` package
-| `nestjs.type`* | See [NestType](./src/enums/NestType.ts)
-| `nestjs.module` | Nest module class name
-| `nestjs.controller` | Nest controller class name
-| `nestjs.callback` | The function name of the member in the controller
-| `http.method` | HTTP method
-| `http.url` | Full request URL
-| `http.route` | Route assigned to handler. Ex: `/users/:id`
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute           | Short Description                                  |
+|---------------------|----------------------------------------------------|
+| `component`*        | "@nestjs/core"                                     |
+| `nestjs.version`*   | Version of instrumented `@nestjs/core` package     |
+| `nestjs.type`*      | See [NestType](./src/enums/NestType.ts)            |
+| `nestjs.module`     | Nest module class name                             |
+| `nestjs.controller` | Nest controller class name                         |
+| `nestjs.callback`   | The function name of the member in the controller  |
+| `http.method`       | HTTP method                                        |
+| `http.url`          | Full request URL                                   |
+| `http.route`        | Route assigned to handler. Ex: `/users/:id`        |
 
 \* included in all of the spans.
 

@@ -65,6 +65,10 @@ For the current active span, the following fields are injected. These field name
 
 When no span context is active or the span context is invalid, injection is skipped.
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

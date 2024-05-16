@@ -25,7 +25,11 @@ import {
 import type { NestFactory } from '@nestjs/core/nest-factory.js';
 import type { RouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
 import type { Controller } from '@nestjs/common/interfaces';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_HTTP_METHOD,
+  SEMATTRS_HTTP_ROUTE,
+  SEMATTRS_HTTP_URL,
+} from '@opentelemetry/semantic-conventions';
 import { VERSION } from './version';
 import { AttributeNames, NestType } from './enums';
 
@@ -168,9 +172,9 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
             ...Instrumentation.COMMON_ATTRIBUTES,
             [AttributeNames.VERSION]: moduleVersion,
             [AttributeNames.TYPE]: NestType.REQUEST_CONTEXT,
-            [SemanticAttributes.HTTP_METHOD]: req.method,
-            [SemanticAttributes.HTTP_URL]: req.originalUrl || req.url,
-            [SemanticAttributes.HTTP_ROUTE]:
+            [SEMATTRS_HTTP_METHOD]: req.method,
+            [SEMATTRS_HTTP_URL]: req.originalUrl || req.url,
+            [SEMATTRS_HTTP_ROUTE]:
               req.route?.path || req.routeOptions?.url || req.routerPath,
             [AttributeNames.CONTROLLER]: instanceName,
             [AttributeNames.CALLBACK]: callbackName,
