@@ -28,7 +28,7 @@ import {
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
@@ -48,7 +48,7 @@ tracerProvider.addSpanProcessor(
 const tracer = tracerProvider.getTracer('default');
 
 const resource = new Resource({
-  [SemanticResourceAttributes.SERVICE_NAME]: 'test-instrumentation-bunyan',
+  [SEMRESATTRS_SERVICE_NAME]: 'test-instrumentation-bunyan',
 });
 const loggerProvider = new LoggerProvider({ resource });
 const memExporter = new InMemoryLogRecordExporter();
