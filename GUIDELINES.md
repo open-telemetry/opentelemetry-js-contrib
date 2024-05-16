@@ -254,7 +254,7 @@ One instrumentation package can potentially instrument multiple modules of diffe
 
 #### Different Patch Logic
 
-In some cases, instrumentations does not use the moduleExports in order to patch, it can hook up to nodejs diagnostics channel, patch globals (like browser instrumentations that patches the `window`), patch arbitrary lambda function handler, etc. In this cases, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
+In some cases, instrumentation does not use the moduleExports to patch, and instead hooks up to the Node.js diagnostics channel, or patches globals (like `window` being patched in browser instrumentations, or patches arbitrary lambda function handlers, etc. In these cases, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
 
 ### Range Specification
 
