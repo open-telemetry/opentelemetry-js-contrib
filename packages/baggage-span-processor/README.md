@@ -46,6 +46,16 @@ const sdk = new NodeSDK({
 sdk.start();
 ```
 
+A predicate function that determines what baggage entries are copied can be provided as a contructor paramter.
+
+For example, to only copy baggage entries that start with `my-key`:
+
+```javascript
+new BaggageSpanProcessor((key: string) =>
+    key.startsWith('my-key')
+  )
+```
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

@@ -72,3 +72,42 @@ describe('BaggageSpanProcessor', () => {
     await expect(baggageProcessor.shutdown()).resolves.not.toThrow();
   });
 });
+
+describe('BaggageSpanProcessor with custom key filter', () => {
+  const baggageProcessor = new BaggageSpanProcessor((key: string) =>
+    key.startsWith('brand')
+  );
+
+  const bag = propagation.createBaggage({
+    brand: { value: 'samsonite' },
+    color: { value: 'blue' },
+  });
+
+  const expectedAttrs = {
+    brand: 'samsonite',
+  };
+
+  let span: Span;
+
+  beforeEach(() => {
+    span = new Span(
+      new BasicTracerProvider().getTracer('baggage-testing'),
+      ROOT_CONTEXT,
+      'Edward W. Span',
+      {
+        traceId: 'e4cda95b652f4a1592b449d5929fda1b',
+        spanId: '7e0c63257de34c92',
+        traceFlags: TraceFlags.SAMPLED,
+      },
+      SpanKind.SERVER
+    );
+  });
+
+  it('should only add baggage entries that match filter', () => {
+    expect(span.attributes).toEqual({});
+    const ctx = propagation.setBaggage(ROOT_CONTEXT, bag);
+    baggageProcessor.onStart(span, ctx);
+
+    expect(span.attributes).toEqual(expectedAttrs);
+  });
+});

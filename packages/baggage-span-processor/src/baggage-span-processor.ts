@@ -43,6 +43,19 @@ import {
  * values will appear in all outgoing HTTP headers from the application.
  */
 export class BaggageSpanProcessor implements SpanProcessor {
+  private _keyFilter: (key: string) => boolean;
+
+  /**
+   * Constructs a new BaggageSpanProcessor instance.
+   * @param keyFilter An optional function that can be used to filter keys
+   * added to the span. If the function returns true, the key will be added
+   * to the span. If the function returns false, the key will not be added
+   * to the span.
+   */
+  constructor(keyFilter?: (key: string) => boolean) {
+    this._keyFilter = keyFilter ?? (() => true);
+  }
+
   /**
    * Forces to export all finished spans
    */
@@ -59,7 +72,9 @@ export class BaggageSpanProcessor implements SpanProcessor {
   onStart(span: Span, parentContext: Context): void {
     (propagation.getBaggage(parentContext)?.getAllEntries() ?? []).forEach(
       entry => {
-        span.setAttribute(entry[0], entry[1].value);
+        if (this._keyFilter(entry[0])) {
+          span.setAttribute(entry[0], entry[1].value);
+        }
       }
     );
   }
