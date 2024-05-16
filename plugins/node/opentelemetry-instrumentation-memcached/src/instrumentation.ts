@@ -29,7 +29,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as utils from './utils';
 import { InstrumentationConfig } from './types';
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export class Instrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'memcached';
@@ -42,8 +42,8 @@ export class Instrumentation extends InstrumentationBase {
 
   constructor(config: InstrumentationConfig = {}) {
     super(
-      NPM_PACKAGE_NAME,
-      NPM_PACKAGE_VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, Instrumentation.DEFAULT_CONFIG, config)
     );
   }

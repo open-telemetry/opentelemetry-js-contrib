@@ -18,7 +18,7 @@ const { eventLoopUtilization } = performance;
 
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { RuntimeNodeInstrumentationConfig } from './types';
 
 const ELUS_LENGTH = 2;
@@ -32,8 +32,8 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
 
   constructor(config: RuntimeNodeInstrumentationConfig = {}) {
     super(
-      NPM_PACKAGE_NAME,
-      NPM_PACKAGE_VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }

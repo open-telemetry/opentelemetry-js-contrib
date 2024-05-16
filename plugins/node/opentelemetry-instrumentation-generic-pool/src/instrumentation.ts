@@ -24,7 +24,7 @@ import {
 
 import type * as genericPool from 'generic-pool';
 
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const MODULE_NAME = 'generic-pool';
 
@@ -33,7 +33,7 @@ export default class Instrumentation extends InstrumentationBase {
   private _isDisabled = false;
 
   constructor(config: InstrumentationConfig = {}) {
-    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {

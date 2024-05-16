@@ -41,14 +41,14 @@ import {
   safeExecuteInTheMiddleMaybePromise,
   startSpan,
 } from './utils';
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export const ANONYMOUS_NAME = 'anonymous';
 
 /** Fastify instrumentation for OpenTelemetry */
 export class FastifyInstrumentation extends InstrumentationBase {
   constructor(config: FastifyInstrumentationConfig = {}) {
-    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override setConfig(config: FastifyInstrumentationConfig = {}) {

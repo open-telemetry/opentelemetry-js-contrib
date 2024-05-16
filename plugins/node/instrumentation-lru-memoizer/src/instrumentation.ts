@@ -20,11 +20,11 @@ import {
   InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export default class LruMemoizerInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
-    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init(): InstrumentationNodeModuleDefinition[] {

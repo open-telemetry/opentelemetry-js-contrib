@@ -39,7 +39,7 @@ import {
   ResourceFetchCustomAttributeFunction,
 } from './types';
 import { AttributeNames } from './enums/AttributeNames';
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   SEMATTRS_HTTP_URL,
   SEMATTRS_HTTP_USER_AGENT,
@@ -62,7 +62,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
    * @param config
    */
   constructor(config: DocumentLoadInstrumentationConfig = {}) {
-    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {}

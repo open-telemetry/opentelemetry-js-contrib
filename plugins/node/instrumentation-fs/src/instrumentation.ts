@@ -21,7 +21,7 @@ import {
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   CALLBACK_FUNCTIONS,
   PROMISE_FUNCTIONS,
@@ -53,7 +53,7 @@ function patchedFunctionWithOriginalProperties<
 
 export default class FsInstrumentation extends InstrumentationBase {
   constructor(config: FsInstrumentationConfig = {}) {
-    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init(): (

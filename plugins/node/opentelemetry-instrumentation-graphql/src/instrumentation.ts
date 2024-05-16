@@ -49,7 +49,7 @@ import {
   wrapFields,
 } from './utils';
 
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
 import { GraphQLInstrumentationConfig } from './types';
@@ -66,8 +66,8 @@ const supportedVersions = ['>=14 <17'];
 export class GraphQLInstrumentation extends InstrumentationBase {
   constructor(config: GraphQLInstrumentationConfig = {}) {
     super(
-      NPM_PACKAGE_NAME,
-      NPM_PACKAGE_VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }

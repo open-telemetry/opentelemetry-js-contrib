@@ -72,15 +72,15 @@ import {
   normalizeExchange,
   unmarkConfirmChannelTracing,
 } from './utils';
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 export class AmqplibInstrumentation extends InstrumentationBase {
   protected override _config!: AmqplibInstrumentationConfig;
 
   constructor(config: AmqplibInstrumentationConfig = {}) {
     super(
-      NPM_PACKAGE_NAME,
-      NPM_PACKAGE_VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }

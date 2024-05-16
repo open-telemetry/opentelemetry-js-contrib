@@ -34,7 +34,7 @@ import {
 import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
 import { getSpanName, once } from './utils';
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const CURRENT_DATABASE = Symbol(
   'opentelemetry.instrumentation-tedious.current-database'
@@ -71,7 +71,7 @@ export class TediousInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'tedious';
 
   constructor(config: TediousInstrumentationConfig = {}) {
-    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {

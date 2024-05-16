@@ -24,7 +24,7 @@ import {
 
 import type * as koa from 'koa';
 import { KoaContext, KoaLayerType, KoaInstrumentationConfig } from './types';
-import { NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
@@ -36,7 +36,7 @@ import {
 /** Koa instrumentation for OpenTelemetry */
 export class KoaInstrumentation extends InstrumentationBase {
   constructor(config: KoaInstrumentationConfig = {}) {
-    super(NPM_PACKAGE_NAME, NPM_PACKAGE_VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override setConfig(config: KoaInstrumentationConfig = {}) {
