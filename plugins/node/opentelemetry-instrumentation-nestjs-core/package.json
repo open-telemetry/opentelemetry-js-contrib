@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-nestjs-core",
   "version": "0.37.1",
-  "description": "OpenTelemetry NestJS automatic instrumentation package.",
+  "description": "OpenTelemetry instrumentation for NestJS server side applications framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
