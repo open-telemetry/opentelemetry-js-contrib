@@ -28,6 +28,7 @@
     "plugins/node/instrumentation-cucumber": {},
     "plugins/node/instrumentation-dataloader": {},
     "plugins/node/instrumentation-fs": {},
+    "plugins/node/instrumentation-kafkajs": {},
     "plugins/node/instrumentation-lru-memoizer": {},
     "plugins/node/instrumentation-mongoose": {},
     "plugins/node/instrumentation-runtime-node": {},
