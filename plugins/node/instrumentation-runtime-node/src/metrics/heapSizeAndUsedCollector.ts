@@ -18,8 +18,8 @@ import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
 import {HeapSizes} from "../types/heapSizes";
 
-const NODEJS_HEAP_SIZE = 'heap.size';
-const NODEJS_HEAP_SIZE_STATE = 'heap.size.state';
+export const V8_HEAP_SIZE = 'heap.size';
+const V8_HEAP_SIZE_STATE = 'heap.size.state';
 
 export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> {
   constructor(
@@ -31,7 +31,7 @@ export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> 
 
   updateMetricInstruments(meter: Meter): void {
    meter.createObservableGauge(
-      `${this.namePrefix}.${NODEJS_HEAP_SIZE}`,
+      `${this.namePrefix}.${V8_HEAP_SIZE}`,
       {
         description: "Process heap size from Node.js in bytes.",
         unit: 'By',
@@ -42,11 +42,11 @@ export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> 
       const data = this._scrapeQueue.shift();
       if (data === undefined) return;
       observableResult.observe(data.heapTotal, {
-        [`${this.namePrefix}.${NODEJS_HEAP_SIZE_STATE}`]: HeapSizes.Total,
+        [`${this.namePrefix}.${V8_HEAP_SIZE_STATE}`]: HeapSizes.Total,
         ...this.versionAttribute
       });
       observableResult.observe(data.heapUsed, {
-        [`${this.namePrefix}.${NODEJS_HEAP_SIZE_STATE}`]: HeapSizes.Used,
+        [`${this.namePrefix}.${V8_HEAP_SIZE_STATE}`]: HeapSizes.Used,
         ...this.versionAttribute
       });
     });

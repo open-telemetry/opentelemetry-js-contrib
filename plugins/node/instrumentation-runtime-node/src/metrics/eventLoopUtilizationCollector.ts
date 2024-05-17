@@ -20,7 +20,7 @@ import { BaseCollector } from './baseCollector';
 
 const { eventLoopUtilization: eventLoopUtilizationCollector } = performance;
 
-const NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
+export const NODEJS_EVENT_LOOP_UTILIZATION = 'eventloop.utilization';
 
 export class EventLoopUtilizationCollector extends BaseCollector<EventLoopUtilization> {
   constructor(

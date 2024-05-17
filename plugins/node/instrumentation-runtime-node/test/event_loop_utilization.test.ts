@@ -18,10 +18,12 @@ import { MeterProvider, DataPointType } from '@opentelemetry/sdk-metrics';
 import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
+import {ConventionalNamePrefix} from "../src/types/ConventionalNamePrefix";
+import {NODEJS_EVENT_LOOP_UTILIZATION} from "../src/metrics/eventLoopUtilizationCollector";
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe('jsruntime.eventloop.utilization', function () {
+describe(`${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION}`, function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -68,7 +70,7 @@ describe('jsruntime.eventloop.utilization', function () {
     );
     const scopeMetrics = resourceMetrics.scopeMetrics;
     const utilizationMetric = scopeMetrics[0].metrics.find(
-      x => x.descriptor.name === 'jsruntime.eventloop.utilization'
+      x => x.descriptor.name === `${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION}`
     );
 
     assert.notEqual(utilizationMetric, undefined, 'metric not found');
@@ -81,7 +83,7 @@ describe('jsruntime.eventloop.utilization', function () {
 
     assert.strictEqual(
       utilizationMetric!.descriptor.name,
-      'jsruntime.eventloop.utilization',
+      `${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION}`,
       'descriptor.name'
     );
 

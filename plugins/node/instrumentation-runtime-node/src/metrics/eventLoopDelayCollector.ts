@@ -31,48 +31,40 @@ enum NodeJsEventLoopDelay {
 }
 
 export const metricNames: Record<NodeJsEventLoopDelay, { description: string }> = {
-  [NodeJsEventLoopDelay.delay]:
-    {
+  [NodeJsEventLoopDelay.delay]: {
       description:
         'Lag of event loop in seconds.'
     },
-  [NodeJsEventLoopDelay.min]:
-    {
+  [NodeJsEventLoopDelay.min]: {
       description:
         'The minimum recorded event loop delay.',
     },
-  [NodeJsEventLoopDelay.max]:
-    {
+  [NodeJsEventLoopDelay.max]: {
       description:
         'The maximum recorded event loop delay.',
     }
   ,
-  [NodeJsEventLoopDelay.mean]:
-    {
+  [NodeJsEventLoopDelay.mean]: {
       description:
         'The mean of the recorded event loop delays.',
     }
   ,
-  [NodeJsEventLoopDelay.stddev]:
-    {
+  [NodeJsEventLoopDelay.stddev]: {
       description:
         'The standard deviation of the recorded event loop delays.',
     }
   ,
-  [NodeJsEventLoopDelay.p50]:
-    {
+  [NodeJsEventLoopDelay.p50]: {
       description:
         'The 50th percentile of the recorded event loop delays.',
     }
   ,
-  [NodeJsEventLoopDelay.p90]:
-    {
+  [NodeJsEventLoopDelay.p90]: {
       description:
         'The 90th percentile of the recorded event loop delays.',
     }
   ,
-  [NodeJsEventLoopDelay.p99]:
-    {
+  [NodeJsEventLoopDelay.p99]: {
 
       description:
         'The 99th percentile of the recorded event loop delays.',

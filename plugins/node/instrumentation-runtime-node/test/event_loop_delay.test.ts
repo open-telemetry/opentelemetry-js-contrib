@@ -18,12 +18,12 @@ import { MeterProvider, DataPointType } from '@opentelemetry/sdk-metrics';
 import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
-import { metricNames } from '../src/metrics/heapSpacesSizeAndUsedCollector';
+import { metricNames } from '../src/metrics/eventLoopDelayCollector';
 import {ConventionalNamePrefix} from "../src/types/ConventionalNamePrefix";
 
 const MEASUREMENT_INTERVAL = 10;
 
-describe('nodejs.heap_space', function () {
+describe(`${ConventionalNamePrefix.NodeJsRuntime}.eventloop`, function () {
   let metricReader: TestMetricReader;
   let meterProvider: MeterProvider;
 
@@ -34,7 +34,7 @@ describe('nodejs.heap_space', function () {
   });
 
   for (const metricName in metricNames) {
-    it(`should write ${ConventionalNamePrefix.V8EnjineRuntime}.${metricName} after monitoringPrecision`, async function () {
+    it(`should write ${ConventionalNamePrefix.NodeJsRuntime}.${metricName} after monitoringPrecision`, async function () {
       // arrange
       const instrumentation = new RuntimeNodeInstrumentation({
         monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -55,10 +55,10 @@ describe('nodejs.heap_space', function () {
       );
       const scopeMetrics = resourceMetrics.scopeMetrics;
       const metric = scopeMetrics[0].metrics.find(
-        x => x.descriptor.name === `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName}`
+        x => x.descriptor.name === `${ConventionalNamePrefix.NodeJsRuntime}.${ metricName}`
       );
 
-      assert.notEqual(metric, undefined, `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName} not found`);
+      assert.notEqual(metric, undefined, `${ConventionalNamePrefix.NodeJsRuntime}.${metricName} not found`);
 
       assert.strictEqual(
         metric!.dataPointType,
@@ -68,7 +68,7 @@ describe('nodejs.heap_space', function () {
 
       assert.strictEqual(
         metric!.descriptor.name,
-        `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName}`,
+        `${ConventionalNamePrefix.NodeJsRuntime}.${ metricName}`,
         'descriptor.name'
       );
     });

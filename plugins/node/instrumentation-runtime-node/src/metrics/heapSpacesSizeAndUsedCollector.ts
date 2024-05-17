@@ -18,11 +18,9 @@ import {Meter} from '@opentelemetry/api';
 import {BaseCollector} from './baseCollector';
 import * as v8 from 'node:v8';
 import {HeapSpaceInfo} from 'v8';
-import {HeapSpaces} from "../types/heapSpaces";
 
 
 enum V8HeapSpaceMetrics {
-  size = 'heap.size',
   spaceSize = 'heap.space_size',
   used = 'heap.space_used_size',
   available = 'heap.space_available_size',
@@ -31,10 +29,6 @@ enum V8HeapSpaceMetrics {
 
 export const metricNames: Record<V8HeapSpaceMetrics, { description: string }> = {
   [V8HeapSpaceMetrics.spaceSize]: {
-    description:
-      'Process heap space size total from Node.js in bytes.',
-  },
-  [V8HeapSpaceMetrics.size]: {
     description:
       'Process heap space size total from Node.js in bytes.',
   },
@@ -70,13 +64,6 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
         unit: 'bytes',
       }
     );
-    const heapSize = meter.createObservableGauge(
-      `${this.namePrefix}.${V8HeapSpaceMetrics.size}`,
-      {
-        description: metricNames[V8HeapSpaceMetrics.size].description,
-        unit: 'bytes',
-      }
-    );
     const heapSpaceUsed = meter.createObservableGauge(
       `${this.namePrefix}.${V8HeapSpaceMetrics.used}`,
       {
@@ -99,8 +86,6 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
       }
     );
     const heapSpaceNameAttributeName = `${this.namePrefix}.heap.space.name`
-    const heapSizeStateAttributeName = `${this.namePrefix}.heap.size.state`
-
 
     meter.addBatchObservableCallback(
       observableResult => {
@@ -111,14 +96,6 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
         for (const space of data) {
 
           const spaceName = space.space_name
-
-          observableResult.observe(heapSize, space.space_size, {
-            [heapSizeStateAttributeName]: HeapSpaces.Total,
-          });
-
-          observableResult.observe(heapSize, space.space_used_size, {
-            [heapSizeStateAttributeName]: HeapSpaces.Used,
-          });
 
           observableResult.observe(heapSpaceSize, space.space_size, {
             [heapSpaceNameAttributeName]: spaceName,
@@ -141,7 +118,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
           });
         }
       },
-      [heapSize, heapSpaceSize, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
+      [heapSpaceSize, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
     );
   }
 
