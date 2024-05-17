@@ -46,6 +46,10 @@ DNS instrumentation has currently one option. You can set the following:
 | ------- | ---- | ----------- |
 | [`ignoreHostnames`](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/plugins/node/opentelemetry-instrumentation-dns/src/types.ts#L99) | `IgnoreMatcher | IgnoreMatcher[]` | DNS instrumentation will not trace all requests that match hostnames |
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

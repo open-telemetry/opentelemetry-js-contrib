@@ -27,6 +27,7 @@
     "plugins/node/instrumentation-cucumber": {},
     "plugins/node/instrumentation-dataloader": {},
     "plugins/node/instrumentation-fs": {},
+    "plugins/node/instrumentation-kafkajs": {},
     "plugins/node/instrumentation-lru-memoizer": {},
     "plugins/node/instrumentation-mongoose": {},
     "plugins/node/instrumentation-runtime-node": {},
@@ -65,7 +66,6 @@
     "plugins/web/opentelemetry-instrumentation-long-task": {},
     "plugins/web/opentelemetry-instrumentation-user-interaction": {},
     "plugins/web/opentelemetry-plugin-react-load": {},
-    "propagators/opentelemetry-propagator-grpc-census-binary": {},
     "propagators/opentelemetry-propagator-instana": {},
     "propagators/opentelemetry-propagator-ot-trace": {}
   }
