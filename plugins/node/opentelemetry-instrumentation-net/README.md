@@ -52,9 +52,9 @@ Attributes added to `connect` spans:
 
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 
