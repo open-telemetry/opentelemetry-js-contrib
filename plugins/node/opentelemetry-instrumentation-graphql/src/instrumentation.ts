@@ -54,22 +54,11 @@ import * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
 import { GraphQLInstrumentationConfig } from './types';
 
-const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
-  mergeItems: false,
-  depth: -1,
-  allowValues: false,
-  ignoreResolveSpans: false,
-};
-
 const supportedVersions = ['>=14 <17'];
 
 export class GraphQLInstrumentation extends InstrumentationBase {
   constructor(config: GraphQLInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-graphql',
-      VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+    super('@opentelemetry/instrumentation-graphql', VERSION, config);
   }
 
   private _getConfig(): GraphQLInstrumentationParsedConfig {
@@ -77,7 +66,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   }
 
   override setConfig(config: GraphQLInstrumentationConfig = {}) {
-    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    this._config = config;
   }
 
   protected init() {

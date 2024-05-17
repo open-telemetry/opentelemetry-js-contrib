@@ -27,18 +27,9 @@ import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 
-const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
-  disableLogSending: false,
-  disableLogCorrelation: false,
-};
-
 export class BunyanInstrumentation extends InstrumentationBase {
   constructor(config: BunyanInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-bunyan',
-      VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+    super('@opentelemetry/instrumentation-bunyan', VERSION, config);
   }
 
   protected init() {
@@ -104,7 +95,7 @@ export class BunyanInstrumentation extends InstrumentationBase {
   }
 
   override setConfig(config: BunyanInstrumentationConfig = {}) {
-    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    this._config = config;
   }
 
   private _getPatchedEmit() {

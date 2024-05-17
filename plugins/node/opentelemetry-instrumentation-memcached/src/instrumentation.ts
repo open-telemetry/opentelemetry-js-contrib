@@ -36,20 +36,13 @@ export class Instrumentation extends InstrumentationBase {
   static readonly COMMON_ATTRIBUTES = {
     [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_MEMCACHED,
   };
-  static readonly DEFAULT_CONFIG: InstrumentationConfig = {
-    enhancedDatabaseReporting: false,
-  };
 
   constructor(config: InstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-memcached',
-      VERSION,
-      Object.assign({}, Instrumentation.DEFAULT_CONFIG, config)
-    );
+    super('@opentelemetry/instrumentation-memcached', VERSION, config);
   }
 
   override setConfig(config: InstrumentationConfig = {}) {
-    this._config = Object.assign({}, Instrumentation.DEFAULT_CONFIG, config);
+    this._config = config;
   }
 
   init() {

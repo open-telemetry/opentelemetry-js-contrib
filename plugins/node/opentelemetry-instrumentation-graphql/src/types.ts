@@ -34,6 +34,7 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
   /**
    * The maximum depth of fields/resolvers to instrument.
    * When set to 0 it will not instrument fields and resolvers
+   * If not set, it will instrument all fields and resolvers.
    *
    * @default undefined
    */

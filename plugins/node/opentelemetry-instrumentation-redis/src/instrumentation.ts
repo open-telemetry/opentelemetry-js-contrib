@@ -27,10 +27,6 @@ import {
 import { RedisInstrumentationConfig } from './types';
 import { VERSION } from './version';
 
-const DEFAULT_CONFIG: RedisInstrumentationConfig = {
-  requireParentSpan: false,
-};
-
 export class RedisInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'redis';
 
@@ -41,7 +37,7 @@ export class RedisInstrumentation extends InstrumentationBase {
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
-    this._config = Object.assign({}, DEFAULT_CONFIG, config);
+    this._config = config;
   }
 
   protected init() {

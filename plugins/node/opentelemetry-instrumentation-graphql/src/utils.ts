@@ -207,7 +207,10 @@ function getParentField(contextValue: any, path: string[]) {
   };
 }
 
-function pathToArray(mergeItems: boolean, path: GraphQLPath): string[] {
+function pathToArray(
+  mergeItems: boolean | undefined,
+  path: GraphQLPath
+): string[] {
   const flattened: string[] = [];
   let curr: GraphQLPath | undefined = path;
   while (curr) {
@@ -415,7 +418,7 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
 
     let field: any;
     let shouldEndSpan = false;
-    if (config.depth >= 0 && config.depth < depth) {
+    if (config.depth != null && config.depth >= 0 && config.depth < depth) {
       field = getParentField(contextValue, path);
     } else {
       const newField = createFieldIfNotExists(
