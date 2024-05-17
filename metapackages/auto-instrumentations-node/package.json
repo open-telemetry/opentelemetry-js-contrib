@@ -17,7 +17,11 @@
     ".": "./build/src/index.js",
     "./register": "./build/src/register.js"
   },
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "metapackages/auto-instrumentations-node"
+  },
   "scripts": {
     "clean": "rimraf build/*",
     "compile": "tsc -p .",

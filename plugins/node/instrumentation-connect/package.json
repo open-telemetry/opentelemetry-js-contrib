@@ -1,28 +1,28 @@
 {
-  "name": "@opentelemetry/instrumentation-fs",
-  "version": "0.12.0",
-  "description": "OpenTelemetry automatic instrumentation package for fs",
+  "name": "@opentelemetry/instrumentation-connect",
+  "version": "0.36.1",
+  "description": "OpenTelemetry connect automatic instrumentation package.",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
-    "directory": "plugins/node/instrumentation-fs"
+    "directory": "plugins/node/instrumentation-connect"
   },
   "scripts": {
-    "test": "ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
     "clean": "rimraf build/*",
+    "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-fs --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-connect --include-dependencies",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc -p ."
+    "watch": "tsc -w"
   },
   "keywords": [
-    "fs",
+    "connect",
     "instrumentation",
     "nodejs",
     "opentelemetry",
@@ -48,22 +48,22 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/resources": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
     "@types/node": "18.6.5",
-    "@types/sinon": "^10.0.11",
+    "connect": "3.7.0",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
     "rimraf": "5.0.5",
-    "sinon": "15.2.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.51.0"
+    "@opentelemetry/instrumentation": "^0.51.0",
+    "@opentelemetry/semantic-conventions": "^1.22.0",
+    "@types/connect": "3.4.36"
   },
-  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-fs#readme"
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-connect#readme"
 }

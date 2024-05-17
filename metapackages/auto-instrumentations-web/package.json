@@ -15,7 +15,11 @@
   "module": "build/esm/index.js",
   "esnext": "build/esnext/index.js",
   "types": "build/src/index.d.ts",
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "metapackages/auto-instrumentations-web"
+  },
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",

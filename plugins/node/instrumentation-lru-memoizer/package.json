@@ -4,7 +4,11 @@
   "description": "OpenTelemetry automatic instrumentation package for lru-memoizer",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "plugins/node/instrumentation-lru-memoizer"
+  },
   "scripts": {
     "test": "ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",

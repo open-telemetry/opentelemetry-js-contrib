@@ -1,20 +1,20 @@
 # Keep all in alphabetical order
 components:
-  detectors/node/opentelemetry-resource-detector-alibaba-cloud:
+  detectors/node/resource-detector-alibaba-cloud:
     - legendecas
-  detectors/node/opentelemetry-resource-detector-aws:
+  detectors/node/resource-detector-aws:
     - carolabadeer
-  detectors/node/opentelemetry-resource-detector-azure:
+  detectors/node/resource-detector-azure:
     - jacksonweber
     - hectorhdzg
-  detectors/node/opentelemetry-resource-detector-container:
+  detectors/node/resource-detector-container:
     - abhee11
-  detectors/node/opentelemetry-resource-detector-gcp:
+  detectors/node/resource-detector-gcp:
     - aabmass
     - punya
-  detectors/node/opentelemetry-resource-detector-github: []
+  detectors/node/resource-detector-github: []
     # Unmaintained?
-  detectors/node/opentelemetry-resource-detector-instana:
+  detectors/node/resource-detector-instana:
     - basti1302
     - kirrg001
   metapackages/auto-instrumentations-node:
@@ -30,20 +30,20 @@ components:
   packages/baggage-span-processor:
     - mikegoldsmith
     - jamiedanielson
-  packages/opentelemetry-host-metrics:
+  packages/host-metrics:
     - legendecas
-  packages/opentelemetry-id-generator-aws-xray:
+  packages/id-generator-aws-xray:
     - carolabadeer
   packages/opentelemetry-sampler-aws-xray:
     - carolabadeer
-  packages/opentelemetry-propagation-utils:
+  packages/propagation-utils:
     - dyladan
     - pichlermarc
     - legendecas
     - blumamir
-  packages/opentelemetry-redis-common:
+  packages/redis-common:
     - haddasbronfman
-  packages/opentelemetry-test-utils:
+  packages/contrib-test-utils:
     - dyladan
     - pichlermarc
     - legendecas
@@ -67,86 +67,86 @@ components:
     - rauno56
   plugins/node/instrumentation-tedious:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-aws-lambda:
+  plugins/node/instrumentation-aws-lambda:
     - carolabadeer
-  plugins/node/opentelemetry-instrumentation-aws-sdk:
+  plugins/node/instrumentation-aws-sdk:
     - carolabadeer
     - blumamir
-  plugins/node/opentelemetry-instrumentation-bunyan:
+  plugins/node/instrumentation-bunyan:
     - seemk
     - trentm
-  plugins/node/opentelemetry-instrumentation-cassandra:
+  plugins/node/instrumentation-cassandra-driver:
     - seemk
-  plugins/node/opentelemetry-instrumentation-connect: []
+  plugins/node/instrumentation-connect: []
     # Unmaintained?
-  plugins/node/opentelemetry-instrumentation-dns: []
+  plugins/node/instrumentation-dns: []
     # Unmaintained?
-  plugins/node/opentelemetry-instrumentation-express:
+  plugins/node/instrumentation-express:
     - JamieDanielson
     - pkanal
-  plugins/node/opentelemetry-instrumentation-fastify:
+  plugins/node/instrumentation-fastify:
     - pichlermarc
-  plugins/node/opentelemetry-instrumentation-generic-pool:
+  plugins/node/instrumentation-generic-pool:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-graphql:
+  plugins/node/instrumentation-graphql:
     - obecny
-  plugins/node/opentelemetry-instrumentation-hapi: []
+  plugins/node/instrumentation-hapi: []
     # Unmaintained?
-  plugins/node/opentelemetry-instrumentation-ioredis:
+  plugins/node/instrumentation-ioredis:
     - blumamir
     - naseemkullah
-  plugins/node/opentelemetry-instrumentation-knex:
+  plugins/node/instrumentation-knex:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-koa: []
+  plugins/node/instrumentation-koa: []
     # Unmaintained?
-  plugins/node/opentelemetry-instrumentation-memcached:
+  plugins/node/instrumentation-memcached:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-mongodb:
+  plugins/node/instrumentation-mongodb:
     - osherv
-  plugins/node/opentelemetry-instrumentation-mysql:
+  plugins/node/instrumentation-mysql:
     - haddasbronfman
-  plugins/node/opentelemetry-instrumentation-mysql2:
+  plugins/node/instrumentation-mysql2:
     - haddasbronfman
-  plugins/node/opentelemetry-instrumentation-nestjs-core:
+  plugins/node/instrumentation-nestjs-core:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-net:
+  plugins/node/instrumentation-net:
     - seemk
   plugins/node/opentelemetry-instrumentation-runtime-node:
     - d4nyll
-  plugins/node/opentelemetry-instrumentation-pg:
+  plugins/node/instrumentation-pg:
     - maryliag
     - rauno56
-  plugins/node/opentelemetry-instrumentation-pino:
+  plugins/node/instrumentation-pino:
     - seemk
-  plugins/node/opentelemetry-instrumentation-redis-4:
+  plugins/node/instrumentation-redis-4:
     - blumamir
-  plugins/node/opentelemetry-instrumentation-redis:
+  plugins/node/instrumentation-redis:
     - blumamir
-  plugins/node/opentelemetry-instrumentation-restify:
+  plugins/node/instrumentation-restify:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-router:
+  plugins/node/instrumentation-router:
     - rauno56
   plugins/node/opentelemetry-instrumentation-undici:
     - david-luna
     - trentm
-  plugins/node/opentelemetry-instrumentation-winston:
+  plugins/node/instrumentation-winston:
     - seemk
-  plugins/web/opentelemetry-instrumentation-document-load:
+  plugins/web/instrumentation-document-load:
     - pkanal
     - martinkuba
-  plugins/web/opentelemetry-instrumentation-long-task:
+  plugins/web/instrumentation-long-task:
     - mhennoch
     - t2t2
-  plugins/web/opentelemetry-instrumentation-user-interaction:
+  plugins/web/instrumentation-user-interaction:
     - obecny
-  plugins/web/opentelemetry-plugin-react-load:
+  plugins/web/plugin-react-load:
     - martinkuba
   propagators/opentelemetry-propagator-grpc-census-binary: []
     # Unmaintained?
-  propagators/opentelemetry-propagator-instana:
+  propagators/propagator-instana:
     - basti1302
     - kirrg001
-  propagators/opentelemetry-propagator-ot-trace: []
+  propagators/propagator-ot-trace: []
     # Unmaintained?
 
 ignored-authors:
