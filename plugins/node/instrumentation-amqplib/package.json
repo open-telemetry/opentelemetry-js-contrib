@@ -24,7 +24,11 @@
   "publishConfig": {
     "access": "public"
   },
-  "repository": "open-telemetry/opentelemetry-js-contrib",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "plugins/node/instrumentation-amqplib"
+  },
   "scripts": {
     "clean": "rimraf build/*",
     "compile": "npm run version:update && tsc -p .",
