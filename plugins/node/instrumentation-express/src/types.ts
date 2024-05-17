@@ -49,7 +49,7 @@ export interface ExpressRequestCustomAttributeFunction {
 }
 
 /**
- * Options available for the Express Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express#express-instrumentation-options))
+ * Options available for the Express Instrumentation (see [documentation](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-express#express-instrumentation-options))
  */
 export interface ExpressInstrumentationConfig extends InstrumentationConfig {
   /** Ignore specific based on their name */
