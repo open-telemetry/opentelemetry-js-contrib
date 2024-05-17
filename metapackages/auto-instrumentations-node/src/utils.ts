@@ -53,6 +53,7 @@ import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
 import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
 import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
 import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
+import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 
 import { alibabaCloudEcsDetector } from '@opentelemetry/resource-detector-alibaba-cloud';
@@ -72,15 +73,23 @@ import {
   hostDetectorSync,
   osDetectorSync,
   processDetectorSync,
+  serviceInstanceIdDetectorSync,
 } from '@opentelemetry/resources';
+import {
+  azureAppServiceDetector,
+  azureFunctionsDetector,
+  azureVmDetector,
+} from '@opentelemetry/resource-detector-azure';
 
 const RESOURCE_DETECTOR_CONTAINER = 'container';
 const RESOURCE_DETECTOR_ENVIRONMENT = 'env';
 const RESOURCE_DETECTOR_HOST = 'host';
 const RESOURCE_DETECTOR_OS = 'os';
+const RESOURCE_DETECTOR_SERVICE_INSTANCE_ID = 'serviceinstance';
 const RESOURCE_DETECTOR_PROCESS = 'process';
 const RESOURCE_DETECTOR_ALIBABA = 'alibaba';
 const RESOURCE_DETECTOR_AWS = 'aws';
+const RESOURCE_DETECTOR_AZURE = 'azure';
 const RESOURCE_DETECTOR_GCP = 'gcp';
 
 const InstrumentationMap = {
@@ -121,6 +130,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-router': RouterInstrumentation,
   '@opentelemetry/instrumentation-socket.io': SocketIoInstrumentation,
   '@opentelemetry/instrumentation-tedious': TediousInstrumentation,
+  '@opentelemetry/instrumentation-undici': UndiciInstrumentation,
   '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
 };
 
@@ -196,12 +206,13 @@ function getEnabledInstrumentationsFromEnv() {
 export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
   const resourceDetectors = new Map<
     string,
-    Detector | DetectorSync | Detector[]
+    Detector | DetectorSync | Detector[] | DetectorSync[]
   >([
     [RESOURCE_DETECTOR_CONTAINER, containerDetector],
     [RESOURCE_DETECTOR_ENVIRONMENT, envDetectorSync],
     [RESOURCE_DETECTOR_HOST, hostDetectorSync],
     [RESOURCE_DETECTOR_OS, osDetectorSync],
+    [RESOURCE_DETECTOR_SERVICE_INSTANCE_ID, serviceInstanceIdDetectorSync],
     [RESOURCE_DETECTOR_PROCESS, processDetectorSync],
     [RESOURCE_DETECTOR_ALIBABA, alibabaCloudEcsDetector],
     [RESOURCE_DETECTOR_GCP, gcpDetector],
@@ -214,6 +225,10 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
         awsBeanstalkDetector,
         awsLambdaDetector,
       ],
+    ],
+    [
+      RESOURCE_DETECTOR_AZURE,
+      [azureAppServiceDetector, azureFunctionsDetector, azureVmDetector],
     ],
   ]);
 
