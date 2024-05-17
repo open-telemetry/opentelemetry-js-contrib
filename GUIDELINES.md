@@ -254,15 +254,15 @@ One instrumentation package can potentially instrument multiple modules of diffe
 
 #### Different Patch Logic
 
-In some cases, instrumentations does not use the moduleExports in order to patch, it can hook up to nodejs diagnostics channel, patch globals (like browser instrumentations that patches the `window`), patch arbitrary lambda function handler, etc. In this cases, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
+In some cases, instrumentation does not use the moduleExports to patch, and instead hooks up to the Node.js diagnostics channel, or patches globals (like `window` being patched in browser instrumentations, or patches arbitrary lambda function handlers, etc. In these cases, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
 
 ### Range Specification
 
 For versions that are a closed range, instrumentations should prefer to specify the supported versions of the instrumented package as `>=x.y.z <w` to promote consistency and readability across the code-base.
 
-If Instrumentations supports just one major version of the instrumented package, it can specify the version range as `^x.y.z` or `^x` which are equivalent but more readable.
+If an instrumentation supports just one major version of the instrumented package, it can specify the version range as `^x.y.z` or `^x`, which are equivalent but more readable.
 
-Instrumentations for nodejs internal modules can specify version range of `['*']`.
+Instrumentations for Node.js internal modules can specify version range of `['*']`.
 
 Instrumentation should use an upper and lower bounds for the version ranges it uses for patches. This is to ensure that any new major versions of the instrumented package are not automatically patched by the instrumentation, which could lead to unexpected behavior.
 
@@ -270,7 +270,7 @@ New major versions should be reviewed and tested before being added to the suppo
 
 ### Documentation
 
-Instrumentation should have a "## Supported Versions" section in the README file that lists the supported versions range of the instrumented package - the user-facing package which makes most sense to human consumer.
+Instrumentation should have a "## Supported Versions" section in the README file that lists the supported versions range of the instrumented package.
 
 This range should hide any internal implementation details like the use of internal modules, different patch logic for different versions, etc. It should focus on the relevance to the human consumer.
 
