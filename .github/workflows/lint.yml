@@ -19,6 +19,7 @@ jobs:
       - name: Lint markdown files
         uses: avto-dev/markdown-lint@v1
         with:
+          config: '.github/markdown-lint.yml'
           ignore: "./**/CHANGELOG.md"
           args: "./**/*.md"
 
