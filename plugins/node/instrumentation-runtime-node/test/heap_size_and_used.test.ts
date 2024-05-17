@@ -19,7 +19,8 @@ import {RuntimeNodeInstrumentation} from '../src';
 import * as assert from 'assert';
 import {TestMetricReader} from './testMetricsReader';
 import {ConventionalNamePrefix} from "../src/types/ConventionalNamePrefix";
-import {V8_HEAP_SIZE} from "../src/metrics/heapSizeAndUsedCollector";
+import {NODE_JS_VERSION_ATTRIBUTE, V8_HEAP_SIZE, V8_HEAP_SIZE_STATE_ATTRIBUTE} from "../src/consts/attributes";
+import {HeapSizes} from "../src/types/heapSizes";
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -69,6 +70,99 @@ describe(`${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE}`, function (
       metric!.descriptor.name,
       `${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE}`,
       'descriptor.name'
+    );
+  });
+
+  it(`should write ${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE} version attribute`, async function () {
+    // arrange
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    // act
+    await new Promise(resolve =>
+      setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
+    );
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(
+      errors,
+      [],
+      'expected no errors from the callback during collection'
+    );
+    const scopeMetrics = resourceMetrics.scopeMetrics;
+    const metric = scopeMetrics[0].metrics.find(
+      x => x.descriptor.name === `${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE}`
+    );
+
+    assert.strictEqual(
+      metric!.dataPoints[0].attributes[NODE_JS_VERSION_ATTRIBUTE],
+      process.version,
+      `version attribute ${NODE_JS_VERSION_ATTRIBUTE} not found`
+    );
+  });
+
+  it(`should write ${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE} ${HeapSizes.Total}  attribute`, async function () {
+    // arrange
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    // act
+    await new Promise(resolve =>
+      setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
+    );
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(
+      errors,
+      [],
+      'expected no errors from the callback during collection'
+    );
+    const scopeMetrics = resourceMetrics.scopeMetrics;
+    const metric = scopeMetrics[0].metrics.find(
+      x => x.descriptor.name === `${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE}`
+    );
+
+    assert.strictEqual(
+      metric!.dataPoints[0].attributes[`${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`],
+      HeapSizes.Total,
+      `${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE_STATE_ATTRIBUTE} attribute ${NODE_JS_VERSION_ATTRIBUTE} not found`
+    );
+  });
+
+  it(`should write ${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE} ${HeapSizes.Used} attribute`, async function () {
+    // arrange
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    // act
+    await new Promise(resolve =>
+      setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
+    );
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(
+      errors,
+      [],
+      'expected no errors from the callback during collection'
+    );
+    const scopeMetrics = resourceMetrics.scopeMetrics;
+    const metric = scopeMetrics[0].metrics.find(
+      x => x.descriptor.name === `${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE}`
+    );
+
+    assert.strictEqual(
+      metric!.dataPoints[1].attributes[`${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`],
+      HeapSizes.Used,
+      `${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE_STATE_ATTRIBUTE} attribute not found`
     );
   });
 });

@@ -20,6 +20,7 @@ import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 import { metricNames } from '../src/metrics/heapSpacesSizeAndUsedCollector';
 import {ConventionalNamePrefix} from "../src/types/ConventionalNamePrefix";
+import {V8_HEAP_SIZE_STATE_ATTRIBUTE} from "../src/consts/attributes";
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -72,5 +73,36 @@ describe('nodejs.heap_space', function () {
         'descriptor.name'
       );
     });
+
+    for (const space of ["new_space", "old_space", "code_space", "large_object_space"]) {
+      it(`should write ${ConventionalNamePrefix.V8EnjineRuntime}.${metricName} ${space} attribute`, async function () {
+        // arrange
+        const instrumentation = new RuntimeNodeInstrumentation({
+          monitoringPrecision: MEASUREMENT_INTERVAL,
+        });
+        instrumentation.setMeterProvider(meterProvider);
+        const map = [...Array(10).keys()].map(x => x + 10)
+        map.indexOf(1)
+        // act
+        await new Promise(resolve =>
+          setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
+        );
+        const { resourceMetrics, errors } = await metricReader.collect();
+
+        // assert
+        assert.deepEqual(
+          errors,
+          [],
+          'expected no errors from the callback during collection'
+        );
+        const scopeMetrics = resourceMetrics.scopeMetrics;
+        const metric = scopeMetrics[0].metrics.find(
+          x => x.descriptor.name === `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName}`
+        );
+        const spaceAttribute =  metric!.dataPoints.find(x => x.attributes[`${ConventionalNamePrefix.V8EnjineRuntime}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`] === space)
+
+        assert.notEqual(spaceAttribute, undefined, `${ConventionalNamePrefix.V8EnjineRuntime}.${metricName} space: ${space} not found`);
+      });
+    }
   }
 });

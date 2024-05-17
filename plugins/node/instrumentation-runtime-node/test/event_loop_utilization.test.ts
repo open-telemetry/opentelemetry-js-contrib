@@ -20,6 +20,7 @@ import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 import {ConventionalNamePrefix} from "../src/types/ConventionalNamePrefix";
 import {NODEJS_EVENT_LOOP_UTILIZATION} from "../src/metrics/eventLoopUtilizationCollector";
+import {NODE_JS_VERSION_ATTRIBUTE} from "../src/consts/attributes";
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -51,7 +52,7 @@ describe(`${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATIO
     assert.strictEqual(scopeMetrics.length, 0);
   });
 
-  it('should write event loop utilization metrics after monitoringPrecision', async function () {
+  it(`should write ${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION} after monitoringPrecision`, async function () {
     // arrange
     const instrumentation = new RuntimeNodeInstrumentation({
       monitoringPrecision: MEASUREMENT_INTERVAL,
@@ -107,5 +108,36 @@ describe(`${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATIO
     const val = utilizationMetric!.dataPoints[0].value;
     assert.strictEqual(val > 0, true, `val (${val}) > 0`);
     assert.strictEqual(val <= 1, true, `val (${val}) <= 1`);
+  });
+
+  it(`should write ${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION} version attribute`, async function () {
+    // arrange
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    // act
+    await new Promise(resolve =>
+      setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
+    );
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(
+      errors,
+      [],
+      'expected no errors from the callback during collection'
+    );
+    const scopeMetrics = resourceMetrics.scopeMetrics;
+    const metric = scopeMetrics[0].metrics.find(
+      x => x.descriptor.name === `${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION}`
+    );
+
+    assert.strictEqual(
+      metric!.dataPoints[0].attributes[NODE_JS_VERSION_ATTRIBUTE],
+      process.version,
+      `version attribute ${NODE_JS_VERSION_ATTRIBUTE} not found`
+    );
   });
 });

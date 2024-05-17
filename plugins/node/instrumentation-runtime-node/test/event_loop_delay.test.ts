@@ -20,6 +20,7 @@ import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 import { metricNames } from '../src/metrics/eventLoopDelayCollector';
 import {ConventionalNamePrefix} from "../src/types/ConventionalNamePrefix";
+import {NODE_JS_VERSION_ATTRIBUTE} from "../src/consts/attributes";
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -70,6 +71,37 @@ describe(`${ConventionalNamePrefix.NodeJsRuntime}.eventloop`, function () {
         metric!.descriptor.name,
         `${ConventionalNamePrefix.NodeJsRuntime}.${ metricName}`,
         'descriptor.name'
+      );
+    });
+
+    it(`should write ${ConventionalNamePrefix.NodeJsRuntime}.${metricName} version attribute`, async function () {
+      // arrange
+      const instrumentation = new RuntimeNodeInstrumentation({
+        monitoringPrecision: MEASUREMENT_INTERVAL,
+      });
+      instrumentation.setMeterProvider(meterProvider);
+
+      // act
+      await new Promise(resolve =>
+        setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
+      );
+      const { resourceMetrics, errors } = await metricReader.collect();
+
+      // assert
+      assert.deepEqual(
+        errors,
+        [],
+        'expected no errors from the callback during collection'
+      );
+      const scopeMetrics = resourceMetrics.scopeMetrics;
+      const metric = scopeMetrics[0].metrics.find(
+        x => x.descriptor.name === `${ConventionalNamePrefix.NodeJsRuntime}.${ metricName}`
+      );
+
+      assert.strictEqual(
+        metric!.dataPoints[0].attributes[NODE_JS_VERSION_ATTRIBUTE],
+        process.version,
+        `version attribute ${NODE_JS_VERSION_ATTRIBUTE} not found`
       );
     });
   }

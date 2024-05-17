@@ -18,14 +18,17 @@ import {Meter} from '@opentelemetry/api';
 import {BaseCollector} from './baseCollector';
 import * as v8 from 'node:v8';
 import {HeapSpaceInfo} from 'v8';
+import {V8_HEAP_SIZE_STATE_ATTRIBUTE} from "../consts/attributes";
 
 
-enum V8HeapSpaceMetrics {
+export enum V8HeapSpaceMetrics {
   spaceSize = 'heap.space_size',
   used = 'heap.space_used_size',
   available = 'heap.space_available_size',
   physical = 'heap.physical_space_size',
 }
+
+
 
 export const metricNames: Record<V8HeapSpaceMetrics, { description: string }> = {
   [V8HeapSpaceMetrics.spaceSize]: {
@@ -85,7 +88,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
         unit: 'bytes',
       }
     );
-    const heapSpaceNameAttributeName = `${this.namePrefix}.heap.space.name`
+    const heapSpaceNameAttributeName = `${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`
 
     meter.addBatchObservableCallback(
       observableResult => {

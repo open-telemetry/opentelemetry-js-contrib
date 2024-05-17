@@ -65,7 +65,6 @@ export const metricNames: Record<NodeJsEventLoopDelay, { description: string }> 
     }
   ,
   [NodeJsEventLoopDelay.p99]: {
-
       description:
         'The 99th percentile of the recorded event loop delays.',
     }

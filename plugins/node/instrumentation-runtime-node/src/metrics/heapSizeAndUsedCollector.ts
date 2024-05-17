@@ -17,9 +17,8 @@ import { RuntimeNodeInstrumentationConfig } from '../types';
 import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
 import {HeapSizes} from "../types/heapSizes";
+import {V8_HEAP_SIZE, V8_HEAP_SIZE_STATE_ATTRIBUTE} from "../consts/attributes";
 
-export const V8_HEAP_SIZE = 'heap.size';
-const V8_HEAP_SIZE_STATE = 'heap.size.state';
 
 export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> {
   constructor(
@@ -42,11 +41,11 @@ export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> 
       const data = this._scrapeQueue.shift();
       if (data === undefined) return;
       observableResult.observe(data.heapTotal, {
-        [`${this.namePrefix}.${V8_HEAP_SIZE_STATE}`]: HeapSizes.Total,
+        [`${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`]: HeapSizes.Total,
         ...this.versionAttribute
       });
       observableResult.observe(data.heapUsed, {
-        [`${this.namePrefix}.${V8_HEAP_SIZE_STATE}`]: HeapSizes.Used,
+        [`${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`]: HeapSizes.Used,
         ...this.versionAttribute
       });
     });
