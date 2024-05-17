@@ -113,7 +113,7 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-net:
     - seemk
-  plugins/node/opentelemetry-instrumentation-runtime-node:
+  plugins/node/instrumentation-runtime-node:
     - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
     - maryliag
@@ -128,7 +128,7 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-router:
     - rauno56
-  plugins/node/opentelemetry-instrumentation-undici:
+  plugins/node/instrumentation-undici:
     - david-luna
     - trentm
   plugins/node/opentelemetry-instrumentation-winston:
