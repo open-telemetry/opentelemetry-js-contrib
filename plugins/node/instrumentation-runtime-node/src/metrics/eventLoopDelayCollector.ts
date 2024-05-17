@@ -15,9 +15,9 @@
  */
 import {RuntimeNodeInstrumentationConfig} from '../types';
 import {Meter} from '@opentelemetry/api';
+import * as perf_hooks from 'node:perf_hooks';
 import {IntervalHistogram} from 'node:perf_hooks';
 import {BaseCollector} from './baseCollector';
-import * as perf_hooks from 'node:perf_hooks';
 
 enum NodeJsEventLoopDelay {
   delay = 'eventloop.delay',
@@ -27,48 +27,37 @@ enum NodeJsEventLoopDelay {
   stddev = 'eventloop.delay.stddev',
   p50 = 'eventloop.delay.p50',
   p90 = 'eventloop.delay.p90',
-  p99 = 'eventloop.delay.p99'
+  p99 = 'eventloop.delay.p99',
 }
 
-export const metricNames: Record<NodeJsEventLoopDelay, { description: string }> = {
+export const metricNames: Record<
+  NodeJsEventLoopDelay,
+  { description: string }
+> = {
   [NodeJsEventLoopDelay.delay]: {
-      description:
-        'Lag of event loop in seconds.'
-    },
+    description: 'Lag of event loop in seconds.',
+  },
   [NodeJsEventLoopDelay.min]: {
-      description:
-        'The minimum recorded event loop delay.',
-    },
+    description: 'The minimum recorded event loop delay.',
+  },
   [NodeJsEventLoopDelay.max]: {
-      description:
-        'The maximum recorded event loop delay.',
-    }
-  ,
+    description: 'The maximum recorded event loop delay.',
+  },
   [NodeJsEventLoopDelay.mean]: {
-      description:
-        'The mean of the recorded event loop delays.',
-    }
-  ,
+    description: 'The mean of the recorded event loop delays.',
+  },
   [NodeJsEventLoopDelay.stddev]: {
-      description:
-        'The standard deviation of the recorded event loop delays.',
-    }
-  ,
+    description: 'The standard deviation of the recorded event loop delays.',
+  },
   [NodeJsEventLoopDelay.p50]: {
-      description:
-        'The 50th percentile of the recorded event loop delays.',
-    }
-  ,
+    description: 'The 50th percentile of the recorded event loop delays.',
+  },
   [NodeJsEventLoopDelay.p90]: {
-      description:
-        'The 90th percentile of the recorded event loop delays.',
-    }
-  ,
+    description: 'The 90th percentile of the recorded event loop delays.',
+  },
   [NodeJsEventLoopDelay.p99]: {
-      description:
-        'The 99th percentile of the recorded event loop delays.',
-    }
-  ,
+    description: 'The 99th percentile of the recorded event loop delays.',
+  },
 };
 
 export interface EventLoopLagInformation {
@@ -83,7 +72,6 @@ export interface EventLoopLagInformation {
 
 export class EventLoopDelayCollector extends BaseCollector<EventLoopLagInformation> {
   private _histogram: IntervalHistogram;
-
 
   constructor(
     config: RuntimeNodeInstrumentationConfig = {},
@@ -160,25 +148,38 @@ export class EventLoopDelayCollector extends BaseCollector<EventLoopLagInformati
         const data = this._scrapeQueue.shift();
         if (data === undefined) return;
 
-        const start = process.hrtime();
+        const startHrTime = process.hrtime();
         const delayResult = await new Promise<number>(res => {
           setImmediate((start: [number, number]) => {
             res(this._reportEventloopLag(start));
-          }, start);
+          }, startHrTime);
         });
 
         observableResult.observe(delay, delayResult, this.versionAttribute);
         observableResult.observe(delayMin, data.min, this.versionAttribute);
         observableResult.observe(delayMax, data.max, this.versionAttribute);
         observableResult.observe(delayMean, data.mean, this.versionAttribute);
-        observableResult.observe(delayStddev, data.stddev, this.versionAttribute);
+        observableResult.observe(
+          delayStddev,
+          data.stddev,
+          this.versionAttribute
+        );
         observableResult.observe(delayp50, data.p50, this.versionAttribute);
         observableResult.observe(delayp90, data.p90, this.versionAttribute);
         observableResult.observe(delayp99, data.p99, this.versionAttribute);
 
         this._histogram.reset();
       },
-      [delay, delayMin, delayMax, delayMean, delayStddev, delayp50, delayp90, delayp99]
+      [
+        delay,
+        delayMin,
+        delayMax,
+        delayMean,
+        delayStddev,
+        delayp50,
+        delayp90,
+        delayp99,
+      ]
     );
   }
 
@@ -205,8 +206,7 @@ export class EventLoopDelayCollector extends BaseCollector<EventLoopLagInformati
   private _reportEventloopLag(start: [number, number]): number {
     const delta = process.hrtime(start);
     const nanosec = delta[0] * 1e9 + delta[1];
-    const seconds = nanosec / 1e9;
-    return seconds;
+    return nanosec / 1e9;
   }
 
   private checkNan(value: number) {

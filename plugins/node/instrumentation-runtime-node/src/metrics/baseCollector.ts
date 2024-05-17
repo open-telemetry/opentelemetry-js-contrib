@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {MetricCollector} from '../types/metricCollector';
-import {Meter} from '@opentelemetry/api';
-import {clearInterval} from 'node:timers';
-import {RuntimeNodeInstrumentationConfig} from '../types';
-import {NODE_JS_VERSION_ATTRIBUTE} from "../consts/attributes";
+import { MetricCollector } from '../types/metricCollector';
+import { Meter } from '@opentelemetry/api';
+import { clearInterval } from 'node:timers';
+import { RuntimeNodeInstrumentationConfig } from '../types';
+import { NODE_JS_VERSION_ATTRIBUTE } from '../consts/attributes';
 
-type VersionAttribute =  { [NODE_JS_VERSION_ATTRIBUTE]: string }
+type VersionAttribute = { [NODE_JS_VERSION_ATTRIBUTE]: string };
 
 export abstract class BaseCollector<T> implements MetricCollector {
   protected _config: RuntimeNodeInstrumentationConfig = {};
@@ -27,7 +27,7 @@ export abstract class BaseCollector<T> implements MetricCollector {
   protected namePrefix: string;
   private _interval: NodeJS.Timeout | undefined;
   protected _scrapeQueue: T[] = [];
-  protected versionAttribute: VersionAttribute
+  protected versionAttribute: VersionAttribute;
 
   protected constructor(
     config: RuntimeNodeInstrumentationConfig = {},
@@ -35,7 +35,7 @@ export abstract class BaseCollector<T> implements MetricCollector {
   ) {
     this._config = config;
     this.namePrefix = namePrefix;
-    this.versionAttribute = {[NODE_JS_VERSION_ATTRIBUTE]: process.version}
+    this.versionAttribute = { [NODE_JS_VERSION_ATTRIBUTE]: process.version };
   }
 
   public disable(): void {

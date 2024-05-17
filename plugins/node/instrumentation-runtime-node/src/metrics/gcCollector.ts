@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {RuntimeNodeInstrumentationConfig} from '../types';
-import {Meter} from '@opentelemetry/api';
-import {Histogram, ValueType} from '@opentelemetry/api';
-import {BaseCollector} from './baseCollector';
+import { RuntimeNodeInstrumentationConfig } from '../types';
+import { Meter } from '@opentelemetry/api';
+import { Histogram, ValueType } from '@opentelemetry/api';
+import { BaseCollector } from './baseCollector';
 import * as perf_hooks from 'node:perf_hooks';
-import {PerformanceObserver} from 'node:perf_hooks';
+import { PerformanceObserver } from 'node:perf_hooks';
 
 const NODEJS_GC_DURATION_SECONDS = 'gc.duration';
 const DEFAULT_GC_DURATION_BUCKETS = [0.01, 0.1, 1, 10];
@@ -43,11 +43,15 @@ export class GCCollector extends BaseCollector<null> {
       // Node < 16 uses entry.kind
       // Node >= 16 uses entry.detail.kind
       // See: https://nodejs.org/docs/latest-v16.x/api/deprecations.html#deprecations_dep0152_extension_performanceentry_properties
+      // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const kind = entry.detail ? kinds[entry.detail.kind] : kinds[entry.kind];
       this._gcDurationByKindHistogram?.record(
         entry.duration / 1000,
-        Object.assign({ [`${this.namePrefix}.gc.type`]: kind }, this.versionAttribute)
+        Object.assign(
+          { [`${this.namePrefix}.gc.type`]: kind },
+          this.versionAttribute
+        )
       );
     });
   }
@@ -68,7 +72,7 @@ export class GCCollector extends BaseCollector<null> {
   }
 
   internalEnable(): void {
-    this._observer.observe({entryTypes: ['gc']});
+    this._observer.observe({ entryTypes: ['gc'] });
   }
 
   internalDisable(): void {

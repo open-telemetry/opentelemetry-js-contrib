@@ -23,12 +23,11 @@ import { EventLoopDelayCollector } from './metrics/eventLoopDelayCollector';
 import { GCCollector } from './metrics/gcCollector';
 import { HeapSizeAndUsedCollector } from './metrics/heapSizeAndUsedCollector';
 import { HeapSpacesSizeAndUsedCollector } from './metrics/heapSpacesSizeAndUsedCollector';
-import {ConventionalNamePrefix} from "./types/ConventionalNamePrefix";
+import { ConventionalNamePrefix } from './types/ConventionalNamePrefix';
 
 const DEFAULT_CONFIG: RuntimeNodeInstrumentationConfig = {
   monitoringPrecision: 5000,
 };
-
 
 export class RuntimeNodeInstrumentation extends InstrumentationBase {
   private _collectors: MetricCollector[] = [];
@@ -40,11 +39,23 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase {
       Object.assign({}, DEFAULT_CONFIG, config)
     );
     this._collectors = [
-      new EventLoopUtilizationCollector(this._config, ConventionalNamePrefix.NodeJsRuntime),
-      new EventLoopDelayCollector(this._config, ConventionalNamePrefix.NodeJsRuntime),
+      new EventLoopUtilizationCollector(
+        this._config,
+        ConventionalNamePrefix.NodeJsRuntime
+      ),
+      new EventLoopDelayCollector(
+        this._config,
+        ConventionalNamePrefix.NodeJsRuntime
+      ),
       new GCCollector(this._config, ConventionalNamePrefix.V8EnjineRuntime),
-      new HeapSizeAndUsedCollector(this._config, ConventionalNamePrefix.V8EnjineRuntime),
-      new HeapSpacesSizeAndUsedCollector(this._config, ConventionalNamePrefix.V8EnjineRuntime),
+      new HeapSizeAndUsedCollector(
+        this._config,
+        ConventionalNamePrefix.V8EnjineRuntime
+      ),
+      new HeapSpacesSizeAndUsedCollector(
+        this._config,
+        ConventionalNamePrefix.V8EnjineRuntime
+      ),
     ];
     if (this._config.enabled) {
       for (const collector of this._collectors) {

@@ -18,9 +18,9 @@ import { MeterProvider, DataPointType } from '@opentelemetry/sdk-metrics';
 import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
-import {ConventionalNamePrefix} from "../src/types/ConventionalNamePrefix";
-import {NODEJS_EVENT_LOOP_UTILIZATION} from "../src/metrics/eventLoopUtilizationCollector";
-import {NODE_JS_VERSION_ATTRIBUTE} from "../src/consts/attributes";
+import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
+import { NODEJS_EVENT_LOOP_UTILIZATION } from '../src/metrics/eventLoopUtilizationCollector';
+import { NODE_JS_VERSION_ATTRIBUTE } from '../src/consts/attributes';
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -71,7 +71,9 @@ describe(`${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATIO
     );
     const scopeMetrics = resourceMetrics.scopeMetrics;
     const utilizationMetric = scopeMetrics[0].metrics.find(
-      x => x.descriptor.name === `${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION}`
+      x =>
+        x.descriptor.name ===
+        `${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION}`
     );
 
     assert.notEqual(utilizationMetric, undefined, 'metric not found');
@@ -118,9 +120,7 @@ describe(`${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATIO
     instrumentation.setMeterProvider(meterProvider);
 
     // act
-    await new Promise(resolve =>
-      setTimeout(resolve, MEASUREMENT_INTERVAL * 5)
-    );
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
     const { resourceMetrics, errors } = await metricReader.collect();
 
     // assert
@@ -131,7 +131,9 @@ describe(`${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATIO
     );
     const scopeMetrics = resourceMetrics.scopeMetrics;
     const metric = scopeMetrics[0].metrics.find(
-      x => x.descriptor.name === `${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION}`
+      x =>
+        x.descriptor.name ===
+        `${ConventionalNamePrefix.NodeJsRuntime}.${NODEJS_EVENT_LOOP_UTILIZATION}`
     );
 
     assert.strictEqual(

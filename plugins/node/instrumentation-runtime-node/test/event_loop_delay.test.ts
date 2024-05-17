@@ -19,8 +19,8 @@ import { RuntimeNodeInstrumentation } from '../src';
 import * as assert from 'assert';
 import { TestMetricReader } from './testMetricsReader';
 import { metricNames } from '../src/metrics/eventLoopDelayCollector';
-import {ConventionalNamePrefix} from "../src/types/ConventionalNamePrefix";
-import {NODE_JS_VERSION_ATTRIBUTE} from "../src/consts/attributes";
+import { ConventionalNamePrefix } from '../src/types/ConventionalNamePrefix';
+import { NODE_JS_VERSION_ATTRIBUTE } from '../src/consts/attributes';
 
 const MEASUREMENT_INTERVAL = 10;
 
@@ -56,10 +56,16 @@ describe(`${ConventionalNamePrefix.NodeJsRuntime}.eventloop`, function () {
       );
       const scopeMetrics = resourceMetrics.scopeMetrics;
       const metric = scopeMetrics[0].metrics.find(
-        x => x.descriptor.name === `${ConventionalNamePrefix.NodeJsRuntime}.${ metricName}`
+        x =>
+          x.descriptor.name ===
+          `${ConventionalNamePrefix.NodeJsRuntime}.${metricName}`
       );
 
-      assert.notEqual(metric, undefined, `${ConventionalNamePrefix.NodeJsRuntime}.${metricName} not found`);
+      assert.notEqual(
+        metric,
+        undefined,
+        `${ConventionalNamePrefix.NodeJsRuntime}.${metricName} not found`
+      );
 
       assert.strictEqual(
         metric!.dataPointType,
@@ -69,7 +75,7 @@ describe(`${ConventionalNamePrefix.NodeJsRuntime}.eventloop`, function () {
 
       assert.strictEqual(
         metric!.descriptor.name,
-        `${ConventionalNamePrefix.NodeJsRuntime}.${ metricName}`,
+        `${ConventionalNamePrefix.NodeJsRuntime}.${metricName}`,
         'descriptor.name'
       );
     });
@@ -95,7 +101,9 @@ describe(`${ConventionalNamePrefix.NodeJsRuntime}.eventloop`, function () {
       );
       const scopeMetrics = resourceMetrics.scopeMetrics;
       const metric = scopeMetrics[0].metrics.find(
-        x => x.descriptor.name === `${ConventionalNamePrefix.NodeJsRuntime}.${ metricName}`
+        x =>
+          x.descriptor.name ===
+          `${ConventionalNamePrefix.NodeJsRuntime}.${metricName}`
       );
 
       assert.strictEqual(

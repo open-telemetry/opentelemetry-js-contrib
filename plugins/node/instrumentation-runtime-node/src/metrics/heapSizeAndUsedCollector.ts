@@ -16,9 +16,11 @@
 import { RuntimeNodeInstrumentationConfig } from '../types';
 import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
-import {HeapSizes} from "../types/heapSizes";
-import {V8_HEAP_SIZE, V8_HEAP_SIZE_STATE_ATTRIBUTE} from "../consts/attributes";
-
+import { HeapSizes } from '../types/heapSizes';
+import {
+  V8_HEAP_SIZE,
+  V8_HEAP_SIZE_STATE_ATTRIBUTE,
+} from '../consts/attributes';
 
 export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> {
   constructor(
@@ -29,26 +31,27 @@ export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> 
   }
 
   updateMetricInstruments(meter: Meter): void {
-   meter.createObservableGauge(
-      `${this.namePrefix}.${V8_HEAP_SIZE}`,
-      {
-        description: "Process heap size from Node.js in bytes.",
+    meter
+      .createObservableGauge(`${this.namePrefix}.${V8_HEAP_SIZE}`, {
+        description: 'Process heap size from Node.js in bytes.',
         unit: 'By',
-      }
-    ).addCallback(async observableResult => {
-      if (this._scrapeQueue.length === 0) return;
+      })
+      .addCallback(async observableResult => {
+        if (this._scrapeQueue.length === 0) return;
 
-      const data = this._scrapeQueue.shift();
-      if (data === undefined) return;
-      observableResult.observe(data.heapTotal, {
-        [`${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`]: HeapSizes.Total,
-        ...this.versionAttribute
+        const data = this._scrapeQueue.shift();
+        if (data === undefined) return;
+        observableResult.observe(data.heapTotal, {
+          [`${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`]:
+            HeapSizes.Total,
+          ...this.versionAttribute,
+        });
+        observableResult.observe(data.heapUsed, {
+          [`${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`]:
+            HeapSizes.Used,
+          ...this.versionAttribute,
+        });
       });
-      observableResult.observe(data.heapUsed, {
-        [`${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`]: HeapSizes.Used,
-        ...this.versionAttribute
-      });
-    });
   }
 
   internalEnable(): void {}

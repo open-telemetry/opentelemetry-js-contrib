@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {RuntimeNodeInstrumentationConfig} from '../types';
-import {Meter} from '@opentelemetry/api';
-import {BaseCollector} from './baseCollector';
+import { RuntimeNodeInstrumentationConfig } from '../types';
+import { Meter } from '@opentelemetry/api';
+import { BaseCollector } from './baseCollector';
 import * as v8 from 'node:v8';
-import {HeapSpaceInfo} from 'v8';
-import {V8_HEAP_SIZE_STATE_ATTRIBUTE} from "../consts/attributes";
-
+import { HeapSpaceInfo } from 'v8';
+import { V8_HEAP_SIZE_STATE_ATTRIBUTE } from '../consts/attributes';
 
 export enum V8HeapSpaceMetrics {
   spaceSize = 'heap.space_size',
@@ -28,26 +27,21 @@ export enum V8HeapSpaceMetrics {
   physical = 'heap.physical_space_size',
 }
 
-
-
-export const metricNames: Record<V8HeapSpaceMetrics, { description: string }> = {
-  [V8HeapSpaceMetrics.spaceSize]: {
-    description:
-      'Process heap space size total from Node.js in bytes.',
-  },
-  [V8HeapSpaceMetrics.used]: {
-    description:
-      'Process heap space size used from Node.js in bytes.',
-  },
-  [V8HeapSpaceMetrics.available]: {
-    description:
-      'Process heap space size available from Node.js in bytes.',
-  },
-  [V8HeapSpaceMetrics.physical]: {
-    description:
-      'Process heap space size available from Node.js in bytes.',
-  },
-}
+export const metricNames: Record<V8HeapSpaceMetrics, { description: string }> =
+  {
+    [V8HeapSpaceMetrics.spaceSize]: {
+      description: 'Process heap space size total from Node.js in bytes.',
+    },
+    [V8HeapSpaceMetrics.used]: {
+      description: 'Process heap space size used from Node.js in bytes.',
+    },
+    [V8HeapSpaceMetrics.available]: {
+      description: 'Process heap space size available from Node.js in bytes.',
+    },
+    [V8HeapSpaceMetrics.physical]: {
+      description: 'Process heap space size available from Node.js in bytes.',
+    },
+  };
 
 export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
   HeapSpaceInfo[]
@@ -88,7 +82,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
         unit: 'bytes',
       }
     );
-    const heapSpaceNameAttributeName = `${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`
+    const heapSpaceNameAttributeName = `${this.namePrefix}.${V8_HEAP_SIZE_STATE_ATTRIBUTE}`;
 
     meter.addBatchObservableCallback(
       observableResult => {
@@ -97,8 +91,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
         const data = this._scrapeQueue.shift();
         if (data === undefined) return;
         for (const space of data) {
-
-          const spaceName = space.space_name
+          const spaceName = space.space_name;
 
           observableResult.observe(heapSpaceSize, space.space_size, {
             [heapSpaceNameAttributeName]: spaceName,
@@ -116,20 +109,22 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
             }
           );
 
-          observableResult.observe(heapSpacePhysical, space.physical_space_size, {
-            [heapSpaceNameAttributeName]: spaceName,
-          });
+          observableResult.observe(
+            heapSpacePhysical,
+            space.physical_space_size,
+            {
+              [heapSpaceNameAttributeName]: spaceName,
+            }
+          );
         }
       },
       [heapSpaceSize, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
     );
   }
 
-  internalEnable(): void {
-  }
+  internalEnable(): void {}
 
-  internalDisable(): void {
-  }
+  internalDisable(): void {}
 
   protected scrape(): HeapSpaceInfo[] {
     return v8.getHeapSpaceStatistics();
