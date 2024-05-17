@@ -17,6 +17,8 @@ components:
   detectors/node/opentelemetry-resource-detector-instana:
     - basti1302
     - kirrg001
+  incubator/opentelemetry-sampler-aws-xray:
+    - carolabadeer
   metapackages/auto-instrumentations-node:
     - dyladan
     - pichlermarc
@@ -33,8 +35,6 @@ components:
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
-    - carolabadeer
-  packages/opentelemetry-sampler-aws-xray:
     - carolabadeer
   packages/opentelemetry-propagation-utils:
     - dyladan
@@ -143,8 +143,6 @@ components:
     - obecny
   plugins/web/opentelemetry-plugin-react-load:
     - martinkuba
-  propagators/opentelemetry-propagator-grpc-census-binary: []
-    # Unmaintained?
   propagators/opentelemetry-propagator-instana:
     - basti1302
     - kirrg001
