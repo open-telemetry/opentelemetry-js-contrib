@@ -13,9 +13,9 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 ## Supported Environments
 
-* Google Chrome (with [Manifest Version 3](https://developer.chrome.com/docs/extensions/mv3/intro/) support)
-* Chromium (with Manifest Version 2)
-* Firefox (*unstable*, with Manifest Version 2)
+- Google Chrome (with [Manifest Version 3](https://developer.chrome.com/docs/extensions/mv3/intro/) support)
+- Chromium (with Manifest Version 2)
+- Firefox (*unstable*, with Manifest Version 2)
 
 ## Installation
 
@@ -32,9 +32,9 @@ npm run build
 
 This will create a so-called unpacked extension into the `build/` folder you now can load into your browser:
 
-* Open a new browser window and go to chrome://extensions
-* Turn on "Developer Mode"
-* Click on "Load unpacked" and select the `build/mv3` (or `build/mv2`) folder, which contains the extension
+- Open a new browser window and go to chrome://extensions
+- Turn on "Developer Mode"
+- Click on "Load unpacked" and select the `build/mv3` (or `build/mv2`) folder, which contains the extension
 
 If all goes well you should see the extension listed:
 
