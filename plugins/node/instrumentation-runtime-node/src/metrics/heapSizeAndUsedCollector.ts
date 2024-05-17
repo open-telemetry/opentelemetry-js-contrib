@@ -42,10 +42,12 @@ export class HeapSizeAndUsedCollector extends BaseCollector<NodeJS.MemoryUsage> 
       const data = this._scrapeQueue.shift();
       if (data === undefined) return;
       observableResult.observe(data.heapTotal, {
-        [`${this.namePrefix}.${NODEJS_HEAP_SIZE_STATE}`]: HeapSizes.Total
+        [`${this.namePrefix}.${NODEJS_HEAP_SIZE_STATE}`]: HeapSizes.Total,
+        ...this.versionAttribute
       });
       observableResult.observe(data.heapUsed, {
-        [`${this.namePrefix}.${NODEJS_HEAP_SIZE_STATE}`]: HeapSizes.Used
+        [`${this.namePrefix}.${NODEJS_HEAP_SIZE_STATE}`]: HeapSizes.Used,
+        ...this.versionAttribute
       });
     });
   }

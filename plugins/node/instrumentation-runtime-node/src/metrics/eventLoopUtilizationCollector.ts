@@ -44,7 +44,7 @@ export class EventLoopUtilizationCollector extends BaseCollector<EventLoopUtiliz
           return;
         }
         const elu = eventLoopUtilizationCollector(this._scrapeQueue.shift());
-        observableResult.observe(elu.utilization);
+        observableResult.observe(elu.utilization, this.versionAttribute);
       });
   }
 

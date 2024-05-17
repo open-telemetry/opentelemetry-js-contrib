@@ -1,1 +1,1 @@
-export const NODE_JS_VERSION_ATTRIBUTE = "nodejs.version"
+export const NODE_JS_VERSION_ATTRIBUTE = "nodejsruntime.version"

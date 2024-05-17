@@ -20,10 +20,37 @@ import * as v8 from 'node:v8';
 import {HeapSpaceInfo} from 'v8';
 import {HeapSpaces} from "../types/heapSpaces";
 
-const NODEJS_HEAP_SPACE = 'heap.space';
-const NODEJS_HEAP_SPACE_STATE = 'heap.space.state';
-const NODEJS_HEAP_SPACE_SPACENAME = 'heap.space.spacename';
 
+enum V8HeapSpaceMetrics {
+  size = 'heap.size',
+  spaceSize = 'heap.space_size',
+  used = 'heap.space_used_size',
+  available = 'heap.space_available_size',
+  physical = 'heap.physical_space_size',
+}
+
+export const metricNames: Record<V8HeapSpaceMetrics, { description: string }> = {
+  [V8HeapSpaceMetrics.spaceSize]: {
+    description:
+      'Process heap space size total from Node.js in bytes.',
+  },
+  [V8HeapSpaceMetrics.size]: {
+    description:
+      'Process heap space size total from Node.js in bytes.',
+  },
+  [V8HeapSpaceMetrics.used]: {
+    description:
+      'Process heap space size used from Node.js in bytes.',
+  },
+  [V8HeapSpaceMetrics.available]: {
+    description:
+      'Process heap space size available from Node.js in bytes.',
+  },
+  [V8HeapSpaceMetrics.physical]: {
+    description:
+      'Process heap space size available from Node.js in bytes.',
+  },
+}
 
 export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
   HeapSpaceInfo[]
@@ -36,41 +63,86 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector<
   }
 
   updateMetricInstruments(meter: Meter): void {
-    meter.createObservableGauge(
-      `${this.namePrefix}.${NODEJS_HEAP_SPACE}`,
+    const heapSpaceSize = meter.createObservableGauge(
+      `${this.namePrefix}.${V8HeapSpaceMetrics.spaceSize}`,
       {
-        description: "Process heap space size total from Node.js in bytes.",
-        unit: 'By',
+        description: metricNames[V8HeapSpaceMetrics.spaceSize].description,
+        unit: 'bytes',
       }
-    ).addCallback(async observableResult => {
-      if (this._scrapeQueue.length === 0) return;
-
-      const data = this._scrapeQueue.shift();
-      if (data === undefined) return;
-      for (const space of data) {
-        const spaceName = space.space_name.substring(
-          0,
-          space.space_name.indexOf('_space')
-        );
-        observableResult.observe(space.space_size, {
-          [`${this.namePrefix}.${NODEJS_HEAP_SPACE_SPACENAME}`]: spaceName,
-          [`${this.namePrefix}.${NODEJS_HEAP_SPACE_STATE}`]: HeapSpaces.Total
-        });
-        observableResult.observe(space.space_used_size, {
-          [`${this.namePrefix}.${NODEJS_HEAP_SPACE_SPACENAME}`]: spaceName,
-          [`${this.namePrefix}.${NODEJS_HEAP_SPACE_STATE}`]: HeapSpaces.Used
-
-        });
-        observableResult.observe(
-          space.space_available_size,
-          {
-            [`${this.namePrefix}.${NODEJS_HEAP_SPACE_SPACENAME}`]: spaceName,
-            [`${this.namePrefix}.${NODEJS_HEAP_SPACE_STATE}`]: HeapSpaces.Availabe
-          }
-        );
+    );
+    const heapSize = meter.createObservableGauge(
+      `${this.namePrefix}.${V8HeapSpaceMetrics.size}`,
+      {
+        description: metricNames[V8HeapSpaceMetrics.size].description,
+        unit: 'bytes',
       }
-    });
+    );
+    const heapSpaceUsed = meter.createObservableGauge(
+      `${this.namePrefix}.${V8HeapSpaceMetrics.used}`,
+      {
+        description: metricNames[V8HeapSpaceMetrics.used].description,
+        unit: 'bytes',
+      }
+    );
+    const heapSpaceAvailable = meter.createObservableGauge(
+      `${this.namePrefix}.${V8HeapSpaceMetrics.available}`,
+      {
+        description: metricNames[V8HeapSpaceMetrics.available].description,
+        unit: 'bytes',
+      }
+    );
+    const heapSpacePhysical = meter.createObservableGauge(
+      `${this.namePrefix}.${V8HeapSpaceMetrics.physical}`,
+      {
+        description: metricNames[V8HeapSpaceMetrics.physical].description,
+        unit: 'bytes',
+      }
+    );
+    const heapSpaceNameAttributeName = `${this.namePrefix}.heap.space.name`
+    const heapSizeStateAttributeName = `${this.namePrefix}.heap.size.state`
 
+
+    meter.addBatchObservableCallback(
+      observableResult => {
+        if (this._scrapeQueue.length === 0) return;
+
+        const data = this._scrapeQueue.shift();
+        if (data === undefined) return;
+        for (const space of data) {
+
+          const spaceName = space.space_name
+
+          observableResult.observe(heapSize, space.space_size, {
+            [heapSizeStateAttributeName]: HeapSpaces.Total,
+          });
+
+          observableResult.observe(heapSize, space.space_used_size, {
+            [heapSizeStateAttributeName]: HeapSpaces.Used,
+          });
+
+          observableResult.observe(heapSpaceSize, space.space_size, {
+            [heapSpaceNameAttributeName]: spaceName,
+          });
+
+          observableResult.observe(heapSpaceUsed, space.space_used_size, {
+            [heapSpaceNameAttributeName]: spaceName,
+          });
+
+          observableResult.observe(
+            heapSpaceAvailable,
+            space.space_available_size,
+            {
+              [heapSpaceNameAttributeName]: spaceName,
+            }
+          );
+
+          observableResult.observe(heapSpacePhysical, space.physical_space_size, {
+            [heapSpaceNameAttributeName]: spaceName,
+          });
+        }
+      },
+      [heapSize, heapSpaceSize, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
+    );
   }
 
   internalEnable(): void {
