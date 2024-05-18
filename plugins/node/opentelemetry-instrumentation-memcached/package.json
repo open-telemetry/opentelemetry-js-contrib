@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-memcached",
   "version": "0.36.0",
-  "description": "OpenTelemetry memcached automatic instrumentation package.",
+  "description": "OpenTelemetry instrumentation for `memcached` database client for memcached",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
