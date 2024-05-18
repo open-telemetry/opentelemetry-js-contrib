@@ -27,6 +27,9 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/baggage-span-processor:
+    - mikegoldsmith
+    - jamiedanielson
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
@@ -55,6 +58,8 @@ components:
     - henrinormak
   plugins/node/instrumentation-fs:
     - rauno56
+  plugins/node/instrumentation-kafkajs:
+    - seemk
   plugins/node/instrumentation-lru-memoizer:
     - blumamir
   plugins/node/instrumentation-mongoose:
