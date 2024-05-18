@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-aws-lambda",
   "version": "0.41.1",
-  "description": "OpenTelemetry AWS Lambda automatic instrumentation package.",
+  "description": "OpenTelemetry instrumentation for AWS Lambda function invocations",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",

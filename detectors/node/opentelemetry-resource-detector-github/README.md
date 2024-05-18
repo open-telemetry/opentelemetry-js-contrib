@@ -22,8 +22,7 @@ npm install --save @opentelemetry/resource-detector-github
 ## Usage
 
 ```js
-
-const { gitHubDetector } = require('@opentelemetry/opentelemetry-resource-detector-github')
+const { gitHubDetector } = require('@opentelemetry/resource-detector-github')
 
 async function run() {
   // Initialize GitHub Resource Detector
