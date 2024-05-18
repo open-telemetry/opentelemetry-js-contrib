@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-redis-4",
   "version": "0.39.0",
-  "description": "Automatic OpenTelemetry instrumentation for redis package version 4",
+  "description": "OpenTelemetry instrumentation for `redis` v4 database client for Redis",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
