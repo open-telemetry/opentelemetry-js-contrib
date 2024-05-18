@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-ioredis",
   "version": "0.40.0",
-  "description": "OpenTelemetry ioredis automatic instrumentation package.",
+  "description": "OpenTelemetry instrumentation for `ioredis` database redis client for Redis",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
