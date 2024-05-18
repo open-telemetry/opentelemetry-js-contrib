@@ -288,3 +288,27 @@ Checklist for adding a new version to the supported versions list:
 - [ ] Update the supported versions list in the instrumentation code, perhaps with different patches and additional `InstrumentationNodeModuleDefinition`s that target the new version.
 - [ ] Update the README file to reflect the support for new versions.
 - [ ] For instrumentations that use test-all-versions `.tav.yaml`, add the new version to the list of versions to test.
+
+## package.json
+
+### Description
+
+Instrumentation should include a `description` field in the `package.json` file. The description targets human readers and is an opportunity to communicate the use case for the instrumented package and its semconv namespace. It should help users know whether the package fits their application, which is especially helpful if the package has a shortened or obscure name.
+
+The description should be written with this format when applicable:
+
+```text
+"OpenTelemetry instrumentation for `<instrumented-package-name>` <package short description>"
+```
+
+For example:
+
+```text
+"OpenTelemetry instrumentation for `express` http framework"
+"OpenTelemetry instrumentation for `winston` logger"
+"OpenTelemetry instrumentation for `redis` database client for Redis"
+```
+
+If the package is consumed directly, the description should state the package name in `<instrumented-package-name>`. Tools like `nestjs` and `aws-lambda` are examples of packages that are consumed indirectly.
+
+A short description should follow the package name, like "http framework", "logger", "database client for X", "messaging client", etc as appropriate in each case. It is preferable to use the semconv namespace semantics that are emitted by this instrumentation (`http`, `database`, `messaging`, `rpc`, `net`) to give quick context for the scope of the instrumentation.
