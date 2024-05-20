@@ -30,7 +30,7 @@ npm install --save @opentelemetry/baggage-span-processor
 Add to the span processors that copies all baggage entries during configuration:
 
 ```javascript
-import { NodeSDK, tracing } from "@opentelemetry/sdk-node";
+import { NodeSDK, tracing } from '@opentelemetry/sdk-node';
 import { ALL_BAGGAGE_KEYS_KEY_FILTER, BaggageSpanProcessor } from '../src/baggage-span-processor';
 
 const spanProcessors = [
