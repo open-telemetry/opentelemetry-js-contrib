@@ -80,13 +80,9 @@ export class BaggageSpanProcessor implements SpanProcessor {
    * @param span the Span that just started.
    */
   onStart(span: Span, parentContext: Context): void {
-    (propagation.getBaggage(parentContext)?.getAllEntries() ?? []).forEach(
-      entry => {
-        if (this._keyFilter(entry[0])) {
-          span.setAttribute(entry[0], entry[1].value);
-        }
-      }
-    );
+    (propagation.getBaggage(parentContext)?.getAllEntries() ?? [])
+      .filter(entry => this._keyFilter(entry[0]))
+      .forEach(entry => span.setAttribute(entry[0], entry[1].value));
   }
 
   /**
