@@ -20,6 +20,7 @@
   "plugins/node/instrumentation-cucumber": "0.6.0",
   "plugins/node/instrumentation-dataloader": "0.9.0",
   "plugins/node/instrumentation-fs": "0.12.0",
+  "plugins/node/instrumentation-kafkajs": "0.0.1",
   "plugins/node/instrumentation-lru-memoizer": "0.37.0",
   "plugins/node/instrumentation-mongoose": "0.38.1",
   "plugins/node/instrumentation-runtime-node": "0.4.0",
