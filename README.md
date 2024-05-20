@@ -42,10 +42,10 @@ A repository for OpenTelemetry JavaScript contributions that are not part of the
 
 This project includes:
 
-* [Instrumentations & other plugins](./plugins),
-* [Metapackages](./metapackages),
-* [Context Propagators](./propagators),
-* [Resource Detectors](./detectors).
+- [Instrumentations & other plugins](./plugins),
+- [Metapackages](./metapackages),
+- [Context Propagators](./propagators),
+- [Resource Detectors](./detectors).
 
 **Instrumentations**: OpenTelemetry can collect tracing data automatically using instrumentations. Vendors/Users can also create and use their own.
 
@@ -59,9 +59,9 @@ Stability level for components in this repository follow the definitions in [CON
 
 Packages in this repository have a variable range of support for Node.JS and browser versions which for each package depend on
 
-* the activeness of the owners of those packages,
-* used techniques or runtime features and
-* in the case of the auto-instrumentations, the supported runtime versions for the underlying package.
+- the activeness of the owners of those packages,
+- used techniques or runtime features and
+- in the case of the auto-instrumentations, the supported runtime versions for the underlying package.
 
 See the `README.md` files and the `engines` field in the `package.json` files for the respective packages for support information about that package.
 
@@ -79,9 +79,9 @@ We'd love your help! Use tags [up-for-grabs][up-for-grabs-issues] and [good firs
 
 ## Useful links
 
-* For more information on OpenTelemetry, visit [OpenTelemetry.io](https://opentelemetry.io/)
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url] or in [Slack](https://cloud-native.slack.com/archives/C01NL1GRPQR)
-* For more 3rd party components for JS as well as other languages, check [OpenTelemetry Registry](https://opentelemetry.io/registry/)
+- For more information on OpenTelemetry, visit [OpenTelemetry.io](https://opentelemetry.io/)
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url] or in [Slack](https://cloud-native.slack.com/archives/C01NL1GRPQR)
+- For more 3rd party components for JS as well as other languages, check [OpenTelemetry Registry](https://opentelemetry.io/registry/)
 
 ## License
 

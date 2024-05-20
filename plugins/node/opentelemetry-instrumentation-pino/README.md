@@ -55,9 +55,9 @@ logger.info('foobar');
 
 For the current active span, the following fields are injected. These field names can be optionally configured via `logKeys` in the PinoInstrumentation config:
 
-* `trace_id`
-* `span_id`
-* `trace_flags`
+- `trace_id`
+- `span_id`
+- `trace_flags`
 
 When no span context is active or the span context is invalid, injection is skipped.
 
@@ -65,11 +65,15 @@ When no span context is active or the span context is invalid, injection is skip
 
 `>=5.14.0 <10`
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 

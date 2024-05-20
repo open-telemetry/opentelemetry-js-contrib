@@ -48,9 +48,9 @@ sdk.start();
 
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 
@@ -59,5 +59,5 @@ APACHE 2.0 - See [LICENSE][license-url] for more information.
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
-[npm-url]: https://www.npmjs.com/package/@opentelemetry/host-metrics
-[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fhost-metrics.svg
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/baggage-span-processor
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fbaggage-span-processor.svg

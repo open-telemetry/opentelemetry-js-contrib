@@ -50,7 +50,7 @@ export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="https://your-endpoint"
 export OTEL_EXPORTER_OTLP_HEADERS="x-api-key=your-api-key"
 export OTEL_EXPORTER_OTLP_TRACES_HEADERS="x-api-key=your-api-key"
 export OTEL_RESOURCE_ATTRIBUTES="service.namespace=my-namespace"
-export OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstace"
+export OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
 export OTEL_SERVICE_NAME="client"
 export NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 node app.js
