@@ -30,7 +30,9 @@ export type BaggageKeyPredicate = (baggageKey: string) => boolean;
 /**
  * A {@link BaggageKeyPredicate} that includes all baggage keys.
  */
-export const ALL_BAGGAGE_KEYS_KEY_FILTER: BaggageKeyPredicate = (baggageKey: string) => true;
+export const ALL_BAGGAGE_KEYS_KEY_FILTER: BaggageKeyPredicate = (
+  baggageKey: string
+) => true;
 
 /**
  * BaggageSpanProcessor is a {@link SpanProcessor} that reads entries stored in {@link Baggage}
