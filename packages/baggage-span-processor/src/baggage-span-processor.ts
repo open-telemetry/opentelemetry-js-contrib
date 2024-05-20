@@ -22,6 +22,17 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 
 /**
+ * A function that determines whether a baggage key-value pair should be added to new
+ * spans as a span attribute.
+ */
+export type BaggageKeyPredicate = (baggageKey: string) => boolean;
+
+/**
+ * A {@link BaggageKeyPredicate} that includes all baggage keys.
+ */
+export const ALL_BAGGAGE_KEYS_KEY_FILTER: BaggageKeyPredicate = (baggageKey: string) => true;
+
+/**
  * BaggageSpanProcessor is a {@link SpanProcessor} that reads entries stored in {@link Baggage}
  * from the parent context and adds the baggage entries' keys and
  * values to the span as attributes on span start.
@@ -43,17 +54,14 @@ import {
  * values will appear in all outgoing HTTP headers from the application.
  */
 export class BaggageSpanProcessor implements SpanProcessor {
-  private _keyFilter: (key: string) => boolean;
+  private _keyFilter: BaggageKeyPredicate;
 
   /**
    * Constructs a new BaggageSpanProcessor instance.
-   * @param keyFilter An optional function that can be used to filter keys
-   * added to the span. If the function returns true, the key will be added
-   * to the span. If the function returns false, the key will not be added
-   * to the span. The default behavior is to add all keys to the span.
+   * @param keyFilter A filter predicate that can be used to exclude keys from being added to the span.
    */
-  constructor(keyFilter?: (key: string) => boolean) {
-    this._keyFilter = keyFilter ?? (() => true);
+  constructor(keyFilter: BaggageKeyPredicate) {
+    this._keyFilter = keyFilter;
   }
 
   /**

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { BaggageSpanProcessor } from '../src/baggage-span-processor';
+import { ALL_BAGGAGE_KEYS_KEY_FILTER, BaggageSpanProcessor } from '../src/baggage-span-processor';
 import {
   propagation,
   ROOT_CONTEXT,
@@ -24,8 +24,8 @@ import {
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
 
-describe('BaggageSpanProcessor', () => {
-  const baggageProcessor = new BaggageSpanProcessor();
+describe('BaggageSpanProcessor with all keys filter', () => {
+  const baggageProcessor = new BaggageSpanProcessor(ALL_BAGGAGE_KEYS_KEY_FILTER);
 
   const bag = propagation.createBaggage({
     brand: { value: 'samsonite' },
