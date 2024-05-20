@@ -51,9 +51,7 @@ Alternatively, you can provide a custom baggage key predicate to select which ba
 For example, to only copy baggage entries that start with `my-key`:
 
 ```javascript
-new BaggageSpanProcessor((key: string) =>
-    key.startsWith('my-key')
-  )
+new BaggageSpanProcessor((baggageKey: string) => key.startsWith('my-key'))
 ```
 
 ## Useful links
