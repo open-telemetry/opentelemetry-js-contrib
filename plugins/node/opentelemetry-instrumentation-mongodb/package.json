@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-mongodb",
   "version": "0.43.0",
-  "description": "OpenTelemetry mongodb automatic instrumentation package.",
+  "description": "OpenTelemetry instrumentation for `mongodb` database client for MongoDB",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
