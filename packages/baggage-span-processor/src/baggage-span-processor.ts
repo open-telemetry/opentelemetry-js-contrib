@@ -30,7 +30,7 @@ export type BaggageKeyPredicate = (baggageKey: string) => boolean;
 /**
  * A {@link BaggageKeyPredicate} that includes all baggage keys.
  */
-export const ALL_BAGGAGE_KEYS_KEY_FILTER: BaggageKeyPredicate = (
+export const ALL_BAGGAGE_KEYS_PREDICATE: BaggageKeyPredicate = (
   baggageKey: string
 ) => true;
 
@@ -56,14 +56,14 @@ export const ALL_BAGGAGE_KEYS_KEY_FILTER: BaggageKeyPredicate = (
  * values will appear in all outgoing HTTP headers from the application.
  */
 export class BaggageSpanProcessor implements SpanProcessor {
-  private _keyFilter: BaggageKeyPredicate;
+  private _keyPredicate: BaggageKeyPredicate;
 
   /**
    * Constructs a new BaggageSpanProcessor instance.
-   * @param keyFilter A filter predicate that can be used to exclude keys from being added to the span.
+   * @param keyPredicate A predicate that determines whether a baggage key-value pair should be added to new spans as a span attribute.
    */
-  constructor(keyFilter: BaggageKeyPredicate) {
-    this._keyFilter = keyFilter;
+  constructor(keyPredicate: BaggageKeyPredicate) {
+    this._keyPredicate = keyPredicate;
   }
 
   /**
@@ -81,7 +81,7 @@ export class BaggageSpanProcessor implements SpanProcessor {
    */
   onStart(span: Span, parentContext: Context): void {
     (propagation.getBaggage(parentContext)?.getAllEntries() ?? [])
-      .filter(entry => this._keyFilter(entry[0]))
+      .filter(entry => this._keyPredicate(entry[0]))
       .forEach(entry => span.setAttribute(entry[0], entry[1].value));
   }
 
