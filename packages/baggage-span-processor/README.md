@@ -54,6 +54,13 @@ For example, to only copy baggage entries that start with `my-key`:
 new BaggageSpanProcessor((baggageKey: string) => key.startsWith('my-key'))
 ```
 
+For example, to only copy baggage entries that matches the regex `^key.+`:
+
+```javascript
+const regex = new RegExp("^key.+")
+new BaggageSpanProcessor((baggageKey: string) => regex.test(baggageKey))
+```
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
