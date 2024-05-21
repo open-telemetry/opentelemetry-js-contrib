@@ -117,7 +117,9 @@ describe('BaggageSpanProcessor with startWith key filter', () => {
 
 describe('BaggageSpanProcessor with regex key filter', () => {
   const regex = new RegExp('^col.+');
-  const baggageProcessor = new BaggageSpanProcessor((key: string) => regex.test(key));
+  const baggageProcessor = new BaggageSpanProcessor((key: string) =>
+    regex.test(key)
+  );
 
   const bag = propagation.createBaggage({
     brand: { value: 'samsonite' },
