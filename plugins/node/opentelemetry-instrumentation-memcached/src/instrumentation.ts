@@ -42,7 +42,7 @@ export class Instrumentation extends InstrumentationBase {
   }
 
   override setConfig(config: InstrumentationConfig = {}) {
-    this._config = config;
+    this._config = { ...config };
   }
 
   init() {

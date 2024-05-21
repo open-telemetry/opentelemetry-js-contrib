@@ -66,7 +66,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   }
 
   override setConfig(config: GraphQLInstrumentationConfig = {}) {
-    this._config = config;
+    this._config = { ...config };
   }
 
   protected init() {

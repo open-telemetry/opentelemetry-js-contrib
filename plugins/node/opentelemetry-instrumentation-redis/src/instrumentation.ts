@@ -37,7 +37,7 @@ export class RedisInstrumentation extends InstrumentationBase {
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
-    this._config = config;
+    this._config = { ...config };
   }
 
   protected init() {

@@ -95,7 +95,7 @@ export class BunyanInstrumentation extends InstrumentationBase {
   }
 
   override setConfig(config: BunyanInstrumentationConfig = {}) {
-    this._config = config;
+    this._config = { ...config };
   }
 
   private _getPatchedEmit() {
