@@ -805,7 +805,7 @@ describe('DocumentLoad Instrumentation', () => {
     it('should ignore performance events if ignorePerformanceEvents is set to true', done => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
-        ignorePerformanceEvents: true,
+        ignorePerformancePaintEvents: true,
       });
       plugin.enable();
 

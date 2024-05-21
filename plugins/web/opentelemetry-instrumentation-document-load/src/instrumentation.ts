@@ -157,7 +157,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
         addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_END, entries);
       }
 
-      if (!this._getConfig().ignorePerformanceEvents) {
+      if (!this._getConfig().ignorePerformancePaintEvents) {
         addSpanPerformancePaintEvents(rootSpan);
       }
 
