@@ -30,7 +30,7 @@ export type BaggageKeyPredicate = (baggageKey: string) => boolean;
 /**
  * A {@link BaggageKeyPredicate} that includes all baggage keys.
  */
-export const ALL_BAGGAGE_KEYS_PREDICATE: BaggageKeyPredicate = (
+export const ALLOW_ALL_BAGGAGE_KEYS: BaggageKeyPredicate = (
   baggageKey: string
 ) => true;
 

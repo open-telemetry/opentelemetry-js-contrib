@@ -15,7 +15,7 @@
  */
 
 import {
-  ALL_BAGGAGE_KEYS_PREDICATE,
+  ALLOW_ALL_BAGGAGE_KEYS,
   BaggageSpanProcessor,
 } from '../src/baggage-span-processor';
 import {
@@ -28,7 +28,7 @@ import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
 
 describe('BaggageSpanProcessor with all keys filter', () => {
-  const baggageProcessor = new BaggageSpanProcessor(ALL_BAGGAGE_KEYS_PREDICATE);
+  const baggageProcessor = new BaggageSpanProcessor(ALLOW_ALL_BAGGAGE_KEYS);
 
   const bag = propagation.createBaggage({
     brand: { value: 'samsonite' },
