@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-generic-pool",
   "version": "0.36.0",
-  "description": "OpenTelemetry Generic Pool automatic instrumentation package",
+  "description": "OpenTelemetry instrumentation for `generic-pool` resource pool for managing expensive resources",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
