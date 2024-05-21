@@ -35,6 +35,38 @@ export interface DocumentLoadInstrumentationConfig
     documentFetch?: DocumentLoadCustomAttributeFunction;
     resourceFetch?: ResourceFetchCustomAttributeFunction;
   };
+
+  /** Ignore adding network events as span events for document fetch and resource fetch spans.
+   * This instrumentation will send the following span events by default:
+   * connectEnd
+   * connectStart
+   * decodedBodySize
+   * domComplete
+   * domContentLoadedEventEnd
+   * domContentLoadedEventStart
+   * domInteractive
+   * domainLookupEnd
+   * domainLookupStart
+   * encodedBodySize
+   * fetchStart
+   * loadEventEnd
+   * loadEventStart
+   * navigationStart
+   * redirectEnd
+   * redirectStart
+   * requestStart
+   * responseEnd
+   * responseStart
+   * secureConnectionStart
+   * unloadEventEnd
+   * unloadEventStart
+   */
   ignoreNetworkEvents?: boolean;
+
+  /** Ignore adding performance paint span events on document load spans
+   * This instrumentation will send the following span events by default:
+   * firstContentfulPaint
+   * firstPaint
+   */
   ignorePerformancePaintEvents?: boolean;
 }
