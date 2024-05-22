@@ -78,7 +78,7 @@ export class TediousInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         TediousInstrumentation.COMPONENT,
-        ['>=1.11.0 <=15'],
+        ['>=1.11.0 <18'],
         (moduleExports: typeof tedious) => {
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
           for (const method of PATCHED_METHODS) {
