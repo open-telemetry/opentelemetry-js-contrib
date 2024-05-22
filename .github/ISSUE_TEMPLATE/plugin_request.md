@@ -20,9 +20,11 @@ A clear and concise description of what the problem is. Ex. I'm always frustrate
 
 
 ### Do you expect this instrumentation to be commonly used?
+
 Weekly Downloads:
 
 ### What version of instrumentation are you interested in using?
+
 Versions:
 
 ### Additional context
