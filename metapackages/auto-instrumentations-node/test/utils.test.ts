@@ -20,7 +20,6 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { getNodeAutoInstrumentations } from '../src';
 import { getPropagator, getResourceDetectorsFromEnv } from '../src/utils';
-import { CompositePropagator } from '@opentelemetry/core';
 
 describe('utils', () => {
   describe('getNodeAutoInstrumentations', () => {
