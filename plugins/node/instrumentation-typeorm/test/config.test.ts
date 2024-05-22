@@ -114,9 +114,9 @@ describe('TypeormInstrumentationConfig', () => {
     await connection.close();
   });
 
-  it('collectParameters:true', async () => {
+  it('enhancedDatabaseReporting:true', async () => {
     const config: TypeormInstrumentationConfig = {
-      collectParameters: true,
+      enhancedDatabaseReporting: true,
     };
     instrumentation.setConfig(config);
     const connectionOptions = defaultOptions as any;

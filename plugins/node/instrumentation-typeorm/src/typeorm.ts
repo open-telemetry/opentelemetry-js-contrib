@@ -100,7 +100,7 @@ export class TypeormInstrumentation extends InstrumentationBase {
   protected init() {
     const selectQueryBuilder = new InstrumentationNodeModuleFile(
       'typeorm/query-builder/SelectQueryBuilder.js',
-      ['>0.2.28'],
+      ['>=0.2.29 <1'],
       moduleExports => {
         selectQueryBuilderExecuteMethods.map(method => {
           if (isWrapped(moduleExports.SelectQueryBuilder.prototype?.[method])) {
@@ -150,7 +150,7 @@ export class TypeormInstrumentation extends InstrumentationBase {
 
     const dataSource = new InstrumentationNodeModuleFile(
       'typeorm/data-source/DataSource.js',
-      ['>=0.3.0'],
+      ['>=0.3.0 <1'],
       moduleExports => {
         if (isWrapped(moduleExports.DataSource.prototype?.[rawQueryFuncName])) {
           this._unwrap(moduleExports.DataSource.prototype, rawQueryFuncName);
@@ -173,7 +173,7 @@ export class TypeormInstrumentation extends InstrumentationBase {
 
     const entityManager = new InstrumentationNodeModuleFile(
       'typeorm/entity-manager/EntityManager.js',
-      ['>0.2.28'],
+      ['>=0.2.29 <1'],
       moduleExports => {
         entityManagerMethods.map(method => {
           if (isWrapped(moduleExports.EntityManager.prototype?.[method])) {
@@ -200,7 +200,7 @@ export class TypeormInstrumentation extends InstrumentationBase {
 
     const module = new InstrumentationNodeModuleDefinition(
       'typeorm',
-      ['>0.2.28'],
+      ['>=0.2.29 <1'],
       undefined,
       undefined,
       [selectQueryBuilder, entityManager, connection, dataSource]
@@ -300,7 +300,7 @@ export class TypeormInstrumentation extends InstrumentationBase {
           [SEMATTRS_DB_STATEMENT]: sql,
           [SEMATTRS_DB_SQL_TABLE]: mainTableName,
         };
-        if (self._config.collectParameters) {
+        if (self._config.enhancedDatabaseReporting) {
           try {
             attributes[ExtendedDatabaseAttribute.DB_STATEMENT_PARAMETERS] =
               JSON.stringify(parameters);

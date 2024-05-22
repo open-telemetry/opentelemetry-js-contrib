@@ -47,16 +47,13 @@ You can set the following:
 | `responseHook` | `TypeormResponseCustomAttributesFunction` | Hook called before response is returned, which allows to add custom attributes to span.  |
 | `suppressInternalInstrumentation` | boolean | Typeorm uses mongodb/postgres/mysql/mariadb/etc. under the hood. If, for example, postgres instrumentation is enabled, a postgres operation will also create a postgres span describing the communication. Setting the `suppressInternalInstrumentation` config value to `true` will cause the instrumentation to suppress instrumentation of underlying operations. |
 | `enableInternalInstrumentation` | boolean |  Some methods such as `getManyAndCount` can generate internally multiple spans. To instrument those set this to `true` |
-| `collectParameters` | boolean | set to `true` if you want to capture the parameter values for parameterized SQL queries (**may leak sensitive information**)
+| `enhancedDatabaseReporting` | boolean | set to `true` if you want to capture the parameter values for parameterized SQL queries (**may leak sensitive information**)
 
 ## Semantic Conventions
 
 This package uses `@opentelemetry/semantic-conventions` version `1.24+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
 Attributes collected:
-
-  SEMATTRS_NET_PEER_NAME,
-  SEMATTRS_NET_PEER_PORT,
 
 | Attribute       | Short Description                                                           |
 | ----------------| --------------------------------------------------------------------------- |
