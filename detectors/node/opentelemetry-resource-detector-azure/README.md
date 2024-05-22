@@ -71,7 +71,6 @@ This package implements Semantic Convention [Version 1.19.0](https://github.com/
 | cloud.resource_id       | The Azure Resource Manager URI uniquely identifying the Azure Virtual Machine. It typically follows this format: /subscriptions/{subscriptionId}/resourceGroups/{groupName}/providers/Microsoft.Compute/virtualMachines/{vmName}. Value from resourceId key on /metadata/instance/compute request. |
 | process.pid             | The process ID collected from the running process.                                                                                                   |
 
-
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
