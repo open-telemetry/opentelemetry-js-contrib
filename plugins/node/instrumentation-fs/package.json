@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-fs",
   "version": "0.12.0",
-  "description": "OpenTelemetry automatic instrumentation package for fs",
+  "description": "OpenTelemetry instrumentation for `node:fs` file system interactions module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -15,7 +15,7 @@
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc -p ."
+    "compile": "tsc -p ."
   },
   "keywords": [
     "fs",
