@@ -94,7 +94,12 @@
     "@opentelemetry/resource-detector-container": "^0.3.9",
     "@opentelemetry/resource-detector-gcp": "^0.29.9",
     "@opentelemetry/resources": "^1.24.0",
-    "@opentelemetry/sdk-node": "^0.51.0"
+    "@opentelemetry/sdk-node": "^0.51.0",
+    "@opentelemetry/core": "^1.24.1",
+    "@opentelemetry/propagator-b3": "^1.24.1",
+    "@opentelemetry/propagator-jaeger": "^1.24.1",
+    "@opentelemetry/propagator-aws-xray": "^1.24.1",
+    "@opentelemetry/propagator-ot-trace": "^0.27.2"
   },
   "files": [
     "build/src/**/*.js",

@@ -19,7 +19,8 @@ import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { getNodeAutoInstrumentations } from '../src';
-import { getResourceDetectorsFromEnv } from '../src/utils';
+import { getPropagator, getResourceDetectorsFromEnv } from '../src/utils';
+import { CompositePropagator } from '@opentelemetry/core';
 
 describe('utils', () => {
   describe('getNodeAutoInstrumentations', () => {
@@ -159,6 +160,33 @@ describe('utils', () => {
 
       spy.restore();
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
+    });
+  });
+
+  describe('getPropagator', () => {
+    afterEach(() => {
+      delete process.env.OTEL_PROPAGATORS;
+    });
+
+    it('should return default when env var is unset', () => {
+      assert.deepStrictEqual(getPropagator().fields(), [
+        'traceparent',
+        'tracestate',
+        'baggage',
+      ]);
+    });
+
+    it('should return the selected propagator when one is in the list', () => {
+      process.env.OTEL_PROPAGATORS = 'tracecontext';
+      assert.deepStrictEqual(getPropagator().fields(), [
+        'traceparent',
+        'tracestate',
+      ]);
+    });
+
+    it('should return the selected propagators when multiple are in the list', () => {
+      process.env.OTEL_PROPAGATORS = 'b3,jaeger';
+      assert.deepStrictEqual(getPropagator().fields(), ['b3', 'uber-trace-id']);
     });
   });
 });

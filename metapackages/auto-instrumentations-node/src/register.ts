@@ -17,6 +17,7 @@ import * as opentelemetry from '@opentelemetry/sdk-node';
 import { diag, DiagConsoleLogger } from '@opentelemetry/api';
 import {
   getNodeAutoInstrumentations,
+  getPropagator,
   getResourceDetectorsFromEnv,
 } from './utils';
 
@@ -28,6 +29,7 @@ diag.setLogger(
 const sdk = new opentelemetry.NodeSDK({
   instrumentations: getNodeAutoInstrumentations(),
   resourceDetectors: getResourceDetectorsFromEnv(),
+  textMapPropagator: getPropagator(),
 });
 
 try {

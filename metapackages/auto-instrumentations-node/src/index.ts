@@ -17,5 +17,6 @@
 export {
   getNodeAutoInstrumentations,
   getResourceDetectorsFromEnv as getResourceDetectors,
+  getPropagator,
   InstrumentationConfigMap,
 } from './utils';

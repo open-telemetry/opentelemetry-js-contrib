@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { diag } from '@opentelemetry/api';
+import { diag, TextMapPropagator } from '@opentelemetry/api';
 import { Instrumentation } from '@opentelemetry/instrumentation';
 
 import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
@@ -80,6 +80,15 @@ import {
   azureFunctionsDetector,
   azureVmDetector,
 } from '@opentelemetry/resource-detector-azure';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
+import { B3InjectEncoding, B3Propagator } from '@opentelemetry/propagator-b3';
+import { JaegerPropagator } from '@opentelemetry/propagator-jaeger';
+import { OTTracePropagator } from '@opentelemetry/propagator-ot-trace';
+import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 
 const RESOURCE_DETECTOR_CONTAINER = 'container';
 const RESOURCE_DETECTOR_ENVIRONMENT = 'env';
@@ -252,4 +261,57 @@ export function getResourceDetectorsFromEnv(): Array<Detector | DetectorSync> {
     }
     return resourceDetector || [];
   });
+}
+
+type PropagatorFactoryFunction = () => TextMapPropagator;
+
+const propagatorMap = new Map<string, PropagatorFactoryFunction>([
+  ['tracecontext', () => new W3CTraceContextPropagator()],
+  ['baggage', () => new W3CTraceContextPropagator()],
+  [
+    'b3',
+    () => new B3Propagator({ injectEncoding: B3InjectEncoding.SINGLE_HEADER }),
+  ],
+  [
+    'b3multi',
+    () => new B3Propagator({ injectEncoding: B3InjectEncoding.MULTI_HEADER }),
+  ],
+  ['jaeger', () => new JaegerPropagator()],
+  ['xray', () => new AWSXRayPropagator()],
+  ['ottrace', () => new OTTracePropagator()],
+]);
+
+/**
+ * Get a propagator based on the OTEL_PROPAGATORS env var.
+ */
+export function getPropagator(): TextMapPropagator {
+  if (process.env.OTEL_PROPAGATORS == null) {
+    return new CompositePropagator({
+      propagators: [
+        new W3CTraceContextPropagator(),
+        new W3CBaggagePropagator(),
+      ],
+    });
+  }
+
+  const propagatorsFromEnv = process.env.OTEL_PROPAGATORS?.split(',').map(
+    value => value.toLowerCase()
+  );
+
+  const propagators = propagatorsFromEnv.flatMap(propagatorName => {
+    const propagatorFactoryFunction = propagatorMap.get(propagatorName);
+    if (propagatorFactoryFunction == null) {
+      diag.error(
+        `Invalid propagator "${propagatorName}" specified in the environment variable OTEL_PROPAGATORS`
+      );
+      return [];
+    }
+    return propagatorFactoryFunction();
+  });
+
+  if (propagators.length === 1) {
+    return propagators[0];
+  }
+
+  return new CompositePropagator({ propagators });
 }
