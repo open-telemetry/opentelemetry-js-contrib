@@ -8,7 +8,7 @@
   "scripts": {
     "clean": "rimraf build/*",
     "codecov": "nyc report --reporter=json && codecov -f coverage/*.json -p ../../../",
-    "compile": "npm run version:update && tsc -p .",
+    "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/resource-detector-container --include-dependencies",
