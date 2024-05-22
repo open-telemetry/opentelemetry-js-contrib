@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.37.0...instrumentation-nestjs-core-v0.37.1) (2024-05-02)
+
+
+### Performance Improvements
+
+* **instrumentation-nestjs-core:** extract reusable span attributes to outer scope ([#2087](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2087)) ([405472d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/405472df3b1d218daab79e9caa7c8a51c3d7a7bf))
+
 ## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.36.0...instrumentation-nestjs-core-v0.37.0) (2024-04-25)
 
 

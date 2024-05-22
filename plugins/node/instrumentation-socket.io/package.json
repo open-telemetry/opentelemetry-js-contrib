@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-socket.io",
   "version": "0.39.0",
-  "description": "OpenTelemetry automatic instrumentation package for socket.io",
+  "description": "OpenTelemetry instrumentation for `socket.io` messaging server implementation for Socket.IO communication",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",

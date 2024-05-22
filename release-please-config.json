@@ -15,6 +15,7 @@
     "detectors/node/opentelemetry-resource-detector-instana": {},
     "metapackages/auto-instrumentations-node": {},
     "metapackages/auto-instrumentations-web": {},
+    "packages/baggage-span-processor": {},
     "packages/opentelemetry-host-metrics": {},
     "packages/opentelemetry-id-generator-aws-xray": {},
     "packages/opentelemetry-propagation-utils": {},
@@ -26,6 +27,7 @@
     "plugins/node/instrumentation-cucumber": {},
     "plugins/node/instrumentation-dataloader": {},
     "plugins/node/instrumentation-fs": {},
+    "plugins/node/instrumentation-kafkajs": {},
     "plugins/node/instrumentation-lru-memoizer": {},
     "plugins/node/instrumentation-mongoose": {},
     "plugins/node/instrumentation-runtime-node": {},
@@ -63,7 +65,6 @@
     "plugins/web/opentelemetry-instrumentation-long-task": {},
     "plugins/web/opentelemetry-instrumentation-user-interaction": {},
     "plugins/web/opentelemetry-plugin-react-load": {},
-    "propagators/opentelemetry-propagator-grpc-census-binary": {},
     "propagators/opentelemetry-propagator-instana": {},
     "propagators/opentelemetry-propagator-ot-trace": {}
   }

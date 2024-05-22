@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-mysql2",
-  "version": "0.38.0",
-  "description": "OpenTelemetry mysql2 automatic instrumentation package.",
+  "version": "0.38.1",
+  "description": "OpenTelemetry instrumentation for `mysql2` database client for MySQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",

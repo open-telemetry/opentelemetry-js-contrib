@@ -31,7 +31,7 @@ import {
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import {
   replaceCurrentStackRoute,
   addNewStackLayer,
@@ -43,11 +43,7 @@ export const ANONYMOUS_NAME = 'anonymous';
 /** Connect instrumentation for OpenTelemetry */
 export class ConnectInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-connect',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-connect', VERSION, config);
   }
 
   init() {
@@ -104,7 +100,7 @@ export class ConnectInstrumentation extends InstrumentationBase {
     const spanName = `${connectTypeName} - ${connectName}`;
     const options: SpanOptions = {
       attributes: {
-        [SemanticAttributes.HTTP_ROUTE]: routeName.length > 0 ? routeName : '/',
+        [SEMATTRS_HTTP_ROUTE]: routeName.length > 0 ? routeName : '/',
         [AttributeNames.CONNECT_TYPE]: connectType,
         [AttributeNames.CONNECT_NAME]: connectName,
       },

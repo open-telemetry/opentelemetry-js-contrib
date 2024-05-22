@@ -78,11 +78,7 @@ export class AwsInstrumentation extends InstrumentationBase {
   private servicesExtensions: ServicesExtensions = new ServicesExtensions();
 
   constructor(config: AwsSdkInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-aws-sdk',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-aws-sdk', VERSION, config);
   }
 
   override setConfig(config: AwsSdkInstrumentationConfig = {}) {

@@ -23,8 +23,12 @@ import {
 import { IORedisInstrumentationConfig } from './types';
 import { IORedisCommand, RedisInterface } from './internal-types';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_REDIS,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { endSpan } from './utils';
@@ -36,11 +40,13 @@ const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
 };
 
 export class IORedisInstrumentation extends InstrumentationBase {
-  constructor(_config: IORedisInstrumentationConfig = {}) {
+  protected override _config!: IORedisInstrumentationConfig;
+
+  constructor(config: IORedisInstrumentationConfig = {}) {
     super(
       '@opentelemetry/instrumentation-ioredis',
       VERSION,
-      Object.assign({}, DEFAULT_CONFIG, _config)
+      Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
 
@@ -119,11 +125,8 @@ export class IORedisInstrumentation extends InstrumentationBase {
       const span = instrumentation.tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
-            cmd.name,
-            cmd.args
-          ),
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+          [SEMATTRS_DB_STATEMENT]: dbStatementSerializer(cmd.name, cmd.args),
         },
       });
 
@@ -147,9 +150,9 @@ export class IORedisInstrumentation extends InstrumentationBase {
       const { host, port } = this.options;
 
       span.setAttributes({
-        [SemanticAttributes.NET_PEER_NAME]: host,
-        [SemanticAttributes.NET_PEER_PORT]: port,
-        [SemanticAttributes.DB_CONNECTION_STRING]: `redis://${host}:${port}`,
+        [SEMATTRS_NET_PEER_NAME]: host,
+        [SEMATTRS_NET_PEER_PORT]: port,
+        [SEMATTRS_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
 
       try {
@@ -199,16 +202,16 @@ export class IORedisInstrumentation extends InstrumentationBase {
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.DB_STATEMENT]: 'connect',
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+          [SEMATTRS_DB_STATEMENT]: 'connect',
         },
       });
       const { host, port } = this.options;
 
       span.setAttributes({
-        [SemanticAttributes.NET_PEER_NAME]: host,
-        [SemanticAttributes.NET_PEER_PORT]: port,
-        [SemanticAttributes.DB_CONNECTION_STRING]: `redis://${host}:${port}`,
+        [SEMATTRS_NET_PEER_NAME]: host,
+        [SEMATTRS_NET_PEER_PORT]: port,
+        [SEMATTRS_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
       try {
         const client = original.apply(this, arguments);

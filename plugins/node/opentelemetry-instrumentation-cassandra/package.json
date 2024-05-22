@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-cassandra-driver",
   "version": "0.38.0",
-  "description": "OpenTelemetry instrumentation for cassandra-driver",
+  "description": "OpenTelemetry instrumentation for `cassandra-driver` database client library for Apache Cassandra",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.51.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0"
+    "@opentelemetry/semantic-conventions": "^1.22.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-cassandra#readme"
 }

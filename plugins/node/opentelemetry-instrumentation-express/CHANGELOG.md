@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.38.0...instrumentation-express-v0.39.0) (2024-05-15)
+
+
+### Features
+
+* **instrumentation-express:** Support non-string routes ([#2008](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2008)) ([525bbba](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/525bbba67accc20eeb96899ab7dc9ccb125a4b2d))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.37.0...instrumentation-express-v0.38.0) (2024-04-25)
 
 
