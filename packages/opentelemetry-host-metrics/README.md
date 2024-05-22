@@ -50,27 +50,27 @@ Metrics collected:
 | Metric                      | Short Description                                         |
 | --------------------------- | --------------------------------------------------------- |
 | `system.cpu.time`           | Seconds each logical CPU spent on each mode               |
-| `system.cpu.utilization`    | Difference in system.cpu.time since the last measurement  |
+| `system.cpu.utilization`    | CPU usage time (0-1)                                      |
 | `system.memory.usage`       | Reports memory in use by state                            |
-| `system.memory.utilization` |                                                           |
+| `system.memory.utilization` | Memory usage (0-1)                                        |
 | `system.network.dropped`    | Count of packets that are dropped                         |
 | `system.network.errors`     | Count of network errors detected                          |
-| `system.network.io`         |                                                           |
+| `system.network.io`         | Network flow direction                                    |
 | `process.cpu.time`          | Total CPU seconds                                         |
 | `process.cpu.utilization`   | Difference in process.cpu.time since the last measurement |
 | `process.memory.usage`      | The amount of physical memory in use                      |
 
 Attributes collected:
 
-| Metric                      | Short Description                  | Notes |
-| --------------------------- | ---------------------------------- | ----- |
-| `system.cpu.logical_number` | The logical CPU number             |       |
-| `system.cpu.state`          | The state of the CPU               |       |
-| `system.memory.state`       | The memory state                   |       |
-| `system.device`             | The device identifier              |       |
-| `network.io.direction`      | The network IO operation direction |       |
-| `system.network.state`      | The network state                  |       |
-| `process.cpu.state`         | The CPU state                      |       |
+| Metric                      | Short Description                  |
+| --------------------------- | ---------------------------------- |
+| `system.cpu.logical_number` | The logical CPU number             |
+| `system.cpu.state`          | The state of the CPU               |
+| `system.memory.state`       | The memory state                   |
+| `system.device`             | The device identifier              |
+| `network.io.direction`      | The network IO operation direction |
+| `system.network.state`      | The network state                  |
+| `process.cpu.state`         | The CPU state                      |
 
 ## Useful links
 
