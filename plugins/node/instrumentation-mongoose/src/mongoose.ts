@@ -330,9 +330,9 @@ export class MongooseInstrumentation extends InstrumentationBase {
           exec,
           originalThis,
           span,
+          args,
           self._config.responseHook,
-          moduleVersion,
-          args
+          moduleVersion
         )
       );
     } else {
