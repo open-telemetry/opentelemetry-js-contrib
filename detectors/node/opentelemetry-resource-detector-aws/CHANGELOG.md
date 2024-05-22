@@ -66,6 +66,36 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.35.1 to ^0.36.0
 
+## [1.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.4.2...resource-detector-aws-v1.5.0) (2024-05-15)
+
+
+### Features
+
+* add support for cloud.resource_id to AWS ECS detector ([#1936](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1936)) ([cc71492](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cc714922b931ce39595ef0b257114b4e797ba6a9))
+
+## [1.4.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.4.1...resource-detector-aws-v1.4.2) (2024-04-25)
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.38.0 to ^0.39.0
+
+## [1.4.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.4.0...resource-detector-aws-v1.4.1) (2024-04-03)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.37.0 to ^0.38.0
+
 ## [1.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.3.6...resource-detector-aws-v1.4.0) (2024-03-06)
 
 

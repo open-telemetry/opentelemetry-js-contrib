@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-import {
-  context,
-  SpanAttributes,
-  SpanStatusCode,
-  trace,
-} from '@opentelemetry/api';
+import { context, Attributes, SpanStatusCode, trace } from '@opentelemetry/api';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import type {
   HookHandlerDoneFunction,
   FastifyInstance,
@@ -53,11 +48,7 @@ export const ANONYMOUS_NAME = 'anonymous';
 /** Fastify instrumentation for OpenTelemetry */
 export class FastifyInstrumentation extends InstrumentationBase {
   constructor(config: FastifyInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-fastify',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super('@opentelemetry/instrumentation-fastify', VERSION, config);
   }
 
   override setConfig(config: FastifyInstrumentationConfig = {}) {
@@ -70,11 +61,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'fastify',
         ['^3.0.0', '^4.0.0'],
-        (moduleExports, moduleVersion) => {
-          this._diag.debug(`Applying patch for fastify@${moduleVersion}`);
+        moduleExports => {
           return this._patchConstructor(moduleExports);
         }
       ),
@@ -204,7 +194,6 @@ export class FastifyInstrumentation extends InstrumentationBase {
     fastify: () => FastifyInstance;
   }): () => FastifyInstance {
     const instrumentation = this;
-    this._diag.debug('Patching fastify constructor function');
 
     function fastify(this: FastifyInstance, ...args: any) {
       const app: FastifyInstance = moduleExports.fastify.apply(this, args);
@@ -275,10 +264,10 @@ export class FastifyInstrumentation extends InstrumentationBase {
         handlerName || this.pluginName || ANONYMOUS_NAME
       }`;
 
-      const spanAttributes: SpanAttributes = {
+      const spanAttributes: Attributes = {
         [AttributeNames.PLUGIN_NAME]: this.pluginName,
         [AttributeNames.FASTIFY_TYPE]: FastifyTypes.REQUEST_HANDLER,
-        [SemanticAttributes.HTTP_ROUTE]: anyRequest.routeOptions
+        [SEMATTRS_HTTP_ROUTE]: anyRequest.routeOptions
           ? anyRequest.routeOptions.url // since fastify@4.10.0
           : request.routerPath,
       };

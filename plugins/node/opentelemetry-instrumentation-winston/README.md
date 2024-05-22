@@ -60,6 +60,7 @@ logger.info('foobar');
 | Option                  | Type              | Description |
 | ----------------------- | ----------------- | ----------- |
 | `disableLogSending`      | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
+| `logSeverity`           | `SeverityNumber`  | Control severity level for [log sending](#log-sending). Default `SeverityNumber.UNSPECIFIED`, it will use Winston Logger's current level when unspecified. |
 | `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |  
 
@@ -78,14 +79,14 @@ npm install --save @opentelemetry/winston-transport
 ### Log correlation
 
 Winston logger calls in the context of a tracing span will have fields
-indentifying the span added to the log record. This allows
+identifying the span added to the log record. This allows
 [correlating](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)
 log records with tracing data. The added fields are
 ([spec](https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/)):
 
-* `trace_id`
-* `span_id`
-* `trace_flags`
+- `trace_id`
+- `span_id`
+- `trace_flags`
 
 After adding these fields, the optional `logHook` is called to allow injecting additional fields. For example:
 
@@ -105,11 +106,15 @@ Log sending
 
 `3.x`
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 

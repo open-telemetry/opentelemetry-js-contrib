@@ -39,7 +39,10 @@ import {
 import chai from 'chai/chai.js';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH,
+  SEMATTRS_HTTP_URL,
+} from '@opentelemetry/semantic-conventions';
 import { EventNames } from '../src/enums/EventNames';
 
 const { assert } = chai as typeof import('chai');
@@ -347,7 +350,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.ok(
           (rootSpan.attributes[
-            SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH
+            SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH
           ] as number) > 0
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
@@ -448,11 +451,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SemanticAttributes.HTTP_URL],
+          spanResource1.attributes[SEMATTRS_HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[SemanticAttributes.HTTP_URL],
+          spanResource2.attributes[SEMATTRS_HTTP_URL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -484,7 +487,7 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SemanticAttributes.HTTP_URL],
+          spanResource1.attributes[SEMATTRS_HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
 
@@ -552,42 +555,43 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
 
         ensureNetworkEventsExists(fsEvents);
-
-        assert.strictEqual(rsEvents[0].name, PTN.FETCH_START);
-        assert.strictEqual(rsEvents[1].name, PTN.UNLOAD_EVENT_START);
-        assert.strictEqual(rsEvents[2].name, PTN.UNLOAD_EVENT_END);
-        assert.strictEqual(rsEvents[3].name, PTN.DOM_INTERACTIVE);
-        assert.strictEqual(
-          rsEvents[4].name,
-          PTN.DOM_CONTENT_LOADED_EVENT_START
-        );
-        assert.strictEqual(rsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
-        assert.strictEqual(rsEvents[6].name, PTN.DOM_COMPLETE);
-        assert.strictEqual(rsEvents[7].name, PTN.LOAD_EVENT_START);
-        assert.strictEqual(rsEvents[8].name, PTN.LOAD_EVENT_END);
-
         assert.strictEqual(fsEvents.length, 8);
-        assert.strictEqual(rsEvents.length, 9);
+
+        const rsEventNames = rsEvents.map(e => e.name);
+        // Allow the unloadEvent{Start,End} events to be missing. Tests that
+        // are simulating a fallback to window.performance.timing are using
+        // values (entriesFallback) for that result in those network span
+        // events being dropped after https://github.com/open-telemetry/opentelemetry-js/pull/4486
+        // (@opentelemetry/sdk-trace-web@1.24.0).
+        const expectedRsEventNames =
+          rsEventNames[1] === PTN.UNLOAD_EVENT_START
+            ? [
+                PTN.FETCH_START,
+                PTN.UNLOAD_EVENT_START,
+                PTN.UNLOAD_EVENT_END,
+                PTN.DOM_INTERACTIVE,
+                PTN.DOM_CONTENT_LOADED_EVENT_START,
+                PTN.DOM_CONTENT_LOADED_EVENT_END,
+                PTN.DOM_COMPLETE,
+                PTN.LOAD_EVENT_START,
+                PTN.LOAD_EVENT_END,
+              ]
+            : [
+                PTN.FETCH_START,
+                PTN.DOM_INTERACTIVE,
+                PTN.DOM_CONTENT_LOADED_EVENT_START,
+                PTN.DOM_CONTENT_LOADED_EVENT_END,
+                PTN.DOM_COMPLETE,
+                PTN.LOAD_EVENT_START,
+                PTN.LOAD_EVENT_END,
+              ];
+        assert.deepStrictEqual(rsEventNames, expectedRsEventNames);
+
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
       });
     });
   }
-
-  describe('when navigation entries types are NOT available then fallback to "performance.timing"', () => {
-    const sandbox = sinon.createSandbox();
-    beforeEach(() => {
-      sandbox.stub(window.performance, 'getEntriesByType').value(undefined);
-      sandbox.stub(window.performance, 'timing').get(() => {
-        return entriesFallback;
-      });
-    });
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    shouldExportCorrectSpan();
-  });
 
   describe('when getEntriesByType is not defined then fallback to "performance.timing"', () => {
     const sandbox = sinon.createSandbox();
