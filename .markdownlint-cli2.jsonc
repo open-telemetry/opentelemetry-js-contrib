@@ -6,7 +6,8 @@
     "MD024": false,
     "MD033": false,
     "MD041": false,
-    "MD012": false, // no-multiple-blanks, common in CHANGELOG.md files, ~1700 hits in changelog files
+    // XXX Rules to discuss:
+    "MD012": false // no-multiple-blanks, common in CHANGELOG.md files, ~1700 hits in changelog files
     // "MD004": { "style": "dash" } // ul-style, ~3800 hits in 63 changelog files, XXX discuss just using "consistent" new default for dash
   },
   "gitignore": true,
