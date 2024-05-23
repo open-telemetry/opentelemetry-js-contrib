@@ -19,10 +19,7 @@ const { AWSXRayPropagator } = require("@opentelemetry/propagator-aws-xray");
 const { AWSXRayIdGenerator } = require("@opentelemetry/id-generator-aws-xray");
 
 
-// Initialize resource, trace exporter, span processor, and ID generator
-const _resource = Resource.default().merge(new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: "remote-sampler-app",
-    }));
+// Initialize trace exporter, span processor, and ID generator
 const _traceExporter = new OTLPTraceExporter();
 const _spanProcessor = new BatchSpanProcessor(_traceExporter);
 const _tracerConfig = {
@@ -32,19 +29,19 @@ const _tracerConfig = {
 }
 
 const sdk = new opentelemetry.NodeSDK({
-        textMapPropagator: new AWSXRayPropagator(),
-        instrumentations: [
-            new HttpInstrumentation(),
-            new AwsInstrumentation({
-                suppressInternalInstrumentation: true
-            }),
-        ],
-        resource: _resource,
-        spanProcessor: _spanProcessor,
-        traceExporter: _traceExporter,
-    });
+    serviceName: "remote-sampler-app",
+    textMapPropagator: new AWSXRayPropagator(),
+    instrumentations: [
+        new HttpInstrumentation(),
+        new AwsInstrumentation({
+            suppressInternalInstrumentation: true
+        }),
+    ],
+    spanProcessor: _spanProcessor,
+    traceExporter: _traceExporter,
+});
 
-    sdk.configureTracerProvider(_tracerConfig, _spanProcessor);
+sdk.configureTracerProvider(_tracerConfig, _spanProcessor);
 
 ```
 
