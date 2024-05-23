@@ -31,14 +31,14 @@ import type {
   Winston3LogMethod,
   Winston3Logger,
 } from './internal-types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
 
 export class WinstonInstrumentation extends InstrumentationBase {
   constructor(config: WinstonInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-winston', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
