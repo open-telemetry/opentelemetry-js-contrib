@@ -8,7 +8,6 @@
     "MD041": false,
     "MD012": false, // no-multiple-blanks, common in CHANGELOG.md files
     "MD045": false, // XXX no-alt-text
-    "MD026": false, // XXX drop?
     // "MD004": { "style": "dash" } // ul-style
   },
   "gitignore": true,
