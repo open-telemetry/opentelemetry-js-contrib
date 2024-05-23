@@ -44,7 +44,7 @@ import type {
   Consumer,
 } from 'kafkajs';
 import { KafkaJsInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { bufferTextMapGetter } from './propagator';
 import {
   InstrumentationBase,
@@ -57,7 +57,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase {
   protected override _config!: KafkaJsInstrumentationConfig;
 
   constructor(config: KafkaJsInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-kafkajs', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
