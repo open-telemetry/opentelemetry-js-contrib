@@ -31,7 +31,7 @@ Add to the span processors that copies all baggage entries during configuration:
 
 ```javascript
 import { NodeSDK, tracing } from '@opentelemetry/sdk-node';
-import { ALLOW_ALL_BAGGAGE_KEYS, BaggageSpanProcessor } from '../src/baggage-span-processor';
+import { ALLOW_ALL_BAGGAGE_KEYS, BaggageSpanProcessor } from '@opentelemetry/baggage-span-processor';
 
 const spanProcessors = [
   new tracing.SimpleSpanProcessor(
