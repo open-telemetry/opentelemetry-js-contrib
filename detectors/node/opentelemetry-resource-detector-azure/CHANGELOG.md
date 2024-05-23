@@ -72,7 +72,7 @@
   * devDependencies
     * @opentelemetry/contrib-test-utils bumped from ^0.34.1 to ^0.34.3
 
-## [0.1.0]() ()
+## 0.1.0
 
 ### Features
 
