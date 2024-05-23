@@ -16,11 +16,10 @@
 
 import { logs, SeverityNumber, Logger } from '@opentelemetry/api-logs';
 import type { LogLevelString } from 'bunyan';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-const DEFAULT_INSTRUMENTATION_SCOPE_NAME =
-  '@opentelemetry/instrumentation-bunyan';
-const DEFAULT_INSTRUMENTATION_SCOPE_VERSION = VERSION;
+const DEFAULT_INSTRUMENTATION_SCOPE_NAME = PACKAGE_NAME;
+const DEFAULT_INSTRUMENTATION_SCOPE_VERSION = PACKAGE_VERSION;
 
 // This block is a copy (modulo code style and TypeScript types) of the Bunyan
 // code that defines log level value and names. These values won't ever change
