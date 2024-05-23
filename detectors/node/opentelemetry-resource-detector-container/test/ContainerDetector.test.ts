@@ -16,6 +16,8 @@
 
 import * as sinon from 'sinon';
 import * as assert from 'assert';
+import * as fs from 'fs';
+import * as https from 'https';
 import { Resource } from '@opentelemetry/resources';
 import { containerDetector } from '../src';
 import {
@@ -33,7 +35,7 @@ describe('ContainerDetector', () => {
   const correctCgroupV2Data = `tmhdefghijklmnopqrstuvwxyzafgrefghiugkmnopqrstuvwxyzabcdefghijkl/hostname
     fhkjdshgfhsdfjhdsfkjhfkdshkjhfd/host
     sahfhfjkhjhfhjdhfjkdhfkjdhfjkhhdsjfhdfhjdhfkj/somethingelse`;
-
+  const k8ContainerIdExpected = 'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm';
   const wrongCgroupV2Data =
     'bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm/wrongkeyword';
 
@@ -140,10 +142,24 @@ describe('ContainerDetector', () => {
   });
 
   describe('Detect containerId in k8s environment', () => {
+    let readFileSyncStub: sinon.SinonStub;
+    let fetchKubernetesApiStub: sinon.SinonStub;
+    let env: NodeJS.ProcessEnv;
+
+    beforeEach(() => {
+      readFileSyncStub = sinon.stub(fs, 'readFileSync');
+      fetchKubernetesApiStub = sinon.stub(containerDetector, 'fetchKubernetesApi');
+      process.env = { ...env }; // Reset environment variables
+
+      // Stub the file reads with mock values
+      readFileSyncStub.withArgs(containerDetector.K8_NAMESPACE_PATH).returns('test-namespace');
+      readFileSyncStub.withArgs(containerDetector.K8_TOKEN_PATH).returns('mock-token');
+      readFileSyncStub.withArgs(containerDetector.K8_CERTIFICATE_PATH).returns('mock-certificate');
+    });
     it('should return an empty Resource when not in a k8s environment', async () => {
-      const containerDetector = new ContainerDetector();
+      // const containerDetector = new ContainerDetector();
       sinon
-        .stub(containerDetector, '_isInKubernetesEnvironment' as any)
+        .stub(fs, 'accessSync' as any)
         .returns(false);
 
       const resource: Resource = await containerDetector.detect();
@@ -155,12 +171,16 @@ describe('ContainerDetector', () => {
       // Stub _isInKubernetesEnvironment to return true
       const containerDetector = new ContainerDetector();
       sinon
-        .stub(containerDetector, '_isInKubernetesEnvironment' as any)
+        .stub(fs, 'accessSync' as any)
         .returns(true);
+
+      sinon
+        .stub(containerDetector, 'fetchKubernetesApi' as any)
+        .resolves({});
       // Stub _getContainerIdK8 to return a mock container ID
       sinon
         .stub(containerDetector, '_getContainerIdK8' as any)
-        .resolves(correctCgroupV1Data);
+        .resolves(k8ContainerIdExpected);
 
       const resource: Resource = await containerDetector.detect();
       assert.ok(resource);
@@ -170,114 +190,62 @@ describe('ContainerDetector', () => {
       sinon.restore();
     });
 
-    it('should return an error with no CONTAINER_NAME environment variable defined', async () => {
-      const containerDetector = new ContainerDetector();
-      sinon
-        .stub(containerDetector, '_isInKubernetesEnvironment' as any)
-        .returns(true);
-      const k8Stub = sinon.spy(
-        ContainerDetector.prototype,
-        '_getContainerIdK8' as any
+    it('should throw an error if container name is not found in pod', async () => {
+      process.env.POD_NAME = 'test-pod';
+      process.env.CONTAINER_NAME = 'test-container';
+      const podData = {
+        status: {
+          containerStatuses: [{ name: 'other-container', containerID: 'container-id-123' }],
+        },
+      };
+      fetchKubernetesApiStub.resolves(podData);
+
+      await assert.rejects(
+        async () => {
+          await containerDetector['_getContainerIdK8']();
+        },
+        Error,
+        'Container "test-container" not found in pod "test-pod".'
       );
-      try {
-        await k8Stub();
-      } catch (error: any) {
-        assert.strictEqual(
-          error.message,
-          'Container name not specified in environment'
-        );
-      } finally {
-        k8Stub.restore();
-      }
     });
 
-    it('should throw "no pod found" for wrong container name', async () => {
-      process.env.CONTAINER_NAME = 'my-container';
-      const containerDetector = new ContainerDetector();
-      sinon
-        .stub(containerDetector, '_isInKubernetesEnvironment' as any)
-        .returns(true);
-      const k8Stub = sinon.spy(
-        ContainerDetector.prototype,
-        '_getContainerIdK8' as any
-      );
-      const listNamespacePodStub = sinon.stub().resolves({
-        body: {
-          items: [
-            {
-              spec: {
-                containers: [{ name: 'container1' }, { name: 'container2' }],
-              },
-            },
-          ],
-        },
-      });
-
-      const apiStub = {
-        listNamespacePod: listNamespacePodStub,
+    it('should loop through all pods if POD_NAME is not provided and return the container ID', async () => {
+      // Notice that we're not setting process.env.POD_NAME here
+      process.env.CONTAINER_NAME = 'test-container';
+      const expectedContainerID = 'container-id-123';
+      const podData = {
+        items: [{
+          status: {
+            containerStatuses: [
+              { name: 'test-container', containerID: `docker://${expectedContainerID}` }
+            ],
+          },
+        }],
       };
-      const kubeconfig = new KubeConfig();
-      kubeconfig.loadFromDefault();
+      fetchKubernetesApiStub.resolves(podData);
 
-      const makeApiClientStub = sinon
-        .stub(KubeConfig.prototype, 'makeApiClient')
-        .returns(apiStub as any);
-      try {
-        await k8Stub();
-        assert(listNamespacePodStub.calledOnceWithExactly('default'));
-        assert(makeApiClientStub.calledOnce);
-      } catch (error: any) {
-        assert.strictEqual(
-          error.message,
-          "No pods found with container name 'my-container'."
-        );
-      } finally {
-        k8Stub.restore();
-      }
+      // Call the private method using bracket notation and await its result
+      const containerId = await containerDetector['_getContainerIdK8']();
+
+      // Use assert to check if the container ID returned from the method matches the expected value
+      assert.strictEqual(containerId, expectedContainerID);
     });
-
-    it('should return a containerId for right container name', async () => {
-      process.env.CONTAINER_NAME = 'container1';
-      const containerDetector = new ContainerDetector();
-      sinon
-        .stub(containerDetector, '_isInKubernetesEnvironment' as any)
-        .returns(true);
-      const k8Stub = sinon.spy(
-        ContainerDetector.prototype,
-        '_getContainerIdK8' as any
-      );
-      const listNamespacePodStub = sinon.stub().resolves({
-        body: {
-          items: [
-            {
-              spec: {
-                containers: [
-                  { name: 'container1', containerID: correctCgroupV1Data },
-                  { name: 'container2' },
-                ],
-              },
-            },
-          ],
+    it('should return the correct RequestOptions object', async () => {
+      process.env.KUBERNETES_SERVICE_HOST = 'K8-service-host';
+      const path = '/api/v1/namespaces/default/pods';
+  
+      const requestOptions = await containerDetector['getKubernetesApiOptions'](path);
+  
+      assert.deepEqual(requestOptions, {
+        hostname: 'K8-service-host',
+        port: 443,
+        path: path,
+        method: 'GET',
+        headers: {
+          'Authorization': 'Bearer mock-token',
         },
+        ca: 'mock-certificate',
       });
-
-      const apiStub = {
-        listNamespacePod: listNamespacePodStub,
-      };
-      const kubeconfig = new KubeConfig();
-      kubeconfig.loadFromDefault();
-
-      const makeApiClientStub = sinon
-        .stub(KubeConfig.prototype, 'makeApiClient')
-        .returns(apiStub as any);
-      try {
-        const cid = await k8Stub();
-        assert(listNamespacePodStub.calledOnceWithExactly('default'));
-        assert(makeApiClientStub.calledOnce);
-        assert.strictEqual(cid, correctCgroupV1Data);
-      } finally {
-        k8Stub.restore();
-      }
     });
   });
 });

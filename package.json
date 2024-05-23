@@ -79,6 +79,7 @@
     "metapackages/*"
   ],
   "dependencies": {
-    "@kubernetes/client-node": "^0.20.0"
+    "@types/node-fetch": "^2.6.11",
+    "node-fetch": "^3.3.2"
   }
 }
