@@ -14,25 +14,13 @@
  * limitations under the License.
  */
 
+import { BaggageKeyPredicate } from './types';
 import { Context, propagation } from '@opentelemetry/api';
 import {
   SpanProcessor,
   Span,
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-base';
-
-/**
- * A function that determines whether a baggage key-value pair should be added to new
- * spans as a span attribute.
- */
-export type BaggageKeyPredicate = (baggageKey: string) => boolean;
-
-/**
- * A {@link BaggageKeyPredicate} that includes all baggage keys.
- */
-export const ALLOW_ALL_BAGGAGE_KEYS: BaggageKeyPredicate = (
-  baggageKey: string
-) => true;
 
 /**
  * BaggageSpanProcessor is a {@link SpanProcessor} that reads entries stored in {@link Baggage}

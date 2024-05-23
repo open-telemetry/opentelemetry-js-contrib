@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-import {
-  ALLOW_ALL_BAGGAGE_KEYS,
-  BaggageSpanProcessor,
-} from '../src/baggage-span-processor';
+import { BaggageSpanProcessor } from '../src/baggage-span-processor';
+import { ALLOW_ALL_BAGGAGE_KEYS } from '../src/types';
 import {
   propagation,
   ROOT_CONTEXT,
