@@ -1,11 +1,5 @@
 # Changelog
 
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
-
 ## [0.10.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.10.0...instrumentation-tedious-v0.10.1) (2024-05-02)
 
 
