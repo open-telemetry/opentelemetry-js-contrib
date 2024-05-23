@@ -39,7 +39,7 @@ import {
   ResourceFetchCustomAttributeFunction,
 } from './types';
 import { AttributeNames } from './enums/AttributeNames';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   SEMATTRS_HTTP_URL,
   SEMATTRS_HTTP_USER_AGENT,
@@ -62,7 +62,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase {
    * @param config
    */
   constructor(config: DocumentLoadInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-document-load', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {}
