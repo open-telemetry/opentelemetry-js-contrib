@@ -166,9 +166,7 @@ describe('mongoose instrumentation', () => {
           const spans = getTestSpans();
           expect(spans.length).toBe(1);
           assertSpan(spans[0] as ReadableSpan);
-          expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe(
-            'save'
-          );
+          expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
           const statement = getStatement(spans[0] as ReadableSpan);
           expect(statement.document).toEqual(expect.objectContaining(document));
 
@@ -198,9 +196,7 @@ describe('mongoose instrumentation', () => {
           const spans = getTestSpans();
           expect(spans.length).toBe(1);
           assertSpan(spans[0] as ReadableSpan);
-          expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe(
-            'save'
-          );
+          expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
           const statement = getStatement(spans[0] as ReadableSpan);
           expect(statement.document).toEqual(expect.objectContaining(document));
 
@@ -224,9 +220,7 @@ describe('mongoose instrumentation', () => {
 
         expect(spans.length).toBe(1);
         assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe(
-          'save'
-        );
+        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
         const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.document).toEqual(expect.objectContaining(document));
         done();
@@ -246,9 +240,7 @@ describe('mongoose instrumentation', () => {
 
         expect(spans.length).toBe(1);
         assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe(
-          'save'
-        );
+        expect(spans[0].attributes[SEMATTRS_DB_OPERATION]).toBe('save');
         const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.document).toEqual(expect.objectContaining(document));
         done();
