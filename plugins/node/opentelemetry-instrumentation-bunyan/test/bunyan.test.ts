@@ -33,7 +33,7 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
 import { BunyanInstrumentation, OpenTelemetryBunyanStream } from '../src';
-import { VERSION } from '../src/version';
+import { PACKAGE_VERSION } from '../src/version';
 
 import type * as BunyanLogger from 'bunyan';
 
@@ -219,7 +219,7 @@ describe('BunyanInstrumentation', () => {
         rec.instrumentationScope.name,
         '@opentelemetry/instrumentation-bunyan'
       );
-      assert.strictEqual(rec.instrumentationScope.version, VERSION);
+      assert.strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
       assert.strictEqual(rec.spanContext, undefined);
 
       // spanContext
@@ -519,7 +519,7 @@ describe('OpenTelemetryBunyanStream', () => {
       rec.instrumentationScope.name,
       '@opentelemetry/instrumentation-bunyan'
     );
-    assert.strictEqual(rec.instrumentationScope.version, VERSION);
+    assert.strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
     assert.strictEqual(rec.spanContext, undefined);
 
     // spanContext
