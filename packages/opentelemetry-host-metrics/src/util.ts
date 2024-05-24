@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-export function ObjectKeys<T extends {}>(t: T) {
+export function ObjectKeys<T extends Record<string, unknown>>(t: T) {
   return Object.keys(t) as (keyof T)[];
 }

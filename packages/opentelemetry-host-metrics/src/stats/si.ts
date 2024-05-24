@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-// Import from network file directly as importing from the root imports the /lib/cpu file,
-// resulting in also having to add osx-temperature-sensor as a dependency for macOS,
-// while /lib/cpu isn't even used by this package (deep-importing not working as expected)
-import { networkStats } from 'systeminformation/lib/network';
+import { networkStats } from 'systeminformation';
 import type { Systeminformation } from 'systeminformation';
 
 export function getNetworkData() {

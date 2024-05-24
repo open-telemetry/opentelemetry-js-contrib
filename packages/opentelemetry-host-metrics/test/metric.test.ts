@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as Network from 'systeminformation/lib/network';
+import * as SI from 'systeminformation';
 import type { Systeminformation } from 'systeminformation';
 import { Attributes } from '@opentelemetry/api';
 import {
@@ -46,21 +46,23 @@ class TestMetricReader extends MetricReader {
 let countSI = 0;
 const mockedSI = {
   networkStats: function () {
-    return new Promise<Systeminformation.NetworkStatsData[]>((resolve, reject) => {
-      countSI++;
-      const stats: any[] = networkJson
-        .slice()
-        .map((obj: any) => Object.assign({}, obj));
+    return new Promise<Systeminformation.NetworkStatsData[]>(
+      (resolve, reject) => {
+        countSI++;
+        const stats: any[] = networkJson
+          .slice()
+          .map((obj: any) => Object.assign({}, obj));
 
-      for (let i = 0, j = networkJson.length; i < j; i++) {
-        Object.keys(stats[i]).forEach(key => {
-          if (typeof stats[i][key] === 'number' && stats[i][key] > 0) {
-            stats[i][key] = stats[i][key] * countSI;
-          }
-        });
+        for (let i = 0, j = networkJson.length; i < j; i++) {
+          Object.keys(stats[i]).forEach(key => {
+            if (typeof stats[i][key] === 'number' && stats[i][key] > 0) {
+              stats[i][key] = stats[i][key] * countSI;
+            }
+          });
+        }
+        resolve(stats);
       }
-      resolve(stats);
-    });
+    );
   },
 };
 
@@ -138,12 +140,11 @@ describe('Host Metrics', () => {
       sandbox
         .stub(process.memoryUsage, 'rss')
         .callsFake(mockedProcess.memoryUsage.rss);
-      sandbox.stub(Network, 'networkStats').callsFake(mockedSI.networkStats);
+      sandbox.stub(SI, 'networkStats').callsFake(mockedSI.networkStats);
 
       reader = new TestMetricReader();
 
-      meterProvider = new MeterProvider();
-      meterProvider.addMetricReader(reader);
+      meterProvider = new MeterProvider({ readers: [reader] });
 
       hostMetrics = new HostMetrics({
         meterProvider,
