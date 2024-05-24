@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-user-interaction",
   "version": "0.38.0",
-  "description": "OpenTelemetry UserInteraction automatic instrumentation package.",
+  "description": "OpenTelemetry instrumentation for user interactions as click events in a web application",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
   "esnext": "build/esnext/index.js",
@@ -14,7 +14,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-user-interaction --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prepublishOnly": "npm run compile",
     "tdd": "karma start",
     "test:browser": "nyc karma start --single-run",

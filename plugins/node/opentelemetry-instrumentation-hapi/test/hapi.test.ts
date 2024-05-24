@@ -22,6 +22,10 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import {
+  runTestFixture,
+  TestCollector,
+} from '@opentelemetry/contrib-test-utils';
 import { getPlugin } from './plugin';
 const plugin = getPlugin();
 
@@ -535,6 +539,37 @@ describe('Hapi Instrumentation - Core Tests', () => {
           );
         }
       );
+    });
+  });
+
+  describe('ESM', () => {
+    it('should work with ESM modules', async () => {
+      await runTestFixture({
+        cwd: __dirname,
+        argv: ['fixtures/use-hapi.mjs'],
+        env: {
+          NODE_OPTIONS:
+            '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+          NODE_NO_WARNINGS: '1',
+        },
+        checkResult: (err, stdout, stderr) => {
+          assert.ifError(err);
+        },
+        checkCollector: (collector: TestCollector) => {
+          const spans = collector.sortedSpans;
+          assert.strictEqual(spans.length, 2);
+          assert.strictEqual(spans[0].name, 'GET /route/{param}');
+          assert.strictEqual(
+            spans[0].instrumentationScope.name,
+            '@opentelemetry/instrumentation-http'
+          );
+          assert.strictEqual(spans[1].name, 'route - /route/{param}');
+          assert.strictEqual(
+            spans[1].instrumentationScope.name,
+            '@opentelemetry/instrumentation-hapi'
+          );
+        },
+      });
     });
   });
 });

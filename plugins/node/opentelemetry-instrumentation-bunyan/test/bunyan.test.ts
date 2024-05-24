@@ -28,12 +28,12 @@ import {
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
 import { BunyanInstrumentation, OpenTelemetryBunyanStream } from '../src';
-import { VERSION } from '../src/version';
+import { PACKAGE_VERSION } from '../src/version';
 
 import type * as BunyanLogger from 'bunyan';
 
@@ -48,7 +48,7 @@ tracerProvider.addSpanProcessor(
 const tracer = tracerProvider.getTracer('default');
 
 const resource = new Resource({
-  [SemanticResourceAttributes.SERVICE_NAME]: 'test-instrumentation-bunyan',
+  [SEMRESATTRS_SERVICE_NAME]: 'test-instrumentation-bunyan',
 });
 const loggerProvider = new LoggerProvider({ resource });
 const memExporter = new InMemoryLogRecordExporter();
@@ -219,7 +219,7 @@ describe('BunyanInstrumentation', () => {
         rec.instrumentationScope.name,
         '@opentelemetry/instrumentation-bunyan'
       );
-      assert.strictEqual(rec.instrumentationScope.version, VERSION);
+      assert.strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
       assert.strictEqual(rec.spanContext, undefined);
 
       // spanContext
@@ -519,7 +519,7 @@ describe('OpenTelemetryBunyanStream', () => {
       rec.instrumentationScope.name,
       '@opentelemetry/instrumentation-bunyan'
     );
-    assert.strictEqual(rec.instrumentationScope.version, VERSION);
+    assert.strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
     assert.strictEqual(rec.spanContext, undefined);
 
     // spanContext
