@@ -38,6 +38,7 @@
     "test": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
+    "readme:verify": "node ../../../scripts/verify-readme.js",
     "watch": "tsc -w"
   },
   "peerDependencies": {

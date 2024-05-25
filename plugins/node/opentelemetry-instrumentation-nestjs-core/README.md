@@ -83,6 +83,4 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/instrumentation-nestjs-core
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-nestjs-core.svg
-[pkg-repo-url]: https://github.com/nestjs/nest
-[pkg-npm-url]: https://www.npmjs.com/package/@nestjs/core
 [pkg-web-url]: https://nestjs.com/

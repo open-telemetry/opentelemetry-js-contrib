@@ -20,6 +20,7 @@
     "test:debug": "ts-mocha --inspect-brk --no-timeouts -p tsconfig.json 'test/**/*.test.ts'",
     "test:local": "cross-env RUN_POSTGRES_TESTS_LOCAL=true npm run test",
     "version:update": "node ../../../scripts/version-update.js",
+    "readme:verify": "node ../../../scripts/verify-readme.js",
     "watch": "tsc -w"
   },
   "keywords": [

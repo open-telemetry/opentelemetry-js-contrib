@@ -37,6 +37,7 @@
     "test": "nyc ts-mocha -p tsconfig.json --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
+    "readme:verify": "node ../../../scripts/verify-readme.js",
     "watch": "tsc -w",
     "test:docker:run": "docker run -d --hostname demo-amqplib-rabbit --name amqplib-unittests -p 22221:5672 --env RABBITMQ_DEFAULT_USER=username --env RABBITMQ_DEFAULT_PASS=password rabbitmq:3"
   },

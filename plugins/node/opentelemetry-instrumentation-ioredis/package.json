@@ -18,6 +18,7 @@
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-ioredis --include-dependencies",
     "prewatch": "npm run precompile",
     "version:update": "node ../../../scripts/version-update.js",
+    "readme:verify": "node ../../../scripts/verify-readme.js",
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile"
   },

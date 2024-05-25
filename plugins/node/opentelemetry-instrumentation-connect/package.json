@@ -15,6 +15,7 @@
     "prepublishOnly": "npm run compile",
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "version:update": "node ../../../scripts/version-update.js",
+    "readme:verify": "node ../../../scripts/verify-readme.js",
     "watch": "tsc -w"
   },
   "keywords": [

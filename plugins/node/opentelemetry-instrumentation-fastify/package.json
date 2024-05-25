@@ -15,6 +15,7 @@
     "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../../scripts/version-update.js",
+    "readme:verify": "node ../../../scripts/verify-readme.js",
     "prewatch": "npm run precompile",
     "watch": "tsc -w"
   },

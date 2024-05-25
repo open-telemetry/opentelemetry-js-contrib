@@ -7,6 +7,8 @@ This module provides automatic instrumentation for the [Koa](https://github.com/
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Status
 
 | Maturity                                              | [Component Owner](../../../.github/component_owners.yml) | Compatibility         |

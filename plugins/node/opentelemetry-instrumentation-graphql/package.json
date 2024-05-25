@@ -17,6 +17,7 @@
     "test-all-versions": "tav",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "version:update": "node ../../../scripts/version-update.js",
+    "readme:verify": "node ../../../scripts/verify-readme.js",
     "watch": "tsc -w"
   },
   "keywords": [
