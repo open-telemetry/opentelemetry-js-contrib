@@ -38,20 +38,6 @@ registerInstrumentations({
 })
 ```
 
-## Migration From opentelemetry-instrumentation-mongoose
-
-This instrumentation was originally published and maintained under the name `"opentelemetry-instrumentation-mongoose"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js).
-
-Few breaking changes were made during porting to the contrib repo to align with conventions:
-
-### Hook Info
-
-The instrumentation's config `responseHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
-
-### `moduleVersionAttributeName` config option
-
-The `moduleVersionAttributeName` config option is removed. To add the mongoose package version to spans, use the `moduleVersion` attribute in hook info for `responseHook` function.
-
 ## Semantic Conventions
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
