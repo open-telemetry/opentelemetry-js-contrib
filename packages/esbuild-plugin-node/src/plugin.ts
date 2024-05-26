@@ -115,16 +115,6 @@ export function openTelemetryPlugin(
   };
 }
 
-// @see https://github.com/nodejs/node/issues/47000
-function dotFriendlyResolve(path: string, directory: string): string {
-  if (path === '.') {
-    path = './';
-  } else if (path === '..') {
-    path = '../';
-  }
-  return require.resolve(path, { paths: [directory] });
-}
-
 /**
  * For a given full path to a module,
  *   return the package name it belongs to and the local path to the module
@@ -135,7 +125,11 @@ function extractPackageAndModulePath(
   path: string,
   resolveDir: string
 ): { path: string; extractedModule: ExtractedModule } {
-  const fullPath = dotFriendlyResolve(path, resolveDir);
+  // @see https://github.com/nodejs/node/issues/47000
+  const fullPath = require.resolve(
+    path === '.' ? './' : path === '..' ? '../' : path,
+    { paths: [resolveDir] }
+  );
 
   const nodeModulesIndex = fullPath.lastIndexOf(NODE_MODULES);
   if (nodeModulesIndex < 0) {
