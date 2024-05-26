@@ -74,7 +74,7 @@ function getTrace(stdOutLines: string[], spanName: string) {
 describe('Esbuild can instrument packages via a plugin', function () {
   let stdOutLines: string[] = [];
 
-  this.beforeAll(async () => {
+  before(async () => {
     await exec(`ts-node ${__dirname}/test-app/build.ts`);
 
     const proc = startTestApp();
