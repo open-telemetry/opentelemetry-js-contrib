@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.7.0",
-    "@opentelemetry/sdk-node": "^0.50.0",
+    "@opentelemetry/sdk-node": "^0.51.1",
     "@types/mocha": "7.0.2",
     "@types/node": "18.6.5",
     "fastify": "4.15.0",
@@ -50,9 +50,9 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/auto-instrumentations-node": "0.44.0",
-    "@opentelemetry/instrumentation": "^0.50.0",
-    "esbuild": "0.20.x"
+    "@opentelemetry/auto-instrumentations-node": "0.46.1",
+    "@opentelemetry/instrumentation": "^0.51.1",
+    "esbuild": "0.21.x"
   },
   "files": [
     "build/src/**/*.js",

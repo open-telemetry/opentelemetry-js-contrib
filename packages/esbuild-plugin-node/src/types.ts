@@ -42,6 +42,8 @@ export interface ModuleParams {
 }
 
 type _RemoveFunctions<T> = {
+  // TODO: Mabye:
+  // [P in keyof T as T[P] extends (...args: unknown[]) => unknown ? never : P]: T[P];
   [P in keyof T as T[P] extends (...args: any) => any ? never : P]: T[P];
 };
 

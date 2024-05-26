@@ -16,6 +16,7 @@
 
 import {
   Instrumentation,
+  InstrumentationBase,
   InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
@@ -24,10 +25,11 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 
 function getModuleDefinitions(
   instrumentation: Instrumentation
-): InstrumentationModuleDefinition<any>[] {
+): InstrumentationModuleDefinition[] {
   if (
-    'getModuleDefinitions' in instrumentation &&
-    typeof instrumentation.getModuleDefinitions === 'function'
+    // 'getModuleDefinitions' in instrumentation &&
+    // typeof instrumentation.getModuleDefinitions === 'function'
+    instrumentation instanceof InstrumentationBase
   ) {
     return instrumentation.getModuleDefinitions() ?? [];
   }
