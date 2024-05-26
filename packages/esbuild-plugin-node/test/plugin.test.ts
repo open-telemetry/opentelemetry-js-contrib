@@ -71,7 +71,7 @@ function getTrace(stdOutLines: string[], spanName: string) {
     .join('');
 }
 
-describe('Esbuild can instrument packages via a plugin', function () {
+describe('Esbuild can instrument packages via a plugin', () => {
   let stdOutLines: string[] = [];
 
   before(async () => {
