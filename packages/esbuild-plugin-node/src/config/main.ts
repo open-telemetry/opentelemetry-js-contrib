@@ -16,14 +16,19 @@
 
 import {
   Instrumentation,
-  InstrumentationBase,
+  InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation';
 
 import { EsbuildInstrumentationConfigMap } from '../types';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 
-function getModuleDefinitions(instrumentation: Instrumentation) {
-  if (instrumentation instanceof InstrumentationBase) {
+function getModuleDefinitions(
+  instrumentation: Instrumentation
+): InstrumentationModuleDefinition<any>[] {
+  if (
+    'getModuleDefinitions' in instrumentation &&
+    typeof instrumentation.getModuleDefinitions === 'function'
+  ) {
     return instrumentation.getModuleDefinitions() ?? [];
   }
 
