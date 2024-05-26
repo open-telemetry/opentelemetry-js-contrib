@@ -26,11 +26,7 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 function getModuleDefinitions(
   instrumentation: Instrumentation
 ): InstrumentationModuleDefinition[] {
-  if (
-    // 'getModuleDefinitions' in instrumentation &&
-    // typeof instrumentation.getModuleDefinitions === 'function'
-    instrumentation instanceof InstrumentationBase
-  ) {
+  if (instrumentation instanceof InstrumentationBase) {
     return instrumentation.getModuleDefinitions() ?? [];
   }
 
@@ -71,7 +67,6 @@ export function getOtelPackageToInstrumentationConfig() {
         {
           oTelInstrumentationPackage:
             instrumentation.instrumentationName as keyof EsbuildInstrumentationConfigMap,
-          // TODO: Do we need to worry about minification/obfuscation messing with this class name?
           oTelInstrumentationClass: instrumentation.constructor.name,
           configGenerator,
         };

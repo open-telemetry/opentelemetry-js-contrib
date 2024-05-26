@@ -42,9 +42,9 @@ export interface ModuleParams {
 }
 
 type _RemoveFunctions<T> = {
-  // TODO: Mabye:
-  // [P in keyof T as T[P] extends (...args: unknown[]) => unknown ? never : P]: T[P];
-  [P in keyof T as T[P] extends (...args: any) => any ? never : P]: T[P];
+  [P in keyof T as T[P] extends (...args: unknown[]) => unknown
+    ? never
+    : P]: T[P];
 };
 
 // _RemoveFunctions does not work on optional fields, so first make the type required then apply Partial to the result
