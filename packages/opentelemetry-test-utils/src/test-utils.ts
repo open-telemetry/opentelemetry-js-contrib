@@ -18,7 +18,7 @@ import * as childProcess from 'child_process';
 import {
   HrTime,
   Span,
-  SpanAttributes,
+  Attributes,
   SpanKind,
   SpanStatus,
 } from '@opentelemetry/api';
@@ -29,6 +29,7 @@ import {
   hrTimeToMicroseconds,
 } from '@opentelemetry/core';
 import * as path from 'path';
+import * as fs from 'fs';
 
 const dockerRunCmds = {
   cassandra:
@@ -87,7 +88,7 @@ function run(cmd: string) {
 export const assertSpan = (
   span: ReadableSpan,
   kind: SpanKind,
-  attributes: SpanAttributes,
+  attributes: Attributes,
   events: TimedEvent[],
   status: SpanStatus
 ) => {
@@ -140,7 +141,7 @@ export interface TimedEvent {
   /** The name of the event. */
   name: string;
   /** The attributes of the event. */
-  attributes?: SpanAttributes;
+  attributes?: Attributes;
   /** Count of attributes of the event that were dropped due to collection limits */
   droppedAttributesCount?: number;
 }
@@ -153,11 +154,28 @@ export const getPackageVersion = (packageName: string) => {
   // "test-all-versions" tests that tend to install conflicting package
   // versions. Prefix the search paths with the cwd to include the workspace
   // dir.
-  const packagePath = require?.resolve(packageName, {
+  const mainPath = require?.resolve(packageName, {
     paths: [path.join(process.cwd(), 'node_modules')].concat(
       require?.main?.paths || []
     ),
   });
-  const packageJsonPath = path.join(path.dirname(packagePath), 'package.json');
-  return require(packageJsonPath).version;
+
+  // Some packages are resolved to a subfolder because their "main" points to it.
+  // As a consequence the "package.json" path is wrong and we get a MODULE_NOT_FOUND
+  // error. We should resolve the package folder from the closest `node_modules` ancestor.
+  // `tedious` package is an example
+  // {
+  //   "name: "tedious",
+  //   "main: "lib/tedious.js",
+  //   ...
+  // }
+  // resolving `packagePath` to `/path/to/opentelemetry-js-contrib/node_modules/tedious/lib/tedious.js`
+  const idx = mainPath.lastIndexOf('node_modules');
+  const pjPath = path.join(
+    mainPath.slice(0, idx),
+    'node_modules',
+    packageName,
+    'package.json'
+  );
+  return JSON.parse(fs.readFileSync(pjPath, 'utf8')).version;
 };

@@ -5,8 +5,8 @@
 
 OpenTelemetry gRPC Census propagator provides gRPC header propagation for systems that use the OpenCensus 'grpc-trace-bin' binary header format. This allows for context propagation when either:
 
-* incoming gRPC calls come from services already instrumented using OpenCensus
-* outgoing gRPC calls go to services already instrumented using OpenCensus
+- incoming gRPC calls come from services already instrumented using OpenCensus
+- outgoing gRPC calls go to services already instrumented using OpenCensus
 
 This propagator works in conjunction with the OpenTelemetry [gRPC plugin](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/exporter-trace-otlp-grpc).
 
@@ -43,9 +43,9 @@ See [binary-format.ts](https://github.com/census-instrumentation/opencensus-node
 
 ## Useful links
 
-* For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-* For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
-* For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+- For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
+- For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
+- For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
 
 ## License
 

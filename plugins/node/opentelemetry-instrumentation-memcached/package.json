@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-memcached",
   "version": "0.36.0",
-  "description": "OpenTelemetry memcached automatic instrumentation package.",
+  "description": "OpenTelemetry instrumentation for `memcached` database client for memcached",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.51.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.23.0",
     "@types/memcached": "^2.2.6"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-memcached#readme"

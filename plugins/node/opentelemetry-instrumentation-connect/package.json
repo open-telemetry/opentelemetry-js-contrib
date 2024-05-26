@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-connect",
-  "version": "0.36.0",
-  "description": "OpenTelemetry connect automatic instrumentation package.",
+  "version": "0.36.1",
+  "description": "OpenTelemetry instrumentation for `connect` http middleware framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -32,6 +32,7 @@
   },
   "files": [
     "build/src/**/*.js",
+    "build/src/**/*.js.map",
     "build/src/**/*.d.ts"
   ],
   "publishConfig": {
