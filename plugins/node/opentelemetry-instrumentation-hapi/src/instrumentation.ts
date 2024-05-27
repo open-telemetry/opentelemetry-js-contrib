@@ -24,7 +24,7 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import type * as Hapi from '@hapi/hapi';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   HapiComponentName,
   HapiServerRouteInput,
@@ -50,14 +50,16 @@ import {
 /** Hapi instrumentation for OpenTelemetry */
 export class HapiInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-hapi', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
     return new InstrumentationNodeModuleDefinition(
       HapiComponentName,
       ['>=17 <22'],
-      (moduleExports: typeof Hapi) => {
+      (module: any) => {
+        const moduleExports: typeof Hapi =
+          module[Symbol.toStringTag] === 'Module' ? module.default : module;
         if (!isWrapped(moduleExports.server)) {
           this._wrap(
             moduleExports,
@@ -75,7 +77,9 @@ export class HapiInstrumentation extends InstrumentationBase {
         }
         return moduleExports;
       },
-      (moduleExports: typeof Hapi) => {
+      (module: any) => {
+        const moduleExports: typeof Hapi =
+          module[Symbol.toStringTag] === 'Module' ? module.default : module;
         this._massUnwrap([moduleExports], ['server', 'Server']);
       }
     );

@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-dns",
   "version": "0.36.1",
-  "description": "OpenTelemetry dns automatic instrumentation package.",
+  "description": "OpenTelemetry instrumentation for `node:dns` name resolution module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -60,7 +60,6 @@
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.51.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
     "semver": "^7.5.4"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-dns#readme"

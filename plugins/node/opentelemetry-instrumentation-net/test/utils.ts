@@ -17,8 +17,12 @@
 import { SpanKind } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
-  NetTransportValues,
-  SemanticAttributes,
+  NETTRANSPORTVALUES_IP_TCP,
+  SEMATTRS_NET_HOST_IP,
+  SEMATTRS_NET_HOST_PORT,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+  SEMATTRS_NET_TRANSPORT,
 } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import * as path from 'path';
@@ -37,21 +41,17 @@ export const IPC_PATH =
 
 export function assertTcpSpan(span: ReadableSpan, socket: Socket) {
   assertSpanKind(span);
-  assertAttrib(
-    span,
-    SemanticAttributes.NET_TRANSPORT,
-    NetTransportValues.IP_TCP
-  );
-  assertAttrib(span, SemanticAttributes.NET_PEER_NAME, HOST);
-  assertAttrib(span, SemanticAttributes.NET_PEER_PORT, PORT);
-  assertAttrib(span, SemanticAttributes.NET_HOST_IP, socket.localAddress);
-  assertAttrib(span, SemanticAttributes.NET_HOST_PORT, socket.localPort);
+  assertAttrib(span, SEMATTRS_NET_TRANSPORT, NETTRANSPORTVALUES_IP_TCP);
+  assertAttrib(span, SEMATTRS_NET_PEER_NAME, HOST);
+  assertAttrib(span, SEMATTRS_NET_PEER_PORT, PORT);
+  assertAttrib(span, SEMATTRS_NET_HOST_IP, socket.localAddress);
+  assertAttrib(span, SEMATTRS_NET_HOST_PORT, socket.localPort);
 }
 
 export function assertIpcSpan(span: ReadableSpan) {
   assertSpanKind(span);
-  assertAttrib(span, SemanticAttributes.NET_TRANSPORT, IPC_TRANSPORT);
-  assertAttrib(span, SemanticAttributes.NET_PEER_NAME, IPC_PATH);
+  assertAttrib(span, SEMATTRS_NET_TRANSPORT, IPC_TRANSPORT);
+  assertAttrib(span, SEMATTRS_NET_PEER_NAME, IPC_PATH);
 }
 
 export function assertTLSSpan(
@@ -60,17 +60,13 @@ export function assertTLSSpan(
 ) {
   assertParentChild(tlsSpan, netSpan);
   assertSpanKind(netSpan);
-  assertAttrib(
-    netSpan,
-    SemanticAttributes.NET_TRANSPORT,
-    NetTransportValues.IP_TCP
-  );
-  assertAttrib(netSpan, SemanticAttributes.NET_PEER_NAME, HOST);
-  assertAttrib(netSpan, SemanticAttributes.NET_PEER_PORT, PORT);
+  assertAttrib(netSpan, SEMATTRS_NET_TRANSPORT, NETTRANSPORTVALUES_IP_TCP);
+  assertAttrib(netSpan, SEMATTRS_NET_PEER_NAME, HOST);
+  assertAttrib(netSpan, SEMATTRS_NET_PEER_PORT, PORT);
   // Node.JS 10 sets socket.localAddress & socket.localPort to "undefined" when a connection is
   // ended, so one of the tests fails, so we skip them for TLS
-  // assertAttrib(span, SemanticAttributes.NET_HOST_IP, socket.localAddress);
-  //assertAttrib(netSpan, SemanticAttributes.NET_HOST_PORT, socket.localPort);
+  // assertAttrib(span, SEMATTRS_NET_HOST_IP, socket.localAddress);
+  //assertAttrib(netSpan, SEMATTRS_NET_HOST_PORT, socket.localPort);
 
   assertAttrib(tlsSpan, TLSAttributes.PROTOCOL, 'TLSv1.2');
   assertAttrib(tlsSpan, TLSAttributes.AUTHORIZED, 'true');

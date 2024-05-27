@@ -28,11 +28,10 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { PinoInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const pinoVersions = ['>=5.14.0 <10'];
 
-const INSTRUMENTATION_SCOPE_NAME = '@opentelemetry/instrumentation-pino';
 const DEFAULT_LOG_KEYS = {
   traceId: 'trace_id',
   spanId: 'span_id',
@@ -107,7 +106,7 @@ function severityNumberFromPinoLevel(lvl: number) {
 
 export class PinoInstrumentation extends InstrumentationBase {
   constructor(config: PinoInstrumentationConfig = {}) {
-    super(INSTRUMENTATION_SCOPE_NAME, VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
@@ -119,7 +118,7 @@ export class PinoInstrumentation extends InstrumentationBase {
 
         // Cannot use `instrumentation.logger` until have delegating LoggerProvider:
         // https://github.com/open-telemetry/opentelemetry-js/issues/4399
-        const otelLogger = logs.getLogger(INSTRUMENTATION_SCOPE_NAME, VERSION);
+        const otelLogger = logs.getLogger(PACKAGE_NAME, PACKAGE_VERSION);
 
         const patchedPino = Object.assign((...args: unknown[]) => {
           // XXX
