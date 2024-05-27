@@ -18,8 +18,8 @@ import type { OnLoadArgs as EsbuildOnLoadArgs } from 'esbuild';
 import type { InstrumentationConfigMap } from '@opentelemetry/auto-instrumentations-node';
 
 export interface ExtractedModule {
-  package: string | null;
-  path: string | null;
+  package: string;
+  path: string;
 }
 
 export type OnLoadArgs = Omit<EsbuildOnLoadArgs, 'pluginData'> & {

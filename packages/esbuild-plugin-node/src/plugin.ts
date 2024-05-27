@@ -59,6 +59,9 @@ export function openTelemetryPlugin(
           args.resolveDir
         );
 
+        // If it's a local import, don't patch it
+        if (!extractedModule) return;
+
         // We'll rely on the OTel auto-instrumentation at runtime to patch builtin modules
         if (isBuiltIn(args.path, extractedModule)) return;
 
@@ -122,42 +125,37 @@ export function openTelemetryPlugin(
  *   output: { package: '@co/stuff', path: 'foo/bar/baz.js' }
  */
 function extractPackageAndModulePath(
-  path: string,
+  originalPath: string,
   resolveDir: string
-): { path: string; extractedModule: ExtractedModule } {
+): { path: string; extractedModule: ExtractedModule | null } {
   // @see https://github.com/nodejs/node/issues/47000
-  const fullPath = require.resolve(
-    path === '.' ? './' : path === '..' ? '../' : path,
+  const path = require.resolve(
+    originalPath === '.' ? './' : originalPath === '..' ? '../' : originalPath,
     { paths: [resolveDir] }
   );
 
-  const nodeModulesIndex = fullPath.lastIndexOf(NODE_MODULES);
-  if (nodeModulesIndex < 0) {
-    return {
-      path: fullPath,
-      extractedModule: { package: null, path: null },
-    };
-  }
+  const nodeModulesIndex = path.lastIndexOf(NODE_MODULES);
+  if (nodeModulesIndex < 0) return { path, extractedModule: null };
 
-  const subPath = fullPath.substring(nodeModulesIndex + NODE_MODULES.length);
-  const firstSlash = subPath.indexOf('/');
+  const subPath = path.substring(nodeModulesIndex + NODE_MODULES.length);
+  const firstSlashIndex = subPath.indexOf('/');
 
   if (!subPath.startsWith('@')) {
     return {
-      path: fullPath,
+      path,
       extractedModule: {
-        package: subPath.substring(0, firstSlash),
-        path: subPath.substring(firstSlash + 1),
+        package: subPath.substring(0, firstSlashIndex),
+        path: subPath.substring(firstSlashIndex + 1),
       },
     };
   }
 
-  const secondSlash = subPath.substring(firstSlash + 1).indexOf('/');
+  const secondSlash = subPath.substring(firstSlashIndex + 1).indexOf('/');
   return {
-    path: fullPath,
+    path,
     extractedModule: {
-      package: subPath.substring(0, firstSlash + 1 + secondSlash),
-      path: subPath.substring(firstSlash + 1 + secondSlash + 1),
+      package: subPath.substring(0, firstSlashIndex + secondSlash + 1),
+      path: subPath.substring(firstSlashIndex + secondSlash + 2),
     },
   };
 }
