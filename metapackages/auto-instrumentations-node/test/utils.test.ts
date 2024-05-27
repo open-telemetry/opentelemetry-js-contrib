@@ -191,6 +191,6 @@ describe('utils', () => {
     it('should return no-op propgator if propagator all propagators are unknown', () => {
       process.env.OTEL_PROPAGATORS = 'my, unknown, propagators';
       assert.deepStrictEqual(getPropagator().fields(), []);
-    })
+    });
   });
 });
