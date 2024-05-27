@@ -187,5 +187,10 @@ describe('utils', () => {
       process.env.OTEL_PROPAGATORS = 'b3,jaeger';
       assert.deepStrictEqual(getPropagator().fields(), ['b3', 'uber-trace-id']);
     });
+
+    it('should return no-op propgator if propagator all propagators are unknown', () => {
+      process.env.OTEL_PROPAGATORS = 'my, unknown, propagators';
+      assert.deepStrictEqual(getPropagator().fields(), []);
+    })
   });
 });

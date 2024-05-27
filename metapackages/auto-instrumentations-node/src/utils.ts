@@ -294,8 +294,12 @@ export function getPropagator(): TextMapPropagator {
     });
   }
 
-  const propagatorsFromEnv = process.env.OTEL_PROPAGATORS?.split(',').map(
-    value => value.toLowerCase()
+  const propagatorsFromEnv = Array.from(
+    new Set(
+      process.env.OTEL_PROPAGATORS?.split(',').map(value =>
+        value.toLowerCase().trim()
+      )
+    )
   );
 
   const propagators = propagatorsFromEnv.flatMap(propagatorName => {
@@ -308,10 +312,6 @@ export function getPropagator(): TextMapPropagator {
     }
     return propagatorFactoryFunction();
   });
-
-  if (propagators.length === 1) {
-    return propagators[0];
-  }
 
   return new CompositePropagator({ propagators });
 }
