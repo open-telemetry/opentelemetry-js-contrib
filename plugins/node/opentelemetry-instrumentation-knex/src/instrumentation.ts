@@ -15,7 +15,7 @@
  */
 
 import * as api from '@opentelemetry/api';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import {
   InstrumentationBase,
@@ -45,8 +45,8 @@ const DEFAULT_CONFIG: types.KnexInstrumentationConfig = {
 export class KnexInstrumentation extends InstrumentationBase {
   constructor(config: types.KnexInstrumentationConfig = {}) {
     super(
-      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
-      VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
