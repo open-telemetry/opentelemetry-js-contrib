@@ -15,6 +15,7 @@
  */
 
 import { BaggageSpanProcessor } from '../src/baggage-span-processor';
+import { ALLOW_ALL_BAGGAGE_KEYS } from '../src/types';
 import {
   propagation,
   ROOT_CONTEXT,
@@ -24,8 +25,8 @@ import {
 import { BasicTracerProvider, Span } from '@opentelemetry/sdk-trace-base';
 import { expect } from 'expect';
 
-describe('BaggageSpanProcessor', () => {
-  const baggageProcessor = new BaggageSpanProcessor();
+describe('BaggageSpanProcessor with all keys filter', () => {
+  const baggageProcessor = new BaggageSpanProcessor(ALLOW_ALL_BAGGAGE_KEYS);
 
   const bag = propagation.createBaggage({
     brand: { value: 'samsonite' },
@@ -70,5 +71,84 @@ describe('BaggageSpanProcessor', () => {
 
   it('shutdown is a no-op and does not throw error', async () => {
     await expect(baggageProcessor.shutdown()).resolves.not.toThrow();
+  });
+});
+
+describe('BaggageSpanProcessor with startWith key filter', () => {
+  const baggageProcessor = new BaggageSpanProcessor((key: string) =>
+    key.startsWith('brand')
+  );
+
+  const bag = propagation.createBaggage({
+    brand: { value: 'samsonite' },
+    color: { value: 'blue' },
+  });
+
+  const expectedAttrs = {
+    brand: 'samsonite',
+  };
+
+  let span: Span;
+
+  beforeEach(() => {
+    span = new Span(
+      new BasicTracerProvider().getTracer('baggage-testing'),
+      ROOT_CONTEXT,
+      'Edward W. Span',
+      {
+        traceId: 'e4cda95b652f4a1592b449d5929fda1b',
+        spanId: '7e0c63257de34c92',
+        traceFlags: TraceFlags.SAMPLED,
+      },
+      SpanKind.SERVER
+    );
+  });
+
+  it('should only add baggage entries that match filter', () => {
+    expect(span.attributes).toEqual({});
+    const ctx = propagation.setBaggage(ROOT_CONTEXT, bag);
+    baggageProcessor.onStart(span, ctx);
+
+    expect(span.attributes).toEqual(expectedAttrs);
+  });
+});
+
+describe('BaggageSpanProcessor with regex key filter', () => {
+  const regex = new RegExp('^col.+');
+  const baggageProcessor = new BaggageSpanProcessor((key: string) =>
+    regex.test(key)
+  );
+
+  const bag = propagation.createBaggage({
+    brand: { value: 'samsonite' },
+    color: { value: 'blue' },
+  });
+
+  const expectedAttrs = {
+    color: 'blue',
+  };
+
+  let span: Span;
+
+  beforeEach(() => {
+    span = new Span(
+      new BasicTracerProvider().getTracer('baggage-testing'),
+      ROOT_CONTEXT,
+      'Edward W. Span',
+      {
+        traceId: 'e4cda95b652f4a1592b449d5929fda1b',
+        spanId: '7e0c63257de34c92',
+        traceFlags: TraceFlags.SAMPLED,
+      },
+      SpanKind.SERVER
+    );
+  });
+
+  it('should only add baggage entries that match filter', () => {
+    expect(span.attributes).toEqual({});
+    const ctx = propagation.setBaggage(ROOT_CONTEXT, bag);
+    baggageProcessor.onStart(span, ctx);
+
+    expect(span.attributes).toEqual(expectedAttrs);
   });
 });
