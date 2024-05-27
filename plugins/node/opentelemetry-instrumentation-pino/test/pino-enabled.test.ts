@@ -19,10 +19,21 @@ import * as semver from 'semver';
 import * as sinon from 'sinon';
 
 import { INVALID_SPAN_CONTEXT, context, trace } from '@opentelemetry/api';
+import { SEMRESATTRS_SERVICE_NAME  } from '@opentelemetry/semantic-conventions';
+import { Resource } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+  InMemoryLogRecordExporter,
+} from '@opentelemetry/sdk-logs';
+
 import {
   TestInstrumentationAndContext,
   assertInjection,
@@ -34,15 +45,26 @@ import {
   testNoInjection,
 } from './common';
 
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import type { pino as Pino } from 'pino';
 
-const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider();
-const tracer = provider.getTracer('default');
-provider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
+const tracerProvider = new NodeTracerProvider();
+tracerProvider.register();
+tracerProvider.addSpanProcessor(
+  new SimpleSpanProcessor(new InMemorySpanExporter())
+);
+const tracer = tracerProvider.getTracer('default');
+// XXX need this? Bunyan test doesn't ahve it, FWIW.
 context.setGlobalContextManager(new AsyncHooksContextManager());
+
+const resource = new Resource({
+  [SEMRESATTRS_SERVICE_NAME]: 'test-instrumentation-bunyan',
+});
+const loggerProvider = new LoggerProvider({ resource });
+const memExporter = new InMemoryLogRecordExporter();
+loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(memExporter));
+logs.setGlobalLoggerProvider(loggerProvider);
+
+// XXX HERE tests for logSending, logCorrelation opts
 
 describe('PinoInstrumentation', () => {
   let testContext: TestInstrumentationAndContext;
