@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { Writable } from 'stream';
+
 import {
   context,
   diag,
@@ -116,10 +118,6 @@ export class PinoInstrumentation extends InstrumentationBase {
         const moduleExports = isESM ? module.default : module;
         const instrumentation = this;
 
-        // Cannot use `instrumentation.logger` until have delegating LoggerProvider:
-        // https://github.com/open-telemetry/opentelemetry-js/issues/4399
-        const otelLogger = logs.getLogger(PACKAGE_NAME, PACKAGE_VERSION);
-
         const patchedPino = Object.assign((...args: unknown[]) => {
           const config = instrumentation.getConfig();
           const isEnabled = instrumentation.isEnabled();
@@ -146,64 +144,51 @@ export class PinoInstrumentation extends InstrumentationBase {
 
           // Setup "log sending" -- sending log records to the Logs API.
           if (isEnabled && !config.disableLogSending) {
-            // Shim the Pino logger's `stream.write` for log sending.
-            const stream = logger[moduleExports.symbols.streamSym];
-            if (typeof stream.write !== 'function') {
-              instrumentation._diag.debug(
-                'cannot setup log-sending: Pino logger stream.write is not a function'
-              );
-            } else {
-              const messageKey = logger[moduleExports.symbols.messageKeySym];
-              stream[Symbol.for('pino.metadata')] = true; // for `stream.lastLevel`
+            // How to convert the serialized "time" on a Pino log record
+            // depends on the Logger's `Symbol(pino.time)` prop, configurable
+            // via https://getpino.io/#/docs/api?id=timestamp-boolean-function
+            // For example:
+            //    const logger = pino({timestamp: pino.stdTimeFunctions.isoTime})
+            // results in log record entries of the form:
+            //    ,"time":"2024-05-17T22:03:25.969Z"
+            // `otelTimestampFromTime` will be given the value of the "time" field:
+            //    "2024-05-17T22:03:25.969Z"
+            // which should be parsed to a number of milliseconds since the epoch.
+            const otelTimestampFromTime = (() => {
+              const stdTimeFns = moduleExports.stdTimeFunctions;
+              const loggerTimeFn = logger[moduleExports.symbols.timeSym];
+              if (loggerTimeFn === stdTimeFns.epochTime) {
+                return (time: number) => time;
+              } else if (loggerTimeFn === stdTimeFns.unixTime) {
+                return (time: number) => time * 1e3;
+              } else if (loggerTimeFn === stdTimeFns.isoTime) {
+                return (time: string) => new Date(time).getTime();
+              } else if (loggerTimeFn === stdTimeFns.nullTime) {
+                return () => Date.now();
+              } else {
+                // The logger has a custom time function. Don't guess.
+                return () => NaN;
+              }
+            })();
 
-              // How to convert the serialized "time" on a Pino log record
-              // depends on the Logger's `Symbol(pino.time)` attr, configurable
-              // via https://getpino.io/#/docs/api?id=timestamp-boolean-function
-              // For example:
-              //    const logger = pino({timestamp: pino.stdTimeFunctions.isoTime})
-              // results in log record entries of the form:
-              //    ,"time":"2024-05-17T22:03:25.969Z"
-              // `otelTimestampFromTime` will be given the value of the "time" field:
-              //    "2024-05-17T22:03:25.969Z"
-              // which should be parsed to a number of milliseconds since the epoch.
-              const otelTimestampFromTime = (() => {
-                const stdTimeFns = moduleExports.stdTimeFunctions;
-                const loggerTimeFn = logger[moduleExports.symbols.timeSym];
-                if (loggerTimeFn === stdTimeFns.epochTime) {
-                  return (time: number) => time;
-                } else if (loggerTimeFn === stdTimeFns.unixTime) {
-                  return (time: number) => time * 1e3;
-                } else if (loggerTimeFn === stdTimeFns.isoTime) {
-                  return (time: string) => new Date(time).getTime();
-                } else if (loggerTimeFn === stdTimeFns.nullTime) {
-                  return () => Date.now();
-                } else {
-                  // The logger has a custom time function. Don't guess.
-                  return () => NaN;
-                }
-              })();
+            const otelStream = new OTelPinoStream({
+              messageKey: logger[moduleExports.symbols.messageKeySym],
+              levels: logger.levels,
+              otelTimestampFromTime,
+            });
+            // XXX Pino.DestinationStreamWithMetadata
+            (otelStream as any)[Symbol.for('pino.metadata')] = true; // for `stream.lastLevel`
 
-              const origWrite = stream.write;
-              stream.write = function otelWrite(...args: unknown[]) {
-                // To gather the log record fields, we *almost* could use the
-                // `stream.last*` fields from https://getpino.io/#/docs/api?id=metadata
-                // However, that gets raw data before being passed through
-                // possible user-provided serializers. Therefore, the only way
-                // is to `JSON.parse(args[0])` -- which is unfortunate parsing
-                // overhead. The alternative for users is to use
-                // `pino-opentelemetry-transport` or similar to move log-sending
-                // processing to a worker-thread.
-                emitOTelLogRecord(
-                  logger,
-                  stream,
-                  args[0] as string,
-                  messageKey,
-                  otelTimestampFromTime,
-                  otelLogger
-                );
-                return origWrite.apply(stream, args);
-              };
-            }
+            // Use pino's own `multistream` to send to the original stream and
+            // to the OTel Logs API/SDK.
+            // https://getpino.io/#/docs/api?id=pinomultistreamstreamsarray-opts-gt-multistreamres
+            const origStream = logger[moduleExports.symbols.streamSym];
+            logger[moduleExports.symbols.streamSym] = moduleExports.multistream([
+              {level: logger.level, stream: origStream},
+              {level: logger.level, stream: otelStream},
+            ])
+            // XXX lower level of logger if necessary from logSeverity
+            // XXX issue with custom log levels?
           }
 
           return logger;
@@ -291,70 +276,94 @@ export class PinoInstrumentation extends InstrumentationBase {
   }
 }
 
-function emitOTelLogRecord(
-  pinoLogger: any,
-  stream: any,
-  s: string,
-  messageKey: string,
-  otelTimestampFromTime: (time: any) => number,
-  otelLogger: Logger
-) {
-  if (!s) {
-    return;
+interface OTelPinoStreamOptions {
+  messageKey: string;
+  levels: any; // Pino.LevelMapping
+  otelTimestampFromTime: (time: any) => number;
+}
+
+class OTelPinoStream extends Writable {
+  private _otelLogger: Logger;
+  private _messageKey: string;
+  private _levels;
+  private _otelTimestampFromTime;
+
+  constructor(options: OTelPinoStreamOptions) {
+    super();
+
+    // XXX PINO_CONFIG was only added 2024-04-24 (very recently).
+    // XXX PINO_CONFIG message doesn't include `time`, which is a failing I think.
+    this._messageKey = options.messageKey;
+    this._levels = options.levels;
+    this._otelTimestampFromTime = options.otelTimestampFromTime;
+
+    // Cannot use `instrumentation.logger` until have delegating LoggerProvider:
+    // https://github.com/open-telemetry/opentelemetry-js/issues/4399
+    this._otelLogger = logs.getLogger(PACKAGE_NAME, PACKAGE_VERSION);
   }
 
-  // Parse, and handle edge cases similar to how `pino-abtract-transport` does:
-  // https://github.com/pinojs/pino-abstract-transport/blob/v1.2.0/index.js#L28-L45
-  let recObj;
-  try {
-    recObj = JSON.parse(s);
-  } catch (_err) {
-    // Invalid JSON suggests a bug in Pino, or a logger configuration bug
-    // (a bogus `options.timestamp` or serializer). diag.warn *once* for the
-    // first error on the assumption subsequent ones stem from the same bug.
-    // XXX test for this.
-    // TODO: possibly emit a simple LogRecord using the full `s` as the body?
-    return;
-  }
-  if (recObj === null) {
-    return;
-  }
-  if (typeof recObj !== 'object') {
-    recObj = {
-      data: recObj,
-    };
-  }
-  // console.log('XXX recObj: ', recObj)
+  override _write(s: string, _encoding: string, callback: Function) {
+    if (!s) {
+      return;
+    }
 
-  const {
-    time,
-    level, // eslint-disable-line @typescript-eslint/no-unused-vars
-    [messageKey]: body,
-    hostname, // eslint-disable-line @typescript-eslint/no-unused-vars
-    pid, // eslint-disable-line @typescript-eslint/no-unused-vars
-    trace_id, // eslint-disable-line @typescript-eslint/no-unused-vars
-    span_id, // eslint-disable-line @typescript-eslint/no-unused-vars
-    trace_flags, // eslint-disable-line @typescript-eslint/no-unused-vars
-    ...attributes
-  } = recObj;
+    // Parse, and handle edge cases similar to how `pino-abtract-transport` does:
+    // https://github.com/pinojs/pino-abstract-transport/blob/v1.2.0/index.js#L28-L45
+    let recObj;
+    try {
+      recObj = JSON.parse(s);
+    } catch (_err) {
+      // Invalid JSON suggests a bug in Pino, or a logger configuration bug
+      // (a bogus `options.timestamp` or serializer). diag.warn *once* for the
+      // first error on the assumption subsequent ones stem from the same bug.
+      // XXX test for this.
+      // TODO: try `callback(err)` with perhaps an error with more details.
+      return;
+    }
+    if (recObj === null) {
+      return;
+    }
+    if (typeof recObj !== 'object') {
+      recObj = {
+        data: recObj,
+      };
+    }
+    // console.log('XXX recObj: ', recObj)
 
-  let timestamp = otelTimestampFromTime(time);
-  if (isNaN(timestamp)) {
-    timestamp = Date.now();
-  }
+    const {
+      time,
+      [this._messageKey]: body,
+      level, // eslint-disable-line @typescript-eslint/no-unused-vars
+      // XXX doc why dropping these
+      hostname, // eslint-disable-line @typescript-eslint/no-unused-vars
+      pid, // eslint-disable-line @typescript-eslint/no-unused-vars
+      trace_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+      span_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+      trace_flags, // eslint-disable-line @typescript-eslint/no-unused-vars
+      ...attributes
+    } = recObj;
 
-  const logRec = {
-    timestamp: timestamp,
-    observedTimestamp: timestamp,
+    let timestamp = this._otelTimestampFromTime(time);
+    if (isNaN(timestamp)) {
+      timestamp = Date.now();
+    }
+
     // Prefer using `stream.lastLevel`, because `recObj.level` can be customized
     // to anything via `formatters.level`
     // (https://getpino.io/#/docs/api?id=formatters-object).
-    severityNumber: severityNumberFromPinoLevel(stream.lastLevel),
-    severityText: pinoLogger.levels.labels[stream.lastLevel],
-    body,
-    attributes,
-  };
-  // console.log('XXX logRec: ', logRec)
+    const lastLevel = (this as any).lastLevel;
 
-  otelLogger.emit(logRec);
+    const otelRec = {
+      timestamp: timestamp,
+      observedTimestamp: timestamp,
+      severityNumber: severityNumberFromPinoLevel(lastLevel),
+      severityText: this._levels.labels[lastLevel],
+      body,
+      attributes,
+    };
+    // console.log('XXX otelRec: ', otelRec)
+
+    this._otelLogger.emit(otelRec);
+    callback();
+  }
 }

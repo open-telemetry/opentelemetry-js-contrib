@@ -20,26 +20,27 @@ import { Writable } from 'stream';
 import * as semver from 'semver';
 import * as sinon from 'sinon';
 import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
-// import { SEMRESATTRS_SERVICE_NAME  } from '@opentelemetry/semantic-conventions';
-// import { Resource } from '@opentelemetry/resources';
+import { SEMRESATTRS_SERVICE_NAME  } from '@opentelemetry/semantic-conventions';
+import { Resource } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-// import { logs, SeverityNumber } from '@opentelemetry/api-logs';
-// import {
-//   LoggerProvider,
-//   SimpleLogRecordProcessor,
-//   InMemoryLogRecordExporter,
-// } from '@opentelemetry/sdk-logs';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+  InMemoryLogRecordExporter,
+} from '@opentelemetry/sdk-logs';
 import {
   runTestFixture,
   TestCollector,
 } from '@opentelemetry/contrib-test-utils';
 
 import { PinoInstrumentation, PinoInstrumentationConfig } from '../src';
+import { PACKAGE_NAME, PACKAGE_VERSION } from '../src/version';
 
 import type { pino as Pino } from 'pino';
 
@@ -51,14 +52,14 @@ tracerProvider.addSpanProcessor(
 const tracer = tracerProvider.getTracer('default');
 context.setGlobalContextManager(new AsyncHooksContextManager());
 
-// // XXX later for logSending tests
-// const resource = new Resource({
-//   [SEMRESATTRS_SERVICE_NAME]: 'test-instrumentation-pino',
-// });
-// const loggerProvider = new LoggerProvider({ resource });
-// const memExporter = new InMemoryLogRecordExporter();
-// loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(memExporter));
-// logs.setGlobalLoggerProvider(loggerProvider);
+// Setup LoggerProvider for "log sending" tests.
+const resource = new Resource({
+  [SEMRESATTRS_SERVICE_NAME]: 'test-instrumentation-pino',
+});
+const loggerProvider = new LoggerProvider({ resource });
+const memExporter = new InMemoryLogRecordExporter();
+loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(memExporter));
+logs.setGlobalLoggerProvider(loggerProvider);
 
 const instrumentation = new PinoInstrumentation();
 const pino = require('pino');
@@ -132,6 +133,7 @@ describe('PinoInstrumentation', () => {
 
     beforeEach(() => {
       instrumentation.setConfig({}); // reset to defaults
+      memExporter.getFinishedLogRecords().length = 0; // clear
       stream = new Writable();
       stream._write = () => {};
       writeSpy = sinon.spy(stream, 'write');
@@ -265,12 +267,12 @@ describe('PinoInstrumentation', () => {
         assert.strictEqual(record['span_id'], undefined);
         assert.strictEqual(record['trace_flags'], undefined);
         assert.strictEqual(record['resource.service.name'], undefined);
-        // XXX restore this
-        // assert.strictEqual(
-        //   memExporter.getFinishedLogRecords().length,
-        //   1,
-        //   'Log sending still works'
-        // );
+
+        assert.strictEqual(
+          memExporter.getFinishedLogRecords().length,
+          1,
+          'Log sending still works'
+        );
       });
     });
 
@@ -390,6 +392,129 @@ describe('PinoInstrumentation', () => {
         const { spanId } = span.spanContext();
         const record = JSON.parse(stdoutSpy.firstCall.args[0].toString());
         assert.strictEqual(record['trace_id'], '123');
+        assert.strictEqual(record['span_id'], spanId);
+      });
+    });
+  });
+
+  describe('log sending', () => {
+    let logger: Pino.Logger;
+    let stream: Writable;
+    let writeSpy: sinon.SinonSpy;
+
+    beforeEach(() => {
+      instrumentation.setConfig({}); // reset to defaults
+      memExporter.getFinishedLogRecords().length = 0; // clear
+      stream = new Writable();
+      stream._write = () => {};
+      writeSpy = sinon.spy(stream, 'write');
+      logger = pino({
+        name: 'test-logger-name',
+        level: 'debug',
+      }, stream);
+    });
+
+    it('emits log records to Logs SDK', () => {
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      // levels
+      logger.trace('at trace level');
+      logger.debug('at debug level');
+      logger.info('at info level');
+      logger.warn('at warn level');
+      logger.error('at error level');
+      logger.fatal('at fatal level');
+      assert.strictEqual(logRecords.length, 5);
+      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.DEBUG);
+      assert.strictEqual(logRecords[0].severityText, 'debug');
+      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.INFO);
+      assert.strictEqual(logRecords[1].severityText, 'info');
+      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
+      assert.strictEqual(logRecords[2].severityText, 'warn');
+      assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.ERROR);
+      assert.strictEqual(logRecords[3].severityText, 'error');
+      assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.FATAL);
+      assert.strictEqual(logRecords[4].severityText, 'fatal');
+
+      // attributes, resource, instrumentationScope, etc.
+      logger.info({ foo: 'bar' }, 'a message');
+      const rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.body, 'a message');
+      assert.deepStrictEqual(rec.attributes, {
+        name: 'test-logger-name',
+        foo: 'bar',
+      });
+      assert.strictEqual(
+        rec.resource.attributes['service.name'],
+        'test-instrumentation-pino'
+      );
+      assert.strictEqual(rec.instrumentationScope.name, PACKAGE_NAME);
+      assert.strictEqual(rec.instrumentationScope.version, PACKAGE_VERSION);
+      assert.strictEqual(rec.spanContext, undefined);
+
+      // spanContext
+      tracer.startActiveSpan('abc', span => {
+        logger.info('in active span');
+        span.end();
+
+        const { traceId, spanId, traceFlags } = span.spanContext();
+        const rec = logRecords[logRecords.length - 1];
+        assert.strictEqual(rec.spanContext?.traceId, traceId);
+        assert.strictEqual(rec.spanContext?.spanId, spanId);
+        assert.strictEqual(rec.spanContext?.traceFlags, traceFlags);
+
+        // This rec should *NOT* have the `trace_id` et al attributes.
+        assert.strictEqual(rec.attributes.trace_id, undefined);
+        assert.strictEqual(rec.attributes.span_id, undefined);
+        assert.strictEqual(rec.attributes.trace_flags, undefined);
+      });
+    });
+
+    // it('handles log record edge cases', () => {
+    //   let rec;
+    //   const logRecords = memExporter.getFinishedLogRecords();
+
+    //   // A non-Date "time" Bunyan field.
+    //   log.info({ time: 'miller' }, 'hi');
+    //   rec = logRecords[logRecords.length - 1];
+    //   assert.deepEqual(
+    //     rec.hrTime.map(n => typeof n),
+    //     ['number', 'number']
+    //   );
+    //   assert.strictEqual(rec.attributes.time, 'miller');
+
+    //   // An atypical Bunyan level number.
+    //   log.info({ level: 42 }, 'just above Bunyan WARN==40');
+    //   rec = logRecords[logRecords.length - 1];
+    //   assert.strictEqual(rec.severityNumber, SeverityNumber.WARN2);
+    //   assert.strictEqual(rec.severityText, undefined);
+
+    //   log.info({ level: 200 }, 'far above Bunyan FATAL==60');
+    //   rec = logRecords[logRecords.length - 1];
+    //   assert.strictEqual(rec.severityNumber, SeverityNumber.FATAL4);
+    //   assert.strictEqual(rec.severityText, undefined);
+    // });
+
+    it('does not emit to the Logs SDK if disableLogSending=true', () => {
+      instrumentation.setConfig({ disableLogSending: true });
+
+      // Changing `disableLogSending` only has an impact on Loggers created
+      // *after* it is set. So we cannot test with the `logger` created in
+      // `beforeEach()` above.
+      logger = pino({ name: 'test-logger-name' }, stream);
+
+      tracer.startActiveSpan('abc', span => {
+        logger.info('foo');
+        span.end();
+
+        assert.strictEqual(memExporter.getFinishedLogRecords().length, 0);
+
+        // Test log correlation still works.
+        const { traceId, spanId } = span.spanContext();
+        sinon.assert.calledOnce(writeSpy);
+        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        assert.strictEqual('foo', record['msg']);
+        assert.strictEqual(record['trace_id'], traceId);
         assert.strictEqual(record['span_id'], spanId);
       });
     });
