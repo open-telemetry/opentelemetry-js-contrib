@@ -121,35 +121,31 @@ export class PinoInstrumentation extends InstrumentationBase {
         const otelLogger = logs.getLogger(PACKAGE_NAME, PACKAGE_VERSION);
 
         const patchedPino = Object.assign((...args: unknown[]) => {
-          // XXX instrumentatin.getConfig(); usage
-          // const config = instrumentation.getConfig();
-          const optLogCorrelation = true;
-          const optLogSending = true;
+          const config = instrumentation.getConfig();
           const isEnabled = instrumentation.isEnabled();
 
           const logger = moduleExports(...args);
 
-          if (isEnabled && optLogCorrelation) {
-            // Note: If the Pino logger is configured with `nestedKey`, then
-            // the `trace_id` et al fields added by `otelMixin` will be nested
-            // as well. https://getpino.io/#/docs/api?id=mixin-function
-            const otelMixin = instrumentation._getMixinFunction();
-            const mixinSym = moduleExports.symbols.mixinSym;
-            const origMixin = logger[mixinSym];
-            if (origMixin === undefined) {
-              // console.warn('XXX adding otelMixin', )
-              logger[mixinSym] = otelMixin;
-            } else {
-              logger[mixinSym] = (ctx: object, level: number) => {
-                return Object.assign(
-                  otelMixin(ctx, level),
-                  origMixin(ctx, level)
-                );
-              };
-            }
+          // Setup "log correlation" -- injection of `trace_id` et al fields.
+          // Note: If the Pino logger is configured with `nestedKey`, then
+          // the `trace_id` et al fields added by `otelMixin` will be nested
+          // as well. https://getpino.io/#/docs/api?id=mixin-function
+          const otelMixin = instrumentation._getMixinFunction();
+          const mixinSym = moduleExports.symbols.mixinSym;
+          const origMixin = logger[mixinSym];
+          if (origMixin === undefined) {
+            logger[mixinSym] = otelMixin;
+          } else {
+            logger[mixinSym] = (ctx: object, level: number) => {
+              return Object.assign(
+                otelMixin(ctx, level),
+                origMixin(ctx, level)
+              );
+            };
           }
 
-          if (isEnabled && optLogSending) {
+          // Setup "log sending" -- sending log records to the Logs API.
+          if (isEnabled && !config.disableLogSending) {
             // Shim the Pino logger's `stream.write` for log sending.
             const stream = logger[moduleExports.symbols.streamSym];
             if (typeof stream.write !== 'function') {
@@ -261,6 +257,13 @@ export class PinoInstrumentation extends InstrumentationBase {
   private _getMixinFunction() {
     const instrumentation = this;
     return function otelMixin(_context: object, level: number) {
+      if (
+        !instrumentation.isEnabled() ||
+        instrumentation.getConfig().disableLogCorrelation
+      ) {
+        return {};
+      }
+
       const span = trace.getSpan(context.active());
 
       if (!span) {

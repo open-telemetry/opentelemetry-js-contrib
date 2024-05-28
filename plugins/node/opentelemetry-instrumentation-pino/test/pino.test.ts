@@ -111,6 +111,18 @@ describe('PinoInstrumentation', () => {
         assert.strictEqual(record['resource.service.name'], undefined);
       });
     });
+
+    it('injects span context once re-enabled', () => {
+      instrumentation.enable();
+      tracer.startActiveSpan('abc', span => {
+        logger.info('a message');
+        span.end();
+
+        sinon.assert.calledOnce(writeSpy);
+        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        assertRecord(record, span);
+      });
+    });
   });
 
   describe('log correlation', () => {
@@ -232,6 +244,33 @@ describe('PinoInstrumentation', () => {
         sinon.assert.calledOnce(writeSpy);
         const record = JSON.parse(writeSpy.firstCall.args[0].toString());
         assertRecord(record, span);
+      });
+    });
+
+    it('does not inject or call logHook if disableLogCorrelation=true', () => {
+      instrumentation.setConfig({
+        disableLogCorrelation: true,
+        logHook: (_span, record) => {
+          record['resource.service.name'] = 'test-service';
+        },
+      });
+      tracer.startActiveSpan('abc', span => {
+        logger.info('foo');
+        span.end();
+
+        sinon.assert.calledOnce(writeSpy);
+        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
+        assert.strictEqual('foo', record['msg']);
+        assert.strictEqual(record['trace_id'], undefined);
+        assert.strictEqual(record['span_id'], undefined);
+        assert.strictEqual(record['trace_flags'], undefined);
+        assert.strictEqual(record['resource.service.name'], undefined);
+        // XXX restore this
+        // assert.strictEqual(
+        //   memExporter.getFinishedLogRecords().length,
+        //   1,
+        //   'Log sending still works'
+        // );
       });
     });
 
