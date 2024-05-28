@@ -104,38 +104,59 @@ function severityNumberFromPinoLevel(lvl: number) {
   return otelSevValue;
 }
 
+// let patchCounter = 0 // XXX
+
+// const PINO_IS_WRAPPED = Symbol('opentelemetry.instrumentation-pino.is-wrapped');
+
 export class PinoInstrumentation extends InstrumentationBase {
   constructor(config: PinoInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
+    // console.warn('XXX returning from PinoInstrumentation.init', )
     return [
       new InstrumentationNodeModuleDefinition('pino', pinoVersions, module => {
+        // console.warn('XXX calling InstrumentationNodeModuleDefinition(pino) patch()')
         const isESM = module[Symbol.toStringTag] === 'Module';
         const moduleExports = isESM ? module.default : module;
         const instrumentation = this;
+
+        // // Pino instrumentation patches the default export, so the usual
+        // // `instrumentation.{_wrap,_unwrap}` cannot be used. This instr must
+        // // then avoid duplicate wrapping itself.
+        // // XXX first config wins then. Hrm.
+        // if (moduleExports[PINO_IS_WRAPPED]) {
+        //   return moduleExports;
+        // }
 
         // Cannot use `instrumentation.logger` until have delegating LoggerProvider:
         // https://github.com/open-telemetry/opentelemetry-js/issues/4399
         const otelLogger = logs.getLogger(PACKAGE_NAME, PACKAGE_VERSION);
 
+        // const patchId = patchCounter++
         const patchedPino = Object.assign((...args: unknown[]) => {
-          // XXX
+          // console.warn('XXX [patchId=%s] calling patchedPino(...)', patchId)
+
+          // XXX instrumentatin.getConfig(); usage
+          // const config = instrumentation.getConfig();
           const optLogCorrelation = true;
           const optLogSending = true;
+          const isEnabled = instrumentation.isEnabled();
 
           const logger = moduleExports(...args);
 
+          // XXX
+          // if (isEnabled && optLogCorrelation) {
           if (optLogCorrelation) {
             // Note: If the Pino logger is configured with `nestedKey`, then
             // the `trace_id` et al fields added by `otelMixin` will be nested
-            // as well. This will likely break downstream log correlation.
-            // (https://getpino.io/#/docs/api?id=mixin-function)
-            const mixinSym = moduleExports.symbols.mixinSym;
+            // as well. https://getpino.io/#/docs/api?id=mixin-function
             const otelMixin = instrumentation._getMixinFunction();
+            const mixinSym = moduleExports.symbols.mixinSym;
             const origMixin = logger[mixinSym];
             if (origMixin === undefined) {
+              // console.warn('XXX adding otelMixin', )
               logger[mixinSym] = otelMixin;
             } else {
               logger[mixinSym] = (ctx: object, level: number) => {
@@ -146,8 +167,9 @@ export class PinoInstrumentation extends InstrumentationBase {
               };
             }
           }
+          // patchedPino[PINO_IS_WRAPPED] = true;
 
-          if (optLogSending) {
+          if (isEnabled && optLogSending) {
             // Shim the Pino logger's `stream.write` for log sending.
             const stream = logger[moduleExports.symbols.streamSym];
             if (typeof stream.write !== 'function') {
@@ -225,6 +247,7 @@ export class PinoInstrumentation extends InstrumentationBase {
           module.default = patchedPino;
         }
 
+        // console.warn('XXX returning patchedPino', )
         return patchedPino;
       }),
     ];
@@ -259,6 +282,7 @@ export class PinoInstrumentation extends InstrumentationBase {
   private _getMixinFunction() {
     const instrumentation = this;
     return function otelMixin(_context: object, level: number) {
+      // XXX drop this in favour of higher up
       if (!instrumentation.isEnabled()) {
         return {};
       }
@@ -320,8 +344,8 @@ function emitOTelLogRecord(
   }
   if (typeof recObj !== 'object') {
     recObj = {
-      data: recObj
-    }
+      data: recObj,
+    };
   }
   // console.log('XXX recObj: ', recObj)
 
