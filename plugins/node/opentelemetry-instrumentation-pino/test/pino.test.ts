@@ -111,18 +111,6 @@ describe('PinoInstrumentation', () => {
         assert.strictEqual(record['resource.service.name'], undefined);
       });
     });
-
-    it('injects span context once re-enabled', () => {
-      instrumentation.enable();
-      tracer.startActiveSpan('abc', span => {
-        logger.info('a message');
-        span.end();
-
-        sinon.assert.calledOnce(writeSpy);
-        const record = JSON.parse(writeSpy.firstCall.args[0].toString());
-        assertRecord(record, span);
-      });
-    });
   });
 
   describe('log correlation', () => {

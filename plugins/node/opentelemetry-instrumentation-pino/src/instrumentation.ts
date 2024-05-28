@@ -129,9 +129,7 @@ export class PinoInstrumentation extends InstrumentationBase {
 
           const logger = moduleExports(...args);
 
-          // XXX
-          // if (isEnabled && optLogCorrelation) {
-          if (optLogCorrelation) {
+          if (isEnabled && optLogCorrelation) {
             // Note: If the Pino logger is configured with `nestedKey`, then
             // the `trace_id` et al fields added by `otelMixin` will be nested
             // as well. https://getpino.io/#/docs/api?id=mixin-function
@@ -263,11 +261,6 @@ export class PinoInstrumentation extends InstrumentationBase {
   private _getMixinFunction() {
     const instrumentation = this;
     return function otelMixin(_context: object, level: number) {
-      // XXX drop this in favour of higher up
-      if (!instrumentation.isEnabled()) {
-        return {};
-      }
-
       const span = trace.getSpan(context.active());
 
       if (!span) {
