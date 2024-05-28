@@ -104,40 +104,23 @@ function severityNumberFromPinoLevel(lvl: number) {
   return otelSevValue;
 }
 
-// let patchCounter = 0 // XXX
-
-// const PINO_IS_WRAPPED = Symbol('opentelemetry.instrumentation-pino.is-wrapped');
-
 export class PinoInstrumentation extends InstrumentationBase {
   constructor(config: PinoInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
-    // console.warn('XXX returning from PinoInstrumentation.init', )
     return [
       new InstrumentationNodeModuleDefinition('pino', pinoVersions, module => {
-        // console.warn('XXX calling InstrumentationNodeModuleDefinition(pino) patch()')
         const isESM = module[Symbol.toStringTag] === 'Module';
         const moduleExports = isESM ? module.default : module;
         const instrumentation = this;
-
-        // // Pino instrumentation patches the default export, so the usual
-        // // `instrumentation.{_wrap,_unwrap}` cannot be used. This instr must
-        // // then avoid duplicate wrapping itself.
-        // // XXX first config wins then. Hrm.
-        // if (moduleExports[PINO_IS_WRAPPED]) {
-        //   return moduleExports;
-        // }
 
         // Cannot use `instrumentation.logger` until have delegating LoggerProvider:
         // https://github.com/open-telemetry/opentelemetry-js/issues/4399
         const otelLogger = logs.getLogger(PACKAGE_NAME, PACKAGE_VERSION);
 
-        // const patchId = patchCounter++
         const patchedPino = Object.assign((...args: unknown[]) => {
-          // console.warn('XXX [patchId=%s] calling patchedPino(...)', patchId)
-
           // XXX instrumentatin.getConfig(); usage
           // const config = instrumentation.getConfig();
           const optLogCorrelation = true;
@@ -167,7 +150,6 @@ export class PinoInstrumentation extends InstrumentationBase {
               };
             }
           }
-          // patchedPino[PINO_IS_WRAPPED] = true;
 
           if (isEnabled && optLogSending) {
             // Shim the Pino logger's `stream.write` for log sending.
@@ -247,7 +229,6 @@ export class PinoInstrumentation extends InstrumentationBase {
           module.default = patchedPino;
         }
 
-        // console.warn('XXX returning patchedPino', )
         return patchedPino;
       }),
     ];
