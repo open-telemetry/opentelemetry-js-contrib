@@ -22,7 +22,7 @@ import * as sinon from 'sinon';
 import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
 import { diag, DiagLogLevel } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import { SEMRESATTRS_SERVICE_NAME  } from '@opentelemetry/semantic-conventions';
+import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { Resource } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
@@ -410,10 +410,13 @@ describe('PinoInstrumentation', () => {
       stream = new Writable();
       stream._write = () => {};
       writeSpy = sinon.spy(stream, 'write');
-      logger = pino({
-        name: 'test-logger-name',
-        level: 'debug',
-      }, stream);
+      logger = pino(
+        {
+          name: 'test-logger-name',
+          level: 'debug',
+        },
+        stream
+      );
     });
 
     it('emits log records to Logs SDK', () => {
@@ -507,7 +510,10 @@ describe('PinoInstrumentation', () => {
       // would be nice to maintain that "time" attribute if possible.
       logger.info({ time: 'miller' }, 'hi');
       rec = logRecords[logRecords.length - 1];
-      assert.deepEqual(rec.hrTime.map(n => typeof n), ['number', 'number']);
+      assert.deepEqual(
+        rec.hrTime.map(n => typeof n),
+        ['number', 'number']
+      );
       assert.strictEqual(rec.attributes.time, 'miller');
     });
 
@@ -519,20 +525,26 @@ describe('PinoInstrumentation', () => {
       logger.info('using false');
       otelRec = logRecords[logRecords.length - 1];
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
-      assert.deepEqual(otelRec.hrTime.map(n => typeof n), ['number', 'number']);
+      assert.deepEqual(
+        otelRec.hrTime.map(n => typeof n),
+        ['number', 'number']
+      );
       assert.strictEqual(pinoRec.time, undefined);
 
       logger = pino({ timestamp: pino.stdTimeFunctions.epochTime }, stream);
       logger.info('using epochTime');
       otelRec = logRecords[logRecords.length - 1];
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
-      assert.strictEqual(hrTimeToMilliseconds(otelRec.hrTime), pinoRec.time)
+      assert.strictEqual(hrTimeToMilliseconds(otelRec.hrTime), pinoRec.time);
 
       logger = pino({ timestamp: pino.stdTimeFunctions.unixTime }, stream);
       logger.info('using unixTime');
       otelRec = logRecords[logRecords.length - 1];
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
-      assert.strictEqual(hrTimeToMilliseconds(otelRec.hrTime), pinoRec.time * 1e3);
+      assert.strictEqual(
+        hrTimeToMilliseconds(otelRec.hrTime),
+        pinoRec.time * 1e3
+      );
 
       logger = pino({ timestamp: pino.stdTimeFunctions.isoTime }, stream);
       logger.info('using isoTime');
@@ -540,13 +552,17 @@ describe('PinoInstrumentation', () => {
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
       assert.strictEqual(
         hrTimeToMilliseconds(otelRec.hrTime),
-        new Date(pinoRec.time).getTime());
+        new Date(pinoRec.time).getTime()
+      );
 
       logger = pino({ timestamp: () => ',"time":"quittin"' }, stream);
       logger.info('using custom timestamp fn');
       otelRec = logRecords[logRecords.length - 1];
       pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
-      assert.deepEqual(otelRec.hrTime.map(n => typeof n), ['number', 'number']);
+      assert.deepEqual(
+        otelRec.hrTime.map(n => typeof n),
+        ['number', 'number']
+      );
       assert.strictEqual(pinoRec.time, 'quittin');
       assert.strictEqual(otelRec.attributes.time, 'quittin');
     });
@@ -559,13 +575,18 @@ describe('PinoInstrumentation', () => {
 
       const diagWarns = [] as any;
       // This messily leaves the diag logger set for other tests.
-      diag.setLogger({
-        verbose() {},
-        debug() {},
-        info() {},
-        warn(...args) { diagWarns.push(args) },
-        error() {},
-      }, DiagLogLevel.WARN);
+      diag.setLogger(
+        {
+          verbose() {},
+          debug() {},
+          info() {},
+          warn(...args) {
+            diagWarns.push(args);
+          },
+          error() {},
+        },
+        DiagLogLevel.WARN
+      );
 
       logger = pino({ timestamp: () => 'invalid JSON' }, stream);
       logger.info('using custom timestamp fn returning bogus result');
@@ -587,7 +608,8 @@ describe('PinoInstrumentation', () => {
             baz: pino.levels.values.warn + 1, // a little above WARN
           },
         },
-        stream);
+        stream
+      );
 
       (logger as any).foo('foomsg');
       rec = logRecords[logRecords.length - 1];
@@ -613,12 +635,13 @@ describe('PinoInstrumentation', () => {
             bar: pino.levels.values.warn - 1, // a little closer to INFO
           },
           formatters: {
-            level (label: string, _num: number) {
-              return { level: label }
-            }
-          }
+            level(label: string, _num: number) {
+              return { level: label };
+            },
+          },
         },
-        stream);
+        stream
+      );
 
       const logRecords = memExporter.getFinishedLogRecords();
       (logger as any).foo('foomsg');
@@ -644,7 +667,8 @@ describe('PinoInstrumentation', () => {
           useOnlyCustomLevels: true,
           level: 'bar',
         },
-        stream);
+        stream
+      );
 
       (logger as any).foo('foomsg');
       rec = logRecords[logRecords.length - 1];
@@ -668,10 +692,7 @@ describe('PinoInstrumentation', () => {
 
       logger = pino(
         {},
-        pino.multistream([
-          {stream: stream},
-          {stream: stream2},
-        ])
+        pino.multistream([{ stream: stream }, { stream: stream2 }])
       );
       logger.info('using multistream');
 
@@ -688,10 +709,7 @@ describe('PinoInstrumentation', () => {
     });
 
     it('edge case: messageKey', () => {
-      logger = pino(
-        { messageKey: 'mymsg' },
-        stream
-      );
+      logger = pino({ messageKey: 'mymsg' }, stream);
       logger.info('using messageKey');
 
       const logRecords = memExporter.getFinishedLogRecords();

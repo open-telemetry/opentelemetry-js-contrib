@@ -176,7 +176,6 @@ export class PinoInstrumentation extends InstrumentationBase {
               levels: logger.levels,
               otelTimestampFromTime,
             });
-            // XXX Pino.DestinationStreamWithMetadata
             (otelStream as any)[Symbol.for('pino.metadata')] = true; // for `stream.lastLevel`
 
             // Warn *once* for first stream error, if any. An error typically
@@ -186,7 +185,7 @@ export class PinoInstrumentation extends InstrumentationBase {
             otelStream.once('unknown', (line, err) => {
               instrumentation._diag.warn(
                 'could not send pino log line (will only log first occurrence)',
-                {line, err}
+                { line, err }
               );
             });
 
@@ -194,11 +193,13 @@ export class PinoInstrumentation extends InstrumentationBase {
             // to the OTel Logs API/SDK.
             // https://getpino.io/#/docs/api?id=pinomultistreamstreamsarray-opts-gt-multistreamres
             const origStream = logger[moduleExports.symbols.streamSym];
-            logger[moduleExports.symbols.streamSym] = moduleExports.multistream([
-              {level: logger.level, stream: origStream},
-              {level: logger.level, stream: otelStream},
-            ], {levels: logger.levels.values})
-            // XXX lower level of logger if necessary from logSeverity
+            logger[moduleExports.symbols.streamSym] = moduleExports.multistream(
+              [
+                { level: logger.level, stream: origStream },
+                { level: logger.level, stream: otelStream },
+              ],
+              { levels: logger.levels.values }
+            );
           }
 
           return logger;
