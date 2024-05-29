@@ -23,6 +23,7 @@ import {
   SpanStatusCode,
   ROOT_CONTEXT,
   Link,
+  Context,
 } from '@opentelemetry/api';
 import {
   hrTime,
@@ -408,12 +409,17 @@ export class AmqplibInstrumentation extends InstrumentationBase {
         }
 
         const headers = msg.properties.headers ?? {};
-        const parentContext = propagation.extract(ROOT_CONTEXT, headers);
+        let parentContext: Context | undefined = propagation.extract(
+          ROOT_CONTEXT,
+          headers
+        );
         const exchange = msg.fields?.exchange;
-        let span: Span;
+        let links: Link[] | undefined;
         if (self._config.useLinksForConsume) {
-          const parentSpanContext = trace.getSpan(parentContext)?.spanContext();
-          let links: Link[] | undefined;
+          const parentSpanContext = parentContext
+            ? trace.getSpan(parentContext)?.spanContext()
+            : undefined;
+          parentContext = undefined;
           if (parentSpanContext) {
             links = [
               {
@@ -421,7 +427,10 @@ export class AmqplibInstrumentation extends InstrumentationBase {
               },
             ];
           }
-          span = self.tracer.startSpan(`${queue} process`, {
+        }
+        const span = self.tracer.startSpan(
+          `${queue} process`,
+          {
             kind: SpanKind.CONSUMER,
             attributes: {
               ...channel?.connection?.[CONNECTION_ATTRIBUTES],
@@ -438,30 +447,9 @@ export class AmqplibInstrumentation extends InstrumentationBase {
                 msg?.properties.correlationId,
             },
             links: links,
-          });
-        } else {
-          span = self.tracer.startSpan(
-            `${queue} process`,
-            {
-              kind: SpanKind.CONSUMER,
-              attributes: {
-                ...channel?.connection?.[CONNECTION_ATTRIBUTES],
-                [SemanticAttributes.MESSAGING_DESTINATION]: exchange,
-                [SemanticAttributes.MESSAGING_DESTINATION_KIND]:
-                  MessagingDestinationKindValues.TOPIC,
-                [SemanticAttributes.MESSAGING_RABBITMQ_ROUTING_KEY]:
-                  msg.fields?.routingKey,
-                [SemanticAttributes.MESSAGING_OPERATION]:
-                  MessagingOperationValues.PROCESS,
-                [SemanticAttributes.MESSAGING_MESSAGE_ID]:
-                  msg?.properties.messageId,
-                [SemanticAttributes.MESSAGING_CONVERSATION_ID]:
-                  msg?.properties.correlationId,
-              },
-            },
-            parentContext
-          );
-        }
+          },
+          parentContext
+        );
 
         if (self._config.consumeHook) {
           safeExecuteInTheMiddle(
@@ -485,8 +473,10 @@ export class AmqplibInstrumentation extends InstrumentationBase {
           // store the span on the message, so we can end it when user call 'ack' on it
           msg[MESSAGE_STORED_SPAN] = span;
         }
-
-        context.with(trace.setSpan(parentContext, span), () => {
+        const setContext: Context = parentContext
+          ? parentContext
+          : ROOT_CONTEXT;
+        context.with(trace.setSpan(setContext, span), () => {
           onMessage.call(this, msg);
         });
 
