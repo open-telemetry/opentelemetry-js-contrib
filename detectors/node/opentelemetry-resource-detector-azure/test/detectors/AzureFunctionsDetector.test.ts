@@ -80,4 +80,25 @@ describe('AzureFunctionsDetector', () => {
       undefined
     );
   });
+
+  it('should get the correct cloud resource id when WEBSITE_OWNER_NAME has a +', () => {
+    process.env.WEBSITE_SITE_NAME = 'test-service';
+    process.env.REGION_NAME = 'test-region';
+    process.env.WEBSITE_INSTANCE_ID = 'test-instance-id';
+    process.env.FUNCTIONS_EXTENSION_VERSION = '~4';
+    process.env.WEBSITE_MEMORY_LIMIT_MB = '1000';
+    process.env.WEBSITE_OWNER_NAME = 'test-owner-name+test-subscription-id';
+    process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
+
+    const expectedWebsiteOwnerName = 'test-owner-name';
+    const resource = detectResourcesSync({
+      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+    });
+    assert.ok(resource);
+    const attributes = resource.attributes;
+    assert.strictEqual(
+      attributes['cloud.resource_id'],
+      `/subscriptions/${expectedWebsiteOwnerName}/resourceGroups/${process.env.WEBSITE_RESOURCE_GROUP}/providers/Microsoft.Web/sites/${process.env.WEBSITE_SITE_NAME}`
+    );
+  });
 });
