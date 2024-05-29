@@ -17,7 +17,7 @@
 import * as api from '@opentelemetry/api';
 import * as metrics from '@opentelemetry/sdk-metrics';
 
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 /**
  * Metrics Collector Configuration
@@ -33,7 +33,7 @@ export interface MetricsCollectorConfig {
   url?: string;
 }
 
-const DEFAULT_NAME = '@opentelemetry/host-metrics';
+const DEFAULT_NAME = PACKAGE_NAME;
 
 /**
  * Base Class for metrics
@@ -50,7 +50,7 @@ export abstract class BaseMetrics {
     if (!config.meterProvider) {
       this._logger.warn('No meter provider, using default');
     }
-    this._meter = meterProvider.getMeter(this._name, VERSION);
+    this._meter = meterProvider.getMeter(this._name, PACKAGE_VERSION);
   }
 
   /**
