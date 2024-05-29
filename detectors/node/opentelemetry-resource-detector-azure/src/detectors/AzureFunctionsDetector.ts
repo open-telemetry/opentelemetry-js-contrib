@@ -52,6 +52,11 @@ class AzureFunctionsDetector implements DetectorSync {
     let attributes = {};
     const serviceName = process.env[WEBSITE_SITE_NAME];
     const functionVersion = process.env[FUNCTIONS_VERSION];
+
+    /**
+     * Checks that we are operating within an Azure Function using the function version since WEBSITE_SITE_NAME
+     * will exist in Azure App Service as well and detectors should be mutually exclusive.
+     */
     if (serviceName && functionVersion) {
       const functionInstance = process.env[WEBSITE_INSTANCE_ID];
       const functionMemLimit = process.env[FUNCTIONS_MEM_LIMIT];
