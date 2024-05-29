@@ -40,7 +40,7 @@ const DEFAULT_LOG_KEYS = {
   traceFlags: 'trace_flags',
 };
 
-// XXX maybe move levels stuff out to separate utility file
+// XXX maybe move stream and levels stuff out to separate utility file
 
 // This block is a copy (modulo code style and TypeScript types) of the Pino
 // code that defines log level value and names. This file is part of
@@ -179,6 +179,17 @@ export class PinoInstrumentation extends InstrumentationBase {
             // XXX Pino.DestinationStreamWithMetadata
             (otelStream as any)[Symbol.for('pino.metadata')] = true; // for `stream.lastLevel`
 
+            // Warn *once* for first stream error, if any. An error typically
+            // indicates a Pino bug, or logger configuration bug. diag.warn
+            // *once* for the first error on the assumption subsequent ones stem
+            // from the same bug.
+            otelStream.once('unknown', (line, err) => {
+              instrumentation._diag.warn(
+                'could not send pino log line (will only log first occurrence)',
+                {line, err}
+              );
+            });
+
             // Use pino's own `multistream` to send to the original stream and
             // to the OTel Logs API/SDK.
             // https://getpino.io/#/docs/api?id=pinomultistreamstreamsarray-opts-gt-multistreamres
@@ -188,7 +199,6 @@ export class PinoInstrumentation extends InstrumentationBase {
               {level: logger.level, stream: otelStream},
             ])
             // XXX lower level of logger if necessary from logSeverity
-            // XXX issue with custom log levels?
           }
 
           return logger;
@@ -200,6 +210,7 @@ export class PinoInstrumentation extends InstrumentationBase {
         if (typeof patchedPino.default === 'function') {
           patchedPino.default = patchedPino;
         }
+        /* istanbul ignore if */
         if (isESM) {
           if (module.pino) {
             // This was added in pino@6.8.0 (https://github.com/pinojs/pino/pull/936).
@@ -303,32 +314,36 @@ class OTelPinoStream extends Writable {
   }
 
   override _write(s: string, _encoding: string, callback: Function) {
+    /* istanbul ignore if */
     if (!s) {
       return;
     }
 
     // Parse, and handle edge cases similar to how `pino-abtract-transport` does:
     // https://github.com/pinojs/pino-abstract-transport/blob/v1.2.0/index.js#L28-L45
+    // - Emitting an 'unknown' event on parse error mimicks pino-abstract-transport.
     let recObj;
     try {
       recObj = JSON.parse(s);
-    } catch (_err) {
+    } catch (parseErr) {
       // Invalid JSON suggests a bug in Pino, or a logger configuration bug
-      // (a bogus `options.timestamp` or serializer). diag.warn *once* for the
-      // first error on the assumption subsequent ones stem from the same bug.
-      // XXX test for this.
-      // TODO: try `callback(err)` with perhaps an error with more details.
+      // (a bogus `options.timestamp` or serializer).
+      this.emit('unknown', s.toString(), parseErr);
+      callback();
       return;
     }
+    /* istanbul ignore if */
     if (recObj === null) {
+      this.emit('unknown', s.toString(), 'Null value ignored');
+      callback();
       return;
     }
+    /* istanbul ignore if */
     if (typeof recObj !== 'object') {
       recObj = {
         data: recObj,
       };
     }
-    // console.log('XXX recObj: ', recObj)
 
     const {
       time,
@@ -345,6 +360,7 @@ class OTelPinoStream extends Writable {
 
     let timestamp = this._otelTimestampFromTime(time);
     if (isNaN(timestamp)) {
+      attributes['time'] = time; // save the unexpected "time" field to attributes
       timestamp = Date.now();
     }
 
@@ -361,7 +377,6 @@ class OTelPinoStream extends Writable {
       body,
       attributes,
     };
-    // console.log('XXX otelRec: ', otelRec)
 
     this._otelLogger.emit(otelRec);
     callback();

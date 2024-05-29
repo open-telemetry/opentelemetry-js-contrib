@@ -20,6 +20,8 @@ import { Writable } from 'stream';
 import * as semver from 'semver';
 import * as sinon from 'sinon';
 import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
+import { diag, DiagLogLevel } from '@opentelemetry/api';
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import { SEMRESATTRS_SERVICE_NAME  } from '@opentelemetry/semantic-conventions';
 import { Resource } from '@opentelemetry/resources';
 import {
@@ -418,6 +420,7 @@ describe('PinoInstrumentation', () => {
       const logRecords = memExporter.getFinishedLogRecords();
 
       // levels
+      logger.silent('silent');
       logger.trace('at trace level');
       logger.debug('at debug level');
       logger.info('at info level');
@@ -470,31 +473,6 @@ describe('PinoInstrumentation', () => {
       });
     });
 
-    // it('handles log record edge cases', () => {
-    //   let rec;
-    //   const logRecords = memExporter.getFinishedLogRecords();
-
-    //   // A non-Date "time" Bunyan field.
-    //   log.info({ time: 'miller' }, 'hi');
-    //   rec = logRecords[logRecords.length - 1];
-    //   assert.deepEqual(
-    //     rec.hrTime.map(n => typeof n),
-    //     ['number', 'number']
-    //   );
-    //   assert.strictEqual(rec.attributes.time, 'miller');
-
-    //   // An atypical Bunyan level number.
-    //   log.info({ level: 42 }, 'just above Bunyan WARN==40');
-    //   rec = logRecords[logRecords.length - 1];
-    //   assert.strictEqual(rec.severityNumber, SeverityNumber.WARN2);
-    //   assert.strictEqual(rec.severityText, undefined);
-
-    //   log.info({ level: 200 }, 'far above Bunyan FATAL==60');
-    //   rec = logRecords[logRecords.length - 1];
-    //   assert.strictEqual(rec.severityNumber, SeverityNumber.FATAL4);
-    //   assert.strictEqual(rec.severityText, undefined);
-    // });
-
     it('does not emit to the Logs SDK if disableLogSending=true', () => {
       instrumentation.setConfig({ disableLogSending: true });
 
@@ -517,6 +495,144 @@ describe('PinoInstrumentation', () => {
         assert.strictEqual(record['trace_id'], traceId);
         assert.strictEqual(record['span_id'], spanId);
       });
+    });
+
+    it('edge case: non-time "time" field is stored in attributes', () => {
+      let rec;
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      // Pino will emit a JSON object with two "time" fields, e.g.
+      //    {...,"time":1716933636063,...,"time":"miller"}
+      // JSON *parsing* rules are that the last duplicate key wins, so it
+      // would be nice to maintain that "time" attribute if possible.
+      logger.info({ time: 'miller' }, 'hi');
+      rec = logRecords[logRecords.length - 1];
+      assert.deepEqual(rec.hrTime.map(n => typeof n), ['number', 'number']);
+      assert.strictEqual(rec.attributes.time, 'miller');
+    });
+
+    it('edge case: custom "timestamp" option', () => {
+      let otelRec, pinoRec;
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      logger = pino({ timestamp: false }, stream);
+      logger.info('using false');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.deepEqual(otelRec.hrTime.map(n => typeof n), ['number', 'number']);
+      assert.strictEqual(pinoRec.time, undefined);
+
+      logger = pino({ timestamp: pino.stdTimeFunctions.epochTime }, stream);
+      logger.info('using epochTime');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.strictEqual(hrTimeToMilliseconds(otelRec.hrTime), pinoRec.time)
+
+      logger = pino({ timestamp: pino.stdTimeFunctions.unixTime }, stream);
+      logger.info('using unixTime');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.strictEqual(hrTimeToMilliseconds(otelRec.hrTime), pinoRec.time * 1e3);
+
+      logger = pino({ timestamp: pino.stdTimeFunctions.isoTime }, stream);
+      logger.info('using isoTime');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.strictEqual(
+        hrTimeToMilliseconds(otelRec.hrTime),
+        new Date(pinoRec.time).getTime());
+
+      logger = pino({ timestamp: () => ',"time":"quittin"' }, stream);
+      logger.info('using custom timestamp fn');
+      otelRec = logRecords[logRecords.length - 1];
+      pinoRec = JSON.parse(writeSpy.lastCall.args[0].toString());
+      assert.deepEqual(otelRec.hrTime.map(n => typeof n), ['number', 'number']);
+      assert.strictEqual(pinoRec.time, 'quittin');
+      assert.strictEqual(otelRec.attributes.time, 'quittin');
+    });
+
+    // A custom 'timestamp' fn that returns invalid data will result in a Pino
+    // log record line that is invalid JSON. We expect the OTel stream to
+    // gracefully handle this.
+    it('edge case: error parsing pino log line', () => {
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      const diagWarns = [] as any;
+      // This messily leaves the diag logger set for other tests.
+      diag.setLogger({
+        verbose() {},
+        debug() {},
+        info() {},
+        warn(...args) { diagWarns.push(args) },
+        error() {},
+      }, DiagLogLevel.WARN);
+
+      logger = pino({ timestamp: () => 'invalid JSON' }, stream);
+      logger.info('using custom timestamp fn returning bogus result');
+      assert.strictEqual(logRecords.length, 0);
+      assert.ok(writeSpy.lastCall.args[0].toString().includes('invalid JSON'));
+      assert.equal(diagWarns.length, 1);
+      assert.ok(diagWarns[0][1].includes('could not send pino log line'));
+    });
+
+    it('edge case: customLevels', () => {
+      let rec;
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      logger = pino(
+        {
+          customLevels: {
+            foo: pino.levels.values.warn,
+            bar: pino.levels.values.warn - 1, // a little closer to INFO
+            baz: pino.levels.values.warn + 1, // a little above WARN
+          },
+        },
+        stream);
+
+      (logger as any).foo('foomsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN);
+      assert.strictEqual(rec.severityText, 'foo');
+
+      (logger as any).bar('barmsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.INFO4);
+      assert.strictEqual(rec.severityText, 'bar');
+
+      (logger as any).baz('bazmsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN2);
+      assert.strictEqual(rec.severityText, 'baz');
+    });
+
+    // We use multistream internally to write to the OTel SDK. This test ensures
+    // that multistream wrapping of a multistream works.
+    it('edge case: multistream', () => {
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      const stream2 = new Writable();
+      stream2._write = () => {};
+      const writeSpy2 = sinon.spy(stream2, 'write');
+
+      logger = pino(
+        {},
+        pino.multistream([
+          {stream: stream},
+          {stream: stream2},
+        ])
+      );
+      logger.info('using multistream');
+
+      const otelRec = logRecords[logRecords.length - 1];
+      assert.equal(otelRec.body, 'using multistream');
+
+      sinon.assert.calledOnce(writeSpy);
+      const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
+      assert.equal((pinoRec as any).msg, 'using multistream');
+
+      sinon.assert.calledOnce(writeSpy2);
+      const pinoRec2 = JSON.parse(writeSpy2.firstCall.args[0].toString());
+      assert.equal((pinoRec2 as any).msg, 'using multistream');
     });
   });
 
