@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-ioredis",
-  "version": "0.39.0",
-  "description": "OpenTelemetry ioredis automatic instrumentation package.",
+  "version": "0.40.0",
+  "description": "OpenTelemetry instrumentation for `ioredis` database redis client for Redis",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -49,9 +49,10 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
     "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/contrib-test-utils": "^0.38.0",
+    "@opentelemetry/contrib-test-utils": "^0.39.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
+    "@types/ioredis4": "npm:@types/ioredis@4.28.10",
     "@types/mocha": "7.0.2",
     "@types/node": "18.6.5",
     "@types/sinon": "10.0.18",
@@ -66,10 +67,9 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.50.0",
-    "@opentelemetry/redis-common": "^0.36.1",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/ioredis4": "npm:@types/ioredis@^4.28.10"
+    "@opentelemetry/instrumentation": "^0.51.0",
+    "@opentelemetry/redis-common": "^0.36.2",
+    "@opentelemetry/semantic-conventions": "^1.23.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-ioredis#readme"
 }

@@ -32,8 +32,12 @@ import {
 import * as assert from 'assert';
 import { RedisInstrumentation } from '../src';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_REDIS,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new RedisInstrumentation();
@@ -47,16 +51,16 @@ const memoryExporter = new InMemorySpanExporter();
 
 const CONFIG = {
   host: process.env.OPENTELEMETRY_REDIS_HOST || 'localhost',
-  port: process.env.OPENTELEMETRY_REDIS_PORT || '63790',
+  port: Number(process.env.OPENTELEMETRY_REDIS_PORT || 63790),
 };
 
 const URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
 const DEFAULT_ATTRIBUTES = {
-  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
-  [SemanticAttributes.DB_CONNECTION_STRING]: URL,
+  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+  [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
+  [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
+  [SEMATTRS_DB_CONNECTION_STRING]: URL,
 };
 
 const unsetStatus: SpanStatus = {
@@ -192,7 +196,7 @@ describe('redis@2.x', () => {
         it(`should create a child span for ${operation.description}`, done => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: `${operation.command} ${operation.expectedDbStatement}`,
+            [SEMATTRS_DB_STATEMENT]: `${operation.command} ${operation.expectedDbStatement}`,
           };
           const span = tracer.startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
@@ -281,7 +285,7 @@ describe('redis@2.x', () => {
                 operation.args
               );
               assert.strictEqual(
-                endedSpans[0].attributes[SemanticAttributes.DB_STATEMENT],
+                endedSpans[0].attributes[SEMATTRS_DB_STATEMENT],
                 expectedStatement
               );
               done();

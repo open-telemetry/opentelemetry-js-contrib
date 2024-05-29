@@ -99,6 +99,27 @@ npm run test:docker:run
 
 By default, the tests that connect to RabbitMQ are skipped. To make sure these tests are run, you can set the `RUN_RABBIT_TESTS` environment variable to `true`
 
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute                        | Short Description                                                      |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| `messaging.destination`          | The message destination name.                                          |
+| `messaging.destination_kind`     | The kind of message destination.                                       |
+| `messaging.rabbitmq.routing_key` | RabbitMQ message routing key.                                          |
+| `messaging.operation`            | A string identifying the kind of message consumption.                  |
+| `messaging.message_id`           | A value used by the messaging system as an identifier for the message. |
+| `messaging.conversation_id`      | The ID identifying the conversation to which the message belongs.      |
+| `messaging.protocol`             | The name of the transport protocol.                                    |
+| `messaging.protocol_version`     | The version of the transport protocol.                                 |
+| `messaging.system`               | A string identifying the messaging system.                             |
+| `messaging.url`                  | The connection string.                                                 |
+| `net.peer.name`                  | Remote hostname or similar.                                            |
+| `net.peer.port`                  | Remote port number.                                                    |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

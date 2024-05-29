@@ -15,29 +15,27 @@
  */
 
 import { Logger, logs } from '@opentelemetry/api-logs';
-import * as Transport from 'winston-transport';
-import { VERSION } from './version';
+import TransportStream = require('winston-transport');
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { emitLogRecord } from './utils';
 
-export class OpenTelemetryTransportV3 extends Transport {
+export class OpenTelemetryTransportV3 extends TransportStream {
   private _logger: Logger;
 
-  constructor(options?: Transport.TransportStreamOptions) {
+  constructor(options?: TransportStream.TransportStreamOptions) {
     super(options);
-    this._logger = logs.getLogger('@opentelemetry/winston-transport', VERSION);
+    this._logger = logs.getLogger(PACKAGE_NAME, PACKAGE_VERSION);
   }
 
-  public override log(info: any, next: () => void) {
+  public override log(info: any, callback: () => void) {
     try {
       emitLogRecord(info, this._logger);
     } catch (error) {
       this.emit('warn', error);
     }
-    setImmediate(() => {
-      this.emit('logged', info);
-    });
-    if (next) {
-      setImmediate(next);
+    this.emit('logged', info);
+    if (callback) {
+      callback();
     }
   }
 }

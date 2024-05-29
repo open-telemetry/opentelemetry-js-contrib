@@ -118,6 +118,10 @@ const logger = bunyan.createLogger({
 });
 ```
 
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

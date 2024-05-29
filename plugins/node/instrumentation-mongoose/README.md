@@ -52,6 +52,23 @@ The instrumentation's config `responseHook` functions signature changed, so the 
 
 The `moduleVersionAttributeName` config option is removed. To add the mongoose package version to spans, use the `moduleVersion` attribute in hook info for `responseHook` function.
 
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute               | Short Description                                                           |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `db.mongodb.collection` | The collection being accessed within the database stated in `db.name`.      |
+| `db.name`               | This attribute is used to report the name of the database being accessed.   |
+| `db.operation`          | The name of the operation being executed, or the SQL keyword.               |
+| `db.statement`          | The database statement being executed.                                      |
+| `db.system`             | An identifier for the database management system (DBMS) product being used. |
+| `db.user`               | Username for accessing the database.                                        |
+| `net.peer.name`         | Remote hostname or similar.                                                 |
+| `net.peer.port`         | Remote port number.                                                         |
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

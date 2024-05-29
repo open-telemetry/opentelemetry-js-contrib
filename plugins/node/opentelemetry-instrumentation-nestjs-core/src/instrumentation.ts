@@ -25,36 +25,28 @@ import {
 import type { NestFactory } from '@nestjs/core/nest-factory.js';
 import type { RouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
 import type { Controller } from '@nestjs/common/interfaces';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import {
+  SEMATTRS_HTTP_METHOD,
+  SEMATTRS_HTTP_ROUTE,
+  SEMATTRS_HTTP_URL,
+} from '@opentelemetry/semantic-conventions';
 import { AttributeNames, NestType } from './enums';
 
-export class Instrumentation extends InstrumentationBase<any> {
+export class Instrumentation extends InstrumentationBase {
   static readonly COMPONENT = '@nestjs/core';
   static readonly COMMON_ATTRIBUTES = {
     component: Instrumentation.COMPONENT,
   };
 
   constructor(config: InstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-nestjs-core', VERSION);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       Instrumentation.COMPONENT,
-      ['>=4.0.0'],
-      (moduleExports, moduleVersion) => {
-        this._diag.debug(
-          `Patching ${Instrumentation.COMPONENT}@${moduleVersion}`
-        );
-        return moduleExports;
-      },
-      (moduleExports, moduleVersion) => {
-        this._diag.debug(
-          `Unpatching ${Instrumentation.COMPONENT}@${moduleVersion}`
-        );
-        if (moduleExports === undefined) return;
-      }
+      ['>=4.0.0']
     );
 
     module.files.push(
@@ -66,12 +58,11 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   getNestFactoryFileInstrumentation(versions: string[]) {
-    return new InstrumentationNodeModuleFile<any>(
+    return new InstrumentationNodeModuleFile(
       '@nestjs/core/nest-factory.js',
       versions,
       (NestFactoryStatic: any, moduleVersion?: string) => {
         this.ensureWrapped(
-          moduleVersion,
           NestFactoryStatic.NestFactoryStatic.prototype,
           'create',
           createWrapNestFactoryCreate(this.tracer, moduleVersion)
@@ -85,12 +76,11 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   getRouterExecutionContextFileInstrumentation(versions: string[]) {
-    return new InstrumentationNodeModuleFile<any>(
+    return new InstrumentationNodeModuleFile(
       '@nestjs/core/router/router-execution-context.js',
       versions,
       (RouterExecutionContext: any, moduleVersion?: string) => {
         this.ensureWrapped(
-          moduleVersion,
           RouterExecutionContext.RouterExecutionContext.prototype,
           'create',
           createWrapCreateHandler(this.tracer, moduleVersion)
@@ -107,14 +97,10 @@ export class Instrumentation extends InstrumentationBase<any> {
   }
 
   private ensureWrapped(
-    moduleVersion: string | undefined,
     obj: any,
     methodName: string,
     wrapper: (original: any) => any
   ) {
-    this._diag.debug(
-      `Applying ${methodName} patch for ${Instrumentation.COMPONENT}@${moduleVersion}`
-    );
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
     }
@@ -166,29 +152,29 @@ function createWrapCreateHandler(tracer: api.Tracer, moduleVersion?: string) {
     ) {
       arguments[1] = createWrapHandler(tracer, moduleVersion, callback);
       const handler = original.apply(this, arguments as any);
+      const callbackName = callback.name;
+      const instanceName =
+        instance.constructor && instance.constructor.name
+          ? instance.constructor.name
+          : 'UnnamedInstance';
+      const spanName = callbackName
+        ? `${instanceName}.${callbackName}`
+        : instanceName;
+
       return function (
         this: any,
         req: any,
         res: any,
         next: (...args: any[]) => unknown
       ) {
-        const callbackName = callback.name;
-        const instanceName =
-          instance.constructor && instance.constructor.name
-            ? instance.constructor.name
-            : 'UnnamedInstance';
-        const spanName = callbackName
-          ? `${instanceName}.${callbackName}`
-          : instanceName;
-
         const span = tracer.startSpan(spanName, {
           attributes: {
             ...Instrumentation.COMMON_ATTRIBUTES,
             [AttributeNames.VERSION]: moduleVersion,
             [AttributeNames.TYPE]: NestType.REQUEST_CONTEXT,
-            [SemanticAttributes.HTTP_METHOD]: req.method,
-            [SemanticAttributes.HTTP_URL]: req.originalUrl || req.url,
-            [SemanticAttributes.HTTP_ROUTE]:
+            [SEMATTRS_HTTP_METHOD]: req.method,
+            [SEMATTRS_HTTP_URL]: req.originalUrl || req.url,
+            [SEMATTRS_HTTP_ROUTE]:
               req.route?.path || req.routeOptions?.url || req.routerPath,
             [AttributeNames.CONTROLLER]: instanceName,
             [AttributeNames.CALLBACK]: callbackName,
@@ -215,15 +201,17 @@ function createWrapHandler(
   moduleVersion: string | undefined,
   handler: Function
 ) {
+  const spanName = handler.name || 'anonymous nest handler';
+  const options = {
+    attributes: {
+      ...Instrumentation.COMMON_ATTRIBUTES,
+      [AttributeNames.VERSION]: moduleVersion,
+      [AttributeNames.TYPE]: NestType.REQUEST_HANDLER,
+      [AttributeNames.CALLBACK]: handler.name,
+    },
+  };
   const wrappedHandler = function (this: RouterExecutionContext) {
-    const span = tracer.startSpan(handler.name || 'anonymous nest handler', {
-      attributes: {
-        ...Instrumentation.COMMON_ATTRIBUTES,
-        [AttributeNames.VERSION]: moduleVersion,
-        [AttributeNames.TYPE]: NestType.REQUEST_HANDLER,
-        [AttributeNames.CALLBACK]: handler.name,
-      },
-    });
+    const span = tracer.startSpan(spanName, options);
     const spanContext = api.trace.setSpan(api.context.active(), span);
 
     return api.context.with(spanContext, async () => {
