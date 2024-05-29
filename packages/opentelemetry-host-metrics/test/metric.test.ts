@@ -38,8 +38,8 @@ class TestMetricReader extends MetricReader {
   public override selectAggregationTemporality(): AggregationTemporality {
     return AggregationTemporality.CUMULATIVE;
   }
-  protected async onForceFlush(): Promise<void> { }
-  protected async onShutdown(): Promise<void> { }
+  protected async onForceFlush(): Promise<void> {}
+  protected async onShutdown(): Promise<void> {}
 }
 
 let countSI = 0;
@@ -142,7 +142,7 @@ describe('Host Metrics', () => {
       reader = new TestMetricReader();
 
       meterProvider = new MeterProvider({
-        readers: [reader]
+        readers: [reader],
       });
 
       hostMetrics = new HostMetrics({
