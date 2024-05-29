@@ -197,7 +197,7 @@ export class PinoInstrumentation extends InstrumentationBase {
             logger[moduleExports.symbols.streamSym] = moduleExports.multistream([
               {level: logger.level, stream: origStream},
               {level: logger.level, stream: otelStream},
-            ])
+            ], {levels: logger.levels.values})
             // XXX lower level of logger if necessary from logSeverity
           }
 

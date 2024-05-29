@@ -605,6 +605,58 @@ describe('PinoInstrumentation', () => {
       assert.strictEqual(rec.severityText, 'baz');
     });
 
+    it('edge case: customLevels and formatters.level', () => {
+      logger = pino(
+        {
+          customLevels: {
+            foo: pino.levels.values.warn,
+            bar: pino.levels.values.warn - 1, // a little closer to INFO
+          },
+          formatters: {
+            level (label: string, _num: number) {
+              return { level: label }
+            }
+          }
+        },
+        stream);
+
+      const logRecords = memExporter.getFinishedLogRecords();
+      (logger as any).foo('foomsg');
+      const otelRec = logRecords[logRecords.length - 1];
+      assert.strictEqual(otelRec.severityNumber, SeverityNumber.WARN);
+      assert.strictEqual(otelRec.severityText, 'foo');
+
+      sinon.assert.calledOnce(writeSpy);
+      const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
+      assert.equal((pinoRec as any).level, 'foo');
+    });
+
+    it('edge case: customLevels and useOnlyCustomLevels', () => {
+      let rec;
+      const logRecords = memExporter.getFinishedLogRecords();
+
+      logger = pino(
+        {
+          customLevels: {
+            foo: pino.levels.values.warn,
+            bar: pino.levels.values.warn - 1, // a little closer to INFO
+          },
+          useOnlyCustomLevels: true,
+          level: 'bar',
+        },
+        stream);
+
+      (logger as any).foo('foomsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.WARN);
+      assert.strictEqual(rec.severityText, 'foo');
+
+      (logger as any).bar('barmsg');
+      rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.severityNumber, SeverityNumber.INFO4);
+      assert.strictEqual(rec.severityText, 'bar');
+    });
+
     // We use multistream internally to write to the OTel SDK. This test ensures
     // that multistream wrapping of a multistream works.
     it('edge case: multistream', () => {
@@ -633,6 +685,22 @@ describe('PinoInstrumentation', () => {
       sinon.assert.calledOnce(writeSpy2);
       const pinoRec2 = JSON.parse(writeSpy2.firstCall.args[0].toString());
       assert.equal((pinoRec2 as any).msg, 'using multistream');
+    });
+
+    it('edge case: messageKey', () => {
+      logger = pino(
+        { messageKey: 'mymsg' },
+        stream
+      );
+      logger.info('using messageKey');
+
+      const logRecords = memExporter.getFinishedLogRecords();
+      const otelRec = logRecords[logRecords.length - 1];
+      assert.equal(otelRec.body, 'using messageKey');
+
+      sinon.assert.calledOnce(writeSpy);
+      const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
+      assert.equal((pinoRec as any).mymsg, 'using messageKey');
     });
   });
 
