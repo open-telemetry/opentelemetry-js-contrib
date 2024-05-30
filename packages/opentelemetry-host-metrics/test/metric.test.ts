@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as SI from 'systeminformation';
+import * as Network from 'systeminformation/lib/network';
 import type { Systeminformation } from 'systeminformation';
 import { Attributes } from '@opentelemetry/api';
 import {
@@ -26,7 +26,7 @@ import {
   MetricReader,
 } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
-import * as os from 'os';
+import * as os from 'node:os';
 import * as sinon from 'sinon';
 import { ATTRIBUTE_NAMES } from '../src/enum';
 import { HostMetrics } from '../src';
@@ -140,7 +140,7 @@ describe('Host Metrics', () => {
       sandbox
         .stub(process.memoryUsage, 'rss')
         .callsFake(mockedProcess.memoryUsage.rss);
-      sandbox.stub(SI, 'networkStats').callsFake(mockedSI.networkStats);
+      sandbox.stub(Network, 'networkStats').callsFake(mockedSI.networkStats);
 
       reader = new TestMetricReader();
 
