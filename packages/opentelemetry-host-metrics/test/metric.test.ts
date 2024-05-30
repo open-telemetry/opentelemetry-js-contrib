@@ -144,7 +144,9 @@ describe('Host Metrics', () => {
 
       reader = new TestMetricReader();
 
-      meterProvider = new MeterProvider({ readers: [reader] });
+      meterProvider = new MeterProvider({
+        readers: [reader],
+      });
 
       hostMetrics = new HostMetrics({
         meterProvider,

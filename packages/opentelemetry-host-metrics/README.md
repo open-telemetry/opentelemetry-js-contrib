@@ -32,8 +32,9 @@ const exporter = new PrometheusExporter(
   }
 );
 
-const meterProvider = new MeterProvider();
-meterProvider.addMetricReader(exporter);
+const meterProvider = new MeterProvider({
+  readers: [reader],
+});
 
 const hostMetrics = new HostMetrics({ meterProvider, name: 'example-host-metrics' });
 hostMetrics.start();
