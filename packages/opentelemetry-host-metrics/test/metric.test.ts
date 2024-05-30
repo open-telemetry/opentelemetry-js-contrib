@@ -141,8 +141,9 @@ describe('Host Metrics', () => {
 
       reader = new TestMetricReader();
 
-      meterProvider = new MeterProvider();
-      meterProvider.addMetricReader(reader);
+      meterProvider = new MeterProvider({
+        readers: [reader],
+      });
 
       hostMetrics = new HostMetrics({
         meterProvider,
@@ -169,7 +170,7 @@ describe('Host Metrics', () => {
     const sysCpuNumAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_LOGICAL_NUMBER;
     const sysMemStateAttr = ATTRIBUTE_NAMES.SYSTEM_MEMORY_STATE;
     const sysDeviceAttr = ATTRIBUTE_NAMES.SYSTEM_DEVICE;
-    const sysNetDirAttr = ATTRIBUTE_NAMES.SYSTEM_NETWORK_DIRECTION;
+    const sysNetDirAttr = ATTRIBUTE_NAMES.NETWORK_IO_DIRECTION;
     const procCpuStateAttr = ATTRIBUTE_NAMES.PROCESS_CPU_STATE;
 
     it('should export CPU time metrics', async () => {
