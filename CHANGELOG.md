@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # CHANGELOG
 
 As of v0.25.1 (2022-01-24) changelog content has moved to separate CHANGELOG.md files for each package. Use [this search for a list of all CHANGELOG.md files in this repo](https://github.com/search?q=repo%3Aopen-telemetry%2Fopentelemetry-js-contrib+path%3A**%2FCHANGELOG.md&type=code).
