@@ -18,6 +18,7 @@ import { Writable } from 'stream';
 
 import { logs, Logger, SeverityNumber } from '@opentelemetry/api-logs';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { millisToHrTime } from '@opentelemetry/core';
 
 // This block is a copy (modulo code style and TypeScript types) of the Pino
 // code that defines log level value and names. This file is part of
@@ -212,14 +213,22 @@ export class OTelPinoStream extends Writable {
       timestamp = Date.now();
     }
 
+    // This avoids a possible subtle bug when a Pino logger uses
+    // `time: pino.stdTimeFunctions.unixTime` and logs in the first half-second
+    // since process start. The rounding involved results in:
+    //    timestamp < performance.timeOrigin
+    // If that is passed to Logger.emit() it will be misinterpreted by
+    // `timeInputToHrTime` as a `performance.now()` value.
+    const timestampHrTime = millisToHrTime(timestamp);
+
     // Prefer using `stream.lastLevel`, because `recObj.level` can be customized
     // to anything via `formatters.level`
     // (https://getpino.io/#/docs/api?id=formatters-object).
     const lastLevel = (this as any).lastLevel;
 
     const otelRec = {
-      timestamp: timestamp,
-      observedTimestamp: timestamp,
+      timestamp: timestampHrTime,
+      observedTimestamp: timestampHrTime,
       severityNumber: severityNumberFromPinoLevel(lastLevel),
       severityText: this._levels.labels[lastLevel],
       body,
