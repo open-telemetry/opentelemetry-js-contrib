@@ -126,7 +126,8 @@ interface OTelPinoStreamOptions {
 /**
  * A Pino stream for sending records to the OpenTelemetry Logs API.
  *
- * XXX doc 'unknown' event
+ * - This stream emits an 'unknown' event on an unprocessable pino record.
+ *   The event arguments are: `logLine: string`, `err: string | Error`.
  */
 export class OTelPinoStream extends Writable {
   private _otelLogger: Logger;
@@ -186,12 +187,23 @@ export class OTelPinoStream extends Writable {
       time,
       [this._messageKey]: body,
       level, // eslint-disable-line @typescript-eslint/no-unused-vars
-      // XXX doc why dropping these
+
+      // The typical Pino `hostname` and `pid` fields are removed because they
+      // are redundant with the OpenTelemetry `host.name` and `process.pid`
+      // Resource attributes, respectively. This code cannot change the
+      // LoggerProvider's `resource`, so getting the OpenTelemetry equivalents
+      // depends on the user using the OpenTelemetry HostDetector and
+      // ProcessDetector.
+      // https://getpino.io/#/docs/api?id=opt-base
       hostname, // eslint-disable-line @typescript-eslint/no-unused-vars
       pid, // eslint-disable-line @typescript-eslint/no-unused-vars
+
+      // The `trace_id` et al fields that may have been added by the
+      // "log correlation" feature are stripped, because they are redundant.
       trace_id, // eslint-disable-line @typescript-eslint/no-unused-vars
       span_id, // eslint-disable-line @typescript-eslint/no-unused-vars
       trace_flags, // eslint-disable-line @typescript-eslint/no-unused-vars
+
       ...attributes
     } = recObj;
 
