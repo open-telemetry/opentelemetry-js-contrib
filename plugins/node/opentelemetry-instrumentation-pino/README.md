@@ -18,6 +18,7 @@ npm install --save @opentelemetry/instrumentation-pino
 ### Supported versions
 
 - `pino` versions `>=5.14.0 <10`
+  - The "log sending" feature is only supported in pino v7 and later.
 
 ## Usage
 

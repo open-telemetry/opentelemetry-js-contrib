@@ -75,7 +75,8 @@ export class PinoInstrumentation extends InstrumentationBase {
           }
 
           // Setup "log sending" -- sending log records to the Logs API.
-          if (isEnabled && !config.disableLogSending) {
+          // This depends on `pino.multistream`, which was added in v7.0.0.
+          if (isEnabled && !config.disableLogSending && typeof moduleExports.multistream === 'function') {
             const otelTimestampFromTime = getTimeConverter(
               logger,
               moduleExports

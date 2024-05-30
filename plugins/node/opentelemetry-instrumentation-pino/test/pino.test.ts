@@ -269,12 +269,6 @@ describe('PinoInstrumentation', () => {
         assert.strictEqual(record['span_id'], undefined);
         assert.strictEqual(record['trace_flags'], undefined);
         assert.strictEqual(record['resource.service.name'], undefined);
-
-        assert.strictEqual(
-          memExporter.getFinishedLogRecords().length,
-          1,
-          'Log sending still works'
-        );
       });
     });
 
@@ -403,6 +397,12 @@ describe('PinoInstrumentation', () => {
     let logger: Pino.Logger;
     let stream: Writable;
     let writeSpy: sinon.SinonSpy;
+
+    before(function () {
+      if (typeof pino.multistream !== 'function') {
+        this.skip();
+      }
+    })
 
     beforeEach(() => {
       instrumentation.setConfig({}); // reset to defaults
