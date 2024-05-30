@@ -26,7 +26,7 @@ import {
   MetricReader,
 } from '@opentelemetry/sdk-metrics';
 import * as assert from 'assert';
-import * as os from 'node:os';
+import * as os from 'os';
 import * as sinon from 'sinon';
 import { ATTRIBUTE_NAMES } from '../src/enum';
 import { HostMetrics } from '../src';
@@ -39,8 +39,8 @@ class TestMetricReader extends MetricReader {
   public override selectAggregationTemporality(): AggregationTemporality {
     return AggregationTemporality.CUMULATIVE;
   }
-  protected async onForceFlush(): Promise<void> {}
-  protected async onShutdown(): Promise<void> {}
+  protected async onForceFlush(): Promise<void> { }
+  protected async onShutdown(): Promise<void> { }
 }
 
 let countSI = 0;
