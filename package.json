@@ -26,7 +26,9 @@
     "lint": "lerna run lint",
     "lint:fix": "lerna run lint:fix",
     "lint:examples": "eslint ./examples/**/*.js",
-    "lint:examples:fix": "eslint ./examples/**/*.js --fix"
+    "lint:examples:fix": "eslint ./examples/**/*.js --fix",
+    "lint:markdown": "markdownlint-cli2 $(git ls-files '*.md')",
+    "lint:markdown:fix": "markdownlint-cli2 --fix $(git ls-files '*.md')"
   },
   "keywords": [
     "opentelemetry",
@@ -51,6 +53,7 @@
     "glob": "^10.3.10",
     "lerna": "6.6.2",
     "lerna-changelog": "2.2.0",
+    "markdownlint-cli2": "0.13.0",
     "minimatch": "^9.0.3",
     "prettier": "2.8.8",
     "semver": "^7.6.0",

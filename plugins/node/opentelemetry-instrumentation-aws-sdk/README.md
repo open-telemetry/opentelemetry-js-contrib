@@ -56,7 +56,7 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 Both V2 and V3 instrumentations are collecting the following attributes:
 | Attribute Name | Type | Description | Example |
 | -------------- | ---- | ----------- | ------- |
-| `rpc.system` | string | Always equals "aws-api" |
+| `rpc.system` | string | Always equals "aws-api" | |
 | `rpc.method` | string | he name of the operation corresponding to the request, as returned by the AWS SDK. If the SDK does not provide a way to retrieve a name, the name of the command SHOULD be used, removing the suffix `Command` if present, resulting in a PascalCase name with no spaces. | `PutObject` |
 | `rpc.service` | string | The name of the service to which a request is made, as returned by the AWS SDK. If the SDK does not provide a away to retrieve a name, the name of the SDK's client interface for a service SHOULD be used, removing the suffix `Client` if present, resulting in a PascalCase name with no spaces. | `S3`, `DynamoDB`, `Route53` |
 | `aws.region` | string | Region name for the request | "eu-west-1" |
