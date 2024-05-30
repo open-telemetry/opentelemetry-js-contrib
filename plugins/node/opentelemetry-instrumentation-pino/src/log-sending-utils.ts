@@ -83,7 +83,6 @@ function severityNumberFromPinoLevel(lvl: number) {
   return otelSevValue;
 }
 
-
 /**
  * Return a function that knows how to convert the "time" field value on a
  * Pino log record to an OTel LogRecord timestamp value.

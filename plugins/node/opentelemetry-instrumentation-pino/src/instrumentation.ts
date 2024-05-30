@@ -76,7 +76,10 @@ export class PinoInstrumentation extends InstrumentationBase {
 
           // Setup "log sending" -- sending log records to the Logs API.
           if (isEnabled && !config.disableLogSending) {
-            const otelTimestampFromTime = getTimeConverter(logger, moduleExports);
+            const otelTimestampFromTime = getTimeConverter(
+              logger,
+              moduleExports
+            );
             const otelStream = new OTelPinoStream({
               messageKey: logger[moduleExports.symbols.messageKeySym],
               levels: logger.levels,

@@ -501,7 +501,6 @@ describe('PinoInstrumentation', () => {
     });
 
     it('edge case: non-time "time" field is stored in attributes', () => {
-      let rec;
       const logRecords = memExporter.getFinishedLogRecords();
 
       // Pino will emit a JSON object with two "time" fields, e.g.
@@ -509,7 +508,7 @@ describe('PinoInstrumentation', () => {
       // JSON *parsing* rules are that the last duplicate key wins, so it
       // would be nice to maintain that "time" attribute if possible.
       logger.info({ time: 'miller' }, 'hi');
-      rec = logRecords[logRecords.length - 1];
+      const rec = logRecords[logRecords.length - 1];
       assert.deepEqual(
         rec.hrTime.map(n => typeof n),
         ['number', 'number']
