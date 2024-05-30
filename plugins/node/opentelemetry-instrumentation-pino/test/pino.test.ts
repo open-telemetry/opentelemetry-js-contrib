@@ -402,7 +402,7 @@ describe('PinoInstrumentation', () => {
       if (typeof pino.multistream !== 'function') {
         this.skip();
       }
-    })
+    });
 
     beforeEach(() => {
       instrumentation.setConfig({}); // reset to defaults
