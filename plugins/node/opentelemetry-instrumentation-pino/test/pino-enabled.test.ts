@@ -239,10 +239,8 @@ describe('PinoInstrumentation', () => {
       });
     });
   });
+
   describe('ESM usage', () => {
-    beforeEach(() => {
-      testContext = setupInstrumentationAndInitTestContext();
-    });
     it('should work with ESM default import', async function () {
       testContext = setupInstrumentationAndInitTestContext();
       let logRecords: any[];
