@@ -150,7 +150,7 @@ With the exception of the stable status, it is up to each individual [component 
 A component may only be marked stable with the approval of a member of @open-telemetry/javascript-maintainers; see the definition of stable below for more details.
 
 A Pull Request modifying components in any stage of the lifecycle is subject to the
-[Pull Request Merge Requirements](#pull-request-merge-requirements).
+[Pull Request Merge Guidelines](#pull-request-merge-guidelines).
 
 ### Unreleased
 
