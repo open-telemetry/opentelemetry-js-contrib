@@ -102,3 +102,26 @@ describe('AzureFunctionsDetector', () => {
     );
   });
 });
+
+it('should detect azure functions if websiteSku is defined as FlexConsumption', () => {
+  process.env.WEBSITE_SITE_NAME = 'test-service';
+  process.env.REGION_NAME = 'test-region';
+  process.env.WEBSITE_INSTANCE_ID = 'test-instance-id';
+  process.env.WEBSITE_SKU = 'FlexConsumption';
+  process.env.WEBSITE_MEMORY_LIMIT_MB = '1000';
+  process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
+  process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
+
+  const resource = detectResourcesSync({
+    detectors: [azureFunctionsDetector, azureAppServiceDetector],
+  });
+  assert.ok(resource);
+  const attributes = resource.attributes;
+  assert.strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-service');
+  assert.strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
+
+  // Should not detect app service values
+  assert.strictEqual(attributes[SEMRESATTRS_SERVICE_INSTANCE_ID], undefined);
+  assert.strictEqual(attributes[SEMRESATTRS_PROCESS_PID], process.pid);
+  delete process.env.WEBSITE_SKU;
+});

@@ -29,13 +29,12 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   WEBSITE_SITE_NAME,
-  FUNCTIONS_VERSION,
   WEBSITE_INSTANCE_ID,
   FUNCTIONS_MEM_LIMIT,
   REGION_NAME,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
 } from '../types';
-import { getAzureResourceUri } from '../utils';
+import { getAzureResourceUri, isAzureFunction } from '../utils';
 
 const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
   [SEMRESATTRS_SERVICE_NAME]: WEBSITE_SITE_NAME,
@@ -51,13 +50,13 @@ class AzureFunctionsDetector implements DetectorSync {
   detect(): IResource {
     let attributes = {};
     const serviceName = process.env[WEBSITE_SITE_NAME];
-    const functionVersion = process.env[FUNCTIONS_VERSION];
 
     /**
      * Checks that we are operating within an Azure Function using the function version since WEBSITE_SITE_NAME
      * will exist in Azure App Service as well and detectors should be mutually exclusive.
+     * If the function version is not present, we check for the website sku to determine if it is a function.
      */
-    if (serviceName && functionVersion) {
+    if (serviceName && isAzureFunction()) {
       const functionInstance = process.env[WEBSITE_INSTANCE_ID];
       const functionMemLimit = process.env[FUNCTIONS_MEM_LIMIT];
 

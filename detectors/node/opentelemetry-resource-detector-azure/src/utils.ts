@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { WEBSITE_OWNER_NAME, WEBSITE_RESOURCE_GROUP } from './types';
+import {
+  FUNCTIONS_VERSION,
+  WEBSITE_OWNER_NAME,
+  WEBSITE_RESOURCE_GROUP,
+  WEBSITE_SKU,
+} from './types';
 
 export function getAzureResourceUri(
   websiteSiteName: string
@@ -32,4 +37,11 @@ export function getAzureResourceUri(
   }
 
   return `/subscriptions/${subscriptionId}/resourceGroups/${websiteResourceGroup}/providers/Microsoft.Web/sites/${websiteSiteName}`;
+}
+
+export function isAzureFunction(): boolean {
+  return !!(
+    process.env[FUNCTIONS_VERSION] ||
+    process.env[WEBSITE_SKU] === 'FlexConsumption'
+  );
 }
