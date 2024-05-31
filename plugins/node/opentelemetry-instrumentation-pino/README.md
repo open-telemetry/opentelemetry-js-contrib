@@ -15,7 +15,7 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-pino
 ```
 
-### Supported versions
+## Supported versions
 
 - `pino` versions `>=5.14.0 <10`
   - The "log sending" feature is only supported in pino v7 and later.
@@ -103,6 +103,16 @@ Log injection can be disabled with the `disableLogCorrelation: true` option.
 ## Semantic Conventions
 
 This package does not currently generate any attributes from semantic conventions.
+
+## Alternative log sending with `pino-opentelemetry-transport`
+
+A possible alternative to the "log sending" support provided by this instrumentation is the [`pino-opentelemetry-transport` package](https://github.com/pinojs/pino-opentelemetry-transport).
+
+Every Pino logger has an output ["destination"](https://getpino.io/#/docs/api?id=destination), for example, a file or stdout.  Since v7, Pino includes support for ["transports"](https://getpino.io/#/docs/transports), a type of destination that uses a [worker thread](https://nodejs.org/api/worker_threads.html) to run the transport code. When calling `logger.info("hi")`, Pino serializes the log record to a JSON string, [sends that string to the worker](https://nodejs.org/api/worker_threads.html#workerpostmessagevalue-transferlist) for it to be handled.
+
+The `pino-opentelemetry-transport` package uses this mechanism. It starts an OpenTelemetry SDK `LoggerProvider` in the worker thread, parses each log record string, translates it into the OpenTelemetry Logs data model and sends it. Note that this `LoggerProvider` is independent of any OpenTelemetry SDK components in the main thread.
+
+The log sending support in this instrumentation works on the main thread and uses the OpenTelemetry SDK configured in the main thread. Otherwise the two mechanisms are very similar. Note that because they are maintained separately, there might be small differences in how Pino log records are translated into the OpenTelemetry Logs data model.
 
 ## Useful links
 
