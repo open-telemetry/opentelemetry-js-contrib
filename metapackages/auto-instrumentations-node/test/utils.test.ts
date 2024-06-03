@@ -188,7 +188,7 @@ describe('utils', () => {
       assert.deepStrictEqual(getPropagator().fields(), ['b3', 'uber-trace-id']);
     });
 
-    it('should return no-op propgator if propagator all propagators are unknown', () => {
+    it('should return no-op propagator if all propagators are unknown', () => {
       process.env.OTEL_PROPAGATORS = 'my, unknown, propagators';
       assert.deepStrictEqual(getPropagator().fields(), []);
     });
