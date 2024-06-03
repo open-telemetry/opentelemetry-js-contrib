@@ -104,6 +104,7 @@ describe('AzureFunctionsDetector', () => {
 });
 
 it('should detect azure functions if websiteSku is defined as FlexConsumption', () => {
+  assert.ok(!process.env.WEBSITE_SKU && !process.env.FUNCTIONS_VERSION);
   process.env.WEBSITE_SITE_NAME = 'test-service';
   process.env.REGION_NAME = 'test-region';
   process.env.WEBSITE_INSTANCE_ID = 'test-instance-id';
