@@ -13,42 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/**
- * CPU usage data
- */
-export interface CpuUsageData {
-  cpuNumber: string;
-  system: number;
-  user: number;
-  idle: number;
-  nice: number;
-  interrupt: number;
-  systemP: number;
-  userP: number;
-  idleP: number;
-  interruptP: number;
-  niceP: number;
-}
-
-/**
- * Process CPU usage data
- */
-export interface ProcessCpuUsageData {
-  system: number;
-  user: number;
-  systemP: number;
-  userP: number;
-}
-
-/**
- * Memory data
- */
-export interface MemoryData {
-  used: number;
-  free: number;
-  // cached: number;
-  usedP: number;
-  freeP: number;
-  // cachedP: number;
+declare module 'systeminformation/lib/network' {
+  export { networkStats } from 'systeminformation';
 }
