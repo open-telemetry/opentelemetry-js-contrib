@@ -5,3 +5,5 @@ The library contains the following changes compared to the original:
 * Changed the function signature of `responseHook`.
 * Removed dependency on `is-promise` package.
 * Removed usage of SemanticAttributes in favor of explicit values.
+* Removed parsing of db operation from raw queries.
+* Changed db.database.parameters to db.typeorm.parameters.
