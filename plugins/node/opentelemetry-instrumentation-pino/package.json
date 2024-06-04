@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-pino",
   "version": "0.39.0",
-  "description": "OpenTelemetry instrumentation for pino",
+  "description": "OpenTelemetry instrumentation for `pino` logger",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",

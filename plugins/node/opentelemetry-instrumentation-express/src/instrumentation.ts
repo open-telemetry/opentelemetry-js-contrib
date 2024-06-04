@@ -33,7 +33,7 @@ import {
   isLayerIgnored,
   storeLayerPath,
 } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -52,7 +52,7 @@ import {
 /** Express instrumentation for OpenTelemetry */
 export class ExpressInstrumentation extends InstrumentationBase {
   constructor(config: ExpressInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-express', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override setConfig(config: ExpressInstrumentationConfig = {}) {

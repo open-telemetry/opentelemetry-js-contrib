@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-amqplib",
   "version": "0.37.0",
-  "description": "OpenTelemetry automatic instrumentation for the `amqplib` package",
+  "description": "OpenTelemetry instrumentation for the `amqplib` messaging client for RabbitMQ",
   "keywords": [
     "amqplib",
     "opentelemetry",
@@ -27,7 +27,7 @@
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf build/*",
-    "compile": "npm run version:update && tsc -p .",
+    "compile": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-amqplib --include-dependencies",

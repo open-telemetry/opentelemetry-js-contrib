@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as os from 'os';
-
-import { CpuUsageData, MemoryData, ProcessCpuUsageData } from '../types';
+import { cpus, totalmem, freemem } from 'os';
+import type { CpuInfo } from 'os';
+import type { CpuUsageData, MemoryData, ProcessCpuUsageData } from '../types';
 
 const MILLISECOND = 1 / 1e3;
 const MICROSECOND = 1 / 1e6;
@@ -25,9 +25,9 @@ const MICROSECOND = 1 / 1e6;
  * We get data as soon as we load the module so the 1st collect
  * of the metric already has valuable data to be sent.
  */
-let prevOsData: { time: number; cpus: os.CpuInfo[] } = {
+let prevOsData: { time: number; cpus: CpuInfo[] } = {
   time: Date.now(),
-  cpus: os.cpus(),
+  cpus: cpus(),
 };
 
 /**
@@ -38,7 +38,7 @@ let prevOsData: { time: number; cpus: os.CpuInfo[] } = {
 export function getCpuUsageData(): CpuUsageData[] {
   const currentTime = Date.now();
   const timeElapsed = currentTime - prevOsData.time;
-  const currentOsData = { time: currentTime, cpus: os.cpus() };
+  const currentOsData = { time: currentTime, cpus: cpus() };
 
   const usageData = currentOsData.cpus.map((cpu, cpuNumber) => {
     const prevTimes = prevOsData.cpus[cpuNumber].times;
@@ -121,8 +121,8 @@ export function getProcessCpuUsageData(): ProcessCpuUsageData {
  * Returns memory data as absolute values
  */
 export function getMemoryData(): MemoryData {
-  const total = os.totalmem();
-  const free = os.freemem();
+  const total = totalmem();
+  const free = freemem();
 
   const used = total - free;
 

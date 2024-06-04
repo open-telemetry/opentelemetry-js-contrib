@@ -44,7 +44,7 @@ let instrumentation: MongoDBInstrumentation;
 
 import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation-Tracing-v5', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -337,7 +337,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
             );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
             done();
@@ -383,7 +383,7 @@ describe('MongoDBInstrumentation-Tracing-v5', () => {
               );
               const mongoSpan = spans.find(s => s.name === operationName);
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+                mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();

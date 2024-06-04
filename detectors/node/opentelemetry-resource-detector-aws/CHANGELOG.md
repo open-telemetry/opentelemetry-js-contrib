@@ -1,70 +1,11 @@
 # Changelog
 
-### Dependencies
+## [1.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.4.2...resource-detector-aws-v1.5.0) (2024-05-15)
 
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.30.0 to ^0.31.0
 
-### Dependencies
+### Features
 
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.32.0
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.32.0 to ^0.33.0
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.33.3 to ^0.33.4
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.34.1 to ^0.34.2
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.34.2 to ^0.34.3
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.35.0 to ^0.35.1
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.35.1 to ^0.36.0
+* add support for cloud.resource_id to AWS ECS detector ([#1936](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1936)) ([cc71492](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cc714922b931ce39595ef0b257114b4e797ba6a9))
 
 ## [1.4.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-aws-v1.4.1...resource-detector-aws-v1.4.2) (2024-04-25)
 
