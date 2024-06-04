@@ -17,7 +17,7 @@ import type { Span } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export enum ExtendedDatabaseAttribute {
-  DB_STATEMENT_PARAMETERS = 'db.statement.parameters',
+  DB_STATEMENT_PARAMETERS = 'db.typeorm.parameters',
 }
 
 export interface HookInfo {
