@@ -27,7 +27,7 @@ import {
   InstrumentationModuleDefinition,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   SEMATTRS_DB_OPERATION,
   SEMATTRS_DB_STATEMENT,
@@ -61,7 +61,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
   protected override _config!: MongooseInstrumentationConfig;
 
   constructor(config: MongooseInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mongoose', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override setConfig(config: MongooseInstrumentationConfig = {}) {
@@ -330,6 +330,7 @@ export class MongooseInstrumentation extends InstrumentationBase {
           exec,
           originalThis,
           span,
+          args,
           self._config.responseHook,
           moduleVersion
         )

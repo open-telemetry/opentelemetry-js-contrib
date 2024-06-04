@@ -1,11 +1,5 @@
 # Changelog
 
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
-
 ## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.42.0...instrumentation-mongodb-v0.43.0) (2024-04-25)
 
 
