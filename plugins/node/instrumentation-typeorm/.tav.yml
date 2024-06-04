@@ -1,0 +1,4 @@
+'typeorm':
+  versions: ">0.2.28"
+  commands:
+    - npm run test
