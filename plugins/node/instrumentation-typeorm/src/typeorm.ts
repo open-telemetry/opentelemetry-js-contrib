@@ -334,20 +334,6 @@ export class TypeormInstrumentation extends InstrumentationBase {
     };
   }
 
-  private getOperationName(statement: string) {
-    let operation = 'raw query';
-    if (typeof statement === 'string') {
-      statement = statement.trim();
-      try {
-        operation = statement.split(' ')[0].toUpperCase();
-      } catch (e) {
-        /* */
-      }
-    }
-
-    return operation;
-  }
-
   private _patchRawQuery() {
     const self = this;
     return (original: Function) => {
@@ -358,7 +344,7 @@ export class TypeormInstrumentation extends InstrumentationBase {
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sql = args[0] as any;
-        const operation = self.getOperationName(sql);
+        const operation = 'raw query';
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const connectionOptions: any = this.options;
         const attributes = {

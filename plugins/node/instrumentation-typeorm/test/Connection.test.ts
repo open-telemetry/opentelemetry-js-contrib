@@ -58,7 +58,7 @@ describe('Connection', () => {
       const attributes = typeOrmSpans[0].attributes;
       assert.strictEqual(attributes[SEMATTRS_DB_SYSTEM], options.type);
       assert.strictEqual(attributes[SEMATTRS_DB_NAME], options.database);
-      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'SELECT');
+      assert.strictEqual(attributes[SEMATTRS_DB_OPERATION], 'raw query');
       assert.strictEqual(attributes[SEMATTRS_DB_STATEMENT], query);
       await connection.close();
     });
