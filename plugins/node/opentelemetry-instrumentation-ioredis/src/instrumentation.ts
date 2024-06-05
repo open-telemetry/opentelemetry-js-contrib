@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import { diag, trace, context, SpanKind } from '@opentelemetry/api';
+import {
+  diag,
+  trace,
+  context,
+  SpanKind,
+  SpanStatusCode,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -31,7 +37,6 @@ import {
   SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import { endSpan } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -155,6 +160,23 @@ export class IORedisInstrumentation extends InstrumentationBase {
         [SEMATTRS_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
 
+      let spanHasEnded = false;
+      function endSpan(err: NodeJS.ErrnoException | null | undefined) {
+        if (spanHasEnded) {
+          return;
+        }
+
+        if (err) {
+          span.recordException(err);
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: err.message,
+          });
+        }
+        span.end();
+        spanHasEnded = true;
+      }
+
       try {
         const result = original.apply(this, arguments);
 
@@ -171,19 +193,19 @@ export class IORedisInstrumentation extends InstrumentationBase {
             true
           );
 
-          endSpan(span, null);
+          endSpan(null);
           origResolve(result);
         };
 
         const origReject = cmd.reject;
         cmd.reject = function (err: Error) {
-          endSpan(span, err);
+          endSpan(err);
           origReject(err);
         };
 
         return result;
       } catch (error: any) {
-        endSpan(span, error);
+        endSpan(error);
         throw error;
       }
     };
@@ -213,12 +235,30 @@ export class IORedisInstrumentation extends InstrumentationBase {
         [SEMATTRS_NET_PEER_PORT]: port,
         [SEMATTRS_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
+
+      let spanHasEnded = false;
+      function endSpan(err: NodeJS.ErrnoException | null | undefined) {
+        if (spanHasEnded) {
+          return;
+        }
+
+        if (err) {
+          span.recordException(err);
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: err.message,
+          });
+        }
+        span.end();
+        spanHasEnded = true;
+      }
+
       try {
         const client = original.apply(this, arguments);
-        endSpan(span, null);
+        endSpan(null);
         return client;
       } catch (error: any) {
-        endSpan(span, error);
+        endSpan(error);
         throw error;
       }
     };
