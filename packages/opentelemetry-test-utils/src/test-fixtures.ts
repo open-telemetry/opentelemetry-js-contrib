@@ -30,7 +30,7 @@ import {
   ISpan,
 } from '@opentelemetry/otlp-transformer';
 import { NodeSDK, tracing } from '@opentelemetry/sdk-node';
-import type { InstrumentationOption } from '@opentelemetry/instrumentation';
+import type { Instrumentation } from '@opentelemetry/instrumentation';
 
 /**
  * A utility for scripts that will be run with `runTestFixture()` to create an
@@ -42,7 +42,7 @@ import type { InstrumentationOption } from '@opentelemetry/instrumentation';
  */
 export function createTestNodeSdk(opts: {
   serviceName?: string;
-  instrumentations: InstrumentationOption[];
+  instrumentations: (Instrumentation | Instrumentation[])[]
 }) {
   const spanProcessor = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
     ? undefined
