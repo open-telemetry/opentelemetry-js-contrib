@@ -42,7 +42,7 @@ import type { Instrumentation } from '@opentelemetry/instrumentation';
  */
 export function createTestNodeSdk(opts: {
   serviceName?: string;
-  instrumentations: (Instrumentation | Instrumentation[])[]
+  instrumentations: (Instrumentation | Instrumentation[])[];
 }) {
   const spanProcessor = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
     ? undefined
