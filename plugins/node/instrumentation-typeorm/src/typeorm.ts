@@ -40,7 +40,7 @@ import {
   isTypeormInternalTracingSuppressed,
   suppressTypeormInternalTracing,
 } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import type * as typeorm from 'typeorm';
 import {
   InstrumentationBase,
@@ -94,7 +94,7 @@ const entityManagerMethods: EntityManagerMethods[] = [
 export class TypeormInstrumentation extends InstrumentationBase {
   protected override _config!: TypeormInstrumentationConfig;
   constructor(config: TypeormInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-typeorm', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected init() {
