@@ -30,6 +30,7 @@
     "plugins/node/instrumentation-kafkajs": {},
     "plugins/node/instrumentation-lru-memoizer": {},
     "plugins/node/instrumentation-mongoose": {},
+    "plugins/node/instrumentation-mongoose-7": {},
     "plugins/node/instrumentation-runtime-node": {},
     "plugins/node/instrumentation-socket.io": {},
     "plugins/node/instrumentation-tedious": {},
