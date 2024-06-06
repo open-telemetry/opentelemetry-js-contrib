@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-restify",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "description": "OpenTelemetry instrumentation for `restify` http web application framework",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.51.0",
+    "@opentelemetry/instrumentation": "^0.52.0",
     "@opentelemetry/semantic-conventions": "^1.22.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-restify#readme"

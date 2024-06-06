@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.38.0...instrumentation-document-load-v0.39.0) (2024-06-06)
+
+
+### Features
+
+* **instrumentation-document-load:** Add ability to disable span events ([#2188](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2188)) ([50ff98b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/50ff98bb219e955ea45422cfb63870af7b8b82ea))
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.37.0...instrumentation-document-load-v0.38.0) (2024-04-25)
 
 

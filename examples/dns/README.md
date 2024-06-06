@@ -36,7 +36,7 @@ npm run zipkin:client
 `zipkin:client` script should output the `traceid` in the terminal (e.g `traceid: 4815c3d576d930189725f1f1d1bdfcc6`).
 Go to Zipkin with your browser <http://localhost:9411/zipkin/traces/(your-trace-id)> (e.g <http://localhost:9411/zipkin/traces/4815c3d576d930189725f1f1d1bdfcc6>)
 
-<p align="center"><img src="./images/zipkin-ui.png?raw=true"/></p>
+<p align="center"><img alt="Zipkin UI with trace" src="./images/zipkin-ui.png?raw=true"/></p>
 
 ### Jaeger
 
@@ -52,7 +52,7 @@ Go to Zipkin with your browser <http://localhost:9411/zipkin/traces/(your-trace-
 `jaeger:client` script should output the `traceid` in the terminal (e.g `traceid: 4815c3d576d930189725f1f1d1bdfcc6`).
 Go to Jaeger with your browser <http://localhost:16686/trace/(your-trace-id)> (e.g <http://localhost:16686/trace/4815c3d576d930189725f1f1d1bdfcc6>)
 
-<p align="center"><img src="images/jaeger-ui.png?raw=true"/></p>
+<p align="center"><img alt="Jaeger UI with trace" src="images/jaeger-ui.png?raw=true"/></p>
 
 ## Useful links
 
