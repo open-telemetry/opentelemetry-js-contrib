@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-undici",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OpenTelemetry instrumentation for `undici` http client and Node.js fetch()",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
