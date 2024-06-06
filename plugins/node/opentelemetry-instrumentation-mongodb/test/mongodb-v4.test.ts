@@ -395,7 +395,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
             );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
             );
             assert.deepEqual(dbStatement, {
               aggregate: '?',
