@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cucumber",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "OpenTelemetry instrumentation for `@cucumber/cucumber` automated tests runner",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",

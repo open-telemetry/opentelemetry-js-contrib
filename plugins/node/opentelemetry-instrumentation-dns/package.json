@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dns",
-  "version": "0.36.1",
+  "version": "0.37.0",
   "description": "OpenTelemetry instrumentation for `node:dns` name resolution module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
