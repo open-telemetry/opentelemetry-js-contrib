@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.41.0...instrumentation-pg-v0.42.0) (2024-06-06)
+
+
+### Features
+
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
+
+### Performance Improvements
+
+* **instrumentation-pg:** do not split query to determine operation name ([#2029](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2029)) ([816611e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/816611e47e71ce1478f4749fe7b6ba923b8d473a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
+
 ## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.40.0...instrumentation-pg-v0.41.0) (2024-04-25)
 
 
