@@ -1,10 +1,98 @@
 # Changelog
 
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-socket.io-v0.39.0...instrumentation-socket.io-v0.40.0) (2024-06-06)
+
+
+### Features
+
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
+
 ### Dependencies
 
 * The following workspace dependencies were updated
   * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
+
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-socket.io-v0.38.0...instrumentation-socket.io-v0.39.0) (2024-04-25)
+
+
+### Features
+
+* **deps:** update otel-js to 0.51.0 ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+* remove generic type from instrumentations ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.38.0 to ^0.39.0
+
+## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-socket.io-v0.37.0...instrumentation-socket.io-v0.38.0) (2024-04-03)
+
+
+### Features
+
+* **deps:** update otel-js to 1.23.0/0.50.0 ([#2076](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2076)) ([d5f079b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d5f079b3992395dcfb3b791c9fdaeefd6d6526f8))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.37.0 to ^0.38.0
+
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-socket.io-v0.36.0...instrumentation-socket.io-v0.37.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.36.0 to ^0.37.0
+
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-socket.io-v0.35.0...instrumentation-socket.io-v0.36.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.1 to ^0.36.0
+
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-socket.io-v0.34.4...instrumentation-socket.io-v0.35.0) (2024-01-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-mongoose, instrumentation-socket.io:** bump engines from >=14.0 to >=14 ([#1843](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1843))
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
+
+### Miscellaneous Chores
+
+* **instrumentation-mongoose, instrumentation-socket.io:** bump engines from &gt;=14.0 to >=14 ([#1843](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1843)) ([67bb0ca](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/67bb0cadb078ba3b8d4679b65f06ae68c4550598))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.35.0 to ^0.35.1
 
 ## [0.34.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-socket.io-v0.34.2...instrumentation-socket.io-v0.34.3) (2023-11-13)
 

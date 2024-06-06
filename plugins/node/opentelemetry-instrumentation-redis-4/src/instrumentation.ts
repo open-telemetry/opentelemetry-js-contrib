@@ -15,7 +15,6 @@
  */
 
 import {
-  diag,
   trace,
   context,
   SpanKind,
@@ -31,14 +30,15 @@ import {
 import { getClientAttributes } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
 import { RedisInstrumentationConfig } from './types';
-import { VERSION } from './version';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
+import type { MultiErrorReply } from './internal-types';
 
 const OTEL_OPEN_SPANS = Symbol(
-  'opentelemetry.instruemntation.redis.open_spans'
+  'opentelemetry.instrumentation.redis.open_spans'
 );
 const MULTI_COMMAND_OPTIONS = Symbol(
-  'opentelemetry.instruemntation.redis.multi_command_options'
+  'opentelemetry.instrumentation.redis.multi_command_options'
 );
 
 interface MutliCommandInfo {
@@ -51,11 +51,13 @@ const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
 };
 
-export class RedisInstrumentation extends InstrumentationBase<any> {
+export class RedisInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = 'redis';
 
-  constructor(protected override _config: RedisInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-redis-4', VERSION, _config);
+  protected override _config!: RedisInstrumentationConfig;
+
+  constructor(config: RedisInstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override setConfig(config: RedisInstrumentationConfig = {}) {
@@ -74,8 +76,8 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
 
   private _getInstrumentationNodeModuleDefinition(
     basePackageName: string
-  ): InstrumentationNodeModuleDefinition<any> {
-    const commanderModuleFile = new InstrumentationNodeModuleFile<any>(
+  ): InstrumentationNodeModuleDefinition {
+    const commanderModuleFile = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/commander.js`,
       ['^1.0.0'],
       (moduleExports: any, moduleVersion?: string) => {
@@ -95,7 +97,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
           : 'attachCommands';
         // this is the function that extend a redis client with a list of commands.
         // the function patches the commandExecutor to record a span
-        this._diag.debug('Patching redis commands executor');
         if (isWrapped(moduleExports?.[functionToPatch])) {
           this._unwrap(moduleExports, functionToPatch);
         }
@@ -108,7 +109,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         return moduleExports;
       },
       (moduleExports: any) => {
-        this._diag.debug('Unpatching redis commands executor');
         if (isWrapped(moduleExports?.extendWithCommands)) {
           this._unwrap(moduleExports, 'extendWithCommands');
         }
@@ -118,11 +118,10 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       }
     );
 
-    const multiCommanderModule = new InstrumentationNodeModuleFile<any>(
+    const multiCommanderModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/multi-command.js`,
       ['^1.0.0'],
       (moduleExports: any) => {
-        this._diag.debug('Patching redis multi commands executor');
         const redisClientMultiCommandPrototype =
           moduleExports?.default?.prototype;
 
@@ -147,7 +146,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         return moduleExports;
       },
       (moduleExports: any) => {
-        this._diag.debug('Unpatching redis multi commands executor');
         const redisClientMultiCommandPrototype =
           moduleExports?.default?.prototype;
         if (isWrapped(redisClientMultiCommandPrototype?.exec)) {
@@ -159,11 +157,10 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       }
     );
 
-    const clientIndexModule = new InstrumentationNodeModuleFile<any>(
+    const clientIndexModule = new InstrumentationNodeModuleFile(
       `${basePackageName}/dist/lib/client/index.js`,
       ['^1.0.0'],
       (moduleExports: any) => {
-        this._diag.debug('Patching redis client');
         const redisClientPrototype = moduleExports?.default?.prototype;
 
         // In some @redis/client versions 'multi' is a method. In later
@@ -210,7 +207,6 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         return moduleExports;
       },
       (moduleExports: any) => {
-        this._diag.debug('Unpatching redis client');
         const redisClientPrototype = moduleExports?.default?.prototype;
         if (isWrapped(redisClientPrototype?.multi)) {
           this._unwrap(redisClientPrototype, 'multi');
@@ -224,20 +220,13 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       }
     );
 
-    return new InstrumentationNodeModuleDefinition<unknown>(
+    return new InstrumentationNodeModuleDefinition(
       basePackageName,
       ['^1.0.0'],
-      (moduleExports: any, moduleVersion?: string) => {
-        diag.debug(
-          `Patching ${basePackageName}/client@${moduleVersion} (redis@^4.0.0)`
-        );
+      (moduleExports: any) => {
         return moduleExports;
       },
-      (_moduleExports: any, moduleVersion?: string) => {
-        diag.debug(
-          `Unpatching ${basePackageName}/client@${moduleVersion} (redis@^4.0.0)`
-        );
-      },
+      () => {},
       [commanderModuleFile, multiCommanderModule, clientIndexModule]
     );
   }
@@ -289,55 +278,21 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
         return execRes
           .then((redisRes: unknown[]) => {
             const openSpans = this[OTEL_OPEN_SPANS];
-            if (!openSpans) {
-              return plugin._diag.error(
-                'cannot find open spans to end for redis multi command'
-              );
-            }
-            if (redisRes.length !== openSpans.length) {
-              return plugin._diag.error(
-                'number of multi command spans does not match response from redis'
-              );
-            }
-            for (let i = 0; i < openSpans.length; i++) {
-              const { span, commandName, commandArgs } = openSpans[i];
-              const currCommandRes = redisRes[i];
-              if (currCommandRes instanceof Error) {
-                plugin._endSpanWithResponse(
-                  span,
-                  commandName,
-                  commandArgs,
-                  null,
-                  currCommandRes
-                );
-              } else {
-                plugin._endSpanWithResponse(
-                  span,
-                  commandName,
-                  commandArgs,
-                  currCommandRes,
-                  undefined
-                );
-              }
-            }
+            plugin._endSpansWithRedisReplies(openSpans, redisRes);
             return redisRes;
           })
           .catch((err: Error) => {
             const openSpans = this[OTEL_OPEN_SPANS];
             if (!openSpans) {
-              return plugin._diag.error(
+              plugin._diag.error(
                 'cannot find open spans to end for redis multi command'
               );
-            }
-            for (let i = 0; i < openSpans.length; i++) {
-              const { span, commandName, commandArgs } = openSpans[i];
-              plugin._endSpanWithResponse(
-                span,
-                commandName,
-                commandArgs,
-                null,
-                err
-              );
+            } else {
+              const replies =
+                err.constructor.name === 'MultiErrorReply'
+                  ? (err as MultiErrorReply).replies
+                  : new Array(openSpans.length).fill(err);
+              plugin._endSpansWithRedisReplies(openSpans, replies);
             }
             return Promise.reject(err);
           });
@@ -438,7 +393,7 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
     try {
       const dbStatement = dbStatementSerializer(commandName, commandArgs);
       if (dbStatement != null) {
-        attributes[SemanticAttributes.DB_STATEMENT] = dbStatement;
+        attributes[SEMATTRS_DB_STATEMENT] = dbStatement;
       }
     } catch (e) {
       this._diag.error('dbStatementSerializer throw an exception', e, {
@@ -485,6 +440,31 @@ export class RedisInstrumentation extends InstrumentationBase<any> {
       });
     }
     return res;
+  }
+
+  private _endSpansWithRedisReplies(
+    openSpans: Array<MutliCommandInfo>,
+    replies: unknown[]
+  ) {
+    if (!openSpans) {
+      return this._diag.error(
+        'cannot find open spans to end for redis multi command'
+      );
+    }
+    if (replies.length !== openSpans.length) {
+      return this._diag.error(
+        'number of multi command spans does not match response from redis'
+      );
+    }
+    for (let i = 0; i < openSpans.length; i++) {
+      const { span, commandName, commandArgs } = openSpans[i];
+      const currCommandRes = replies[i];
+      const [res, err] =
+        currCommandRes instanceof Error
+          ? [null, currCommandRes]
+          : [currCommandRes, undefined];
+      this._endSpanWithResponse(span, commandName, commandArgs, res, err);
+    }
   }
 
   private _endSpanWithResponse(

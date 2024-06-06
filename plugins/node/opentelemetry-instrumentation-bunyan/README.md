@@ -33,6 +33,7 @@ const sdk = new NodeSDK({
     }),
   ]
 })
+sdk.start();
 
 const bunyan = require('bunyan');
 const logger = bunyan.createLogger({name: 'example'});
@@ -61,7 +62,7 @@ Log sending can be disabled with the `disableLogSending: true` option.
 ### Log correlation
 
 Bunyan logger calls in the context of a tracing span will have fields
-indentifying the span added to the log record. This allows
+identifying the span added to the log record. This allows
 [correlating](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)
 log records with tracing data. The added fields are
 ([spec](https://opentelemetry.io/docs/specs/otel/compatibility/logging_trace_context/)):
@@ -86,6 +87,7 @@ Log injection can be disabled with the `disableLogCorrelation: true` option.
 | Option                  | Type              | Description |
 | ----------------------- | ----------------- | ----------- |
 | `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`. |
+| `logSeverity`           | `SeverityNumber`  | Control severity level for [log sending](#log-sending). Default `SeverityNumber.UNSPECIFIED`, it will use Bunnyan Logger's current level when unspecified. |
 | `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`. |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
 
@@ -115,6 +117,10 @@ const logger = bunyan.createLogger({
   ],
 });
 ```
+
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
 
 ## Useful links
 

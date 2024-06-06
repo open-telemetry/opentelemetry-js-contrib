@@ -16,7 +16,17 @@
 
 import * as assert from 'assert';
 import { azureAppServiceDetector } from '../../src/detectors/AzureAppServiceDetector';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+  SEMRESATTRS_HOST_ID,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
+  SEMRESATTRS_SERVICE_NAME,
+} from '@opentelemetry/semantic-conventions';
+import { azureFunctionsDetector } from '../../src';
+import { detectResourcesSync } from '@opentelemetry/resources';
 
 describe('AzureAppServiceDetector', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -38,39 +48,29 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
     process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
-    const resource = azureAppServiceDetector.detect();
+    const resource = detectResourcesSync({
+      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+    });
     assert.ok(resource);
     const attributes = resource.attributes;
+    assert.strictEqual(attributes[SEMRESATTRS_SERVICE_NAME], 'test-site');
+    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_PROVIDER], 'azure');
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.SERVICE_NAME],
-      'test-site'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_PROVIDER],
-      'azure'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_PLATFORM],
+      attributes[SEMRESATTRS_CLOUD_PLATFORM],
       'azure_app_service'
     );
     assert.strictEqual(
       attributes['cloud.resource_id'],
       `/subscriptions/${process.env.WEBSITE_OWNER_NAME}/resourceGroups/${process.env.WEBSITE_RESOURCE_GROUP}/providers/Microsoft.Web/sites/${process.env.WEBSITE_SITE_NAME}`
     );
+    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_REGION],
-      'test-region'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT],
+      attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT],
       'test-slot'
     );
+    assert.strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.HOST_ID],
-      'test-hostname'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+      attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
       'test-instance-id'
     );
     assert.strictEqual(
@@ -88,23 +88,19 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_HOME_STAMPNAME = 'test-home-stamp';
     process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
 
-    const resource = azureAppServiceDetector.detect();
+    const resource = detectResourcesSync({
+      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+    });
     assert.ok(resource);
     const attributes = resource.attributes;
+    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_REGION],
-      'test-region'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT],
+      attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT],
       'test-slot'
     );
+    assert.strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.HOST_ID],
-      'test-hostname'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+      attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
       'test-instance-id'
     );
     assert.strictEqual(
@@ -123,23 +119,19 @@ describe('AzureAppServiceDetector', () => {
     process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
     delete process.env.WEBSITE_OWNER_NAME;
 
-    const resource = azureAppServiceDetector.detect();
+    const resource = detectResourcesSync({
+      detectors: [azureFunctionsDetector, azureAppServiceDetector],
+    });
     assert.ok(resource);
     const attributes = resource.attributes;
+    assert.strictEqual(attributes[SEMRESATTRS_CLOUD_REGION], 'test-region');
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.CLOUD_REGION],
-      'test-region'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT],
+      attributes[SEMRESATTRS_DEPLOYMENT_ENVIRONMENT],
       'test-slot'
     );
+    assert.strictEqual(attributes[SEMRESATTRS_HOST_ID], 'test-hostname');
     assert.strictEqual(
-      attributes[SemanticResourceAttributes.HOST_ID],
-      'test-hostname'
-    );
-    assert.strictEqual(
-      attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+      attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
       'test-instance-id'
     );
     assert.strictEqual(

@@ -53,7 +53,7 @@ describe('lru-memoizer instrumentation', () => {
       memoizerLoadCallback!(null as any, 'result');
     });
 
-    it('should invoke callback with right context when serving 2 parallel async requestes', () => {
+    it('should invoke callback with right context when serving 2 parallel async requests', () => {
       const testTracer = trace
         .getTracerProvider()
         .getTracer('lru-memoize-testing');

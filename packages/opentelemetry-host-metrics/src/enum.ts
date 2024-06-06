@@ -27,9 +27,14 @@ export enum METRIC_NAMES {
   PROCESS_MEMORY_USAGE = 'process.memory.usage',
 }
 
-export enum METRIC_ATTRIBUTES {
+export enum ATTRIBUTE_NAMES {
   SYSTEM_CPU_LOGICAL_NUMBER = 'system.cpu.logical_number',
   SYSTEM_CPU_STATE = 'system.cpu.state',
+  SYSTEM_MEMORY_STATE = 'system.memory.state',
+  SYSTEM_DEVICE = 'system.device',
+  NETWORK_IO_DIRECTION = 'network.io.direction',
+  SYSTEM_NETWORK_STATE = 'system.network.state',
+  PROCESS_CPU_STATE = 'process.cpu.state',
 }
 
 export enum CPU_LABELS {
@@ -41,7 +46,6 @@ export enum CPU_LABELS {
 }
 
 export enum NETWORK_LABELS {
-  DEVICE = 'device',
   RECEIVE = 'receive',
   TRANSMIT = 'transmit',
 }

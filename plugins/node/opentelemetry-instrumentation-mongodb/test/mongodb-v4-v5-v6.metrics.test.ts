@@ -44,7 +44,7 @@ const instrumentation = registerInstrumentationTesting(
 );
 
 import { accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import * as mongodb from 'mongodb';
+import type { MongoClient, Collection } from 'mongodb';
 import * as assert from 'assert';
 
 async function waitForNumberOfExports(
@@ -76,15 +76,30 @@ describe('MongoDBInstrumentation-Metrics', () => {
   }
 
   const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
-  const PORT = process.env.MONGODB_PORT || '27017';
+  const PORT = process.env.MONGODB_PORT || 27017;
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-metrics';
   const COLLECTION_NAME = 'test-metrics';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
-  let client: mongodb.MongoClient;
 
-  before(() => {
+  let client: MongoClient;
+  let collection: Collection;
+
+  before(done => {
     otelTestingMeterProvider.addMetricReader(metricReader);
     instrumentation?.setMeterProvider(otelTestingMeterProvider);
+
+    shouldTest = true;
+    accessCollection(URL, DB_NAME, COLLECTION_NAME)
+      .then(result => {
+        client = result.client;
+        collection = result.collection;
+        done();
+      })
+      .catch((err: Error) => {
+        console.log('Skipping test-mongodb. ' + err.message);
+        shouldTest = false;
+        done();
+      });
   });
 
   beforeEach(function mongoBeforeEach(done) {
@@ -100,9 +115,6 @@ describe('MongoDBInstrumentation-Metrics', () => {
   });
 
   it('Should add connection usage metrics', async () => {
-    const result = await accessCollection(URL, DB_NAME, COLLECTION_NAME);
-    client = result.client;
-    const collection = result.collection;
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
     await collection.insertMany(insertData);
     await collection.deleteMany({});

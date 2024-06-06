@@ -17,8 +17,14 @@
 import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_MSSQL,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_SQL_TABLE,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_USER,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import * as util from 'util';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
@@ -32,6 +38,7 @@ import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
 import makeApi from './api';
 import type { Connection, ConnectionConfig } from 'tedious';
+import * as semver from 'semver';
 
 const port = Number(process.env.MSSQL_PORT) || 1433;
 const database = process.env.MSSQL_DATABASE || 'master';
@@ -65,6 +72,15 @@ const config: ConnectionConfig & { userName: string; password: string } = {
   },
 };
 
+const processVersion = process.version;
+const tediousVersion = testUtils.getPackageVersion('tedious');
+const incompatVersions =
+  // tedious@16 removed support for node v14 https://github.com/tediousjs/tedious/releases/tag/v16.0.0
+  (semver.lt(processVersion, '15.0.0') &&
+    semver.gte(tediousVersion, '16.0.0')) ||
+  // tedious@17 removed support for node v16 and v19 https://github.com/tediousjs/tedious/releases/tag/v17.0.0
+  (semver.lt(processVersion, '17.0.0') && semver.gte(tediousVersion, '17.0.0'));
+
 describe('tedious', () => {
   let tedious: any;
   let contextManager: AsyncHooksContextManager;
@@ -75,7 +91,7 @@ describe('tedious', () => {
   const memoryExporter = new InMemorySpanExporter();
 
   before(function (done) {
-    if (!(shouldTest || shouldTestLocally)) {
+    if (!(shouldTest || shouldTestLocally) || incompatVersions) {
       // this.skip() workaround
       // https://github.com/mochajs/mocha/issues/2683#issuecomment-375629901
       this.test!.parent!.pending = true;
@@ -94,7 +110,7 @@ describe('tedious', () => {
 
   after(function () {
     if (shouldTestLocally) {
-      this.timeout(5000);
+      this.timeout(15000);
       testUtils.cleanUpDocker('mssql');
     }
   });
@@ -335,17 +351,14 @@ function assertSpan(span: ReadableSpan, expected: any) {
   assert(span);
   assert.strictEqual(span.name, expected.name);
   assert.strictEqual(span.kind, SpanKind.CLIENT);
+  assert.strictEqual(span.attributes[SEMATTRS_DB_SYSTEM], DBSYSTEMVALUES_MSSQL);
   assert.strictEqual(
-    span.attributes[SemanticAttributes.DB_SYSTEM],
-    DbSystemValues.MSSQL
-  );
-  assert.strictEqual(
-    span.attributes[SemanticAttributes.DB_NAME],
+    span.attributes[SEMATTRS_DB_NAME],
     expected.database ?? database
   );
-  assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[SemanticAttributes.NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[SemanticAttributes.DB_USER], user);
+  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_PORT], port);
+  assert.strictEqual(span.attributes[SEMATTRS_NET_PEER_NAME], host);
+  assert.strictEqual(span.attributes[SEMATTRS_DB_USER], user);
   assert.strictEqual(
     span.attributes['tedious.procedure_count'],
     expected.procCount ?? 1,
@@ -362,27 +375,18 @@ function assertSpan(span: ReadableSpan, expected: any) {
       expected.parentSpan.spanContext().spanId
     );
   }
-  assert.strictEqual(
-    span.attributes[SemanticAttributes.DB_SQL_TABLE],
-    expected.table
-  );
+  assert.strictEqual(span.attributes[SEMATTRS_DB_SQL_TABLE], expected.table);
   if (expected.sql) {
     if (expected.sql instanceof RegExp) {
       assertMatch(
-        span.attributes[SemanticAttributes.DB_STATEMENT] as string | undefined,
+        span.attributes[SEMATTRS_DB_STATEMENT] as string | undefined,
         expected.sql
       );
     } else {
-      assert.strictEqual(
-        span.attributes[SemanticAttributes.DB_STATEMENT],
-        expected.sql
-      );
+      assert.strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], expected.sql);
     }
   } else {
-    assert.strictEqual(
-      span.attributes[SemanticAttributes.DB_STATEMENT],
-      undefined
-    );
+    assert.strictEqual(span.attributes[SEMATTRS_DB_STATEMENT], undefined);
   }
   if (expected.error) {
     assert(

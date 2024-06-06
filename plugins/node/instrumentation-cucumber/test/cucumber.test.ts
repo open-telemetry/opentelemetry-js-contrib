@@ -21,9 +21,14 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_CODE_FILEPATH,
+  SEMATTRS_CODE_FUNCTION,
+  SEMATTRS_CODE_LINENO,
+  SEMATTRS_CODE_NAMESPACE,
+  SEMRESATTRS_SERVICE_NAME,
+} from '@opentelemetry/semantic-conventions';
 import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 import * as path from 'path';
 import * as assert from 'assert';
@@ -50,7 +55,7 @@ import { PassThrough } from 'stream';
 describe('CucumberInstrumentation', () => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: 'CucumberInstrumentation',
+      [SEMRESATTRS_SERVICE_NAME]: 'CucumberInstrumentation',
     }),
   });
   const memoryExporter = new InMemorySpanExporter();
@@ -165,10 +170,10 @@ describe('CucumberInstrumentation', () => {
         assert(parent, 'Expected a parent span');
 
         assert.deepEqual(parent.attributes, {
-          [SemanticAttributes.CODE_FILEPATH]: 'test/current.feature',
-          [SemanticAttributes.CODE_LINENO]: 7,
-          [SemanticAttributes.CODE_FUNCTION]: 'Button pushing',
-          [SemanticAttributes.CODE_NAMESPACE]: 'Basic',
+          [SEMATTRS_CODE_FILEPATH]: 'test/current.feature',
+          [SEMATTRS_CODE_LINENO]: 7,
+          [SEMATTRS_CODE_FUNCTION]: 'Button pushing',
+          [SEMATTRS_CODE_NAMESPACE]: 'Basic',
           [AttributeNames.FEATURE_DESCRIPTION]:
             '          A very basic feature file with a single scenario',
           [AttributeNames.FEATURE_LANGUAGE]: 'en',
@@ -182,12 +187,12 @@ describe('CucumberInstrumentation', () => {
 
       it('adds step args to span attributes', () => {
         const spans = memoryExporter.getFinishedSpans();
-        const parametrisedSpan = spans.find(span =>
+        const parameterisedSpan = spans.find(span =>
           span.name.startsWith('Then(it is pushed')
         );
-        assert(parametrisedSpan);
+        assert(parameterisedSpan);
 
-        assert.deepEqual(parametrisedSpan.attributes, {
+        assert.deepEqual(parameterisedSpan.attributes, {
           [`${AttributeNames.STEP_ARGS}[0]`]: 'limit',
         });
       });

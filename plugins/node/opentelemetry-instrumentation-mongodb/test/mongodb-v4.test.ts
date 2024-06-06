@@ -33,9 +33,9 @@ const instrumentation = registerInstrumentationTesting(
   new MongoDBInstrumentation()
 );
 
-import * as mongodb from 'mongodb';
+import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_DB_STATEMENT } from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation-Tracing-v4', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -51,13 +51,13 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
   }
 
   const HOST = process.env.MONGODB_HOST || DEFAULT_MONGO_HOST;
-  const PORT = process.env.MONGODB_PORT || '27017';
+  const PORT = process.env.MONGODB_PORT || 27017;
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests-traces';
   const COLLECTION_NAME = 'test-traces';
   const URL = `mongodb://${HOST}:${PORT}/${DB_NAME}`;
 
-  let client: mongodb.MongoClient;
-  let collection: mongodb.Collection;
+  let client: MongoClient;
+  let collection: Collection;
 
   before(done => {
     accessCollection(URL, DB_NAME, COLLECTION_NAME)
@@ -67,9 +67,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
         done();
       })
       .catch((err: Error) => {
-        console.log(
-          'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-        );
+        console.log('Skipping test-mongodb. ' + err.message);
         shouldTest = false;
         done();
       });
@@ -84,6 +82,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
     }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
+    // @ts-expect-error -- v5 removed callback support
     collection.insertMany(insertData, (err: any, result: any) => {
       resetMemoryExporter();
       done();
@@ -92,9 +91,11 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
 
   afterEach(done => {
     if (shouldTest) {
-      return collection.deleteMany({}, done);
+      // @ts-expect-error -- v5 removed callback support
+      collection.deleteMany({}, done);
+    } else {
+      done();
     }
-    done();
   });
 
   after(async () => {
@@ -359,7 +360,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
             );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
             done();
@@ -447,7 +448,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
               );
               const mongoSpan = spans.find(s => s.name === operationName);
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+                mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();

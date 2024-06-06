@@ -55,7 +55,7 @@ amqplib instrumentation has few options available to choose from. You can set th
 | `publishConfirmHook`                  | `AmqplibPublishConfirmCustomAttributeFunction`    | hook for adding custom attributes after publish message is confirmed by the broker.                                             |
 | `consumeHook`                  | `AmqplibConsumeCustomAttributeFunction`    | hook for adding custom attributes before consumer message is processed.                                             |
 | `consumeEndHook`                  | `AmqplibConsumeEndCustomAttributeFunction`    | hook for adding custom attributes after consumer message is acked to server.                                             |
-| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#ConsumeTimeout) below                                             |
+| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#consume-timeout) below                                             |
 
 ### Consume Timeout
 
@@ -80,6 +80,27 @@ The instrumentation's config `publishHook`, `publishConfirmHook`, `consumeHook` 
 ### `moduleVersionAttributeName` config option
 
 The `moduleVersionAttributeName` config option is removed. To add the amqplib package version to spans, use the `moduleVersion` attribute in hook info for `publishHook` and `consumeHook` functions.
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute                        | Short Description                                                      |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| `messaging.destination`          | The message destination name.                                          |
+| `messaging.destination_kind`     | The kind of message destination.                                       |
+| `messaging.rabbitmq.routing_key` | RabbitMQ message routing key.                                          |
+| `messaging.operation`            | A string identifying the kind of message consumption.                  |
+| `messaging.message_id`           | A value used by the messaging system as an identifier for the message. |
+| `messaging.conversation_id`      | The ID identifying the conversation to which the message belongs.      |
+| `messaging.protocol`             | The name of the transport protocol.                                    |
+| `messaging.protocol_version`     | The version of the transport protocol.                                 |
+| `messaging.system`               | A string identifying the messaging system.                             |
+| `messaging.url`                  | The connection string.                                                 |
+| `net.peer.name`                  | Remote hostname or similar.                                            |
+| `net.peer.port`                  | Remote port number.                                                    |
 
 ## Useful links
 

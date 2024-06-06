@@ -40,6 +40,13 @@ export interface GraphQLInstrumentationConfig extends InstrumentationConfig {
   depth?: number;
 
   /**
+   * Do not create spans for resolvers.
+   *
+   * @default false
+   */
+  ignoreResolveSpans?: boolean;
+
+  /**
    * Don't create spans for the execution of the default resolver on object properties.
    *
    * When a resolver function is not defined on the schema for a field, graphql will

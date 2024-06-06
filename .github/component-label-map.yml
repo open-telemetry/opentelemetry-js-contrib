@@ -1,0 +1,272 @@
+pkg:resource-detector-alibaba-cloud:
+  - changed-files:
+      - any-glob-to-any-file:
+          - detectors/node/opentelemetry-resource-detector-alibaba-cloud/**
+          - packages/opentelemetry-test-utils/**
+pkg:resource-detector-aws:
+  - changed-files:
+      - any-glob-to-any-file:
+          - detectors/node/opentelemetry-resource-detector-aws/**
+          - packages/opentelemetry-test-utils/**
+pkg:resource-detector-azure:
+  - changed-files:
+      - any-glob-to-any-file:
+          - detectors/node/opentelemetry-resource-detector-azure/**
+          - packages/opentelemetry-test-utils/**
+pkg:resource-detector-container:
+  - changed-files:
+      - any-glob-to-any-file:
+          - detectors/node/opentelemetry-resource-detector-container/**
+          - packages/opentelemetry-test-utils/**
+pkg:resource-detector-gcp:
+  - changed-files:
+      - any-glob-to-any-file:
+          - detectors/node/opentelemetry-resource-detector-gcp/**
+          - packages/opentelemetry-test-utils/**
+pkg:resource-detector-github:
+  - changed-files:
+      - any-glob-to-any-file:
+          - detectors/node/opentelemetry-resource-detector-github/**
+pkg:resource-detector-instana:
+  - changed-files:
+      - any-glob-to-any-file:
+          - detectors/node/opentelemetry-resource-detector-instana/**
+          - packages/opentelemetry-test-utils/**
+pkg:auto-instrumentations-node:
+  - changed-files:
+      - any-glob-to-any-file:
+          - metapackages/auto-instrumentations-node/**
+pkg:auto-instrumentations-web:
+  - changed-files:
+      - any-glob-to-any-file:
+          - metapackages/auto-instrumentations-web/**
+pkg:test-utils:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/opentelemetry-test-utils/**
+pkg:host-metrics:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/opentelemetry-host-metrics/**
+pkg:id-generator-aws-xray:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/opentelemetry-id-generator-aws-xray/**
+pkg:instrumentation-amqplib:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-amqplib/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-aws-lambda:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-aws-lambda/**
+pkg:instrumentation-aws-sdk:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-aws-sdk/**
+          - packages/opentelemetry-test-utils/**
+          - packages/opentelemetry-propagation-utils/**
+pkg:instrumentation-bunyan:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-bunyan/**
+pkg:instrumentation-cassandra-driver:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-cassandra/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-connect:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-connect/**
+pkg:instrumentation-cucumber:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-cucumber/**
+pkg:instrumentation-dataloader:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-dataloader/**
+pkg:instrumentation-dns:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-dns/**
+pkg:instrumentation-document-load:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/web/opentelemetry-instrumentation-document-load/**
+pkg:instrumentation-express:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-express/**
+pkg:instrumentation-fastify:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-fastify/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-fs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-fs/**
+pkg:instrumentation-generic-pool:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-generic-pool/**
+pkg:instrumentation-graphql:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-graphql/**
+pkg:instrumentation-hapi:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-hapi/**
+pkg:instrumentation-ioredis:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-ioredis/**
+          - packages/opentelemetry-test-utils/**
+          - packages/opentelemetry-redis-common/**
+pkg:instrumentation-knex:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-knex/**
+pkg:instrumentation-koa:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-koa/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-long-task:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/web/opentelemetry-instrumentation-long-task/**
+pkg:instrumentation-lru-memoizer:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-lru-memoizer/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-memcached:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-memcached/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-mongodb:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-mongodb/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-mongoose:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-mongoose/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-mysql:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-mysql/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-mysql2:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-mysql2/**
+          - packages/opentelemetry-test-utils/**
+          - packages/opentelemetry-sql-common/**
+pkg:instrumentation-nestjs-core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-nestjs-core/**
+pkg:instrumentation-net:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-net/**
+pkg:instrumentation-pg:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-pg/**
+          - packages/opentelemetry-test-utils/**
+          - packages/opentelemetry-sql-common/**
+pkg:instrumentation-pino:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-pino/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-redis:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-redis/**
+          - packages/opentelemetry-test-utils/**
+          - packages/opentelemetry-redis-common/**
+pkg:instrumentation-redis-4:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-redis-4/**
+          - packages/opentelemetry-test-utils/**
+          - packages/opentelemetry-redis-common/**
+pkg:instrumentation-restify:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-restify/**
+pkg:instrumentation-router:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-router/**
+pkg:instrumentation-runtime-node:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-runtime-node/**
+pkg:instrumentation-socket.io:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-socket.io/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-tedious:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-tedious/**
+          - packages/opentelemetry-test-utils/**
+pkg:instrumentation-undici:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/instrumentation-undici/**
+pkg:instrumentation-user-interaction:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/web/opentelemetry-instrumentation-user-interaction/**
+pkg:instrumentation-winston:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/node/opentelemetry-instrumentation-winston/**
+pkg:plugin-react-load:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/web/opentelemetry-plugin-react-load/**
+pkg:propagation-utils:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/opentelemetry-propagation-utils/**
+          - packages/opentelemetry-test-utils/**
+pkg:propagator-grpc-census-binary:
+  - changed-files:
+      - any-glob-to-any-file:
+          - propagators/opentelemetry-propagator-grpc-census-binary/**
+pkg:propagator-instana:
+  - changed-files:
+      - any-glob-to-any-file:
+          - propagators/opentelemetry-propagator-instana/**
+pkg:propagator-ot-trace:
+  - changed-files:
+      - any-glob-to-any-file:
+          - propagators/opentelemetry-propagator-ot-trace/**
+pkg:redis-common:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/opentelemetry-redis-common/**
+pkg:sampler-aws-xray:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/opentelemetry-sampler-aws-xray/**
+          - packages/opentelemetry-test-utils/**
+pkg:sql-common:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/opentelemetry-sql-common/**

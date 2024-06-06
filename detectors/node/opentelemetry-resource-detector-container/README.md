@@ -28,7 +28,15 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 ## Available detectors
 
-- `containerDetector`: Populates `container.id` for processes running on contianers supporting : docker( cgroup v1 or v2 ) or with containerd
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+### ContainerDetector
+
+Populates `container.id` for processes running on containers supporting : docker( cgroup v1 or v2 ) or with containerd
+
+| Resource Attribute |  Description                                                                                                                             |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| `container.id`     | Value parsed from file `/proc/self/cgroup` (cgroup v1). If it doesn't exist, parse the value from file `/proc/self/mountinfo` (cgroup v2)|
 
 ## Useful links
 
@@ -43,3 +51,5 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/resource-detector-container
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fresource-detector-container.svg

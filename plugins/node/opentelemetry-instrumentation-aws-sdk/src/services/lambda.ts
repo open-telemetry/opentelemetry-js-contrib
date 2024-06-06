@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { Span, SpanKind, Tracer, diag, Attributes } from '@opentelemetry/api';
 import {
-  Span,
-  SpanKind,
-  Tracer,
-  diag,
-  SpanAttributes,
-} from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+  SEMATTRS_FAAS_EXECUTION,
+  SEMATTRS_FAAS_INVOKED_NAME,
+  SEMATTRS_FAAS_INVOKED_PROVIDER,
+  SEMATTRS_FAAS_INVOKED_REGION,
+} from '@opentelemetry/semantic-conventions';
 import {
   AwsSdkInstrumentationConfig,
   NormalizedRequest,
@@ -34,21 +33,23 @@ class LambdaCommands {
 }
 
 export class LambdaServiceExtension implements ServiceExtension {
-  requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
+  requestPreSpanHook(
+    request: NormalizedRequest,
+    _config: AwsSdkInstrumentationConfig
+  ): RequestMetadata {
     const functionName = this.extractFunctionName(request.commandInput);
 
-    let spanAttributes: SpanAttributes = {};
+    let spanAttributes: Attributes = {};
     let spanName: string | undefined;
 
     switch (request.commandName) {
       case 'Invoke':
         spanAttributes = {
-          [SemanticAttributes.FAAS_INVOKED_NAME]: functionName,
-          [SemanticAttributes.FAAS_INVOKED_PROVIDER]: 'aws',
+          [SEMATTRS_FAAS_INVOKED_NAME]: functionName,
+          [SEMATTRS_FAAS_INVOKED_PROVIDER]: 'aws',
         };
         if (request.region) {
-          spanAttributes[SemanticAttributes.FAAS_INVOKED_REGION] =
-            request.region;
+          spanAttributes[SEMATTRS_FAAS_INVOKED_REGION] = request.region;
         }
         spanName = `${functionName} ${LambdaCommands.Invoke}`;
         break;
@@ -84,10 +85,7 @@ export class LambdaServiceExtension implements ServiceExtension {
     switch (response.request.commandName) {
       case LambdaCommands.Invoke:
         {
-          span.setAttribute(
-            SemanticAttributes.FAAS_EXECUTION,
-            response.requestId
-          );
+          span.setAttribute(SEMATTRS_FAAS_EXECUTION, response.requestId);
         }
         break;
     }

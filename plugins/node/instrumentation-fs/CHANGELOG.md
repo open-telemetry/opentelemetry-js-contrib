@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.13.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.12.0...instrumentation-fs-v0.13.0) (2024-06-06)
+
+
+### Features
+
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
+## [0.12.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.11.0...instrumentation-fs-v0.12.0) (2024-04-25)
+
+
+### Features
+
+* **deps:** update otel-js to 0.51.0 ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+* remove generic type from instrumentations ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+
+## [0.11.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.10.0...instrumentation-fs-v0.11.0) (2024-04-03)
+
+
+### Features
+
+* **deps:** update otel-js to 1.23.0/0.50.0 ([#2076](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2076)) ([d5f079b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d5f079b3992395dcfb3b791c9fdaeefd6d6526f8))
+
+## [0.10.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.9.0...instrumentation-fs-v0.10.0) (2024-03-06)
+
+
+### Features
+
+* **deps:** update otel-js to 1.22.0/0.49.1 ([edc426b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/edc426b348bc5f45ff6816bcd5ea7473251a05df))
+
+## [0.9.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.8.4...instrumentation-fs-v0.9.0) (2024-01-29)
+
+
+### Features
+
+* **deps:** update otel-js to 1.21.0/0.48.0 ([9624486](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96244869d0fe22e6006fa6ef5e54839e06afb99d))
+
+## [0.8.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.8.3...instrumentation-fs-v0.8.4) (2024-01-04)
+
+
+### Bug Fixes
+
+* **deps:** update otel core experimental ([#1866](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1866)) ([9366543](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9366543f5572e1e976ce176ddeb0b438f6c16c45))
+
 ## [0.8.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-fs-v0.8.2...instrumentation-fs-v0.8.3) (2023-11-13)
 
 

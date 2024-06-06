@@ -9,9 +9,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14", "16", "18"]
+        node: ["14", "16", "18", "20"]
         include:
-            - node: 14
+            - node: 18
               code-coverage: true
     runs-on: ubuntu-latest
     services:
@@ -51,7 +51,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       postgres:
-        image: postgres:15-alpine
+        image: postgres:16-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_DB: otel_pg_database
@@ -123,9 +123,6 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Set MySQL variables
         run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
-      - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == '16'
-        run: npm config set legacy-peer-deps=true
       - name: Update npm to a version that supports workspaces (v7 or later)
         if: ${{ matrix.node < 16 }}
         run: npm install -g npm@9 # npm@9 supports node >=14.17.0
@@ -135,15 +132,13 @@ jobs:
         run: npm run compile
       - name: Unit tests (Full)
         if: matrix.code-coverage
-        run: npm run test -- ${{ matrix.lerna-extra-args }}
+        run: npm run test
       - name: Unit tests (Delta)
         if: ${{ !matrix.code-coverage }}
-        run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
-      - name: Build examples
-        run: npm run compile:examples
+        run: npm run test:ci:changed
       - name: Report Coverage
         if: ${{ matrix.code-coverage && !cancelled()}}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           verbose: true
 
@@ -151,7 +146,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14"]
+        node: ["16"]
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
@@ -174,6 +169,6 @@ jobs:
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           verbose: true

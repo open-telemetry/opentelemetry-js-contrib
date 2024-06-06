@@ -142,4 +142,51 @@ describe('Utils', () => {
       );
     });
   });
+
+  describe('asErrorAndMessage', () => {
+    it('should special case Error instances', () => {
+      const input = new Error('message');
+      const [error, message] = utils.asErrorAndMessage(input);
+      assert.strictEqual(error, input);
+      assert.strictEqual(message, 'message');
+    });
+
+    it('should pass strings as-is', () => {
+      const input = 'error';
+      const [error, message] = utils.asErrorAndMessage(input);
+      assert.strictEqual(error, input);
+      assert.strictEqual(message, input);
+    });
+
+    it('should stringify other types', () => {
+      const input = 2;
+      const [error, message] = utils.asErrorAndMessage(input);
+      assert.strictEqual(error, '2');
+      assert.strictEqual(message, '2');
+    });
+  });
+
+  describe('getLayerPath', () => {
+    it('should return path for a string route definition', () => {
+      assert.strictEqual(utils.getLayerPath(['/test']), '/test');
+    });
+
+    it('should return path for a regex route definition', () => {
+      assert.strictEqual(utils.getLayerPath([/^\/test$/]), '/^\\/test$/');
+    });
+
+    it('should return path for an array of route definitions', () => {
+      assert.strictEqual(
+        utils.getLayerPath([[/^\/test$/, '/test']]),
+        '/^\\/test$/,/test'
+      );
+    });
+
+    it('should return path for a mixed array of route definitions', () => {
+      assert.strictEqual(
+        utils.getLayerPath([[/^\/test$/, '/test', /^\/test$/]]),
+        '/^\\/test$/,/test,/^\\/test$/'
+      );
+    });
+  });
 });

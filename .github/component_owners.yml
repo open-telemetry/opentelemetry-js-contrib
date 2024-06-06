@@ -17,15 +17,24 @@ components:
   detectors/node/opentelemetry-resource-detector-instana:
     - basti1302
     - kirrg001
+  incubator/opentelemetry-sampler-aws-xray:
+    - carolabadeer
   metapackages/auto-instrumentations-node:
-    - obecny
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
   metapackages/auto-instrumentations-web:
-    - obecny
+    - dyladan
+    - pichlermarc
+    - legendecas
+    - blumamir
+  packages/baggage-span-processor:
+    - mikegoldsmith
+    - jamiedanielson
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
-    - carolabadeer
-  packages/opentelemetry-sampler-aws-xray:
     - carolabadeer
   packages/opentelemetry-propagation-utils:
     - dyladan
@@ -39,6 +48,8 @@ components:
     - pichlermarc
     - legendecas
     - blumamir
+  packages/winston-transport:
+    - hectorhdzg
   plugins/node/instrumentation-amqplib:
     - blumamir
   plugins/node/instrumentation-cucumber:
@@ -47,6 +58,8 @@ components:
     - henrinormak
   plugins/node/instrumentation-fs:
     - rauno56
+  plugins/node/instrumentation-kafkajs:
+    - seemk
   plugins/node/instrumentation-lru-memoizer:
     - blumamir
   plugins/node/instrumentation-mongoose:
@@ -63,6 +76,7 @@ components:
     - blumamir
   plugins/node/opentelemetry-instrumentation-bunyan:
     - seemk
+    - trentm
   plugins/node/opentelemetry-instrumentation-cassandra:
     - seemk
   plugins/node/opentelemetry-instrumentation-connect: []
@@ -99,7 +113,10 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-net:
     - seemk
+  plugins/node/instrumentation-runtime-node:
+    - d4nyll
   plugins/node/opentelemetry-instrumentation-pg:
+    - maryliag
     - rauno56
   plugins/node/opentelemetry-instrumentation-pino:
     - seemk
@@ -111,22 +128,21 @@ components:
     - rauno56
   plugins/node/opentelemetry-instrumentation-router:
     - rauno56
+  plugins/node/instrumentation-undici:
+    - david-luna
+    - trentm
   plugins/node/opentelemetry-instrumentation-winston:
     - seemk
   plugins/web/opentelemetry-instrumentation-document-load:
     - pkanal
-    - martinkuba 
+    - martinkuba
   plugins/web/opentelemetry-instrumentation-long-task:
     - mhennoch
     - t2t2
   plugins/web/opentelemetry-instrumentation-user-interaction:
     - obecny
-  plugins/web/opentelemetry-plugin-react-load: []
-    # Unmaintained?
-  propagators/opentelemetry-propagator-aws-xray:
-    - carolabadeer
-  propagators/opentelemetry-propagator-grpc-census-binary: []
-    # Unmaintained?
+  plugins/web/opentelemetry-plugin-react-load:
+    - martinkuba
   propagators/opentelemetry-propagator-instana:
     - basti1302
     - kirrg001

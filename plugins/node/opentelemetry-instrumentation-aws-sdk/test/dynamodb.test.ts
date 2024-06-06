@@ -13,23 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AwsInstrumentation } from '../src';
+import {
+  AwsInstrumentation,
+  CommandInput,
+  AwsSdkDynamoDBStatementSerializer,
+} from '../src';
 import {
   getTestSpans,
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
-registerInstrumentationTesting(new AwsInstrumentation());
+const instrumentation = registerInstrumentationTesting(
+  new AwsInstrumentation()
+);
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 
 import { mockV2AwsSend } from './testing-utils';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_DYNAMODB,
+  SEMATTRS_AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS,
+  SEMATTRS_AWS_DYNAMODB_CONSISTENT_READ,
+  SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY,
+  SEMATTRS_AWS_DYNAMODB_COUNT,
+  SEMATTRS_AWS_DYNAMODB_EXCLUSIVE_START_TABLE,
+  SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES,
+  SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES,
+  SEMATTRS_AWS_DYNAMODB_INDEX_NAME,
+  SEMATTRS_AWS_DYNAMODB_ITEM_COLLECTION_METRICS,
+  SEMATTRS_AWS_DYNAMODB_LIMIT,
+  SEMATTRS_AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES,
+  SEMATTRS_AWS_DYNAMODB_PROJECTION,
+  SEMATTRS_AWS_DYNAMODB_PROVISIONED_READ_CAPACITY,
+  SEMATTRS_AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY,
+  SEMATTRS_AWS_DYNAMODB_SCAN_FORWARD,
+  SEMATTRS_AWS_DYNAMODB_SCANNED_COUNT,
+  SEMATTRS_AWS_DYNAMODB_SEGMENT,
+  SEMATTRS_AWS_DYNAMODB_SELECT,
+  SEMATTRS_AWS_DYNAMODB_TABLE_COUNT,
+  SEMATTRS_AWS_DYNAMODB_TABLE_NAMES,
+  SEMATTRS_AWS_DYNAMODB_TOTAL_SEGMENTS,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_OPERATION,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import { expect } from 'expect';
 import type { ConsumedCapacity as ConsumedCapacityV2 } from 'aws-sdk/clients/dynamodb';
 import type { ConsumedCapacity as ConsumedCapacityV3 } from '@aws-sdk/client-dynamodb';
+import * as sinon from 'sinon';
 
 type ConsumedCapacity = ConsumedCapacityV2 | ConsumedCapacityV3;
 
@@ -83,35 +114,27 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_NAME]).toStrictEqual('test-table');
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual('Query');
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_SCAN_FORWARD]
-          ).toStrictEqual(true);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSISTENT_READ]
-          ).toStrictEqual(true);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_INDEX_NAME]
-          ).toStrictEqual('name_to_group');
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_SELECT]).toStrictEqual(
+          expect(attrs[SEMATTRS_DB_NAME]).toStrictEqual('test-table');
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('Query');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SCAN_FORWARD]).toStrictEqual(true);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_CONSISTENT_READ]).toStrictEqual(
+            true
+          );
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_INDEX_NAME]).toStrictEqual(
+            'name_to_group'
+          );
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SELECT]).toStrictEqual(
             'ALL_ATTRIBUTES'
           );
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(
-            10
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROJECTION]
-          ).toStrictEqual('id');
-          expect(
-            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
-          ).toEqual(params);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_LIMIT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_PROJECTION]).toStrictEqual('id');
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -152,41 +175,29 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_NAME]).toStrictEqual('test-table');
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual('Scan');
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_SEGMENT]).toStrictEqual(
-            10
+          expect(attrs[SEMATTRS_DB_NAME]).toStrictEqual('test-table');
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('Scan');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SEGMENT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TOTAL_SEGMENTS]).toStrictEqual(
+            100
           );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TOTAL_SEGMENTS]
-          ).toStrictEqual(100);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_INDEX_NAME]
-          ).toStrictEqual('index_name');
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_SELECT]).toStrictEqual(
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_INDEX_NAME]).toStrictEqual(
+            'index_name'
+          );
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SELECT]).toStrictEqual(
             'ALL_ATTRIBUTES'
           );
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_COUNT]).toStrictEqual(
-            10
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_SCANNED_COUNT]
-          ).toStrictEqual(50);
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(
-            10
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROJECTION]
-          ).toStrictEqual('id');
-          expect(
-            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
-          ).toEqual(params);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_COUNT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_SCANNED_COUNT]).toStrictEqual(50);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_LIMIT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_PROJECTION]).toStrictEqual('id');
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -223,18 +234,16 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
+            attrs[SEMATTRS_AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
           ).toStrictEqual([
             JSON.stringify({ ItemCollectionKey: [], SizeEstimateRangeGB: [0] }),
           ]);
 
-          expect(
-            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
-          ).toEqual(params);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -320,31 +329,29 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
+            attrs[SEMATTRS_AWS_DYNAMODB_ITEM_COLLECTION_METRICS]
           ).toStrictEqual([
             JSON.stringify({ ItemCollectionKey: [], SizeEstimateRangeGB: [0] }),
           ]);
 
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES]
+            attrs[SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEXES]
           ).toStrictEqual([JSON.stringify(globalSecondaryIndexMockData)]);
 
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES]
+            attrs[SEMATTRS_AWS_DYNAMODB_LOCAL_SECONDARY_INDEXES]
           ).toStrictEqual([JSON.stringify(localSecondaryIndexMockData)]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROVISIONED_READ_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_PROVISIONED_READ_CAPACITY]
           ).toStrictEqual(20);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY]
           ).toStrictEqual(30);
-          expect(
-            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
-          ).toEqual(params);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -395,14 +402,12 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
 
           expect(
-            attrs[
-              SemanticAttributes.AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES
-            ]
+            attrs[SEMATTRS_AWS_DYNAMODB_GLOBAL_SECONDARY_INDEX_UPDATES]
           ).toStrictEqual([
             JSON.stringify({
               Update: {
@@ -415,7 +420,7 @@ describe('DynamoDB', () => {
             }),
           ]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS]
+            attrs[SEMATTRS_AWS_DYNAMODB_ATTRIBUTE_DEFINITIONS]
           ).toStrictEqual([
             JSON.stringify({
               AttributeName: 'test_attr',
@@ -423,14 +428,12 @@ describe('DynamoDB', () => {
             }),
           ]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROVISIONED_READ_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_PROVISIONED_READ_CAPACITY]
           ).toStrictEqual(10);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_PROVISIONED_WRITE_CAPACITY]
           ).toStrictEqual(15);
-          expect(
-            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
-          ).toEqual(params);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -458,23 +461,17 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
 
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_EXCLUSIVE_START_TABLE]
+            attrs[SEMATTRS_AWS_DYNAMODB_EXCLUSIVE_START_TABLE]
           ).toStrictEqual('start_table');
-          expect(attrs[SemanticAttributes.AWS_DYNAMODB_LIMIT]).toStrictEqual(
-            10
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_COUNT]
-          ).toStrictEqual(3);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_LIMIT]).toStrictEqual(10);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_COUNT]).toStrictEqual(3);
 
-          expect(
-            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
-          ).toEqual(params);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -516,21 +513,17 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'BatchGetItem'
-          );
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('BatchGetItem');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY]
           ).toBeUndefined();
-          expect(
-            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
-          ).toEqual(dynamodb_params);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -563,25 +556,19 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'BatchGetItem'
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
-          ).toStrictEqual(
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('BatchGetItem');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY]).toStrictEqual(
             consumedCapacityResponseMockData.map((x: ConsumedCapacity) =>
               JSON.stringify(x)
             )
           );
-          expect(
-            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
-          ).toEqual(dynamodb_params);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -614,19 +601,15 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual('dynamodb');
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'BatchGetItem'
-          );
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual('dynamodb');
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('BatchGetItem');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_TABLE_NAMES]).toStrictEqual([
+            'test-table',
+          ]);
           expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_TABLE_NAMES]
-          ).toStrictEqual(['test-table']);
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
+            attrs[SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY]
           ).toBeUndefined();
-          expect(
-            JSON.parse(attrs[SemanticAttributes.DB_STATEMENT] as string)
-          ).toEqual(dynamodb_params);
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
           expect(err).toBeFalsy();
           done();
         }
@@ -655,15 +638,11 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'PutItem'
-          );
-          expect(
-            attrs[SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY]
-          ).toStrictEqual([
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('PutItem');
+          expect(attrs[SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY]).toStrictEqual([
             JSON.stringify({
               TableName: 'test-table',
               CapacityUnits: 0.5,
@@ -692,14 +671,461 @@ describe('DynamoDB', () => {
           const spans = getTestSpans();
           expect(spans.length).toStrictEqual(1);
           const attrs = spans[0].attributes;
-          expect(attrs[SemanticAttributes.DB_SYSTEM]).toStrictEqual(
-            DbSystemValues.DYNAMODB
+          expect(attrs[SEMATTRS_DB_SYSTEM]).toStrictEqual(
+            DBSYSTEMVALUES_DYNAMODB
           );
-          expect(attrs[SemanticAttributes.DB_OPERATION]).toStrictEqual(
-            'PutItem'
-          );
+          expect(attrs[SEMATTRS_DB_OPERATION]).toStrictEqual('PutItem');
           expect(attrs).not.toHaveProperty(
-            SemanticAttributes.AWS_DYNAMODB_CONSUMED_CAPACITY
+            SEMATTRS_AWS_DYNAMODB_CONSUMED_CAPACITY
+          );
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+  });
+
+  describe('dbStatementSerializer config', () => {
+    const SERIALIZED_DB_STATEMENT = 'serialized statement';
+
+    const dynamoDBStatementSerializer: AwsSdkDynamoDBStatementSerializer = (
+      _operation: string,
+      _command: CommandInput
+    ): string => {
+      return SERIALIZED_DB_STATEMENT;
+    };
+
+    beforeEach(() => {
+      instrumentation.disable();
+      instrumentation.setConfig({
+        dynamoDBStatementSerializer,
+      });
+      instrumentation.enable();
+    });
+
+    it('should not fail if serializer throws', done => {
+      instrumentation.disable();
+      instrumentation.setConfig({
+        dynamoDBStatementSerializer: () => {
+          throw new Error('Serializer failure');
+        },
+      });
+      instrumentation.enable();
+      mockV2AwsSend(responseMockSuccess, {
+        Items: [{ key1: 'val1' }, { key2: 'val2' }],
+        Count: 2,
+        ScannedCount: 5,
+      } as AWS.DynamoDB.Types.QueryOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: {
+          '#k': 'key1',
+        },
+        ExpressionAttributeValues: {
+          ':v': 'val1',
+        },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.query(
+        params,
+        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should omit DB statement if serializer is not configured', done => {
+      instrumentation.disable();
+      instrumentation.setConfig({
+        dynamoDBStatementSerializer: undefined,
+      });
+      instrumentation.enable();
+      mockV2AwsSend(responseMockSuccess, {
+        Items: [{ key1: 'val1' }, { key2: 'val2' }],
+        Count: 2,
+        ScannedCount: 5,
+      } as AWS.DynamoDB.Types.QueryOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: {
+          '#k': 'key1',
+        },
+        ExpressionAttributeValues: {
+          ':v': 'val1',
+        },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.query(
+        params,
+        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should omit DB statement if serializer returns undefined', done => {
+      instrumentation.disable();
+      instrumentation.setConfig({
+        dynamoDBStatementSerializer: () => undefined,
+      });
+      instrumentation.enable();
+      mockV2AwsSend(responseMockSuccess, {
+        Items: [{ key1: 'val1' }, { key2: 'val2' }],
+        Count: 2,
+        ScannedCount: 5,
+      } as AWS.DynamoDB.Types.QueryOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: {
+          '#k': 'key1',
+        },
+        ExpressionAttributeValues: {
+          ':v': 'val1',
+        },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.query(
+        params,
+        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs).not.toHaveProperty(SEMATTRS_DB_STATEMENT);
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should provide operation and command input to serializer', done => {
+      const dynamoDBStatementSerializerSpy = sinon.spy();
+      instrumentation.disable();
+      instrumentation.setConfig({
+        dynamoDBStatementSerializer: dynamoDBStatementSerializerSpy,
+      });
+      instrumentation.enable();
+      mockV2AwsSend(responseMockSuccess, {
+        Items: [{ key1: 'val1' }, { key2: 'val2' }],
+        Count: 2,
+        ScannedCount: 5,
+      } as AWS.DynamoDB.Types.QueryOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: {
+          '#k': 'key1',
+        },
+        ExpressionAttributeValues: {
+          ':v': 'val1',
+        },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.query(
+        params,
+        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+
+          expect(dynamoDBStatementSerializerSpy.callCount).toBe(1);
+          expect(dynamoDBStatementSerializerSpy.args[0][0]).toStrictEqual(
+            'Query'
+          );
+          expect(dynamoDBStatementSerializerSpy.args[0][1]).toStrictEqual({
+            ConsistentRead: true,
+            ExpressionAttributeNames: {
+              '#k': 'key1',
+            },
+            ExpressionAttributeValues: {
+              ':v': 'val1',
+            },
+            IndexName: 'name_to_group',
+            KeyConditionExpression: '#k = :v',
+            Limit: 10,
+            ProjectionExpression: 'id',
+            ScanIndexForward: true,
+            Select: 'ALL_ATTRIBUTES',
+            TableName: 'test-table',
+          });
+
+          done();
+        }
+      );
+    });
+
+    it('should properly execute the db statement serializer for Query operation', done => {
+      mockV2AwsSend(responseMockSuccess, {
+        Items: [{ key1: 'val1' }, { key2: 'val2' }],
+        Count: 2,
+        ScannedCount: 5,
+      } as AWS.DynamoDB.Types.QueryOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: 'test-table',
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: {
+          '#k': 'key1',
+        },
+        ExpressionAttributeValues: {
+          ':v': 'val1',
+        },
+        ProjectionExpression: 'id',
+        ScanIndexForward: true,
+        ConsistentRead: true,
+        IndexName: 'name_to_group',
+        Limit: 10,
+        Select: 'ALL_ATTRIBUTES',
+      };
+
+      dynamodb.query(
+        params,
+        (err: AWSError, _data: AWS.DynamoDB.DocumentClient.QueryOutput) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
+            SERIALIZED_DB_STATEMENT
+          );
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should properly execute the db statement serializer for CreateTable operation', done => {
+      mockV2AwsSend(responseMockSuccess, {
+        TableName: 'test_table',
+        ItemCollectionMetrics: {
+          ItemCollectionKey: [],
+          SizeEstimateRangeGB: [0],
+        },
+        ConsumedCapacity: undefined,
+      } as AWS.DynamoDB.Types.CreateTableOutput);
+      const globalSecondaryIndexMockData = {
+        IndexName: 'test_index',
+        KeySchema: [
+          {
+            AttributeName: 'attribute1',
+            KeyType: 'HASH',
+          },
+        ],
+        Projection: {
+          ProjectionType: 'ALL',
+          NonKeyAttributes: ['non_key_attr'],
+        },
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 10,
+        },
+      };
+
+      const localSecondaryIndexMockData = {
+        IndexName: 'test_index',
+        KeySchema: [
+          {
+            AttributeName: 'test_attribute',
+            KeyType: 'HASH',
+          },
+        ],
+        Projection: {
+          ProjectionType: 'ALL',
+          NonKeyAttributes: ['STRING_VALUE'],
+        },
+      };
+
+      const dynamodb = new AWS.DynamoDB();
+      const params = {
+        AttributeDefinitions: [
+          {
+            AttributeName: 'test_attribute',
+            AttributeType: 'S',
+          },
+        ],
+        TableName: 'test_table',
+        KeySchema: [
+          {
+            AttributeName: 'test_attribute',
+            KeyType: 'HASH',
+          },
+        ],
+        LocalSecondaryIndexes: [localSecondaryIndexMockData],
+        GlobalSecondaryIndexes: [globalSecondaryIndexMockData],
+        BillingMode: 'PROVISIONED',
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 20,
+          WriteCapacityUnits: 30,
+        },
+      };
+
+      dynamodb.createTable(
+        params,
+        (
+          err: AWSError,
+          _data: AWS.DynamoDB.DocumentClient.CreateTableOutput
+        ) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
+            SERIALIZED_DB_STATEMENT
+          );
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should properly execute the db statement serializer for UpdateTable operation', done => {
+      mockV2AwsSend(responseMockSuccess, {
+        TableName: 'test_table',
+      } as AWS.DynamoDB.Types.UpdateTableOutput);
+      const dynamodb = new AWS.DynamoDB();
+      const params = {
+        AttributeDefinitions: [
+          {
+            AttributeName: 'test_attr',
+            AttributeType: 'S',
+          },
+        ],
+        TableName: 'test_table',
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 10,
+          WriteCapacityUnits: 15,
+        },
+        GlobalSecondaryIndexUpdates: [
+          {
+            Update: {
+              IndexName: 'test_index',
+              ProvisionedThroughput: {
+                ReadCapacityUnits: 1,
+                WriteCapacityUnits: 5,
+              },
+            },
+          },
+        ],
+      };
+
+      dynamodb.updateTable(
+        params,
+        (
+          err: AWSError,
+          _data: AWS.DynamoDB.DocumentClient.UpdateTableOutput
+        ) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
+            SERIALIZED_DB_STATEMENT
+          );
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should properly execute the db statement serializer for ListTables operation', done => {
+      mockV2AwsSend(responseMockSuccess, {
+        TableNames: ['test_table', 'test_table_2', 'start_table'],
+      } as AWS.DynamoDB.Types.ListTablesOutput);
+      const dynamodb = new AWS.DynamoDB();
+      const params = {
+        ExclusiveStartTableName: 'start_table',
+        Limit: 10,
+      };
+
+      dynamodb.listTables(
+        params,
+        (
+          err: AWSError,
+          _data: AWS.DynamoDB.DocumentClient.ListTablesOutput
+        ) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
+            SERIALIZED_DB_STATEMENT
+          );
+          expect(err).toBeFalsy();
+          done();
+        }
+      );
+    });
+
+    it('should properly execute the db statement serializer for BatchWriteItem operation', done => {
+      mockV2AwsSend(responseMockSuccess, {
+        UnprocessedItems: {},
+        ItemCollectionMetrics: {
+          ItemCollectionKey: [],
+          SizeEstimateRangeGB: [0],
+        },
+        ConsumedCapacity: undefined,
+      } as AWS.DynamoDB.Types.BatchWriteItemOutput);
+      const dynamodb = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        RequestItems: {},
+        ReturnConsumedCapacity: 'INDEXES',
+        ReturnItemCollectionMetrics: 'SIZE',
+      };
+
+      dynamodb.batchWrite(
+        params,
+        (
+          err: AWSError,
+          _data: AWS.DynamoDB.DocumentClient.BatchWriteItemOutput
+        ) => {
+          const spans = getTestSpans();
+          expect(spans.length).toStrictEqual(1);
+          const attrs = spans[0].attributes;
+
+          expect(attrs[SEMATTRS_DB_STATEMENT]).toStrictEqual(
+            SERIALIZED_DB_STATEMENT
           );
           expect(err).toBeFalsy();
           done();
