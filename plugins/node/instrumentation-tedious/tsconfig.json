@@ -2,10 +2,17 @@
   "extends": "../../../tsconfig.base",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "build"
+    "outDir": "build",
+    "target": "es2022",
+    // https://www.typescriptlang.org/tsconfig/#skipLibCheck
+    // We are using two different typescript versions in the project.
+    // Tedious v18 requires typescript v5.
+    // However, the rest of the project is still using v4.
+    // This is a temporary solution to avoid general errors from
+    // other @types/* installations, which are not compatible with v5 yet.
+    // Long-term solutions: - use noist (not support yet by npm workspaces)
+    //                      - use latest typescript version everywhere.
+    "skipLibCheck": true
   },
-  "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

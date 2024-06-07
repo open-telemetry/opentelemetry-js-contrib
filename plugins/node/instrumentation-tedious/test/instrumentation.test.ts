@@ -37,7 +37,7 @@ import {
 import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
 import makeApi from './api';
-import type { Connection, ConnectionConfig } from 'tedious';
+import type { Connection, ConnectionConfiguration } from 'tedious';
 import * as semver from 'semver';
 
 const port = Number(process.env.MSSQL_PORT) || 1433;
@@ -50,27 +50,28 @@ const instrumentation = new TediousInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
-const config: ConnectionConfig & { userName: string; password: string } = {
-  userName: user,
-  password,
-  server: host,
-  authentication: {
-    type: 'default',
-    options: {
-      userName: user,
-      password,
+const config: ConnectionConfiguration & { userName: string; password: string } =
+  {
+    userName: user,
+    password,
+    server: host,
+    authentication: {
+      type: 'default',
+      options: {
+        userName: user,
+        password,
+      },
     },
-  },
-  options: {
-    port,
-    database,
-    encrypt: true,
-    // Required for <11.0.8
-    trustServerCertificate: true,
-    rowCollectionOnRequestCompletion: true,
-    rowCollectionOnDone: true,
-  },
-};
+    options: {
+      port,
+      database,
+      encrypt: true,
+      // Required for <11.0.8
+      trustServerCertificate: true,
+      rowCollectionOnRequestCompletion: true,
+      rowCollectionOnDone: true,
+    },
+  };
 
 const processVersion = process.version;
 const tediousVersion = testUtils.getPackageVersion('tedious');

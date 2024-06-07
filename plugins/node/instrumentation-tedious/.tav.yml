@@ -1,6 +1,6 @@
 tedious:
   versions:
-    include: ">=1.11.0 <=17"
+    include: ">=1.11.0 <19"
     # 4.0.0 is broken: https://github.com/tediousjs/tedious/commit/4eceb48
     exclude: "4.0.0"
     mode: latest-majors

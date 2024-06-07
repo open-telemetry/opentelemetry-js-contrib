@@ -31,6 +31,8 @@ module.exports = {
       rules: {
         "@typescript-eslint/no-floating-promises": "error",
         "@typescript-eslint/no-this-alias": "off",
+        '@typescript-eslint/no-explicit-any': "warn",
+        '@typescript-eslint/no-unused-vars': "warn",
         "@typescript-eslint/naming-convention": [
           "error",
           {
