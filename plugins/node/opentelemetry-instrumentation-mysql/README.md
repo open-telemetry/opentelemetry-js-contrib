@@ -47,7 +47,7 @@ See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/
 | Options | Type | Default | Description |
 | ------- | ---- | --------| ----------- |
 | [`enhancedDatabaseReporting`](./src/types.ts#L24) | `boolean` | `false` | If true, an attribute containing the query's parameters will be attached the spans generated to represent the query |
-|
+
 
 ## Semantic Conventions
 
