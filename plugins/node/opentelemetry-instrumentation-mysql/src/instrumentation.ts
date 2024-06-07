@@ -42,7 +42,7 @@ import {
   getSpanName,
   getPoolName,
 } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter, MeterProvider } from '@opentelemetry/api';
 
 type getConnectionCallbackType = (
@@ -57,7 +57,7 @@ export class MySQLInstrumentation extends InstrumentationBase {
   private _connectionsUsage!: UpDownCounter;
 
   constructor(config: MySQLInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mysql', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
     this._setMetricInstruments();
   }
 

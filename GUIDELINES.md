@@ -115,7 +115,7 @@ To support this use case, you can choose one of the following options:
     ...
     ```
 
-    If possible, this is the prefered option, as it uses types from a maintained package.
+    If possible, this is the preferred option, as it uses types from a maintained package.
 
     Notice that types may introduce breaking changes in major semver releases, and instrumentation should choose a `@types/` package that is compatible with the version range it supports.
 
@@ -197,3 +197,27 @@ Instrumentation may add additional patch/unpatch messages for specific functions
 - In situations where the patch logic is not trivial and it helps to specify patch events in the right context and nuances. `aws-lambda` logs additional properties extracted from the lambda framework and exposes them for troubleshooting.
 
 The cases above are not covered by the base class and offer additional context to the user troubleshooting an issue with the instrumentation.
+
+## package.json
+
+### Description
+
+Instrumentation should include a `description` field in the `package.json` file. The description targets human readers and is an opportunity to communicate the use case for the instrumented package and its semconv namespace. It should help users know whether the package fits their application, which is especially helpful if the package has a shortened or obscure name.
+
+The description should be written with this format when applicable:
+
+```text
+"OpenTelemetry instrumentation for `<instrumented-package-name>` <package short description>"
+```
+
+For example:
+
+```text
+"OpenTelemetry instrumentation for `express` http framework"
+"OpenTelemetry instrumentation for `winston` logger"
+"OpenTelemetry instrumentation for `redis` database client for Redis"
+```
+
+If the package is consumed directly, the description should state the package name in `<instrumented-package-name>`. Tools like `nestjs` and `aws-lambda` are examples of packages that are consumed indirectly.
+
+A short description should follow the package name, like "http framework", "logger", "database client for X", "messaging client", etc as appropriate in each case. It is preferable to use the semconv namespace semantics that are emitted by this instrumentation (`http`, `database`, `messaging`, `rpc`, `net`) to give quick context for the scope of the instrumentation.

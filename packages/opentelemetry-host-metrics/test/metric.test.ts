@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-const SI = require('systeminformation');
+import * as Network from 'systeminformation/lib/network';
+import type { Systeminformation } from 'systeminformation';
 import { Attributes } from '@opentelemetry/api';
 import {
   AggregationTemporality,
@@ -45,21 +46,23 @@ class TestMetricReader extends MetricReader {
 let countSI = 0;
 const mockedSI = {
   networkStats: function () {
-    return new Promise((resolve, reject) => {
-      countSI++;
-      const stats: any[] = networkJson
-        .slice()
-        .map((obj: any) => Object.assign({}, obj));
+    return new Promise<Systeminformation.NetworkStatsData[]>(
+      (resolve, reject) => {
+        countSI++;
+        const stats: any[] = networkJson
+          .slice()
+          .map((obj: any) => Object.assign({}, obj));
 
-      for (let i = 0, j = networkJson.length; i < j; i++) {
-        Object.keys(stats[i]).forEach(key => {
-          if (typeof stats[i][key] === 'number' && stats[i][key] > 0) {
-            stats[i][key] = stats[i][key] * countSI;
-          }
-        });
+        for (let i = 0, j = networkJson.length; i < j; i++) {
+          Object.keys(stats[i]).forEach(key => {
+            if (typeof stats[i][key] === 'number' && stats[i][key] > 0) {
+              stats[i][key] = stats[i][key] * countSI;
+            }
+          });
+        }
+        resolve(stats);
       }
-      resolve(stats);
-    });
+    );
   },
 };
 
@@ -137,12 +140,13 @@ describe('Host Metrics', () => {
       sandbox
         .stub(process.memoryUsage, 'rss')
         .callsFake(mockedProcess.memoryUsage.rss);
-      sandbox.stub(SI, 'networkStats').callsFake(mockedSI.networkStats);
+      sandbox.stub(Network, 'networkStats').callsFake(mockedSI.networkStats);
 
       reader = new TestMetricReader();
 
-      meterProvider = new MeterProvider();
-      meterProvider.addMetricReader(reader);
+      meterProvider = new MeterProvider({
+        readers: [reader],
+      });
 
       hostMetrics = new HostMetrics({
         meterProvider,
@@ -169,7 +173,7 @@ describe('Host Metrics', () => {
     const sysCpuNumAttr = ATTRIBUTE_NAMES.SYSTEM_CPU_LOGICAL_NUMBER;
     const sysMemStateAttr = ATTRIBUTE_NAMES.SYSTEM_MEMORY_STATE;
     const sysDeviceAttr = ATTRIBUTE_NAMES.SYSTEM_DEVICE;
-    const sysNetDirAttr = ATTRIBUTE_NAMES.SYSTEM_NETWORK_DIRECTION;
+    const sysNetDirAttr = ATTRIBUTE_NAMES.NETWORK_IO_DIRECTION;
     const procCpuStateAttr = ATTRIBUTE_NAMES.PROCESS_CPU_STATE;
 
     it('should export CPU time metrics', async () => {

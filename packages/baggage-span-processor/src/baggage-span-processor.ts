@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { BaggageKeyPredicate } from './types';
 import { Context, propagation } from '@opentelemetry/api';
 import {
   SpanProcessor,
@@ -43,6 +44,16 @@ import {
  * values will appear in all outgoing HTTP headers from the application.
  */
 export class BaggageSpanProcessor implements SpanProcessor {
+  private _keyPredicate: BaggageKeyPredicate;
+
+  /**
+   * Constructs a new BaggageSpanProcessor instance.
+   * @param keyPredicate A predicate that determines whether a baggage key-value pair should be added to new spans as a span attribute.
+   */
+  constructor(keyPredicate: BaggageKeyPredicate) {
+    this._keyPredicate = keyPredicate;
+  }
+
   /**
    * Forces to export all finished spans
    */
@@ -57,11 +68,9 @@ export class BaggageSpanProcessor implements SpanProcessor {
    * @param span the Span that just started.
    */
   onStart(span: Span, parentContext: Context): void {
-    (propagation.getBaggage(parentContext)?.getAllEntries() ?? []).forEach(
-      entry => {
-        span.setAttribute(entry[0], entry[1].value);
-      }
-    );
+    (propagation.getBaggage(parentContext)?.getAllEntries() ?? [])
+      .filter(entry => this._keyPredicate(entry[0]))
+      .forEach(entry => span.setAttribute(entry[0], entry[1].value));
   }
 
   /**
