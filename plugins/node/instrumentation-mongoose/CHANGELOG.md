@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.38.1...instrumentation-mongoose-v0.39.0) (2024-06-06)
+
+
+### Features
+
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
+
+### Bug Fixes
+
+* **instrumentation-mongoose:** Fix instrumentation for Mongoose Model methods, save() and remove(), by passing options argument to original method calls ([#2009](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2009)) ([96eb7dc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/96eb7dcccddfbb6a06ad72c3865b44a4a2d153ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
+
 ## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongoose-v0.38.0...instrumentation-mongoose-v0.38.1) (2024-05-02)
 
 
