@@ -169,7 +169,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
     if (layer[kLayerPatched] === true) return;
     layer[kLayerPatched] = true;
 
-    this._wrap(layer, 'handle', (original: Function) => {
+    this._wrap(layer, 'handle', (original) => {
       // TODO: instrument error handlers
       if (original.length === 4) return original;
 
@@ -318,11 +318,9 @@ export class ExpressInstrumentation extends InstrumentationBase {
       Object.keys(original).forEach(key => {
         Object.defineProperty(patched, key, {
           get() {
-            // @ts-expect-error -- the original function has hidden props indexed by strings
             return original[key];
           },
           set(value) {
-            // @ts-expect-error -- the original function has hidden props indexed by strings
             original[key] = value;
           },
         });
