@@ -169,7 +169,7 @@ export class ExpressInstrumentation extends InstrumentationBase {
     if (layer[kLayerPatched] === true) return;
     layer[kLayerPatched] = true;
 
-    this._wrap(layer, 'handle', (original) => {
+    this._wrap(layer, 'handle', original => {
       // TODO: instrument error handlers
       if (original.length === 4) return original;
 
