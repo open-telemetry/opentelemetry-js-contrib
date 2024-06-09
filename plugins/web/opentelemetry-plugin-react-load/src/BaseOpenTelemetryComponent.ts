@@ -19,7 +19,7 @@ import { isWrapped } from '@opentelemetry/core';
 import * as shimmer from 'shimmer';
 import { AttributeNames } from './enums/AttributeNames';
 import * as React from 'react';
-import { VERSION } from './version';
+import { PACKAGE_VERSION } from './version';
 import {
   RenderFunction,
   ComponentDidMountFunction,
@@ -58,7 +58,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
   static setTracer(name: string, version?: string): void {
     BaseOpenTelemetryComponent._tracer = api.trace.getTracer(
       name,
-      version ? version : VERSION
+      version ? version : PACKAGE_VERSION
     );
   }
 
@@ -423,7 +423,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
     BaseOpenTelemetryComponent._logger.debug(
       'applying patch to',
       this.moduleName,
-      VERSION
+      PACKAGE_VERSION
     );
 
     if (isWrapped(this.render)) {
@@ -536,7 +536,7 @@ export class BaseOpenTelemetryComponent extends React.Component {
     BaseOpenTelemetryComponent._logger.debug(
       'removing patch from',
       this.moduleName,
-      VERSION
+      PACKAGE_VERSION
     );
 
     shimmer.unwrap(this, 'render');

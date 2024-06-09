@@ -84,7 +84,8 @@ Populates `container` for containers running on [Amazon ECS](https://aws.amazon.
 | cloud.platform          | The cloud platform. In this context, it's always "aws_ecs"                             |
 | cloud.provider          | The cloud provider. In this context, it's always "aws"                                 |
 | cloud.region            | Parsed value from the `TaskARN`                                                        |
-| container.id            | Value of from file `/proc/self/cgroup`                                                 |
+| cloud.resource_id       | Value of `ContainerARN` from `ECS_CONTAINER_METADATA_URI_V4/task` request              |
+| container.id            | Value from file `/proc/self/cgroup`                                                    |
 | container.name          | The hostname of the operating system                                                   |
 
 ### AWS EKS Detector

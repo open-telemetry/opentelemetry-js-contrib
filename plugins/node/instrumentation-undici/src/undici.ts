@@ -34,7 +34,7 @@ import {
   ValueType,
 } from '@opentelemetry/api';
 
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 import {
   ListenerRecord,
@@ -66,8 +66,8 @@ export class UndiciInstrumentation extends InstrumentationBase {
   private _recordFromReq = new WeakMap<UndiciRequest, InstrumentationRecord>();
 
   private _httpClientDurationHistogram!: Histogram;
-  constructor(config?: UndiciInstrumentationConfig) {
-    super('@opentelemetry/instrumentation-undici', VERSION, config);
+  constructor(config: UndiciInstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
     this.setConfig(config);
   }
 
@@ -111,7 +111,7 @@ export class UndiciInstrumentation extends InstrumentationBase {
     this.subscribeToChannel('undici:request:error', this.onError.bind(this));
   }
 
-  override setConfig(config?: UndiciInstrumentationConfig): void {
+  override setConfig(config: UndiciInstrumentationConfig = {}): void {
     super.setConfig(config);
 
     if (config?.enabled) {

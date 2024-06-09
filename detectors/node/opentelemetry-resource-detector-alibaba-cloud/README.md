@@ -28,6 +28,8 @@ const tracerProvider = new NodeTracerProvider({ resource });
 
 ## Available detectors
 
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
 ### Alibaba Cloud Ecs Detector
 
 Populates `cloud` and `host` for processes running on [Alibaba Cloud ECS](https://www.alibabacloud.com/product/ecs). More info about Alibaba Instance Identities can be found [here](https://www.alibabacloud.com/help/en/ecs/user-guide/use-instance-identities).

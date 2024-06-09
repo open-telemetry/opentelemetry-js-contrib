@@ -555,42 +555,43 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
 
         ensureNetworkEventsExists(fsEvents);
-
-        assert.strictEqual(rsEvents[0].name, PTN.FETCH_START);
-        assert.strictEqual(rsEvents[1].name, PTN.UNLOAD_EVENT_START);
-        assert.strictEqual(rsEvents[2].name, PTN.UNLOAD_EVENT_END);
-        assert.strictEqual(rsEvents[3].name, PTN.DOM_INTERACTIVE);
-        assert.strictEqual(
-          rsEvents[4].name,
-          PTN.DOM_CONTENT_LOADED_EVENT_START
-        );
-        assert.strictEqual(rsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
-        assert.strictEqual(rsEvents[6].name, PTN.DOM_COMPLETE);
-        assert.strictEqual(rsEvents[7].name, PTN.LOAD_EVENT_START);
-        assert.strictEqual(rsEvents[8].name, PTN.LOAD_EVENT_END);
-
         assert.strictEqual(fsEvents.length, 8);
-        assert.strictEqual(rsEvents.length, 9);
+
+        const rsEventNames = rsEvents.map(e => e.name);
+        // Allow the unloadEvent{Start,End} events to be missing. Tests that
+        // are simulating a fallback to window.performance.timing are using
+        // values (entriesFallback) for that result in those network span
+        // events being dropped after https://github.com/open-telemetry/opentelemetry-js/pull/4486
+        // (@opentelemetry/sdk-trace-web@1.24.0).
+        const expectedRsEventNames =
+          rsEventNames[1] === PTN.UNLOAD_EVENT_START
+            ? [
+                PTN.FETCH_START,
+                PTN.UNLOAD_EVENT_START,
+                PTN.UNLOAD_EVENT_END,
+                PTN.DOM_INTERACTIVE,
+                PTN.DOM_CONTENT_LOADED_EVENT_START,
+                PTN.DOM_CONTENT_LOADED_EVENT_END,
+                PTN.DOM_COMPLETE,
+                PTN.LOAD_EVENT_START,
+                PTN.LOAD_EVENT_END,
+              ]
+            : [
+                PTN.FETCH_START,
+                PTN.DOM_INTERACTIVE,
+                PTN.DOM_CONTENT_LOADED_EVENT_START,
+                PTN.DOM_CONTENT_LOADED_EVENT_END,
+                PTN.DOM_COMPLETE,
+                PTN.LOAD_EVENT_START,
+                PTN.LOAD_EVENT_END,
+              ];
+        assert.deepStrictEqual(rsEventNames, expectedRsEventNames);
+
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
       });
     });
   }
-
-  describe('when navigation entries types are NOT available then fallback to "performance.timing"', () => {
-    const sandbox = sinon.createSandbox();
-    beforeEach(() => {
-      sandbox.stub(window.performance, 'getEntriesByType').value(undefined);
-      sandbox.stub(window.performance, 'timing').get(() => {
-        return entriesFallback;
-      });
-    });
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    shouldExportCorrectSpan();
-  });
 
   describe('when getEntriesByType is not defined then fallback to "performance.timing"', () => {
     const sandbox = sinon.createSandbox();
@@ -750,6 +751,76 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+  });
+
+  describe('ignore span events if specified', () => {
+    let spyEntries: any;
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resources);
+      spyEntries.withArgs('paint').returns(paintEntries);
+    });
+
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should ignore network span events if ignoreNetworkEvents is set to true', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        ignoreNetworkEvents: true,
+      });
+      plugin.enable();
+
+      setTimeout(() => {
+        const rootSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+        const fetchSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
+        const loadSpan = exporter.getFinishedSpans()[3] as ReadableSpan;
+
+        const rsEvents = rootSpan.events;
+        const fsEvents = fetchSpan.events;
+        const lsEvents = loadSpan.events;
+
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        assert.strictEqual(rootSpan.name, 'documentFetch');
+        assert.strictEqual(rsEvents.length, 0);
+
+        assert.strictEqual(fetchSpan.name, 'resourceFetch');
+        assert.strictEqual(fsEvents.length, 0);
+
+        assert.strictEqual(loadSpan.name, 'documentLoad');
+        assert.deepEqual(
+          lsEvents.map(event => event.name),
+          ['firstPaint', 'firstContentfulPaint']
+        );
+
+        done();
+      });
+    });
+
+    it('should ignore performance events if ignorePerformanceEvents is set to true', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        ignorePerformancePaintEvents: true,
+      });
+      plugin.enable();
+
+      setTimeout(() => {
+        const loadSpan = exporter.getFinishedSpans()[3] as ReadableSpan;
+        const lsEvents = loadSpan.events;
+
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+
+        assert.strictEqual(loadSpan.name, 'documentLoad');
+        assert.notInclude(
+          lsEvents.map(event => event.name),
+          ['firstPaint', 'firstContentfulPaint']
+        );
+
         done();
       });
     });

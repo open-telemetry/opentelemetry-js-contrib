@@ -21,7 +21,7 @@ import * as api from '@opentelemetry/api';
 import type { Server } from 'restify';
 import { LayerType } from './types';
 import { AttributeNames } from './enums/AttributeNames';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import {
   InstrumentationBase,
@@ -35,15 +35,9 @@ import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
 
-const { diag } = api;
-
-export class RestifyInstrumentation extends InstrumentationBase<any> {
+export class RestifyInstrumentation extends InstrumentationBase {
   constructor(config: RestifyInstrumentationConfig = {}) {
-    super(
-      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
-      VERSION,
-      Object.assign({}, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   private _moduleVersion?: string;
@@ -58,7 +52,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
@@ -68,13 +62,10 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<any>(
+      new InstrumentationNodeModuleFile(
         'restify/lib/server.js',
         constants.SUPPORTED_VERSIONS,
-        (moduleExports, moduleVersion) => {
-          diag.debug(
-            `Applying patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           this._isDisabled = false;
           const Server: any = moduleExports;
           for (const name of constants.RESTIFY_METHODS) {
@@ -99,10 +90,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
           }
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          diag.debug(
-            `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           this._isDisabled = true;
           if (moduleExports) {
             const Server: any = moduleExports;

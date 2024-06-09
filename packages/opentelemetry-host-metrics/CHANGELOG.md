@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.35.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.1...host-metrics-v0.35.2) (2024-06-06)
+
+
+### Bug Fixes
+
+* **host-metrics:** macOS bundling fix ([#2071](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2071)) ([7d6ddea](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7d6ddea613d6702931d8abb468eb3500fbd06f33))
+* semconv alignment & listed in README ([#2240](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2240)) ([040eaa6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/040eaa68346550447535d48736f80af240db90bf))
+
+## [0.35.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.0...host-metrics-v0.35.1) (2024-04-25)
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
 ## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.34.1...host-metrics-v0.35.0) (2024-01-29)
 
 

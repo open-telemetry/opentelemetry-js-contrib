@@ -115,7 +115,7 @@ To support this use case, you can choose one of the following options:
     ...
     ```
 
-    If possible, this is the prefered option, as it uses types from a maintained package.
+    If possible, this is the preferred option, as it uses types from a maintained package.
 
     Notice that types may introduce breaking changes in major semver releases, and instrumentation should choose a `@types/` package that is compatible with the version range it supports.
 
@@ -164,3 +164,60 @@ To support this use case, you can choose one of the following options:
     };
     ...
     ```
+
+## Diag Logging
+
+The OpenTelemetry diagnostic logging channel can be used to troubleshoot issues with instrumentation packages.
+
+### Patching Messages
+
+When OpenTelemetry is installed in a user application, and expected spans are missing from generated traces, it is often useful to differentiate between the following scenarios:
+
+- The instrumentation is not auto loaded - due to issue with the require/import interception, an unsupported version of the instrumented package, or some other issue. This knowledge can pin-point the issue to the instrumentation package.
+- The instrumentation patch was applied but expected spans are missing -- this can suggest an issue with instrumented package logic, configuration, limits, otel sdk, or other issues.
+
+It can also be useful to know when the instrumentation is loaded and patched, to understand the order of operations in the application.
+
+Instrumentation packages should use the `@opentelemetry/instrumentation` package `InstrumentationBase` class to register patches and unpatch callbacks for specific require/import of the instrumented package, it's dependency or an internal module file. When this mechanism is used, the base class will automatically emit a debug message on instrumentation diag component logger, looking like this:
+
+```shell
+@opentelemetry/instrumentation-foo Applying instrumentation patch for module on require hook {
+  module: 'foo',
+  version: '1.2.3',
+  baseDir: '<your directory>/node_modules/foo'
+}
+```
+
+Instrumentation should not add additional debug messages for triggering the patching and unpatching callbacks, as the base class will handle this.
+
+Instrumentation may add additional patch/unpatch messages for specific functions if it is expected to help in troubleshooting issues with the instrumentation. Few examples:
+
+- If the patch logic is conditional, and user can benefit from ensuring the condition is met and the patch happened. `koa` patching logic examine an object and branch between patching it as router vs middleware, which is applied at runtime. `aws-lambda` will abort patching if the environment is not configured properly.
+- When the patch is not applied directly on a `moduleExports` object in the `InstrumentationBase` callbacks, but rather from an event in the package, like creating new client instance, registering a listener, etc. `fastify` instrumentation applies a patch when a hook is added to the fastify app instance, which is patched from `moduleExports`.
+- In situations where the patch logic is not trivial and it helps to specify patch events in the right context and nuances. `aws-lambda` logs additional properties extracted from the lambda framework and exposes them for troubleshooting.
+
+The cases above are not covered by the base class and offer additional context to the user troubleshooting an issue with the instrumentation.
+
+## package.json
+
+### Description
+
+Instrumentation should include a `description` field in the `package.json` file. The description targets human readers and is an opportunity to communicate the use case for the instrumented package and its semconv namespace. It should help users know whether the package fits their application, which is especially helpful if the package has a shortened or obscure name.
+
+The description should be written with this format when applicable:
+
+```text
+"OpenTelemetry instrumentation for `<instrumented-package-name>` <package short description>"
+```
+
+For example:
+
+```text
+"OpenTelemetry instrumentation for `express` http framework"
+"OpenTelemetry instrumentation for `winston` logger"
+"OpenTelemetry instrumentation for `redis` database client for Redis"
+```
+
+If the package is consumed directly, the description should state the package name in `<instrumented-package-name>`. Tools like `nestjs` and `aws-lambda` are examples of packages that are consumed indirectly.
+
+A short description should follow the package name, like "http framework", "logger", "database client for X", "messaging client", etc as appropriate in each case. It is preferable to use the semconv namespace semantics that are emitted by this instrumentation (`http`, `database`, `messaging`, `rpc`, `net`) to give quick context for the scope of the instrumentation.

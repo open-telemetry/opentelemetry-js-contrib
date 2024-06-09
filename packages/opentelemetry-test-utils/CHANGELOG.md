@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.39.0...contrib-test-utils-v0.40.0) (2024-06-06)
+
+
+### Features
+
+* **instr-tedious:** add support for v16 and v17 ([#2178](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2178)) ([8c578cd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8c578cd17b25b33390e4237596b9e5cbbc0d0b6d)), closes [#1656](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1656)
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.38.0...contrib-test-utils-v0.39.0) (2024-04-25)
+
+
+### Features
+
+* **deps:** update otel-js to 0.51.0 ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+* remove generic type from instrumentations ([80cbee7](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/80cbee73130c65c8ccd78384485a7be8d2a4a84b))
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
 ## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.37.0...contrib-test-utils-v0.38.0) (2024-04-03)
 
 
