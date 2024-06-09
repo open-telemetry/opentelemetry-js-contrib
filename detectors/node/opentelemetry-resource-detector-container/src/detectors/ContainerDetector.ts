@@ -108,7 +108,7 @@ export class ContainerDetector implements Detector {
   private async _getContainerId(): Promise<string | undefined> {
     try {
       return (
-        (await this._getContainerIdV1()) ?? (await this._getContainerIdV2())
+        (await this._getContainerIdV1()) || (await this._getContainerIdV2())
       );
     } catch (e) {
       if (e instanceof Error) {
