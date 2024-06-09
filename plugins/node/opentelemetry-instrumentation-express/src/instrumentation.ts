@@ -29,10 +29,11 @@ import { AttributeNames } from './enums/AttributeNames';
 import {
   asErrorAndMessage,
   getLayerMetadata,
+  getLayerPath,
   isLayerIgnored,
   storeLayerPath,
 } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -49,15 +50,9 @@ import {
 } from './internal-types';
 
 /** Express instrumentation for OpenTelemetry */
-export class ExpressInstrumentation extends InstrumentationBase<
-  typeof express
-> {
+export class ExpressInstrumentation extends InstrumentationBase {
   constructor(config: ExpressInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-express',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override setConfig(config: ExpressInstrumentationConfig = {}) {
@@ -70,11 +65,10 @@ export class ExpressInstrumentation extends InstrumentationBase<
 
   init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof express>(
+      new InstrumentationNodeModuleDefinition(
         'express',
         ['^4.0.0'],
-        (moduleExports, moduleVersion) => {
-          diag.debug(`Applying patch for express@${moduleVersion}`);
+        moduleExports => {
           const routerProto = moduleExports.Router as unknown as express.Router;
           // patch express.Router.route
           if (isWrapped(routerProto.route)) {
@@ -99,9 +93,8 @@ export class ExpressInstrumentation extends InstrumentationBase<
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
+        moduleExports => {
           if (moduleExports === undefined) return;
-          diag.debug(`Removing patch for express@${moduleVersion}`);
           const routerProto = moduleExports.Router as unknown as express.Router;
           this._unwrap(routerProto, 'route');
           this._unwrap(routerProto, 'use');
@@ -123,10 +116,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
       ) {
         const route = original.apply(this, args);
         const layer = this.stack[this.stack.length - 1] as ExpressLayer;
-        instrumentation._applyPatch(
-          layer,
-          typeof args[0] === 'string' ? args[0] : undefined
-        );
+        instrumentation._applyPatch(layer, getLayerPath(args));
         return route;
       };
     };
@@ -144,10 +134,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
       ) {
         const route = original.apply(this, args);
         const layer = this.stack[this.stack.length - 1] as ExpressLayer;
-        instrumentation._applyPatch(
-          layer,
-          typeof args[0] === 'string' ? args[0] : undefined
-        );
+        instrumentation._applyPatch(layer, getLayerPath(args));
         return route;
       };
     };
@@ -168,7 +155,7 @@ export class ExpressInstrumentation extends InstrumentationBase<
         instrumentation._applyPatch.call(
           instrumentation,
           layer,
-          typeof args[0] === 'string' ? args[0] : undefined
+          getLayerPath(args)
         );
         return route;
       };

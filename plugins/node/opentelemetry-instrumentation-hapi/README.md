@@ -21,7 +21,7 @@ npm install --save @opentelemetry/instrumentation-hapi
 
 ### Supported Versions
 
-- `>=17.0.0 <21`
+- `>=17.0.0 <22`
 
 ## Usage
 
@@ -65,6 +65,17 @@ The dev dependency of `@hapi/podium@4.1.1` is required to force the compatible t
 ## Hapi Instrumentation Support
 
 This package provides automatic tracing for hapi server routes and [request lifecycle](https://github.com/hapijs/hapi/blob/master/API.md#request-lifecycle) extensions defined either directly or via a Hapi plugin.
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute           | Short Description                                  |
+|---------------------|----------------------------------------------------|
+| `http.method`       | HTTP method                                        |
+| `http.route`        | Route assigned to handler. Ex: `/users/:id`        |
 
 ## Useful links
 

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 export interface RedisPluginClientTypes {
-  options?: {
-    host: string;
-    port: string;
+  connection_options?: {
+    port?: string;
+    host?: string;
   };
 
   address?: string;

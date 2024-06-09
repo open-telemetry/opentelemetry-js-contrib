@@ -24,7 +24,7 @@ import {
 
 import type * as koa from 'koa';
 import { KoaContext, KoaLayerType, KoaInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import {
@@ -34,13 +34,9 @@ import {
 } from './internal-types';
 
 /** Koa instrumentation for OpenTelemetry */
-export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
+export class KoaInstrumentation extends InstrumentationBase {
   constructor(config: KoaInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-koa',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override setConfig(config: KoaInstrumentationConfig = {}) {
@@ -52,7 +48,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   }
 
   protected init() {
-    return new InstrumentationNodeModuleDefinition<typeof koa>(
+    return new InstrumentationNodeModuleDefinition(
       'koa',
       ['^2.0.0'],
       (module: any) => {
@@ -63,7 +59,6 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         if (moduleExports == null) {
           return moduleExports;
         }
-        api.diag.debug('Patching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }
@@ -79,7 +74,6 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
           module[Symbol.toStringTag] === 'Module'
             ? module.default // ESM
             : module; // CommonJS
-        api.diag.debug('Unpatching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }

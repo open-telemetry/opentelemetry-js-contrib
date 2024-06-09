@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/winston-transport",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "OpenTelemetry Transport for winston",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -50,7 +50,7 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/api-logs": "^0.50.0",
+    "@opentelemetry/api-logs": "^0.52.0",
     "winston-transport": "4.*"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/winston-transport#readme"

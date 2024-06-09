@@ -15,7 +15,7 @@
  */
 
 import * as api from '@opentelemetry/api';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import {
   InstrumentationBase,
@@ -37,24 +37,22 @@ import {
 import * as utils from './utils';
 import * as types from './types';
 
-import type * as knex from 'knex';
-
 const contextSymbol = Symbol('opentelemetry.instrumentation-knex.context');
 const DEFAULT_CONFIG: types.KnexInstrumentationConfig = {
   maxQueryLength: 1022,
 };
 
-export class KnexInstrumentation extends InstrumentationBase<any> {
+export class KnexInstrumentation extends InstrumentationBase {
   constructor(config: types.KnexInstrumentationConfig = {}) {
     super(
-      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
-      VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS
     );
@@ -71,15 +69,11 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
   }
 
   private getRunnerNodeModuleFileInstrumentation(basePath: string) {
-    return new InstrumentationNodeModuleFile<typeof knex>(
+    return new InstrumentationNodeModuleFile(
       `knex/${basePath}/runner.js`,
       constants.SUPPORTED_VERSIONS,
       (Runner: any, moduleVersion) => {
-        api.diag.debug(
-          `Applying ${basePath}/runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         this.ensureWrapped(
-          moduleVersion,
           Runner.prototype,
           'query',
           this.createQueryWrapper(moduleVersion)
@@ -87,9 +81,6 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
         return Runner;
       },
       (Runner: any, moduleVersion) => {
-        api.diag.debug(
-          `Removing ${basePath}/runner.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         this._unwrap(Runner.prototype, 'query');
         return Runner;
       }
@@ -97,37 +88,28 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
   }
 
   private getClientNodeModuleFileInstrumentation(basePath: string) {
-    return new InstrumentationNodeModuleFile<typeof knex>(
+    return new InstrumentationNodeModuleFile(
       `knex/${basePath}/client.js`,
       constants.SUPPORTED_VERSIONS,
-      (Client: any, moduleVersion) => {
-        api.diag.debug(
-          `Applying ${basePath}/client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
+      (Client: any) => {
         this.ensureWrapped(
-          moduleVersion,
           Client.prototype,
           'queryBuilder',
           this.storeContext.bind(this)
         );
         this.ensureWrapped(
-          moduleVersion,
           Client.prototype,
           'schemaBuilder',
           this.storeContext.bind(this)
         );
         this.ensureWrapped(
-          moduleVersion,
           Client.prototype,
           'raw',
           this.storeContext.bind(this)
         );
         return Client;
       },
-      (Client: any, moduleVersion) => {
-        api.diag.debug(
-          `Removing ${basePath}/client.js patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
+      (Client: any) => {
         this._unwrap(Client.prototype, 'queryBuilder');
         this._unwrap(Client.prototype, 'schemaBuilder');
         this._unwrap(Client.prototype, 'raw');
@@ -175,6 +157,7 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
         const span = instrumentation.tracer.startSpan(
           utils.getName(name, operation, table),
           {
+            kind: api.SpanKind.CLIENT,
             attributes,
           },
           parent
@@ -216,15 +199,7 @@ export class KnexInstrumentation extends InstrumentationBase<any> {
     };
   }
 
-  ensureWrapped(
-    moduleVersion: string | undefined,
-    obj: any,
-    methodName: string,
-    wrapper: (original: any) => any
-  ) {
-    api.diag.debug(
-      `Applying ${methodName} patch for ${constants.MODULE_NAME}@${moduleVersion}`
-    );
+  ensureWrapped(obj: any, methodName: string, wrapper: (original: any) => any) {
     if (isWrapped(obj[methodName])) {
       this._unwrap(obj, methodName);
     }

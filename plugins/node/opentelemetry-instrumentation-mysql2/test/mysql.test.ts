@@ -154,7 +154,7 @@ describe('mysql2@2.x', () => {
   afterEach(done => {
     context.disable();
     memoryExporter.reset();
-    instrumentation.setConfig();
+    instrumentation.setConfig({});
     instrumentation.disable();
     connection.end(() => {
       pool.end(() => {
