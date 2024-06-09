@@ -98,7 +98,7 @@ describe('ContainerDetector', () => {
       readStub = sinon.stub(ContainerDetector, 'readFileAsync' as any);
       sinon.stub(containerDetector, '_getContainerIdV1' as any).resolves('');
       sinon.stub(containerDetector, '_getContainerIdV2' as any).resolves(correctCgroupV2Data);
-
+      
       const containerId = await containerDetector['_getContainerId']();
       assert.strictEqual(containerId, correctCgroupV2Data);
     });
