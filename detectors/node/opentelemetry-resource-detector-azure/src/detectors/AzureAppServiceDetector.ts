@@ -24,7 +24,6 @@ import {
   WEBSITE_SITE_NAME,
   WEBSITE_SLOT_NAME,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
-  FUNCTIONS_VERSION,
 } from '../types';
 import {
   SEMRESATTRS_CLOUD_REGION,
@@ -37,7 +36,7 @@ import {
   CLOUDPROVIDERVALUES_AZURE,
   CLOUDPLATFORMVALUES_AZURE_APP_SERVICE,
 } from '@opentelemetry/semantic-conventions';
-import { getAzureResourceUri } from '../utils';
+import { getAzureResourceUri, isAzureFunction } from '../utils';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
   [SEMRESATTRS_CLOUD_REGION]: REGION_NAME,
@@ -55,8 +54,7 @@ class AzureAppServiceDetector implements DetectorSync {
   detect(): IResource {
     let attributes = {};
     const websiteSiteName = process.env[WEBSITE_SITE_NAME];
-    const isAzureFunction = !!process.env[FUNCTIONS_VERSION];
-    if (websiteSiteName && !isAzureFunction) {
+    if (websiteSiteName && !isAzureFunction()) {
       attributes = {
         ...attributes,
         [SEMRESATTRS_SERVICE_NAME]: websiteSiteName,
