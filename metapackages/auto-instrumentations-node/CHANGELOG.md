@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.47.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.47.0...auto-instrumentations-node-v0.47.1) (2024-06-10)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-express bumped from ^0.40.0 to ^0.40.1
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.44.0 to ^0.45.0
+    * @opentelemetry/resource-detector-azure bumped from ^0.2.8 to ^0.2.9
+    * @opentelemetry/resource-detector-container bumped from ^0.3.10 to ^0.3.11
+
 ## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.46.1...auto-instrumentations-node-v0.47.0) (2024-06-06)
 
 
