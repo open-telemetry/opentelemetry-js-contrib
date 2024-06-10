@@ -15,7 +15,10 @@
  */
 
 import * as tracing from '@opentelemetry/sdk-trace-base';
-import * as assert from 'assert';
+// @ts-expect-error: not an export, but we want the prebundled version
+import chai from 'chai/chai.js';
+
+const { assert } = chai as typeof import('chai');
 
 export class DummySpanExporter implements tracing.SpanExporter {
   export(spans: tracing.ReadableSpan[]) {}
