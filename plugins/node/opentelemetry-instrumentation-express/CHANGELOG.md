@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.40.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.40.0...instrumentation-express-v0.40.1) (2024-06-10)
+
+
+### Bug Fixes
+
+* **instr-express:** keep hidden properties in layer handlers ([#2137](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2137)) ([ce5f48d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ce5f48d6960726bed69fac0ef07747780fa02a63))
+
 ## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.39.0...instrumentation-express-v0.40.0) (2024-06-06)
 
 
