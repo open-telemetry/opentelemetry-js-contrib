@@ -63,7 +63,6 @@
     "assert": "2.0.0",
     "babel-loader": "8.3.0",
     "babel-plugin-istanbul": "6.1.1",
-    "cross-var": "1.1.0",
     "karma": "6.4.3",
     "karma-chrome-launcher": "3.1.0",
     "karma-coverage": "2.2.1",
