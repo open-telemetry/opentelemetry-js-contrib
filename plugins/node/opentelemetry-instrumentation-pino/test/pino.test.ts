@@ -28,7 +28,6 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
@@ -52,7 +51,6 @@ tracerProvider.addSpanProcessor(
   new SimpleSpanProcessor(new InMemorySpanExporter())
 );
 const tracer = tracerProvider.getTracer('default');
-context.setGlobalContextManager(new AsyncHooksContextManager());
 
 // Setup LoggerProvider for "log sending" tests.
 const resource = new Resource({
