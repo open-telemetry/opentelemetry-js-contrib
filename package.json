@@ -13,25 +13,22 @@
   "types": "build/src/index.d.ts",
   "scripts": {
     "clean": "lerna run clean",
-    "postinstall": "npm run bootstrap",
-    "prepare": "husky install",
     "precompile": "tsc --version && npm run version:update",
     "version:update": "lerna run version:update",
     "compile": "lerna run compile",
-    "compile:examples": "lerna run compile:examples",
     "prewatch": "npm run precompile",
     "test": "lerna run test",
     "test:ci:changed": "lerna run test --since origin/main",
     "test:browser": "lerna run test:browser --concurrency 1",
-    "bootstrap": "lerna bootstrap --no-ci",
+    "test-all-versions": "npm run --if-present --workspaces test-all-versions",
     "bump": "lerna publish",
     "changelog": "lerna-changelog",
-    "lerna:link": "lerna link",
     "lint": "lerna run lint",
     "lint:fix": "lerna run lint:fix",
     "lint:examples": "eslint ./examples/**/*.js",
     "lint:examples:fix": "eslint ./examples/**/*.js --fix",
-    "lerna:scope": "lerna bootstrap --include-dependents --include-dependencies --scope"
+    "lint:markdown": "markdownlint-cli2 $(git ls-files '*.md')",
+    "lint:markdown:fix": "markdownlint-cli2 --fix $(git ls-files '*.md')"
   },
   "keywords": [
     "opentelemetry",
@@ -44,8 +41,6 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@commitlint/cli": "16.0.2",
-    "@commitlint/config-conventional": "16.0.0",
     "@typescript-eslint/eslint-plugin": "5.8.1",
     "@typescript-eslint/parser": "5.8.1",
     "eslint": "8.7.0",
@@ -55,11 +50,15 @@
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
-    "husky": "7.0.4",
-    "lerna": "5.5.2",
+    "glob": "^10.3.10",
+    "lerna": "6.6.2",
     "lerna-changelog": "2.2.0",
-    "prettier": "2.8.7",
-    "typescript": "4.4.4"
+    "markdownlint-cli2": "0.13.0",
+    "minimatch": "^9.0.3",
+    "prettier": "2.8.8",
+    "semver": "^7.6.0",
+    "process": "0.11.10",
+    "util": "0.12.5"
   },
   "changelog": {
     "labels": {
@@ -74,5 +73,13 @@
       "renovate-bot",
       "dependabot"
     ]
-  }
+  },
+  "workspaces": [
+    "packages/*",
+    "plugins/node/*",
+    "plugins/web/*",
+    "propagators/*",
+    "detectors/node/*",
+    "metapackages/*"
+  ]
 }

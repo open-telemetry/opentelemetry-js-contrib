@@ -15,14 +15,17 @@
  */
 
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
-import { RPCType, setRPCMetadata } from '@opentelemetry/core';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
+import {
+  runTestFixture,
+  TestCollector,
+} from '@opentelemetry/contrib-test-utils';
 import { getPlugin } from './plugin';
 const plugin = getPlugin();
 
@@ -119,6 +122,52 @@ describe('Hapi Instrumentation - Core Tests', () => {
               return 'Hello World!';
             },
           },
+        });
+
+        await server.start();
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+        await context.with(
+          trace.setSpan(context.active(), rootSpan),
+          async () => {
+            const res = await server.inject({
+              method: 'GET',
+              url: '/',
+            });
+            assert.strictEqual(res.statusCode, 200);
+
+            rootSpan.end();
+            assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+
+            const requestHandlerSpan = memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name === 'route - /');
+            assert.notStrictEqual(requestHandlerSpan, undefined);
+            assert.strictEqual(
+              requestHandlerSpan?.attributes[AttributeNames.HAPI_TYPE],
+              HapiLayerType.ROUTER
+            );
+
+            const exportedRootSpan = memoryExporter
+              .getFinishedSpans()
+              .find(span => span.name === 'rootSpan');
+            assert.notStrictEqual(exportedRootSpan, undefined);
+          }
+        );
+      });
+    });
+
+    describe('when handler is returned by route.options function', () => {
+      it('should create a child span for single routes', async () => {
+        const rootSpan = tracer.startSpan('rootSpan');
+        server.route({
+          method: 'GET',
+          path: '/',
+          options: () => ({
+            handler: (request, h) => {
+              return 'Hello World!';
+            },
+          }),
         });
 
         await server.start();
@@ -379,7 +428,7 @@ describe('Hapi Instrumentation - Core Tests', () => {
       assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 0);
     });
 
-    it('should rename root span with route information', async () => {
+    it('should update rpcMetadata.route information', async () => {
       const rootSpan = tracer.startSpan('rootSpan', {});
       server.route({
         method: 'GET',
@@ -391,7 +440,7 @@ describe('Hapi Instrumentation - Core Tests', () => {
 
       await server.start();
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       await context.with(
         setRPCMetadata(trace.setSpan(context.active(), rootSpan), rpcMetadata),
         async () => {
@@ -404,14 +453,7 @@ describe('Hapi Instrumentation - Core Tests', () => {
           rootSpan.end();
           assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
 
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /users/{userId}');
-          assert.notStrictEqual(exportedRootSpan, undefined);
-          assert.strictEqual(
-            exportedRootSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
-            '/users/{userId}'
-          );
+          assert.strictEqual(rpcMetadata.route, '/users/{userId}');
         }
       );
     });
@@ -461,7 +503,7 @@ describe('Hapi Instrumentation - Core Tests', () => {
     it('should not create new spans', async () => {
       plugin.disable();
 
-      // must reininitialize here for effects of disabling plugin to become apparent
+      // must reinitialize here for effects of disabling plugin to become apparent
       server = hapi.server({
         port: 3000,
         host: 'localhost',
@@ -497,6 +539,37 @@ describe('Hapi Instrumentation - Core Tests', () => {
           );
         }
       );
+    });
+  });
+
+  describe('ESM', () => {
+    it('should work with ESM modules', async () => {
+      await runTestFixture({
+        cwd: __dirname,
+        argv: ['fixtures/use-hapi.mjs'],
+        env: {
+          NODE_OPTIONS:
+            '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+          NODE_NO_WARNINGS: '1',
+        },
+        checkResult: (err, stdout, stderr) => {
+          assert.ifError(err);
+        },
+        checkCollector: (collector: TestCollector) => {
+          const spans = collector.sortedSpans;
+          assert.strictEqual(spans.length, 2);
+          assert.strictEqual(spans[0].name, 'GET /route/{param}');
+          assert.strictEqual(
+            spans[0].instrumentationScope.name,
+            '@opentelemetry/instrumentation-http'
+          );
+          assert.strictEqual(spans[1].name, 'route - /route/{param}');
+          assert.strictEqual(
+            spans[1].instrumentationScope.name,
+            '@opentelemetry/instrumentation-hapi'
+          );
+        },
+      });
     });
   });
 });

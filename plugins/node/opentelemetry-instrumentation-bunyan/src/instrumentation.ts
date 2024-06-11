@@ -14,54 +14,86 @@
  * limitations under the License.
  */
 
-import {
-  context,
-  diag,
-  trace,
-  isSpanContextValid,
-  Span,
-} from '@opentelemetry/api';
+import { inherits } from 'util';
+import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
-  isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { BunyanInstrumentationConfig } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';
+import { SeverityNumber } from '@opentelemetry/api-logs';
 
-export class BunyanInstrumentation extends InstrumentationBase<
-  typeof BunyanLogger
-> {
+const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
+  disableLogSending: false,
+  disableLogCorrelation: false,
+};
+
+export class BunyanInstrumentation extends InstrumentationBase {
   constructor(config: BunyanInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-bunyan', VERSION, config);
+    super(
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
+      Object.assign({}, DEFAULT_CONFIG, config)
+    );
   }
 
   protected init() {
     return [
-      new InstrumentationNodeModuleDefinition<typeof BunyanLogger>(
+      new InstrumentationNodeModuleDefinition(
         'bunyan',
         ['<2.0'],
-        logger => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const proto = logger.prototype as any;
-          if (isWrapped(proto['_emit'])) {
-            this._unwrap(proto, '_emit');
-          }
+        (module: any) => {
+          const instrumentation = this;
+          const Logger =
+            module[Symbol.toStringTag] === 'Module'
+              ? module.default // ESM
+              : module; // CommonJS
 
           this._wrap(
-            proto,
+            Logger.prototype,
             '_emit',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this._getPatchedEmit() as any
           );
-          return logger;
-        },
-        logger => {
-          if (logger === undefined) return;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          this._unwrap(logger.prototype as any, '_emit');
+
+          function LoggerTraced(this: any, ...args: unknown[]) {
+            let inst;
+            let retval = undefined;
+            if (this instanceof LoggerTraced) {
+              // called with `new Logger()`
+              inst = this;
+              Logger.apply(this, args);
+            } else {
+              // called without `new`
+              inst = Logger(...args);
+              retval = inst;
+            }
+            // If `_childOptions` is defined, this is a `Logger#child(...)`
+            // call. We must not add an OTel stream again.
+            if (args[1] /* _childOptions */ === undefined) {
+              instrumentation._addStream(inst);
+            }
+            return retval;
+          }
+          // Must use the deprecated `inherits` to support this style:
+          //    const log = require('bunyan')({name: 'foo'});
+          // i.e. calling the constructor function without `new`.
+          inherits(LoggerTraced, Logger);
+
+          const patchedExports = Object.assign(LoggerTraced, Logger);
+
+          this._wrap(
+            patchedExports,
+            'createLogger',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this._getPatchedCreateLogger() as any
+          );
+
+          return patchedExports;
         }
       ),
     ];
@@ -71,22 +103,25 @@ export class BunyanInstrumentation extends InstrumentationBase<
     return this._config;
   }
 
-  override setConfig(config: BunyanInstrumentationConfig) {
-    this._config = config;
+  override setConfig(config: BunyanInstrumentationConfig = {}) {
+    this._config = Object.assign({}, DEFAULT_CONFIG, config);
   }
 
   private _getPatchedEmit() {
     return (original: (...args: unknown[]) => void) => {
       const instrumentation = this;
       return function patchedEmit(this: BunyanLogger, ...args: unknown[]) {
-        const span = trace.getSpan(context.active());
+        const config = instrumentation.getConfig();
+        if (!instrumentation.isEnabled() || config.disableLogCorrelation) {
+          return original.apply(this, args);
+        }
 
+        const span = trace.getSpan(context.active());
         if (!span) {
           return original.apply(this, args);
         }
 
         const spanContext = span.spanContext();
-
         if (!isSpanContextValid(spanContext)) {
           return original.apply(this, args);
         }
@@ -103,6 +138,35 @@ export class BunyanInstrumentation extends InstrumentationBase<
     };
   }
 
+  private _getPatchedCreateLogger() {
+    return (original: (...args: unknown[]) => void) => {
+      const instrumentation = this;
+      return function patchedCreateLogger(...args: unknown[]) {
+        const logger = original(...args);
+        instrumentation._addStream(logger);
+        return logger;
+      };
+    };
+  }
+
+  private _addStream(logger: any) {
+    const config: BunyanInstrumentationConfig = this.getConfig();
+    if (!this.isEnabled() || config.disableLogSending) {
+      return;
+    }
+    this._diag.debug('Adding OpenTelemetryBunyanStream to logger');
+    let streamLevel = logger.level();
+    if (config.logSeverity) {
+      const bunyanLevel = bunyanLevelFromSeverity(config.logSeverity);
+      streamLevel = bunyanLevel || streamLevel;
+    }
+    logger.addStream({
+      type: 'raw',
+      stream: new OpenTelemetryBunyanStream(),
+      level: streamLevel,
+    });
+  }
+
   private _callHook(span: Span, record: Record<string, string>) {
     const hook = this.getConfig().logHook;
 
@@ -114,10 +178,27 @@ export class BunyanInstrumentation extends InstrumentationBase<
       () => hook(span, record),
       err => {
         if (err) {
-          diag.error('bunyan instrumentation: error calling logHook', err);
+          this._diag.error('error calling logHook', err);
         }
       },
       true
     );
   }
+}
+
+function bunyanLevelFromSeverity(severity: SeverityNumber): string | undefined {
+  if (severity >= SeverityNumber.FATAL) {
+    return 'fatal';
+  } else if (severity >= SeverityNumber.ERROR) {
+    return 'error';
+  } else if (severity >= SeverityNumber.WARN) {
+    return 'warn';
+  } else if (severity >= SeverityNumber.INFO) {
+    return 'info';
+  } else if (severity >= SeverityNumber.DEBUG) {
+    return 'debug';
+  } else if (severity >= SeverityNumber.TRACE) {
+    return 'trace';
+  }
+  return;
 }

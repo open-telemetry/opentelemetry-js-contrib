@@ -82,7 +82,7 @@ Because the browser does not send a trace context header for the initial page na
 </body>
 ```
 
-## Optional : Add custom attributes to document load span if needed
+## Optional : Add custom attributes to spans if needed
 
 If it is needed to add custom attributes to the document load span,and/or document fetch span and/or resource fetch spans, respective functions to do so needs to be provided
 as a config to the DocumentLoad Instrumentation as shown below. The attributes will be added to the respective spans
@@ -93,11 +93,16 @@ the rest of the process continues.
 const addCustomAttributesToSpan = (span: Span) => {
   span.setAttribute('<custom.attribute.key>','<custom-attribute-value>');
 }
+const addCustomAttributesToResourceFetchSpan = (span: Span, resource: PerformanceResourceTiming) => {
+  span.setAttribute('<custom.attribute.key>','<custom-attribute-value>');
+  span.setAttribute('resource.tcp.duration_ms', resource.connectEnd - resource.connectStart);
+}
 registerInstrumentations({
   instrumentations: [
     new DocumentLoadInstrumentation({
         applyCustomAttributesOnSpan: {
-            documentLoad: addCustomAttributesToSpan
+            documentLoad: addCustomAttributesToSpan,
+            resourceFetch: addCustomAttributesToResourceFetchSpan
         }
     })
     ]
@@ -105,6 +110,29 @@ registerInstrumentations({
 ```
 
 See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/tracer-web) for a short example.
+
+## Document Load Instrumentation Options
+
+The document load instrumentation plugin has few options available to choose from. You can set the following:
+
+| Options                                                                                                                                                                  | Type                          | Description                                                                             |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|-----------------------------------------------------------------------------------------|
+| `applyCustomAttributesOnSpan.documentLoad`| `DocumentLoadCustomAttributeFunction` | Function for adding custom attributes to `documentLoad` spans.                                                  |
+| `applyCustomAttributesOnSpan.documentFetch`                      | `DocumentLoadCustomAttributeFunction`                     | Function for adding custom attributes to `documentFetch` spans.  |
+| `applyCustomAttributesOnSpan.resourceFetch`                      | `ResourceFetchCustomAttributeFunction`                     | Function for adding custom attributes to `resourceFetch` spans  |
+| `ignoreNetworkEvents`                      | `boolean`                     | Ignore adding [network events as span events](https://github.com/open-telemetry/opentelemetry-js/blob/e49c4c7f42c6c444da3f802687cfa4f2d6983f46/packages/opentelemetry-sdk-trace-web/src/enums/PerformanceTimingNames.ts#L17) for document fetch and resource fetch spans.  |
+| `ignorePerformancePaintEvents`                      | `boolean`                     | Ignore adding performance resource paint span events to document load spans.  |
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute         | Short Description                                                              |
+| ----------------- | ------------------------------------------------------------------------------ |
+| `http.url`        | Full HTTP request URL in the form `scheme://host[:port]/path?query[#fragment]` |
+| `http.user_agent` | Value of the HTTP User-Agent header sent by the client                         |
 
 ## Useful links
 

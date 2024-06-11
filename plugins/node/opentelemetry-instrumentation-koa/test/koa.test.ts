@@ -15,14 +15,19 @@
  */
 
 import * as KoaRouter from '@koa/router';
-import { context, trace, Span } from '@opentelemetry/api';
+import { context, trace, Span, SpanKind } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_HTTP_METHOD,
+  SEMATTRS_HTTP_ROUTE,
+} from '@opentelemetry/semantic-conventions';
 
 import { KoaInstrumentation } from '../src';
 const plugin = new KoaInstrumentation();
@@ -34,7 +39,7 @@ import * as sinon from 'sinon';
 import { AddressInfo } from 'net';
 import { KoaLayerType, KoaRequestInfo } from '../src/types';
 import { AttributeNames } from '../src/enums/AttributeNames';
-import { RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
@@ -132,9 +137,9 @@ describe('Koa Instrumentation', () => {
     };
 
   describe('Instrumenting @koa/router calls', () => {
-    it('should create a child span for middlewares', async () => {
+    it('should create a child span for middlewares (string route)', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
         context.with(
           setRPCMetadata(
@@ -168,23 +173,75 @@ describe('Koa Instrumentation', () => {
             requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
             KoaLayerType.ROUTER
           );
-
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[AttributeNames.KOA_NAME],
             '/post/:id'
           );
 
-          const exportedRootSpan = memoryExporter
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            '/post/:id'
+          );
+
+          assert.strictEqual(rpcMetadata.route, '/post/:id');
+        }
+      );
+    });
+
+    it('should create a child span for middlewares (RegExp route)', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
+      app.use((ctx, next) =>
+        context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        )
+      );
+
+      const router = new KoaRouter();
+      router.get(/^\/post/, ctx => {
+        ctx.body = 'Post';
+      });
+
+      app.use(router.routes());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/post/0`);
+          rootSpan.end();
+
+          assert.deepStrictEqual(memoryExporter.getFinishedSpans().length, 2);
+          const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
-            .find(span => span.name === 'GET /post/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+            .find(span => span.name.includes('router - /^\\/post/'));
+          assert.notStrictEqual(requestHandlerSpan, undefined);
+
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.ROUTER
+          );
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[AttributeNames.KOA_NAME],
+            '/^\\/post/'
+          );
+
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
+            '/^\\/post/'
+          );
+
+          assert.strictEqual(rpcMetadata.route, '/^\\/post/');
         }
       );
     });
 
     it('should create a named child span for middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
         context.with(
           setRPCMetadata(
@@ -220,21 +277,18 @@ describe('Koa Instrumentation', () => {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/post/:id'
           );
 
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /post/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata.route, '/post/:id');
         }
       );
     });
 
     it('should correctly instrument nested routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
         context.with(
           setRPCMetadata(
@@ -272,21 +326,18 @@ describe('Koa Instrumentation', () => {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /:first/post/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata.route, '/:first/post/:id');
         }
       );
     });
 
     it('should correctly instrument prefixed routers', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+      const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span: rootSpan };
       app.use((ctx, next) =>
         context.with(
           setRPCMetadata(
@@ -322,14 +373,11 @@ describe('Koa Instrumentation', () => {
           );
 
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/:first/post/:id'
           );
 
-          const exportedRootSpan = memoryExporter
-            .getFinishedSpans()
-            .find(span => span.name === 'GET /:first/post/:id');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata.route, '/:first/post/:id');
         }
       );
     });
@@ -364,7 +412,9 @@ describe('Koa Instrumentation', () => {
             .find(span => span.name.includes('spanCreateMiddleware'));
           assert.notStrictEqual(fooParentSpan, undefined);
 
-          const fooSpan = memoryExporter.getFinishedSpans().find(span => 'foo');
+          const fooSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'foo');
           assert.notStrictEqual(fooSpan, undefined);
           assert.strictEqual(
             fooSpan!.parentSpanId,
@@ -524,7 +574,7 @@ describe('Koa Instrumentation', () => {
       assert.ok(exceptionEvent, 'There should be an exception event recorded');
       assert.deepStrictEqual(exceptionEvent.name, 'exception');
       assert.deepStrictEqual(
-        exceptionEvent.attributes![SemanticAttributes.EXCEPTION_MESSAGE],
+        exceptionEvent.attributes![SEMATTRS_EXCEPTION_MESSAGE],
         'I failed!'
       );
     });
@@ -545,10 +595,7 @@ describe('Koa Instrumentation', () => {
       );
 
       const requestHook = sinon.spy((span: Span, info: KoaRequestInfo) => {
-        span.setAttribute(
-          SemanticAttributes.HTTP_METHOD,
-          info.context.request.method
-        );
+        span.setAttribute(SEMATTRS_HTTP_METHOD, info.context.request.method);
 
         throw Error('error thrown in requestHook');
       });
@@ -662,6 +709,38 @@ describe('Koa Instrumentation', () => {
           );
         }
       );
+    });
+  });
+
+  it('should work with ESM usage', async () => {
+    await testUtils.runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-koa.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: testUtils.TestCollector) => {
+        // use-koa.mjs creates a Koa app with a 'GET /post/:id' endpoint and
+        // a `simpleMiddleware`, then makes a single 'GET /post/0' request. We
+        // expect to see spans like this:
+        //    span 'GET /post/:id'
+        //    `- span 'middleware - simpleMiddleware'
+        //       `- span 'router - /post/:id'
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans[0].name, 'GET /post/:id');
+        assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+        assert.strictEqual(spans[1].name, 'middleware - simpleMiddleware');
+        assert.strictEqual(spans[1].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[1].parentSpanId, spans[0].spanId);
+        assert.strictEqual(spans[2].name, 'router - /post/:id');
+        assert.strictEqual(spans[2].kind, SpanKind.SERVER);
+        assert.strictEqual(spans[2].parentSpanId, spans[1].spanId);
+      },
     });
   });
 });

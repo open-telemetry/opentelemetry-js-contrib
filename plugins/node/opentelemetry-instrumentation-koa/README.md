@@ -7,7 +7,11 @@ This module provides automatic instrumentation for the [Koa](https://github.com/
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+## Status
+
+| Maturity                                              | [Component Owner](../../../.github/component_owners.yml) | Compatibility         |
+| ----------------------------------------------------- | -------------------------------------------------------- | --------------------- |
+| [Unmaintained](../../../CONTRIBUTING.md#unmaintained) | N/A                                                      | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 
@@ -39,16 +43,16 @@ registerInstrumentations({
 });
 ```
 
-See [`examples`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-koa/examples) for a short example using both Koa and @koa/router.
+See [`examples/koa`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/koa) for a short example using both Koa and @koa/router.
 
 Note that generator-based middleware are deprecated and won't be instrumented.
 
 ### Koa Instrumentation Options
 
-| Options | Type | Example | Description |
-| ------- | ---- | ------- | ----------- |
-| `ignoreLayersType`| `KoaLayerType[]` | `['middleware']` | Ignore layers of specified type. |
-| `requestHook` | `KoaRequestCustomAttributeFunction` | `(span, info) => {}` | Function for adding custom attributes to Koa middleware layers. Receives params: `Span, KoaRequestInfo`. |
+| Options            | Type                                | Example              | Description                                                                                              |
+| ------------------ | ----------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------- |
+| `ignoreLayersType` | `KoaLayerType[]`                    | `['middleware']`     | Ignore layers of specified type.                                                                         |
+| `requestHook`      | `KoaRequestCustomAttributeFunction` | `(span, info) => {}` | Function for adding custom attributes to Koa middleware layers. Receives params: `Span, KoaRequestInfo`. |
 
 `ignoreLayersType` accepts an array of `KoaLayerType` which can take the following string values:
 

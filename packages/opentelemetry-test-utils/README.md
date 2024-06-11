@@ -19,9 +19,9 @@ This package:
 
 By using this package, testing instrumentation code can be shorter, and good practices for writing tests are more easily applied.
 
-### Supporter Version
+### Supported Version
 
-Since [root hook plugin](https://mochajs.org/#root-hook-plugins) are used, this package is compatible to mocha v8.0.0 and above.
+Since [root hook plugin](https://mochajs.org/#root-hook-plugins) are used, this package is compatible to mocha v7.2.0 and above.
 
 ### Usage
 
@@ -64,6 +64,10 @@ it('some test', () => {
 ```
 
 That's it - supper short and easy.
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
 
 ## Useful links
 

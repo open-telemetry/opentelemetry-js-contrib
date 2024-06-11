@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-fs",
-  "version": "0.7.2",
-  "description": "OpenTelemetry automatic instrumentation package for fs",
+  "version": "0.13.0",
+  "description": "OpenTelemetry instrumentation for `node:fs` file system interactions module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -11,11 +11,11 @@
     "clean": "rimraf build/*",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "precompile": "tsc --version && lerna run version --scope @opentelemetry/instrumentation-fs --include-dependencies",
+    "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-fs --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "version:update": "node ../../../scripts/version-update.js",
-    "compile": "npm run version:update && tsc -p ."
+    "compile": "tsc -p ."
   },
   "keywords": [
     "fs",
@@ -48,19 +48,18 @@
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@opentelemetry/sdk-trace-node": "^1.8.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "18.11.7",
+    "@types/node": "18.6.5",
     "@types/sinon": "^10.0.11",
     "mocha": "7.2.0",
     "nyc": "15.1.0",
-    "rimraf": "4.2.0",
-    "sinon": "15.0.1",
+    "rimraf": "5.0.5",
+    "sinon": "15.2.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.38.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0"
+    "@opentelemetry/instrumentation": "^0.52.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-fs#readme"
 }

@@ -33,8 +33,9 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
-  SemanticAttributes,
-  SemanticResourceAttributes,
+  SEMATTRS_EXCEPTION_MESSAGE,
+  SEMATTRS_FAAS_EXECUTION,
+  SEMRESATTRS_FAAS_NAME,
 } from '@opentelemetry/semantic-conventions';
 import {
   Context as OtelContext,
@@ -56,7 +57,7 @@ const assertSpanSuccess = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
   assert.strictEqual(span.name, 'my_function');
   assert.strictEqual(
-    span.attributes[SemanticAttributes.FAAS_EXECUTION],
+    span.attributes[SEMATTRS_FAAS_EXECUTION],
     'aws_request_id'
   );
   assert.strictEqual(span.attributes['faas.id'], 'my_arn');
@@ -68,7 +69,7 @@ const assertSpanFailure = (span: ReadableSpan) => {
   assert.strictEqual(span.kind, SpanKind.SERVER);
   assert.strictEqual(span.name, 'my_function');
   assert.strictEqual(
-    span.attributes[SemanticAttributes.FAAS_EXECUTION],
+    span.attributes[SEMATTRS_FAAS_EXECUTION],
     'aws_request_id'
   );
   assert.strictEqual(span.attributes['faas.id'], 'my_arn');
@@ -76,7 +77,7 @@ const assertSpanFailure = (span: ReadableSpan) => {
   assert.strictEqual(span.status.message, 'handler error');
   assert.strictEqual(span.events.length, 1);
   assert.strictEqual(
-    span.events[0].attributes![SemanticAttributes.EXCEPTION_MESSAGE],
+    span.events[0].attributes![SEMATTRS_EXCEPTION_MESSAGE],
     'handler error'
   );
 };
@@ -544,6 +545,92 @@ describe('lambda handler', () => {
       assert.strictEqual(spans.length, 0);
     });
 
+    it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "true"', async () => {
+      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'true';
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {});
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.notDeepStrictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "TRUE"', async () => {
+      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'TRUE';
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {});
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.notDeepStrictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('ignores sampled lambda context if env OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION is set to "True"', async () => {
+      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'True';
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {});
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.notDeepStrictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, undefined);
+    });
+
+    it('ignores OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION if `config.disableAwsContextPropagation` is set', async () => {
+      process.env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] = 'true';
+      process.env[traceContextEnvironmentKey] = sampledAwsHeader;
+      initializeHandler('lambda-test/async.handler', {
+        disableAwsContextPropagation: false,
+      });
+
+      const result = await lambdaRequire('lambda-test/async').handler(
+        'arg',
+        ctx
+      );
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(
+        span.spanContext().traceId,
+        sampledAwsSpanContext.traceId
+      );
+      assert.strictEqual(span.parentSpanId, sampledAwsSpanContext.spanId);
+    });
+
     it('ignores sampled lambda context if "disableAwsContextPropagation" config option is true', async () => {
       process.env[traceContextEnvironmentKey] = sampledAwsHeader;
       initializeHandler('lambda-test/async.handler', {
@@ -755,10 +842,7 @@ describe('lambda handler', () => {
       it('sync - success', async () => {
         initializeHandler('lambda-test/async.handler', {
           requestHook: (span, { context }) => {
-            span.setAttribute(
-              SemanticResourceAttributes.FAAS_NAME,
-              context.functionName
-            );
+            span.setAttribute(SEMRESATTRS_FAAS_NAME, context.functionName);
           },
         });
 
@@ -767,7 +851,7 @@ describe('lambda handler', () => {
         const [span] = spans;
         assert.strictEqual(spans.length, 1);
         assert.strictEqual(
-          span.attributes[SemanticResourceAttributes.FAAS_NAME],
+          span.attributes[SEMRESATTRS_FAAS_NAME],
           ctx.functionName
         );
         assertSpanSuccess(span);
@@ -876,6 +960,27 @@ describe('lambda handler', () => {
         assertSpanSuccess(span);
         assert.strictEqual(span.parentSpanId, undefined);
       });
+    });
+  });
+
+  describe('custom handler', () => {
+    it('prioritizes instrumenting the handler specified on the config over the handler implied from the _HANDLER env var', async () => {
+      initializeHandler('not-a-real-handler', {
+        lambdaHandler: 'lambda-test/async.handler',
+      });
+
+      const otherEvent = {};
+      const result = await lambdaRequire('lambda-test/async').handler(
+        otherEvent,
+        ctx
+      );
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpanSuccess(span);
+      assert.strictEqual(span.parentSpanId, undefined);
     });
   });
 });

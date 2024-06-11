@@ -70,6 +70,25 @@ describe('utils', () => {
       assert.strictEqual(instrumentation, undefined);
     });
 
+    it('should return only instrumentations enabled via OTEL_NODE_ENABLED_INSTRUMENTATIONS environment variable', () => {
+      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS =
+        'http,aws-sdk, nestjs-core'; // separator with and without whitespaces should be allowed
+      try {
+        const instrumentations = getNodeAutoInstrumentations();
+
+        assert.deepStrictEqual(
+          new Set(instrumentations.map(i => i.instrumentationName)),
+          new Set([
+            '@opentelemetry/instrumentation-http',
+            '@opentelemetry/instrumentation-aws-sdk',
+            '@opentelemetry/instrumentation-nestjs-core',
+          ])
+        );
+      } finally {
+        delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+      }
+    });
+
     it('should show error for none existing instrumentation', () => {
       const spy = sinon.stub(diag, 'error');
       const name = '@opentelemetry/instrumentation-http2';
@@ -95,25 +114,28 @@ describe('utils', () => {
 
   describe('getResourceDetectorsFromEnv', () => {
     it('should return all resource detectors by default', () => {
-      assert.equal(getResourceDetectorsFromEnv().length, 12);
+      assert.equal(getResourceDetectorsFromEnv().length, 16);
     });
 
     it('should return all resource detectors when OTEL_NODE_RESOURCE_DETECTORS contains "all"', () => {
       process.env.OTEL_NODE_RESOURCE_DETECTORS = 'all';
-
-      assert.equal(getResourceDetectorsFromEnv().length, 12);
+      assert.equal(getResourceDetectorsFromEnv().length, 16);
 
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });
 
     it('should return specific resource detectors depending on OTEL_NODE_RESOURCE_DETECTORS', () => {
-      process.env.OTEL_NODE_RESOURCE_DETECTORS = 'env,host';
+      process.env.OTEL_NODE_RESOURCE_DETECTORS = 'env,host,serviceinstance';
 
       const resourceDetectors = getResourceDetectorsFromEnv();
 
-      assert.equal(resourceDetectors.length, 2);
+      assert.equal(resourceDetectors.length, 3);
       assert.equal(resourceDetectors[0].constructor.name, 'EnvDetectorSync');
       assert.equal(resourceDetectors[1].constructor.name, 'HostDetectorSync');
+      assert.equal(
+        resourceDetectors[2].constructor.name,
+        'ServiceInstanceIdDetectorSync'
+      );
 
       delete process.env.OTEL_NODE_RESOURCE_DETECTORS;
     });

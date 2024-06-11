@@ -1,0 +1,9 @@
+"fastify":
+  # Sanity check the first 4.x release, instead of all releases, plus recent
+  # releases.
+  - versions: "4.0.0 || >=4.24.3 <5"
+    commands: npm run test
+
+# Fastify versions after 4.18.0 require a typescript greater than 4.4.4.
+"typescript":
+  - versions: "4.7.4"

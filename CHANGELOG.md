@@ -1,6 +1,7 @@
+<!-- markdownlint-disable -->
 # CHANGELOG
 
-All notable changes to this project will be documented in this file. Do not remove the "Unreleased" header; it is used in the automated release workflow.
+As of v0.25.1 (2022-01-24) changelog content has moved to separate CHANGELOG.md files for each package. Use [this search for a list of all CHANGELOG.md files in this repo](https://github.com/search?q=repo%3Aopen-telemetry%2Fopentelemetry-js-contrib+path%3A**%2FCHANGELOG.md&type=code).
 
 ## Unreleased
 

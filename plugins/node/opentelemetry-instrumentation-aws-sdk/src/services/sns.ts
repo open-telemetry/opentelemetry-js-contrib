@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Span, Tracer, SpanKind } from '@opentelemetry/api';
+import { Span, Tracer, SpanKind, Attributes } from '@opentelemetry/api';
 import {
-  MessagingDestinationKindValues,
-  SemanticAttributes,
+  MESSAGINGDESTINATIONKINDVALUES_TOPIC,
+  SEMATTRS_MESSAGING_DESTINATION,
+  SEMATTRS_MESSAGING_DESTINATION_KIND,
+  SEMATTRS_MESSAGING_SYSTEM,
 } from '@opentelemetry/semantic-conventions';
 import {
   NormalizedRequest,
@@ -27,26 +29,32 @@ import { injectPropagationContext } from './MessageAttributes';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
 export class SnsServiceExtension implements ServiceExtension {
-  requestPreSpanHook(request: NormalizedRequest): RequestMetadata {
+  requestPreSpanHook(
+    request: NormalizedRequest,
+    _config: AwsSdkInstrumentationConfig
+  ): RequestMetadata {
     let spanKind: SpanKind = SpanKind.CLIENT;
     let spanName = `SNS ${request.commandName}`;
-    const spanAttributes = {
-      [SemanticAttributes.MESSAGING_SYSTEM]: 'aws.sns',
+    const spanAttributes: Attributes = {
+      [SEMATTRS_MESSAGING_SYSTEM]: 'aws.sns',
     };
 
     if (request.commandName === 'Publish') {
       spanKind = SpanKind.PRODUCER;
 
-      spanAttributes[SemanticAttributes.MESSAGING_DESTINATION_KIND] =
-        MessagingDestinationKindValues.TOPIC;
+      spanAttributes[SEMATTRS_MESSAGING_DESTINATION_KIND] =
+        MESSAGINGDESTINATIONKINDVALUES_TOPIC;
       const { TopicArn, TargetArn, PhoneNumber } = request.commandInput;
-      spanAttributes[SemanticAttributes.MESSAGING_DESTINATION] =
+      spanAttributes[SEMATTRS_MESSAGING_DESTINATION] =
         this.extractDestinationName(TopicArn, TargetArn, PhoneNumber);
+      // ToDO: Use SEMATTRS_MESSAGING_DESTINATION_NAME when implemented
+      spanAttributes['messaging.destination.name'] =
+        TopicArn || TargetArn || PhoneNumber || 'unknown';
 
       spanName = `${
         PhoneNumber
           ? 'phone_number'
-          : spanAttributes[SemanticAttributes.MESSAGING_DESTINATION]
+          : spanAttributes[SEMATTRS_MESSAGING_DESTINATION]
       } send`;
     }
 

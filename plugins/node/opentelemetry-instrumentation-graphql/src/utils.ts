@@ -129,7 +129,7 @@ function createResolverSpan(
   };
 
   const span = tracer.startSpan(
-    SpanNames.RESOLVE,
+    `${SpanNames.RESOLVE} ${attributes[AttributeNames.FIELD_PATH]}`,
     {
       attributes,
     },
@@ -392,7 +392,7 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
     }
     const config = getConfig();
 
-    // follows what graphql is doing to decied if this is a trivial resolver
+    // follows what graphql is doing to decide if this is a trivial resolver
     // for which we don't need to create a resolve span
     if (
       config.ignoreTrivialResolveSpans &&

@@ -47,8 +47,9 @@ See [examples/fastify](https://github.com/open-telemetry/opentelemetry-js-contri
 
 ## Fastify Instrumentation Options
 
-| Options | Type | Example | Description |
-| `requestHook` | `FastifyCustomAttributeFunction` | `(span, requestInfo) => {}` | Function for adding custom attributes to Fastify requests. Receives params: `Span, FastifyRequestInfo`. |
+| Options        | Type                         | Example                          | Description                                                                    |
+| -------------- | ---------------------------- | -------------------------------- | ------------------------------------------------------------------------------ |
+| `requestHook`  | `FastifyCustomAttributeFunction` | `(span, requestInfo) => {}`       | Function for adding custom attributes to Fastify requests. Receives parameters: `Span, FastifyRequestInfo`. |
 
 ### Using `requestHook`
 
@@ -66,6 +67,16 @@ const fastifyInstrumentation = new FastifyInstrumentation({
   }
 });
 ```
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute    | Short Description                  |
+| ------------ | ---------------------------------- |
+| `http.route` | The matched route (path template). |
 
 ## Useful links
 

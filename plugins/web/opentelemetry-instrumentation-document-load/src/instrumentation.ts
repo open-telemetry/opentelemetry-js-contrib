@@ -36,10 +36,14 @@ import {
 import {
   DocumentLoadCustomAttributeFunction,
   DocumentLoadInstrumentationConfig,
+  ResourceFetchCustomAttributeFunction,
 } from './types';
 import { AttributeNames } from './enums/AttributeNames';
-import { VERSION } from './version';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import {
+  SEMATTRS_HTTP_URL,
+  SEMATTRS_HTTP_USER_AGENT,
+} from '@opentelemetry/semantic-conventions';
 import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
@@ -48,7 +52,7 @@ import {
 /**
  * This class represents a document load plugin
  */
-export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
+export class DocumentLoadInstrumentation extends InstrumentationBase {
   readonly component: string = 'document-load';
   readonly version: string = '1';
   moduleName = this.component;
@@ -58,7 +62,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
    * @param config
    */
   constructor(config: DocumentLoadInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-document-load', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {}
@@ -114,9 +118,11 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
           entries
         );
         if (fetchSpan) {
-          fetchSpan.setAttribute(SemanticAttributes.HTTP_URL, location.href);
+          fetchSpan.setAttribute(SEMATTRS_HTTP_URL, location.href);
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
-            addSpanNetworkEvents(fetchSpan, entries);
+            if (!this._getConfig().ignoreNetworkEvents) {
+              addSpanNetworkEvents(fetchSpan, entries);
+            }
             this._addCustomAttributesOnSpan(
               fetchSpan,
               this._getConfig().applyCustomAttributesOnSpan?.documentFetch
@@ -126,29 +132,35 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
         }
       });
 
-      rootSpan.setAttribute(SemanticAttributes.HTTP_URL, location.href);
-      rootSpan.setAttribute(
-        SemanticAttributes.HTTP_USER_AGENT,
-        navigator.userAgent
-      );
+      rootSpan.setAttribute(SEMATTRS_HTTP_URL, location.href);
+      rootSpan.setAttribute(SEMATTRS_HTTP_USER_AGENT, navigator.userAgent);
 
       this._addResourcesSpans(rootSpan);
 
-      addSpanNetworkEvent(rootSpan, PTN.FETCH_START, entries);
-      addSpanNetworkEvent(rootSpan, PTN.UNLOAD_EVENT_START, entries);
-      addSpanNetworkEvent(rootSpan, PTN.UNLOAD_EVENT_END, entries);
-      addSpanNetworkEvent(rootSpan, PTN.DOM_INTERACTIVE, entries);
-      addSpanNetworkEvent(
-        rootSpan,
-        PTN.DOM_CONTENT_LOADED_EVENT_START,
-        entries
-      );
-      addSpanNetworkEvent(rootSpan, PTN.DOM_CONTENT_LOADED_EVENT_END, entries);
-      addSpanNetworkEvent(rootSpan, PTN.DOM_COMPLETE, entries);
-      addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_START, entries);
-      addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_END, entries);
+      if (!this._getConfig().ignoreNetworkEvents) {
+        addSpanNetworkEvent(rootSpan, PTN.FETCH_START, entries);
+        addSpanNetworkEvent(rootSpan, PTN.UNLOAD_EVENT_START, entries);
+        addSpanNetworkEvent(rootSpan, PTN.UNLOAD_EVENT_END, entries);
+        addSpanNetworkEvent(rootSpan, PTN.DOM_INTERACTIVE, entries);
+        addSpanNetworkEvent(
+          rootSpan,
+          PTN.DOM_CONTENT_LOADED_EVENT_START,
+          entries
+        );
+        addSpanNetworkEvent(
+          rootSpan,
+          PTN.DOM_CONTENT_LOADED_EVENT_END,
+          entries
+        );
+        addSpanNetworkEvent(rootSpan, PTN.DOM_COMPLETE, entries);
+        addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_START, entries);
+        addSpanNetworkEvent(rootSpan, PTN.LOAD_EVENT_END, entries);
+      }
 
-      addSpanPerformancePaintEvents(rootSpan);
+      if (!this._getConfig().ignorePerformancePaintEvents) {
+        addSpanPerformancePaintEvents(rootSpan);
+      }
+
       this._addCustomAttributesOnSpan(
         rootSpan,
         this._getConfig().applyCustomAttributesOnSpan?.documentLoad
@@ -195,10 +207,13 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
       parentSpan
     );
     if (span) {
-      span.setAttribute(SemanticAttributes.HTTP_URL, resource.name);
-      addSpanNetworkEvents(span, resource);
-      this._addCustomAttributesOnSpan(
+      span.setAttribute(SEMATTRS_HTTP_URL, resource.name);
+      if (!this._getConfig().ignoreNetworkEvents) {
+        addSpanNetworkEvents(span, resource);
+      }
+      this._addCustomAttributesOnResourceSpan(
         span,
+        resource,
         this._getConfig().applyCustomAttributesOnSpan?.resourceFetch
       );
       this._endSpan(span, PTN.RESPONSE_END, resource);
@@ -265,6 +280,31 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<unknown> {
           }
 
           this._diag.error('addCustomAttributesOnSpan', error);
+        },
+        true
+      );
+    }
+  }
+
+  /**
+   * adds custom attributes to span if configured
+   */
+  private _addCustomAttributesOnResourceSpan(
+    span: Span,
+    resource: PerformanceResourceTiming,
+    applyCustomAttributesOnSpan:
+      | ResourceFetchCustomAttributeFunction
+      | undefined
+  ) {
+    if (applyCustomAttributesOnSpan) {
+      safeExecuteInTheMiddle(
+        () => applyCustomAttributesOnSpan(span, resource),
+        error => {
+          if (!error) {
+            return;
+          }
+
+          this._diag.error('addCustomAttributesOnResourceSpan', error);
         },
         true
       );

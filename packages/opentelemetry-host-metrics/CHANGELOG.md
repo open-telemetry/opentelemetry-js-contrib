@@ -1,5 +1,77 @@
 # Changelog
 
+## [0.35.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.1...host-metrics-v0.35.2) (2024-06-06)
+
+
+### Bug Fixes
+
+* **host-metrics:** macOS bundling fix ([#2071](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2071)) ([7d6ddea](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7d6ddea613d6702931d8abb468eb3500fbd06f33))
+* semconv alignment & listed in README ([#2240](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2240)) ([040eaa6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/040eaa68346550447535d48736f80af240db90bf))
+
+## [0.35.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.35.0...host-metrics-v0.35.1) (2024-04-25)
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.34.1...host-metrics-v0.35.0) (2024-01-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **host-metrics:** fix process.cpu.* metrics ([#1785](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1785))
+
+### Bug Fixes
+
+* **host-metrics:** fix process.cpu.* metrics ([#1785](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1785)) ([1e90a40](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/1e90a4055144e48ec007b6237b6a4fecba2748fb))
+
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.34.0...host-metrics-v0.34.1) (2024-01-04)
+
+
+### Bug Fixes
+
+* **host-metrics:** bump minimum systeminformation version to 5.21.20 (security) ([#1868](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1868)) ([c59e666](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c59e666de2b1361ae80697d546633a7d3643ba00))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.33.2...host-metrics-v0.34.0) (2023-12-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **host-metrics:** use the package name as the default instrumentation scope name, to align with instrumentations ([#1822](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1822))
+
+### Features
+
+* **host-metrics:** use the package name as the default instrumentation scope name, to align with instrumentations ([#1822](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1822)) ([bcf3501](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bcf3501e623d0fa6af87eeeef0f1cdd2ef755857)), closes [#1782](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1782)
+
+## [0.33.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.33.1...host-metrics-v0.33.2) (2023-11-13)
+
+
+### Bug Fixes
+
+* host-metrics `system.cpu.utilization` calculation fix ([#1741](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1741)) ([b9350d9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b9350d918bf08569cffb3374d2b1e1fff6b38b80))
+
+## [0.33.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.33.0...host-metrics-v0.33.1) (2023-08-14)
+
+
+### Bug Fixes
+
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.32.2...host-metrics-v0.33.0) (2023-07-12)
+
+
+### Features
+
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+
+## [0.32.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.32.1...host-metrics-v0.32.2) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
 ## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.32.0...host-metrics-v0.32.1) (2023-04-25)
 
 

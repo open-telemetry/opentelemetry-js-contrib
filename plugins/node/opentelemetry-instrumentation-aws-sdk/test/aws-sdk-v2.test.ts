@@ -32,7 +32,9 @@ import { SpanStatusCode, Span, SpanKind } from '@opentelemetry/api';
 import { AttributeNames } from '../src/enums';
 import { mockV2AwsSend } from './testing-utils';
 import { expect } from 'expect';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_STATUS_CODE } from '@opentelemetry/semantic-conventions';
+import { AWSError } from 'aws-sdk';
+import { HttpResponse } from 'aws-sdk/lib/http_response';
 
 describe('instrumentation-aws-sdk-v2', () => {
   const responseMockSuccess = {
@@ -43,9 +45,20 @@ describe('instrumentation-aws-sdk-v2', () => {
     },
   };
 
-  const responseMockWithError = {
+  const error: AWSError = {
+    name: 'error',
+    message: 'something went wrong',
+    stack: 'fakeStack',
+    code: 'errorCode',
+    time: new Date(),
+  };
+
+  const responseMockWithError: Pick<
+    AWS.Response<any, AWSError>,
+    'requestId' | 'error'
+  > & { httpResponse: Partial<HttpResponse> } = {
     requestId: '0000000000000',
-    error: 'something went wrong',
+    error,
     httpResponse: {
       statusCode: 400,
     },
@@ -118,9 +131,9 @@ describe('instrumentation-aws-sdk-v2', () => {
         expect(spanCreateBucket.attributes[AttributeNames.AWS_REGION]).toBe(
           'us-east-1'
         );
-        expect(
-          spanCreateBucket.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(200);
+        expect(spanCreateBucket.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(
+          200
+        );
 
         expect(spanCreateBucket.name).toBe('S3.CreateBucket');
         expect(spanCreateBucket.kind).toEqual(SpanKind.CLIENT);
@@ -146,9 +159,7 @@ describe('instrumentation-aws-sdk-v2', () => {
           'us-east-1'
         );
         expect(spanPutObject.name).toBe('S3.PutObject');
-        expect(
-          spanPutObject.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(200);
+        expect(spanPutObject.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(200);
       });
 
       it('adds proper number of spans with correct attributes if both, promise and callback were used', async () => {
@@ -197,9 +208,7 @@ describe('instrumentation-aws-sdk-v2', () => {
         expect(spanPutObjectCb.attributes[AttributeNames.AWS_REGION]).toBe(
           'us-east-1'
         );
-        expect(
-          spanPutObjectCb.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(200);
+        expect(spanPutObjectCb.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(200);
       });
 
       it('adds proper number of spans with correct attributes if only promise was used', async () => {
@@ -235,9 +244,7 @@ describe('instrumentation-aws-sdk-v2', () => {
         expect(spanPutObjectCb.attributes[AttributeNames.AWS_REGION]).toBe(
           'us-east-1'
         );
-        expect(
-          spanPutObjectCb.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(200);
+        expect(spanPutObjectCb.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(200);
       });
 
       it('should create span if no callback is supplied', done => {
@@ -275,12 +282,25 @@ describe('instrumentation-aws-sdk-v2', () => {
         const awsSpans = getAwsSpans();
         expect(awsSpans.length).toBe(1);
         const [spanCreateBucket] = awsSpans;
-        expect(spanCreateBucket.attributes[AttributeNames.AWS_ERROR]).toBe(
-          responseMockWithError.error
+        const exceptionEvent = spanCreateBucket.events.filter(
+          event => event.name === 'exception'
         );
-        expect(
-          spanCreateBucket.attributes[SemanticAttributes.HTTP_STATUS_CODE]
-        ).toBe(400);
+        expect(exceptionEvent.length).toBe(1);
+
+        expect(exceptionEvent[0]).toStrictEqual(
+          expect.objectContaining({
+            name: 'exception',
+            attributes: {
+              'exception.message': 'something went wrong',
+              'exception.stacktrace': 'fakeStack',
+              'exception.type': 'errorCode',
+            },
+          })
+        );
+
+        expect(spanCreateBucket.attributes[SEMATTRS_HTTP_STATUS_CODE]).toBe(
+          400
+        );
       });
     });
   });

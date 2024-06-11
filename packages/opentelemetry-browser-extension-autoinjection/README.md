@@ -10,7 +10,7 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
 - Google Chrome (with [Manifest Version 3](https://developer.chrome.com/docs/extensions/mv3/intro/) support)
 - Chromium (with Manifest Version 2)
-- Firefox (_unstable_, with Manifest Version 2)
+- Firefox (*unstable*, with Manifest Version 2)
 
 ## Installation
 

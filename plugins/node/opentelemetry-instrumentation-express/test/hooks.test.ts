@@ -27,13 +27,14 @@ import * as sinon from 'sinon';
 import { ExpressInstrumentation } from '../src';
 import { ExpressRequestInfo, SpanNameHook } from '../src/types';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_METHOD } from '@opentelemetry/semantic-conventions';
 
 const instrumentation = new ExpressInstrumentation();
 instrumentation.enable();
 instrumentation.disable();
 
 import { httpRequest, serverWithMiddleware } from './utils';
+import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
 
 describe('ExpressInstrumentation hooks', () => {
   const provider = new NodeTracerProvider();
@@ -59,12 +60,14 @@ describe('ExpressInstrumentation hooks', () => {
     let server: http.Server;
     let port: number;
     let rootSpan: Span;
+    let rpcMetadata: RPCMetadata | undefined;
 
     beforeEach(async () => {
       rootSpan = tracer.startSpan('rootSpan');
 
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.get('*', (req, res) => {
+          rpcMetadata = getRPCMetadata(context.active());
           res.send('ok');
         });
       });
@@ -78,16 +81,8 @@ describe('ExpressInstrumentation hooks', () => {
 
     it('should rename spans', async () => {
       instrumentation.setConfig({
-        spanNameHook: ({ request, route, layerType }, defaultName) => {
-          if (layerType) {
-            return `hook - ${route}`;
-          }
-
-          if (route === '*') {
-            return `parent - ${request.method} ${request.url}`;
-          }
-
-          return defaultName;
+        spanNameHook: ({ route, layerType }) => {
+          return `custom: ${layerType} - ${route}`;
         },
       });
 
@@ -101,12 +96,7 @@ describe('ExpressInstrumentation hooks', () => {
           assert.strictEqual(spans.length, 2);
 
           assert.notStrictEqual(
-            spans.find(span => span.name === 'parent - GET /foo/3'),
-            undefined
-          );
-
-          assert.notStrictEqual(
-            spans.find(span => span.name === 'hook - *'),
+            spans.find(span => span.name === 'custom: request_handler - *'),
             undefined
           );
         }
@@ -129,11 +119,7 @@ describe('ExpressInstrumentation hooks', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 2);
 
-          assert.notStrictEqual(
-            spans.find(span => span.name === 'GET *'),
-            undefined
-          );
-
+          assert.strictEqual(rpcMetadata?.route, '*');
           assert.notStrictEqual(
             spans.find(span => span.name === 'request handler - *'),
             undefined
@@ -159,11 +145,7 @@ describe('ExpressInstrumentation hooks', () => {
           const spans = memoryExporter.getFinishedSpans();
           assert.strictEqual(spans.length, 2);
 
-          assert.notStrictEqual(
-            spans.find(span => span.name === 'GET *'),
-            undefined
-          );
-
+          assert.strictEqual(rpcMetadata?.route, '*');
           assert.notStrictEqual(
             spans.find(span => span.name === 'request handler - *'),
             undefined
@@ -196,7 +178,7 @@ describe('ExpressInstrumentation hooks', () => {
 
     it('should call requestHook when set in config', async () => {
       const requestHook = sinon.spy((span: Span, info: ExpressRequestInfo) => {
-        span.setAttribute(SemanticAttributes.HTTP_METHOD, info.request.method);
+        span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
 
         if (info.layerType) {
           span.setAttribute('express.layer_type', info.layerType);

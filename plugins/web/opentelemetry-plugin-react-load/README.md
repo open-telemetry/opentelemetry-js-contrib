@@ -7,7 +7,11 @@ This module provides automatic instrumentation for *React lifecycles* for Web ap
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-web`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
 
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+## Status
+
+| Maturity                                 | [Component Owner](../../../.github/component_owners.yml) | Compatibility         |
+| ---------------------------------------- | -------------------------------------------------------- | --------------------- |
+| [Unmaintained](../../../CONTRIBUTING.md) | N/A                                                      | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 
@@ -34,6 +38,10 @@ export class Component1 extends BaseOpenTelemetryComponent { ... }
 ```
 
 See [/examples/react-load](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/react-load) for a short example.
+
+## Semantic Conventions
+
+This package does not currently generate any attributes from semantic conventions.
 
 ## Useful links
 

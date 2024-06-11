@@ -13,21 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { SpanAttributes, SpanStatusCode, diag, Span } from '@opentelemetry/api';
+import { Attributes, SpanStatusCode, diag, Span } from '@opentelemetry/api';
 import type { Collection } from 'mongoose';
 import { MongooseResponseCustomAttributesFunction } from './types';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_DB_MONGODB_COLLECTION,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_USER,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 export function getAttributesFromCollection(
   collection: Collection
-): SpanAttributes {
+): Attributes {
   return {
-    [SemanticAttributes.DB_MONGODB_COLLECTION]: collection.name,
-    [SemanticAttributes.DB_NAME]: collection.conn.name,
-    [SemanticAttributes.DB_USER]: collection.conn.user,
-    [SemanticAttributes.NET_PEER_NAME]: collection.conn.host,
-    [SemanticAttributes.NET_PEER_PORT]: collection.conn.port,
+    [SEMATTRS_DB_MONGODB_COLLECTION]: collection.name,
+    [SEMATTRS_DB_NAME]: collection.conn.name,
+    [SEMATTRS_DB_USER]: collection.conn.user,
+    [SEMATTRS_NET_PEER_NAME]: collection.conn.host,
+    [SEMATTRS_NET_PEER_PORT]: collection.conn.port,
   };
 }
 
@@ -92,16 +98,23 @@ export function handleCallbackResponse(
   exec: Function,
   originalThis: any,
   span: Span,
+  args: IArguments,
   responseHook?: MongooseResponseCustomAttributesFunction,
   moduleVersion: string | undefined = undefined
 ) {
-  return exec.apply(originalThis, [
-    (err: Error, response: any) => {
-      err
-        ? setErrorStatus(span, err)
-        : applyResponseHook(span, response, responseHook, moduleVersion);
-      span.end();
-      return callback!(err, response);
-    },
-  ]);
+  let callbackArgumentIndex = 0;
+  if (args.length === 2) {
+    callbackArgumentIndex = 1;
+  }
+
+  args[callbackArgumentIndex] = (err: Error, response: any): any => {
+    err
+      ? setErrorStatus(span, err)
+      : applyResponseHook(span, response, responseHook, moduleVersion);
+
+    span.end();
+    return callback!(err, response);
+  };
+
+  return exec.apply(originalThis, args);
 }

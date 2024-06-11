@@ -31,11 +31,15 @@ const instrumentation = registerInstrumentationTesting(
   new MongoDBInstrumentation()
 );
 
-import * as mongodb from 'mongodb';
+import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
-describe('MongoDBInstrumentation', () => {
+describe('MongoDBInstrumentation-Tracing-v3', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
     instrumentation.setConfig(config);
   }
@@ -49,13 +53,13 @@ describe('MongoDBInstrumentation', () => {
   }
 
   const URL = `mongodb://${process.env.MONGODB_HOST || DEFAULT_MONGO_HOST}:${
-    process.env.MONGODB_PORT || '27017'
+    process.env.MONGODB_PORT || 27017
   }`;
   const DB_NAME = process.env.MONGODB_DB || 'opentelemetry-tests';
   const COLLECTION_NAME = 'test';
 
-  let client: mongodb.MongoClient;
-  let collection: mongodb.Collection;
+  let client: MongoClient;
+  let collection: Collection;
 
   before(done => {
     shouldTest = true;
@@ -66,9 +70,7 @@ describe('MongoDBInstrumentation', () => {
         done();
       })
       .catch((err: Error) => {
-        console.log(
-          'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-        );
+        console.log('Skipping test-mongodb. ' + err.message);
         shouldTest = false;
         done();
       });
@@ -83,7 +85,8 @@ describe('MongoDBInstrumentation', () => {
     }
     // Non traced insertion of basic data to perform tests
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    collection.insertMany(insertData, (err, result) => {
+    // @ts-expect-error -- v5 removed callback support
+    collection.insertMany(insertData, (err: any, result: any) => {
       resetMemoryExporter();
       done();
     });
@@ -91,9 +94,11 @@ describe('MongoDBInstrumentation', () => {
 
   afterEach(done => {
     if (shouldTest) {
-      return collection.deleteMany({}, done);
+      // @ts-expect-error -- v5 removed callback support
+      collection.deleteMany({}, done);
+    } else {
+      done();
     }
-    done();
   });
 
   after(() => {
@@ -116,7 +121,8 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.insert',
               SpanKind.CLIENT,
-              'insert'
+              'insert',
+              undefined
             );
             done();
           })
@@ -137,7 +143,8 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.update',
               SpanKind.CLIENT,
-              'update'
+              'update',
+              undefined
             );
             done();
           })
@@ -158,7 +165,8 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.remove',
               SpanKind.CLIENT,
-              'remove'
+              'remove',
+              undefined
             );
             done();
           })
@@ -183,7 +191,8 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.find',
               SpanKind.CLIENT,
-              'find'
+              'find',
+              undefined
             );
             done();
           })
@@ -211,7 +220,8 @@ describe('MongoDBInstrumentation', () => {
                 ),
                 'mongodb.find',
                 SpanKind.CLIENT,
-                'find'
+                'find',
+                undefined
               );
               // assert that we correctly got the first as a find
               assertSpans(
@@ -220,7 +230,8 @@ describe('MongoDBInstrumentation', () => {
                 ),
                 'mongodb.getMore',
                 SpanKind.CLIENT,
-                'getMore'
+                'getMore',
+                undefined
               );
               done();
             })
@@ -245,7 +256,34 @@ describe('MongoDBInstrumentation', () => {
               getTestSpans(),
               'mongodb.createIndexes',
               SpanKind.CLIENT,
-              'createIndexes'
+              'createIndexes',
+              undefined
+            );
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+
+    it('should create a child span for aggregation', done => {
+      const span = trace.getTracer('default').startSpan('indexRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection
+          .aggregate([
+            { $match: { key: 'value' } },
+            { $group: { _id: '$a', count: { $sum: 1 } } },
+          ])
+          .toArray()
+          .then(() => {
+            span.end();
+            assertSpans(
+              getTestSpans(),
+              'mongodb.aggregate',
+              SpanKind.CLIENT,
+              'aggregate',
+              undefined
             );
             done();
           })
@@ -281,14 +319,57 @@ describe('MongoDBInstrumentation', () => {
               operationName,
               SpanKind.CLIENT,
               'insert',
+              undefined,
               false,
               false
             );
             const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
+            done();
+          })
+          .catch(err => {
+            done(err);
+          });
+      });
+    });
+
+    it('should properly collect nested db statement (hide attribute values)', done => {
+      const span = trace.getTracer('default').startSpan('insertRootSpan');
+      context.with(trace.setSpan(context.active(), span), () => {
+        collection
+          .aggregate([
+            { $match: { key: 'value' } },
+            { $group: { _id: '$a', count: { $sum: 1 } } },
+          ])
+          .toArray()
+          .then(() => {
+            span.end();
+            const spans = getTestSpans();
+            const operationName = 'mongodb.aggregate';
+            assertSpans(
+              spans,
+              operationName,
+              SpanKind.CLIENT,
+              'aggregate',
+              undefined,
+              false,
+              false
+            );
+            const mongoSpan = spans.find(s => s.name === operationName);
+            const dbStatement = JSON.parse(
+              mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
+            );
+            assert.deepEqual(dbStatement, {
+              aggregate: '?',
+              pipeline: [
+                { $match: { key: '?' } },
+                { $group: { _id: '?', count: { $sum: '?' } } },
+              ],
+              cursor: {},
+            });
             done();
           })
           .catch(err => {
@@ -326,12 +407,13 @@ describe('MongoDBInstrumentation', () => {
                 operationName,
                 SpanKind.CLIENT,
                 'insert',
+                undefined,
                 false,
                 true
               );
               const mongoSpan = spans.find(s => s.name === operationName);
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[SemanticAttributes.DB_STATEMENT] as string
+                mongoSpan!.attributes[SEMATTRS_DB_STATEMENT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();
@@ -361,7 +443,13 @@ describe('MongoDBInstrumentation', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT, 'insert');
+              assertSpans(
+                spans,
+                'mongodb.insert',
+                SpanKind.CLIENT,
+                'insert',
+                undefined
+              );
               done();
             })
             .catch(err => {
@@ -458,7 +546,13 @@ describe('MongoDBInstrumentation', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(spans, 'mongodb.find', SpanKind.CLIENT, 'find');
+              assertSpans(
+                spans,
+                'mongodb.find',
+                SpanKind.CLIENT,
+                'find',
+                undefined
+              );
               done();
             })
             .catch(err => {
@@ -480,7 +574,13 @@ describe('MongoDBInstrumentation', () => {
             span.end();
             const spans = getTestSpans();
             const mainSpan = spans[spans.length - 1];
-            assertSpans(spans, 'mongodb.insert', SpanKind.CLIENT, 'insert');
+            assertSpans(
+              spans,
+              'mongodb.insert',
+              SpanKind.CLIENT,
+              'insert',
+              undefined
+            );
             resetMemoryExporter();
 
             collection
@@ -490,7 +590,13 @@ describe('MongoDBInstrumentation', () => {
                 const spans2 = getTestSpans();
                 spans2.push(mainSpan);
 
-                assertSpans(spans2, 'mongodb.find', SpanKind.CLIENT, 'find');
+                assertSpans(
+                  spans2,
+                  'mongodb.find',
+                  SpanKind.CLIENT,
+                  'find',
+                  undefined
+                );
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
                   spans2[0].parentSpanId
@@ -509,8 +615,8 @@ describe('MongoDBInstrumentation', () => {
   });
 
   describe('MongoDb useUnifiedTopology enabled', () => {
-    let client: mongodb.MongoClient;
-    let collection: mongodb.Collection;
+    let client: MongoClient;
+    let collection: Collection;
     before(done => {
       accessCollection(URL, DB_NAME, COLLECTION_NAME, {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -523,9 +629,7 @@ describe('MongoDBInstrumentation', () => {
           done();
         })
         .catch((err: Error) => {
-          console.log(
-            'Skipping test-mongodb. Could not connect. Run MongoDB to test'
-          );
+          console.log('Skipping test-mongodb. ' + err.message);
           shouldTest = false;
           done();
         });
@@ -538,6 +642,7 @@ describe('MongoDBInstrumentation', () => {
     it('should generate correct span attributes', done => {
       const span = trace.getTracer('default').startSpan('findRootSpan');
       context.with(trace.setSpan(context.active(), span), () => {
+        // @ts-expect-error -- v5 removed callback support
         collection.find({ a: 1 }).toArray((err, results) => {
           span.end();
           const [mongoSpan] = getTestSpans();
@@ -547,12 +652,14 @@ describe('MongoDBInstrumentation', () => {
             (err, address) => {
               if (err) return done(err);
               assert.strictEqual(
-                mongoSpan.attributes[SemanticAttributes.NET_PEER_NAME],
+                mongoSpan.attributes[SEMATTRS_NET_PEER_NAME],
                 address
               );
               assert.strictEqual(
-                mongoSpan.attributes[SemanticAttributes.NET_PEER_PORT],
-                process.env.MONGODB_PORT || '27017'
+                mongoSpan.attributes[SEMATTRS_NET_PEER_PORT],
+                process.env.MONGODB_PORT
+                  ? parseInt(process.env.MONGODB_PORT)
+                  : 27017
               );
               done();
             }

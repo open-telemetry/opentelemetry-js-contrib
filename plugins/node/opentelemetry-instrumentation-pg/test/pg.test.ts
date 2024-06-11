@@ -42,10 +42,16 @@ import {
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
 import {
-  SemanticAttributes,
-  DbSystemValues,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_NET_PEER_PORT,
+  SEMATTRS_DB_USER,
+  DBSYSTEMVALUES_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
-import { addSqlCommenterComment } from '../src/utils';
+import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -60,12 +66,12 @@ const CONFIG = {
 };
 
 const DEFAULT_ATTRIBUTES = {
-  [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL,
-  [SemanticAttributes.DB_NAME]: CONFIG.database,
-  [SemanticAttributes.NET_PEER_NAME]: CONFIG.host,
-  [SemanticAttributes.DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
-  [SemanticAttributes.NET_PEER_PORT]: CONFIG.port,
-  [SemanticAttributes.DB_USER]: CONFIG.user,
+  [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+  [SEMATTRS_DB_NAME]: CONFIG.database,
+  [SEMATTRS_NET_PEER_NAME]: CONFIG.host,
+  [SEMATTRS_DB_CONNECTION_STRING]: `postgresql://${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+  [SEMATTRS_NET_PEER_PORT]: CONFIG.port,
+  [SEMATTRS_DB_USER]: CONFIG.user,
 };
 
 const unsetStatus: SpanStatus = {
@@ -348,7 +354,7 @@ describe('pg', () => {
     it('should intercept client.query(text, callback)', done => {
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: 'SELECT NOW()',
+        [SEMATTRS_DB_STATEMENT]: 'SELECT NOW()',
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -368,7 +374,7 @@ describe('pg', () => {
       const values = ['0'];
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: query,
+        [SEMATTRS_DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -387,7 +393,7 @@ describe('pg', () => {
       const query = 'SELECT NOW()';
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: query,
+        [SEMATTRS_DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -409,7 +415,7 @@ describe('pg', () => {
       const query = 'SELECT NOW()';
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: query,
+        [SEMATTRS_DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -429,7 +435,7 @@ describe('pg', () => {
       const values = ['0'];
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: query,
+        [SEMATTRS_DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -449,7 +455,7 @@ describe('pg', () => {
       const values = ['0'];
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: query,
+        [SEMATTRS_DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -474,7 +480,7 @@ describe('pg', () => {
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
         [AttributeNames.PG_PLAN]: name,
-        [SemanticAttributes.DB_STATEMENT]: query,
+        [SEMATTRS_DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -498,7 +504,7 @@ describe('pg', () => {
       const query = 'SELECT NOW()';
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: query,
+        [SEMATTRS_DB_STATEMENT]: query,
       };
       const events: TimedEvent[] = [];
       const span = tracer.startSpan('test span');
@@ -513,6 +519,60 @@ describe('pg', () => {
       });
     });
 
+    describe('Check configuration enhancedDatabaseReporting:true', () => {
+      const obj = { type: 'Fiat', model: '500', color: 'white' };
+      const buf = Buffer.from('abc');
+      const objWithToPostgres = {
+        toPostgres: () => {
+          return 'custom value';
+        },
+      };
+      const query =
+        'SELECT $1::text as msg1, $2::bytea as bufferParam, $3::integer as numberParam, $4::jsonb as objectParam, $5::text as objToPostgres, $6::text as msg2, $7::text as msg3';
+      const values = [
+        'Hello,World',
+        buf,
+        6,
+        obj,
+        objWithToPostgres,
+        null,
+        undefined,
+      ];
+
+      const events: TimedEvent[] = [];
+
+      const attributes = {
+        ...DEFAULT_ATTRIBUTES,
+        [SEMATTRS_DB_STATEMENT]: query,
+        [AttributeNames.PG_VALUES]: [
+          'Hello,World',
+          'abc',
+          '6',
+          '{"type":"Fiat","model":"500","color":"white"}',
+          'custom value',
+          'null',
+          'null',
+        ],
+      };
+      beforeEach(async () => {
+        create({
+          enhancedDatabaseReporting: true,
+        });
+      });
+
+      it('When enhancedDatabaseReporting:true, values should appear as parsable array of strings', done => {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query(query, values, (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            runCallbackTest(span, attributes, events);
+            done();
+          });
+        });
+      });
+    });
+
     describe('when specifying a requestHook configuration', () => {
       const dataAttributeName = 'pg_data';
       const query = 'SELECT 0::text';
@@ -522,7 +582,7 @@ describe('pg', () => {
       // span if there is no requestHook.
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [SemanticAttributes.DB_STATEMENT]: query,
+        [SEMATTRS_DB_STATEMENT]: query,
       };
 
       // These are the attributes we expect on the span after the requestHook
@@ -615,7 +675,7 @@ describe('pg', () => {
       describe('AND valid responseHook', () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: query,
+          [SEMATTRS_DB_STATEMENT]: query,
           [dataAttributeName]: '{"rowCount":1}',
         };
         beforeEach(async () => {
@@ -648,7 +708,7 @@ describe('pg', () => {
         it('should attach response hook data to resulting spans for query returning a Promise', async () => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [SemanticAttributes.DB_STATEMENT]: query,
+            [SEMATTRS_DB_STATEMENT]: query,
             [dataAttributeName]: '{"rowCount":1}',
           };
 
@@ -673,7 +733,7 @@ describe('pg', () => {
       describe('AND invalid responseHook', () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [SemanticAttributes.DB_STATEMENT]: query,
+          [SEMATTRS_DB_STATEMENT]: query,
         };
 
         beforeEach(async () => {

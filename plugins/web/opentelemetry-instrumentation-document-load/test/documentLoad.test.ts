@@ -35,11 +35,17 @@ import {
   StackContextManager,
 } from '@opentelemetry/sdk-trace-web';
 
-import * as assert from 'assert';
+// @ts-expect-error: not an export, but we want the prebundled version
+import chai from 'chai/chai.js';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH,
+  SEMATTRS_HTTP_URL,
+} from '@opentelemetry/semantic-conventions';
 import { EventNames } from '../src/enums/EventNames';
+
+const { assert } = chai as typeof import('chai');
 
 const exporter = new InMemorySpanExporter();
 const provider = new BasicTracerProvider();
@@ -210,11 +216,10 @@ function ensureNetworkEventsExists(events: TimedEvent[]) {
   assert.strictEqual(events[1].name, PTN.DOMAIN_LOOKUP_START);
   assert.strictEqual(events[2].name, PTN.DOMAIN_LOOKUP_END);
   assert.strictEqual(events[3].name, PTN.CONNECT_START);
-  assert.strictEqual(events[4].name, PTN.SECURE_CONNECTION_START);
-  assert.strictEqual(events[5].name, PTN.CONNECT_END);
-  assert.strictEqual(events[6].name, PTN.REQUEST_START);
-  assert.strictEqual(events[7].name, PTN.RESPONSE_START);
-  assert.strictEqual(events[8].name, PTN.RESPONSE_END);
+  assert.strictEqual(events[4].name, PTN.CONNECT_END);
+  assert.strictEqual(events[5].name, PTN.REQUEST_START);
+  assert.strictEqual(events[6].name, PTN.RESPONSE_START);
+  assert.strictEqual(events[7].name, PTN.RESPONSE_END);
 }
 
 describe('DocumentLoad Instrumentation', () => {
@@ -345,7 +350,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.ok(
           (rootSpan.attributes[
-            SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH
+            SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH
           ] as number) > 0
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
@@ -370,7 +375,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fsEvents[7].name, PTN.LOAD_EVENT_START);
         assert.strictEqual(fsEvents[8].name, PTN.LOAD_EVENT_END);
 
-        assert.strictEqual(rsEvents.length, 9);
+        assert.strictEqual(rsEvents.length, 8);
         assert.strictEqual(fsEvents.length, 11);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
@@ -446,11 +451,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SemanticAttributes.HTTP_URL],
+          spanResource1.attributes[SEMATTRS_HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[SemanticAttributes.HTTP_URL],
+          spanResource2.attributes[SEMATTRS_HTTP_URL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -482,19 +487,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SemanticAttributes.HTTP_URL],
+          spanResource1.attributes[SEMATTRS_HTTP_URL],
           'http://localhost:8090/bundle.js'
         );
 
-        assert.strictEqual(srEvents1[0].name, PTN.FETCH_START);
-        assert.strictEqual(srEvents1[1].name, PTN.DOMAIN_LOOKUP_START);
-        assert.strictEqual(srEvents1[2].name, PTN.DOMAIN_LOOKUP_END);
-        assert.strictEqual(srEvents1[3].name, PTN.CONNECT_START);
-        assert.strictEqual(srEvents1[4].name, PTN.SECURE_CONNECTION_START);
-        assert.strictEqual(srEvents1[5].name, PTN.CONNECT_END);
-        assert.strictEqual(srEvents1[6].name, PTN.REQUEST_START);
-        assert.strictEqual(srEvents1[7].name, PTN.RESPONSE_START);
-        assert.strictEqual(srEvents1[8].name, PTN.RESPONSE_END);
+        ensureNetworkEventsExists(srEvents1);
 
         assert.strictEqual(exporter.getFinishedSpans().length, 3);
         done();
@@ -544,54 +541,57 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fetchSpan.name, 'documentFetch');
         assert.strictEqual(rootSpan.name, 'documentLoad');
 
-        assert.strictEqual(
-          fetchSpan.attributes['http.url'],
-          'http://localhost:9876/context.html'
+        assert.isOk(
+          (fetchSpan.attributes['http.url'] as string).startsWith(
+            'http://localhost:8000/?wtr-session-id='
+          )
         );
 
-        assert.strictEqual(
-          rootSpan.attributes['http.url'],
-          'http://localhost:9876/context.html'
+        assert.isOk(
+          (rootSpan.attributes['http.url'] as string).startsWith(
+            'http://localhost:8000/?wtr-session-id='
+          )
         );
         assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
 
         ensureNetworkEventsExists(fsEvents);
+        assert.strictEqual(fsEvents.length, 8);
 
-        assert.strictEqual(rsEvents[0].name, PTN.FETCH_START);
-        assert.strictEqual(rsEvents[1].name, PTN.UNLOAD_EVENT_START);
-        assert.strictEqual(rsEvents[2].name, PTN.UNLOAD_EVENT_END);
-        assert.strictEqual(rsEvents[3].name, PTN.DOM_INTERACTIVE);
-        assert.strictEqual(
-          rsEvents[4].name,
-          PTN.DOM_CONTENT_LOADED_EVENT_START
-        );
-        assert.strictEqual(rsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
-        assert.strictEqual(rsEvents[6].name, PTN.DOM_COMPLETE);
-        assert.strictEqual(rsEvents[7].name, PTN.LOAD_EVENT_START);
-        assert.strictEqual(rsEvents[8].name, PTN.LOAD_EVENT_END);
+        const rsEventNames = rsEvents.map(e => e.name);
+        // Allow the unloadEvent{Start,End} events to be missing. Tests that
+        // are simulating a fallback to window.performance.timing are using
+        // values (entriesFallback) for that result in those network span
+        // events being dropped after https://github.com/open-telemetry/opentelemetry-js/pull/4486
+        // (@opentelemetry/sdk-trace-web@1.24.0).
+        const expectedRsEventNames =
+          rsEventNames[1] === PTN.UNLOAD_EVENT_START
+            ? [
+                PTN.FETCH_START,
+                PTN.UNLOAD_EVENT_START,
+                PTN.UNLOAD_EVENT_END,
+                PTN.DOM_INTERACTIVE,
+                PTN.DOM_CONTENT_LOADED_EVENT_START,
+                PTN.DOM_CONTENT_LOADED_EVENT_END,
+                PTN.DOM_COMPLETE,
+                PTN.LOAD_EVENT_START,
+                PTN.LOAD_EVENT_END,
+              ]
+            : [
+                PTN.FETCH_START,
+                PTN.DOM_INTERACTIVE,
+                PTN.DOM_CONTENT_LOADED_EVENT_START,
+                PTN.DOM_CONTENT_LOADED_EVENT_END,
+                PTN.DOM_COMPLETE,
+                PTN.LOAD_EVENT_START,
+                PTN.LOAD_EVENT_END,
+              ];
+        assert.deepStrictEqual(rsEventNames, expectedRsEventNames);
 
-        assert.strictEqual(fsEvents.length, 9);
-        assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
       });
     });
   }
-
-  describe('when navigation entries types are NOT available then fallback to "performance.timing"', () => {
-    const sandbox = sinon.createSandbox();
-    beforeEach(() => {
-      sandbox.stub(window.performance, 'getEntriesByType').value(undefined);
-      sandbox.stub(window.performance, 'timing').get(() => {
-        return entriesFallback;
-      });
-    });
-    afterEach(() => {
-      sandbox.restore();
-    });
-
-    shouldExportCorrectSpan();
-  });
 
   describe('when getEntriesByType is not defined then fallback to "performance.timing"', () => {
     const sandbox = sinon.createSandbox();
@@ -706,8 +706,12 @@ describe('DocumentLoad Instrumentation', () => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         applyCustomAttributesOnSpan: {
-          resourceFetch: span => {
+          resourceFetch: (span, resource) => {
             span.setAttribute('custom-key', 'custom-val');
+            span.setAttribute(
+              'resource.tcp.duration_ms',
+              resource.connectEnd - resource.connectStart
+            );
           },
         },
       });
@@ -722,6 +726,14 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(
           resourceSpan2.attributes['custom-key'],
           'custom-val'
+        );
+        assert.strictEqual(
+          resourceSpan1.attributes['resource.tcp.duration_ms'],
+          0
+        );
+        assert.strictEqual(
+          resourceSpan2.attributes['resource.tcp.duration_ms'],
+          0
         );
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
         done();
@@ -739,6 +751,76 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+  });
+
+  describe('ignore span events if specified', () => {
+    let spyEntries: any;
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resources);
+      spyEntries.withArgs('paint').returns(paintEntries);
+    });
+
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should ignore network span events if ignoreNetworkEvents is set to true', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        ignoreNetworkEvents: true,
+      });
+      plugin.enable();
+
+      setTimeout(() => {
+        const rootSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+        const fetchSpan = exporter.getFinishedSpans()[1] as ReadableSpan;
+        const loadSpan = exporter.getFinishedSpans()[3] as ReadableSpan;
+
+        const rsEvents = rootSpan.events;
+        const fsEvents = fetchSpan.events;
+        const lsEvents = loadSpan.events;
+
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        assert.strictEqual(rootSpan.name, 'documentFetch');
+        assert.strictEqual(rsEvents.length, 0);
+
+        assert.strictEqual(fetchSpan.name, 'resourceFetch');
+        assert.strictEqual(fsEvents.length, 0);
+
+        assert.strictEqual(loadSpan.name, 'documentLoad');
+        assert.deepEqual(
+          lsEvents.map(event => event.name),
+          ['firstPaint', 'firstContentfulPaint']
+        );
+
+        done();
+      });
+    });
+
+    it('should ignore performance events if ignorePerformanceEvents is set to true', done => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        ignorePerformancePaintEvents: true,
+      });
+      plugin.enable();
+
+      setTimeout(() => {
+        const loadSpan = exporter.getFinishedSpans()[3] as ReadableSpan;
+        const lsEvents = loadSpan.events;
+
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+
+        assert.strictEqual(loadSpan.name, 'documentLoad');
+        assert.notInclude(
+          lsEvents.map(event => event.name),
+          ['firstPaint', 'firstContentfulPaint']
+        );
+
         done();
       });
     });

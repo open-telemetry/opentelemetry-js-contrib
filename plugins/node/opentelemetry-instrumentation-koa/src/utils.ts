@@ -13,31 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  KoaContext,
-  KoaMiddleware,
-  KoaLayerType,
-  KoaInstrumentationConfig,
-} from './types';
+import { KoaContext, KoaLayerType, KoaInstrumentationConfig } from './types';
+import { KoaMiddleware } from './internal-types';
 import { AttributeNames } from './enums/AttributeNames';
-import { SpanAttributes } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { Attributes } from '@opentelemetry/api';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 
 export const getMiddlewareMetadata = (
   context: KoaContext,
   layer: KoaMiddleware,
   isRouter: boolean,
-  layerPath?: string
+  layerPath?: string | RegExp
 ): {
-  attributes: SpanAttributes;
+  attributes: Attributes;
   name: string;
 } => {
   if (isRouter) {
     return {
       attributes: {
-        [AttributeNames.KOA_NAME]: layerPath,
+        [AttributeNames.KOA_NAME]: layerPath?.toString(),
         [AttributeNames.KOA_TYPE]: KoaLayerType.ROUTER,
-        [SemanticAttributes.HTTP_ROUTE]: layerPath,
+        [SEMATTRS_HTTP_ROUTE]: layerPath?.toString(),
       },
       name: context._matchedRouteName || `router - ${layerPath}`,
     };

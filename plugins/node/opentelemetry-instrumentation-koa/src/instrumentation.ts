@@ -23,26 +23,20 @@ import {
 } from '@opentelemetry/instrumentation';
 
 import type * as koa from 'koa';
-import {
-  KoaMiddleware,
-  KoaContext,
-  KoaLayerType,
-  KoaInstrumentationConfig,
-} from './types';
-import { AttributeNames } from './enums/AttributeNames';
-import { VERSION } from './version';
+import { KoaContext, KoaLayerType, KoaInstrumentationConfig } from './types';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getMiddlewareMetadata, isLayerIgnored } from './utils';
-import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
-import { kLayerPatched, KoaPatchedMiddleware } from './internal-types';
+import { getRPCMetadata, RPCType } from '@opentelemetry/core';
+import {
+  kLayerPatched,
+  KoaMiddleware,
+  KoaPatchedMiddleware,
+} from './internal-types';
 
 /** Koa instrumentation for OpenTelemetry */
-export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
+export class KoaInstrumentation extends InstrumentationBase {
   constructor(config: KoaInstrumentationConfig = {}) {
-    super(
-      '@opentelemetry/instrumentation-koa',
-      VERSION,
-      Object.assign({}, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override setConfig(config: KoaInstrumentationConfig = {}) {
@@ -54,14 +48,17 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   }
 
   protected init() {
-    return new InstrumentationNodeModuleDefinition<typeof koa>(
+    return new InstrumentationNodeModuleDefinition(
       'koa',
       ['^2.0.0'],
-      moduleExports => {
+      (module: any) => {
+        const moduleExports: typeof koa =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
         if (moduleExports == null) {
           return moduleExports;
         }
-        api.diag.debug('Patching Koa');
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }
@@ -70,10 +67,13 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
           'use',
           this._getKoaUsePatch.bind(this)
         );
-        return moduleExports;
+        return module;
       },
-      moduleExports => {
-        api.diag.debug('Unpatching Koa');
+      (module: any) => {
+        const moduleExports: typeof koa =
+          module[Symbol.toStringTag] === 'Module'
+            ? module.default // ESM
+            : module; // CommonJS
         if (isWrapped(moduleExports.prototype.use)) {
           this._unwrap(moduleExports.prototype, 'use');
         }
@@ -136,7 +136,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
   private _patchLayer(
     middlewareLayer: KoaPatchedMiddleware,
     isRouter: boolean,
-    layerPath?: string
+    layerPath?: string | RegExp
   ): KoaMiddleware {
     const layerType = isRouter ? KoaLayerType.ROUTER : KoaLayerType.MIDDLEWARE;
     // Skip patching layer if its ignored in the config
@@ -174,21 +174,8 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
 
       const rpcMetadata = getRPCMetadata(api.context.active());
 
-      if (
-        metadata.attributes[AttributeNames.KOA_TYPE] === KoaLayerType.ROUTER &&
-        rpcMetadata?.type === RPCType.HTTP
-      ) {
-        rpcMetadata.span.updateName(
-          `${context.method} ${context._matchedRoute}`
-        );
-      }
-
-      let newContext = api.trace.setSpan(api.context.active(), span);
-      if (rpcMetadata?.type === RPCType.HTTP) {
-        newContext = setRPCMetadata(
-          newContext,
-          Object.assign(rpcMetadata, { route: context._matchedRoute })
-        );
+      if (rpcMetadata?.type === RPCType.HTTP && context._matchedRoute) {
+        rpcMetadata.route = context._matchedRoute.toString();
       }
 
       if (this.getConfig().requestHook) {
@@ -208,6 +195,7 @@ export class KoaInstrumentation extends InstrumentationBase<typeof koa> {
         );
       }
 
+      const newContext = api.trace.setSpan(api.context.active(), span);
       return api.context.with(newContext, async () => {
         try {
           return await middlewareLayer(context, next);

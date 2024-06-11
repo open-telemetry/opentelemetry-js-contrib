@@ -23,34 +23,43 @@ import {
 import { IORedisInstrumentationConfig } from './types';
 import { IORedisCommand, RedisInterface } from './internal-types';
 import {
-  DbSystemValues,
-  SemanticAttributes,
+  DBSYSTEMVALUES_REDIS,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_DB_STATEMENT,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { endSpan } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const DEFAULT_CONFIG: IORedisInstrumentationConfig = {
   requireParentSpan: true,
 };
 
-export class IORedisInstrumentation extends InstrumentationBase<any> {
-  constructor(_config: IORedisInstrumentationConfig = {}) {
+export class IORedisInstrumentation extends InstrumentationBase {
+  protected override _config!: IORedisInstrumentationConfig;
+
+  constructor(config: IORedisInstrumentationConfig = {}) {
     super(
-      '@opentelemetry/instrumentation-ioredis',
-      VERSION,
-      Object.assign({}, DEFAULT_CONFIG, _config)
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
+      Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
 
-  init(): InstrumentationNodeModuleDefinition<any>[] {
+  init(): InstrumentationNodeModuleDefinition[] {
     return [
-      new InstrumentationNodeModuleDefinition<any>(
+      new InstrumentationNodeModuleDefinition(
         'ioredis',
         ['>1', '<6'],
-        (moduleExports, moduleVersion?: string) => {
-          diag.debug('Applying patch for ioredis');
+        (module, moduleVersion?: string) => {
+          const moduleExports =
+            module[Symbol.toStringTag] === 'Module'
+              ? module.default // ESM
+              : module; // CommonJS
           if (isWrapped(moduleExports.prototype.sendCommand)) {
             this._unwrap(moduleExports.prototype, 'sendCommand');
           }
@@ -67,11 +76,14 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
             'connect',
             this._patchConnection()
           );
-          return moduleExports;
+          return module;
         },
-        moduleExports => {
-          if (moduleExports === undefined) return;
-          diag.debug('Removing patch for ioredis');
+        module => {
+          if (module === undefined) return;
+          const moduleExports =
+            module[Symbol.toStringTag] === 'Module'
+              ? module.default // ESM
+              : module; // CommonJS
           this._unwrap(moduleExports.prototype, 'sendCommand');
           this._unwrap(moduleExports.prototype, 'connect');
         }
@@ -84,17 +96,17 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
    */
   private _patchSendCommand(moduleVersion?: string) {
     return (original: Function) => {
-      return this.traceSendCommand(original, moduleVersion);
+      return this._traceSendCommand(original, moduleVersion);
     };
   }
 
   private _patchConnection() {
     return (original: Function) => {
-      return this.traceConnection(original);
+      return this._traceConnection(original);
     };
   }
 
-  private traceSendCommand = (original: Function, moduleVersion?: string) => {
+  private _traceSendCommand(original: Function, moduleVersion?: string) {
     const instrumentation = this;
     return function (this: RedisInterface, cmd?: IORedisCommand) {
       if (arguments.length < 1 || typeof cmd !== 'object') {
@@ -113,11 +125,8 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
       const span = instrumentation.tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.DB_STATEMENT]: dbStatementSerializer(
-            cmd.name,
-            cmd.args
-          ),
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+          [SEMATTRS_DB_STATEMENT]: dbStatementSerializer(cmd.name, cmd.args),
         },
       });
 
@@ -141,9 +150,9 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
       const { host, port } = this.options;
 
       span.setAttributes({
-        [SemanticAttributes.NET_PEER_NAME]: host,
-        [SemanticAttributes.NET_PEER_PORT]: port,
-        [SemanticAttributes.DB_CONNECTION_STRING]: `redis://${host}:${port}`,
+        [SEMATTRS_NET_PEER_NAME]: host,
+        [SEMATTRS_NET_PEER_PORT]: port,
+        [SEMATTRS_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
 
       try {
@@ -178,9 +187,9 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         throw error;
       }
     };
-  };
+  }
 
-  private traceConnection = (original: Function) => {
+  private _traceConnection(original: Function) {
     const instrumentation = this;
     return function (this: RedisInterface) {
       const config =
@@ -193,16 +202,16 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
         attributes: {
-          [SemanticAttributes.DB_SYSTEM]: DbSystemValues.REDIS,
-          [SemanticAttributes.DB_STATEMENT]: 'connect',
+          [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_REDIS,
+          [SEMATTRS_DB_STATEMENT]: 'connect',
         },
       });
       const { host, port } = this.options;
 
       span.setAttributes({
-        [SemanticAttributes.NET_PEER_NAME]: host,
-        [SemanticAttributes.NET_PEER_PORT]: port,
-        [SemanticAttributes.DB_CONNECTION_STRING]: `redis://${host}:${port}`,
+        [SEMATTRS_NET_PEER_NAME]: host,
+        [SEMATTRS_NET_PEER_PORT]: port,
+        [SEMATTRS_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
       });
       try {
         const client = original.apply(this, arguments);
@@ -213,5 +222,5 @@ export class IORedisInstrumentation extends InstrumentationBase<any> {
         throw error;
       }
     };
-  };
+  }
 }

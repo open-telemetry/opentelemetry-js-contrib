@@ -45,7 +45,7 @@ registerInstrumentations({
 });
 ```
 
-See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-express/examples) for a short example.
+See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/express) for a short example.
 
 ### Caveats
 
@@ -76,8 +76,15 @@ Express instrumentation has few options available to choose from. You can set th
 
 `spanNameHook` is invoked with 2 arguments:
 
-- `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer or undefined when renaming the root HTTP instrumentation span.
+- `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer.
 - `defaultName: string` - original name proposed by the instrumentation.
+
+`requestHook` is invoked with 2 arguments:
+
+- `span: Span` - the span associated with the express request.
+- `info: ExpressRequestInfo` containing the incoming Express.js request, the current route handler creating a span and `ExpressLayerType` - the type of the handling layer.
+
+NOTE: `ExpressRequestInfo.request` is typed as `any`. If you want type support make sure you have `@types/express` installed then you can use `ExpressRequestInfo<express.Request>`
 
 #### Ignore a whole Express route
 
@@ -85,7 +92,7 @@ In order to ignore whole traces that represent a given Express route, use
 the `ignoreIncomingRequestHook` option from
 `@opentelemetry/instrumentation-http` against the route path. Ideally, this
 shouldn't be necessary since spans should a have low cardinality and minimize
-interaction between instrumentation libraies but
+interaction between instrumentation libraries but
 `@opentelemetry/instrumentation-express` renames the root span from
 `@opentelemetry/instrumentation-http` in order to get things in order.
 
@@ -134,6 +141,16 @@ const expressInstrumentation = new ExpressInstrumentation({
   }
 });
 ```
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute    | Short Description                  |
+| ------------ | ---------------------------------- |
+| `http.route` | The matched route (path template). |
 
 ## Useful links
 

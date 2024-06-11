@@ -1,7 +1,7 @@
 {
   "name": "@opentelemetry/instrumentation-mysql",
-  "version": "0.33.1",
-  "description": "OpenTelemetry mysql automatic instrumentation package.",
+  "version": "0.39.0",
+  "description": "OpenTelemetry instrumentation for `mysql` database client for MySQL",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
@@ -12,11 +12,10 @@
     "lint": "eslint . --ext .ts",
     "precompile": "tsc --version && lerna run version:update --scope @opentelemetry/instrumentation-mysql --include-dependencies",
     "prewatch": "npm run precompile",
-    "prepare": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc ts-mocha tsconfig.json 'test/**/*.test.ts'",
-    "version:update": "node ../../../scripts/version-update.js",
-    "compile:examples": "cd examples && npm run compile"
+    "test": "nyc ts-mocha -p tsconfig.json 'test/**/*.test.ts'",
+    "version:update": "node ../../../scripts/version-update.js"
   },
   "keywords": [
     "instrumentation",
@@ -34,10 +33,7 @@
   "files": [
     "build/src/**/*.js",
     "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
-    "doc",
-    "LICENSE",
-    "README.md"
+    "build/src/**/*.d.ts"
   ],
   "publishConfig": {
     "access": "public"
@@ -47,25 +43,25 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/sdk-metrics": "^1.8.0",
     "@opentelemetry/context-async-hooks": "^1.8.0",
-    "@opentelemetry/contrib-test-utils": "^0.33.2",
+    "@opentelemetry/contrib-test-utils": "^0.40.0",
+    "@opentelemetry/sdk-metrics": "^1.8.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@types/mocha": "7.0.2",
-    "@types/node": "18.11.7",
-    "@types/sinon": "10.0.13",
+    "@types/node": "18.6.5",
+    "@types/sinon": "10.0.18",
     "mocha": "7.2.0",
     "mysql": "2.18.1",
     "nyc": "15.1.0",
-    "rimraf": "4.2.0",
-    "sinon": "15.0.1",
+    "rimraf": "5.0.5",
+    "sinon": "15.2.0",
     "ts-mocha": "10.0.0",
     "typescript": "4.4.4"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.38.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
-    "@types/mysql": "2.15.19"
+    "@opentelemetry/instrumentation": "^0.52.0",
+    "@opentelemetry/semantic-conventions": "^1.22.0",
+    "@types/mysql": "2.15.22"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql#readme"
 }

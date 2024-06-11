@@ -1,22 +1,78 @@
 # Changelog
 
-### Dependencies
+## [0.30.10](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.9...propagation-utils-v0.30.10) (2024-06-06)
 
-* The following workspace dependencies were updated
-  * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.31.0 to ^0.33.0
 
 ### Dependencies
 
 * The following workspace dependencies were updated
   * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.33.0 to ^0.33.1
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
+
+## [0.30.9](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.8...propagation-utils-v0.30.9) (2024-04-25)
+
+
+### Bug Fixes
+
+* revert modifications to Apache license ([#2105](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2105)) ([4590c8d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4590c8df184bbcb9bd67ce1111df9f25f865ccf2))
+
 
 ### Dependencies
 
 * The following workspace dependencies were updated
   * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.33.1 to ^0.33.2
+    * @opentelemetry/contrib-test-utils bumped from ^0.38.0 to ^0.39.0
+
+## [0.30.8](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.7...propagation-utils-v0.30.8) (2024-04-03)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.37.0 to ^0.38.0
+
+## [0.30.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.30.0...propagation-utils-v0.30.1) (2023-08-14)
+
+
+### Bug Fixes
+
+* Revert "feat(minification): Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545))" ([#1611](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1611)) ([e5bca5f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5bca5fe5b27adc59c8de8fe4087d38b69d93bd4))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.34.0 to ^0.34.1
+
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.29.5...propagation-utils-v0.30.0) (2023-07-12)
+
+
+### Features
+
+* **minification:** Add importHelpers and tslib as a dependency ([#1545](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1545)) ([65f612e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/65f612e35c4d67b9935dc3a9155588b35d915482))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.4 to ^0.34.0
+
+## [0.29.4](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.29.3...propagation-utils-v0.29.4) (2023-05-16)
+
+
+### Bug Fixes
+
+* **eslint-config:** replace gts with prettier and eslint ([#1439](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1439)) ([2571c37](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2571c371be1b5738442200cab2415b6a04c32aab))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.33.2 to ^0.33.3
 
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/propagation-utils-v0.28.0...propagation-utils-v0.29.0) (2022-09-27)
 

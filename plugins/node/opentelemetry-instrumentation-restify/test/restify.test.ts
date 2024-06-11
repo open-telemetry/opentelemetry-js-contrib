@@ -15,8 +15,8 @@
  */
 
 import { context, trace, Span } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
-import { RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { SEMATTRS_HTTP_METHOD } from '@opentelemetry/semantic-conventions';
+import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -109,7 +109,7 @@ const createServer = async (setupRoutes?: Function) => {
 
     server.use(useHandler);
     server.get('/route/:param', getHandler);
-    server.get('/thowing', throwError);
+    server.get('/throwing', throwError);
     server.get('/erroring', returnError);
   }
 
@@ -292,14 +292,14 @@ describe('Restify Instrumentation', () => {
       );
     });
 
-    it('should rename HTTP span', async () => {
+    it('should update rpcMetadata.route', async () => {
       const httpSpan: types.InstrumentationSpan = tracer.startSpan('HTTP GET');
+      const rpcMetadata: RPCMetadata = {
+        type: RPCType.HTTP,
+        span: httpSpan,
+      };
 
       const testLocalServer = await createServer((server: restify.Server) => {
-        const rpcMetadata = {
-          type: RPCType.HTTP,
-          span: httpSpan,
-        };
         server.pre((req, res, next) => {
           // to simulate HTTP instrumentation
           context.with(
@@ -320,7 +320,7 @@ describe('Restify Instrumentation', () => {
         );
         httpSpan.end();
         assert.strictEqual(memoryExporter.getFinishedSpans().length, 3);
-        assert.strictEqual(httpSpan.name, 'GET /route/:param');
+        assert.strictEqual(rpcMetadata.route, '/route/:param');
         assert.strictEqual(res, '{"route":"hello"}');
       } finally {
         testLocalServer.close();
@@ -493,10 +493,7 @@ describe('Restify Instrumentation', () => {
     describe('using requestHook in config', () => {
       it('calls requestHook provided function when set in config', async () => {
         const requestHook = (span: Span, info: RestifyRequestInfo) => {
-          span.setAttribute(
-            SemanticAttributes.HTTP_METHOD,
-            info.request.method
-          );
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
           span.setAttribute('restify.layer', info.layerType);
         };
 
@@ -518,10 +515,7 @@ describe('Restify Instrumentation', () => {
               // span from get
               const span = memoryExporter.getFinishedSpans()[2];
               assert.notStrictEqual(span, undefined);
-              assert.strictEqual(
-                span.attributes[SemanticAttributes.HTTP_METHOD],
-                'GET'
-              );
+              assert.strictEqual(span.attributes[SEMATTRS_HTTP_METHOD], 'GET');
               assert.strictEqual(
                 span.attributes['restify.layer'],
                 'request_handler'
@@ -533,10 +527,7 @@ describe('Restify Instrumentation', () => {
 
       it('does not propagate an error from a requestHook that throws exception', async () => {
         const requestHook = (span: Span, info: RestifyRequestInfo) => {
-          span.setAttribute(
-            SemanticAttributes.HTTP_METHOD,
-            info.request.method
-          );
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
 
           throw Error('error thrown in requestHook');
         };
@@ -559,10 +550,7 @@ describe('Restify Instrumentation', () => {
               // span from get
               const span = memoryExporter.getFinishedSpans()[2];
               assert.notStrictEqual(span, undefined);
-              assert.strictEqual(
-                span.attributes[SemanticAttributes.HTTP_METHOD],
-                'GET'
-              );
+              assert.strictEqual(span.attributes[SEMATTRS_HTTP_METHOD], 'GET');
             }
           }
         );

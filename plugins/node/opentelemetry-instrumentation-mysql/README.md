@@ -1,4 +1,4 @@
-# OpenTelemetry mysql Instrumentation for Node.js
+# OpenTelemetry MySQL Instrumentation for Node.js
 
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
@@ -40,14 +40,31 @@ registerInstrumentations({
 })
 ```
 
-See [examples](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql/examples) for a short example.
+See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main//examples/mysql) for a short example.
 
 ### MySQL instrumentation Options
 
 | Options | Type | Default | Description |
 | ------- | ---- | --------| ----------- |
 | [`enhancedDatabaseReporting`](./src/types.ts#L24) | `boolean` | `false` | If true, an attribute containing the query's parameters will be attached the spans generated to represent the query |
-|
+
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute               | Short Description                                                              |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `db.connection_string`  | The connection string used to connect to the database.                         |
+| `db.name`               | This attribute is used to report the name of the database being accessed.      |
+| `db.operation`          | The name of the operation being executed.                                      |
+| `db.statement`          | The database statement being executed.                                         |
+| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
+| `db.user`               | Username for accessing the database.                                           |
+| `net.peer.name`         | Remote hostname or similar.                                                    |
+| `net.peer.port`         | Remote port number.                                                            |
 
 ## Useful links
 

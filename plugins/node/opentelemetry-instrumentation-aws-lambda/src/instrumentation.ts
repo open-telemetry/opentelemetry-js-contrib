@@ -44,8 +44,9 @@ import {
   AWSXRayPropagator,
 } from '@opentelemetry/propagator-aws-xray';
 import {
-  SemanticAttributes,
-  SemanticResourceAttributes,
+  SEMATTRS_FAAS_EXECUTION,
+  SEMRESATTRS_CLOUD_ACCOUNT_ID,
+  SEMRESATTRS_FAAS_ID,
 } from '@opentelemetry/semantic-conventions';
 
 import {
@@ -56,7 +57,8 @@ import {
 } from 'aws-lambda';
 
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { env } from 'process';
 import { LambdaModule } from './internal-types';
 
 const awsPropagator = new AWSXRayPropagator();
@@ -75,8 +77,21 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
   private _traceForceFlusher?: () => Promise<void>;
   private _metricForceFlusher?: () => Promise<void>;
 
-  constructor(protected override _config: AwsLambdaInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-aws-lambda', VERSION, _config);
+  protected override _config!: AwsLambdaInstrumentationConfig;
+
+  constructor(config: AwsLambdaInstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    if (this._config.disableAwsContextPropagation == null) {
+      if (
+        typeof env['OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'] ===
+          'string' &&
+        env[
+          'OTEL_LAMBDA_DISABLE_AWS_CONTEXT_PROPAGATION'
+        ].toLocaleLowerCase() === 'true'
+      ) {
+        this._config.disableAwsContextPropagation = true;
+      }
+    }
   }
 
   override setConfig(config: AwsLambdaInstrumentationConfig = {}) {
@@ -85,10 +100,14 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
 
   init() {
     const taskRoot = process.env.LAMBDA_TASK_ROOT;
-    const handlerDef = process.env._HANDLER;
+    const handlerDef = this._config.lambdaHandler ?? process.env._HANDLER;
 
     // _HANDLER and LAMBDA_TASK_ROOT are always defined in Lambda but guard bail out if in the future this changes.
     if (!taskRoot || !handlerDef) {
+      this._diag.debug(
+        'Skipping lambda instrumentation: no _HANDLER/lambdaHandler or LAMBDA_TASK_ROOT.',
+        { taskRoot, handlerDef }
+      );
       return [];
     }
 
@@ -111,6 +130,16 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
       }
     }
 
+    diag.debug('Instrumenting lambda handler', {
+      taskRoot,
+      handlerDef,
+      handler,
+      moduleRoot,
+      module,
+      filename,
+      functionName,
+    });
+
     return [
       new InstrumentationNodeModuleDefinition(
         // NB: The patching infrastructure seems to match names backwards, this must be the filename, while
@@ -124,7 +153,6 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
             module,
             ['*'],
             (moduleExports: LambdaModule) => {
-              diag.debug('Applying patch for lambda handler');
               if (isWrapped(moduleExports[functionName])) {
                 this._unwrap(moduleExports, functionName);
               }
@@ -132,8 +160,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
               return moduleExports;
             },
             (moduleExports?: LambdaModule) => {
-              if (moduleExports == undefined) return;
-              diag.debug('Removing patch for lambda handler');
+              if (moduleExports == null) return;
               this._unwrap(moduleExports, functionName);
             }
           ),
@@ -175,9 +202,9 @@ export class AwsLambdaInstrumentation extends InstrumentationBase {
         {
           kind: SpanKind.SERVER,
           attributes: {
-            [SemanticAttributes.FAAS_EXECUTION]: context.awsRequestId,
-            [SemanticResourceAttributes.FAAS_ID]: context.invokedFunctionArn,
-            [SemanticResourceAttributes.CLOUD_ACCOUNT_ID]:
+            [SEMATTRS_FAAS_EXECUTION]: context.awsRequestId,
+            [SEMRESATTRS_FAAS_ID]: context.invokedFunctionArn,
+            [SEMRESATTRS_CLOUD_ACCOUNT_ID]:
               AwsLambdaInstrumentation._extractAccountId(
                 context.invokedFunctionArn
               ),

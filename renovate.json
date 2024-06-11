@@ -4,30 +4,60 @@
   ],
   "packageRules": [
     {
-      "groupName": "all non-major dependencies",
-      "updateTypes": ["patch", "minor"],
-      "groupSlug": "all-minor-patch"
+      "groupName": "all patch versions",
+      "groupSlug": "all-patch",
+      "matchUpdateTypes": ["patch"],
+      "excludePackageNames": ["prettier"],
+      "schedule": ["before 3am on Monday"]
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "dependencyDashboardApproval": true
     },
     {
       "matchPackageNames": ["@opentelemetry/api"],
-      "rangeStrategy": "bump"
+      "rangeStrategy": "widen"
     },
     {
-      "groupName": "Otel Core experimental",
+      "groupName": "OTel Core experimental",
       "matchPackageNames": [
+        "@opentelemetry/api-events",
+        "@opentelemetry/api-logs",
+        "@opentelemetry/exporter-logs-otlp-grpc",
+        "@opentelemetry/exporter-logs-otlp-http",
+        "@opentelemetry/exporter-logs-otlp-proto",
+        "@opentelemetry/exporter-trace-otlp-grpc",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/exporter-trace-otlp-proto",
+        "@opentelemetry/browser-detector",
+        "@opentelemetry/exporter-metrics-otlp-grpc",
+        "@opentelemetry/exporter-metrics-otlp-http",
+        "@opentelemetry/exporter-metrics-otlp-proto",
+        "@opentelemetry/exporter-prometheus",
         "@opentelemetry/instrumentation",
+        "@opentelemetry/instrumentation-fetch",
         "@opentelemetry/instrumentation-grpc",
         "@opentelemetry/instrumentation-http",
-        "@opentelemetry/instrumentation-fetch",
         "@opentelemetry/instrumentation-xml-http-request",
-        "@opentelemetry/sdk-node"
+        "@opentelemetry/sdk-node",
+        "@opentelemetry/otlp-exporter-base",
+        "@opentelemetry/otlp-grpc-exporter-base",
+        "@opentelemetry/otlp-proto-exporter-base",
+        "@opentelemetry/otlp-transformer",
+        "@opentelemetry/sdk-logs",
+        "@opentelemetry/shim-opencensus"
       ],
-      "rangeStrategy": "bump"
+      "rangeStrategy": "bump",
+      "schedule": ["before 3am every weekday"]
     }
   ],
-  "ignoreDeps": ["lerna", "lerna-changelog"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 3am on Monday"]
+  },
+  "ignoreDeps": ["lerna", "lerna-changelog", "@types/node"],
   "ignorePaths": ["archive/**", "examples/**"],
-  "assignees": ["@blumamir", "@dyladan", "@legendecas", "@Rauno56", "@vmarchaud"],
+  "assignees": ["@blumamir", "@dyladan", "@legendecas", "@pichlermarc" ],
   "schedule": [
     "before 3am on Friday"
   ],

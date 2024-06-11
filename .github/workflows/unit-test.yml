@@ -9,17 +9,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14", "16", "18"]
+        node: ["14", "16", "18", "20"]
         include:
-          - node: "18"
-            lerna-extra-args: >-
-              --ignore @opentelemetry/resource-detector-alibaba-cloud
-              --ignore @opentelemetry/instrumentation-fastify
-              --ignore @opentelemetry/instrumentation-restify
+            - node: 18
+              code-coverage: true
     runs-on: ubuntu-latest
     services:
       memcached:
-        image: memcached:1.6.9-alpine
+        image: memcached:1.6.21-alpine
         ports:
         - 11211:11211
       mongo:
@@ -54,7 +51,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       postgres:
-        image: postgres:15-alpine
+        image: postgres:16-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_DB: otel_pg_database
@@ -101,8 +98,9 @@ jobs:
       MONGODB_PORT: 27017
       MSSQL_PASSWORD: mssql_passw0rd
       MYSQL_DATABASE: otel_mysql_database
-      MYSQL_HOST: localhost
+      MYSQL_HOST: 127.0.0.1
       MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootpw
       MYSQL_PORT: 3306
       MYSQL_USER: otel
       OPENTELEMETRY_MEMCACHED_HOST: localhost
@@ -117,45 +115,30 @@ jobs:
       NPM_CONFIG_UNSAFE_PERM: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            detectors/node/*/node_modules
-            detectors/node/*/package-lock.json
-            metapackages/*/node_modules
-            metapackages/*/package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            plugins/node/*/node_modules
-            plugins/node/*/package-lock.json
-            plugins/web/*/node_modules
-            plugins/web/*/package-lock.json
-            propagators/*/node_modules
-            propagators/*/package-lock.json
-          key: ${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
-      - name: Legacy Peer Dependencies for npm 7
-        if: matrix.node == '16'
-        run: npm config set legacy-peer-deps=true
-      - name: Install Root Dependencies
-        run: npm install --ignore-scripts
-      - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci --hoist --nohoist='zone.js' --nohoist='mocha' --nohoist='ts-mocha'
-      - name: Unit tests
-        run: npm run test:ci:changed -- ${{ matrix.lerna-extra-args }}
-      - name: Build examples
-        run: npm run compile:examples
+      - name: Set MySQL variables
+        run: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} --host=${MYSQL_HOST} --port=${MYSQL_PORT} -e "SET GLOBAL log_output='TABLE'; SET GLOBAL general_log = 1;" mysql
+      - name: Update npm to a version that supports workspaces (v7 or later)
+        if: ${{ matrix.node < 16 }}
+        run: npm install -g npm@9 # npm@9 supports node >=14.17.0
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run compile
+      - name: Unit tests (Full)
+        if: matrix.code-coverage
+        run: npm run test
+      - name: Unit tests (Delta)
+        if: ${{ !matrix.code-coverage }}
+        run: npm run test:ci:changed
       - name: Report Coverage
-        if: matrix.node == '14'
-        uses: codecov/codecov-action@v3
+        if: ${{ matrix.code-coverage && !cancelled()}}
+        uses: codecov/codecov-action@v4
         with:
           verbose: true
 
@@ -163,45 +146,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ["14"]
+        node: ["16"]
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_UNSAFE_PERM: true
       NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules
-            package-lock.json
-            detectors/node/*/node_modules
-            detectors/node/*/package-lock.json
-            metapackages/*/node_modules
-            metapackages/*/package-lock.json
-            packages/*/node_modules
-            packages/*/package-lock.json
-            plugins/node/*/node_modules
-            plugins/node/*/package-lock.json
-            plugins/web/*/node_modules
-            plugins/web/*/package-lock.json
-            propagators/*/node_modules
-            propagators/*/package-lock.json
-          key: ${{ runner.os }}${{ matrix.node }}-browser-${{ hashFiles('package.json', 'detectors/node/*/package.json', 'metapackages/*/package.json', 'packages/*/package.json', 'plugins/node/*/package.json', 'plugins/web/*/package.json', 'propagators/*/package.json') }}
-      - name: Install Root Dependencies
-        run: npm install --ignore-scripts
-      - name: Bootstrap Dependencies
-        run: npx lerna bootstrap --no-ci
+      - name: Update npm to a version that supports workspaces (v7 or later)
+        if: ${{ matrix.node < 16 }}
+        run: npm install -g npm@9 # npm@9 supports node >=14.17.0
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run compile
       - name: Unit tests
         run: npm run test:browser
       - name: Report Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           verbose: true

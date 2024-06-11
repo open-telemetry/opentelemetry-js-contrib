@@ -124,12 +124,15 @@ export const satisfiesPattern = (
  */
 export const isIgnored = (
   constant: string,
-  list?: IgnoreMatcher[],
+  list?: IgnoreMatcher | IgnoreMatcher[],
   onException?: (error: Error) => void
 ): boolean => {
   if (!list) {
     // No ignored urls - trace everything
     return false;
+  }
+  if (!Array.isArray(list)) {
+    list = [list];
   }
   // Try/catch outside the loop for failing fast
   try {

@@ -15,12 +15,34 @@
  */
 
 import { diag } from '@opentelemetry/api';
-import { Detector, Resource } from '@opentelemetry/resources';
 import {
-  CloudProviderValues,
-  CloudPlatformValues,
-  SemanticResourceAttributes,
+  Detector,
+  Resource,
+  ResourceAttributes,
+} from '@opentelemetry/resources';
+import {
+  SEMRESATTRS_CLOUD_PROVIDER,
+  SEMRESATTRS_CLOUD_PLATFORM,
+  SEMRESATTRS_CONTAINER_ID,
+  SEMRESATTRS_CONTAINER_NAME,
+  SEMRESATTRS_AWS_ECS_CONTAINER_ARN,
+  SEMRESATTRS_AWS_ECS_CLUSTER_ARN,
+  SEMRESATTRS_AWS_ECS_LAUNCHTYPE,
+  SEMRESATTRS_AWS_ECS_TASK_ARN,
+  SEMRESATTRS_AWS_ECS_TASK_FAMILY,
+  SEMRESATTRS_AWS_ECS_TASK_REVISION,
+  SEMRESATTRS_CLOUD_ACCOUNT_ID,
+  SEMRESATTRS_CLOUD_REGION,
+  SEMRESATTRS_CLOUD_AVAILABILITY_ZONE,
+  SEMRESATTRS_AWS_LOG_GROUP_NAMES,
+  SEMRESATTRS_AWS_LOG_GROUP_ARNS,
+  SEMRESATTRS_AWS_LOG_STREAM_NAMES,
+  SEMRESATTRS_AWS_LOG_STREAM_ARNS,
+  CLOUDPROVIDERVALUES_AWS,
+  CLOUDPLATFORMVALUES_AWS_ECS,
 } from '@opentelemetry/semantic-conventions';
+// Patch until the OpenTelemetry SDK is updated to ship this attribute
+import { SemanticResourceAttributes as AdditionalSemanticResourceAttributes } from './SemanticResourceAttributes';
 import * as http from 'http';
 import * as util from 'util';
 import * as fs from 'fs';
@@ -54,8 +76,8 @@ export class AwsEcsDetector implements Detector {
     }
 
     let resource = new Resource({
-      [SemanticResourceAttributes.CLOUD_PROVIDER]: CloudProviderValues.AWS,
-      [SemanticResourceAttributes.CLOUD_PLATFORM]: CloudPlatformValues.AWS_ECS,
+      [SEMRESATTRS_CLOUD_PROVIDER]: CLOUDPROVIDERVALUES_AWS,
+      [SEMRESATTRS_CLOUD_PLATFORM]: CLOUDPLATFORMVALUES_AWS_ECS,
     }).merge(await AwsEcsDetector._getContainerIdAndHostnameResource());
 
     const metadataUrl = getEnv().ECS_CONTAINER_METADATA_URI_V4;
@@ -110,8 +132,8 @@ export class AwsEcsDetector implements Detector {
 
     if (hostName || containerId) {
       return new Resource({
-        [SemanticResourceAttributes.CONTAINER_NAME]: hostName || '',
-        [SemanticResourceAttributes.CONTAINER_ID]: containerId || '',
+        [SEMRESATTRS_CONTAINER_NAME]: hostName || '',
+        [SEMRESATTRS_CONTAINER_ID]: containerId || '',
       });
     }
 
@@ -128,23 +150,37 @@ export class AwsEcsDetector implements Detector {
     const baseArn: string = taskArn.substring(0, taskArn.lastIndexOf(':'));
     const cluster: string = taskMetadata['Cluster'];
 
+    const accountId: string = AwsEcsDetector._getAccountFromArn(taskArn);
+    const region: string = AwsEcsDetector._getRegionFromArn(taskArn);
+    const availabilityZone: string | undefined =
+      taskMetadata?.['AvailabilityZone'];
+
     const clusterArn = cluster.startsWith('arn:')
       ? cluster
       : `${baseArn}:cluster/${cluster}`;
 
     const containerArn: string = containerMetadata['ContainerARN'];
 
-    // https://github.com/open-telemetry/opentelemetry-specification/blob/main/semantic_conventions/resource/cloud_provider/aws/ecs.yaml
-    return new Resource({
-      [SemanticResourceAttributes.AWS_ECS_CONTAINER_ARN]: containerArn,
-      [SemanticResourceAttributes.AWS_ECS_CLUSTER_ARN]: clusterArn,
-      [SemanticResourceAttributes.AWS_ECS_LAUNCHTYPE]:
-        launchType?.toLowerCase(),
-      [SemanticResourceAttributes.AWS_ECS_TASK_ARN]: taskArn,
-      [SemanticResourceAttributes.AWS_ECS_TASK_FAMILY]: taskMetadata['Family'],
-      [SemanticResourceAttributes.AWS_ECS_TASK_REVISION]:
-        taskMetadata['Revision'],
-    });
+    // https://github.com/open-telemetry/semantic-conventions/blob/main/semantic_conventions/resource/cloud_provider/aws/ecs.yaml
+    const attributes: ResourceAttributes = {
+      [SEMRESATTRS_AWS_ECS_CONTAINER_ARN]: containerArn,
+      [SEMRESATTRS_AWS_ECS_CLUSTER_ARN]: clusterArn,
+      [SEMRESATTRS_AWS_ECS_LAUNCHTYPE]: launchType?.toLowerCase(),
+      [SEMRESATTRS_AWS_ECS_TASK_ARN]: taskArn,
+      [SEMRESATTRS_AWS_ECS_TASK_FAMILY]: taskMetadata['Family'],
+      [SEMRESATTRS_AWS_ECS_TASK_REVISION]: taskMetadata['Revision'],
+
+      [SEMRESATTRS_CLOUD_ACCOUNT_ID]: accountId,
+      [SEMRESATTRS_CLOUD_REGION]: region,
+      [AdditionalSemanticResourceAttributes.CLOUD_RESOURCE_ID]: containerArn,
+    };
+
+    // The availability zone is not available in all Fargate runtimes
+    if (availabilityZone) {
+      attributes[SEMRESATTRS_CLOUD_AVAILABILITY_ZONE] = availabilityZone;
+    }
+
+    return new Resource(attributes);
   }
 
   private static async _getLogResource(
@@ -172,10 +208,10 @@ export class AwsEcsDetector implements Detector {
     const logsStreamArn = `arn:aws:logs:${logsRegion}:${awsAccount}:log-group:${logsGroupName}:log-stream:${logsStreamName}`;
 
     return new Resource({
-      [SemanticResourceAttributes.AWS_LOG_GROUP_NAMES]: [logsGroupName],
-      [SemanticResourceAttributes.AWS_LOG_GROUP_ARNS]: [logsGroupArn],
-      [SemanticResourceAttributes.AWS_LOG_STREAM_NAMES]: [logsStreamName],
-      [SemanticResourceAttributes.AWS_LOG_STREAM_ARNS]: [logsStreamArn],
+      [SEMRESATTRS_AWS_LOG_GROUP_NAMES]: [logsGroupName],
+      [SEMRESATTRS_AWS_LOG_GROUP_ARNS]: [logsGroupArn],
+      [SEMRESATTRS_AWS_LOG_STREAM_NAMES]: [logsStreamName],
+      [SEMRESATTRS_AWS_LOG_STREAM_ARNS]: [logsStreamArn],
     });
   }
 

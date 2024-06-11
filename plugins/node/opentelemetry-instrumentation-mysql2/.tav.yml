@@ -6,11 +6,6 @@ mysql2:
     # Skip 2.3.3 which installs types from git which takes 10m on it's own
     commands: npm run test
 
-    # Fix missing `test-utils` package
-    pretest: npm run --prefix ../../../ lerna:link
   - versions: 1.4.2 || 1.5.3 || 1.6.4 || 1.6.5 || 1.7.0
     # Skip v1.6.2, which is broken
     commands: npm run test
-
-    # Fix missing `test-utils` package
-    pretest: npm run --prefix ../../../ lerna:link

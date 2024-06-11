@@ -115,7 +115,7 @@ describe('mysql@2.x-Metrics', () => {
       instrumentation.disable();
       instrumentation.enable();
       inMemoryMetricsExporter.reset();
-      // credentials to connect to pool if you run docker locally using 'npm run docker:start' from 'examples' folder
+      // credentials to connect to pool if you run docker locally using 'npm run docker:start' from 'examples/mysql' folder
       // pool = mysqlTypes.createPool({
       //   host: 'localhost',
       //   user: 'root',

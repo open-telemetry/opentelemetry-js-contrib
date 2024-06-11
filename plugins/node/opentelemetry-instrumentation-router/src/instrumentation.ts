@@ -22,56 +22,40 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 
 import * as http from 'http';
 import type * as Router from 'router';
 
 import * as types from './internal-types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import * as utils from './utils';
 import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
-export default class RouterInstrumentation extends InstrumentationBase<any> {
-  constructor(config?: InstrumentationConfig) {
-    super(
-      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
-      VERSION,
-      config
-    );
+export default class RouterInstrumentation extends InstrumentationBase {
+  constructor(config: InstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   private _moduleVersion?: string;
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
-        api.diag.debug(
-          `Applying patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         this._moduleVersion = moduleVersion;
-        return moduleExports;
-      },
-      (moduleExports, moduleVersion) => {
-        api.diag.debug(
-          `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
-        );
         return moduleExports;
       }
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<typeof Router>(
+      new InstrumentationNodeModuleFile(
         'router/lib/layer.js',
         constants.SUPPORTED_VERSIONS,
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(
-            `Applying patch for "lib/layer.js" of ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           const Layer: any = moduleExports;
           if (isWrapped(Layer.prototype.handle_request)) {
             this._unwrap(Layer.prototype, 'handle_request');
@@ -91,10 +75,7 @@ export default class RouterInstrumentation extends InstrumentationBase<any> {
           );
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          api.diag.debug(
-            `Removing patch for "lib/layer.js" of ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           const Layer: any = moduleExports;
           this._unwrap(Layer.prototype, 'handle_request');
           this._unwrap(Layer.prototype, 'handle_error');
@@ -182,7 +163,7 @@ export default class RouterInstrumentation extends InstrumentationBase<any> {
       [AttributeNames.NAME]: fnName,
       [AttributeNames.VERSION]: this._moduleVersion,
       [AttributeNames.TYPE]: type,
-      [SemanticAttributes.HTTP_ROUTE]: route,
+      [SEMATTRS_HTTP_ROUTE]: route,
     };
 
     const parent = api.context.active();

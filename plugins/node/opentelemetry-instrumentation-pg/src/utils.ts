@@ -22,14 +22,17 @@ import {
   Tracer,
   SpanKind,
   diag,
-  defaultTextMapSetter,
-  ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { AttributeNames } from './enums/AttributeNames';
 import {
-  SemanticAttributes,
-  DbSystemValues,
+  SEMATTRS_DB_SYSTEM,
+  SEMATTRS_DB_NAME,
+  SEMATTRS_DB_CONNECTION_STRING,
+  SEMATTRS_NET_PEER_NAME,
+  SEMATTRS_NET_PEER_PORT,
+  SEMATTRS_DB_USER,
+  SEMATTRS_DB_STATEMENT,
+  DBSYSTEMVALUES_POSTGRESQL,
 } from '@opentelemetry/semantic-conventions';
 import {
   PgClientExtended,
@@ -37,15 +40,12 @@ import {
   PgPoolCallback,
   PgPoolExtended,
   PgParsedConnectionParams,
+  PgPoolOptionsParams,
 } from './internal-types';
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
-import { PgInstrumentation } from './';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-
-function arrayStringifyHelper(arr: Array<unknown>): string {
-  return '[' + arr.toString() + ']';
-}
+import { SpanNames } from './enums/SpanNames';
 
 /**
  * Helper function to get a low cardinality span name from whatever info we have
@@ -73,7 +73,7 @@ export function getQuerySpanName(
   // NB: when the query config is invalid, we omit the dbName too, so that
   // someone (or some tool) reading the span name doesn't misinterpret the
   // dbName as being a prepared statement or sql commit name.
-  if (!queryConfig) return PgInstrumentation.BASE_SPAN_NAME;
+  if (!queryConfig) return SpanNames.QUERY_PREFIX;
 
   // Either the name of a prepared statement; or an attempted parse
   // of the SQL command, normalized to uppercase; or unknown.
@@ -82,13 +82,16 @@ export function getQuerySpanName(
       ? queryConfig.name
       : parseNormalizedOperationName(queryConfig.text);
 
-  return `${PgInstrumentation.BASE_SPAN_NAME}:${command}${
-    dbName ? ` ${dbName}` : ''
-  }`;
+  return `${SpanNames.QUERY_PREFIX}:${command}${dbName ? ` ${dbName}` : ''}`;
 }
 
 function parseNormalizedOperationName(queryText: string) {
-  const sqlCommand = queryText.split(' ')[0].toUpperCase();
+  const indexOfFirstSpace = queryText.indexOf(' ');
+  let sqlCommand =
+    indexOfFirstSpace === -1
+      ? queryText
+      : queryText.slice(0, indexOfFirstSpace);
+  sqlCommand = sqlCommand.toUpperCase();
 
   // Handle query text being "COMMIT;", which has an extra semicolon before the space.
   return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
@@ -101,15 +104,40 @@ export function getConnectionString(params: PgParsedConnectionParams) {
   return `postgresql://${host}:${port}/${database}`;
 }
 
+function getPort(port: number | undefined): number | undefined {
+  // Port may be NaN as parseInt() is used on the value, passing null will result in NaN being parsed.
+  // https://github.com/brianc/node-postgres/blob/2a8efbee09a284be12748ed3962bc9b816965e36/packages/pg/lib/connection-parameters.js#L66
+  if (Number.isInteger(port)) {
+    return port;
+  }
+
+  // Unable to find the default used in pg code, so falling back to 'undefined'.
+  return undefined;
+}
+
 export function getSemanticAttributesFromConnection(
   params: PgParsedConnectionParams
 ) {
   return {
-    [SemanticAttributes.DB_NAME]: params.database, // required
-    [SemanticAttributes.DB_CONNECTION_STRING]: getConnectionString(params), // required
-    [SemanticAttributes.NET_PEER_NAME]: params.host, // required
-    [SemanticAttributes.NET_PEER_PORT]: params.port,
-    [SemanticAttributes.DB_USER]: params.user,
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+    [SEMATTRS_DB_NAME]: params.database, // required
+    [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params), // required
+    [SEMATTRS_NET_PEER_NAME]: params.host, // required
+    [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
+    [SEMATTRS_DB_USER]: params.user,
+  };
+}
+
+export function getSemanticAttributesFromPool(params: PgPoolOptionsParams) {
+  return {
+    [SEMATTRS_DB_SYSTEM]: DBSYSTEMVALUES_POSTGRESQL,
+    [SEMATTRS_DB_NAME]: params.database, // required
+    [SEMATTRS_DB_CONNECTION_STRING]: getConnectionString(params), // required
+    [SEMATTRS_NET_PEER_NAME]: params.host, // required
+    [SEMATTRS_NET_PEER_PORT]: getPort(params.port),
+    [SEMATTRS_DB_USER]: params.user,
+    [AttributeNames.IDLE_TIMEOUT_MILLIS]: params.idleTimeoutMillis,
+    [AttributeNames.MAX_CLIENT]: params.maxClient,
   };
 }
 
@@ -137,10 +165,7 @@ export function handleConfigQuery(
   const spanName = getQuerySpanName(dbName, queryConfig);
   const span = tracer.startSpan(spanName, {
     kind: SpanKind.CLIENT,
-    attributes: {
-      [SemanticAttributes.DB_SYSTEM]: DbSystemValues.POSTGRESQL, // required
-      ...getSemanticAttributesFromConnection(connectionParameters),
-    },
+    attributes: getSemanticAttributesFromConnection(connectionParameters),
   });
 
   if (!queryConfig) {
@@ -149,17 +174,33 @@ export function handleConfigQuery(
 
   // Set attributes
   if (queryConfig.text) {
-    span.setAttribute(SemanticAttributes.DB_STATEMENT, queryConfig.text);
+    span.setAttribute(SEMATTRS_DB_STATEMENT, queryConfig.text);
   }
 
   if (
     instrumentationConfig.enhancedDatabaseReporting &&
     Array.isArray(queryConfig.values)
   ) {
-    span.setAttribute(
-      AttributeNames.PG_VALUES,
-      arrayStringifyHelper(queryConfig.values)
-    );
+    try {
+      const convertedValues = queryConfig.values.map(value => {
+        if (value == null) {
+          return 'null';
+        } else if (value instanceof Buffer) {
+          return value.toString();
+        } else if (typeof value === 'object') {
+          if (typeof value.toPostgres === 'function') {
+            return value.toPostgres();
+          }
+          return JSON.stringify(value);
+        } else {
+          //string, number
+          return value.toString();
+        }
+      });
+      span.setAttribute(AttributeNames.PG_VALUES, convertedValues);
+    } catch (e) {
+      diag.error('failed to stringify ', queryConfig.values, e);
+    }
   }
 
   // Set plan name attribute, if present
@@ -252,72 +293,6 @@ export function patchClientConnectCallback(span: Span, cb: Function): Function {
     span.end();
     cb.apply(this, arguments);
   };
-}
-
-// NOTE: This function currently is returning false-positives
-// in cases where comment characters appear in string literals
-// ("SELECT '-- not a comment';" would return true, although has no comment)
-function hasValidSqlComment(query: string): boolean {
-  const indexOpeningDashDashComment = query.indexOf('--');
-  if (indexOpeningDashDashComment >= 0) {
-    return true;
-  }
-
-  const indexOpeningSlashComment = query.indexOf('/*');
-  if (indexOpeningSlashComment < 0) {
-    return false;
-  }
-
-  const indexClosingSlashComment = query.indexOf('*/');
-  return indexOpeningDashDashComment < indexClosingSlashComment;
-}
-
-// sqlcommenter specification (https://google.github.io/sqlcommenter/spec/#value-serialization)
-// expects us to URL encode based on the RFC 3986 spec (https://en.wikipedia.org/wiki/Percent-encoding),
-// but encodeURIComponent does not handle some characters correctly (! ' ( ) *),
-// which means we need special handling for this
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
-function fixedEncodeURIComponent(str: string) {
-  return encodeURIComponent(str).replace(
-    /[!'()*]/g,
-    c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`
-  );
-}
-
-export function addSqlCommenterComment(span: Span, query: string): string {
-  if (typeof query !== 'string' || query.length === 0) {
-    return query;
-  }
-
-  // As per sqlcommenter spec we shall not add a comment if there already is a comment
-  // in the query
-  if (hasValidSqlComment(query)) {
-    return query;
-  }
-
-  const propagator = new W3CTraceContextPropagator();
-  const headers: { [key: string]: string } = {};
-  propagator.inject(
-    trace.setSpan(ROOT_CONTEXT, span),
-    headers,
-    defaultTextMapSetter
-  );
-
-  // sqlcommenter spec requires keys in the comment to be sorted lexicographically
-  const sortedKeys = Object.keys(headers).sort();
-
-  if (sortedKeys.length === 0) {
-    return query;
-  }
-
-  const commentString = sortedKeys
-    .map(key => {
-      const encodedValue = fixedEncodeURIComponent(headers[key]);
-      return `${key}='${encodedValue}'`;
-    })
-    .join(',');
-
-  return `${query} /*${commentString}*/`;
 }
 
 /**

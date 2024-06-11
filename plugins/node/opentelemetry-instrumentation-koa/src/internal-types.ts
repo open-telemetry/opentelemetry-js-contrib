@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { KoaMiddleware } from './types';
+import type { Middleware, DefaultState } from 'koa';
+import { KoaContext } from './types';
+import type * as Router from '@koa/router';
+
+export type KoaMiddleware = Middleware<DefaultState, KoaContext> & {
+  router?: Router;
+};
 
 /**
  * This symbol is used to mark a Koa layer as being already instrumented

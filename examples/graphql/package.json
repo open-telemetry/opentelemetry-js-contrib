@@ -44,7 +44,7 @@
     "@opentelemetry/resources": "~1.0.0",
     "@opentelemetry/sdk-trace-base": "~1.0.0",
     "@opentelemetry/sdk-trace-node": "~1.0.0",
-    "@opentelemetry/semantic-conventions": "~1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.23.0",
     "apollo-server": "^2.18.1",
     "cross-fetch": "^3.0.5",
     "express": "^4.17.1",

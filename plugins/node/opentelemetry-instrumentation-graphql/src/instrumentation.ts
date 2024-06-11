@@ -18,7 +18,6 @@ import { context, trace } from '@opentelemetry/api';
 import {
   isWrapped,
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   safeExecuteInTheMiddle,
@@ -50,7 +49,7 @@ import {
   wrapFields,
 } from './utils';
 
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
 import { GraphQLInstrumentationConfig } from './types';
@@ -59,17 +58,16 @@ const DEFAULT_CONFIG: GraphQLInstrumentationConfig = {
   mergeItems: false,
   depth: -1,
   allowValues: false,
+  ignoreResolveSpans: false,
 };
 
-const supportedVersions = ['>=14'];
+const supportedVersions = ['>=14 <17'];
 
 export class GraphQLInstrumentation extends InstrumentationBase {
-  constructor(
-    config: GraphQLInstrumentationConfig & InstrumentationConfig = {}
-  ) {
+  constructor(config: GraphQLInstrumentationConfig = {}) {
     super(
-      '@opentelemetry/instrumentation-graphql',
-      VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }
@@ -83,7 +81,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
   }
 
   protected init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       'graphql',
       supportedVersions
     );
@@ -94,10 +92,8 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     return module;
   }
 
-  private _addPatchingExecute(): InstrumentationNodeModuleFile<
-    typeof graphqlTypes
-  > {
-    return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
+  private _addPatchingExecute(): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
       'graphql/execution/execute.js',
       supportedVersions,
       // cannot make it work with appropriate type as execute function has 2
@@ -121,20 +117,18 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     );
   }
 
-  private _addPatchingParser(): InstrumentationNodeModuleFile<
-    typeof graphqlTypes
-  > {
-    return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
+  private _addPatchingParser(): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
       'graphql/language/parser.js',
       supportedVersions,
-      moduleExports => {
-        if (isWrapped(moduleExports.execute)) {
+      (moduleExports: typeof graphqlTypes) => {
+        if (isWrapped(moduleExports.parse)) {
           this._unwrap(moduleExports, 'parse');
         }
         this._wrap(moduleExports, 'parse', this._patchParse());
         return moduleExports;
       },
-      moduleExports => {
+      (moduleExports: typeof graphqlTypes) => {
         if (moduleExports) {
           this._unwrap(moduleExports, 'parse');
         }
@@ -142,14 +136,12 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     );
   }
 
-  private _addPatchingValidate(): InstrumentationNodeModuleFile<
-    typeof graphqlTypes
-  > {
-    return new InstrumentationNodeModuleFile<typeof graphqlTypes>(
+  private _addPatchingValidate(): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
       'graphql/validation/validate.js',
       supportedVersions,
       moduleExports => {
-        if (isWrapped(moduleExports.execute)) {
+        if (isWrapped(moduleExports.validate)) {
           this._unwrap(moduleExports, 'validate');
         }
         this._wrap(moduleExports, 'validate', this._patchValidate());
@@ -253,13 +245,18 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     }
 
     if (isPromise(result)) {
-      (result as Promise<graphqlTypes.ExecutionResult>).then(resultData => {
-        if (typeof config.responseHook !== 'function') {
-          endSpan(span);
-          return;
+      (result as Promise<graphqlTypes.ExecutionResult>).then(
+        resultData => {
+          if (typeof config.responseHook !== 'function') {
+            endSpan(span);
+            return;
+          }
+          this._executeResponseHook(span, resultData);
+        },
+        error => {
+          endSpan(span, error);
         }
-        this._executeResponseHook(span, resultData);
-      });
+      );
     } else {
       if (typeof config.responseHook !== 'function') {
         endSpan(span);
@@ -280,7 +277,7 @@ export class GraphQLInstrumentation extends InstrumentationBase {
       },
       err => {
         if (err) {
-          api.diag.error('Error running response hook', err);
+          this._diag.error('Error running response hook', err);
         }
 
         endSpan(span, undefined);
@@ -457,7 +454,11 @@ export class GraphQLInstrumentation extends InstrumentationBase {
     if (!contextValue) {
       contextValue = {};
     }
-    if (contextValue[OTEL_GRAPHQL_DATA_SYMBOL]) {
+
+    if (
+      contextValue[OTEL_GRAPHQL_DATA_SYMBOL] ||
+      this._getConfig().ignoreResolveSpans
+    ) {
       return {
         schema,
         document,

@@ -21,9 +21,9 @@ import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
-import { RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { ExpressInstrumentation, ExpressInstrumentationConfig } from '../src';
@@ -110,8 +110,9 @@ describe('ExpressInstrumentation', () => {
     });
 
     it('should not repeat middleware paths in the span name', async () => {
+      let rpcMetadata: RPCMetadata;
       app.use((req, res, next) => {
-        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
         return context.with(
           setRPCMetadata(
             trace.setSpan(context.active(), rootSpan),
@@ -139,14 +140,12 @@ describe('ExpressInstrumentation', () => {
           assert.strictEqual(response, 'ok');
           rootSpan.end();
 
-          const spans = memoryExporter.getFinishedSpans();
-
           const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/mw'
           );
 
@@ -154,8 +153,7 @@ describe('ExpressInstrumentation', () => {
             requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
             'request_handler'
           );
-          const exportedRootSpan = spans.find(span => span.name === 'GET /mw');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata.route, '/mw');
         }
       );
     });
@@ -167,8 +165,9 @@ describe('ExpressInstrumentation', () => {
           ExpressLayerType.REQUEST_HANDLER,
         ],
       } as ExpressInstrumentationConfig);
+      let rpcMetadata: RPCMetadata;
       app.use((req, res, next) => {
-        const rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
         return context.with(
           setRPCMetadata(
             trace.setSpan(context.active(), rootSpan),
@@ -192,14 +191,12 @@ describe('ExpressInstrumentation', () => {
           assert.strictEqual(response, 'ok');
           rootSpan.end();
 
-          const spans = memoryExporter.getFinishedSpans();
-
           const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name.includes('request handler'));
           assert.notStrictEqual(requestHandlerSpan, undefined);
           assert.strictEqual(
-            requestHandlerSpan?.attributes[SemanticAttributes.HTTP_ROUTE],
+            requestHandlerSpan?.attributes[SEMATTRS_HTTP_ROUTE],
             '/'
           );
 
@@ -207,8 +204,7 @@ describe('ExpressInstrumentation', () => {
             requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
             'request_handler'
           );
-          const exportedRootSpan = spans.find(span => span.name === 'GET /');
-          assert.notStrictEqual(exportedRootSpan, undefined);
+          assert.strictEqual(rpcMetadata?.route, '/');
         }
       );
     });

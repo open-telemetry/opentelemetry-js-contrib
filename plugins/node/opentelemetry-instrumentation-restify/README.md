@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-restify
 
 ### Supported Versions
 
-- `>=4.0.0 <9`
+- `>=4.0.0 <12`
 
 ## Usage
 
@@ -61,6 +61,16 @@ const restifyInstrumentation = new RestifyInstrumentation({
   }
 });
 ```
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute    | Short Description                  |
+| ------------ | ---------------------------------- |
+| `http.route` | The matched route (path template). |
 
 ## Useful links
 

@@ -7,7 +7,11 @@ This module provides automatic instrumentation for the [`connect`](https://githu
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+## Status
+
+| Maturity                                              | [Component Owner](../../../.github/component_owners.yml) | Compatibility         |
+| ----------------------------------------------------- | -------------------------------------------------------- | --------------------- |
+| [Unmaintained](../../../CONTRIBUTING.md#unmaintained) | N/A                                                      | API 1.0+<br/>SDK 1.0+ |
 
 ## Installation
 
@@ -46,6 +50,16 @@ registerInstrumentations({
 ```
 
 See [examples/connect](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/connect) for a short example.
+
+## Semantic Conventions
+
+This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+
+Attributes collected:
+
+| Attribute    | Short Description                  |
+| ------------ | ---------------------------------- |
+| `http.route` | The matched route (path template). |
 
 ## Useful links
 

@@ -16,7 +16,10 @@
 
 import * as assert from 'assert';
 import { context, SpanStatusCode } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import {
+  SEMATTRS_HTTP_ROUTE,
+  SEMATTRS_HTTP_METHOD,
+} from '@opentelemetry/semantic-conventions';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
@@ -25,13 +28,20 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { Span } from '@opentelemetry/api';
+import {
+  getPackageVersion,
+  runTestFixture,
+  TestCollector,
+} from '@opentelemetry/contrib-test-utils';
+import * as semver from 'semver';
 import * as http from 'http';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { ANONYMOUS_NAME } from '../src/instrumentation';
 import { AttributeNames, FastifyInstrumentation } from '../src';
 import { FastifyRequestInfo } from '../src/types';
 
 const URL = require('url').URL;
+
+const fastifyVersion = getPackageVersion('fastify');
 
 const httpRequest = {
   get: (options: http.ClientRequestArgs | string) => {
@@ -150,9 +160,12 @@ describe('fastify', () => {
       assert.deepStrictEqual(span.attributes, {
         'fastify.type': 'request_handler',
         'plugin.name': 'fastify -> @fastify/express',
-        [SemanticAttributes.HTTP_ROUTE]: '/test',
+        [SEMATTRS_HTTP_ROUTE]: '/test',
       });
-      assert.strictEqual(span.name, `request handler - ${ANONYMOUS_NAME}`);
+      assert.strictEqual(
+        span.name,
+        'request handler - fastify -> @fastify/express'
+      );
       const baseSpan = spans[1];
       assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
     });
@@ -173,10 +186,27 @@ describe('fastify', () => {
         'fastify.type': 'request_handler',
         'fastify.name': 'namedHandler',
         'plugin.name': 'fastify -> @fastify/express',
-        [SemanticAttributes.HTTP_ROUTE]: '/test',
+        [SEMATTRS_HTTP_ROUTE]: '/test',
       });
       assert.strictEqual(span.name, 'request handler - namedHandler');
 
+      const baseSpan = spans[1];
+      assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
+    });
+
+    it('should generate span for 404 request', async () => {
+      await startServer();
+      await httpRequest.get(`http://localhost:${PORT}/no-such-route`);
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 5);
+      const span = spans[2];
+      assert.deepStrictEqual(span.attributes, {
+        'fastify.name': 'basic404',
+        'fastify.type': 'request_handler',
+        'plugin.name': 'fastify -> @fastify/express',
+      });
+      assert.strictEqual(span.name, 'request handler - basic404');
       const baseSpan = spans[1];
       assert.strictEqual(span.parentSpanId, baseSpan.spanContext().spanId);
     });
@@ -188,7 +218,7 @@ describe('fastify', () => {
         async function subsystem(fastify: FastifyInstance) {
           fastify.addHook(
             'onRequest',
-            async (
+            (
               req: FastifyRequest,
               res: FastifyReply,
               next: HookHandlerDoneFunction
@@ -290,7 +320,7 @@ describe('fastify', () => {
         assert.strictEqual(spans.length, 6);
         const baseSpan = spans[1];
         const span = spans[2];
-        assert.strictEqual(span.name, `middleware - ${ANONYMOUS_NAME}`);
+        assert.strictEqual(span.name, 'middleware - subsystem');
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'middleware',
           'plugin.name': 'subsystem',
@@ -307,7 +337,7 @@ describe('fastify', () => {
 
         assert.strictEqual(spans.length, 6);
         const span = spans[3];
-        assert.strictEqual(span.name, 'request handler - anonymous');
+        assert.strictEqual(span.name, 'request handler - subsystem');
         assert.deepStrictEqual(span.status, {
           code: SpanStatusCode.ERROR,
           message: 'foo',
@@ -422,6 +452,19 @@ describe('fastify', () => {
         await startServer();
       });
 
+      it('preClose is not instrumented', async function () {
+        // 'preClose' was added in fastify@4.16.0.
+        if (semver.lt(fastifyVersion, '4.16.0')) {
+          this.skip();
+        } else {
+          app.addHook('preClose', () => {
+            assertRootContextActive();
+          });
+
+          await startServer();
+        }
+      });
+
       it('onClose is not instrumented', async () => {
         app.addHook('onClose', () => {
           assertRootContextActive();
@@ -434,10 +477,7 @@ describe('fastify', () => {
     describe('using requestHook in config', () => {
       it('calls requestHook provided function when set in config', async () => {
         const requestHook = (span: Span, info: FastifyRequestInfo) => {
-          span.setAttribute(
-            SemanticAttributes.HTTP_METHOD,
-            info.request.method
-          );
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
         };
 
         instrumentation.setConfig({
@@ -458,17 +498,14 @@ describe('fastify', () => {
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'request_handler',
           'plugin.name': 'fastify -> @fastify/express',
-          [SemanticAttributes.HTTP_ROUTE]: '/test',
-          [SemanticAttributes.HTTP_METHOD]: 'GET',
+          [SEMATTRS_HTTP_ROUTE]: '/test',
+          [SEMATTRS_HTTP_METHOD]: 'GET',
         });
       });
 
       it('does not propagate an error from a requestHook that throws exception', async () => {
         const requestHook = (span: Span, info: FastifyRequestInfo) => {
-          span.setAttribute(
-            SemanticAttributes.HTTP_METHOD,
-            info.request.method
-          );
+          span.setAttribute(SEMATTRS_HTTP_METHOD, info.request.method);
 
           throw Error('error thrown in requestHook');
         };
@@ -491,10 +528,36 @@ describe('fastify', () => {
         assert.deepStrictEqual(span.attributes, {
           'fastify.type': 'request_handler',
           'plugin.name': 'fastify -> @fastify/express',
-          [SemanticAttributes.HTTP_ROUTE]: '/test',
-          [SemanticAttributes.HTTP_METHOD]: 'GET',
+          [SEMATTRS_HTTP_ROUTE]: '/test',
+          [SEMATTRS_HTTP_METHOD]: 'GET',
         });
       });
+    });
+  });
+
+  it('should work with ESM usage', async () => {
+    await runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-fastify.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: (err, stdout, stderr) => {
+        assert.ifError(err);
+      },
+      checkCollector: (collector: TestCollector) => {
+        const spans = collector.sortedSpans;
+        assert.strictEqual(spans.length, 1);
+        assert.strictEqual(spans[0].name, 'request handler - aRoute');
+        assert.strictEqual(
+          spans[0].attributes.filter(a => a.key === 'plugin.name')[0]?.value
+            ?.stringValue,
+          'fastify',
+          'attribute plugin.name'
+        );
+      },
     });
   });
 });

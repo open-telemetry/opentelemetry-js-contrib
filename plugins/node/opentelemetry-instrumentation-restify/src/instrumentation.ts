@@ -20,8 +20,8 @@ import type * as restify from 'restify';
 import * as api from '@opentelemetry/api';
 import type { Server } from 'restify';
 import { LayerType } from './types';
-import * as AttributeNames from './enums/AttributeNames';
-import { VERSION } from './version';
+import { AttributeNames } from './enums/AttributeNames';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import {
   InstrumentationBase,
@@ -30,20 +30,14 @@ import {
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import { isPromise, isAsyncFunction } from './utils';
-import { getRPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
+import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
 
-const { diag } = api;
-
-export class RestifyInstrumentation extends InstrumentationBase<any> {
+export class RestifyInstrumentation extends InstrumentationBase {
   constructor(config: RestifyInstrumentationConfig = {}) {
-    super(
-      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
-      VERSION,
-      Object.assign({}, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   private _moduleVersion?: string;
@@ -58,7 +52,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
   }
 
   init() {
-    const module = new InstrumentationNodeModuleDefinition<any>(
+    const module = new InstrumentationNodeModuleDefinition(
       constants.MODULE_NAME,
       constants.SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
@@ -68,13 +62,10 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
     );
 
     module.files.push(
-      new InstrumentationNodeModuleFile<any>(
+      new InstrumentationNodeModuleFile(
         'restify/lib/server.js',
         constants.SUPPORTED_VERSIONS,
-        (moduleExports, moduleVersion) => {
-          diag.debug(
-            `Applying patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           this._isDisabled = false;
           const Server: any = moduleExports;
           for (const name of constants.RESTIFY_METHODS) {
@@ -99,10 +90,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
           }
           return moduleExports;
         },
-        (moduleExports, moduleVersion) => {
-          diag.debug(
-            `Removing patch for ${constants.MODULE_NAME}@${moduleVersion}`
-          );
+        moduleExports => {
           this._isDisabled = true;
           if (moduleExports) {
             const Server: any = moduleExports;
@@ -151,7 +139,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
     };
   }
 
-  // will return the same type as `handler`, but all functions recusively patched
+  // will return the same type as `handler`, but all functions recursively patched
   private _handlerPatcher(
     metadata: types.Metadata,
     handler: restify.RequestHandler | types.NestedRequestHandlers
@@ -176,7 +164,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
         // replace HTTP instrumentations name with one that contains a route
         const httpMetadata = getRPCMetadata(api.context.active());
         if (httpMetadata?.type === RPCType.HTTP) {
-          httpMetadata.span.updateName(`${req.method} ${route}`);
+          httpMetadata.route = route;
         }
 
         const fnName = handler.name || undefined;
@@ -185,11 +173,11 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
             ? `request handler - ${route}`
             : `middleware - ${fnName || 'anonymous'}`;
         const attributes = {
-          [AttributeNames.AttributeNames.NAME]: fnName,
-          [AttributeNames.AttributeNames.VERSION]: this._moduleVersion || 'n/a',
-          [AttributeNames.AttributeNames.TYPE]: metadata.type,
-          [AttributeNames.AttributeNames.METHOD]: metadata.methodName,
-          [SemanticAttributes.HTTP_ROUTE]: route,
+          [AttributeNames.NAME]: fnName,
+          [AttributeNames.VERSION]: this._moduleVersion || 'n/a',
+          [AttributeNames.TYPE]: metadata.type,
+          [AttributeNames.METHOD]: metadata.methodName,
+          [SEMATTRS_HTTP_ROUTE]: route,
         };
         const span = this.tracer.startSpan(
           spanName,
@@ -237,13 +225,7 @@ export class RestifyInstrumentation extends InstrumentationBase<any> {
             });
         };
 
-        let newContext = api.trace.setSpan(api.context.active(), span);
-        if (httpMetadata) {
-          newContext = setRPCMetadata(
-            newContext,
-            Object.assign(httpMetadata, { route })
-          );
-        }
+        const newContext = api.trace.setSpan(api.context.active(), span);
         return api.context.with(
           newContext,
           (req: types.Request, res: restify.Response, next: restify.Next) => {

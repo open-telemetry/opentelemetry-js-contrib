@@ -21,7 +21,7 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { Span, SpanStatusCode } from '@opentelemetry/api';
-import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
+import { SEMATTRS_EXCEPTION_MESSAGE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
 import type * as graphqlTypes from 'graphql';
 import { GraphQLInstrumentation } from '../src';
@@ -611,11 +611,11 @@ describe('graphql', () => {
       });
 
       await graphql({ schema: simpleSchemaWithResolver, source: '{ hello }' });
-      const resovleSpans = exporter
+      const resolveSpans = exporter
         .getFinishedSpans()
-        .filter(span => span.name === SpanNames.RESOLVE);
-      assert.deepStrictEqual(resovleSpans.length, 1);
-      const resolveSpan = resovleSpans[0];
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
+      assert.deepStrictEqual(resolveSpans.length, 1);
+      const resolveSpan = resolveSpans[0];
       assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
     });
 
@@ -631,11 +631,11 @@ describe('graphql', () => {
       };
 
       await graphql({ schema, source: '{ hello }', rootValue });
-      const resovleSpans = exporter
+      const resolveSpans = exporter
         .getFinishedSpans()
-        .filter(span => span.name === SpanNames.RESOLVE);
-      assert.deepStrictEqual(resovleSpans.length, 1);
-      const resolveSpan = resovleSpans[0];
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
+      assert.deepStrictEqual(resolveSpans.length, 1);
+      const resolveSpan = resolveSpans[0];
       assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
     });
 
@@ -651,10 +651,10 @@ describe('graphql', () => {
       };
 
       await graphql({ schema, source: '{ hello }', rootValue });
-      const resovleSpans = exporter
+      const resolveSpans = exporter
         .getFinishedSpans()
-        .filter(span => span.name === SpanNames.RESOLVE);
-      assert.deepStrictEqual(resovleSpans.length, 0);
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
+      assert.deepStrictEqual(resolveSpans.length, 0);
     });
 
     it('should create resolve span for custom field resolver', async () => {
@@ -680,12 +680,43 @@ describe('graphql', () => {
       };
 
       await graphql({ schema, source: '{ hello }', rootValue, fieldResolver });
-      const resovleSpans = exporter
+      const resolveSpans = exporter
         .getFinishedSpans()
-        .filter(span => span.name === SpanNames.RESOLVE);
-      assert.deepStrictEqual(resovleSpans.length, 1);
-      const resolveSpan = resovleSpans[0];
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
+      assert.deepStrictEqual(resolveSpans.length, 1);
+      const resolveSpan = resolveSpans[0];
       assert(resolveSpan.attributes[AttributeNames.FIELD_PATH] === 'hello');
+    });
+  });
+
+  describe('when ignoreResolveSpans is true', () => {
+    beforeEach(() => {
+      create({
+        ignoreResolveSpans: true,
+      });
+    });
+
+    afterEach(() => {
+      exporter.reset();
+      graphQLInstrumentation.disable();
+    });
+
+    it('should not create a span for a defined resolver', async () => {
+      const schema = buildSchema(`
+        type Query {
+          hello: String
+        }
+      `);
+
+      const rootValue = {
+        hello: () => 'world',
+      };
+
+      await graphql({ schema, source: '{ hello }', rootValue });
+      const resolveSpans = exporter
+        .getFinishedSpans()
+        .filter(span => span.name === `${SpanNames.RESOLVE} hello`);
+      assert.deepStrictEqual(resolveSpans.length, 0);
     });
   });
 
@@ -1179,7 +1210,7 @@ describe('graphql', () => {
 
       it('should attach response hook data to the resulting spans', () => {
         const querySpan = spans.find(
-          span => span.attributes[AttributeNames.OPERATION_TYPE] == 'query'
+          span => span.attributes[AttributeNames.OPERATION_TYPE] === 'query'
         );
         const instrumentationResult = querySpan?.attributes[dataAttributeName];
         assert.deepStrictEqual(
@@ -1355,7 +1386,9 @@ describe('graphql', () => {
       const spans = exporter.getFinishedSpans();
 
       // single resolve span with error and event for exception
-      const resolveSpans = spans.filter(s => s.name === SpanNames.RESOLVE);
+      const resolveSpans = spans.filter(
+        s => s.name === `${SpanNames.RESOLVE} hello`
+      );
       assert.deepStrictEqual(resolveSpans.length, 1);
       const resolveSpan = resolveSpans[0];
       assert.deepStrictEqual(resolveSpan.status.code, SpanStatusCode.ERROR);
@@ -1366,7 +1399,7 @@ describe('graphql', () => {
       const resolveEvent = resolveSpan.events[0];
       assert.deepStrictEqual(resolveEvent.name, 'exception');
       assert.deepStrictEqual(
-        resolveEvent.attributes?.[SemanticAttributes.EXCEPTION_MESSAGE],
+        resolveEvent.attributes?.[SEMATTRS_EXCEPTION_MESSAGE],
         'sync resolver error from tests'
       );
 
