@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export function ObjectKeys<T extends Record<string, unknown>>(t: T) {
-  return Object.keys(t) as (keyof T)[];
+declare module 'systeminformation/lib/network' {
+  export { networkStats } from 'systeminformation';
 }

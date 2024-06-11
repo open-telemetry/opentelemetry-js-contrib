@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-sdk",
-  "version": "0.41.0",
+  "version": "0.42.0",
   "description": "OpenTelemetry instrumentation for `aws-sdk` and `@aws-sdk/client-*` clients for various AWS services",
   "keywords": [
     "aws",
@@ -45,8 +45,8 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^1.8.0",
-    "@opentelemetry/instrumentation": "^0.51.0",
-    "@opentelemetry/propagation-utils": "^0.30.9",
+    "@opentelemetry/instrumentation": "^0.52.0",
+    "@opentelemetry/propagation-utils": "^0.30.10",
     "@opentelemetry/semantic-conventions": "^1.22.0"
   },
   "devDependencies": {
@@ -57,7 +57,7 @@
     "@aws-sdk/client-sqs": "3.85.0",
     "@aws-sdk/types": "3.78.0",
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/contrib-test-utils": "^0.39.0",
+    "@opentelemetry/contrib-test-utils": "^0.40.0",
     "@opentelemetry/sdk-trace-base": "^1.8.0",
     "@types/mocha": "8.2.3",
     "@types/node": "18.6.5",

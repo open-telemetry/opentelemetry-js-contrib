@@ -115,7 +115,7 @@ To support this use case, you can choose one of the following options:
     ...
     ```
 
-    If possible, this is the prefered option, as it uses types from a maintained package.
+    If possible, this is the preferred option, as it uses types from a maintained package.
 
     Notice that types may introduce breaking changes in major semver releases, and instrumentation should choose a `@types/` package that is compatible with the version range it supports.
 
