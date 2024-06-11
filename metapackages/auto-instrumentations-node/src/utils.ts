@@ -285,7 +285,7 @@ const propagatorMap = new Map<string, PropagatorFactoryFunction>([
  * Get a propagator based on the OTEL_PROPAGATORS env var.
  */
 export function getPropagator(): TextMapPropagator {
-  if (process.env.OTEL_PROPAGATORS == null) {
+  if (process.env.OTEL_PROPAGATORS == null || process.env.OTEL_PROPAGATORS.trim() === '') {
     return new CompositePropagator({
       propagators: [
         new W3CTraceContextPropagator(),
@@ -303,6 +303,13 @@ export function getPropagator(): TextMapPropagator {
   );
 
   const propagators = propagatorsFromEnv.flatMap(propagatorName => {
+    if (propagatorName === 'none'){
+      diag.info(
+        `Not selecting any propagator for value "none" specified in the environment variable OTEL_PROPAGATORS`
+      );
+      return [];
+    }
+
     const propagatorFactoryFunction = propagatorMap.get(propagatorName);
     if (propagatorFactoryFunction == null) {
       diag.error(

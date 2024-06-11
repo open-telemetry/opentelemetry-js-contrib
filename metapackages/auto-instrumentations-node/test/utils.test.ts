@@ -175,6 +175,24 @@ describe('utils', () => {
       ]);
     });
 
+    it('should return default when env var is empty', () => {
+      process.env.OTEL_PROPAGATORS = '';
+      assert.deepStrictEqual(getPropagator().fields(), [
+        'traceparent',
+        'tracestate',
+        'baggage',
+      ]);
+    });
+
+    it('should return default when env var is all spaces', () => {
+      process.env.OTEL_PROPAGATORS = '  ';
+      assert.deepStrictEqual(getPropagator().fields(), [
+        'traceparent',
+        'tracestate',
+        'baggage',
+      ]);
+    });
+
     it('should return the selected propagator when one is in the list', () => {
       process.env.OTEL_PROPAGATORS = 'tracecontext';
       assert.deepStrictEqual(getPropagator().fields(), [
@@ -190,6 +208,11 @@ describe('utils', () => {
 
     it('should return no-op propagator if all propagators are unknown', () => {
       process.env.OTEL_PROPAGATORS = 'my, unknown, propagators';
+      assert.deepStrictEqual(getPropagator().fields(), []);
+    });
+
+    it('should return no-op propagator if "none" is selected', () => {
+      process.env.OTEL_PROPAGATORS = 'none';
       assert.deepStrictEqual(getPropagator().fields(), []);
     });
   });
