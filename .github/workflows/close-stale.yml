@@ -24,7 +24,7 @@ jobs:
         with:
           days-before-issue-stale: 0
           days-before-issue-close: 14
-          stale-issue-message: 'This package does not have an assigned owner and is considered unmaintained and is therefore in feature-freeze. As such it will be closed with 14 days unless a new owner or a sponsor (@open-telemetry/javascript-approvers) for the feature is found.'
+          stale-issue-message: 'This package does not have an assigned owner and is considered unmaintained. As such this package is in feature-freeze and this issue will be closed with 14 days unless a new owner or a sponsor (@open-telemetry/javascript-approvers) for the feature is found. It is the responsibility of the author to find a sponsor for this component.'
           close-issue-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
           only-labels: pkg-status:unmaintained,feature-request
           exempt-issue-labels: bug,has:sponsor
@@ -32,7 +32,7 @@ jobs:
         with:
           days-before-pr-stale: 0
           days-before-pr-close: 14
-          stale-pr-message: 'This package does not have an assigned owner and is considered unmaintained and is therefore in feature-freeze. As such it will be closed with 14 days unless a new owner or a sponsor (@open-telemetry/javascript-approvers) for the feature is found.'
+          stale-pr-message: 'This package does not have an assigned owner and is considered unmaintained. As such this package is in feature-freeze and this PR will be closed with 14 days unless a new owner or a sponsor (@open-telemetry/javascript-approvers) for the feature is found. It is the responsibility of the author to find a sponsor for this component.'
           close-pr-message: 'This issue was closed because no owner or sponsor has been found after 14 days'
           only-labels: pkg-status:unmaintained
           exempt-pr-labels: bug,has:sponsor
