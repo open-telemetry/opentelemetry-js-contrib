@@ -32,6 +32,8 @@ components:
   packages/baggage-span-processor:
     - mikegoldsmith
     - jamiedanielson
+  packages/opentelemetry-browser-extension-autoinjection:
+    - svrnm
   packages/opentelemetry-host-metrics:
     - legendecas
   packages/opentelemetry-id-generator-aws-xray:
