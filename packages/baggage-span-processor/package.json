@@ -1,8 +1,8 @@
 {
   "name": "@opentelemetry/baggage-span-processor",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "OpenTelemetry Baggage Span Processor for Node.js",
-  "main": "build/src/index.ts",
+  "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
