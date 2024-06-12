@@ -16,30 +16,35 @@
 
 import * as assert from 'assert';
 import { promisify } from 'util';
+import * as semver from 'semver';
+
 import type {
   Connection,
   Request,
   TYPES,
-  ConnectionConfiguration,
+  // @ts-ignore
+  ConnectionConfig as ConnectionConfigLegacy,
+  // @ts-ignore
+  ConnectionConfiguration as ConnectionConfigNew,
 } from 'tedious';
 
 type Method = keyof Connection & ('execSql' | 'execSqlBatch' | 'prepare');
+type ConnectionConfig = ConnectionConfigLegacy | ConnectionConfigNew;
+
 export type tedious = {
   Connection: typeof Connection;
   Request: typeof Request;
   TYPES: typeof TYPES;
-  ConnectionConfig: ConnectionConfiguration;
+  ConnectionConfig: ConnectionConfig;
 };
 
-export const makeApi = (tedious: tedious) => {
+export const makeApi = (tedious: tedious, tediousVersion: string) => {
   const fullName = (resource: string) => {
     assert.strictEqual(typeof resource, 'string');
     return `[dbo].[${resource}]`;
   };
 
-  const createConnection = (
-    config: ConnectionConfiguration
-  ): Promise<Connection> => {
+  const createConnection = (config: ConnectionConfig): Promise<Connection> => {
     return new Promise((resolve, reject) => {
       const connection = new tedious.Connection(config);
 
@@ -299,8 +304,16 @@ export const makeApi = (tedious: tedious) => {
 
         if (connection.execBulkLoad.length === 1) {
           // required in <=11.5. not supported in 14
-          const rows = [{ c1: 1 }, { c1: 2, c2: 'hello' }];
-          return connection.execBulkLoad(request, rows);
+          if (semver.lt(tediousVersion, '18.0.0')) {
+            request.addRow({ c1: 1 });
+            request.addRow({ c1: 2, c2: 'hello' });
+            // @ts-ignore
+            return connection.execBulkLoad(request);
+          } else {
+            const rows = [{ c1: 1 }, { c1: 2, c2: 'hello' }];
+            // @ts-ignore
+            return connection.execBulkLoad(request, rows);
+          }
         }
 
         (connection.execBulkLoad as any)(request, [
