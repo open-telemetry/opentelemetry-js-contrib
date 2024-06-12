@@ -257,7 +257,7 @@ This will appropriately assign maintenance responsibilities for the instrumentat
 The last place instrumentation should be hosted is here in this repository.
 Maintaining instrumentation here hampers the development of OpenTelemetry for JavaScript and therefore should be avoided.
 When instrumentation cannot be included in a target package and there is good reason to not host it in a separate and dedicated repository an [instrumentation request](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/new/choose) should be filed.
-Note that new instrumentation needs at least two contributors assigned to it as a code-owner.  It is the responsibility
+Note that new instrumentation needs at least two contributors assigned to it as code-owners.  It is the responsibility
 of the requesting party to reach out and find code-owners for the proposed instrumentation. The instrumentation request
 needs to be accepted before any pull requests for the instrumentation can be considered for merging.
 
