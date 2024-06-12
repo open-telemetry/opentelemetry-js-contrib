@@ -22,8 +22,10 @@ import type {
   Connection,
   Request,
   TYPES,
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   ConnectionConfig as ConnectionConfigLegacy,
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   ConnectionConfiguration as ConnectionConfigNew,
 } from 'tedious';
@@ -307,10 +309,12 @@ export const makeApi = (tedious: tedious, tediousVersion: string) => {
           if (semver.lt(tediousVersion, '18.0.0')) {
             request.addRow({ c1: 1 });
             request.addRow({ c1: 2, c2: 'hello' });
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             return connection.execBulkLoad(request);
           } else {
             const rows = [{ c1: 1 }, { c1: 2, c2: 'hello' }];
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             return connection.execBulkLoad(request, rows);
           }
