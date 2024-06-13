@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.11](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.3.10...resource-detector-container-v0.3.11) (2024-06-10)
+
+
+### Bug Fixes
+
+* ContainerId not detected post version 0.2.2 ([#2270](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2270)) ([9761a91](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9761a9160c862b9f8a35c00afc26217973e4462a))
+
+## [0.3.10](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.3.9...resource-detector-container-v0.3.10) (2024-06-06)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
+
 ## [0.3.9](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.3.8...resource-detector-container-v0.3.9) (2024-04-25)
 
 
