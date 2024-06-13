@@ -52,11 +52,15 @@ export function wrapModule(
     return;
   }
 
-  if (!instrumentation.patch) {
+  if (instrumentation.patch) {
+    mod = instrumentation.patch(mod)
+  } else {
     if (!instrumentation.files?.length) {
       diag.error('No patch nor files exist on instrumentation for ${oTelInstrumentationClass} ${instrumentationName}');
       return;
-    } else if (instrumentation.files.length > 1) {
+    } else if (instrumentation.files.length === 1) {
+      mod = instrumentation.files[0].patch(mod);
+    } else {
       const instrumentationFile = instrumentation.files.find(file => file.name === '${instrumentedFileName}');
       if (!instrumentationFile) {
         diag.error('Not sure how to handle multiple files for instrumentations for ${instrumentationName} when none is found with name ${instrumentedFileName}');
@@ -66,7 +70,6 @@ export function wrapModule(
     }
   }
 
-  mod = instrumentation.patch?.(mod) ?? instrumentation.files[0].patch({ ...mod });
   module.exports = mod;
 }
 `;
