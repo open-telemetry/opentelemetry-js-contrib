@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export { instrumentations, otelPackageToInstrumentationConfig } from './main';
+export { otelPackageToInstrumentationConfig } from './main';

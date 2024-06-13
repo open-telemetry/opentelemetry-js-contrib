@@ -21,7 +21,7 @@ import {
 } from './types';
 import { Plugin, PluginBuild } from 'esbuild';
 import {
-  instrumentations,
+  instrumentationModuleDefinitions,
   otelPackageToInstrumentationConfig,
 } from './config/main';
 
@@ -205,14 +205,14 @@ async function getInstrumentation({
   resolveDir: string;
   build: PluginBuild;
 }) {
-  for (const instrumentation of instrumentations) {
+  for (const instrumentationModuleDefinition of instrumentationModuleDefinitions) {
     const moduleWithPackage = `${extractedModule.package}/${extractedModule.path}`;
     const nameMatches =
-      instrumentation.name === path ||
-      instrumentation.name === moduleWithPackage;
+      instrumentationModuleDefinition.name === path ||
+      instrumentationModuleDefinition.name === moduleWithPackage;
 
     if (!nameMatches) {
-      const fileMatch = instrumentation.files.find(
+      const fileMatch = instrumentationModuleDefinition.files.find(
         file => file.name === path || file.name === moduleWithPackage
       );
       if (!fileMatch) continue;
@@ -230,11 +230,11 @@ async function getInstrumentation({
     const version = JSON.parse(packageJsonContents.toString()).version;
 
     if (
-      instrumentation.supportedVersions.some(supportedVersion =>
+      instrumentationModuleDefinition.supportedVersions.some(supportedVersion =>
         satisfies(version, supportedVersion)
       )
     ) {
-      return instrumentation;
+      return instrumentationModuleDefinition;
     }
   }
   return null;

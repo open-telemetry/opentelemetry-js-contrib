@@ -23,6 +23,16 @@ import {
 import { EsbuildInstrumentationConfigMap } from '../types';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 
+const instrumentations = getNodeAutoInstrumentations();
+const instrumentationModuleDefinitionsByInstrumentationName =
+  Object.fromEntries(
+    instrumentations.map(i => [i.instrumentationName, getModuleDefinitions(i)])
+  );
+
+export const instrumentationModuleDefinitions = Object.values(
+  instrumentationModuleDefinitionsByInstrumentationName
+).flat();
+
 function getModuleDefinitions(
   instrumentation: Instrumentation
 ): InstrumentationModuleDefinition[] {
@@ -32,9 +42,6 @@ function getModuleDefinitions(
 
   return [];
 }
-
-export const instrumentations =
-  getNodeAutoInstrumentations().flatMap(getModuleDefinitions);
 
 function configGenerator<T extends { enabled?: boolean }>(
   config?: T
@@ -58,9 +65,11 @@ export function getOtelPackageToInstrumentationConfig() {
       ) => string | undefined;
     }
   > = {};
-  for (const instrumentation of getNodeAutoInstrumentations()) {
+  for (const instrumentation of instrumentations) {
     const instrumentationModuleDefinitions =
-      getModuleDefinitions(instrumentation);
+      instrumentationModuleDefinitionsByInstrumentationName[
+        instrumentation.instrumentationName
+      ];
 
     for (const instrumentationModuleDefinition of instrumentationModuleDefinitions) {
       otelPackageToInstrumentationConfig[instrumentationModuleDefinition.name] =
