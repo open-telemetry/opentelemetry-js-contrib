@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.9](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.2.8...resource-detector-azure-v0.2.9) (2024-06-10)
+
+
+### Bug Fixes
+
+* **azure-functions-resource-detector:** Update Azure Functions Detector to Consider WEBSITE_SKU ([#2251](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2251)) ([93776fa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/93776fad10fb46ba4ba2bfe31a4825ec0929fd50))
+
+## [0.2.8](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.2.7...resource-detector-azure-v0.2.8) (2024-06-06)
+
+
+### Bug Fixes
+
+* Update Azure Functions Detector Collected Attributes ([#2233](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2233)) ([7272ca8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7272ca85625248718c6276559b36853ea93ae97e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
+
 ## [0.2.7](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.2.6...resource-detector-azure-v0.2.7) (2024-04-25)
 
 

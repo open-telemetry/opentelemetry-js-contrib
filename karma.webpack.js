@@ -14,33 +14,61 @@
  * limitations under the License.
  */
 
-const webpackNodePolyfills = require('./webpack.node-polyfills.js');
+const webpack = require('webpack')
 
 // This is the webpack configuration for browser Karma tests with coverage.
 module.exports = {
   mode: 'development',
   target: 'web',
-  output: { filename: 'bundle.js' },
-  resolve: { extensions: ['.ts', '.js', '.tsx'] },
-  devtool: 'inline-source-map',
+  output: {filename: 'bundle.js'},
+  resolve: {
+    extensions: ['.ts', '.js', '.tsx'],
+    fallback: {
+      // Enable the assert library polyfill because that is used in tests
+      "assert": require.resolve('assert/'),
+      "util": require.resolve('util/'),
+    },
+  },
+  devtool: 'eval-source-map',
+  plugins: [
+    new webpack.ProvidePlugin({
+      // Make a global `process` variable that points to the `process` package,
+      // because the `util` package expects there to be a global variable named `process`.
+      // Thanks to https://stackoverflow.com/a/65018686/14239942
+      // NOTE: I wish there was a better way as this pollutes the tests with a defined 'process' global.
+      process: 'process/browser'
+    })
+  ],
   module: {
     rules: [
       { test: /\.tsx?$/, use: 'ts-loader' },
+      {
+        test: /\.js$/,
+        exclude: {
+          and: [/node_modules/], // Exclude libraries in node_modules ...
+          not: [
+            // Except for a few of them that needs to be transpiled because they use modern syntax
+            /zone.js/,
+          ],
+        },
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
+          }
+        },
+      },
       {
         enforce: 'post',
         exclude: /(node_modules|\.test\.[tj]sx?$)/,
         test: /\.ts$/,
         use: {
-          loader: '@jsdevtools/coverage-istanbul-loader',
+          loader: 'babel-loader',
           options: {
-            produceSourceMap: false,
-            esModules: true
+            plugins: ['babel-plugin-istanbul'],
           }
-        }
+        },
       },
-      // This setting configures Node polyfills for the browser that will be
-      // added to the webpack bundle for Karma tests.
-      { parser: { node: webpackNodePolyfills } }
-    ]
-  }
+    ],
+  },
 };
