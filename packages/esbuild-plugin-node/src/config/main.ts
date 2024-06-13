@@ -66,12 +66,12 @@ export function getOtelPackageToInstrumentationConfig() {
     }
   > = {};
   for (const instrumentation of instrumentations) {
-    const instrumentationModuleDefinitions =
+    const moduleDefinitions =
       instrumentationModuleDefinitionsByInstrumentationName[
         instrumentation.instrumentationName
       ];
 
-    for (const instrumentationModuleDefinition of instrumentationModuleDefinitions) {
+    for (const instrumentationModuleDefinition of moduleDefinitions) {
       otelPackageToInstrumentationConfig[instrumentationModuleDefinition.name] =
         {
           oTelInstrumentationPackage:
