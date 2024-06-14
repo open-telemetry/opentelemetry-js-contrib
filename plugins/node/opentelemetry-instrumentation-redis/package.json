@@ -58,7 +58,7 @@
     "@types/redis": "2.8.32",
     "cross-env": "7.0.3",
     "mocha": "7.2.0",
-    "nyc": "15.1.0",
+    "nyc": "17.0.0",
     "redis": "3.1.2",
     "rimraf": "5.0.5",
     "test-all-versions": "6.1.0",
