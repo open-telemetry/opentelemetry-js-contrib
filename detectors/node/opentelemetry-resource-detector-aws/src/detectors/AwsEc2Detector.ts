@@ -131,7 +131,7 @@ class AwsEc2Detector implements Detector {
       const timeoutId = setTimeout(() => {
         req.abort();
         reject(new Error('EC2 metadata api request timed out.'));
-      }, 1000);
+      }, this.MILLISECOND_TIME_OUT);
 
       const req = http.request(options, res => {
         clearTimeout(timeoutId);
