@@ -89,6 +89,31 @@ describe('utils', () => {
       }
     });
 
+    it('should include all instrumentations except those disabled via OTEL_NODE_DISABLED_INSTRUMENTATIONS environment variable', () => {
+      process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS =
+        'fs,aws-sdk, aws-lambda'; // separator with and without whitespaces should be allowed
+      try {
+        const instrumentations = getNodeAutoInstrumentations();
+        const disabledInstrumentations = new Set([
+          '@opentelemetry/instrumentation-fs',
+          '@opentelemetry/instrumentation-aws-sdk',
+          '@opentelemetry/instrumentation-aws-lambda',
+        ]);
+        const enabledInstrumentationNames = new Set(
+          instrumentations.map(i => i.instrumentationName)
+        );
+
+        for (const disabledInstrumentation of disabledInstrumentations) {
+          assert.strictEqual(
+            enabledInstrumentationNames.has(disabledInstrumentation),
+            false
+          );
+        }
+      } finally {
+        delete process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS;
+      }
+    });
+
     it('should show error for none existing instrumentation', () => {
       const spy = sinon.stub(diag, 'error');
       const name = '@opentelemetry/instrumentation-http2';
