@@ -56,10 +56,10 @@ This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which i
 
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
+[`gcp-metadata`]: https://www.npmjs.com/package/gcp-metadata
+[GCP Metadata Documentation]: https://cloud.google.com/compute/docs/metadata/overview
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/resource-detector-gcp
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fresource-detector-gcp.svg
-[`gcp-metadata`]: https://www.npmjs.com/package/gcp-metadata
-[GCP Metadata Documentation]: https://cloud.google.com/compute/docs/metadata/overview
