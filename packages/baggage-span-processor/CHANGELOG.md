@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/baggage-span-processor-v0.3.0...baggage-span-processor-v0.3.1) (2024-06-10)
+
+
+### Bug Fixes
+
+* **baggage-span-processor:** cannot find module ([#2260](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2260)) ([6721bdd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6721bddc2d190befabab95f706ca467d06633674))
+
 ## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/baggage-span-processor-v0.2.0...baggage-span-processor-v0.3.0) (2024-06-06)
 
 
