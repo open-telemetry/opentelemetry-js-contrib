@@ -6,7 +6,7 @@
 > We encourage extensions to be developed and maintained outside this repository.
 > Alternatives can be found in the OpenTelemetry Registry:
 >
-> https://opentelemetry.io/ecosystem/registry/?component=utilities&s=browserextension
+> <https://opentelemetry.io/ecosystem/registry/?component=utilities&s=browserextension>
 >
 > If you are a developer of such an extension you can
 > [add it to the registry](https://opentelemetry.io/ecosystem/registry/adding/)
