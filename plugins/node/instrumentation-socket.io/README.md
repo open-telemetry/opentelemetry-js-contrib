@@ -48,16 +48,9 @@ registerInstrumentations({
 | `onIgnoreEventList` | `string[]` | `[]` | names of listened events to ignore tracing for |
 | `traceReserved` | `boolean` | `false` | set to true if you want to trace socket.io reserved events (see [docs](https://socket.io/docs/v4/emit-cheatsheet/#Reserved-events)) |
 
-## Migration From opentelemetry-instrumentation-socket.io
+## Filter Http Transport
 
-This instrumentation was originally published and maintained under the name `"opentelemetry-instrumentation-socket.io"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js).
-
-Few breaking changes were made during porting to the contrib repo:
-
-### filterHttpTransport
-
-The instrumentation's config `filterHttpTransport` option was removed to decouple this instrumentation from the http instrumentation.
-if you do not want to trace the socket.io http requests, add the default socket.io route (`/socket.io/`) to the `HttpInstrumentationConfig.ignoreIncomingPaths` array
+If you do not want to trace the socket.io http requests, add the default socket.io route (`/socket.io/`) to the `HttpInstrumentationConfig.ignoreIncomingPaths` array
 
 ## Semantic Conventions
 
