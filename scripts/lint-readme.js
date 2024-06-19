@@ -1,20 +1,24 @@
 const fs = require('fs');
 const path = require('path');
 
-const appRoot = process.cwd();
+const packageRoot = process.cwd();
+const monorepoRoot = path.resolve(`${packageRoot}/../../..`);
 
-// identify if it's node or web
-const isNode = appRoot.includes('node');
-const isWeb = appRoot.includes('web');
+const autoInstrumentationNodeDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-node/package.json`).dependencies;
+const autoInstrumentationWebDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-web/package.json`).dependencies;
 
 // extract info from package.json
-const packageJsonUrl = path.resolve(`${appRoot}/package.json`);
+const packageJsonUrl = path.resolve(`${packageRoot}/package.json`);
 const pjson = require(packageJsonUrl);
 const instrumentationPackageName = pjson.name;
 
+// identify if it's node or web
+const isNode = instrumentationPackageName in autoInstrumentationNodeDeps;
+const isWeb = instrumentationPackageName in autoInstrumentationWebDeps;
+
 // extract info from README.md
 const currentReadmeContent = fs.readFileSync(
-  path.resolve(`${appRoot}/README.md`),
+  path.resolve(`${packageRoot}/README.md`),
   'utf8'
 );
 
