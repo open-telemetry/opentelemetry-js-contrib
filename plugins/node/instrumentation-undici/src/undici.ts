@@ -241,7 +241,10 @@ export class UndiciInstrumentation extends InstrumentationBase {
     const currentSpan = trace.getSpan(activeCtx);
     let span: Span;
 
-    if (config.requireParentforSpans && !currentSpan) {
+    if (
+      config.requireParentforSpans &&
+      (!currentSpan || !trace.isSpanContextValid(currentSpan.spanContext()))
+    ) {
       span = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
     } else {
       span = this.tracer.startSpan(

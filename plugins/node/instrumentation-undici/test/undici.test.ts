@@ -17,6 +17,7 @@ import * as assert from 'assert';
 import { Writable } from 'stream';
 
 import {
+  INVALID_SPAN_CONTEXT,
   SpanKind,
   SpanStatusCode,
   context,
@@ -621,6 +622,30 @@ describe('UndiciInstrumentation `undici` tests', function () {
         response.headers['propagation-error'] == null,
         'propagation is set for instrumented requests'
       );
+
+      spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0, 'no spans are created');
+    });
+
+    it('should not create spans with INVALID_SPAN_CONTEXT parent if required in configuration', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      instrumentation.setConfig({
+        enabled: true,
+        requireParentforSpans: true,
+      });
+
+      const root = trace.wrapSpanContext(INVALID_SPAN_CONTEXT);
+      await context.with(trace.setSpan(context.active(), root), async () => {
+        const requestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+        const response = await undici.request(requestUrl);
+        await consumeResponseBody(response.body);
+        assert.ok(
+          response.headers['propagation-error'] == null,
+          'propagation is set for instrumented requests'
+        );
+      });
 
       spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0, 'no spans are created');
