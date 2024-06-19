@@ -258,7 +258,7 @@ New major versions should be reviewed and tested before being added to the suppo
 
 Specific guidelines for different cases:
 
-- For `Different Modules`, instrumentations can use an upper limit on patched packages but it is unknown which future versions of the instrumented package will continue to use it. Thus it is ok to use an open upper limit `>=1.2.3` for the instrumented package.
+- For `Different Modules`, instrumentations can use an upper limit on patched packages but it is unknown which future versions of the instrumented package will continue to use it. Thus it is ok to use an open upper limit, for example `>=1.2.3`, for the instrumented package.
 - For `Node.js Core Modules`, the supported versions range is set to `['*']` to advertise that the instrumentation is compatible with all versions of Node.js that OpenTelemetry supports.
 - For `Multiple Modules`, the supported versions range should be specified for each module in the README file with the supported versions.
 - For `Different Patch Logic`, the use of supported versions can sometimes be more flexible, and the README should specify useful versioning information.
