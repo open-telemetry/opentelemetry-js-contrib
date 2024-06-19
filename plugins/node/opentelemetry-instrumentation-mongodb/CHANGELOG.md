@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.45.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.44.0...instrumentation-mongodb-v0.45.0) (2024-06-10)
+
+
+### Features
+
+* **instrumentation-mongodb:** support aggregation commands and support nested statements ([#1728](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1728)) ([2b1360d](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2b1360daea5254d15c7dba71c30748630d92c17f))
+
 ## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.43.0...instrumentation-mongodb-v0.44.0) (2024-06-06)
 
 
