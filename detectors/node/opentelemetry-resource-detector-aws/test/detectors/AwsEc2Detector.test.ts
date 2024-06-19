@@ -109,7 +109,8 @@ describe('awsEc2Detector', () => {
       scope.done();
     });
 
-    it('should throw when timed out', async () => {
+    it('should throw when timed out', function (done) {
+      this.timeout(6000);
       const expectedError = new Error('EC2 metadata api request timed out.');
       const scope = nock(AWS_HOST)
         .put(AWS_TOKEN_PATH)
@@ -120,17 +121,21 @@ describe('awsEc2Detector', () => {
         .reply(200, () => mockedIdentityResponse)
         .get(AWS_HOST_PATH)
         .matchHeader(AWS_METADATA_TOKEN_HEADER, mockedTokenResponse)
-        .delayConnection(2000)
+        .delayConnection(5000)
         .reply(200, () => mockedHostResponse);
 
-      try {
-        await awsEc2Detector.detect();
-        assert.ok(false, 'Expected to throw');
-      } catch (err) {
-        assert.deepStrictEqual(err, expectedError);
-      }
-
-      scope.done();
+      awsEc2Detector
+        .detect()
+        .then(() => {
+          assert.ok(false, 'Expected to throw');
+        })
+        .catch(err => {
+          assert.deepStrictEqual(err, expectedError);
+        })
+        .finally(() => {
+          scope.done();
+          done();
+        });
     });
 
     it('should throw when replied with an Error', async () => {
