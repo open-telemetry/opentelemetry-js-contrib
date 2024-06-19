@@ -23,7 +23,7 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 
 ### Supported Versions
 
-- [`connect`](https://www.npmjs.com/package/connect) versions `^3.0.0`
+- [`connect`](https://www.npmjs.com/package/connect) versions `>=3.0.0 <4`
 
 ## Usage
 

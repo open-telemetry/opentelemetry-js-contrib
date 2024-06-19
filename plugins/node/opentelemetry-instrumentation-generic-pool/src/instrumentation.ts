@@ -40,7 +40,7 @@ export default class Instrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['^3.0.0'],
+        ['>=3.0.0 <4'],
         moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {
@@ -61,7 +61,7 @@ export default class Instrumentation extends InstrumentationBase {
       ),
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
-        ['^2.4'],
+        ['>=2.4.0 <3'],
         moduleExports => {
           const Pool: any = moduleExports.Pool;
           if (isWrapped(Pool.prototype.acquire)) {

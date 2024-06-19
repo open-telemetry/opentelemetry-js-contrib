@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-pg
 
 ### Supported Versions
 
-- [`pg`](https://www.npmjs.com/package/pg) versions `^8.0.0`
+- [`pg`](https://www.npmjs.com/package/pg) versions `>=8.0.0 <9`
 - [`pg-pool`](https://www.npmjs.com/package/pg-pool) versions `>=2.0.0 <4`
 
 ## Usage

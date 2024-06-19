@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-bunyan
 
 ## Supported Versions
 
-- [`bunyan`](https://www.npmjs.com/package/bunyan) versions `^1.0.0`
+- [`bunyan`](https://www.npmjs.com/package/bunyan) versions `>=1.0.0 <2`
 
 ## Usage
 

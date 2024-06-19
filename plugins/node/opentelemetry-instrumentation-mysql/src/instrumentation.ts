@@ -81,7 +81,7 @@ export class MySQLInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'mysql',
-        ['^2.0.0'],
+        ['>=2.0.0 <3'],
         (moduleExports: typeof mysqlTypes) => {
           if (isWrapped(moduleExports.createConnection)) {
             this._unwrap(moduleExports, 'createConnection');

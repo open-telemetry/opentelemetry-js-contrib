@@ -34,7 +34,7 @@ import * as utils from './utils';
 import AttributeNames from './enums/AttributeNames';
 import LayerType from './enums/LayerType';
 
-const supportedVersions = ['^1.0.0'];
+const supportedVersions = ['>=1.0.0 <2'];
 
 export default class RouterInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
