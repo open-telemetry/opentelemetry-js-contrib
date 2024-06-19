@@ -42,11 +42,11 @@ registerInstrumentations({
 
 ## Emitted Spans
 
-| Name | `nestjs.type` | Description | Included attributes
-| ---- | ---- | ---- | ----
-`Create Nest App` | `app_creation` | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module`
-`<ControllerName>.<memberName>` | `request_context` | Traces the whole request context. | `http.*`, `nestjs.callback`
-`<memberName>` | `handler` | Traces the work of a specific controller member function. | `nestjs.callback`
+| Name | `nestjs.type` | Description | Included attributes |
+| ---- | ---- | ---- | ---- |
+| `Create Nest App` | `app_creation` | Traces the bootup for the Nest App. The `NestFactory(Static).create` call. | `nestjs.module` |
+| `<ControllerName>.<memberName>` | `request_context` | Traces the whole request context. | `http.*`, `nestjs.callback` |
+| `<memberName>` | `handler` | Traces the work of a specific controller member function. | `nestjs.callback` |
 
 ## Semantic Conventions
 

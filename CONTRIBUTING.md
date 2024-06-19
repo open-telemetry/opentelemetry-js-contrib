@@ -26,6 +26,7 @@ We'd love your help!
 - [Contributing Vendor Components](#contributing-vendor-components)
   - [Adding a New Vendor Component](#adding-a-new-vendor-component)
   - [Removing Vendor Components](#removing-vendor-components)
+- [New Instrumentation](#new-instrumentation)
 
 ## Development Quick Start
 
@@ -150,7 +151,7 @@ With the exception of the stable status, it is up to each individual [component 
 A component may only be marked stable with the approval of a member of @open-telemetry/javascript-maintainers; see the definition of stable below for more details.
 
 A Pull Request modifying components in any stage of the lifecycle is subject to the
-[Pull Request Merge Requirements](#pull-request-merge-requirements).
+[Pull Request Merge Guidelines](#pull-request-merge-guidelines).
 
 ### Unreleased
 
@@ -231,6 +232,38 @@ please ping ([@open-telemetry/javascript-approvers](https://github.com/orgs/open
 - New or changed functionality is tested by unit tests
 - New or changed functionality is documented if appropriate
 - Substantial changes should not be merged within 24 hours of opening in order to allow reviewers from all time zones to have a chance to review
+
+## New Instrumentation
+
+**Do not submit pull requests for new instrumentation without reading the following.**
+
+This project is dedicated to promoting the development of quality instrumentation using OpenTelemetry.
+To achieve this goal, we recognize that the instrumentation needs to be written using the best practices of OpenTelemetry, but also by developers that understand the package they are instrumenting.
+Additionally, the produced instrumentation needs to be maintained and evolved.
+
+The size of the OpenTelemetry JavaScript developer community is not large enough to support an ever-growing amount of instrumentation.
+Therefore, to reach our goal, we have the following recommendations for where instrumentation packages should live.
+
+1. Native to the instrumented package
+2. A dedicated public repository
+3. Here in the opentelemetry-js-contrib repository
+
+If possible, OpenTelemetry instrumentation should be included in the instrumented package.
+This will ensure the instrumentation reaches all package users, and is continuously maintained by developers that understand the package.
+
+If instrumentation cannot be directly included in the package it is instrumenting, it should be hosted in a dedicated public repository owned by its maintainer(s).
+This will appropriately assign maintenance responsibilities for the instrumentation and ensure these maintainers have the needed privilege to maintain the code.
+
+The last place instrumentation should be hosted is here in this repository.
+Maintaining instrumentation here hampers the development of OpenTelemetry for JavaScript and therefore should be avoided.
+When instrumentation cannot be included in a target package and there is good reason to not host it in a separate and dedicated repository an [instrumentation request](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/new/choose) should be filed.
+Note that new instrumentation needs at least two contributors assigned to it as code-owners.  It is the responsibility
+of the requesting party to reach out and find code-owners for the proposed instrumentation. The instrumentation request
+needs to be accepted before any pull requests for the instrumentation can be considered for merging.
+
+Regardless of where instrumentation is hosted, it needs to be discoverable.
+The [OpenTelemetry registry](https://opentelemetry.io/registry/) exists to ensure that instrumentation is discoverable.
+You can find out how to add instrumentation to the registry [here](https://github.com/open-telemetry/opentelemetry.io#adding-a-project-to-the-opentelemetry-registry).
 
 ## Contributing Vendor Components
 

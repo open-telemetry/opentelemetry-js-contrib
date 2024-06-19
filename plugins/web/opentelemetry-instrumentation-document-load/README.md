@@ -111,6 +111,18 @@ registerInstrumentations({
 
 See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/tracer-web) for a short example.
 
+## Document Load Instrumentation Options
+
+The document load instrumentation plugin has few options available to choose from. You can set the following:
+
+| Options                                                                                                                                                                  | Type                          | Description                                                                             |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|-----------------------------------------------------------------------------------------|
+| `applyCustomAttributesOnSpan.documentLoad`| `DocumentLoadCustomAttributeFunction` | Function for adding custom attributes to `documentLoad` spans.                                                  |
+| `applyCustomAttributesOnSpan.documentFetch`                      | `DocumentLoadCustomAttributeFunction`                     | Function for adding custom attributes to `documentFetch` spans.  |
+| `applyCustomAttributesOnSpan.resourceFetch`                      | `ResourceFetchCustomAttributeFunction`                     | Function for adding custom attributes to `resourceFetch` spans  |
+| `ignoreNetworkEvents`                      | `boolean`                     | Ignore adding [network events as span events](https://github.com/open-telemetry/opentelemetry-js/blob/e49c4c7f42c6c444da3f802687cfa4f2d6983f46/packages/opentelemetry-sdk-trace-web/src/enums/PerformanceTimingNames.ts#L17) for document fetch and resource fetch spans.  |
+| `ignorePerformancePaintEvents`                      | `boolean`                     | Ignore adding performance resource paint span events to document load spans.  |
+
 ## Semantic Conventions
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)

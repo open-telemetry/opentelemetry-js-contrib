@@ -15,17 +15,9 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-
-      - name: Lint markdown files
-        uses: avto-dev/markdown-lint@v1
-        with:
-          config: '.github/markdown-lint.yml'
-          ignore: "./**/CHANGELOG.md"
-          args: "./**/*.md"
-
       - run: npm ci
       - name: Lint
-        run: npm run lint
-
-      - name: Verify READMEs
-        run: npm run readme:verify
+        run: |
+          npm run lint
+          npm run lint:markdown
+          run: npm run readme:verify
