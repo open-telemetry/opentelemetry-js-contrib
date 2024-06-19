@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.39.0...contrib-test-utils-v0.40.0) (2024-06-06)
+
+
+### Features
+
+* **instr-tedious:** add support for v16 and v17 ([#2178](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2178)) ([8c578cd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8c578cd17b25b33390e4237596b9e5cbbc0d0b6d)), closes [#1656](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1656)
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
 ## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.38.0...contrib-test-utils-v0.39.0) (2024-04-25)
 
 

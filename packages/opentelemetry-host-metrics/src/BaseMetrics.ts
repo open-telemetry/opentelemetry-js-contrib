@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as api from '@opentelemetry/api';
-import * as metrics from '@opentelemetry/sdk-metrics';
+import { Meter, diag, metrics } from '@opentelemetry/api';
+import { MeterProvider } from '@opentelemetry/sdk-metrics';
 
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -24,7 +24,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
  */
 export interface MetricsCollectorConfig {
   // Meter Provider
-  meterProvider?: metrics.MeterProvider;
+  meterProvider?: MeterProvider;
   // Character to be used to join metrics - default is "."
   metricNameSeparator?: string;
   // Name of component
@@ -39,14 +39,13 @@ const DEFAULT_NAME = PACKAGE_NAME;
  * Base Class for metrics
  */
 export abstract class BaseMetrics {
-  protected _logger = api.diag;
-  protected _meter: api.Meter;
+  protected _logger = diag;
+  protected _meter: Meter;
   private _name: string;
 
   constructor(config: MetricsCollectorConfig) {
     this._name = config.name || DEFAULT_NAME;
-    const meterProvider =
-      config.meterProvider || api.metrics.getMeterProvider();
+    const meterProvider = config.meterProvider || metrics.getMeterProvider();
     if (!config.meterProvider) {
       this._logger.warn('No meter provider, using default');
     }

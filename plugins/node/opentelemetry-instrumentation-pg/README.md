@@ -38,8 +38,6 @@ registerInstrumentations({
 
 PgInstrumentation contains both pg and [`pg.Pool`](https://node-postgres.com/api/pool) so it will be instrumented automatically.
 
-See [examples/postgres](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/postgres) for a short example.
-
 ### PostgreSQL Instrumentation Options
 
 PostgreSQL instrumentation has few options available to choose from. You can set the following:

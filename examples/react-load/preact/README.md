@@ -40,25 +40,25 @@ Take note of the parent-child relationships.
 #### First load
 
 Upon loading, <http://localhost:8080> mounting spans will be exported
-<p align="center"><img src="./images/mounting.png?raw=true"/></p>
-<p align="center"><img src="./images/zipkin-mounting.png?raw=true"/></p>
+<p align="center"><img alt="span data showing parentId" src="./images/mounting.png?raw=true"/></p>
+<p align="center"><img alt="Zipkin UI showing trace" src="./images/zipkin-mounting.png?raw=true"/></p>
 
 #### Pressing 'Enter'
 
 Here we can see the previous component unmounting and the new component mounting.
-<p align="center"><img src="./images/redirect.png?raw=true"/></p>
-<p align="center"><img src="./images/zipkin-redirect.png?raw=true"/></p>
-<p align="center"><img src="./images/zipkin-redirect2.png?raw=true"/></p>
+<p align="center"><img alt="span data showing parentId" src="./images/redirect.png?raw=true"/></p>
+<p align="center"><img alt="Zipkin UI showing trace" src="./images/zipkin-redirect.png?raw=true"/></p>
+<p align="center"><img alt="Zipkin UI showing trace" src="./images/zipkin-redirect2.png?raw=true"/></p>
 
 #### Pressing 'Make Request'
 
 While in loading state:
-<p align="center"><img src="./images/updating.png?raw=true"/></p>
-<p align="center"><img src="./images/zipkin-updating.png?raw=true"/></p>
+<p align="center"><img alt="span data showing parentId" src="./images/updating.png?raw=true"/></p>
+<p align="center"><img alt="Zipkin UI showing trace" src="./images/zipkin-updating.png?raw=true"/></p>
 
 After a few seconds (when the request is fulfilled):
-<p align="center"><img src="./images/updating2.png?raw=true"/></p>
-<p align="center"><img src="./images/zipkin-updating2.png?raw=true"/></p>
+<p align="center"><img alt="span data showing parentId" src="./images/updating2.png?raw=true"/></p>
+<p align="center"><img alt="Zipkin UI showing trace" src="./images/zipkin-updating2.png?raw=true"/></p>
 
 ## Useful links
 
