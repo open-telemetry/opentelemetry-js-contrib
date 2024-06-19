@@ -25,12 +25,12 @@ import {
 import type { NestFactory } from '@nestjs/core/nest-factory.js';
 import type { RouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
 import type { Controller } from '@nestjs/common/interfaces';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_ROUTE,
   SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
-import { VERSION } from './version';
 import { AttributeNames, NestType } from './enums';
 
 const supportedVersions = ['>=4.0.0 <11'];
@@ -42,7 +42,7 @@ export class Instrumentation extends InstrumentationBase {
   };
 
   constructor(config: InstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-nestjs-core', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   init() {

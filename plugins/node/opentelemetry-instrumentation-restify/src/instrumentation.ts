@@ -21,7 +21,7 @@ import * as api from '@opentelemetry/api';
 import type { Server } from 'restify';
 import { LayerType } from './types';
 import { AttributeNames } from './enums/AttributeNames';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import * as constants from './constants';
 import {
   InstrumentationBase,
@@ -39,11 +39,7 @@ const supportedVersions = ['>=4.0.0 <12'];
 
 export class RestifyInstrumentation extends InstrumentationBase {
   constructor(config: RestifyInstrumentationConfig = {}) {
-    super(
-      `@opentelemetry/instrumentation-${constants.MODULE_NAME}`,
-      VERSION,
-      config
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   private _moduleVersion?: string;

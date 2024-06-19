@@ -67,11 +67,22 @@ This package implements Semantic Convention [Version 1.19.0](https://github.com/
 | cloud.region            | The Azure region where the Azure Function is hosted, e.g., "East US", "West Europe", etc. Value of Process Environment Variable `REGION_NAME`.       |
 | faas.instance           | The specific instance of the Azure App Service, useful in a scaled-out configuration. Value from Process Environment Variable `WEBSITE_INSTANCE_ID`. |
 | faas.max_memory         | The amount of memory available to the Azure Function expressed in MiB. value from Process Environment Variable `WEBSITE_MEMORY_LIMIT_MB`.            |
-| faas.name               | The name of the Azure App Service. Value from Process Environment Variable `WEBSITE_SITE_NAME`.                                                      |
-| faas.version            | The version of the Azure Function being executed, e.g., "~4". value from Process Environment Variable `FUNCTIONS_EXTENSION_VERSION`.                 |
+| service.name            | The name of the service the Azure Functions runs within. Value from Process Environment Variable `WEBSITE_SITE_NAME`.                                |
+| cloud.resource_id       | The Azure Resource Manager URI uniquely identifying the Azure Virtual Machine. It typically follows this format: /subscriptions/{subscriptionId}/resourceGroups/{groupName}/providers/Microsoft.Compute/virtualMachines/{vmName}. Value from resourceId key on /metadata/instance/compute request. |
+| process.pid             | The process ID collected from the running process.                                                                                                   |
 
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
 - For more about OpenTelemetry JavaScript: <https://github.com/open-telemetry/opentelemetry-js>
 - For help or feedback on this project, join us in [GitHub Discussions][discussions-url]
+
+## License
+
+Apache 2.0 - See [LICENSE][license-url] for more information.
+
+[discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
+[license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
+[license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
+[npm-url]: https://www.npmjs.com/package/@opentelemetry/resource-detector-azure
+[npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fresource-detector-azure.svg

@@ -72,7 +72,7 @@ import {
   normalizeExchange,
   unmarkConfirmChannelTracing,
 } from './utils';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const supportedVersions = ['>=0.5.5 <1'];
 
@@ -81,8 +81,8 @@ export class AmqplibInstrumentation extends InstrumentationBase {
 
   constructor(config: AmqplibInstrumentationConfig = {}) {
     super(
-      '@opentelemetry/instrumentation-amqplib',
-      VERSION,
+      PACKAGE_NAME,
+      PACKAGE_VERSION,
       Object.assign({}, DEFAULT_CONFIG, config)
     );
   }

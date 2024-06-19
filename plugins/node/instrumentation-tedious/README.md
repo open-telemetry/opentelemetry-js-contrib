@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-tedious
 
 ## Supported Versions
 
-- [tedious](https://www.npmjs.com/package/tedious) `>=1.11.0 <16`
+- [tedious](https://www.npmjs.com/package/tedious) `>=1.11.0 <18`
 
 ## Usage
 

@@ -1,10 +1,18 @@
 # Changelog
 
+## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.36.0...instrumentation-memcached-v0.37.0) (2024-06-06)
+
+
+### Features
+
+* update otel core dependencies ([#2257](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2257)) ([71c15d5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/71c15d597276773c19c16c1117b8d151892e5366))
+
+
 ### Dependencies
 
 * The following workspace dependencies were updated
   * devDependencies
-    * @opentelemetry/contrib-test-utils bumped from ^0.34.3 to ^0.35.0
+    * @opentelemetry/contrib-test-utils bumped from ^0.39.0 to ^0.40.0
 
 ## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-memcached-v0.35.0...instrumentation-memcached-v0.36.0) (2024-04-25)
 

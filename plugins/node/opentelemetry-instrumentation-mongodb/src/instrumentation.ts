@@ -50,7 +50,7 @@ import {
   V4ConnectionPool,
 } from './internal-types';
 import { V4Connect, V4Session } from './internal-types';
-import { VERSION } from './version';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { UpDownCounter } from '@opentelemetry/api';
 
 /** mongodb instrumentation plugin for OpenTelemetry */
@@ -61,7 +61,7 @@ export class MongoDBInstrumentation extends InstrumentationBase {
   protected override _config!: MongoDBInstrumentationConfig;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
-    super('@opentelemetry/instrumentation-mongodb', VERSION, config);
+    super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   override _updateMetricInstruments() {
@@ -775,6 +775,8 @@ export class MongoDBInstrumentation extends InstrumentationBase {
       return MongodbCommandType.IS_MASTER;
     } else if (command.count !== undefined) {
       return MongodbCommandType.COUNT;
+    } else if (command.aggregate !== undefined) {
+      return MongodbCommandType.AGGREGATE;
     } else {
       return MongodbCommandType.UNKNOWN;
     }
@@ -924,11 +926,26 @@ export class MongoDBInstrumentation extends InstrumentationBase {
     const enhancedDbReporting = !!this._config?.enhancedDatabaseReporting;
     const resultObj = enhancedDbReporting
       ? commandObj
-      : Object.keys(commandObj).reduce((obj, key) => {
-          obj[key] = '?';
-          return obj;
-        }, {} as { [key: string]: unknown });
+      : this._scrubStatement(commandObj);
     return JSON.stringify(resultObj);
+  }
+
+  private _scrubStatement(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map(element => this._scrubStatement(element));
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, element]) => [
+          key,
+          this._scrubStatement(element),
+        ])
+      );
+    }
+
+    // A value like string or number, possible contains PII, scrub it
+    return '?';
   }
 
   /**

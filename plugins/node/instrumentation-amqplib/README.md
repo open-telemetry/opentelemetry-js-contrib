@@ -55,7 +55,7 @@ amqplib instrumentation has few options available to choose from. You can set th
 | `publishConfirmHook`                  | `AmqplibPublishConfirmCustomAttributeFunction`    | hook for adding custom attributes after publish message is confirmed by the broker.                                             |
 | `consumeHook`                  | `AmqplibConsumeCustomAttributeFunction`    | hook for adding custom attributes before consumer message is processed.                                             |
 | `consumeEndHook`                  | `AmqplibConsumeEndCustomAttributeFunction`    | hook for adding custom attributes after consumer message is acked to server.                                             |
-| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#ConsumeTimeout) below                                             |
+| `consumeTimeoutMs`                  | `number`    | read [Consume Timeout](#consume-timeout) below                                             |
 
 ### Consume Timeout
 
