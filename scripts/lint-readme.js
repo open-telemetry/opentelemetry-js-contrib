@@ -78,5 +78,3 @@ Compatible with OpenTelemetry JS API and SDK \`1.0+\`.
     );
   }
 }
-
-console.log('README.md is verified!');
