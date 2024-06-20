@@ -77,8 +77,9 @@ For example, to enable only the `env`, `host` detectors:
 export OTEL_NODE_RESOURCE_DETECTORS="env,host"
 ```
 
-By default, all [Supported Instrumentations](#supported-instrumentations) are enabled,
-but you can use the environment variable `OTEL_NODE_ENABLED_INSTRUMENTATIONS` to enable only certain instrumentations
+By default, all [Supported Instrumentations](#supported-instrumentations) are enabled.
+You can use the environment variable `OTEL_NODE_ENABLED_INSTRUMENTATIONS` to enable only certain instrumentations,
+OR the environment variable `OTEL_NODE_DISABLED_INSTRUMENTATIONS` to disable only certain instrumentations,
 by providing a comma-separated list of the instrumentation package names without the `@opentelemetry/instrumentation-` prefix.
 
 For example, to enable only
@@ -88,6 +89,12 @@ instrumentations:
 
 ```shell
 export OTEL_NODE_ENABLED_INSTRUMENTATIONS="http,nestjs-core"
+```
+
+To disable only [@opentelemetry/instrumentation-fs](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/instrumentation-fs):
+
+```shell
+export OTEL_NODE_DISABLED_INSTRUMENTATIONS="fs"
 ```
 
 To enable logging for troubleshooting, set the log level by setting the `OTEL_LOG_LEVEL` environment variable to one of the following:

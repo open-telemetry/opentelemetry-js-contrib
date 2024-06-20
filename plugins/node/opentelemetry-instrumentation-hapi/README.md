@@ -21,7 +21,7 @@ npm install --save @opentelemetry/instrumentation-hapi
 
 ### Supported Versions
 
-- `>=17.0.0 <22`
+- [`@hapi/hapi`](https://www.npmjs.com/package/@hapi/hapi) versions `>=17.0.0 <22`
 
 ## Usage
 
