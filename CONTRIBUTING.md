@@ -14,6 +14,7 @@ We'd love your help!
   - [CHANGELOG](#changelog)
   - [Benchmarks](#benchmarks)
 - [Component Ownership](#component-ownership)
+  - [Becoming a Component Owner](#becoming-a-component-owner)
 - [Component Lifecycle](#component-lifecycle)
   - [Unreleased](#unreleased)
   - [Experimental](#experimental)
@@ -138,9 +139,41 @@ When two or more approaches must be compared, please write a benchmark in the be
 This repository contains many components which are maintained by more than the typical set of JS maintainers and approvers.
 Each component in this repository SHOULD have a component owner who is responsible for maintaining it.
 The README.md for each component SHOULD contain its owner, but the source of truth for component ownership is in [.github/component_owners.yml](.github/component_owners.yml).
-Component owners are generally given authority to make decisions relating to implementation and feature requests for their components, provided they follow the best practices set out by the maintainers.
+Component owners are generally given authority to make decisions relating to implementation and feature requests for their components,
+provided they follow the best practices set out by the maintainers and the [mission, vision and values](https://github.com/open-telemetry/community/blob/main/mission-vision-values.md)
+of the OpenTelemetry Project.
+
 Component owners MUST do their best to maintain a high level of quality, security, performance, and specification compliance within their components.
 Maintainers may override the decisions of component owners, but should only do so when they feel one or more of these traits is compromised.
+
+### Becoming a Component Owner
+
+To become a component owner, contributors SHOULD demonstrate prior knowledge of the instrumented package or the concepts therein.
+
+Ways do to so may be by providing proof of:
+- current or prior involvement with the community that develops the upstream package
+  - **Example:** A person working on MongoDB requesting ownership over a MongoDB instrumentation
+- current or prior involvement with a community that develops systems with similar concepts
+  - **Example:** A person previously working on a MySQL requesting ownership of a instrumentation package that instruments another database client library instrumentation.
+- current or prior extensive use of the instrumented package in other project they are involved in
+  - **Example:** A person working at a company that makes extensive use of the `fastify` library requesting ownership of the
+- a vested interest in the telemetry being emitted from that instrumentation
+  - **Example:** A person employed at an observability vendor that relies on the continued maintenance of the instrumentation
+
+**Examples of proof may include but are not limited to:**
+  - Links to issues/PRs they worked on
+  - Links to blog posts authored by them on behalf of the organization developing that system
+  - Membership in GitHub teams/organizations that are associated with the development of the upstream package
+
+Aspiring Component Owners MUST agree to uphold the [mission, vision and values](https://github.com/open-telemetry/community/blob/main/mission-vision-values.md) of the OpenTelemetry project.
+Further, aspiring component owners are expected to have knowledge of the [OpenTelemetry Semantic Conventions](https://github.com/open-telemetry/semantic-conventions)
+and MUST agree to adhere to the rules set out therein.
+
+If all these conditions are met, aspiring component owners are encouraged to self-nominate by opening an issue.
+@open-telemetry/javascript-maintainers will then engage on the issue, may ask questions, and will then - based on the
+information provided on the issue - either approve or deny the ownership request. If the ownership request has been
+approved, the new component owner opens a PR to add themselves to the list of owners ([.github/component_owners.yml](.github/component_owners.yml))
+for that package.
 
 ## Component Lifecycle
 
