@@ -19,6 +19,10 @@ This module is currently under active development and not ready for general use.
 npm install --save @opentelemetry/instrumentation-aws-lambda
 ```
 
+## Supported Versions
+
+- This package will instrument the lambda execution regardless of versions.
+
 ## Usage
 
 Create a file to initialize the instrumentation, such as `lambda-wrapper.js`.

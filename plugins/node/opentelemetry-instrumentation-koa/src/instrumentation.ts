@@ -50,7 +50,7 @@ export class KoaInstrumentation extends InstrumentationBase {
   protected init() {
     return new InstrumentationNodeModuleDefinition(
       'koa',
-      ['^2.0.0'],
+      ['>=2.0.0 <3'],
       (module: any) => {
         const moduleExports: typeof koa =
           module[Symbol.toStringTag] === 'Module'

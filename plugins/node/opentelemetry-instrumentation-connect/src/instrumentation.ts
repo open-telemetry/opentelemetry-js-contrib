@@ -50,7 +50,7 @@ export class ConnectInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'connect',
-        ['^3.0.0'],
+        ['>=3.0.0 <4'],
         moduleExports => {
           return this._patchConstructor(moduleExports);
         }

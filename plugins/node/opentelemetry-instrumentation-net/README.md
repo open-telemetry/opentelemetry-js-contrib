@@ -17,6 +17,10 @@ Supports both TCP and IPC connections.
 npm install --save @opentelemetry/instrumentation-net
 ```
 
+## Supported Versions
+
+- Node.js `>=14`
+
 ## Usage
 
 ```js

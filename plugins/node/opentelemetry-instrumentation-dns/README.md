@@ -21,6 +21,10 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-dns
 ```
 
+## Supported Versions
+
+- Node.js `>=14`
+
 ## Usage
 
 ```js
