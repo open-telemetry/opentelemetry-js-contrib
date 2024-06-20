@@ -389,7 +389,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         const { consumeTimeoutMs } = self.getConfig();
         if (consumeTimeoutMs) {
           const timer = setInterval(() => {
-            self.checkConsumeTimeoutOnChannel(channel, consumeTimeoutMs);
+            self.checkConsumeTimeoutOnChannel(channel);
           }, consumeTimeoutMs);
           timer.unref();
           channel[CHANNEL_CONSUME_TIMEOUT_TIMER] = timer;
@@ -722,20 +722,18 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
     );
   }
 
-  private checkConsumeTimeoutOnChannel(
-    channel: InstrumentationConsumeChannel,
-    consumeTimeoutMs: number
-  ) {
+  private checkConsumeTimeoutOnChannel(channel: InstrumentationConsumeChannel) {
     const currentTime = hrTime();
     const spansNotEnded = channel[CHANNEL_SPANS_NOT_ENDED] ?? [];
     let i: number;
+    const { consumeTimeoutMs } = this.getConfig();
     for (i = 0; i < spansNotEnded.length; i++) {
       const currMessage = spansNotEnded[i];
       const timeFromConsume = hrTimeDuration(
         currMessage.timeOfConsume,
         currentTime
       );
-      if (hrTimeToMilliseconds(timeFromConsume) < consumeTimeoutMs) {
+      if (hrTimeToMilliseconds(timeFromConsume) < consumeTimeoutMs!) {
         break;
       }
       this.endConsumerSpan(
