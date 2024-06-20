@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const packageRoot = process.cwd();
-const monorepoRoot = path.resolve(`${packageRoot}/../../..`);
+const monorepoRoot = path.resolve(__dirname, '..');
 
 const autoInstrumentationNodeDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-node/package.json`).dependencies;
 const autoInstrumentationWebDeps = require(`${monorepoRoot}/metapackages/auto-instrumentations-web/package.json`).dependencies;
