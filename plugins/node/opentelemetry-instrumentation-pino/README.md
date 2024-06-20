@@ -15,6 +15,10 @@ Compatible with OpenTelemetry JS API and SDK `1.0+`.
 npm install --save @opentelemetry/instrumentation-pino
 ```
 
+### Supported Versions
+
+- [`pino`](https://www.npmjs.com/package/pino) versions `>=5.14.0 <10`
+
 ## Usage
 
 ```js
@@ -60,10 +64,6 @@ For the current active span, the following fields are injected. These field name
 - `trace_flags`
 
 When no span context is active or the span context is invalid, injection is skipped.
-
-### Supported versions
-
-`>=5.14.0 <10`
 
 ## Semantic Conventions
 

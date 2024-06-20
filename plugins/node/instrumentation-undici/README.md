@@ -16,7 +16,7 @@ npm install --save @opentelemetry/instrumentation-undici
 
 ## Supported Versions
 
-- `undici@>=5.12.0`
+- [`undici`](https://www.npmjs.com/package/undici) version `>=5.12.0`
 
 ## Usage
 

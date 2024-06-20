@@ -74,6 +74,8 @@ import {
 } from './utils';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
+const supportedVersions = ['>=0.5.5 <1'];
+
 export class AmqplibInstrumentation extends InstrumentationBase {
   protected override _config!: AmqplibInstrumentationConfig;
 
@@ -92,28 +94,28 @@ export class AmqplibInstrumentation extends InstrumentationBase {
   protected init() {
     const channelModelModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/channel_model.js',
-      ['>=0.5.5'],
+      supportedVersions,
       this.patchChannelModel.bind(this),
       this.unpatchChannelModel.bind(this)
     );
 
     const callbackModelModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/callback_model.js',
-      ['>=0.5.5'],
+      supportedVersions,
       this.patchChannelModel.bind(this),
       this.unpatchChannelModel.bind(this)
     );
 
     const connectModuleFile = new InstrumentationNodeModuleFile(
       'amqplib/lib/connect.js',
-      ['>=0.5.5'],
+      supportedVersions,
       this.patchConnect.bind(this),
       this.unpatchConnect.bind(this)
     );
 
     const module = new InstrumentationNodeModuleDefinition(
       'amqplib',
-      ['>=0.5.5'],
+      supportedVersions,
       undefined,
       undefined,
       [channelModelModuleFile, connectModuleFile, callbackModelModuleFile]
