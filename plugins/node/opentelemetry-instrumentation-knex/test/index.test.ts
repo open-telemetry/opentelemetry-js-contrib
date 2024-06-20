@@ -452,6 +452,27 @@ describe('Knex instrumentation', () => {
       );
     });
   });
+
+  it('works when knex is configured with connection function', async () => {
+    client = knex({
+      client: 'sqlite3',
+      // Use a function to configure the connection
+      connection: async () => ({
+        filename: ':memory:',
+      }),
+      useNullAsDefault: true,
+    });
+
+    await client.raw('SELECT 1');
+
+    const instrumentationSpans = memoryExporter.getFinishedSpans();
+    assert.strictEqual(instrumentationSpans.length, 1);
+    assert.strictEqual(instrumentationSpans[0].name, 'raw :memory:');
+    assert.strictEqual(
+      instrumentationSpans[0].attributes['net.transport'],
+      'inproc'
+    );
+  });
 });
 
 const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
