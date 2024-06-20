@@ -768,5 +768,43 @@ describe('UndiciInstrumentation `undici` tests', function () {
         },
       });
     });
+
+    it('should not report an user-agent if it was not defined', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      // Do some requests
+      const headers = {
+        'foo-client': 'bar',
+      };
+
+      const queryRequestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      const queryResponse = await undici.request(queryRequestUrl, { headers });
+      await consumeResponseBody(queryResponse.body);
+
+      assert.ok(
+        queryResponse.headers['propagation-error'] == null,
+        'propagation is set for instrumented requests'
+      );
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(spans.length, 1);
+      assertSpan(span, {
+        hostname: 'localhost',
+        httpStatusCode: queryResponse.statusCode,
+        httpMethod: 'GET',
+        path: '/',
+        query: '?query=test',
+        reqHeaders: headers,
+        resHeaders: queryResponse.headers,
+      });
+      assert.strictEqual(
+        span.attributes['user_agent.original'],
+        undefined,
+        'user-agent is undefined'
+      );
+    });
   });
 });
