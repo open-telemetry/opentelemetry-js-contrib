@@ -43,7 +43,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { EventEmitter } from 'events';
 import type * as CassandraDriver from 'cassandra-driver';
 
-const supportedVersions = ['>=4.4 <5.0'];
+const supportedVersions = ['>=4.4.0 <5'];
 
 export class CassandraDriverInstrumentation extends InstrumentationBase {
   protected override _config!: CassandraDriverInstrumentationConfig;
