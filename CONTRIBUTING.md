@@ -151,6 +151,7 @@ Maintainers may override the decisions of component owners, but should only do s
 To become a component owner, contributors SHOULD demonstrate prior knowledge of the instrumented package or the concepts therein.
 
 Ways do to so may be by providing proof of:
+
 - current or prior involvement with the community that develops the upstream package
   - **Example:** A person working on MongoDB requesting ownership over a MongoDB instrumentation
 - current or prior involvement with a community that develops systems with similar concepts
