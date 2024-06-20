@@ -48,7 +48,7 @@ export class RedisInstrumentation extends InstrumentationBase {
     return [
       new InstrumentationNodeModuleDefinition(
         'redis',
-        ['^2.6.0', '^3.0.0'],
+        ['>=2.6.0 <4'],
         moduleExports => {
           if (
             isWrapped(
