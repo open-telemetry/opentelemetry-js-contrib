@@ -161,9 +161,10 @@ Ways do to so may be by providing proof of:
   - **Example:** A person employed at an observability vendor that relies on the continued maintenance of the instrumentation
 
 **Examples of proof may include but are not limited to:**
-  - Links to issues/PRs they worked on
-  - Links to blog posts authored by them on behalf of the organization developing that system
-  - Membership in GitHub teams/organizations that are associated with the development of the upstream package
+
+- Links to issues/PRs they worked on
+- Links to blog posts authored by them on behalf of the organization developing that system
+- Membership in GitHub teams/organizations that are associated with the development of the upstream package
 
 Aspiring Component Owners MUST agree to uphold the [mission, vision and values](https://github.com/open-telemetry/community/blob/main/mission-vision-values.md) of the OpenTelemetry project.
 Further, aspiring component owners are expected to have knowledge of the [OpenTelemetry Semantic Conventions](https://github.com/open-telemetry/semantic-conventions)
