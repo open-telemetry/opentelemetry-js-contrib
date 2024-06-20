@@ -69,18 +69,6 @@ If timeout is not big enough, span might be closed with 'InstrumentationTimeout'
 
 Default is 1 minute
 
-## Migration From opentelemetry-instrumentation-amqplib
-
-This instrumentation was originally published under the name `"opentelemetry-instrumentation-amqplib"` in [this repo](https://github.com/aspecto-io/opentelemetry-ext-js). Few breaking changes were made during porting to the contrib repo to align with conventions:
-
-### Hook Info
-
-The instrumentation's config `publishHook`, `publishConfirmHook`, `consumeHook` and `consumeEndHook` functions signature changed, so the second function parameter is info object, containing the relevant hook data.
-
-### `moduleVersionAttributeName` config option
-
-The `moduleVersionAttributeName` config option is removed. To add the amqplib package version to spans, use the `moduleVersion` attribute in hook info for `publishHook` and `consumeHook` functions.
-
 ## Semantic Conventions
 
 This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
