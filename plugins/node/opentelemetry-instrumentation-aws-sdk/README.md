@@ -15,6 +15,11 @@ If total installation size is not constrained, it is recommended to use the [`@o
 npm install --save @opentelemetry/instrumentation-aws-sdk
 ```
 
+## Supported Versions
+
+- [`aws-sdk`](https://www.npmjs.com/package/aws-sdk) versions `>=2.308.0 <3`
+- `@aws-sdk/client-*` versions `>=3.0.0 <4`
+
 ## Usage
 
 For further automatic instrumentation instruction see the [@opentelemetry/instrumentation](https://www.npmjs.com/package/@opentelemetry/instrumentation) package.

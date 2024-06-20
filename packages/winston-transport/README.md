@@ -51,7 +51,7 @@ const logger = winston.createLogger({
 
 ### Supported versions
 
-Winston `3.x`
+- [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`
 
 ## Useful links
 
