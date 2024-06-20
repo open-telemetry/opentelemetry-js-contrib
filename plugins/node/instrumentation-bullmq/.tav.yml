@@ -1,0 +1,23 @@
+bullmq:
+  jobs:
+    - versions:
+        include: ">=2 <3"
+        mode: max-3
+      node: '>=14'
+      commands: npm run test
+    - versions:
+        include: ">=3 <4"
+        mode: max-3
+      node: '>=16'
+      commands: npm run test
+    - versions:
+        include: ">=4 <5"
+        mode: max-3
+      node: '>=18'
+      commands: npm run test
+    - versions:
+        include: ">=3 <4"
+        mode: max-3
+      node: '>=20'
+      commands: npm run test
+

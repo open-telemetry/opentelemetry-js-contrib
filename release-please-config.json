@@ -24,6 +24,7 @@
     "packages/opentelemetry-test-utils": {},
     "packages/winston-transport": {},
     "plugins/node/instrumentation-amqplib": {},
+    "plugins/node/instrumentation-bullmq": {},
     "plugins/node/instrumentation-cucumber": {},
     "plugins/node/instrumentation-dataloader": {},
     "plugins/node/instrumentation-fs": {},
