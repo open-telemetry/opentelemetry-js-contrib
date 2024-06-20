@@ -158,7 +158,7 @@ Ways do to so may be by providing proof of:
 - current or prior involvement with a community that develops systems with similar concepts
   - **Example:** A person previously working on a MySQL requesting ownership of a instrumentation package that instruments another database client library instrumentation.
 - current or prior extensive use of the instrumented package in other project they are involved in
-  - **Example:** A person working at a company that makes extensive use of the `fastify` library requesting ownership of the
+  - **Example:** A person working at a company that makes extensive use of the `fastify` library requesting ownership of the `@opentelemetry/instrumentation-fastify` package.
 - a vested interest in the telemetry being emitted from that instrumentation
   - **Example:** A person employed at an observability vendor that relies on the continued maintenance of the instrumentation
 
