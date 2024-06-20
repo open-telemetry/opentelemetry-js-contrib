@@ -37,7 +37,7 @@ const DEFAULT_LOG_KEYS = {
   traceFlags: 'trace_flags',
 };
 
-export class PinoInstrumentation extends InstrumentationBase {
+export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentationConfig> {
   constructor(config: PinoInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -93,23 +93,15 @@ export class PinoInstrumentation extends InstrumentationBase {
     ];
   }
 
-  override getConfig(): PinoInstrumentationConfig {
-    return this._config;
-  }
-
-  override setConfig(config: PinoInstrumentationConfig = {}) {
-    this._config = config;
-  }
-
   private _callHook(span: Span, record: Record<string, string>, level: number) {
-    const hook = this.getConfig().logHook;
+    const { logHook } = this.getConfig();
 
-    if (!hook) {
+    if (!logHook) {
       return;
     }
 
     safeExecuteInTheMiddle(
-      () => hook(span, record, level),
+      () => logHook(span, record, level),
       err => {
         if (err) {
           diag.error('pino instrumentation: error calling logHook', err);

@@ -27,7 +27,6 @@ import {
   OtelPatched,
   Maybe,
 } from './internal-types';
-import { GraphQLInstrumentationConfig } from './types';
 
 const OPERATION_VALUES = Object.values(AllowedOperationTypes);
 
@@ -367,12 +366,17 @@ const handleResolveSpanSuccess = (
 
 export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
   tracer: api.Tracer,
-  getConfig: () => Required<GraphQLInstrumentationConfig>,
+  getConfig: () => GraphQLInstrumentationParsedConfig,
   fieldResolver: Maybe<
     graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched
   >,
   isDefaultResolver = false
-): graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched {
+): graphqlTypes.GraphQLFieldResolver<
+  TSource,
+  TContext & ObjectWithGraphQLData,
+  TArgs
+> &
+  OtelPatched {
   if (
     (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] ||
     typeof fieldResolver !== 'function'
@@ -415,7 +419,7 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
 
     let field: any;
     let shouldEndSpan = false;
-    if (config.depth >= 0 && config.depth < depth) {
+    if (config.depth! >= 0 && config.depth! < depth) {
       field = getParentField(contextValue, path);
     } else {
       const newField = createFieldIfNotExists(

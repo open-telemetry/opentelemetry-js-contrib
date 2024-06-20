@@ -78,11 +78,7 @@ const supportedVersions = ['>=0.5.5 <1'];
 
 export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumentationConfig> {
   constructor(config: AmqplibInstrumentationConfig = {}) {
-    super(
-      PACKAGE_NAME,
-      PACKAGE_VERSION,
-      Object.assign({}, DEFAULT_CONFIG, config)
-    );
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
   }
 
   override setConfig(config: AmqplibInstrumentationConfig = {}) {

@@ -29,11 +29,14 @@ import { GraphQLInstrumentationConfig } from './types';
 export const OPERATION_NOT_SUPPORTED =
   'Operation$operationName$not' + ' supported';
 
-/**
- * Merged and parsed config of default instrumentation config and GraphQL
- */
-export type GraphQLInstrumentationParsedConfig =
-  Required<GraphQLInstrumentationConfig> & InstrumentationConfig;
+// Utility type to make specific properties required
+type RequireSpecificKeys<T, K extends keyof T> = T & { [P in K]-?: T[P] };
+
+// Merged and parsed config of default instrumentation config and GraphQL
+export type GraphQLInstrumentationParsedConfig = RequireSpecificKeys<
+  GraphQLInstrumentationConfig,
+  'mergeItems' | 'depth' | 'allowValues' | 'ignoreResolveSpans'
+>;
 
 export type executeFunctionWithObj = (
   args: graphqlTypes.ExecutionArgs

@@ -36,7 +36,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
 
-export class WinstonInstrumentation extends InstrumentationBase {
+export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumentationConfig> {
   constructor(config: WinstonInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -112,23 +112,15 @@ export class WinstonInstrumentation extends InstrumentationBase {
     ];
   }
 
-  override getConfig(): WinstonInstrumentationConfig {
-    return this._config;
-  }
-
-  override setConfig(config: WinstonInstrumentationConfig = {}) {
-    this._config = config;
-  }
-
   private _callHook(span: Span, record: Record<string, string>) {
-    const hook = this.getConfig().logHook;
+    const { logHook } = this.getConfig();
 
-    if (!hook) {
+    if (!logHook) {
       return;
     }
 
     safeExecuteInTheMiddle(
-      () => hook(span, record),
+      () => logHook(span, record),
       err => {
         if (err) {
           this._diag.error('error calling logHook', err);
