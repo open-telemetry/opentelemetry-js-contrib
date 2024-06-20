@@ -7,6 +7,8 @@ This module provides automatic instrumentation for the [`fastify`](https://www.f
 
 If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
 
+Compatible with OpenTelemetry JS API and SDK `1.0+`.
+
 ## Installation
 
 This instrumentation relies on HTTP calls to also be instrumented. Make sure you install and enable both, otherwise you will have spans that are not connected with each other.
