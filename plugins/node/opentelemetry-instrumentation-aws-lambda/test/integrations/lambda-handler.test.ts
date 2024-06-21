@@ -842,6 +842,19 @@ describe('lambda handler', () => {
     });
   });
 
+  describe('non-existent handler module', () => {
+    it('should skip instrumentation', async () => {
+      initializeHandler('lambda-test/callback.handle');
+
+      const handler = await lambdaLoadHandler('lambda-test/async.handler');
+      const result = await handler('arg', ctx);
+
+      assert.strictEqual(result, 'ok');
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+    });
+  });
+
   describe('non-existent handler function', () => {
     it('should skip instrumentation', async () => {
       initializeHandler('lambda-test/async.handle');
