@@ -450,7 +450,7 @@ export class AmqplibInstrumentation extends InstrumentationBase {
               [SEMATTRS_MESSAGING_CONVERSATION_ID]:
                 msg?.properties.correlationId,
             },
-            links: links,
+            links,
           },
           parentContext
         );
