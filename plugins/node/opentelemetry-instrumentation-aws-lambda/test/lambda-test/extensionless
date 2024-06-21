@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 exports.handler = async function (event, context) {
   return 'ok';
 };

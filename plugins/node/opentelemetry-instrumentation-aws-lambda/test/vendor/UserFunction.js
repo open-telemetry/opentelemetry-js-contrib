@@ -1,0 +1,301 @@
+// https://raw.githubusercontent.com/aws/aws-lambda-nodejs-runtime-interface-client/v3.1.0/src/UserFunction.js
+
+/**
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * This module defines the functions for loading the user's code as specified
+ * in a handler string.
+ */
+
+'use strict';
+
+const path = require('path');
+const fs = require('fs');
+const {
+  HandlerNotFound,
+  MalformedHandlerName,
+  ImportModuleError,
+  UserCodeSyntaxError,
+} = require('./Errors');
+const { HttpResponseStream } = require('./HttpResponseStream');
+
+const FUNCTION_EXPR = /^([^.]*)\.(.*)$/;
+const RELATIVE_PATH_SUBSTRING = '..';
+const HANDLER_STREAMING = Symbol.for('aws.lambda.runtime.handler.streaming');
+const HANDLER_HIGHWATERMARK = Symbol.for(
+  'aws.lambda.runtime.handler.streaming.highWaterMark'
+);
+const STREAM_RESPONSE = 'response';
+
+// `awslambda.streamifyResponse` function is provided by default.
+const NoGlobalAwsLambda =
+  process.env['AWS_LAMBDA_NODEJS_NO_GLOBAL_AWSLAMBDA'] === '1' ||
+  process.env['AWS_LAMBDA_NODEJS_NO_GLOBAL_AWSLAMBDA'] === 'true';
+
+/**
+ * Break the full handler string into two pieces, the module root and the actual
+ * handler string.
+ * Given './somepath/something/module.nestedobj.handler' this returns
+ * ['./somepath/something', 'module.nestedobj.handler']
+ */
+function _moduleRootAndHandler(fullHandlerString) {
+  let handlerString = path.basename(fullHandlerString);
+  let moduleRoot = fullHandlerString.substring(
+    0,
+    fullHandlerString.indexOf(handlerString)
+  );
+  return [moduleRoot, handlerString];
+}
+
+/**
+ * Split the handler string into two pieces: the module name and the path to
+ * the handler function.
+ */
+function _splitHandlerString(handler) {
+  let match = handler.match(FUNCTION_EXPR);
+  if (!match || match.length != 3) {
+    throw new MalformedHandlerName('Bad handler');
+  }
+  return [match[1], match[2]]; // [module, function-path]
+}
+
+/**
+ * Resolve the user's handler function from the module.
+ */
+function _resolveHandler(object, nestedProperty) {
+  return nestedProperty.split('.').reduce((nested, key) => {
+    return nested && nested[key];
+  }, object);
+}
+
+function _tryRequireFile(file, extension) {
+  const path = file + (extension || '');
+  return fs.existsSync(path) ? require(path) : undefined;
+}
+
+async function _tryAwaitImport(file, extension) {
+  const path = file + (extension || '');
+
+  if (fs.existsSync(path)) {
+    return await import(path);
+  }
+
+  return undefined;
+}
+
+function _hasFolderPackageJsonTypeModule(folder) {
+  // Check if package.json exists, return true if type === "module" in package json.
+  // If there is no package.json, and there is a node_modules, return false.
+  // Check parent folder otherwise, if there is one.
+  if (folder.endsWith('/node_modules')) {
+    return false;
+  }
+
+  const pj = path.join(folder, '/package.json');
+  if (fs.existsSync(pj)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pj));
+      if (pkg) {
+        if (pkg.type === 'module') {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    } catch (e) {
+      console.warn(
+        `${pj} cannot be read, it will be ignored for ES module detection purposes.`,
+        e
+      );
+      return false;
+    }
+  }
+
+  if (folder === '/') {
+    // We have reached root without finding either a package.json or a node_modules.
+    return false;
+  }
+
+  return _hasFolderPackageJsonTypeModule(path.resolve(folder, '..'));
+}
+
+function _hasPackageJsonTypeModule(file) {
+  // File must have a .js extension
+  const jsPath = file + '.js';
+  return fs.existsSync(jsPath)
+    ? _hasFolderPackageJsonTypeModule(path.resolve(path.dirname(jsPath)))
+    : false;
+}
+
+/**
+ * Attempt to load the user's module.
+ * Attempts to directly resolve the module relative to the application root,
+ * then falls back to the more general require().
+ */
+async function _tryRequire(appRoot, moduleRoot, module) {
+  const lambdaStylePath = path.resolve(appRoot, moduleRoot, module);
+
+  // Extensionless files are loaded via require.
+  const extensionless = _tryRequireFile(lambdaStylePath);
+  if (extensionless) {
+    return extensionless;
+  }
+
+  // If package.json type != module, .js files are loaded via require.
+  const pjHasModule = _hasPackageJsonTypeModule(lambdaStylePath);
+  if (!pjHasModule) {
+    const loaded = _tryRequireFile(lambdaStylePath, '.js');
+    if (loaded) {
+      return loaded;
+    }
+  }
+
+  // If still not loaded, try .js, .mjs, and .cjs in that order.
+  // Files ending with .js are loaded as ES modules when the nearest parent package.json
+  // file contains a top-level field "type" with a value of "module".
+  // https://nodejs.org/api/packages.html#packages_type
+  const loaded =
+    (pjHasModule && (await _tryAwaitImport(lambdaStylePath, '.js'))) ||
+    (await _tryAwaitImport(lambdaStylePath, '.mjs')) ||
+    _tryRequireFile(lambdaStylePath, '.cjs');
+  if (loaded) {
+    return loaded;
+  }
+
+  // Why not just require(module)?
+  // Because require() is relative to __dirname, not process.cwd(). And the
+  // runtime implementation is not located in /var/task
+  // This won't work (yet) for esModules as import.meta.resolve is still experimental
+  // See: https://nodejs.org/api/esm.html#esm_import_meta_resolve_specifier_parent
+  const nodeStylePath = require.resolve(module, {
+    paths: [appRoot, moduleRoot],
+  });
+
+  return require(nodeStylePath);
+}
+
+/**
+ * Load the user's application or throw a descriptive error.
+ * @throws Runtime errors in two cases
+ *   1 - UserCodeSyntaxError if there's a syntax error while loading the module
+ *   2 - ImportModuleError if the module cannot be found
+ */
+async function _loadUserApp(appRoot, moduleRoot, module) {
+  if (!NoGlobalAwsLambda) {
+    globalThis.awslambda = {
+      streamifyResponse: (handler, options) => {
+        handler[HANDLER_STREAMING] = STREAM_RESPONSE;
+        if (typeof options?.highWaterMark === 'number') {
+          handler[HANDLER_HIGHWATERMARK] = parseInt(options.highWaterMark);
+        }
+        return handler;
+      },
+      HttpResponseStream: HttpResponseStream,
+    };
+  }
+
+  try {
+    return await _tryRequire(appRoot, moduleRoot, module);
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      throw new UserCodeSyntaxError(e);
+    } else if (e.code !== undefined && e.code === 'MODULE_NOT_FOUND') {
+      throw new ImportModuleError(e);
+    } else {
+      throw e;
+    }
+  }
+}
+
+function _throwIfInvalidHandler(fullHandlerString) {
+  if (fullHandlerString.includes(RELATIVE_PATH_SUBSTRING)) {
+    throw new MalformedHandlerName(
+      `'${fullHandlerString}' is not a valid handler name. Use absolute paths when specifying root directories in handler names.`
+    );
+  }
+}
+
+function _isHandlerStreaming(handler) {
+  if (
+    typeof handler[HANDLER_STREAMING] === 'undefined' ||
+    handler[HANDLER_STREAMING] === null ||
+    handler[HANDLER_STREAMING] === false
+  ) {
+    return false;
+  }
+
+  if (handler[HANDLER_STREAMING] === STREAM_RESPONSE) {
+    return STREAM_RESPONSE;
+  } else {
+    throw new MalformedStreamingHandler(
+      'Only response streaming is supported.'
+    );
+  }
+}
+
+function _highWaterMark(handler) {
+  if (
+    typeof handler[HANDLER_HIGHWATERMARK] === 'undefined' ||
+    handler[HANDLER_HIGHWATERMARK] === null ||
+    handler[HANDLER_HIGHWATERMARK] === false
+  ) {
+    return undefined;
+  }
+
+  const hwm = parseInt(handler[HANDLER_HIGHWATERMARK]);
+  return isNaN(hwm) ? undefined : hwm;
+}
+
+/**
+ * Load the user's function with the approot and the handler string.
+ * @param appRoot {string}
+ *   The path to the application root.
+ * @param handlerString {string}
+ *   The user-provided handler function in the form 'module.function'.
+ * @return userFuction {function}
+ *   The user's handler function. This function will be passed the event body,
+ *   the context object, and the callback function.
+ * @throws In five cases:-
+ *   1 - if the handler string is incorrectly formatted an error is thrown
+ *   2 - if the module referenced by the handler cannot be loaded
+ *   3 - if the function in the handler does not exist in the module
+ *   4 - if a property with the same name, but isn't a function, exists on the
+ *       module
+ *   5 - the handler includes illegal character sequences (like relative paths
+ *       for traversing up the filesystem '..')
+ *   Errors for scenarios known by the runtime, will be wrapped by Runtime.* errors.
+ */
+module.exports.load = async function (appRoot, fullHandlerString) {
+  _throwIfInvalidHandler(fullHandlerString);
+
+  let [moduleRoot, moduleAndHandler] = _moduleRootAndHandler(fullHandlerString);
+  let [module, handlerPath] = _splitHandlerString(moduleAndHandler);
+
+  let userApp = await _loadUserApp(appRoot, moduleRoot, module);
+  let handlerFunc = _resolveHandler(userApp, handlerPath);
+
+  if (!handlerFunc) {
+    throw new HandlerNotFound(
+      `${fullHandlerString} is undefined or not exported`
+    );
+  }
+
+  if (typeof handlerFunc !== 'function') {
+    throw new HandlerNotFound(`${fullHandlerString} is not a function`);
+  }
+
+  return handlerFunc;
+};
+
+module.exports.isHandlerFunction = function (value) {
+  return typeof value === 'function';
+};
+
+module.exports.getHandlerMetadata = function (handlerFunc) {
+  return {
+    streaming: _isHandlerStreaming(handlerFunc),
+    highWaterMark: _highWaterMark(handlerFunc),
+  };
+};
+
+module.exports.STREAM_RESPONSE = STREAM_RESPONSE;

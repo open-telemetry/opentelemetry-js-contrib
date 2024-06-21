@@ -20,6 +20,7 @@
 import * as path from 'path';
 
 import { AwsLambdaInstrumentation } from '../../src';
+import { load } from '../vendor/UserFunction';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
@@ -71,8 +72,8 @@ describe('force flush', () => {
     instrumentation.setMeterProvider(provider);
   };
 
-  const lambdaRequire = (module: string) =>
-    require(path.resolve(__dirname, '..', module));
+  const lambdaLoadHandler = (handler: string = process.env._HANDLER!) =>
+    load(process.env.LAMBDA_TASK_ROOT!, handler);
 
   beforeEach(() => {
     oldEnv = { ...process.env };
@@ -100,18 +101,15 @@ describe('force flush', () => {
     provider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
+    const handler = await lambdaLoadHandler();
     await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
+      handler('arg', ctx, (err: Error, res: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res);
         }
-      );
+      });
     });
 
     assert.strictEqual(forceFlushed, true);
@@ -134,18 +132,15 @@ describe('force flush', () => {
     nodeTracerProvider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
+    const handler = await lambdaLoadHandler();
     await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
+      handler('arg', ctx, (err: Error, res: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res);
         }
-      );
+      });
     });
 
     assert.strictEqual(forceFlushed, true);
@@ -165,18 +160,15 @@ describe('force flush', () => {
     provider.forceFlush = forceFlush;
     initializeHandlerMetrics('lambda-test/sync.handler', provider);
 
+    const handler = await lambdaLoadHandler();
     await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
+      handler('arg', ctx, (err: Error, res: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res);
         }
-      );
+      });
     });
 
     assert.strictEqual(forceFlushed, true);
@@ -217,19 +209,16 @@ describe('force flush', () => {
     instrumentation.setMeterProvider(meterProvider);
 
     let callbackCount = 0;
+    const handler = await lambdaLoadHandler();
     await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          callbackCount++;
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
+      handler('arg', ctx, (err: Error, res: any) => {
+        callbackCount++;
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res);
         }
-      );
+      });
     });
 
     assert.strictEqual(tracerForceFlushed, true);
