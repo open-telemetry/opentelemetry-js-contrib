@@ -22,6 +22,10 @@
     "compile": "tsc -p .",
     "prepublishOnly": "npm run compile"
   },
+  "opentelemetry": {
+    "componentType": "instrumentation",
+    "platforms": ["node"]
+  },
   "keywords": [
     "instrumentation",
     "ioredis",

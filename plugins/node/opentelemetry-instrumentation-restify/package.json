@@ -20,6 +20,10 @@
     "version:update": "node ../../../scripts/version-update.js",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "componentType": "instrumentation",
+    "platforms": ["node"]
+  },
   "keywords": [
     "instrumentation",
     "nodejs",

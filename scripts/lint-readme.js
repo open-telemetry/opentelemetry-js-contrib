@@ -12,9 +12,15 @@ const packageJsonUrl = path.resolve(`${packageRoot}/package.json`);
 const pjson = require(packageJsonUrl);
 const instrumentationPackageName = pjson.name;
 
+if (!pjson.opentelemetry) {
+  throw new Error(
+    `package.json is missing the "opentelemetry" field. Please add it.`
+  );
+}
+
 // identify if it's node or web
-const isNode = instrumentationPackageName in autoInstrumentationNodeDeps;
-const isWeb = instrumentationPackageName in autoInstrumentationWebDeps;
+const isNode = 'node' in pjson.opentelemetry.platforms;
+const isWeb = 'web' in pjson.opentelemetry.platforms;
 
 // extract info from README.md
 const currentReadmeContent = fs.readFileSync(

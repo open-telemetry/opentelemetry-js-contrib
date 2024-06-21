@@ -21,6 +21,10 @@
     "test:browser": "nyc karma start --single-run",
     "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
   },
+  "opentelemetry": {
+    "componentType": "instrumentation",
+    "platforms": ["web"]
+  },
   "keywords": [
     "opentelemetry",
     "react",

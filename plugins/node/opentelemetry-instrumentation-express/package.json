@@ -20,6 +20,10 @@
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"
   },
+  "opentelemetry": {
+    "componentType": "instrumentation",
+    "platforms": ["node"]
+  },
   "keywords": [
     "express",
     "instrumentation",

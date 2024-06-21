@@ -18,6 +18,10 @@
     "version:update": "node ../../../scripts/version-update.js",
     "compile": "tsc -p ."
   },
+  "opentelemetry": {
+    "componentType": "instrumentation",
+    "platforms": ["node"]
+  },
   "keywords": [
     "cassandra-driver",
     "instrumentation",
