@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type * as graphqlTypes from 'graphql';
 import type * as api from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
